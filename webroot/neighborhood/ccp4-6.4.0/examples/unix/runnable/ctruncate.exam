@@ -1,0 +1,35 @@
+#!/bin/sh 
+#
+# Run ctruncate after scala to give F's from intensities
+# 
+set -e
+
+if test ! -f $CCP4_SCR/aucn_mrg.mtz; then
+  echo '! run scala.exam first' 1>&2
+  exit 1
+fi
+
+ctruncate -stdin << eof
+hklin $CCP4_SCR/aucn_mrg.mtz
+hklout $CCP4_SCR/aucn_ctr.mtz
+colin /*/*/[IMEAN,SIGIMEAN]
+eof
+
+# Second example of running CTRUNCATE on Fs. You might
+# do this if you already have Fs but want to look at the
+# output graphs of CTRUNCATE
+
+ctruncate -stdin << eof
+hklin $CEXAM/rnase/rnase18.mtz
+amplitudes
+colin /*/*/[FNAT,SIGFNAT]
+eof
+
+
+# Third example uses a twinned dataset, H3 symmetry
+
+ctruncate --stdin << eof
+hklin $CEXAM/data/1vr7_lr_i.mtz
+hklout $CCP4_SCR/1vr7_lr_trunc.mtz
+colin /*/*/[IMEAN,SIGIMEAN]
+eof

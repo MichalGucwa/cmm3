@@ -1,0 +1,40 @@
+#!/bin/sh
+
+set -e
+
+# Run pirate on toxd mlphare output.
+# 1ajr.na4 is the reference structure which provides
+# the target distributions for the pirate procedure.
+
+if test ! -f $CCP4_SCR/toxd_phase_mir.mtz; then
+  echo '! run the mlphare procedure first' 1>&2
+  exit 1
+fi
+
+na4tomtz hklin $CEXAM/data/1ajr.na4 hklout $CCP4_SCR/ref
+
+cpirate -stdin << eof
+mtzin-ref $CCP4_SCR/ref.mtz
+colin-ref-fo /*/*/[FP.F_sigF.F,FP.F_sigF.sigF]
+colin-ref-hl /*/*/[FC.ABCD.A,FC.ABCD.B,FC.ABCD.C,FC.ABCD.D]
+mtzin-wrk $CCP4_SCR/toxd_phase_mir.mtz
+colin-wrk-fo /*/*/[FTOXD3,SIGFTOXD3]
+colin-wrk-hl /*/*/[HLA,HLB,HLC,HLD]
+colin-wrk-free /*/*/[FreeR_flag]
+mtzout $CCP4_SCR/toxd_phase_mir_pirate1.mtz
+colout pirate
+ncycles 3
+weight-expllk 0.5
+weight-mapllk 0.1
+stats-radius 9.0,3.0
+skew-content 0.0,0.0
+auto-content
+eof
+
+cfft -stdin << eof
+mtzin $CCP4_SCR/toxd_phase_mir_pirate1.mtz
+colin-fc /*/*/[pirate.F_phi.F,pirate.F_phi.phi]
+mapout $CCP4_SCR/toxd_phase_mir_pirate1_fft1.map
+stats
+stats-radius 4.0
+eof

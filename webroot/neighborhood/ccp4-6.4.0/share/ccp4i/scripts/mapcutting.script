@@ -1,0 +1,57 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#======================================================================
+#
+# mapcutting script
+#
+#======================================================================
+
+# check that the map and mask grids are compatible
+  source [SearchPath TOP utils map_utils.tcl]
+
+  if { ![GetMapHeader $MAPIN space_group cell xyzlim grid1 section_axis] } {
+    TerminateScript 0 -report "ERROR: cannot read header for file $MAPIN"
+  }
+  if { ![GetMapHeader $MSKIN space_group cell xyzlim grid2 section_axis] } {
+    TerminateScript 0 -report "ERROR: cannot read header for file $MSKIN"
+  }
+  if { $grid1 != $grid2 } {
+    TerminateScript 0 -report "ERROR: map and mask grid samplings do not match"
+  }
+
+# run mapmask to extend the map to match the mask
+
+  set mapmask_script [GetTmpFileName -ext com]
+  WriteFile $mapmask_script "XYZLIM MATCH \n"
+  set WRKMAP [GetTmpFileName -ext map]
+
+  set cmd "[BinPath mapmask] MAPIN \"$MAPIN\" MAPLIM \"$MSKIN\" MAPOUT \"$WRKMAP\""
+  set status [Execute $cmd $mapmask_script program_status report]
+  DeleteFile $mapmask_script
+
+# now run maprot to do the map cutting
+
+  # Set the GRID and CELL parameters for cubic cell
+  if { $CELL_TYPE == "CUBIC" } {
+    # GRID and CELL lengths
+    for { set i 1 } { $i <= 3 } { incr i } {
+      set GRID_$i $GRID_CUBIC
+      set CELL_$i $CELL_CUBIC
+    }
+    # CELL angles all 90
+    for { set i 4 } { $i <= 6 } { incr i } {
+      set CELL_$i 90
+    }
+  }
+
+  CreateComScript maprot mapcutting_script
+
+  set cmd "[BinPath maprot] WRKIN \"$WRKMAP\" MSKIN \"$MSKIN\" CUTOUT \"$CUTOUT\""
+  set status [Execute $cmd $mapcutting_script program_status report]

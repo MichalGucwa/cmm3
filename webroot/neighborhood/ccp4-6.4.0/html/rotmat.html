@@ -1,0 +1,494 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::ROTMAT::Supported::Molecular Replacement::interconverts CCP4/MERLOT/X-PLOR rotation angles:::::::: -->
+
+<H1> ROTMAT (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>rotmat </b>
+- interconverts CCP4/MERLOT/X-PLOR rotation angles.
+<H2> SYNOPSIS</H2>
+<b>rotmat</b>
+<br>
+ [<A HREF="#keywords">Keyworded input</A>]
+<H2> <A NAME="description"></A>DESCRIPTION</H2>
+This program converts the CCP4/MERLOT/X-PLOR rotation angles to 
+any other format, and generates their symmetry equivalents.
+MERLOT/CCP4 conventions are the same;  X-PLOR is different. 
+See <A HREF="#notes">below</A> for further details of this.
+<P> 
+It also tests whether [Ri]*[Rj]**-1 satisfies some target.
+This is useful for checking whether your set of solutions 
+agree with a self rotation, or perhaps some outside criteria.
+<H2> <A NAME="keywords"></A>KEYWORDED INPUT</H2>
+The various data control lines are identified by keywords, those
+available being:
+<blockquote>
+<A HREF="#crystal"><B>CRYSTAL</B></A>, <A HREF="#end"><B>END</B></A>,
+<A HREF="#error"><B>ERROR</B></A>, <A HREF="#input"><B>INPUT</B></A>,
+<A HREF="#output"><B>OUTPUT</B></A>, <A HREF="#target"><B>TARGET</B></A>,
+<A HREF="#verbose"><B>VERBOSE</B></A>
+</blockquote>
+<P> 
+CRYSTAL and INPUT are compulsory.  CRYSTAL (with CELL information)
+must be given before INPUT, OUTPUT or TARGET.
+<H3> <A NAME="crystal"></A>CRYSTAL  subkeyword ..</H3>
+Subkeywords:
+<dl>
+<dt> <A NAME="crystal_number"></A>NUMBER &lt;crystal number&gt;<dd>
+&lt;crystal number&gt; must be 1 or 2. In cases where two CRYSTALs are
+defined with different spacegroups and cell parameters, then crystal 2
+should correspond to the set of coordinates which are rotated by the INPUT
+solutions to overlap those in crystal 1 <i>i.e.</i> crystal 1 represents
+the data and crystal 2 the model.
+<dt> <A NAME="crystal_file"></A>FILE &lt;crystal number&gt;<dd>
+&lt;crystal number&gt; must be 1 or 2
+<dt> <A NAME="crystal_orth"></A>ORTH &lt;ncode&gt;<dd>
+&lt;ncode&gt; is the orthogonalisation code.
+<dt> <A NAME="crystal_symm"></A>SYMM &lt;SG number&gt; | &lt;SG name&gt;<dd>
+specifies the spacegroup in International Tables style.
+<dt> <A NAME="crystal_cell"></A>CELL &lt;a&gt; &lt;b&gt; &lt;c&gt; [ &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt; ] <dd>
+Specify the cell
+dimensions (&Aring;) and angles (degrees).  The angles default to 90 degrees
+and rarely need to be changed - just for peak analysis.
+</dl>
+<H3> <A NAME="verbose"></A>VERBOSE</H3>
+Produces lots more output.
+<H3> <A NAME="input"></A>INPUT CCP4 | MERLOT | XPLOR subkeywords ...</H3>
+[Compulsory].
+<P> 
+Input a rotation in a specified format. Format conversion is
+performed and the results output.
+<P> 
+The possible subsidiary keywords are: <A HREF="#input_alpha">ALPHA</A>, <A HREF="#input_theta">THETA</A>, <A HREF="#input_omega">OMEGA</A>, <A HREF="#input_psi">PSI</A>, <A HREF="#input_phi">PHI</A>,
+<A HREF="#input_axis">AXIS</A> and <A HREF="#input_matrix">MATRIX</A>, followed by appropriate numbers.
+<dl>
+<dt> <A NAME="input_alpha"></A>ALPHA [ BETA GAMMA ] &lt;alpha&gt; [ &lt;beta&gt; &lt;gamma&gt; ]<dd>
+alpha beta gamma.
+<dt> <A NAME="input_theta"></A>THETA1 [ THETA2 THETA3 ] &lt;theta1&gt; [ &lt;theta2&gt; &lt;theta3&gt; ]<dd>
+theta1 theta2 theta3
+<dt> <A NAME="input_omega"></A>OMEGA [ PHI KAPPA ] &lt;omega&gt; [ &lt;phi&gt; &lt;kappa&gt; ] <dd>
+omega phi kappa
+<dt> <A NAME="input_psi"></A>PSI [ PHI KAPPA ] &lt;psi&gt; [ &lt;phi&gt; &lt;kappa&gt; ]<dd>
+psi phi kappa
+<dt> <A NAME="input_phi"></A>PHI [ PSI KAPPA ] &lt;phi&gt; [ &lt;psi&gt; &lt;kappa&gt; ]<dd>
+phi kappa
+<dt> <A NAME="input_axis"></A>AXIS    <dd>
+direction cosines - kappa - special for XPLOR.
+<dt> <A NAME="input_matrix"></A>MATRIX &lt;r11&gt; &lt;r12&gt; &lt;r13&gt; &lt;r21&gt; &lt;r22&gt; &lt;r23&gt; &lt;r31&gt; &lt;r32&gt; &lt;r33&gt;<dd>
+Specifies matrix elements.  Be careful of transpose. 
+</dl>
+<H3> <A NAME="target"></A>TARGET</H3>
+Input a target rotation. The subsidiary keywords for TARGET 
+have the same format as those for <A HREF="#input">INPUT</A>.
+<P> 
+If <A HREF="#output">OUTPUT</A> is specified, checks whether
+<dl>
+<dt><dd>
+  [Rj]*[Ri]**(-1)*[Rtarget]**(-1) 
+</dl>
+<P> 
+lies near the identity matrix, <EM>i.e.</EM> it checks if Kappa of this matrix
+is less than the acceptable error given by the <A HREF="#error">ERROR</A> keyword for pairs
+of <A HREF="#input">INPUT</A>s.  This may be useful to see whether two cross rotation
+solutions are consistent with a given self rotation specified as a
+<A HREF="#target">TARGET</A>.
+<H3> <A NAME="output"></A>OUTPUT</H3>
+The subsidiary keywords for OUTPUT have the same format as those for
+<A HREF="#input">INPUT</A> but the MATRIX sub-keyword doesn't take arguments and implies
+<A HREF="#verbose">VERBOSE</A>.
+<P> 
+If an INPUT line is followed by OUTPUT request, all symmetry equivalent
+solutions are given using CCP4 conventions. For this, <A HREF="#crystal">CRYSTAL</A> information 
+must have been supplied. If both appropriate sub-keywords and VERBOSE
+are specified, then symmetry equivalents in other conventions are given.
+<P> 
+If a <A HREF="#target">TARGET</A> line is followed by OUTPUT request, checks matrix pairs to 
+see if they fit self rotation defined by TARGET rotation angles.
+<H3> <A NAME="error"></A>ERROR &lt;kappa&gt;</H3>
+Specify the acceptable error limit &lt;kappa&gt; for the <A HREF="#target">TARGET</A> command. Default value is  10.0.
+<H3> <A NAME="end"></A>END</H3>
+Terminates input.
+<H2> CALCULATIONS</H2>
+For each <A HREF="#input">INPUT</A> the full set of rotation angles for all the other
+conventions is calculated.  These are corrected for the appropriate
+orthogonalisation.  Theory:
+<P> 
+For the self rotation, where coordinates [X'O] are mapped onto [XO]
+<pre>
+
+         [Rncode=i] [X'Oncode=i]  = [XOncode=i]          (1)
+   and   [Rncode=j] [X'Oncode=j]  = [XOncode=j]          (2)
+
+</pre>
+Remember: fractional coordinates are invariant, and
+<pre>
+
+          [XOncode=?] = [ROncode=?] [Xf] for any ncode.
+ Since       [RFncode=?] [ROncode=?] ==[I]                (3)
+
+          [Xf] = [RFncode=?] [XOncode=?].
+
+ So       [XOncode=j] = [ROncode=j] [RFncode=i] [XOncode=i]
+
+</pre>
+Now (2) can be rewritten as
+<pre>
+
+          [Rncode=j][ROncode=j] [RFncode=i] [X'Oncode=i]
+               =       [ROncode=j] [RFncode=i] [XOncode=i]
+
+</pre>
+Rearranging this:
+<pre>
+
+ [RFncode=i]**(-1) [ROncode=j]**(-1) [Rncode=j][ROncode=j] [RFncode=i] [X'Oncode=i]
+               = [XOncode=i]
+
+</pre>
+>From (3) it follows that 
+<pre>
+
+          [RFncode=?]**(-1) = [ROncode=?]
+     and  [ROncode=?]**(-1) = [RFncode=?]
+
+</pre>
+so  (2) becomes
+<pre>
+
+     [ROncode=i][RFncode=j][Rncode=j][ROncode=j] [RFncode=i] [X'Oncode=i]
+               = [XOncode=i]
+
+ <EM>i.e.</EM> [ROncode=i][RFncode=j][Rncode=j][ROncode=j] [RFncode=i] == [Rncode=i]
+
+</pre>
+For the cross rotation, where model coordinates [YO] are mapped onto some [XO]
+we do not need to consider more than one orthogonalisation code for the [YO].
+These coordinates are always positioned in some orthogonal P1 cell.
+<pre>
+
+         [Rncode=i] [YO]  = [XOncode=i]           (4)
+   and   [Rncode=j] [YO]  = [XOncode=j]           (5)
+
+</pre>
+Eq. (5) can be rewritten as
+<pre>
+
+       [Rncode=j] [YO]  = [ROncode=j] [RFncode=i] [XOncode=i]
+
+</pre>
+and rearranging this:
+<pre>
+
+      [RFncode=i]**(-1) [ROncode=j]**(-1) [Rncode=j] [YO]  = [XOncode=i]
+ <EM>i.e.</EM>   [ROncode=i][RFncode=j][Rncode=j] == [Rncode=i]
+
+</pre>
+Similar arguments can be used to get the symmetry equivalents of any [R]
+<P> 
+<A HREF="almn.html">ALMN</A> and <A HREF="polarrfn.html">POLARRFN</A> allow you to choose your orthogonalisation convention
+whereas MERLOT and X-PLOR have fixed values.
+<P> 
+The orthogonal axes I J K are defined thus:
+<pre>
+  NCODE = 1  I parallel to a, K parallel to c*, J in a-b plane.
+  NCODE = 2  I parallel to b, K parallel to a*, J in b-c plane.
+  NCODE = 3  I parallel to c, K parallel to b*, J in c-a plane.
+  NCODE = 5  I parallel to a*, K parallel to c, J in b-c plane.
+  NCODE = 6  I parallel to a, K parallel to b*, J in c-a plane.
+</pre>
+(Others are listed in the <A HREF="almn.html">ALMN documentation</A>.)
+<P> 
+MERLOT and X-PLOR are both fixed:
+<dl>
+<dt>MERLOT
+<dl>
+<dt>Monoclinic spacegroups - b rotation:  NCODE = 3, <EM>i.e.</EM>
+<dd>I parallel to c, K parallel to b*( = b), J in a-c plane.
+<dt>All others: NCODE = 5, <EM>i.e.</EM>
+<dd>I parallel to a*, K parallel to c, J in b-c plane.
+</dl>
+<dt>X-PLOR
+<dl>
+<dt>All spacegroups: NCODE = 1, <EM>i.e.</EM>
+<dd>I parallel to a, K parallel to c* (= b), J in a-b plane.
+</dl>
+</dl>
+<H2> <A NAME="examples"></A>EXAMPLE</H2>
+<pre>
+#
+#  So  far program messages are:
+#    Input/Output MERLOT ALPHA  BETA   GAMMA
+#    Input/Output MERLOT THETA1 THETA2 THETA3
+#    Input/Output MERLOT PHI    PSI    KAPPA
+#    Input/Output MERLOT MATRIX
+#    Input/Output CCP4   ALPHA  BETA   GAMMA
+#    Input/Output CCP4   PHI    PSI    KAPPA
+#    Input/Output CCP4   MATRIX
+#    Input/Output XPLOR  THETA1 THETA2 THETA3
+#    Input/Output XPLOR  PHI    PSI    KAPPA
+#    Input/Output XPLOR  MATRIX
+#
+rotmat &lt;&lt; eof
+CRYSTAL number 1 cell 20 30 40 90 110 90
+CRYSTAL number 1 orth 3
+CRYSTAL number 2 symm 19 cell 60 70 80 90 90 90 orth 1
+INPUT XPLOR phi psi kappa 62.9 112 140 
+INPUT XPLOR phi psi kappa 63  106.46 156.663 
+INPUT XPLOR phi psi kappa 43 8   137
+OUTPUT MERLOT phi psi kappa 
+END  
+eof
+#
+</pre>
+<H2> <A NAME="notes"></A>NOTES</H2>
+<H3> <A NAME="rotation_matrix_conventions"></A>MERLOT/ALMN/POLARRFN/LSQKAB conventions</H3>
+<dl>
+<dt>  <EM>N.B.</EM><dd>
+Here the letters I J K represent AXES, while
+X Y Z  represent COORDINATES in the  ORTHOGONAL axial frame.
+<dt>  <EM>N.N.B.</EM><dd>
+Positive rotations appear ANTI-CLOCKWISE when viewed 
+toward the origin from the positive direction of the 
+rotation axis.
+<dt>  <EM>N.N.N.B.</EM><dd>
+All matrices are listed here as the TRANSPOSE of  
+those in the MERLOT documentation.
+MERLOT gives matrices to rotate a COLUMN vector of AXES.
+</dl>
+<P> 
+Rotation matrices to PREMULTIPLY coordinate columns  or 
+POSTMULTIPLY axis rows vectors are defined as follows:
+<OL>  
+<LI>Using Eulerian angles ALPHA BETA GAMMA (CCP4/MERLOT) relative to
+orthogonal axes (I J K) and defining [R] as the product of:
+<pre>
+        Rotation 1 (ALPHA) about K         :  [R]alpha
+        Rotation 2 (BETA)  about the new J :  [R]beta
+        Rotation 3 (GAMMA) about the new K :  [R]gamma
+
+    (and abbreviating cos(ALPHA) = CA; sin(BETA) = SB etc)
+
+       [ R11 R12 R13 ]
+       [ R21 R22 R23 ]  =  [ R]alpha * [R]beta * [R]gamma 
+       [ R31 R32 R33 ]
+                           [CA -SA 0] [ CB 0 SB] [CG -SG 0]
+                        =  [SA  CA 0]*[  0 1  0]*[SG  CG 0] 
+                           [ 0   0 1] [-SB 0 CB] [ 0   0 1]
+
+      ( CA CB CG - SA SG      -CA CB SG - SA CG      CA SB )
+    = ( SA CB CG + CA SG      -SA CB SG + CA CG      SA SB )
+      (         -SB CG                  SB SG           CB )
+</pre>
+<dl>
+<dt><dd>
+Note that the rotation matrix generated from (ALPHA,BETA,GAMMA)
+is identical to that generated from (PI+ALPHA,-BETA,PI+GAMMA)
+so it is conventional to restrict BETA to range: 0 to PI
+<dt><dd>
+If you think of coordinates as vector products of
+the row vector of the AXES by the column vector of  
+orthogonal coordinates
+<pre>
+                             [ I J K] * [ X0]
+                                        [ Y0]
+                                        [ Z0]
+</pre>
+and a rotation matrix [R] as moving these to 
+<pre>
+                       [ I J K] * [R] * [ X0]
+                                        [ Y0]
+                                        [ Z0]
+</pre>
+then it is obvious that rotation [R] can be seen <EM>either</EM><br>
+as rotating the axes [I J K ] by ALPHA then BETA then GAMMA <EM>or</EM><br>
+as rotating coordinates [X0] by -GAMMA then -BETA then -ALPHA.
+</dl>
+</LI>   
+<LI>Using polar angles PSI/OMEGA PHI KAPPA 
+(<EM>N.B.</EM> Merlot PSI identical to CCP4 OMEGA):
+<dl>
+<dt><dd>
+The definition is:
+<dl><dt>
+OMEGA/PSI<dd>gives inclination of rotation axis to K axis;
+<dt>
+PHI<dd>gives anticlockwise rotation from I to projection of rotation axis 
+onto I-J plane;
+<dt>
+KAPPA<dd>is the rotation about the rotation axis.
+</dl>
+<dt><dd>
+Int. Tab. Vol 2 (p 59?) gives this rotation matrix:
+<br>
+(l m n) are the direction cosines of the axis about which the rotation
+KAPPA takes place.
+<pre>
+ (abbreviating cos(OMEGA) = CO; sin(PHI) = SP etc)
+         ( l )             ( SO*CP )
+         ( m )     =       ( SO*SP )
+         ( n )             (    CO )
+
+ and   [ R11 R12 R13 ]
+       [ R21 R22 R23 ]   =
+       [ R31 R32 R33 ]
+
+     ( ll+(mm+nn)CK     lm(1-CK)-nSK     nl(1-CK)+mSK )
+     ( lm(1-CK)+nSK     mm+(ll+nn)CK     mn(1-CK)-lSK )
+     ( nl(1-CK)-mSK     mn(1-CK)+lSK     nn+(ll+mm)CK )
+</pre>
+Note that the rotation matrix generated from (OMEGA,PHI,KAPPA)
+is identical to that generated from (PI-OMEGA,PI+PHI,-KAPPA)
+so it is conventional to restrict KAPPA to range: 0 to PI
+<dt><dd>
+An alternative definition  which generates the same matrix is given 
+in the MERLOT documentation:
+<pre>
+     This can be visualised as
+     Rotation 1 (PHI  )  about Z
+     Rotation 2 (PSI  )  about the new Y
+     Rotation 3 (KAPPA)  about the new Z
+
+     Rotation 4 (PSI-1)  about the new Y
+     Rotation 5 (PHI-1)  about the new Z
+</pre>
+</dl>
+</LI>   
+<LI>Using Eulerian angles THETA1 THETA2 THETA3 
+<dl>
+<dt><dd>
+<pre>
+     Rotation 1 (THETA1) about K
+     Rotation 2 (THETA2) about the new I
+     Rotation 3 (THETA3) about the new K
+
+Rotation 1   =                CT1      -ST1       0  
+                              ST1       CT1       0 
+                              0         0         1
+
+Rotation 2   =                1         0         0 
+                              0         CT2      -ST2
+                              0         ST2       CT2
+
+Rotation 3   =                CT3      -ST3       0
+                              ST3       CT3       0 
+                              0         0         1
+
+
+ Matrix for axis system is 
+    Rotation 3 (Rotation 2 (Rotation 1) ) =  
+
+       CT1*CT3             -CT1*ST3             ST1*ST2 
+      -ST1*CT2*ST3         -ST1*CT2*CT3           
+
+       ST1*CT3             -ST1*ST3            -CT1*ST2
+      +CT1*CT2*ST3         +CT1*CT2*CT3   
+
+       ST2*ST3              ST2*CT3             CT2
+</pre>
+<dt><dd>
+Note that the rotation matrix generated from (THETA1,THETA2,THETA3)
+is identical to that generated from (PI+THETA1,-THETA2,PI+THETA3)
+so it is conventional to restrict THETA2 to range: 0 to PI
+</dl>
+</LI>
+</OL>
+<H3> <A NAME="xplor_conventions"></A>X-PLOR CONVENTIONS</H3>
+These are not very clear in the documentation: 
+the following definitions are taken from the program and 
+SHOULD BE CHECKED.
+<P>
+Extracts from subroutine rotmat.
+<pre>
+ Routine computes unitary rotation matrix ROT using
+ a) Eulerian angles (MODE=EULE),
+ b) Lattman angles (MODE=LATT), 
+ c) Spherical polar angles (MODE=SPHE) or 
+ d) A rotation about the specified axis (MODE=AXIS).
+</pre>
+<dl>
+<dt>In Eulerian mode, angles are<dd>XTHETA1 XTHETA2 XTHETA3.
+<dt>In Lattman mode, angles are
+<dd>
+  XTHETA+=XTHETA1+XTHETA3, XTHETA-=XTHETA1-XTHETA3
+<dt>
+In Spherical or Axis mode:
+<dd>
+compute rotation matrix corresponding to the three
+spherical polar angles PSI=t1, PHI=t2 and KAPPA=t3. 
+</dl>
+<P> 
+<EM>N.B.</EM> BEWARE: The angle convention is DIFFERENT to MERLOT/CCP4.<br>
+The rotation is described by specification of the 
+direction of an axis through
+<dl compact><dt>PHI<dd>(azimuthal angle between the I axis and the projection of the
+rotation axis on the I-K plane)
+<dt>and
+<dt>PSI<dd>(inclination versus J axis).</dl>
+<P> 
+The angle KAPPA specifies the rotation around the specified axis. 
+The KAPPA angle is anti-clockwise when looking along the rotation axis.
+The PHI angle is anti-clockwise when looking along J.
+<P> 
+In axis mode we obtain the PSI, PHI spherical polar angles from 
+the AXIS vector.
+<P> 
+Output:
+<pre>
+    ROT(3,3) contains the rotation matrix.  Should be applied as 
+   r''(i)=sum_j ROT(i,j)*r(j)
+</pre>
+BUT EJD thinks the X-PLOR matrix equals  CCP4/MERLOT matrix transpose.
+This means that: Eulerian XT1 XT2 XT3 (X-PLOR) = -T3 -T2 -T1 (MERLOT). 
+Which is the same as PI-T3 T2 PI-T1.
+<P> 
+The matrix for X-PLOR axis system in Eulerian theta is
+<pre>
+       CT1*CT3              ST1*CT3             ST2*ST3 
+      -ST1*CT2*ST3         +CT1*CT2*ST3           
+
+      -CT1*ST3             -ST1*ST3             ST2*CT3
+      -ST1*CT2*CT3         +CT1*CT2*CT3   
+
+       ST1*ST2             -CT1*ST2             CT2
+</pre>
+To derive the rotation matrix for X-PLOR spherical polar angles
+PHI,PSI,and KAPPA.
+<pre>
+     This can be visualised as
+     Rotation 1 (PHI  )  about K
+     Rotation 2 (PSI  )  about the new J
+     Rotation 3 (KAPPA)  about the new K
+
+     Rotation 4 (PSI-1)  about the new J
+     Rotation 5 (PHI-1)  about the new K
+
+    +CK                 -SF*SP*SK           -CP*SK 
+    +CF*CF*SP*SP(1-CK)  +CF*SP*CP*(1-CK)    -SF*CF*SP*SP(1-CK)
+
+    +SP*SF*SK           +CK                 +CF*SP*SK  
+    +CF*SP*CP(1-CK)     +CP*CP(1-CK)        -SF*CP*SP(1-CK)
+
+    +CP*SK              -CF*SP*SK           +CK 
+    -SF*CF*SP*SP(1-CK)  -SF*CP*SP(1-CK)     +SF*SF*SP*SP(1-CK)
+</pre>
+<H3> <A NAME="orthogonalisation_conventions"></A>ORTHOGONALISATION CONVENTIONS</H3>
+<dl>
+<dt>  CCP4 <dd>
+allows the user to request their own orthogonalisation.
+Useful ones are 
+<pre>
+  I parallel to a, J in a-b plane, K parallel to c*(ncode = 1)
+  I parallel to b, J in b-c plane, K parallel to a*(ncode = 2)
+  I parallel to c, J in c-a plane, K parallel to b*(ncode = 3)
+</pre>
+<dt> MERLOT <dd>
+always uses ncode = 5 for all spacegroups except the monoclinic
+(b unique) spacegroups where it uses ncode = 3.
+<dt> X-PLOR<dd>
+always uses NCODE = 1
+</dl>
+<H2> AUTHOR</H2>
+Eleanor Dodson, York University, Jan 1992
+</body></html>

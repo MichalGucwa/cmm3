@@ -1,0 +1,244 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4i Documentation for Programmers: Introduction to Tcl</title>
+<link rel="stylesheet" type="text/css" href="../ccp4idocs.css" title="CCP4i" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="3" class="logopic"><img src="../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logoprog">Documentation for Programmers</td></tr>
+<tr><td class="logotitle">Introduction to Tcl</td></tr>
+</table>
+<br />
+<table border="0">
+<tr><td>
+<a href="indexframeset.html" target="_PROGMAIN">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="task_windows.html" target="_PROGMAIN">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="intro.html" target="_PROGMAIN">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td></tr>
+</table>
+
+<p><a href="#intro" target="_PROGMAIN">Introduction
+to Tcl/Tk</a></p>
+<p><a href="#data_structures" target="_PROGMAIN">Tcl
+Data Structures</a></p>
+<p><a href="#nested_commands" target="_PROGMAIN">Nested
+Commands and Some Useful Commands</a></p>
+<p><a href="#procedures" target="_PROGMAIN">Procedures</a></p>
+
+<h3><a name="intro"></a>Introduction to Tcl/Tk</h3>
+
+<p>The interface is written in Tcl/Tk but only minimal knowledge of Tcl
+scripting language should be necessary to write a simple task interface.
+You do not need to know anything about the Tk graphics side as this is
+all handled by CCP4i library commands. You may find it useful to read a
+few chapters of one of the introductory textbooks:</p>
+
+<p><strong>Tcl and the Tk Toolkit</strong> by <em>John Ousterhout</em></p>
+
+<p>Addison-Wesley 1994 ISBN 0-201-63337-X</p>
+
+<p><strong>Practical Programming in Tcl and Tk</strong> by <em>Brent Welch</em></p>
+
+<p>Prentice-Hall 1995 ISBN 0-13-182007-9</p>
+
+<p>The latter can be found on the web:</p>
+
+<p><a href="http://www.beedub.com/book" target="_blank">http://www.beedub.com/book</a>
+(particularly look at chapters 1 and 18)</p>
+
+<p>The man pages for Tcl/Tk are also <strong>extremely</strong> useful.</p>
+
+<p>Below is an introduction to some features of Tcl which are used in a task
+interface <strong>.tcl</strong> file.</p>
+
+<h3><a name="data_structures"></a>Tcl Data Structures</h3>
+
+<p>Tcl treats all data as text strings except in some limited situations
+where it 'knows' they should be numerical. A value is assigned to a variable
+using the <em>set</em> command:</p>
+
+<pre>
+set NCYCLES 25
+set MODE refinement
+set TITLE &quot;This is 25 cycles of refinement&quot;
+</pre>
+
+<p>Here the variable <tt>NCYCLES</tt> is set to '25', <tt>MODE</tt> is set to
+'refinement' and <tt>TITLE</tt> is set to 'This is 25 cycles of refinement'.
+Some features:</p>
+
+<ul>
+<li>As in the third line above, a string which includes white space (spaces,
+tabs, new lines <em>etc.</em>) must be enclosed in double quotes.</li>
+
+<li>The variable names are case sensitive: <tt>mode</tt> is not the same
+as <tt>MODE</tt>.</li>
+
+<li>To access the contents of a variable, put a dollar sign before the variable
+name, <em>e.g.</em>:
+
+<pre>
+set last_cycle $NCYCLES
+</pre>
+and
+<pre>
+set title &quot;This is $NCYCLES cycles of $MODE&quot;
+</pre>
+
+<p>Note that in the second example the values of <tt>NCYCLES</tt> and <tt>MODE</tt>
+will be substituted into the string. Strings can also be built up using the
+<em>append</em> command.</p>
+
+<li>Tcl supports two other variable types: lists and arrays.<br />
+In a list of variables, one variable consists of a list of values. For example,
+there could be a list variable <tt>allowed_modes</tt> which is a list of
+three items: <tt>initialisation</tt>, <tt>scaling</tt> and <tt>refinement</tt>.
+There are two ways to assign a list variable, <em>i.e.</em>
+
+<pre>
+set allowed_modes { initialisation scaling refinement }
+</pre>
+and
+<pre>
+set allowed_modes [list initialisation scaling refinement]
+</pre>
+
+<p>In the first example, the list of possible allowed modes are enclosed in curly
+braces. In the second example, the <em>list</em> command is used explicitly
+and must be enclosed by square brackets (discussed
+<a href="#square_brackets" target="_self">below</a>).
+You are strongly
+recommended to use the second method as there are situations where the
+first will not work correctly. There are several other commands you may
+need to use to manipulate lists: <strong>lappend lindex llength lsearch lsort
+lrange</strong> (see the Tcl documentation for more info).</li>
+
+<li>Tcl supports arrays but these are not numerically indexed like Fortran
+arrays. The name of an array element can be any text string so if you have
+an array called <tt>refine_params</tt>, it could have elements called <tt>NCYCLES</tt>
+or <tt>MODE</tt> which could be assigned values with commands like:
+
+<pre>
+set refine_params(NCYCLES) 25
+</pre>
+or
+<pre>
+set refine_params(MODE) refinement
+</pre>
+
+<p>These values can then be used in commands like:
+
+<pre>
+set refine_params(TITLE) &quot;This is $refine_params(NCYCLES) cycles
+of $refine_params(MODE)&quot;
+</pre>
+</li>
+
+<li>It is acceptable for array elements to have simple integer element names,
+<em>e.g.</em> refine_params(1) and refine_params(2), but there is no notion in Tcl
+that the element named '2' comes after the element named '1'. It is also
+possible to imitate multi-dimensional arrays by using array element names
+such as '1,1' , '1,2' , '2,1' .... Here the comma in the element name is treated
+as just another character.</li>
+</ul>
+
+<h3><a name="nested_commands"></a>Nested Commands and Some Useful Commands</h3>
+
+<p>In the example above of assigning a list value:</p>
+
+<pre>
+set allowed_modes [list initialisation scaling refinement]
+</pre>
+
+<a name="square_brackets"></a>
+<p>two Tcl commands are used: <strong>set</strong> and <strong>list</strong>. The
+latter is an example of a <strong>nested command</strong> which is delimited by
+<strong>square brackets</strong>. Everything
+within the square brackets is interpreted and the result substituted into
+the outer command. The square brackets are essential for the correct interpretation
+of the whole command.</p>
+
+<p>Here is a very brief review of some of the commands you might see or
+use while working with CCP4i - see the Tcl documentation for details.</p>
+
+<p>All mathematical expressions are evaluated by the <em>expr</em> command.
+<em>I.e.</em> to find half of the value of variable <tt>length</tt>:
+
+<pre>
+set half [expr $length /2.0]
+</pre>
+
+<p>expr supports some built-in functions such as log, sqrt, sin. So to find
+the value of pi:
+
+<pre>
+set pi [expr 2.0*asin(1.0)]
+</pre>
+
+<p>Tcl has a regular expression command <em>regexp</em> which is very powerful
+(and complex) but mostly used very simply within CCP4i. The command returns
+a value of 1 (true) if some part of the input string matches the test pattern,
+or a value of 0 (false) if it does not match. For example, to test if the
+value of the variable <tt>command</tt> includes the pattern '<tt>refi</tt>':
+
+<pre>
+set if_match [regexp refi $command]
+</pre>
+
+<p>There are a series of commands for handling text strings which all begin
+with the word <strong>string</strong>. For example, to find the length of the string
+in the variable 'title':
+
+<pre>
+set length [string length $title]
+</pre>
+
+<h3><a name="procedures"></a>Procedures</h3>
+
+<p>In Tcl a procedure (equivalent to a Fortran subroutine) is defined with
+the following syntax:
+
+<pre>
+proc <em>procedure_name</em> { <em>argument_1 ... argument_n</em> } {
+<em>procedure body....</em>
+}
+</pre>
+
+<p>The command <em>proc</em> is followed by three elements: the procedure
+name, a list of arguments enclosed in curly braces, and the script which
+forms the body of the procedure which is also enclosed in curly braces.
+Some features of Tcl to note:
+
+<ul>
+<li>There is considerable flexibility in Tcl over line layout. I have tried
+to stick to some conventions which make scripts readable; I hope you find
+these tolerable enough to use the same.</li>
+
+<li>Procedures can have a variable number of arguments. You will use some
+CCP4i library routines which have variable numbers of arguments but you
+probably will not need to write procedures which have this feature.</li>
+
+<li>The continuation character is a backslash (<tt>\</tt>) which must be the last
+character on a line. Task window files can be made much more readable by
+using generous spacing of commands over several lines and so using a lot
+of continuation characters. But beware: forgetting the continuation character
+or having an extra space after the backslash are common mistakes when writing
+task window files!</li>
+
+<li>The 'comment' character is <tt>#</tt>. If the first character of a line is
+<tt>#</tt>, the rest of the line is ignored. Beware: a weird feature of Tcl is
+that it does 'see' curly braces in a line commencing with a <tt>#</tt> and is liable
+to give an error message complaining about unmatched parentheses or, worse
+still, not give an error message.</li>
+</ul>
+
+</body>
+</html>

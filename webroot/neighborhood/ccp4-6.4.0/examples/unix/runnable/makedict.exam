@@ -1,0 +1,56 @@
+#!/bin/sh -e
+#
+# This file contains two examples for using MAKEDICT to
+# generate PROTIN-style dictionary entries using coordinates
+# from pdb files.
+#
+# Example 1: a simple example using a SUL residue cut
+#            out of toxd.pdb
+#
+# There are no planar groups, chiral centres etc.
+#
+makedict XYZIN $CEXAM/data/toxd_sul.pdb \
+         DICT $CCP4_SCR/toxd_sul.dict \
+<<eof-makedict
+INPUT PDB      ! Input coordinates from pdb file
+OUTPUT PROTIN  ! Output protin dictionary format
+RESIDUE JNK    ! Name of residue in dictionary file; default is
+               ! name in pdb file
+CENTRE S       ! Centred on atom S; default is first atom
+eof-makedict
+#
+#
+# Example 2: a slightly more complicated example using
+#            the first ASP residue cut from rnase.pdb
+#
+# First prepare a pdb file containing just the residue of
+# interest:
+grep 'ASP A   1' $CEXAM/rnase/rnase.pdb > $CCP4_SCR/rnase1.tmp
+#
+pdbset XYZIN $CCP4_SCR/rnase1.tmp XYZOUT $CCP4_SCR/rnase_asp.pdb \
+<<eof-pdbset
+REMARK This is the first ASP residue cut from rnase.pdb
+CELL 64.900   78.320   38.790
+SPACEGROUP P212121
+END
+eof-pdbset
+#
+rm -f $CCP4_SCR/rnase1.tmp
+#
+# Make the dictionary entry
+# Here we define a planar group and a chiral group
+#
+makedict XYZIN $CCP4_SCR/rnase_asp.pdb \
+         DICT $CCP4_SCR/rnase_asp.dict \
+<<eof-makedict
+INPUT PDB      ! Input coordinates from pdb file
+OUTPUT PROTIN  ! Output protin dictionary format
+RESIDUE JNK    ! Name of residue in dictionary file; default is
+               ! name in pdb file
+PLANE OD1 OD2 CG CB  ! These atoms define a plane
+CHIRAL CB CG OD1 OD2 ! Define chiral group with CB at the centre
+eof-makedict
+#
+# See the MAKEDICT documentation for a description of how to
+# incorporate the resulting files into the dictionary.
+#

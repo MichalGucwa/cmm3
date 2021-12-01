@@ -1,0 +1,990 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>CCP4 Program Suite : fft</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.0Gold (X11; I; IRIX64 6.2 IP19) [Netscape]">
+</HEAD>
+<BODY>
+
+<!-- ::INDEX_INFO::FFT::Supported::Map calculation and manipulation::fast Fourier transform:::::::: -->
+
+<H1>FFT (CCP4: Supported Program)</H1>
+<H2>NAME</H2>
+<B>fft</B>
+- fast Fourier transform 
+
+<H2>SYNOPSIS</H2>
+
+<P><B>fft HKLIN</B> <I>foo.mtz</I> <B>MAPOUT</B> <I>foo.map</I> [ <B>ABCOEFFS</B>
+<I>foo.txt</I> ] <BR>
+[<A HREF="#keywords">Keyworded input</A>] </P>
+
+<H2><A NAME="description"></A>DESCRIPTION</H2>
+
+<P>The FFT (Fast Fourier Transform) program may be used to calculate Fouriers,
+difference Fouriers, double difference Fouriers, Pattersons and difference
+Pattersons from reflection data. The type of map is controlled by the input
+flags, principally <A HREF="#labin">LABIN</A>. The input file will contain
+h k l Fi... SIGFi... Phases weights etc. and the required Fourier coefficients
+will be generated from these. </P>
+
+<P><A NAME="fftbig"></A>
+Only  P1  is  available in  FFT.  This is the old FFTBIG. This reduces
+internal I/O, but you must have plenty of real memory to use FFT -  it
+will cause bad disc thrashing  if the calculation  won't fit into real
+memory. </P>
+
+<H2><A NAME="keywords"></A>KEYWORDED INPUT</H2>
+
+<P>The various data control lines are identified by keywords. Only the
+first 4 characters of a keyword are significant. Absent values default
+to 0 unless otherwise stated. The cards can be in any order, except END
+(if present) which must be last. Numbers in [ ] are optional and can be
+left out. The only compulsory command is <A HREF="#labin">LABIN</A>. The
+available keywords are: </P>
+
+<P>
+<A HREF="#axis">AXIS</A>, <A HREF="#bias">BIAS</A>, <A HREF="#binmapout">BINMAPOUT</A>, <A HREF="#exclude">EXCLUDE</A>, <A HREF="#fftspacegroup">FFTSPACEGROUP</A>, <A HREF="#freerflag">FREERFLAG</A>, <A HREF="#grid">GRID</A>, <A HREF="#labin">LABIN</A>,
+<A HREF="#list">LIST</A>, <A HREF="#lpmap">LPMAP</A>, <A HREF="#lpfmt">LPFMT</A>, <A HREF="#nochecks">NOCHECKS</A>, <A HREF="#patterson">PATTERSON</A>, <A HREF="#phtranslation">PHTRANSLATION</A>, <A HREF="#projection">PROJECTION</A>, <A HREF="#resolution">RESOLUTION</A>,
+<A HREF="#rholim">RHOLIM</A>, <A HREF="#scale">SCALE</A>, <A HREF="#symmetry">SYMMETRY</A>, <A HREF="#title">TITLE</A>, <A HREF="#vf000">VF000</A>, <A HREF="#xyzlim">XYZLIM</A>, (END)
+</P>
+
+<H3><A NAME="labin"></A>LABIN &lt;program label&gt;=&lt;file label&gt;...</H3>
+
+<P>(Compulsory.) <BR>
+This command defines which items are to be used in the calculation and
+these definitions largely control the type of map. <EM>E.g.</EM> </P>
+
+<P>F1=FP SIG1=SIGFP PHI=PHIC </P>
+
+<P>Names of items for the calculation are selected from the following list.
+H, K, L will always be used. </P>
+
+<DL compact>
+<DT>A</DT>
+
+<DD> real part of structure factor </DD>
+
+<DT>B</DT>
+
+<DD> imaginary part of structure factor </DD>
+
+<DT>F1</DT>
+
+<DD> first F </DD>
+
+<DT>SIG1</DT>
+
+<DD> standard deviation of first F </DD>
+
+<DT>F2</DT>
+
+<DD> second F </DD>
+
+<DT>SIG2</DT>
+
+<DD> standard deviation of second F </DD>
+
+<DT>PHI</DT>
+
+<DD> phase angle in degrees </DD>
+
+<DT>W</DT>
+
+<DD> reflection weight </DD>
+
+<DT>W2</DT>
+
+<DD> weight for second F </DD>
+
+<DT>PHI2</DT>
+
+<DD> phase for second F </DD>
+
+<DT>FH</DT>
+
+<DD> heavy atom Fh </DD>
+
+<DT>PHIH</DT>
+
+<DD> heavy atom phase </DD>
+
+<DT>DANO</DT>
+
+<DD> anomalous difference for anomalous Fourier (see <A HREF="#map_anom">below</A>) </DD>
+
+<DT>I</DT>
+
+<DD> Intensity to be used for Patterson </DD>
+
+<DT>SIGI</DT>
+
+<DD> standard deviation of Intensity </DD>
+
+<DT>FREE</DT>
+
+<DD> The Free R flag. Reflections flagged with a free R value selected
+by the FREERFLAG keyword (default 0) will be omitted from the map. Don't
+assign this column if you don't want to omit data. </DD>
+</DL>
+
+<P>The items selected will determine the Fourier coefficients used for
+the calculation. If any of the assigned columns contains a missing datum
+the whole reflection will be omitted. </P>
+
+<P>Common types of maps: </P>
+
+<DL>
+<DT>1)<A NAME="map_simple"></A> F1 [SIG1] PHI [W]</DT>
+
+<DD> The Fourier summation has: </DD>
+
+<BLOCKQUOTE>
+<DD>Amplitudes - [W] F1 </DD>
+
+<DD>Phases - PHI </DD>
+
+<DD>The values of SIG1 may be used to exclude some terms; see <A HREF="#exclude">EXCLUDE</A>.
+</DD>
+</BLOCKQUOTE>
+</DL>
+
+<DL>
+<DD>Used for example for MIR Fobs maps - F1 = Fp, PHI=PHImir W=FOMmir;
+Fcalc maps - F1=Fcalc PHI=PHIcalc </DD>
+
+<DT>2) <A NAME="map_diff"></A>F1 [SIG1] F2 [SIG2] PHI [W]</DT>
+
+<DD> The Fourier summation has: </DD>
+
+<BLOCKQUOTE>
+<DD>Amplitudes - [W] (SCALE1 F1 - SCALE2 F2) </DD>
+
+<DD>Phases - PHI </DD>
+
+<DD>The values of SIG1 and SIG2 may be used to exclude some terms; see
+<A HREF="#exclude">EXCLUDE</A>. Also, they are used to check for missing reflections,
+see <A HREF="#note_missing_reflections">below</A>. </DD>
+</BLOCKQUOTE>
+</DL>
+
+<DL>
+<DD>Used for example for 2Fp-Fcalc maps: </DD>
+
+<BLOCKQUOTE>
+<DD>F1=Fp SIG1=SIGFp F2=Fcalc PHI=PHIcalc Scale1=2 SCALE2=1 </DD>
+</BLOCKQUOTE>
+</DL>
+
+<DL>
+<DD>Difference maps to find sites in a second derivative using phases calculated
+from the first derivative. [W] (FPh2 - Fobs) maps: </DD>
+
+<BLOCKQUOTE>
+<DD>F1=FPH2 SIG1=SIGFPH2 F2=Fp SIG2=SIGFP PHI=PHIsir1 W=FOMsir1 </DD>
+</BLOCKQUOTE>
+</DL>
+
+<DL>
+<DT>3)<A NAME="map_anom"></A> DANO [SIG1] PHI [W]</DT>
+
+<DD> The Fourier summation has: </DD>
+
+<BLOCKQUOTE>
+<DD>Amplitudes - [W] (DANO) </DD>
+
+<DD>Phases - PHI - 90 </DD>
+</BLOCKQUOTE>
+</DL>
+
+<DL>
+<DD>Used for `anomalous Fourier' maps. DANO is the column for the anomalous
+amplitude, and the phase angle (PHI) is retarded by 90 degrees. </DD>
+
+<DT>4) <A NAME="map_ab"></A>A B</DT>
+
+<DD> Some programs output values of A and B ready for summation, <EM>e.g.</EM> <B>SHELX</B>,<B>tffc</B>.<BR>
+The Fourier summation has: </DD>
+
+<BLOCKQUOTE>
+<DD>Amplitudes - sqrt (A * A + B * B) </DD>
+
+<DD>Phases - atan2 ( B,A) </DD>
+</BLOCKQUOTE>
+</DL>
+
+<DL>
+<DT>5)<A NAME="map_ddiff"></A></DT>
+
+<DD> More complicated vector difference terms can be generated. If you
+want to find further sites in a derivative you may want to calculate a
+`[W] (FPHi - ( Fp+FH))' difference Fourier, <EM>i.e.</EM> a <I>double difference</I>
+Fourier. To do this assign </DD>
+
+<BLOCKQUOTE>
+<DD>F1 [SIG1] F2 [ SIG2] PHI [W] FH PHIH </DD>
+</BLOCKQUOTE>
+
+<P>Remember you need to have run <A HREF="mlphare.html">MLPHARE</A> with
+the appropriate FHOUT and APPLY keywords. </P>
+</DL>
+
+<DL>
+<DT>6)<A NAME="map_vecdiff"></A></DT>
+
+<DD> Unspecified vector difference terms can be generated. To do this assign:
+</DD>
+
+<BLOCKQUOTE>
+<DD>F1 [SIG1] F2 [ SIG2] PHI [W] PHI2 [W2] </DD>
+</BLOCKQUOTE>
+</DL>
+
+<DL>
+<DD>The map will sum: </DD>
+
+<BLOCKQUOTE>
+<DD>[W] SCALE1 F1 with phase PHI - [W2] SCALE2 F2 with phase PHI2 </DD>
+</BLOCKQUOTE>
+</DL>
+
+<DL>
+<DT>7)<A NAME="map_patt"></A></DT>
+
+<DD> Some other keywords modulate the generation of terms. If PATTERSON
+is specified all amplitudes are squared (after all scaling, checking
+etc.) and phases set to 0. The symmetry of the spacegroup is used to generate
+the appropriate Patterson symmetry, and this is checked against the symmetry
+of the FFTSPACEGROUP. Note Pattersons should be calculated in P-1(2) P2/m(10)
+or Pmmm(47) Unspecified vector difference terms can be generated. </DD>
+
+<DT>8)<A NAME="map_phtrans"></A></DT>
+
+<DD>If PHTRANSLATION is specified the program uses:</DD>
+
+<BLOCKQUOTE>
+<DD>Amplitudes - [W] F1 F2</DD>
+
+<DD>Phases - PHI - PHI2</DD>
+</BLOCKQUOTE>
+
+<DD>If PHTRANSLATION HAND 2 is specified the program uses:</DD>
+
+<BLOCKQUOTE>
+<DD>Amplitudes - [W] F1 F2</DD>
+
+<DD>Phases - PHI + PHI2 + origin correction if required ( only for I41 etc)</DD>
+</BLOCKQUOTE>
+</DL>
+
+<DL>
+<DD>See <A HREF="#phtranslation">PHTRANSLATION</A>.
+If the maximum peak in the phased translation map is high (typically greater than 50 RMS),
+then for hand 1 the model corresponding to PHI2 will need to be moved by this
+amount to overlap the model corresponding to PHI. If HAND 2 is specified, the model corresponding
+to PHI2 will need to be inverted then moved.</DD>
+</DL>
+
+<P><A NAME="note_missing_reflections"></A><B><EM>N.B.</EM> IMPORTANT!</B> The items SIG1 and SIG2 are used to check the validity
+of the F for a reflection. This can be done in two ways at present either
+by checking SIGFn=0 or by checking SIGFn=MNF (see <A HREF="mtzmnf.html">documentation on Missing
+Number Flags</A>). MNFs give a more reliable way of checking reflections because
+even Fc and PHI can be checked. Another benefit with MNFs is for certain
+types of map F1 can be replaced by F2 if F1=MNF (see <A HREF="#fillin">FILLIN</A>). Sigma cutoffs
+can also be applied in order to reject reflections (see <A HREF="#exclude">EXCLUDE</A>). </P>
+
+<P>All other keywords are given in alphabetical order below. </P>
+
+<H3><A NAME="axis"></A>AXIS &lt;fast&gt; &lt;medium&gt; &lt;slow&gt;</H3>
+
+<P><i>In general DO NOT change the axis order unless you are in P1 or are
+very sure you know what you are doing! This is permitted if your map is being
+calculated using the routines for P1 or P222, but not otherwise.</i></P>
+
+<P>&lt;fast&gt; &lt;medium&gt; &lt;slow&gt; are the letters X, Y and Z in the
+appropriate order. Note that many of the FFT space-group specific routines
+have FIXED axis orders. In general these are Y,X,Z for those which have
+rotation axes along c, and are best output with z-sections (all space-groups
+with space-group number greater than 18 (P21212)).</P>
+
+<P>For P1, the monoclinic space-groups, and space-groups 16 (P 2 2 2), 17
+(P 2 2 21) and 18 (P 21 21 2), the required axis order is Z,X,Y, which gives
+y-sections.</P>
+
+<P>If this keyword is left out (the recommended procedure), and the map is
+calculated in FFT space-group P1 (the FFTBIG default) then the standard order
+for TRUE space-group is used, <EM>i.e.</EM> Z,X,Y for P1, the monoclinic
+space-groups, and space-groups 16, 17 and 18; for all higher symmetry
+space-groups the standard axis ordering will be Y,X,Z. </P>
+
+<P>Otherwise, note that any axis permutation must make sense in the space-group
+used for the FFT, <EM>e.g.</EM> the P21 FFT (sg4) always generates a 21 axis along
+the section axis, through the origin. Axis permutation is only permitted in a few
+space-groups and should probably by cyclic: 1, 2, 19, 21, 23, 47. In space-group 19,
+only cyclic permutations are valid, <EM>i.e.</EM> Y,X,Z (default); Z,Y,X; or X,Z,Y;
+others will give WRONG ANSWERS. </P>
+
+<H3><A NAME="bias"></A>BIAS &lt;bias&gt;</H3>
+
+<P>If &lt;bias&gt; .NE.0, F = (F**3)/(F**2+(&lt;bias&gt;*SD(F))**2) <BR>
+This is a bias correction for anomalous Patterson maps due to Ian Tickle
+(perhaps useful, perhaps not). </P>
+
+<H3><A NAME="binmapout"></A>BINMAPOUT [ NONE ]</H3>
+
+<P>Send binary output to MAPOUT. This is the default. NONE stops this.
+</P>
+
+<H3><A NAME="exclude"></A>EXCLUDE &lt;keyword&gt; &lt;value&gt; ...</H3>
+
+<P>Each secondary keyword is followed by a number setting the appropriate
+limit. </P>
+
+<PRE>
+         <A NAME="excl_sig"></A>SIG1 Nsig1   and SIG2 Nsig2
+         *** reflections excluded if |F1| lt Nsig1 * sd(F1) 
+                                  or |F2| lt Nsig2 * sd(F2)
+
+         <A NAME="excl_min"></A>F1LIM (F1minimum)     F2LIM (F2minimum) IMIN (Minimum I)
+         *** reflections excluded if |F1| (or |DANO|) lt F1minimum 
+                                  or |F2| lt F2minimum
+                                  or I  lt Iminimum
+              (cut off applied BEFORE scaling or squaring for Patterson)
+
+         <A NAME="excl_max"></A>F1MAX F1maximum   F2MAX F2maximum  IMAX Imaximum
+         *** reflections excluded if |F1| (or |DANO|) gt F1maximum
+                                  or |F2| gt F2maximum
+                                  or I  gt Imaximum
+              (cut off applied BEFORE scaling or squaring for Patterson)
+
+         <A NAME="excl_diff"></A>DIFF difference_limit
+         *** reflections excluded if 
+             Abs(Sc1*F1 - Sc2*F2) gt difference_limit
+              (cut off applied BEFORE squaring for Patterson)
+
+         <A NAME="excl_term"></A>TERM limit
+         *** reflections excluded if 
+              Sqrt( A**2 + B**2) gt limit for Fourier
+                   A**2 or F**2  gt limit for Patterson
+
+         [default for all =  0.0 == no cut off]
+     
+</PRE>
+
+<P>It is very important to use this sensibly for difference or anomalous
+Pattersons. As the terms in a Patterson are squared the map can be distorted
+by one or two large `differences' which have been overestimated. It is
+sensible to use the SIGi cut offs to exclude weak data, and to inspect
+the SCALEIT output to decide on a sensible value for DIFF. Many instruments
+have glitches and you may have a few completely incorrect estimates of
+F(hkl) which can hide the true signal. </P>
+
+<P>When calculating `anomalous Pattersons', internally DANO is treated
+like F1. Therefore, it is possible to assign F2 and SIG2 to the appropriate
+FPH and set SCALE F2 to 0.0001 or something extremely small. Formally you
+will be calculating a difference Patterson (F1-F2) but because F2 is very
+small you are left with just the F1/DANO term. The advantage is that you
+can use the SIG2 check to exclude anomalous differences from weak measurements.
+</P>
+
+<P> If the input option to input intensities (LABI I= ...) is used, an origin removed Patterson
+can be calculated.
+<dd> The terms required for calculating an origin removed Patterson.
+ F2OR = F**2 -&lt;E**2&gt;  and E2OR = E**2 - &lt;E**2&gt; =  E**2 - 1.0.
+
+They can be used as input to the fft programs using LABI I=F2OR, etc ( See ecalc documentation) </dd>
+</P>
+
+<H3><A NAME="fftspacegroup"></A>FFTSPACEGROUP &lt;SG&gt;</H3>
+
+<P>Space group name or number for Fourier calculation. Possible values
+[&lt;name&gt; (&lt;number&gt;)] are: </P>
+
+<DL>
+<DD>P1 (1), P1bar (2), P21 (4), P2/m (10), P21212 (18 and 1018), P212121
+(19), C2221 (20), C222 (21), I222 (23), Pmmm (47), P41212 (92), P43212
+(96), P31 (144)/P32 (145), R3 (146), P3121 (152), P3221 (154), P61 (169),
+P65 (170). </DD>
+</DL>
+
+<P>For a Patterson the space group should be P1bar(2) (for all space groups),
+P2/m(10) (for all monoclinic space groups, b axis unique), or Pmmm(47)
+(for all orthorhombic space groups). </P>
+
+<P>If this command is omitted, the true symmetry is used if it is one of
+the FFT spacegroups, otherwise spacegroup P1 or P-1 is used. If the crystal
+symmetry is different to this the program will check that the symmetry
+operators are compatible. An (incomplete) list of possible symmetry pairings
+is given <A HREF="#spgp_symm_pair">below</A>. For further examples consult International Tables Vol.
+A. </P>
+
+<H3><A NAME="fillin"></A>FILLIN</H3>
+
+<P>When this keyword is specified the Fourier term </P>
+
+<PRE>
+    k1 * F1 * exp{B1*s}   -   k2 * F2 * exp{B2*s}
+
+</PRE>
+
+<P>is replaced by this term below if F1=MNF </P>
+
+<PRE>
+    [k1 * exp{B1*s}  -  k2 * exp{B2*s}] F2.
+
+</PRE>
+
+<P>Where k1,k2 and B1,B2 are the scales and Bfactors specified by the user
+respectively. The types of maps this procedure would benefit are 2Fo-Fc,
+3Fo-2fc ... (n+1)Fo-nFc maps. Noise levels could be reduced because rather
+than treating each Fourier term as zero for unmeasured Fo reflections,
+it will given an approximately correct value (Fc). However, the down side
+in these maps is that model bias would certainly increase. Maps should
+not be calculated beyond the resolution of the observed data for obvious
+reasons. </P>
+
+<H3><A NAME="freerflag"></A>FREERFLAG &lt;freeflag&gt;</H3>
+
+<P>Reflections where the value of the column FREE, taken from the MTZ file,
+equals &lt;freeflag&gt; (default 0) are omitted from the calculation. If
+you do not wish a free-R set to be used don't assign FREE. </P>
+
+<H3><A NAME="grid"></A>GRID &lt;nx&gt; &lt;ny&gt; &lt;nz&gt; | SAMPLE &lt;grid_sample&gt;</H3>
+
+<P>Number of sampling divisions along whole cell edge (see <A HREF="#grid_restr">restrictions
+below</A>). Alternatively, the keyword SAMPLE allows specification of the fineness
+of sampling, <EM>e.g.</EM> GRID SAMPLE 3 gives a grid of about 1/3 of the maximum
+resolution: this is the default if this command is omitted. A larger value
+gives a finer sampling (minimum sampling = 2). </P>
+
+<H3><A NAME="list"></A>LIST</H3>
+
+<P>List Fourier terms in ASCII to logical name ABCOEFFS. This may be useful
+if you want to monitor the input, but the output file is HUGE and it should
+normally be suppressed. </P>
+
+<P>The columns output are: </P>
+
+<PRE>
+   H  K  L  k1*F1  PHI  k2*F2  PHI2  W1  W2   A  B  ATAN(B,A) SQRT(AA+BB)
+
+</PRE>
+
+<P>See the <A HREF="#labin">LABIN</A> keyword for a description of the
+symbols. </P>
+
+<P>If, for instance, your Pattersons are junk, and you suspect some special
+problem - all 0 2k 4l are junk or something - you can sort it on the SQRT(AA+BB)
+column to see where the large contributions come from. You see sometimes
+all F2 for these are &lt;1 or something and get immediately suspicious.
+</P>
+
+<H3><A NAME="lpmap"></A>LPMAP</H3>
+
+<P>Output map to printer. </P>
+
+<H3><A NAME="lpfmt"></A>LPFMT &lt;nlines&gt; &lt;ncol&gt; &lt;idig&gt;
+&lt;ilin&gt; &lt;max&gt; &lt;min&gt;</H3>
+
+<P>For printer output, change format from default. </P>
+
+<BLOCKQUOTE>
+<DL>
+<DT>&lt;nlines&gt;</DT>
+
+<DD> number of lines/page (if=0, reset to NR) </DD>
+
+<DT>&lt;ncol&gt;</DT>
+
+<DD> number of columns/page (if=0, reset to maximum) </DD>
+
+<DT>&lt;idig&gt;</DT>
+
+<DD> number of digits in output numbers to LP (default=4) </DD>
+
+<DT>&lt;ilin&gt;</DT>
+
+<DD> number of lines between output lines of map (default=1) </DD>
+
+<DT>&lt;min&gt;,&lt;max&gt;</DT>
+
+<DD> resets rho to 0 if &lt;min&gt;&lt;rho&lt;&lt;max&gt;. (Can be used
+<EM>e.g.</EM> to set negative regions to 0 &lt;min&gt; = -9999, &lt;max&gt;=0.)
+</DD>
+</DL>
+</BLOCKQUOTE>
+
+<H3><A NAME="nochecks"></A>NOCHECKS</H3>
+
+<P>Specifies that no symmetry expansion or permutation is required and
+no checks needed to see if h k l is in the correct asymmetric unit. </P>
+
+<P>Limits on the value of h,k,l: <BR>
+These limits are required by the program if NOCHECK is used They are those
+used throughout the CCP4 suite to cover a single asymmetric unit of reciprocal
+space. </P>
+
+<DL>
+<DT>FFT symmetry</DT>
+
+<DD> </DD>
+
+<DT>Triclinic</DT>
+
+<DD> </DD>
+
+<PRE>hkl:  l&gt;=0
+hk0:  h&gt;=0
+0k0:  k&gt;0
+</PRE>
+
+<DT>Monoclinic</DT>
+
+<DD> </DD>
+
+<PRE>hkl:  k&gt;=0  and l&gt;=0
+hk0:  h&gt;=0
+0k0:  k&gt;0
+</PRE>
+
+<DT>Orthorhombic</DT>
+
+<DD> hkl: h&gt;=0, k&gt;=0 and l&gt;=0 </DD>
+
+<DT>Tetragonal</DT>
+
+<DD> pg4 hkl:h&gt;=0, l&gt;=0 with k&gt;=0 if h=0 and k&gt;0 if h&gt;0
+<BR>
+pg422 hkl:h&gt;=0, k&gt;=0, k&lt;=h, l&gt;=0 </DD>
+
+<DT>Trigonal</DT>
+
+<DD> </DD>
+
+<PRE>pg3 hkl:h&gt;=0, k&gt;0  00l:l&gt;0    
+pg312 hkl:h&gt;=0, k&gt;=0 with k&lt;=h for all l.
+if k = 0  l&gt;=0
+pg321 hkl:h&gt;=0, k&gt;=0 with k&lt;=h for all l.
+if h = k  l&gt;=0
+pg6 hkl:h&gt;=0, k&gt;=0, l&gt;=0 with k&gt;=0 if  h=0
+and k&gt; 0 if h&gt;0
+pg622 hkl:h&gt;=0, k&gt;=0, l&gt;=0 with h&gt;=k 
+</PRE>
+
+<DT>Cubic</DT>
+
+<DD> pg23 hkl:h&gt;=0, k&gt;=0, l&gt;=0 with l&gt;=h, k&gt;=h <BR>
+pg432 hkl:h&gt;=0, k&gt;=0, l&gt;=0 with k&gt;=l </DD>
+</DL>
+
+<P>If the FFTSPACEGROUP is different to the true SYMMETRY or the AXIS order
+is non-standard for the FFT spacegroup the NOCHECK option is overridden.
+</P>
+
+<H3><A NAME="patterson"></A>PATTERSON</H3>
+
+<P>Calculate a Patterson map (Fourier is the default). If F1 is assigned on the LABIN
+line the amplitudes are squared after scaling and taking any differences. If 
+I is assigned the input term is used as read. This allows you to calculate 
+origin removed pattersons using the E2OR and F2OR terms output by ECALC.</P>
+
+<H3><A NAME="phtranslation"></A>PHTRANSLATION [ HAND 2]</H3>
+
+<P>Calculate a phased translation function (<A HREF="#reference3">reference [3]</A>). The terms are: <BR>
+w*F1*F2*exp(i(PHI - PHI2))<BR>  
+If the "change hand" flag is set ( HAND 2) the terms are
+<BR> w*F1*F2*exp(i(PHI + PHI2 +CX *IH +CY *IK +CL*IL ))<BR>
+For most space groups CX=CY=CL = 0.0 , ie the phases for the opposite hand is -PHIhkl.
+However the space groups  I41, I4122, F4132, and I4132, changing hand also implies
+a change of origin. For these space groups  the following correction is required.
+<pre> 
+      Space_group CX    CY    CZ
+          I41    0.0   0.5   0.0
+         I4122   0.0   0.5   0.25
+         F4132   0.75  0.25  0.75
+         I4132   0.25  0.25  0.25
+</pre>
+Scale is multiplied by 1/sqrt(Sigma((w*F1)**2)*Sigma((F2)**2)</P>
+<p>If the maximum peak in the phased translation map is high (typically greater than 50 RMS),
+then for hand 1 the model corresponding to PHI2 will need to be moved by this
+amount to overlap the model corresponding to PHI. If HAND 2 is specified the model corresponding
+to PHI2 will need to be inverted then moved.</p>
+
+<H3><A NAME="projection"></A>PROJECTION</H3>
+
+<P>Calculate projection along section axis. All reflections except those
+in the zone are ignored. The sampling interval along the section axis <A HREF="#grid">GRID</A>
+should be left unchanged from 3D value, and the map limits on the section
+axis <A HREF="#xyzlim">XYZLIM</A> will be reset to 0 0. </P>
+
+<H3><A NAME="resolution"></A>RESOLUTION &lt;rmin&gt; &lt;rmax&gt;</H3>
+
+<P>&lt;rmin&gt; and &lt;rmax&gt; are resolution limits in Angstrom (either
+order). If one is 0 or blank, no high resolution cutoff, if both blank,
+no cutoff. <BR>
+If this command is absent, the default is to use all reflections in the
+file. For translation functions you MUST omit this command, to allow the
+program to accept all reflections in the file. </P>
+
+<H3><A NAME="rholim"></A>RHOLIM &lt;rhomax&gt; [ &lt;rhomin&gt; ]</H3>
+
+<P>The scaling of the output map is usually controlled by the values input
+for VF000. However If these are set, the map will be automatically scaled
+(using v and F000) to give a maximum &lt;rhomax&gt; (and minimum if &lt;rhomin&gt;
+is given) in the first group of sections. The default option (which should
+normally be used, except possibly for Pattersons) gives a map on the true
+scale. </P>
+
+<H3><A NAME="scale"></A>SCALE F1 | F2 &lt;scale&gt; &lt;B-factor&gt;</H3>
+
+<P><EM>e.g.</EM> SCALE F1 2.0 0.0 F2 1.0 0.0 <BR>
+<A NAME="scale_bfac"></A>Read scale and temperature factor to be applied
+to amplitude (F1 or F2). Default Scale = 1.0, B-factor = 0.0. Scales are
+also applied to the associated SIGi. <BR>
+Fused = &lt;scale&gt; * F * exp(-&lt;B-factor&gt; (sin theta/lambda)**2)
+<BR>
+</P>
+
+<H3><A NAME="symmetry"></A>SYMMETRY &lt;SG&gt;</H3>
+
+<P>Specifies true space-group as a name, number or explicit operators in
+the standard form. By default, this is taken from the input file, and it
+will probably cause chaos if you set it to anything else. </P>
+
+<H3><A NAME="title"></A>TITLE &lt;title&gt;</H3>
+
+<P>80 character title for map - sensible to choose an informative one.
+</P>
+
+<H3><A NAME="vf000"></A>VF000 &lt;vol&gt; &lt;F000&gt;</H3>
+
+<P>These parameters can be used to modify the scaling of the output map.
+The default values are &lt;vol&gt;=Cell_volume, and &lt;F000&gt;=0.0 These
+give a map approximately on absolute scale, and should usually not be altered.
+Setting &lt;vol&gt; = Cell_volume/100 would inflate the map values by 100.
+</P>
+
+<H3><A NAME="xyzlim"></A>XYZLIM &lt;xmin&gt; &lt;xmax&gt; &lt;ymin&gt;
+&lt;ymax&gt; &lt;zmin&gt; &lt;zmax&gt; | ASU</H3>
+
+<P>Range of cell to be calculated. This defines the extent of the output
+map. The arguments to the XYZLIM keyword can be either: (i) six numbers
+giving the limits in cell divisions OR fractional coordinates, or else (ii)
+the subkeyword ASU (which will automatically set the map limits to be the
+CCP4 asymmetric unit for the true or Patterson spacegroup, as appropriate).
+See <A HREF="#section_restr">below</A> for minimum and maximum requirements for each spacegroup. </P>
+
+<P>It is essential that &lt;xmin&gt; greater or equal to 0, and &lt;xmax&gt;
+is less than NX and so on (see definition of <A HREF="#grid">GRID</A>). For other restrictions,
+see <A HREF="#restrictions">below</A>. Some limits can be reset by the program but not all. In particular
+if your grid disagrees with these limits the program will not necessarily
+reset them sensibly. </P>
+
+<P>If this command is omitted, the limits will default to those of the
+asymmetric unit for the "fft space-group" - <EM>i.e.</EM> the spacegroup in which the
+fft calculation is performed in. This may or may not be the same as the
+asymmetric unit of the true spacegroup.
+
+<P>For many spacegroups there are several choices of such
+an asymmetric unit, and you may wish to override the default one. The inverse
+transform used in <A HREF="sfall.html">SFALL</A> has quite strict limits, and if you want to use
+that you probably ought to take the default values, which are compatible.
+Remember that if the map is to be extended to cover a molecule, it is fastest
+to calculate as much of the cell as possible (the whole cell in P1) as
+input to EXTEND. </P>
+
+<H2><A NAME="restrictions"></A>RESTRICTIONS</H2>
+
+<H3><A NAME="grid_restr"></A>Grid restrictions:</H3>
+
+<P>Note that symmetry expansion is not permitted to space-groups marked
+by *. For all space-groups, NX,NY,NZ must have no prime factors greater
+than 19, and NX must be greater than 2 HMAX + 1, etc. Below, `n' is an
+integer, so `2n' means the number must be even. </P>
+
+<PRE>
+        Space              section
+        group      number    axis
+
+        P1            1       y   NZ=2n 
+        P-1           2       y   NY=2n, NZ=2n, NX=2n, 
+        P21           4       y   NY=4n, NZ=2n, 
+        P2/M         10       y   NX=2n, NY=8n, NZ=2n, 
+       *P21212       18       y   NY=4n, NZ=2n, 
+       *P21212a    1018       y   NY=4n, NZ=2n, 
+        P212121      19       z   NY=2n, NZ=4n, 
+       *C2221        20       y   NX=4n, NY=4n, NZ=4n, 
+       *C222         21       y   NX=4n, NY=4n, NZ=4n, 
+        I222         23       y   NX=4n, NY=4n, NX=4n, 
+        PMMM         47       z   NX=8n, NY=8n, NZ=8n, 
+  *P41212/P43212  92,96       z   NX=2n, NY=NX, NZ=8n, 
+  *P31/P32      144,145       z   NX=6n, NY=6n, NZ=6n  
+  *R3               146       z   NX=6n, NY=6n, NZ=6n 
+  *P3121/P3221  152,154       z   NX=6n, NY=6n, NZ=6n
+  *P61/P65      169/170       z   NX=6n, NY=6n, NZ=12n
+
+</PRE>
+
+<H3><A NAME="section_restr"></A>Section restrictions:</H3>
+
+<PRE>
+         Spacegroup           Section limits
+
+            P1      all Z  all X      Y      0 to NY-1   
+            P1bar   all Z  all X      Y      0 to NY/2-1 
+            P21     all Z  all X      Y      0 to NY/2-1 
+            P2/m  0-1/2 X  all Z      Y      0 to NY/2-1
+            P21212  all Z  all X      Y      0 to NY/2    
+            P21212a all Z  all X      Y      0 to NY/2    
+            P212121 all X  all Y      Z      0 to NZ/2    
+            C2221 0-1/2 Z  all X      Y      0 to NY/4   
+            C222  0-1/2 Z  all X      Y      0 to NY/4   
+            I222  0-1/2 Z  all X      Y      0 to NY/4   
+            Pmmm  0-1/2 X 0-1/2 Y     Z      0 to NZ/2  
+    ??      P4122   all X  all Y      Z      0 to NZ/2    
+            P41212  all X  all Y      Z      0 to NZ/2    
+    ??      P4322   all X  all Y      Z      0 to NZ/2    
+            P43212  all X  all Y      Z      0 to NZ/2    
+            P31     all X  all Y      Z      0 to NZ-1   
+            P32     all X  all Y      Z      0 to NZ-1   
+            R3      all X  all Y      Z      0 to NZ/3-1 
+        or  R3    0-1/3  X and Y      Z      0 to NZ -1 
+            P3121   all X  all Y      Z      0 to NZ-1   
+            P3221   all X  all Y      Z      0 to NZ/6    
+            P61     all X  all Y      Z      0 to NZ/6-1 
+            P65     all X  all Y      Z      0 to NZ/6-1 
+
+</PRE>
+
+<P>For maps with Y-sections the output has Z fastest and X medium. <BR>
+For maps with Z-sections the output has Y fastest and X medium. </P>
+
+<H3><A NAME="spgp_symm_pair"></A>Possible FFTSPACEGROUP/SYMMETRY pairing:</H3>
+
+<PRE>     
+        FFTSPACEGROUP             Crystal spacegroup
+        group            number  
+
+        P1                 1       all
+        P-1                2       all centric spacegroups, Pattersons
+        P21                4       C21 I21 P21212a P...
+        P2/M              10       Pmmm etc
+       *P21212            18       C222  F222  I222
+       *P21212a         1018       C222a F222a I222a
+        P212121           19       C2221a I212121  P42  cubics
+        PMMM              47       P4/mmm
+       *P41212/P43212  92,96
+       *P31/P32      144,145
+        R3               146       R32
+       *P3121/P3221  152,154
+       *P61/P65      169/170       P6122/P6522
+
+</PRE>
+
+<H2><A NAME="files"></A>INPUT AND OUTPUT FILES</H2>
+
+<P>The input files are the control data file and a standard MTZ reflection
+data file. </P>
+
+<P>Unless suppressed, a standard format output map file will be written
+by the program. </P>
+
+<H3>Input:</H3>
+
+<BLOCKQUOTE>
+<DL>
+<DT>HKLIN</DT>
+
+<DD> input data </DD>
+
+<DT>SYMOP</DT>
+
+<DD> symmetry operation library </DD>
+</DL>
+</BLOCKQUOTE>
+
+<H3>Output:</H3>
+
+<BLOCKQUOTE>
+<DL>
+<DT>MAPOUT</DT>
+
+<DD> output binary map </DD>
+
+<DT>ABCOEFFS</DT>
+
+<DD> Output unit for an optional listing of the generated Fourier coefficients
+(for diagnostic purposes). See the <A HREF="#list">LIST</A> keyword. </DD>
+</DL>
+</BLOCKQUOTE>
+
+<H2><A NAME="output"></A>PRINTER OUTPUT</H2>
+
+<P>The printed output starts with details from the input control data and
+details from the MTZ subroutines when the input reflection data file is
+read. Details are given of the array sizes and of the scratch files used.
+If a line printer listing of the map was requested, each section is listed
+in the requested format preceded by a title and details identifying the
+section and followed by the minimum and maximum density (E) values on the
+section. If no line printer listing was requested then only the minimum
+and maximum densities for each section. </P>
+
+<P>Error Messages are MEANT to be self explanatory, here are some of them:
+</P>
+
+<P>You may get errors from binsort which is in fact a separate program
+
+
+<P>The FFT uses a Buffer set in the Main program. If you get the BUFFER
+Too Small message you can either: reduce your grid size, or recompile the
+program with a bigger value for IDIM (currently 500000). Similar action
+is needed if you get this message: </P>
+
+<DL>
+<DD>Array SIZE ?????? TOO Small </DD>
+</DL>
+
+<P>There are a series of error messages which mean your grid sampling does
+not satisfy the requirements. </P>
+
+<DL>
+<DD>Prime factor &gt; 19???? </DD>
+
+<DD>NX NY or NZ not divisible by correct factor. Check documentation. </DD>
+
+<DD>Similar messages about grid restrictions - check documentation. </DD>
+</DL>
+
+<P>If NOCHECKS is set you must have reflections in right asymmetric unit,
+and sorted. Run CAD to do this if you have a problem. You will get this
+sort of error message. </P>
+
+<DL>
+<DD>Reflection out of Order. HKL = ?? ?? ?? K greater than H ?? ?? ?? </DD>
+</DL>
+
+<DL>
+<DT>Array Z too short in routine PRTSHF</DT>
+
+<DD> An obscure error - redimension it. </DD>
+</DL>
+
+<H2><A NAME="function"></A>PROGRAM FUNCTION</H2>
+
+<P>The crystallographic fast Fourier transform (FFT) program was written
+by Lynn F. Ten Eyck. The use of the FFT in crystallography has been discussed
+by A. Immirzi (ref.1) and the methods for incorporating crystallographic
+symmetry into FFT calculations has been discussed by L.F. Ten Eyck (ref.2).
+</P>
+
+<P>The computational speed of the FFT is due to two factors. An examination
+of the algebra on which the Cooley-Tukey Fast Fourier Transform is based
+has led to a different approach towards incorporating crystallographic
+symmetry into Fourier transforms than that based on the trigonometric relationships
+as given in the International Tables for Crystallography. The method involves
+extracting the desired information from the results of an ordinary complex
+Fourier transform of a short sequence rather than a long one. Second, the
+complex Fourier transforms are calculated by an extremely efficient and
+general set of subroutines for calculating one dimensional transforms.
+The program does not suffer from any stringent restrictions on the number
+of input points though certain rules have to be obeyed as described above
+in notes 5 and 6. </P>
+
+<P>The program has been developed by Birkbeck College to allow for the
+generation of equivalent reflections using the space group symmetry elements
+so that the program may be used for space groups other than those for which
+it was specifically written. </P>
+
+<P>It has also been developed to allow for the input of selected data items
+from a binary reflection data file so that a number of different types
+of Fourier transforms may be calculated without having to prepare a special
+input file. These include: Fourier synthesis, difference Fourier, double
+difference Fourier, Patterson function, and difference Patterson functions.
+</P>
+
+<P>If the reflection file has been modified to correctly include Missing
+Number Flags then it is possible to substitute data. When calculating a
+difference map of some kind <EM>i.e.</EM> using F1 and F2, then if F1=MNF then F2
+is substituted for F1. This is useful in reducing the noise in maps for
+2Fo-Fc or 3Fo-2Fc maps for instance. Low resolution terms tend to be absent
+from measured data but contribute significantly to the overall quality
+of the map. Assuming that these low resolution terms are zero just because
+they are unmeasured can lead to significant noise in the map. Therefore,
+substituting Fc for Fo will inevitably be a better approximation than zero.
+The down side is that model bias will increase in the map and may cause
+trouble if large sections of data are unmeasured. </P>
+
+<H2><A NAME="references"></A>REFERENCES</H2>
+
+<OL>
+<P><!-- KEEP startreferencelist --></P>
+
+<LI><A NAME="reference1"></A>A.Immirzi, <I>Crystallographic Computing Techniques</I>, ed. F.R.Ahmed,
+Munksgaard, p399, (1966). </LI>
+
+<LI><A NAME="reference2"></A>L.F.Ten Eyck, <I>Acta Cryst.</I>, <B>A29</B>, 183, (1973). </LI>
+
+<LI><A NAME="reference3"></A>R.J.Read and A.J.Schierbeek <I>J. Appl. Cryst.</I> <B>21</B> 490-495
+(1988). </LI>
+<!-- KEEP endreferencelist -->
+</OL>
+
+<H2><A NAME="examples"></A>EXAMPLES</H2>
+
+<H3>Simple unix example script found in $CEXAM/unix/runnable/</H3>
+
+<LI><A HREF="../examples/unix/runnable/fft.exam">fft.exam</A> (Example
+of the calculation of difference patterson and anomalous difference patterson).
+</LI>
+
+<H3>Also found combined with other programs in the example scripts ($CEXAM/unix/runnable/)</H3>
+
+<LI><A HREF="../examples/unix/runnable/mapcorrelation_procedures">mapcorrelation_procedure</A>
+(Use of fft in calculations leading up to map correlations). </LI>
+
+<LI><A HREF="../examples/unix/runnable/tffc_procedure">tffc_procedure</A>
+(Run FFT in Space group 1). </LI>
+
+<LI><A HREF="../examples/unix/runnable/rsps.exam">rsps.exam</A> (Example
+of calculating and interpreting Patterson). </LI>
+
+<LI><A HREF="../examples/unix/runnable/solomon.exam">solomon.exam</A> (Calculate
+initial map with best phases and FOM weighted amplitudes). </LI>
+
+<LI><A HREF="../examples/unix/runnable/vecref.exam">vecref.exam</A> (Use
+in vector space heavy atom refinement). </LI>
+
+<LI><A HREF="../examples/unix/runnable/patterson">patterson</A> (Patterson
+Example). </LI>
+
+<LI><A HREF="../examples/unix/runnable/dm.exam">dm.exam</A> (Calculate
+maps from density modified map). </LI>
+
+<LI><A HREF="../examples/unix/runnable/mir_steps">mir_steps</A> (Heavy
+atom refinement and Phasing tutorial). </LI>
+
+<LI><A HREF="../examples/unix/runnable/3fo2fcmap">3fo2fcmap</A> (3Fo-2Fc
+map). </LI>
+
+<LI><A HREF="../examples/unix/runnable/fofcmap">fofcmap</A> (Calculate
+an Fo-Fc map and find position of significant peaks). </LI>
+
+<LI><A HREF="../examples/unix/runnable/phased_translation_calc">phased_translation_calc</A>
+(Phased translation function for isomorphous phases set). </LI>
+
+<LI><A HREF="../examples/unix/runnable/waterpeaks">waterpeaks</A> (Procedure
+for finding water peaks). </LI>
+
+<LI><A HREF="../examples/unix/runnable/watpeak.exam">watpeak.exam</A> (Procedure
+for finding water peaks). </LI>
+
+<H2>AUTHOR</H2>
+
+<P>Originator: Lynn F. Ten Eyck </P>
+
+<H2>SEE ALSO</H2>
+
+<P><A HREF="sfall.html">sfall</A></P>
+
+</BODY>
+</HTML>

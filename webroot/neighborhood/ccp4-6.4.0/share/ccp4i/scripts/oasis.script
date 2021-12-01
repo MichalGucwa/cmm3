@@ -1,0 +1,704 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#===========================================================================
+#
+# oasis.script
+#
+#===========================================================================
+source [SearchPath TOP src CCP4_utils.tcl]
+
+set job_id [GetJobid]
+set cpath  [GetCurrentDir]
+set dpath [GetDefaultDirPath]
+
+set NAME [split $HKLOUT .]
+set HKL_T [lindex $NAME 0]
+
+set oasis_script "{TIT $TITLE}"
+
+##################################################
+#MODE
+##################################################
+if { [regexp SAD $OASIS_MODE] } {
+append oasis_script " {SAD }"
+}
+
+if { [regexp SIR $OASIS_MODE] } {
+append oasis_script " {SIR }"
+}
+
+if { [regexp DMR $OASIS_MODE] } {
+	if { $MR_SAD } {
+append oasis_script " {DMR }"
+} else {
+append oasis_script " {DMR 1 }"
+}
+}
+
+
+
+if { $RES } {
+append oasis_script " {LIM $RES_L $RES_H}" 
+}
+
+if { [regexp DMR $OASIS_MODE] } {
+append oasis_script " {NHA $NHA}"
+append oasis_script " {SED $SED}"
+}
+
+################################
+#LABIN
+################################
+append oasis_script " {LABIN "
+
+if { [regexp SAD $OASIS_MODE] }  {
+  if { $MAP_FM }  { 
+append oasis_script "FP=$FP SIGFP=$SIGFP DANO=$DANO SIGDANO=$SIGDANO"
+}  else  {
+append oasis_script "F(+)=$FP SIGF(+)=$FP F(-)=$DANO SIGF(-)=$SIGDANO"
+}
+}
+
+
+if { [regexp SIR $OASIS_MODE] } {
+append oasis_script "FP=$FP SIGFP=$SIGFP FPH=$FPH SIGFPH=$SIGFPH"
+}
+
+if { [regexp DMR $OASIS_MODE] } {
+append oasis_script "FP=$FP SIGFP=$SIGFP"
+
+}
+
+if { $COMPARE_PHI } {
+append oasis_script " PHIC=$PHIC"
+}
+append oasis_script "}"
+
+
+##################################################
+#DUM
+##################################################
+set OASIS_NS_S 0
+  if { [regexp P_PDB $PAR_MODE] && $PAR } {  
+
+      set par_tmp_pdb_file [GetTmpFileName -ext pdb]
+      
+      WriteFile [set par_tmp_script [GetTmpFileName -ext _com]]\
+      "input PDB -
+                orth 1
+       output HA
+       cell $CELL_A $CELL_B $CELL_C $CELL_ALPHA $CELL_BETA $CELL_GAMMA
+       end
+      "
+
+      set Coordconv_cmd "[BinPath coordconv] XYZOUT $par_tmp_pdb_file XYZIN $PAR_PDB_FILE "
+      set status [Execute $Coordconv_cmd $par_tmp_script program_status report -nolog]
+
+
+
+if { [ReadFile $par_tmp_pdb_file file_list -split] }  {
+set par_input_file $HKL_T
+append par_input_file "_partial.frc"
+if [file exists $par_input_file] { DeleteFile $par_input_file }
+set n 0
+	foreach line0 $file_list {
+
+      	 set line [string trim $line0]
+	 set par_tmp   [lindex $line 1]
+       set par_type  [string toupper [string range $par_tmp 0 0]]
+	if { $par_type != "" } {		
+	    set xpar      [format "%.4f" [lindex $line 2]]
+	    set ypar      [format "%.4f" [lindex $line 3]]
+	    set zpar      [format "%.4f" [lindex $line 4]]
+	    set hatom_occ [format "%.4f" [lindex $line 5]]
+	    set hatom_b   [format "%.4f" [lindex $line 8]]
+           }    
+       if { $par_type=="C"}   {
+       set par_type "C "      
+}
+
+       if { $par_type=="D"}   {
+       set par_type "C "      
+}
+       if { $par_type=="O" }   {
+       set  par_type "O "       
+}
+ 
+       if { $par_type=="N" }   {      
+		 set par_type "N "
+}
+
+       if { $par_type=="S"  }   {
+       set par_type "S "
+       incr OASIS_NS_S       
+
+}
+if {$par_type!=""}  {
+	incr n
+      WriteFile $par_input_file\
+      "$par_type       $n        $xpar       $ypar       $zpar      $hatom_occ       $hatom_b"
+
+}	 
+}
+}
+
+	DeleteFile $par_tmp_pdb_file
+}
+
+  if { [regexp P_OAS $PAR_MODE] && $PAR }  {
+if { [ReadFile $PAR_OAS_FILE file_list -split] }  {
+	foreach line0 $file_list {
+          
+      	  set line [string trim $line0]
+          
+          set par_tmp   [lindex $line 1]
+          set par_type  [string toupper [string range $par_tmp 0 0]] 
+
+       if { $par_type=="S"  }   {
+       incr OASIS_NS_S       
+}
+}
+}
+set par_input_file $PAR_OAS_FILE
+}
+
+##################################################
+# CELL CONTENTS
+##################################################
+append oasis_script " {CON"
+
+if { [regexp NUM $CELL_CON] }  {
+    set OASIS_NS_C [expr $CELL_CON_NUM*5]
+    set OASIS_NS_N [expr $CELL_CON_NUM*1.2]
+    set OASIS_NS_O [expr $CELL_CON_NUM*1.5]
+    set OASIS_NS_H [expr $CELL_CON_NUM*8]
+append oasis_script " C $OASIS_NS_C N $OASIS_NS_N O $OASIS_NS_O H $OASIS_NS_H "
+ 
+    for {set i 1} { $i <= $C_NUM} {incr i} {
+    if { $C_TYPE($i) == "S" } {
+       if { $C_TYPE_NUM($i) > $OASIS_NS_S }  {
+		set  OASIS_NS_S $C_TYPE_NUM($i)
+}	
+	continue
+}
+append oasis_script "$C_TYPE($i) $C_TYPE_NUM($i) "
+}
+
+
+
+if { [regexp SAD $OASIS_MODE] || [regexp SIR $OASIS_MODE] }  {
+
+
+    for {set i 1} { $i <= $HA_T_NUM } {incr i} {
+
+    if { $HA_T_TYPE($i) == "S" }  {
+       if { $HA_T_TYPE_NUM($i) > $OASIS_NS_S }  {
+		set  OASIS_NS_S $HA_T_TYPE_NUM($i)
+}
+	continue	
+}	
+append oasis_script "$HA_T_TYPE($i) $HA_T_TYPE_NUM($i) "
+}
+}
+
+if { $OASIS_NS_S != 0 } {
+	append oasis_script "S $OASIS_NS_S"
+}
+
+}  else  {
+
+set seq_C(A) 3
+set seq_N(A) 1
+set seq_O(A) 1
+set seq_S(A) 0
+
+set seq_C(R) 6
+set seq_N(R) 4
+set seq_O(R) 1
+set seq_S(R) 0
+
+set seq_C(N) 4
+set seq_N(N) 2
+set seq_O(N) 2
+set seq_S(N) 0
+
+set seq_C(D) 4
+set seq_N(D) 1
+set seq_O(D) 3
+set seq_S(D) 0
+
+set seq_C(C) 3
+set seq_N(C) 1
+set seq_O(C) 1
+set seq_S(C) 1
+
+set seq_C(E) 5
+set seq_N(E) 1
+set seq_O(E) 3
+set seq_S(E) 0
+
+set seq_C(Q) 5
+set seq_N(Q) 2
+set seq_O(Q) 2
+set seq_S(Q) 0
+
+set seq_C(G) 2
+set seq_N(G) 1
+set seq_O(G) 1
+set seq_S(G) 0
+
+set seq_C(H) 6
+set seq_N(H) 3
+set seq_O(H) 1
+set seq_S(H) 0
+
+set seq_C(I) 6
+set seq_N(I) 1
+set seq_O(I) 1
+set seq_S(I) 0
+
+set seq_C(L) 6
+set seq_N(L) 1
+set seq_O(L) 1
+set seq_S(L) 0
+
+set seq_C(K) 6
+set seq_N(K) 2
+set seq_O(K) 1
+set seq_S(K) 0
+
+set seq_C(M) 5
+set seq_N(M) 1
+set seq_O(M) 1
+set seq_S(M) 1
+
+set seq_C(F) 9
+set seq_N(F) 1
+set seq_O(F) 1
+set seq_S(F) 0
+
+set seq_C(P) 5
+set seq_N(P) 1
+set seq_O(P) 1
+set seq_S(P) 0
+
+set seq_C(S) 3
+set seq_N(S) 1
+set seq_O(S) 2
+set seq_S(S) 0
+
+set seq_C(T) 4
+set seq_N(T) 1
+set seq_O(T) 2
+set seq_S(T) 0
+
+set seq_C(W) 11
+set seq_N(W) 2
+set seq_O(W) 1
+set seq_S(W) 0
+
+set seq_C(Y) 9
+set seq_N(Y) 1
+set seq_O(Y) 2
+set seq_S(Y) 0
+
+set seq_C(V) 5
+set seq_N(V) 1
+set seq_O(V) 1
+set seq_S(V) 0
+
+    set OASIS_NS_C 0
+    set OASIS_NS_N 0
+    set OASIS_NS_O 0
+    set OASIS_NS_S 0
+
+      if { [ReadFile $SEQIN file_list -split] } {
+
+	foreach line0 $file_list {
+      set line [string trim $line0]
+	set len [string length $line]
+	set c [string range $line 0 0]
+	if { $c == ">" } {
+	continue
+}
+	for {set i 1} { $i <= $len } { incr i } {
+	set t [expr $i - 1]	
+
+	set c [string range $line $t $t]
+	set OASIS_NS_C [expr $seq_C($c) + $OASIS_NS_C]
+	set OASIS_NS_N [expr $seq_N($c) + $OASIS_NS_N]
+	set OASIS_NS_O [expr $seq_O($c) + $OASIS_NS_O]
+	set OASIS_NS_S [expr $seq_S($c) + $OASIS_NS_S]
+}
+
+}
+}
+
+
+append oasis_script " C $OASIS_NS_C N $OASIS_NS_N O $OASIS_NS_O "
+
+    for {set i 1} { $i <= $HA_T_NUM } {incr i} {
+    if { $HA_T_TYPE($i) == "S" } {
+       if { $HA_T_TYPE_NUM($i) > $OASIS_NS_S }  {
+		set  OASIS_NS_S $HA_T_TYPE_NUM($i)
+}
+	continue	
+}	
+append oasis_script "$HA_T_TYPE($i) $HA_T_TYPE_NUM($i) "
+}
+
+if { $OASIS_NS_S != 0 } {
+	append oasis_script "S $OASIS_NS_S"
+}
+}
+
+append oasis_script "} "
+##################################################
+# SPACE GROUP
+##################################################
+
+##################################################
+# GENERAL OPTIONS
+##################################################
+
+##################################################
+if { $COS } {
+append oasis_script " {COS } "
+}
+
+if { $CYC != "2" } {
+append oasis_script " {CYC $CYC}"
+}
+
+if { $FOM } {
+append oasis_script " {FOM } "
+}
+
+append oasis_script " {KMI $KMI}"
+# ANO
+##################################################
+if { [regexp SAD $OASIS_MODE] }  {
+    for {set i 1} { $i <= $HA_T_NUM } {incr i} {
+
+	if { $X_F($i) != "" }  {
+	set ano_tem $X_F($i)
+
+}  else  {
+      set ha_ano_tem [GetTmpFileName -ext _log]
+       WriteFile [set f_tmp_script [GetTmpFileName -ext _com]]\
+      "ATOM $HA_T_TYPE($i)
+       NWAV 1 $X_WLENGTH
+       END  
+       "
+
+      set Cro_cmd "[BinPath crossec] "
+      set status [Execute $Cro_cmd $f_tmp_script program_status report -copy_log $ha_ano_tem ]
+
+      if { [ReadFile $ha_ano_tem file_list -split] } {
+
+      foreach line0 $file_list {
+      set line [string trim $line0]
+
+      if { [regexp ^$HA_T_TYPE($i) $line] } {
+      set ano_tem [lindex $line 3]
+      break
+      }
+      }
+      }
+	DeleteFile $ha_ano_tem
+}
+
+
+if { $i == 1} {
+append oasis_script " {ANO $HA_T_TYPE($i) $ano_tem}"
+} else {
+append oasis_script " {   $HA_T_TYPE($i) $ano_tem}"
+}
+}
+}
+##################################################
+# HEAVY ATOM DATA
+##################################################
+
+if { [regexp SAD $OASIS_MODE] || [regexp SIR $OASIS_MODE] }  {
+
+if { [regexp HA_PDB $HA] }  {
+      set ha_tmp_file [GetTmpFileName -ext pdb]
+      WriteFile [set ha_tmp_script [GetTmpFileName -ext _com]]\
+      "input PDB -
+                orth 1
+       output HA
+       cell $CELL_A $CELL_B $CELL_C $CELL_ALPHA $CELL_BETA $CELL_GAMMA
+       end
+      "
+
+      set Coordconv_cmd "[BinPath coordconv] XYZOUT \"$ha_tmp_file\" XYZIN \"$HA_FILE_PDB\" "
+      set status [Execute $Coordconv_cmd $ha_tmp_script program_status report -nolog]
+
+} 
+
+if { [regexp HA_OAS $HA] } {
+       if { [ReadFile $HA_FILE_OAS file_list -split] } {
+	set n 0
+	foreach line0 $file_list {
+       set line [string trim $line0]
+	    set h_tem [lindex $line 0]
+	if { $h_tem != "" }  {
+	    incr n
+	    set HA_TYPE($n) [lindex $line 0]
+	    set HA_X($n)    [lindex $line 2]
+	    set HA_Y($n)    [lindex $line 3]
+	    set HA_Z($n)    [lindex $line 4]
+	    set HA_OCC($n)  [lindex $line 5]
+	    set HA_B($n)    [lindex $line 6] 
+		}
+	}
+      }
+set HA_NUM $n   
+} 
+if { [regexp HA_PDB $HA] } {
+
+      if { [ReadFile $ha_tmp_file file_list -split] } {
+	set n 0
+	foreach line0 $file_list {
+       set line [string trim $line0]
+       set hatom_type [lindex $line 1]
+       if { [regexp ^ATOM $line] } {
+	    incr n
+	    set HA_TYPE($n) $hatom_type
+	    set HA_X($n)    [lindex $line 2]
+	    set HA_Y($n)    [lindex $line 3]
+	    set HA_Z($n)   [lindex $line 4]
+	    set HA_OCC($n)  [lindex $line 5]
+	    set HA_B($n)    [lindex $line 8]
+	  } 
+
+	}
+      }
+set HA_NUM $n
+}
+
+append oasis_script " {POS}"
+    for {set i 1} { $i <= $HA_NUM } {incr i} {
+     append oasis_script " {   $HA_TYPE($i) $i $HA_X($i) $HA_Y($i) $HA_Z($i) $HA_OCC($i) $HA_B($i)}"
+}
+}
+
+
+
+append oasis_script " {END }"
+##################################################
+#EXECUTE OASIS
+##################################################
+
+set oasis_script_file [GetTmpFileName -ext _com]
+
+	foreach line0 $oasis_script {
+       set line [string trim $line0]
+      WriteFile $oasis_script_file\
+      "$line"
+	}
+
+set cmd "[BinPath oasis]"
+append cmd " HKLIN \"$HKLIN\""
+append cmd " HKLOUT \"$HKLOUT\""
+set C_LOG $HKL_T
+append C_LOG ".log"
+set LOG $dpath
+append LOG "/"
+append LOG $job_id
+append LOG "_oasis.log"
+
+
+if { $PAR } {
+append cmd " FRCIN \"$par_input_file\""
+set status [Execute $cmd $oasis_script_file program_status report ]
+if [file exists $C_LOG] { DeleteFile $C_LOG }
+CopyFile $LOG $C_LOG
+} else {
+set status [Execute $cmd $oasis_script_file program_status report ]
+if [file exists $C_LOG] { DeleteFile $C_LOG }
+CopyFile $LOG $C_LOG
+} 
+
+
+
+set name_script $HKL_T
+append name_script ".csh"
+
+if [file exists $name_script] { DeleteFile $name_script }
+      WriteFile $name_script \
+      "oasis \\
+hklin \"$HKLIN\"  \\"
+
+
+if { $PAR } {
+      WriteFile $name_script \
+      "frcin \"$par_input_file\" \\"
+}
+      WriteFile $name_script \
+	"hklout \"$HKLOUT\" << +"
+	foreach line0 $oasis_script {
+       set line [string trim $line0]
+      WriteFile $name_script\
+      "$line"
+	}
+	WriteFile $name_script "+"
+
+
+##################################################
+#EXECUTE merge
+##################################################
+set fof_sig "F"
+if { [regexp DMR $OASIS_MODE] }  {
+#	if { [ regexp M_MER $MOD_MOD ] } {
+#         set M_HKLOUT $HKL_T
+#	  append M_HKLOUT "_MER.mtz"
+#     WriteFile [set merge_tmp_script [GetTmpFileName -ext _com]]\
+#      "LABIN FOM=$M_FOM   PHIB=$M_PHIC
+#      "
+#	set mcmd "[BinPath combinereslv]"
+#	append mcmd " HKLIN1 \"$HKLOUT\" HKLIN2 \"$M_HKLIN\" HKLOUT \"$M_HKLOUT\" "
+#	set status [Execute $mcmd $merge_tmp_script program_status report ]
+#       if { $KEEP_MOD }  {
+#
+#	 } else {
+#	DeleteFile $HKLOUT
+#      MoveFile $M_HKLOUT $HKLOUT
+#}
+#}
+
+	if { [ regexp M_FOM $MOD_MOD ]  } {
+	set cadcmd "[BinPath cad]"
+	set CAD_HKLOUT $HKL_T
+	append CAD_HKLOUT "_CAD.mtz"
+
+if { [ regexp DMR $OASIS_MODE ] } {
+set lab_list [GetMtzAllCols $M_HKLIN]
+	foreach i $lab_list {
+	if { $i == "2FOFCWT" } {
+			set fof_sig "T"	
+			break
+		}	
+	}
+
+}
+
+
+
+append cadcmd " HKLIN1 \"$HKLOUT\" HKLIN2 \"$M_HKLIN\"  HKLOUT \"$CAD_HKLOUT\" "
+if { $fof_sig == "F" } {
+  WriteFile [set cad_tmp_script [GetTmpFileName -ext _com]]\
+          "monitor BRIEF
+	labin file 1 -
+	    E1 = PHIB 
+	labout file 1 -
+	    E1 = PHIB 
+	ctypin file 1 -
+	    E1 = P 
+	labin file 2 -
+	    E1 = $FP -
+	    E2 = $SIGFP -
+	    E3 = $FOMM 
+	labout file 2 -
+	    E1 = $FP -
+	    E2 = $SIGFP -
+	    E3 = FOM 
+	ctypin file 2 -
+	    E1 = F -
+	    E2 = Q -
+	    E3 = W 
+          "
+} else {
+  WriteFile [set cad_tmp_script [GetTmpFileName -ext _com]]\
+	"monitor BRIEF
+	labin file 1 -
+	    E1 = PHIB 
+	labout file 1 -
+	    E1 = PHIB 
+	ctypin file 1 -
+	    E1 = P 
+	labin file 2 -
+	    E1 = $FP -
+	    E2 = $SIGFP -
+	    E3 = $FOMM -
+	    E4 = 2FOFCWT
+	labout file 2 -
+	    E1 = $FP -
+	    E2 = $SIGFP -
+	    E3 = FOM -
+	    E4 = 2FOFCWT
+	ctypin file 2 -
+	    E1 = F -
+	    E2 = Q -
+	    E3 = W -
+	    E4 = F
+	"
+}
+set status [Execute $cadcmd $cad_tmp_script program_status report ]
+       if { $KEEP_MOD }  {
+
+	 } else {
+	DeleteFile $HKLOUT
+      MoveFile $CAD_HKLOUT $HKLOUT
+}
+
+}
+}
+
+##################################################
+#EXECUTE DM
+##################################################
+
+if { $DM } {
+	set DM_T [GetTmpFileName -ext _mtz]
+	set DM_FP "FP"	
+	set DM_SFP "SIGFP"
+	if { [ regexp DMR $OASIS_MODE ] } {
+	set DM_FP $FP	
+	set DM_SFP $SIGFP
+		if { $fof_sig == "T" } {
+		set DM_FP "2FOFCWT"
+		}
+}
+	set dmcmd "[BinPath dm]"
+	if { $KEEP_MOD && $MOD } {
+	if { [ regexp M_MER $MOD_MOD ] } {
+	append dmcmd " HKLIN \"$M_HKLOUT\" HKLOUT \"$DM_T\" "
+}	
+	if { [ regexp M_FOM $MOD_MOD ] } {
+	append dmcmd " HKLIN \"$CAD_HKLOUT\" HKLOUT \"$DM_T\" "
+}	
+	} else {
+	append dmcmd " HKLIN \"$HKLOUT\" HKLOUT \"$DM_T\" "
+}
+	WriteFile [set dm_tmp_script [GetTmpFileName -ext _com]]\
+	"mode -
+	SOLV
+	combine PERT
+	scheme ALL
+	ncycles -
+    	AUTO
+	solc $solc
+	ncsmask
+	LABIN  FP=$DM_FP SIGFP=$DM_SFP PHIO=PHIB FOMO=FOM
+	LABOUT  FDM=FDM PHIDM=PHIDM FOMDM=FOMDM
+	RSIZE 80
+	END
+	"
+	set status [Execute $dmcmd $dm_tmp_script program_status report ]
+	set rfree "[BinPath freerflag]"
+	append rfree " HKLIN \"$DM_T\" HKLOUT \"$DM_HKLOUT\""
+	WriteFile [set dm_t_script [GetTmpFileName]]\
+	"FREERFRAC 0.05"
+	set status [Execute $rfree $dm_t_script program_status report ]
+	DeleteFile $dm_t_script
+	DeleteFile $DM_T
+}

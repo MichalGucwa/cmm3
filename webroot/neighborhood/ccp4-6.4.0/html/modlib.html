@@ -1,0 +1,1233 @@
+<html>
+<head><title>CCP4 Program Suite: modlib</title></head>
+<body>
+
+<!-- ::INDEX_INFO::MODLIB::Library::::Subroutine Library for mathematical operations:::::::: -->
+
+<H1> MODLIB (CCP4: Library)</H1>
+
+<H2> NAME</H2>
+
+<b>modlib </b> - Subroutine Library for handling mathematical operations
+
+<H2>DESCRIPTION</H2>
+
+<p>The library modlib contains subroutines for a number of mathematical operations,
+mainly operations with vectors and matrices. This document is the first stage in an
+attempt to document and rationalise the mathematical subroutines found in the CCP4
+libraries and programs.
+
+
+<H2>CONTENTS</H2>
+
+<p>The subroutines have been arranged as much as possible into groups with
+similar functions or origins.
+
+<ol>
+  <li><a href="#modlib">Overview of the subroutines in modlib</a></li>
+  <ol type="a">
+      <li><a href="#vector_ops">Vector operations</a></li>
+      <li><a href="#matrix_vector_ops">Matrix-vector operations</a></li>
+      <li><a href="#matrix_ops">Matrix operations</a></li>
+      <li><a href="#harwell_routines">Harwell routines</a></li>
+      <li><a href="#bessel">Bessel function routines</a></li>
+      <li><a href="#miscellaneous">Miscellaneous routines</a></li>
+  </ol>
+  <li><a href="#blas_and_lapack">Information on BLAS and LAPACK routines</a></li>
+  <ol type="i">
+      <li><a href="#lapack_introduction">Introduction</a></li>
+      <li><a href="#blas_descript">BLAS</a></li>
+      <li><a href="#lapack_descript">LAPACK</a></li>
+      <li><a href="#blas_and_lapack_in_ccp4">BLAS and LAPACK in CCP4</a></li>
+      <li><a href="#installation_non_ieee">Installation issues for non-IEEE
+          compliant machines</a></li>
+  </ol>
+  <li><a href="#list_of_routines">List of subroutines in modlib</a></li>
+</ol>
+
+<a name="modlib"></a><H2>Overview of the MODLIB routines</H2>
+
+<p> The routines are divided into six sections below: vector operations,
+matrix-vector operations, matrix operations, Harwell routines, 
+Bessel function routines, and miscellaneous (i.e. those which
+don't fit in anywhere else).
+
+<a name="vector_ops"></a><H3>a. Vector Operations</H3>
+
+<p>
+<table border=1>
+<tr><th>Type <th>Name     <th>Function    <th>Call using    <th>Arguments
+<tr><td>s/r  <td><a href="#cross">cross</a>
+             <td>compute vector product A = B x C
+             <td>CROSS(A,B,C)
+             <td>REAL: A(3), B(3), C(3)
+<tr><td>fun  <td><a href="#dot">dot</a>
+             <td>dot product of two vectors A.B
+             <td>DOT(A,B)
+             <td>REAL: A(3), B(3)
+<tr><td>s/r  <td><a href="#icross">icross</a>
+             <td>cross product (integer version) A = B x C
+             <td>ICROSS(A,B,C)
+             <td>INTEGER: A(3), B(3), C(3)
+<tr><td>fun  <td><a href="#idot">idot</a>
+             <td>dot product (integer version) A.B
+             <td>IDOT(A,B)
+             <td>INTEGER: A(3), B(3)
+<tr><td>s/r  <td><a href="#unit">unit</a>
+             <td>Vector V reduced to unit vector
+             <td>UNIT(V)
+             <td>REAL V(3)
+<tr><td>s/r  <td><a href="#scalev">scalev</a>
+             <td>Scale vector B with scalar X and put result in A
+             <td>SCALEV(A,X,B)
+             <td>REAL: A(3), B(3), X
+<tr><td>s/r  <td><a href="#vsum">vsum</a>
+             <td>Add two vectors  A = B + C
+             <td>VSUM(A,B,C)
+             <td>REAL: A(3),B(3),C(3)
+<tr><td>s/r  <td><a href="#vdif">vdif</a>
+             <td>Subtract two vectors A = B - C
+             <td>VDIF(A,B,C)
+             <td>REAL: A(3),B(3),C(3)
+<tr><td>s/r  <td><a href="#vset">vset</a>
+             <td>Copy a vector from B to A
+             <td>VSET(A,B)
+             <td>REAL A(3),B(3)
+</table>
+<p>
+
+<a name="matrix_vector_ops"></a><H3>b. Matrix-Vector Operations</H3>
+
+<p>
+<table border=1>
+<tr><th>Type <th>Name       <th>Function    <th>Call using    <th>Arguments
+<tr><td>s/r   <td><a href="#matvec">matvec</a>
+              <td>Post-multiply a 3x3 matrix by a vector V = AB
+              <td>MATVEC(V,A,B)
+              <td>REAL: A(3,3), B(3), V(3)
+<tr><td>s/r   <td><a href="#imatvec">imatvec</a>
+              <td>Post-multiply a 3x3 matrix by a vector V=AB (integer version)
+              <td>IMATVEC(V,A,B)
+              <td>INTEGER A(3,3),B(3),V(3)
+<tr><td>s/r   <td><a href="#matvc4">matvc4</a>
+              <td>Matrix x Vector, A(3)  =  R(4x4) . B(3) (see notes)
+	      <td>MATVC4(A,R,B)
+	      <td>REAL A(3), R(4,4), B(3)
+<tr><td>s/r   <td><a href="#transfrm">transfrm</a>
+              <td>Transform vector X(3) by quine matrix MAT(4,4), return
+	          transformed vector in X (see notes)
+              <td>TRANSFRM(X,MAT)
+              <td>REAL X(3),MAT(4,4)
+</table>
+
+<p><b>Notes on Matrix-Vector operations:</b></p>
+
+<p>The subroutines MATVC4 and TRANSFRM perform the same operation, and
+differ only in that in the first case the result vector is returned
+separately from the input vector, whilst in the second the result
+overwrites the input vector.</p>
+
+<p>The transformation of the input 3-vector by the 4x4 matrix is effected
+by treating the input vector as a 4-vector, with 1 in the last position,
+and performing a standard matrix times vector operation.</p>
+
+<p>4x4 matrices are commonly used in CCP4 programs to represent symmetry
+operations, which may have both rotational and translational components
+(screw operations). For more information on this, see the documentation
+for <a href="symlib.html">SYMLIB</a>, in particular the section on
+<a href="symlib.html#symmetry_store">How Symmetry Operations are Stored
+and Applied</a>.</p>
+
+<a name="matrix_ops"></a><H3>c. Matrix Operations</H3>
+
+<p>
+<table border=1>
+<tr><th>Type <th>Name       <th>Function    <th>Call using    <th>Arguments
+<tr><td>s/r   <td><a href="#minv3">minv3</a>
+              <td>Invert a general 3x3 matrix and return determinant in
+                                D<br>
+                                A=(B)<sup>-1</sup>
+              <td>MINV3(A,B,D)
+              <td>REAL: A(3,3), B(3,3), D
+<tr><td>s/r   <td><a href="#iminv3">iminv3</a>
+              <td>Invert a general 3x3 matrix and return determinant in D
+                                (integer version) A = (B)<sup>-1</sup>
+              <td>IMINV3(A,B,D)
+              <td>INTEGER: A(3,3),B(3,3), D
+<tr><td>s/r   <td><a href="#minvn">minvn</a>
+              <td>Invert a matrix A of order N (overwritten on output)
+                  and return determinant D
+              <td>MINVN(A,N,D,L,M)
+              <td>INTEGER: N <br>
+                  REAL: A(N,N), D, L(N), M(N) <br>
+                  L,M are work-vectors
+<tr><td>s/r   <td><a href="#matmul">matmul</a>
+              <td>Multiply two 3x3 matrices A = BC
+              <td>MATMUL(A,B,C)
+              <td>REAL: A(3,3),B(3,3),C(3,3)
+<tr><td>s/r   <td><a href="#matmulnm">matmulnm</a>
+              <td>Multiply  NxM  MXN matrices A = BC
+              <td>MATMULNM(N,M,A,B,C)
+              <td>INTEGER: N, M <br>
+                  REAL: A(N,N), B(N,M), C(M,N)
+<tr><td>s/r   <td><a href="#matmulgen">matmulgen</a>
+              <td>Generalised matrix multiplication subroutine<br>
+                                Multiplies a NbxMbc matrix (B) by a  MbcXNc (C) matrix,
+                                so that A = BC
+              <td>MATMULGEN(Nb,Mbc,Nc,A,B,C)
+              <td>INTEGER: Nb, Mbc, Nc <br>
+                  REAL: A(Nb,Nc),B(Nb,Mbc),C(Mbc,Nc)
+<tr><td>s/r   <td><a href="#transp">transp</a>
+              <td>Transpose a 3x3 matrix  A = B<sup>T</sup>
+              <td>TRANSP(A,B)
+              <td>REAL: A(3,3),B(3,3)
+<tr><td>s/r   <td><a href="#gmprd">gmprd</a>
+              <td>general matrix product R(N,L) = A(N,M) * B(M,L)
+	      <td>GMPRD(A,B,R,N,M,L)
+	      <td>REAL A(N*M),B(M*L),R(N*L)<br>
+	          INTEGER L,M,N
+<tr><td>s/r   <td><a href="#matmul4">matmul4</a>
+              <td>Multiply two 4x4 matrices, A=B*C
+	      <td>MATMUL4(A,B,C)
+	      <td>REAL A(4,4),B(4,4),C(4,4)
+<tr><td>s/r   <td><a href="#matmln">matmln</a>
+              <td>Multiply two nxn matrices, a = b . c
+	      <td>MATMLN(N,A,B,C)
+	      <td>INTEGER N<br>
+                  REAL A(N,N),B(N,N),C(N,N)
+<tr><td>s/r   <td><a href="#detmat">detmat</a>
+              <td>Calculate determinant DET of 3x3 matrix RMAT
+	      <td>DETMAT(RMAT,DET)
+	      <td>REAL DET,RMAT(3,3)
+<tr><td>s/r   <td><a href="#ml3mat">ml3mat</a>
+              <td>Multiply together three matrices of any size
+	          D = A.B.C
+              <td>ML3MAT(P,A,Q,B,R,C,S,D)
+              <td>REAL A(P,Q),B(Q,R),C(R,S),D(P,S)<br>
+	          INTEGER P,Q,R,S
+<tr><td>s/r   <td><a href="#inv44">inv44</a>
+              <td>4x4 matrix inversion, returns IA as inverse of A
+              <td>INV44(A,AI)
+              <td>REAL A(4,4),AI(4,4)
+<tr><td>s/r   <td><a href="#matmli">matmli</a>
+              <td>Multiply two 3x3 matrices A = BC (integer version)
+              <td>MATMLI(A,B,C)
+              <td>INTEGER A(3,3),B(3,3),C(3,3)
+<tr><td>s/r   <td><a href="#matmultrans">matmultrans</a>
+              <td>A=B*C<sup>T</sup> for 3x3 matrices
+              <td>MATMULTrans(A,B,C)
+              <td>REAL A(3,3),B(3,3),C(3,3)
+<tr><td>s/r   <td><a href="#eigen_rs_asc">eigen_rs_asc</a>
+              <td>eigenvalues and eigenvectors of real symmetric matrix
+              <td>EIGEN_RS_ASC(A, R, N, MV)
+              <td>REAL A(*), R(*) <br>
+                  INTEGER N, MV
+</table>
+<p>
+
+<a name="harwell_routines"></a><H3>d. Harwell Subroutines</H3>
+
+<p>The Harwell Subroutine Library was started at Harwell by the precursor of the
+Numerical Analysis Group at Rutherford Appleton Laboratory in 1963, to provide
+high quality numerical software to the scientists and engineers working there.
+Since then it has developed into a portable fully documented Fortran library.
+See <a href="http://www.cse.clrc.ac.uk/Activity/HSL">http://www.cse.clrc.ac.uk/Activity/HSL</a> for more details.
+
+<p>
+Some of the Harwell routines are already been distributed as part of CCP4, in
+modlib.f (ea06c, ea08c, ea09c, fa01as, fa01bs, fa01cs, fa01ds, fm02ad, mc04b)
+
+<p>The modlib header has the following comment on the conditions of use of the
+routines:
+
+<pre>
+The routines ea06c, ea08c, ea09c, fa01as, fa01bs, fa01cs, fa01ds,
+fm02ad, mc04b, (and possibly others) are from the
+Harwell Subroutine library.  The conditions on their external use,
+reproduced from the Harwell manual are:
+* due acknowledgement is made of the use of subroutines in any
+research publications resulting from their use.
+* the subroutines may be modified for use in research applications
+by external users.  The nature of such modifications should be
+indicated in writing for information to the liaison officer.  At
+no time however, shall the subroutines or modifications thereof
+become the property of the external user.
+The liaison officer for the library's external affairs is listed
+as: Mr. S. Marlow, Building 8.9, Harwell Laboratory, Didcot, 
+Oxon OX11 0RA, UK.
+</pre>
+
+<p>
+Information on some of the Harwell routines can also be found at
+<a href="http://www.netlib.org/harwell/index.html">http://www.netlib.org/harwell/index.html</a>.
+
+<p>
+<table border=1>
+<tr><th>Type <th>Name    <th>Function
+<tr><td>s/r  <td><a href="#ea06c">ea06c</a>
+             <td>Given a real MxM symmetric matrix A = {aij} this
+              routine finds all its eigenvalues (lambda)i i=1,2,.....,m  and
+              eigenvectors xj i=1,2,...,m.  i.e. finds the non-trivial
+              solutions of Ax=(lambda)x
+<tr><td>s/r  <td><a href="#ea08c">ea08c</a>
+             <td>This uses QR iteration to find the all the
+              eigenvalues and eigenvectors of a real symmetric tri-diagonal matrix
+<tr><td>s/r  <td><a href="#ea09c">ea09c</a>
+             <td>Purpose is unspecified (no comments in header)
+<tr><td>fun  <td><a href="#fa01as">fa01as</a>
+             <td>Purpose is unspecified (no comments in header)
+<tr><td>s/r  <td><a href="#fa01bs">fa01bs</a>
+             <td>Purpose is unspecified (no comments in header)
+<tr><td>s/r  <td><a href="#fa01cs">fa01cs</a>
+             <td>Purpose is unspecified (no comments in header)
+<tr><td>s/r  <td><a href="#fa01ds">fa01ds</a>
+             <td>Purpose is unspecified (no comments in header)
+<tr><td>fun  <td><a href="#fm02ad">fm02ad</a>
+             <td>Compute the inner product of two double precision real
+              vectors accumulating the result double precision, when the
+              elements of each vector are stored at some fixed displacement
+              from neighbouring elements.
+<tr><td>s/r  <td><a href="#mc04b">mc04b</a>
+             <td>Transforms a real symmetric matrix A={a(i,j)}, i,
+              j=1..IA into a tri-diagonal matrix having the same eigenvalues
+              as A using Householder's method.
+</table>
+<p>
+
+<a name="bessel"></a><H3>e. Bessel function routines</H3>
+
+The following routines calculate Bessel functions of
+the first kind, their derivatives, and their zeros.
+<p>
+Subroutine ZJVX is from Ian Tickle.
+Subroutines JDVX, JVX, GAMMA and functions MSTA1, MSTA2
+are from MJYV at <a href="http://iris-lee3.ece.uiuc.edu/~jjin/routines/routines.html">
+http://iris-lee3.ece.uiuc.edu/~jjin/routines/routines.html</a>.
+<p>
+That site states:
+<pre>
+All the programs and subroutines contained in this archive are copyrighted. However, 
+we give permission to the user who downloads these routines to incorporate any of these
+routines into his or her programs provided that the copyright is acknowledged. 
+</pre>
+
+<p>
+<table border=1>
+<tr><th>Type <th>Name    <th>Function
+<tr><td>s/r  <td><a href="#zjvx">ZJVX</a>
+             <td>Compute zero of Bessel function of 1st kind Jv(x)
+<tr><td>s/r  <td><a href="#jdvx">JDVX</a>
+             <td>Compute Bessel functions of 1st kind Jv(x) and their derivatives
+<tr><td>s/r  <td><a href="#jvx">JVX</a>
+             <td>Compute Bessel functions of 1st kind Jv(x)
+<tr><td>s/r  <td><a href="#gamma">GAMMA</a>
+             <td>Compute gamma function GA(x)
+<tr><td>fun  <td><a href="#msta1">MSTA1</a>
+             <td>Determine the starting point for backward
+              recurrence such that the magnitude of
+              Jn(x) at that point is about 10^(-MP)
+<tr><td>fun  <td><a href="#msta2">MSTA2</a>
+             <td>Determine the starting point for backward
+              recurrence such that all Jn(x) has MP
+              significant digits
+</table>
+
+<a name="miscellaneous"></a><H3>f. Miscellaneous</H3>
+
+<p>
+<table border=1>
+<tr><th>Type <th>Name    <th>Function    <th>Call using    <th>Arguments
+<tr><td>s/r  <td><a href="#ranmar">ranmar</a>
+             <td>Universal random number generator; returns a random vector
+                 RVEC(LEN)
+             <td>RANMAR(RVEC,LEN)
+             <td>INTEGER: LEN <br>
+                 REAL: RVEC(LEN)
+<tr><td>ent  <td>rmarin
+             <td>initialisation for <a href="#ranmar">ranmar</a>
+             <td>RMARIN(IJ,KL)
+             <td>INTEGER: IJ, KL (seeds for ranmar)
+<tr><td>s/r  <td><a href="#zipin">zipin</a>
+             <td>Fast binary read on unit ID into real array BUF of length N
+             <td>ZIPIN(ID,N,BUF)
+             <td>INTEGER: ID, N <br>
+                 REAL: BUF(N)
+<tr><td>s/r  <td><a href="#zipout">zipout</a>
+             <td>Fast binary write to unit ID of real array BUF length N
+             <td>ZIPOUT(ID,N,BUF)
+             <td>INTEGER: ID, N <br>
+                 REAL: BUF(N)
+</table>
+<p>
+
+<a name="blas_and_lapack"></a><H2>2. Information on BLAS and LAPACK routines</H2>
+
+<a name="lapack_introduction"></a>
+<H3>(i) Introduction</H3>
+
+<p>From version 4.2, installation of the CCP4 suite is configured by default to
+include the BLAS and LAPACK libraries, which are used by some of the programs
+(e.g. SCALA, REFMAC5, BEAST). The advantage of using these external libraries is
+their robustness and efficiency of implementation, which should give greater
+reliability and higher speed.</p>
+
+<a name="blas_descript"></a>
+<H3>(ii) BLAS = <u>B</u>asic <u>L</u>inear <u>A</u>lgebra <u>S</u>ub-programs</H3>
+<p>BLAS contains routines for vector-vector, vector-matrix and matrix-matrix operations.
+Pre-compiled optimised versions of BLAS are distributed and should be used in
+preference to the versions available from NetLib, since they should be considerably
+faster.</p>
+<p>
+The NetLib BLAS FAQ is at
+<a href="http://www.netlib.org/blas/faq.html">http://www.netlib.org/blas/faq.html</a>
+which includes a <a href="http://www.netlib.org/blas/faq.html#1.6">list of links to
+vendor BLAS libraries</a> for various systems (<i>warning</i> the list may not be
+up-to-date), and to the
+<a href="http://www.netlib.org/blas/faq.html#1.3">BLAS Quick Reference Guide</a>.</p>
+<p>
+For systems where optimised ("vendor") BLAS libraries are unavailable,
+investigation of the Automatically Tuned Linear Algebra Software project (ATLAS) is
+recommended for improved BLAS performance- see
+<a href="http://math-atlas.sourceforge.net/">http://math-atlas.sourceforge.net/</a>
+for more information. ATLAS can be also be used on systems which have a vendor
+BLAS library provided.</p>
+
+<a name="lapack_descript"></a>
+<H3>(iii) LAPACK = <u>L</u>inear <u>A</u>lgebra <u>PACK</u>age</H3>
+<p>LAPACK is built on the BLAS routines and provides routines for solving systems of
+simultaneous equations, least-squares solutions of linear systems of equations,
+eigenvalue problems and singular value problems (plus others).</p>
+<p>
+The NetLib LAPACK FAQ is at
+<a href="http://www.netlib.org/lapack/faq.html">http://www.netlib.org/lapack/faq.html</a>
+</p>
+<p>There is also a html version of the
+<a href="http://www.netlib.org/lapack/lug/lapack_lug.html">LAPACK User Guide</a>.</p>
+
+<a name="blas_and_lapack_in_ccp4"></a>
+<H3>(iv) BLAS and LAPACK in CCP4</H3>
+<p>Installation of the CCP4 suite by default includes the BLAS and LAPACK libraries.
+This section describes how this done, and may be of interest if you have problems.
+LAPACK configuration can be disabled at build time by running the main CCP4 configure
+with the <tt><b>--disable-lapack</b></tt> option, but this is not advised as some
+programs will fail to build as a result.</p>
+
+<p>Many systems carry their own version of the BLAS and/or LAPACK libraries, and
+configure will try to use these preferentially. Some examples for common systems are
+given in the table:</p>
+<table border=1>
+<tr><th>System</th>
+    <th>LAPACK and BLAS</th>
+    <th>BLAS only</th>
+    <th>See also:</th>
+</tr>
+<tr><td>OSF1 (DEC/Compaq)</td>
+    <td>libcxml,libdxml</td>
+    <td>[none known]</td>
+    <td><a href="http://www5.compaq.com/math/documentation/index.html">http://www5.compaq.com/math/documentation/index.html</a></td>
+</tr>
+<tr><td>IRIX (SGI)</td>
+    <td>libscs</td>
+    <td>libblas</td>
+    <td><a href="http://www.sgi.com/software/scsl.html">http://www.sgi.com/software/scsl.html</a></td>
+</tr>
+<tr><td>HPUX</td>
+    <td>HP mlib</td>
+    <td>libblas</td>
+    <td><a href="http://h21007.www2.hp.com/dspp/tech/tech_TechSoftwareDetailPage_IDX/1,1703,1204,00.html">http://h21007.www2.hp.com/dspp/tech/tech_TechSoftwareDetailPage_IDX/1,1703,1204,00.html</a></td>
+</tr>
+<tr><td>SUNOS</td>
+    <td>Sun Performance Library</td>
+    <td>[none known]</td>
+    <td><a href="http://docs.sun.com/db/doc/806-7995">http://docs.sun.com/db/doc/806-7995</a></td>
+</tr>
+</table>
+<p>If no system LAPACK library is found then configure will set up to build
+the `reference' version from Fortran source code originally taken from the Netlib
+archive. Source code for both BLAS and LAPACK v3.0 is included in the $CCP4/lib/lapack
+directory. Some comments:</p>
+<ol>
+<li>
+<p>The Netlib LAPACK routines will normally only be built if configure cannot find
+a system LAPACK library.</p>
+</li>
+<li>
+The NetLib BLAS routines will only be built if configure cannot detect a native
+(i.e. ``vendor'') BLAS library on the system. Vendor BLAS are used preferentially
+over the NetLib versions because they are optimised for the specific platform.</p>
+</li>
+<li>
+<p>As of CCP4 v5.0, all the versions of the routines are built (i.e. single (real),
+double precision, complex and complex*16). versions of the routines.</p>
+</li>
+<li>
+<p>If you are installing on a non-IEEE compliant machine then there is a
+small but very important change which must be made to prevent run-time crashes;
+see <a href="#installation_non_ieee">below</a>. Configure should normally make the
+change automatically, but if you encounter problems then please let us know.</p>
+</li>
+</ol>
+
+<p>Note that building of the Netlib routines can also be forced by
+specifying the <tt>--with-netlib-lapack</tt> when running configure.</p>
+
+<p>Since the configuration and build has only been tested on a limited number
+of platforms, CCP4 welcomes any feedback or information about the LAPACK libraries
+under the Suite. If you have queries or comments please e-mail then to
+<a href="mailto:ccp4@ccp4.ac.uk">ccp4@ccp4.ac.uk</a></p>
+
+<a name="installation_non_ieee"></a>
+<H3>(v) Installation issues for non-IEEE compliant machines</H3>
+<p>By default the NetLib version of the LAPACK routine ILAENV (distributed
+with CCP4) assumes an IEEE-compliant machine, which implies certain behaviour
+for NaN and "infinity arithmetic". On non-IEEE compliant machines or O/S
+the LAPACK library will compile successfully but may crash at run-time
+when ILAENV is called.</p>
+
+<p>The CCP4 distribution contains two versions of the ILAENV routine, in
+<tt>$CCP4/lib/lapack/src/</tt>. <i>ilaenv-dist.f</i> is the standard Netlib
+version of the routine, whilst <i>ilaenv-non-ieee.f</i> is the version
+modified for a non-IEEE compliant machine.</p>
+
+<p>The CCP4 configure will copy the appropriate version of the routine to
+<i>ilaenv.f</i> on installation.</p>
+
+<a name="list_of_routines"></a><H2>3. List of modlib routines:</H2>
+
+<a name="cross"></a>
+<H3>SUBROUTINE CROSS(A,B,C)</H3>
+
+<pre>
+Compute vector product A = B x C
+
+     .. Array Arguments ..
+      REAL             A(3),B(3),C(3)
+</pre>
+
+<a name="dot"></a>
+<H3>REAL FUNCTION DOT(A,B)</H3>
+<pre>
+dot product of two vectors
+
+     .. Array Arguments ..
+      REAL              A(3),B(3)
+</pre>
+
+<a name="ea06c"></a>
+<H3>SUBROUTINE EA06C(A,VALUE,VECTOR,M,IA,IV,W)</H3>
+<pre>
+C
+C**  18/03/70 LAST LIBRARY UPDATE
+C
+C       ( Calls EA08C(W,W(M1),VALUE,VECTOR,M,IV,W(M+M1))
+C       and MC04B(A,W,W(M1),M,IA,W(M+M1)) )
+C
+C       Given a real MxM symmetric matrix A = {aij} this routine
+C       finds all its eigenvalues (lambda)i i=1,2,.....,m  and
+C       eigenvectors xj i=1,2,...,m.  i.e. finds the non-trivial
+C       solutions of Ax=(lambda)x
+C
+C       The matrix is reduced to tri-diagonal form by applying
+C       Householder transformations. The eigenvalue problem for
+C       the reduced problem is then solved using the QR algorithm
+C       by calling EA08C.
+C
+C  Argument list
+C  -------------
+C
+C   IA    (I) (integer) should be set to the first dimension
+C                       of the array A, i.e. if the allocation
+C                       for the array A was specified by
+C                       DIMENSION A(100,50)
+C                       then IA would be set to 100
+C
+C   M     (I) (integer) should be set to the order m of the matrix
+C
+C   IV    (I) (integer) should be set to the first dimension
+C                       of the 2-dimensional array VECTOR
+C
+C   VECTOR(IV,M) (O) (real) 2-dimensional array, with first dimension IV,
+C                           containing the eigenvectors. The components
+C                           of the eigenvector vector(i) corresponding
+C                           to the eigenvalue (lambda)i (in VALUE(I))
+C                           are placed in VECTOR(J,I) J=1,2,...,M.
+C                           The eigenvectors are normalized so that
+C                           xT(i)x(i)=1 i=1,2,...,m.
+C
+C   VALUE(M) (O) (real)  array in which the routine puts
+C                        the eigenvalues (lambda)i, i=1,2,...,m.
+C                        These are not necessarily in any order.
+C
+C   W    (I) (real(*)) working array used by the routine for
+C                      work space. The dimension must be set
+C                      to at least 5*M.
+</pre>
+
+<a name="ea08c"></a>
+<H3>SUBROUTINE EA08C(A,B,VALUE,VEC,M,IV,W)</H3>
+<pre>
+C       (Calls EA09C(A,B,W(M+1),M,W))
+C
+C       This uses QR iteration to find the all the eigenvalues and
+C       eigenvectors of the real symmetric tri-diagonal matrix
+C       whose diagonal elements are A(i), i=1,M and off-diagonal
+C       elements are B(i),i=2,M. The eigenvalues will have unit
+C       length. The array W is used for workspace and must have
+C       dimension at least 2*M. We treat VEC as if it had
+C       dimensions (IV,M).
+C
+C       First EA09, which uses the QR algorithm, is used to find
+C       the eigenvalues; using these as shifts the QR algorithm is
+C       again applied but now using the plane rotations to generate
+C       the eigenvectors. Finally the eigenvalues are refined
+C       by taking Rayleigh quotients of the vectors.
+C
+C    Argument list
+C    -------------
+C
+C       A(M)    (I) (real)    Diagonal elements
+C
+C       B(M)    (I) (real)    Off-diagonal elements
+C
+C       IV      (I)  (integer)  should be set to the first dimen-
+C                               sion of the 2-dimensional array VEC
+C
+C       M       (I) (integer) should be set to the order m of the
+C                             matrix
+C
+C       VALUE(M) (O) (real)   Eigenvalues
+C
+C       VEC     (O) (real)    Eigenvectors. The dimensions
+C                             should be set to (IV,M).
+C
+C       W(*)    (I) (real)    Working array. The dimension must be
+C                             set to at least 2*M.
+</pre>
+
+<a name="ea09c"></a>
+<H3>SUBROUTINE EA09C(A,B,VALUE,M,OFF)</H3>
+<pre>
+C    18/03/70 LAST LIBRARY UPDATE
+</pre>
+[No info]
+
+<a name="fa01as"></a>
+<H3>FUNCTION FA01AS(I)</H3>
+
+[No info]
+
+<a name="fa01bs"></a>
+<H3>SUBROUTINE FA01BS(MAX,NRAND)</H3>
+
+[No info]
+
+<a name="fa01cs"></a>
+<H3>SUBROUTINE FA01CS(IL,IR)</H3>
+
+[No info]
+
+<a name="fa01cs"></a>
+<H3>SUBROUTINE FA01CS(IL,IR)</H3>
+
+[No info]
+
+<a name="fa01ds"></a>
+<H3>SUBROUTINE FA01DS(IL,IR)</H3>
+
+[No info]
+
+<a name="fm02ad"></a>
+<H3>DOUBLE PRECISION FUNCTION FM02AD(N,A,IA,B,IB)</H3>
+<pre>
+C     Compute the inner product of two double precision real
+C     vectors accumulating the result double precision, when the
+C     elements of each vector are stored at some fixed displacement
+C     from neighbouring elements. Given vectors A={a(j)},
+C     B={b(j)} of length N, evaluates w=a(j)b(j) summed over
+C     j=1..N. Can be used to evaluate inner products involving
+C     rows of multi-dimensional arrays.
+C     It can be used as an alternative to the assembler version,
+C     but note that it is likely to be significantly slower in execution.
+C
+C     Argument list
+C     -------------
+C
+C       N  (I) (integer) The length of the vectors (if N <= 0 FM02AD = 0)
+C
+C       A  (I) (double precision) The first vector
+C
+C       IA (I) (integer) Subscript displacement between elements of A
+C
+C       B  (I) (double precision) The second vector
+C
+C       IB (I) (integer) Subscript displacement between elements of B
+C
+C       FM02AD  the result
+</pre>
+
+<a name="icross"></a>
+<H3>SUBROUTINE ICROSS(A,B,C)</H3>
+<pre>
+C    Cross product (integer version)
+C
+C    A = B x C
+C
+C     .. Array Arguments ..
+      INTEGER           A(3),B(3),C(3)
+</pre>
+
+<a name="idot"></a>
+<H3>INTEGER FUNCTION IDOT(A,B)</H3>
+<pre>
+C      Dot product (integer version)
+C
+C      IDOT = A . B
+C
+C     .. Array Arguments ..
+      INTEGER               A(3),B(3)
+</pre>
+
+<a name="iminv3"></a>
+<H3>SUBROUTINE IMINV3(A,B,D)</H3>
+<pre>
+C     Invert a general 3x3 matrix and return determinant in D
+C     (integer version)
+C
+C     A = (B)-1
+C
+C     .. Scalar Arguments ..
+      INTEGER          D
+C     ..
+C     .. Array Arguments ..
+      INTEGER          A(3,3),B(3,3)
+</pre>
+
+<a name="matmul"></a>
+<H3>SUBROUTINE MATMUL(A,B,C)</H3>
+<pre>
+C      Multiply two 3x3 matrices
+C
+C      A = BC
+C
+C     .. Array Arguments ..
+      REAL              A(3,3),B(3,3),C(3,3)
+</pre>
+
+<a name="matmulnm"></a>
+<H3>SUBROUTINE MATMULNM(N,M,A,B,C)</H3>
+<pre>
+C      Multiply  NxM  MXN matrices
+C
+C      A = BC
+C
+C     .. Array Arguments ..
+      REAL              A(N,N),B(N,M),C(M,N)
+</pre>
+
+<a name="matvec"></a>
+<H3>SUBROUTINE MATVEC(V,A,B)</H3>
+<pre>
+C      Post-multiply a 3x3 matrix by a vector
+C
+C      V = AB
+C
+C     .. Array Arguments ..
+      REAL              A(3,3),B(3),V(3)
+</pre>
+
+<a name="matmulgen"></a>
+<H3>SUBROUTINE MATMULGEN(Nb,Mbc,Nc,A,B,C)</H3>
+<pre>
+C      Generalised matrix multiplication subroutine
+C      Multiplies a NbxMbc matrix (B) by a  MbcXNc
+C      (C) matrix, so that
+C
+C      A = BC
+C
+      IMPLICIT NONE
+C     ..
+C     .. Scalar Arguments ..
+      INTEGER           Nb,Mbc,Nc
+C     ..
+C     .. Array Arguments ..
+      REAL              A(Nb,Nc),B(Nb,Mbc),C(Mbc,Nc)
+</pre>
+
+<a name="mc04b"></a>
+<H3>SUBROUTINE MC04B(A,ALPHA,BETA,M,IA,Q)</H3>
+<pre>
+C     Transforms a real symmetric matrix A={a(i,j)}, i, j=1..IA
+C     into a tri-diagonal matrix having the same eigenvalues as A
+C     using Householder's method.
+C
+C     .. Scalar Arguments ..
+      INTEGER          IA,M
+C     ..
+C     .. Array Arguments ..
+      REAL             A(IA,1),ALPHA(1),BETA(1),Q(1)
+</pre>
+
+<a name="minvn"></a>
+<H3>SUBROUTINE MINVN(A,N,D,L,M)</H3>
+<pre>
+C---- Purpose
+C     =======
+C
+C           invert a matrix
+C
+C---- Usage
+C     ======
+C
+C           CALL MINVN(A,N,D,L,M)
+C
+C---- Description of parameters
+C     =========================
+C
+C    A - input matrix, destroyed in computation and replaced by
+C        resultant inverse.
+C
+C    N - order of matrix A
+C
+C    D - resultant determinant
+C
+C    L - work vector of length n
+C
+C    M - work vector of length n
+C
+C---- Remarks
+C     =======
+C
+C     Matrix a must be a general matrix
+C
+C---- Subroutines and function subprograms required
+C     =============================================
+C
+C           NONE
+C
+C---- Method
+C     ======
+C
+C     The standard gauss-jordan method is used. the determinant
+C     is also calculated. a determinant of zero indicates that
+C     the matrix is singular.
+C
+C
+C---- Note
+C     =====
+C
+C     If a double precision version of this routine is desired, the
+C     c in column 1 should be removed from the double precision
+C     statement which follows.
+C
+C     double precision a,d,biga,hold
+C
+C        the c must also be removed from double precision statements
+C        appearing in other routines used in conjunction with this
+C        routine.
+C
+C        The double precision version of this subroutine must also
+C        contain double precision fortran functions.  abs in statement
+C        10 must be changed to dabs.
+C
+ccc     REAL*8 D
+</pre>
+
+<a name="minv3"></a>
+<H3>SUBROUTINE MINV3(A,B,D)</H3>
+<pre>
+C     Invert a general 3x3 matrix and return determinant in D
+C
+C     A = (B)-1
+C
+C     .. Scalar Arguments ..
+      REAL            D
+C     ..
+C     .. Array Arguments ..
+      REAL            A(3,3),B(3,3)
+</pre>
+
+<a name="ranmar"></a>
+<H3>SUBROUTINE RANMAR(RVEC,LEN)</H3>
+<pre>
+C     Universal random number generator proposed by Marsaglia and Zaman
+C     in report FSU-SCRI-87-50
+C     slightly modified by F. James, 1988 to generate a vector
+C     of pseudorandom numbers RVEC of length LEN
+C     and making the COMMON block include everything needed to
+C     specify completely the state of the generator.
+C     Transcribed from CERN report DD/88/22.
+C     Rather inelegant messing about added by D. Love, Jan. 1989 to
+C     make sure initialisation always occurs.
+C     *** James says that this is the preferred generator.
+C     Gives bit-identical results on all machines with at least
+C     24-bit mantissas in the floating point representation (i.e.
+C     all common 32-bit computers. Fairly fast, satisfies very
+C     stringent tests, has very long period and makes it very
+C     simple to generate independently disjoint sequences.
+C     See also RANECU.
+C     The state of the generator may be saved/restored using the
+C     whole contents of /RASET1/.
+C     Call RANMAR to get a vector, RMARIN to initialise. 
+C     
+C  Argument list
+C  -------------
+C
+C     VREC (O)                 (REAL)   Random Vector
+C
+C     LEN  (I)              (INTEGER)   Length of random vector
+C
+C
+C  For ENTRY point RMARIN
+C  ----------------------
+C
+C     Initialisation for RANMAR.  The input values should
+C     be in the ranges: 0<=ij<=31328, 0<=kl<=30081
+C     This shows the correspondence between the simplified input seeds
+C     IJ, KL and the original Marsaglia-Zaman seeds i,j,k,l
+C     To get standard values in Marsaglia-Zaman paper,
+C     (I=12, J=34, K=56, L=78) put IJ=1802, KL=9373
+C
+C     IJ   (I)              (INTEGER)   Seed for random number generator
+C
+C     KL   (I)              (INTEGER)   Seed for random number generator
+</pre>
+
+<a name="scalev"></a>
+<H3>SUBROUTINE SCALEV(A,X,B)</H3>
+<pre>
+C     Scale vector B with scalar X and put result in A
+C
+C     .. Scalar Arguments ..
+      REAL              X
+C     ..
+C     .. Array Arguments ..
+      REAL              A(3),B(3)
+</pre>
+
+<a name="transp"></a>
+<H3>SUBROUTINE TRANSP(A,B)</H3>
+<pre>
+C---- Transpose a 3x3 matrix
+C
+C     A = BT
+C
+C     .. Array Arguments ..
+      REAL              A(3,3),B(3,3)
+</pre>
+
+<a name="unit"></a>
+<H3>SUBROUTINE UNIT(V)</H3>
+<pre>
+C    Vector V reduced to unit vector
+C
+C     .. Array Arguments ..
+      REAL            V(3)
+</pre>
+
+<a name="vdif"></a>
+<H3>SUBROUTINE VDIF(A,B,C)</H3>
+<pre>
+C      Subtract two vectors
+C
+C      A = B - C
+C
+C     .. Array Arguments ..
+      REAL            A(3),B(3),C(3)
+</pre>
+
+<a name="vset"></a>
+<H3>SUBROUTINE VSET(A,B)</H3>
+<pre>
+C      Copy a vector from B to A
+C
+C     .. Array Arguments ..
+      REAL            A(3),B(3)
+</pre>
+
+<a name="vsum"></a>
+<H3>SUBROUTINE VSUM(A,B,C)</H3>
+<pre>
+C     Add two vectors
+C
+C     A = B + C
+C
+C     .. Array Arguments ..
+      REAL            A(3),B(3),C(3)
+</pre>
+
+<a name="zipin"></a>
+<H3>SUBROUTINE ZIPIN(ID,N,BUF)</H3>
+<pre>
+C     Fast binary read on unit ID into real array BUF of length N
+C
+C     .. Scalar Arguments ..
+      INTEGER          ID,N
+C     ..
+C     .. Array Arguments ..
+      REAL             BUF(N)
+</pre>
+
+<a name="zipout"></a>
+<H3>SUBROUTINE ZIPOUT(ID,N,BUF)</H3>
+<pre>
+C     Fast binary write to unit ID of real array BUF length N
+C
+C     .. Scalar Arguments ..
+      INTEGER           ID,N
+C     ..
+C     .. Array Arguments ..
+      REAL              BUF(N)
+</pre>
+
+<a name="gmprd"></a>
+<H3>SUBROUTINE GMPRD(A,B,R,N,M,L)</H3>
+<pre>
+C---- Ssp general matrix product
+C
+C   R(N,L) = A(N,M) * B(M,L)
+C
+C     .. Scalar Arguments ..
+      INTEGER L,M,N
+C     ..
+C     .. Array Arguments ..
+      REAL A(N*M),B(M*L),R(N*L)
+</pre>
+
+<a name="matmul4"></a>
+<H3>SUBROUTINE MATMUL4(A,B,C)</H3>
+<pre>
+C     Multiply two 4x4 matrices, A=B*C
+C
+C     .. Array Arguments ..
+      REAL A(4,4),B(4,4),C(4,4)
+</pre>
+
+<a name="matmln"></a>
+<H3>subroutine matmln(n,a,b,c)</H3>
+<pre>
+C Multiply two nxn matrices
+C  a = b . c
+C
+      integer n
+      real a(n,n),b(n,n),c(n,n)
+</pre>
+
+<a name="detmat"></a>
+<H3>SUBROUTINE DETMAT(RMAT,DET)</H3>
+<pre>
+C---- Calculate determinant DET of 3x3 matrix RMAT
+C
+C
+C     .. Scalar Arguments ..
+      REAL DET
+C     ..
+C     .. Array Arguments ..
+      REAL RMAT(3,3)
+</pre>
+
+<a name="matvc4"></a>
+<H3>SUBROUTINE MATVC4(A,R,B)</H3>
+<pre>
+C Matrix x Vector
+C       A(3)  =  R(4x4) . B(3)
+C
+      REAL A(3), R(4,4), B(3)
+</pre>
+
+<a name="ml3mat"></a>
+<H3>SUBROUTINE ML3MAT(P,A,Q,B,R,C,S,D)</H3>
+<pre>
+C 26-Nov-1988       J. W. Pflugrath           Cold Spring Harbor Laboratory
+C    Edited to conform to Fortran 77.  Renamed from Multiply_3_matrices to
+C    ML3MAT
+C
+C ==============================================================================
+C
+C! to multiply three matrices
+C
+      SUBROUTINE ML3MAT
+C          ! input: 1st side of 1st matrix
+     1   (P
+C          ! input: first matrix
+     2   ,A
+C          ! input: 2nd side of 1st matrix & 1st side of 2nd matrix
+     3   ,Q
+C          ! input: second matrix
+     4   ,B
+C          ! input: 2nd side of 2nd matrix & 1st side of 3rd matrix
+     5   ,R
+C          ! input: third matrix
+     6   ,C
+C          ! input: 2nd side of 3rd matrix
+     7   ,S
+C          ! output: product matrix
+     8   ,D)
+C
+CEE Multiplies three real matrices of any dimensions.  It is not optimised
+C   for very large matrices.
+C Multiply_3_matrices
+C*** this routine is inefficient!
+C Multiply_3_matrices
+Created: 15-NOV-1985 D.J.Thomas,   MRC Laboratory of Molecular Biology,
+C                                  Hills Road, Cambridge, CB2 2QH, England
+</pre>
+
+<a name="inv44"></a>
+<H3>SUBROUTINE INV44(A,AI)</H3>
+<pre>
+C SUBROUTINE TO INVERT 4*4 MATRICES FOR CONVERSION BETWEEN
+C FRACTIONAL AND ORTHOGONAL AXES
+C PARAMETERS
+C
+C           A (I)   4*4 MATRIX TO BE INVERTED
+C          AI (O)   INVERSE MATRIX
+</pre>
+
+<a name="matmli"></a>
+<H3>SUBROUTINE MATMLI(A,B,C)</H3>
+<pre>
+C Integer matrix multiply
+      INTEGER A(3,3),B(3,3),C(3,3)
+</pre>
+
+<a name="matmultrans"></a>
+<H3>SUBROUTINE MATMULTrans(A,B,C)</H3>
+<pre>
+C  A=B*C(transpose) for 3x3 matrices
+C
+C     ..Array arguments
+      REAL A(3,3),B(3,3),C(3,3)
+</pre>
+
+<a name="imatvec"></a>
+<H3>SUBROUTINE IMATVEC(V,A,B)</H3>
+<pre>
+C---- Post-multiply a 3x3 matrix by a vector
+C
+C       V=AB
+C
+C     .. Array Arguments ..
+      INTEGER A(3,3),B(3),V(3)
+</pre>
+
+<a name="transfrm"></a>
+<H3>SUBROUTINE TRANSFRM(X,MAT)</H3>
+<pre>
+C  Transform vector X(3) by quine matrix MAT(4,4)
+C  Return transformed vector in X.
+C
+C     ..Array arguments..
+      REAL X(3),MAT(4,4)
+</pre>
+
+<a name="eigen_rs_asc"></a>
+<H3>SUBROUTINE EIGEN_RS_ASC(A, R, N, MV)</H3>
+<pre>
+
+C---- SUBROUTINE TO COMPUTE EIGENVALUES & EIGENVECTORS OF A REAL
+C---- SYMMETRIC MATRIX, FROM IBM SSP MANUAL (SEE P165).
+C---- DESCRIPTION OF PARAMETERS -
+C---- A - ORIGINAL MATRIX STORED COLUMNWISE AS UPPER TRIANGLE ONLY,
+C---- I.E. "STORAGE MODE" = 1.  EIGENVALUES ARE WRITTEN INTO DIAGONAL
+C---- ELEMENTS OF A  I.E.  A(1)  A(3)  A(6)  FOR A 3*3 MATRIX.
+C---- R - RESULTANT MATRIX OF EIGENVECTORS STORED COLUMNWISE IN SAME
+C---- ORDER AS EIGENVALUES.
+C---- N - ORDER OF MATRICES A & R.
+C---- MV = 0 TO COMPUTE EIGENVALUES & EIGENVECTORS.
+C
+      REAL        A(*), R(*)
+      INTEGER     N, MV
+
+</pre>
+
+<a name="zjvx"></a>
+<H3>SUBROUTINE ZJVX(V,IZ,BJ,DJ,X)</H3>
+<pre>
+
+C     Purpose: Compute zero of Bessel function Jv(x)
+C     Input :  V     --- Order of Jv(x)
+C              IZ    --- Index of previous zero of Jv(x)
+C              X     --- Value of previous zero of Jv(x)
+C     Output:  BJ(N) --- Jv(x) for N = 0...INT(V)
+C              DJ(N) --- J'v(x) for N = 0...INT(V)
+C              X     --- Value of next zero of Jv(x)
+
+</pre>
+
+<a name="jdvx"></a>
+<H3>SUBROUTINE JDVX(V,X,VM,BJ,DJ)</H3>
+<pre>
+
+C     Purpose: Compute Bessel functions Jv(x) and their derivatives
+C     Input :  x --- Argument of Jv(x)
+C              v --- Order of Jv(x)
+C                    ( v = n+v0, 0 <= v0 < 1, n = 0,1,2,... )
+C     Output:  BJ(n) --- Jn+v0(x)
+C              DJ(n) --- Jn+v0'(x)
+C              VM --- Highest order computed
+C     Routines called:
+C          (1) GAMMA for computing gamma function
+C          (2) MSTA1 and MSTA2 for computing the starting
+C              point for backward recurrence
+
+</pre>
+
+<a name="jvx"></a>
+<H3>SUBROUTINE JVX(V,X,VM,BJ)</H3>
+<pre>
+
+C     Purpose: Compute Bessel functions Jv(x)
+C     Input :  x --- Argument of Jv(x)
+C              v --- Order of Jv(x)
+C                    ( v = n+v0, 0 <= v0 < 1, n = 0,1,2,... )
+C     Output:  BJ(n) --- Jn+v0(x)
+C              VM --- Highest order computed
+C     Routines called:
+C          (1) GAMMA for computing gamma function
+C          (2) MSTA1 and MSTA2 for computing the starting
+C              point for backward recurrence
+
+</pre>
+
+<a name="gamma"></a>
+<H3>SUBROUTINE GAMMA(X,GA)</H3>
+<pre>
+
+C     Purpose: Compute gamma function GA(x)
+C     Input :  x  --- Argument of GA(x)
+C                     ( x is not equal to 0,-1,-2,... )
+C     Output:  GA --- GA(x)
+
+</pre>
+
+<a name="msta1"></a>
+<H3>INTEGER FUNCTION MSTA1(X,MP)</H3>
+<pre>
+
+C     Purpose: Determine the starting point for backward
+C              recurrence such that the magnitude of
+C              Jn(x) at that point is about 10^(-MP)
+C     Input :  x     --- Argument of Jn(x)
+C              MP    --- Value of magnitude
+C     Output:  MSTA1 --- Starting point
+
+</pre>
+
+<a name="msta2"></a>
+<H3>INTEGER FUNCTION MSTA2(X,N,MP)</H3>
+<pre>
+
+C     Purpose: Determine the starting point for backward
+C              recurrence such that all Jn(x) has MP
+C              significant digits
+C     Input :  x  --- Argument of Jn(x)
+C              n  --- Order of Jn(x)
+C              MP --- Significant digit
+C     Output:  MSTA2 --- Starting point
+
+</pre>
+
+<hr>
+
+</body>
+</html>

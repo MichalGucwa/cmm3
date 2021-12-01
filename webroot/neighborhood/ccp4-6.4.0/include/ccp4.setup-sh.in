@@ -1,0 +1,163 @@
+# This is CCP4 setup file for users of bash and similar shells.
+# The include/ccp4.setup-sh.in file is a template used to generate
+# the bin/ccp4.setup-sh file.  Source the latter to use CCP4.
+# You may add it to one of your shell startup files, such as ~/.bashrc:
+# . /full/path/to/ccp4/ccp4-version/bin/ccp4.setup-sh
+
+################### THIS SECTION MUST BE EDITED #####################
+
+# CCP4_MASTER is the location of the top-level directory containing ccp4-N.N.N.
+export CCP4_MASTER=/xtal
+export CCP4=$CCP4_MASTER/ccp4-6.4.0
+
+# CCP4_SCR: a per-user directory for run-time-generated scratch files.
+export CCP4_SCR=/tmp/$USER
+
+# CCP4I_TCLTK - directory containing tclsh, wish and bltwish executables
+#               for ccp4i. The CCP4 suite is distributed with Tcl/Tk 8.4.
+export CCP4I_TCLTK=$CCP4/bin
+
+### Optional - setting http proxy
+#export HTTP_PROXY wwwblah.blah.ac.uk:xxxx/blah.blah
+
+
+################### OPTIONS TO CUSTOMISE CCP4 #####################
+
+# ccp4_first_in_path=1 - prepend CCP4 directories to system PATH
+# ccp4_first_in_path=0 - append CCP4 directories to system PATH
+# Important only if non-CCP4 programs have the same names as CCP4 programs.
+ccp4_first_in_path=1
+
+# This variable is set to ensure that the logfile output from programs
+# compiled with Gfortran is in the correct order.
+export GFORTRAN_UNBUFFERED_PRECONNECTED=Y
+
+
+# CBIN: location of the executables -- must be on your path (see below)
+export CBIN=$CCP4/bin
+# CLIB: location of (binary) library files such as libccp4.a and libccp4.so
+export CLIB=$CCP4/lib
+# CCP4I_TOP: the top directory of the interface
+export CCP4I_TOP=$CCP4/share/ccp4i
+
+if test ! -d $CCP4; then
+    echo "WARNING: The directory $CCP4"
+    echo 'WARNING: (assigned to $CCP4) does not exist.'
+    echo "WARNING: The CCP4 programs will not run correctly."
+fi
+
+# check to see if $CCP4_SCR exists and if not try to make it
+test -d $CCP4_SCR || mkdir $CCP4_SCR
+test -d $CCP4_SCR || echo "Unable to assign CCP4_SCR. This will cause probs."
+
+# HARVESTHOME specifies location of harvesting files (defaults to $HOME)
+#export HARVESTHOME=$HOME
+
+# CCP4_OPEN is set to 'UNKNOWN' by default. When set to 'NEW' traditional
+# CCP4 programs treat over-writing of existing files as a fatal error.
+export CCP4_OPEN=UNKNOWN
+
+# Location of resources for xloggraph and xplot84driver.
+if test -d $CLIB/X11/app-defaults ; then
+  if test "$XUSERFILESEARCHPATH"; then
+    export XUSERFILESEARCHPATH=$CLIB/X11/app-defaults/%N:$XUSERFILESEARCHPATH
+  else
+    export XUSERFILESEARCHPATH=$CLIB/X11/app-defaults/%N:/usr/lib/X11/app-defaults
+  fi
+fi
+
+
+################### THE REST SHOULDN'T NEED EDITING #####################
+
+### dbCCP4i database handler setup ###
+
+export DBCCP4I_TOP=${CCP4}/share/dbccp4i
+
+### MOSFLM_WISH: if not set, ${CCP4I_TCLTK}/wish is used
+#export MOSFLM_WISH=${CCP4I_TCLTK}/wish
+export MOSFLM_EXEC=ipmosflm
+
+### MMCIFDIC is now defined here. cif_mmdic.lib is a binary file ===
+# so on multiple installs it need to be unique and not in $CLIBD
+
+export MMCIFDIC=$CLIB/ccp4/cif_mmdic.lib
+
+### CRANK points to location of Crank automation suite within ccp4i
+
+export CRANK=$CCP4I_TOP/crank
+
+### XIA2 setup
+if test -e $CCP4/share/xia2/setup.sh; then
+  export XIA2_ROOT=$CCP4/share/xia2
+  . $CCP4/share/xia2/setup.sh
+fi
+
+### CLIBD_MON Point to the location of the dictionary files for REFMAC5
+# They are distributed with CCP4 in $CLIBD/monomers. This env must have 
+# the trailing \ or /
+
+export CLIBD_MON=$CCP4/lib/data/monomers/
+
+### CCP4_HELPDIR: location of VMS-style help file used by (ip)mosflm:
+export CCP4_HELPDIR=$CCP4/help/            # NB trailing /
+
+# CCP4 executables and scripts live in $CBIN and $CETC respectively; put them
+# on the path in an appropriate order for scripts to be used as wrappers for
+# binaries of the same name.
+# This construct prevents the path getting longer each time ccp4.setup is run.
+for dir in ${CCP4}/etc ${CBIN} ${CCP4I_TOP}/bin ${DBCCP4I_TOP}/bin
+do
+  if [ `expr ":${PATH}:" : ".*:${dir}:"` -eq 0 ]; then
+    if test $ccp4_first_in_path -eq 1; then
+      PATH=${dir}:${PATH}
+    else
+      PATH=${PATH}:${dir}
+    fi
+  fi
+done
+
+# Optional (useful) additional environment variables
+export CHTML=$CCP4/html
+export CETC=$CCP4/etc
+export CEXAM=$CCP4/examples
+export CINCL=$CCP4/include
+export CLIBD=$CCP4/lib/data
+#export CLIBS=$CCP4/lib/libccp4
+#export CPROG=$CCP4/src
+
+# useful aliases, at least for developers
+alias ccp4='pushd $CCP4>/dev/null'
+alias xtal='pushd $CCP4_MASTER>/dev/null'
+alias cbin='pushd $CBIN>/dev/null'
+alias cetc='pushd $CETC>/dev/null'
+#alias cprog='pushd $CPROG>/dev/null'
+alias cincl='pushd $CINCL>/dev/null'
+alias clib='pushd $CLIB>/dev/null'
+alias clibd='pushd $CLIBD>/dev/null'
+#alias clibs='pushd $CLIBS>/dev/null'
+alias cbin='pushd $CBIN>/dev/null'
+alias cexam='pushd $CEXAM>/dev/null'
+alias chtml='pushd $CHTML>/dev/null'
+
+### Settings for the Laue software suite (not distributed now)
+#if test -d $CCP4_MASTER/laue ; then
+#  export MCTYPE=unix
+#  alias laue='$CCP4_MASTER/laue/cmd/laue.cmd'
+#  alias lget='$CCP4_MASTER/laue/cmd/lget.cmd'
+#  alias linkimages='$CCP4_MASTER/laue/cmd/linkimages.cmd'
+#fi
+
+# Set-up cctbx environment
+test -r $CCP4/lib/cctbx/cctbx_build/setpaths.sh && . $CCP4/lib/cctbx/cctbx_build/setpaths.sh
+
+# BALBES root configuration
+if test -d $CCP4/share/BALBES/Package; then
+  export BALBES_ROOT=$CCP4/share/BALBES/Package
+fi
+
+# Test for ARP/wARP 7.4 and source
+if test -f ${CCP4}/bin/arpwarp.source-sh; then
+   . ${CCP4}/bin/arpwarp.source-sh
+fi
+
+unset ccp4_first_in_path

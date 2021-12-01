@@ -1,0 +1,215 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+##########################################################
+#
+# AVERAGING PROCEDURE USING SOLOMON
+#
+# Script to run several cycles of density modification, in
+# this case with a flip value (solvmul) of SOLVENT_MULTIPLIER 
+# (default -1.0). This 
+# corresponds to adding the inverted solvent density to 
+# the initial map. This is similar to adding negative noise
+# to an image in order to strengthen the signal/noise ratio.
+#
+# The resolution of the map is extended from  the initial to 
+# the final value of the RESOLUTION array.  Automatic 
+# refinement over a large number of cycles is not advisable, 
+# the increase in map quality is the most important factor.
+#
+# Note that the 'final' map from each cycle is kept i.e. 
+# the ones calculated from the combined structure factors.
+# Along with the MTZ file that generated it and the solomon
+# log files are appended.
+#
+##########################################################
+
+set FCmod FCmod
+set PHICmod PHICmod
+set FWT FWT
+set PHFWT PHFWT
+if { $RUN_IN_P1 } {
+  set FFT_SPACE_GROUP P1
+  set SPACE_GROUP P1
+}
+#
+set lastcycle 0
+set currentcycle $lastcycle
+set data_file_root [SetOutputFileRoot -tmp]
+set statsfile [SetOutputFileRoot]_stats.log
+#
+#
+#
+##########################################################
+#  Calculate initial map with best phases and FOM weighted 
+#  amplitudes.
+##########################################################
+#
+set LABIN "F1 SIG1 PHI W"
+set F1 $FO
+set SIG1 $SIGFO
+set PHI $PHIIN
+set W $WIN
+set EXCLUDE_RESOLUTION 1
+set EXCLUDE_RESOLUTION_MAX $RESOLUTION(1)
+
+  CreateComScript fft fft_script
+  set status [Execute "[BinPath fft] HKLIN \"$HKLIN\" MAPOUT \"[subst $data_file_root]0.map\""  \
+               $fft_script program_status report ]
+#
+#
+for { set currentcycle 1 } { $currentcycle <= $NCYCLES } { incr currentcycle } {
+
+
+##########################################################
+#  Extend the map resolution for several cycles
+##########################################################
+#
+#
+##########################################################
+#  1) Modify the density with Solomon
+##########################################################
+
+  set SOLOMON_MAPOUT 1
+  
+  set solomon_log [subst $data_file_root][subst $currentcycle]_solomon.log
+
+  set solomon_script ""
+  CreateComScript solomon solomon_script
+
+  set status [Execute "[BinPath solomon] MAPIN \"[subst $data_file_root][subst $lastcycle].map\"  \
+                    MAPOUT \"[subst $data_file_root][subst $currentcycle]_solomon.map\""  \
+                    $solomon_script program_status report \
+			-copy_log $solomon_log ]
+ 
+  ReadFile $solomon_log solomon_text
+  set SOLVENT_DENSITY [ExtractFromText "$solomon_text" "solvdens:" 0 2]
+  DeleteFile $solomon_log
+ 
+##########################################################
+#  2) generate sfs and phases from this modified map
+##########################################################
+
+  set sfall_log [subst $data_file_root][subst $currentcycle]_sfall.log
+ 
+ 
+#  set SFALL_LABIN_LIST "FP SIGFP F0 F1 F2 F3 F4 F5"
+  set LABIN "FP SIGFP F0 F1"
+  set FP $FO
+  set SIGFP $SIGFO
+  set F0 $PHIIN
+  set F1 $WIN
+  set LABOUT "FC PHIC"
+  set ALLIN 1
+  set FC $FCmod
+  set PHIC $PHICmod
+  set TITLE "Sfall solmon cycle $currentcycle"
+  set SFALL_RESOLUTION 1
+  set RESOLUTION_MAX $RESOLUTION($currentcycle)
+  set RESOLUTION_MIN $EXCLUDE_RESOLUTION_MIN
+  set RSCB 1
+  set RSCB_MIN $RESOLUTION($currentcycle)
+  set RSCB_MAX 6.0
+  set SFALL_BINS 40
+  set SFALL_MODE  SFCALC
+  set SFALL_SFCALC_IN MAPIN
+  set SFALL_SFCALC_HKLIN 1
+
+  set sfall_script ""
+  CreateComScript sfall sfall_script
+  set sfall_mtz [GetTmpFileName -ext mtz]
+
+  set status [ Execute "[BinPath sfall] HKLIN \"$HKLIN\" \
+                  MAPIN \"[subst $data_file_root][subst $currentcycle]_solomon.map\" \
+                  HKLOUT \"$sfall_mtz\" " \
+                  $sfall_script program_status report \
+		  -copy_log $sfall_log ]
+#
+# put information to stats file
+#
+
+  ReadFile $sfall_log sfall_text
+  set reliability [ExtractFromText "$sfall_text" "Overall Reliability" 0 all]
+  DeleteFile $sfall_log
+
+  WriteFile $statsfile "Cycle $currentcycle    $reliability"
+  
+##########################################################
+#  3) combine phases
+##########################################################
+#
+
+  set LABIN "FP SIGFP PHIBP WP FC PHIC"
+  set FP $FO
+  set SIGFP $SIGFO
+  set PHIBP $PHIIN
+  set WP $WIN
+  set FC $FCmod
+  set PHIC $PHICmod
+  set LABOUT "PHCMB WCMB FWT PHFWT"
+  set PHCMB PHCMB1
+  set WCMB FOMCMB1
+  set FWT FWT
+  set PHFWT PHFWT
+  set TITLE "sigmaa solmon cycle $currentcycle"
+  set RANGES_NBIN 10
+  set RANGES_MON 1000
+  set SIGMAA_ERROR 1
+  set SIGMAA_RESOLUTION 1
+  set RESOLUTION_MAX $RESOLUTION($currentcycle)
+  set COMBINE_PART 1
+  set COMBINE_PARTS 1
+
+  set TMPMTZ [GetTmpFileName -ext mtz]
+
+  set sigmaa_script ""
+  CreateComScript sigmaa sigmaa_script
+  set status [ Execute "[BinPath sigmaa] HKLIN \"$sfall_mtz\" \
+                  HKLOUT \"$TMPMTZ\" " \
+                  $sigmaa_script program_status report ]
+#
+##########################################################
+#  4) recalculate map.
+##########################################################
+#
+# delete last map 
+  DeleteFile [subst $data_file_root]$lastcycle.map
+  DeleteFile [subst $data_file_root][subst $currentcycle]_solomon.map
+
+  set TITLE "Map for Solomon cycle $currentcycle Resolution $RESOLUTION($currentcycle) $HKLIN"
+  set LABIN "F1 SIG1 PHI"
+  set F1 $FWT
+  set SIG1 $FWT
+  set PHI $PHFWT
+  set EXCLUDE_RESOLUTION 1
+  set EXCLUDE_RESOLUTION_MAX $RESOLUTION($currentcycle)
+
+  set fft_script ""
+  CreateComScript fft fft_script
+  set status [Execute "[BinPath fft] HKLIN  \"$TMPMTZ\" \
+		 MAPOUT \"[subst $data_file_root]$currentcycle.map\""  \
+               $fft_script program_status report ]
+#
+#
+  incr lastcycle
+#
+#
+ } 
+#
+# Since we are out of the lopp the counters have been incremented and
+# the last created MTZ file has $lastcycle in its name
+
+   MoveFile $TMPMTZ $HKLOUT
+
+   AddOutputFile $statsfile PROJECT
+
+#===================================================================
+# Create maps for input and output density
+
+  if $IFMAPOUT { source [SearchPath TOP scripts solomon_maps.script] }

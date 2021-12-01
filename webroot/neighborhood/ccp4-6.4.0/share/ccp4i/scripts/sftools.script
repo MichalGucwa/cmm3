@@ -1,0 +1,35 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#===========================================================================
+#
+# sftools.script
+#
+#===========================================================================
+
+# Generate Dano option requires special treatment
+# because the script needs to contain special characters e.g. double quotes
+# and trailing minus signs which cannot be handled by CreateComScript
+# as of version 1.3.1
+if { $SF_ACTION == "GETDANO" } {
+  set sftools_script [GetTmpFileName -ext com]
+  WriteFile $sftools_script "mode batch
+read \"$HKLIN\" mtz
+CALC D COL \"$DANO\" = COL \"$FPLUS\" COL \"$FMINUS\" -
+CALC Q COL \"$SIGDANO\" = COL \"$SIGFPLUS\" 2 ** COL \"$SIGFMINUS\" 2 ** + 0.5 **
+select all
+write \"$HKLOUT\" mtz
+EXIT
+YES\n"
+} else {
+  # For other actions create script in the conventional way
+  CreateComScript sftools sftools_script -nocontinue
+}
+
+set status [Execute [BinPath sftools] $sftools_script program_status report]

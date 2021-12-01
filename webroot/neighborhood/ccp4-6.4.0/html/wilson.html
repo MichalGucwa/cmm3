@@ -1,0 +1,249 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+   <title>CCP4 Program Suite</title>
+   <meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+</head>
+<body>
+
+<!-- ::INDEX_INFO::WILSON::Supported::Data Processing and Reduction::Wilson plot, absolute scale and temperature factor:::::::: -->
+
+<h1>WILSON (CCP4: Supported Program)</h1>
+
+<h2>NAME</h2>
+<p><b>wilson</b>
+- Wilson plot, absolute scale and temperature factor</p>
+
+<h2>SYNOPSIS</h2>
+
+<p><b>wilson hklin</b> <i>input.mtz</i><br />
+[<a href="#keywords">Keyworded input</a>]</p>
+
+<h2><a name="description"></a>DESCRIPTION</h2>
+
+<p>This program reads a file of amplitudes (or of intensities), and performs a
+Wilson plot of the observed intensities against resolution to determine an
+absolute scale and temperature factor.</p>
+
+<p>If the atoms are randomly distributed in the cell, then</p>
+
+<pre>
+  &lt;f**2&gt; = Scale * &lt;Fobs**2&gt; * exp (-2B (sin theta/lambda)**2)
+</pre>
+
+<p>where &lt;f**2&gt; is the mean squared atomic form factor summed over
+all atoms in the unit cell. Thus a plot of ln(&lt;f**2&gt;/&lt;Fobs**2&gt;)
+against 2(sin theta/lambda)**2 will have slope -B and an intercept Scale.
+The program derives Scale and B by a least squares fit.</p>
+
+<p>There may be a problem in evaluating &lt;Fobs**2&gt; if all the weak
+data have been systematically omitted (which should NOT be the case for
+data measured in any proper manner). If weak reflections are missing from
+the data, use the WILSON ALL option. The program then estimates the expected
+number of reflections in each resolution shell and then calculates &lt;Fobs**2&gt;
+by dividing by the number of predicted reflections. The program also produces a
+log graph of the numbers of observed and missing reflections against resolution,
+and will work with either amplitudes or with intensities directly depending upon
+which labels are specified in the <a href="#labin">LABIN</a> keyword.</p>
+
+<p>Note that the scale determined by this procedure is very approximate,
+unless very high resolution data are available. See also the determination
+done by `<tt>dm</tt>'.</p>
+
+<h2><a name="keywords"></a>KEYWORDED INPUT</h2>
+
+<p>The available keywords are:</p>
+<blockquote>
+<a href="#contents"><b>CONTENTS</b></a>,
+<a href="#end"><b>END</b></a>,
+<a href="#header"><b>HEADER</b></a>,
+<a href="#labin"><b>LABIN</b></a>,
+<a href="#nresidue"><b>NRESIDUE</b></a>,
+<a href="#ranges"><b>RANGES</b></a>,
+<a href="#resolution"><b>RESOLUTION</b></a>,
+<a href="#rscale"><b>RSCALE</b></a>,
+<a href="#symmetry"><b>SYMMETRY</b></a>,
+<a href="#title"><b>TITLE</b></a>,
+<a href="#vpat"><b>VPAT</b></a>,
+<a href="#wilson"><b>WILSON</b></a>.
+</blockquote>
+
+<p><em>N.B.</em>, one of CONTENTS or NRESIDUES is compulsory.</p>
+
+<h3><a name="title"></a>TITLE &lt;title&gt;</h3>
+
+<p>Specify the TITLE to write to the log file.</p>
+
+<h3><a name="ranges"></a>RANGES &lt;Nbin&gt; | &lt;Range&gt;</h3>
+
+<p>&lt;Nbin&gt; is number of resolution bins over the resolution range
+of the Wilson Plot. &lt;Range&gt; is the width of ranges on 4sin**2 theta/lambda**2
+and is an alternative to &lt;Nbin&gt;. The resolution range of the Wilson
+PLot is defined by <a href="#rscale">RSCALE</a>. The default if this card is absent
+is &lt;Nbin&gt;=30.</p>
+
+<h3><a name="resolution"></a>RESOLUTION &lt;Dmin&gt; &lt;Dmax&gt;</h3>
+
+<p>Resolution limits, either 4(sin theta/lambda)**2 or d in Angstrom (either
+order). Reflections outside these limits will be excluded from all analysis
+and omitted on output. Defaults are taken from the range of data in the
+input file (<em>i.e.</em> all data are included).</p>
+
+<h3><a name="rscale"></a>RSCALE &lt;Dmin&gt; &lt;Dmax&gt;</h3>
+
+<p>Resolution limits for scaling, specified as for <a href="#resolution">RESOLUTION</a>. This option
+allows you to exclude low resolution reflections from the Wilson plot:
+it is probably a good idea to include only high resolution data (beyond
+3&Aring;, if you have any data there) in the Wilson plot. This is because the
+assumptions made in determining the Wilson statistics are not valid for
+the low resolution reflections. The default for the high resolution is the
+same as that for the RESOLUTION card. The default low resolution is 4.0&Aring;
+if the high resolution limit is less than 3.5&Aring;.</p>
+
+<h3><a name="wilson"></a>WILSON OBSERVED | ALL</h3>
+
+<blockquote>
+<dl>
+<dt><a name="wilson_observed"></a>OBSERVED</dt>
+
+<dd>use observed reflection count to determine average intensity (default).
+This is the normal option.</dd>
+
+<dt><a name="wilson_all"></a>ALL</dt>
+
+<dd>use total number of possible reflections to determine average intensity
+(<em>i.e.</em> assume missing data are all zero). THIS IS NOT NORMALLY CORRECT.</dd>
+</dl>
+</blockquote>
+
+<h3><a name="contents"></a>CONTENTS &lt;element&gt; &lt;natoms&gt; ...</h3>
+
+<p>&lt;element&gt; is an element name (including hydrogen) for which there
+are &lt;atoms&gt; atoms in the asymmetric unit, <em>e.g.</em></p>
+
+<pre>  CONTENTS  H 746 C  454  N 115    O 139   S 12  ! Must include hydrogens
+</pre>
+
+<p>NOTE the program <a href="rwcontents.html">RWCONTENTS</a> reads a PDB file and finds out how many
+Carbons, <em>etc</em>. there are in the file, and gives an estimate of the number
+of hydrogens.</p>
+
+<h3><a name="nresidue"></a>NRESIDUE &lt;Nres&gt;</h3>
+
+<p>&lt;Nres&gt; is the number of residues expected in the asymmetric unit.
+A very approximate atom composition is calculated using:</p>
+
+<pre>   mean mass of an amino acid = 110
+   add on one ordered water per amino acid = ca. 128
+</pre>
+
+<p>This is then taken as 5 C + 1.35 N + 1.5 O + 8 H /residue as number of atoms
+in asymmetric unit.</p>
+
+<h3><a name="vpat"></a>VPAT &lt;vpat&gt;</h3>
+
+<p>&lt;vpat&gt; is the volume per atom, default 10.</p>
+
+<h3><a name="header"></a>HEADER [NONE | BRIEF | HISTORY | ALL] [NOBATCH
+| BATCH | ORIENTATION]</h3>
+
+<p>Controls printout from reading file and batch headers.</p>
+
+<ol type="a">
+<li>file header printing:
+<blockquote>
+<dl>
+<dt><a name="header_none"></a>NONE</dt>
+
+<dd>no header printed</dd>
+
+<dt><a name="header_brief"></a>BRIEF</dt>
+
+<dd>brief header (default)</dd>
+
+<dt><a name="header_history"></a>HISTORY</dt>
+
+<dd>brief + history</dd>
+
+<dt><a name="header_all"></a>ALL</dt>
+
+<dd>full header printed</dd>
+</dl>
+</blockquote></li>
+<li>batch header printing:
+<blockquote>
+<dl>
+<dt><a name="header_nobatch"></a>NOBATCH</dt>
+
+<dd>no batch header printed</dd>
+
+<dt><a name="header_batch"></a>BATCH</dt>
+
+<dd>batch titles printed (default)</dd>
+
+<dt><a name="header_orientation"></a>ORIENTATION</dt>
+
+<dd>batch orientation data also printed</dd>
+</dl>
+</blockquote></li>
+</ol>
+
+<h3><a name="symmetry"></a>SYMMETRY &lt;space group&gt;</h3>
+
+<p>The default is to use the symmetry from the input HKLIN file. Normally
+OMIT this command.</p>
+
+<h3><a name="labin"></a>LABIN &lt;program label&gt;=&lt;file label&gt;
+.....</h3>
+
+<p>Column assignments for the program columns.</p>
+
+<blockquote>
+<dl>
+<dt>FP</dt>
+
+<dd>amplitude</dd>
+
+<dt>SIGFP</dt>
+
+<dd>standard deviation of amplitude</dd>
+
+<dt>IP</dt>
+
+<dd>intensity</dd>
+
+<dt>SIGIP</dt>
+
+<dd>standard deviation of intensity</dd>
+</dl>
+</blockquote>
+
+<p>Note that the FP/IP labels are mutually exclusive - you specify if the
+program uses either amplitudes or intensities, but not both.</p>
+
+<h3><a name="end"></a>END</h3>
+
+<p>Terminate input</p>
+
+<h2>SEE ALSO</h2>
+
+<p><a href="dm.html">dm</a>, rwcontents (1), <a href="xloggraph.html">xloggraph</a>.</p>
+
+<h2>AUTHORS</h2>
+
+<p>Eleanor Dodson, Phil Evans</p>
+
+<h2><a name="examples"></a>EXAMPLE</h2>
+
+<pre>wilson  hklin u1afobs  &lt;&lt;EOF-wil
+title U1A native, Weis (3/91), 2.5A, pass 3.2
+wilson
+resolution  20 2.4
+rscale      4.5 2.4
+nresidues   190
+labin  FP=FP SIGFP=SIGFP
+EOF-wil
+</pre>
+
+</body>
+</html>

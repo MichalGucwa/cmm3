@@ -1,0 +1,21 @@
+#!/bin/sh
+#
+# Rotation search (full) for toxd using an ensemble of two models.
+# The two models are 1BIK.pdb and the B chain of 1D0D.pdb
+# The models must be aligned to each other:
+#   here 1BIK has been aligned to the B chain of 1D0D.pdb
+#
+# This test job happens to find the right orientation by luck, but the 
+# sampling of orientations is much too coarse.  The program will provide
+# a sensible default based on size and resolution, which would be 5 degrees
+# in this case.
+#
+beast HKLIN $CEXAM/toxd/toxd.mtz << eof
+LABIN F=FTOXD3
+MOLECULE mol1 1.0
+MODEL mol1 $CEXAM/data/1D0D_B.pdb IDENT 0.364
+MODEL mol1 $CEXAM/data/1BIK_2_1D0D_B.pdb IDENT 0.377
+SEARCH mol1 ROTATE FULL 8.
+BEST 20
+END
+eof

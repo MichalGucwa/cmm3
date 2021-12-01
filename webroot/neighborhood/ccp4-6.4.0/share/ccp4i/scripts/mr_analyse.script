@@ -1,0 +1,106 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#===========================================================================
+#
+# patterson.script
+#
+#===========================================================================
+
+# Source file with utility procedures
+  source [SearchPath TOP src CCP4_utils.tcl]
+  source [SearchPath TOP utils map_utils.tcl]
+# Read the crystal parameters files
+  ReadSymops [FileJoin [GetEnvPath CLIBD] symop.lib]
+  ReadCrystalData [SearchPath TOP etc crystal.lib]
+
+  CreateComScript  fft patterson_script
+
+  set status [ Execute "[BinPath fft] HKLIN \"$HKLIN\" MAPOUT \"$MAPOUT\""  \
+   $patterson_script program_status report]
+
+
+  set PEAK_FILE [SetOutputFileRoot]_peaks.pdb
+  set XYZFRC [SetOutputFileRoot]_peaks.ha
+
+  CreateComScript peakmax peaks_script
+  set cmd "[BinPath peakmax]"
+  append cmd " MAPIN \"$MAPOUT\""
+  append cmd " XYZOUT \"$PEAK_FILE\""
+  append cmd " XYZFRC \"$XYZFRC\""
+  if { $OUTPUT_XML } { 
+    append cmd " XMLFILE \"$XMLFILE\"" 
+  }
+  set status [Execute $cmd $peaks_script program_status report ]
+
+  AddOutputFile $PEAK_FILE PROJECT $XYZFRC PROJECT
+
+  if { $BANALYSIS } {
+#
+#  Run Wilson to determine B value for the exptal data 
+
+    set bdata ""
+    set bmodel ""
+
+# Run RWCONTENTS if required
+
+    if { $CONTENTS_MODE == "PDB" } {
+# use the GetPDBContents procedure in pdb_utils.tcl to get contents of PDB file
+      source [FileJoin [GetEnvPath CCP4I_TOP] utils pdb_utils.tcl]
+      GetPDBContents $CONTENTS_PDB nres contents heavy_atoms
+      set N_CONTENTS 0
+      foreach element $contents {
+        incr N_CONTENTS
+        set CONTENTS_ATOM_TYPE($N_CONTENTS) [lindex $element 0]
+        set CONTENTS_ATOM_COUNT($N_CONTENTS) [lindex $element 1]
+      }
+    }
+
+    set LABIN "FP SIGFP"
+    set FP $F1
+    set SIGFP $SIG1
+    set EXCLUDE_RESOLUTION 0
+
+    set tmplog [GetTmpFileName -ext log]
+
+    CreateComScript wilson wilson_script
+
+    set status [Execute "[BinPath wilson] HKLIN \"$HKLIN\"" $wilson_script \
+		program_status report -copy_log $tmplog]
+
+    if { [ReadFile $tmplog tmptext] } {
+      set bdata [ExtractFromText $tmptext "Least squares straight line gives" 0 7 ] }
+
+    DeleteFile $tmplog
+
+#Run baverage to get the B value for the model data
+
+    CreateComScript baverage baverage_script
+
+    set status [Execute "[BinPath baverage] xyzin \"$XYZIN\"" $baverage_script \
+                program_status report -copy_log $tmplog]
+
+
+    if { [ReadFile $tmplog tmptext] } {
+      set bmodel [ExtractFromText $tmptext "AVERAGE B VALUE FOR ALL ATOMS" 0 6 ] }
+
+    DeleteFile $tmplog
+
+    if { ![catch {set badd [expr $bdata - $bmodel]}] } {
+
+    WriteToLog "Average B value for experimental data = $bdata
+Average B value for model = $bmodel
+
+Running aMoRe: set the Tabling parameter BADD 
+(the amount to add to the Bvalue) to $badd"
+
+
+    }
+
+  }

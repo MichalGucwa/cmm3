@@ -1,0 +1,239 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+# TCL script file to run f2mtz to import reflection file to CCP4
+# If FORMAT is MTZ no conversion necessary
+# If FORMAT is MTZNA4 then will run na4tomtz
+# If FORMAT is CIF then will run cif2mtz 
+# Else will run f2mtz
+# If RUN_UNIQUE > 0 then will run a version of uniqueify
+
+# Source pdb_utils for harvest handling & move to project directory 
+# if we are going to dump harvest file to current directory 
+  source [SearchPath TOP utils pdb_utils.tcl ] 
+  if { $RUN_TRUNCATE && [StringSame $HARVEST_MODE  CURRENTDIR ] } { 
+	ChangeDirectory [GetDefaultDirPath]  }
+
+if { $FORMAT == "MTZ" } {
+
+# There is only one option for input in MTZ and that is to
+# run the Uniqueify procedure
+
+  set RUN_UNIQUE 1
+
+}
+
+
+if { $FORMAT ==  "TNT" && $TNT_INPUT_FILE != "" } {
+
+# Read the two TNT files and append a freeRflag column 
+# Merge the two files into tmptnt
+
+  OpenFile [set tmptnt [GetTmpFileName -ext tnt]] fo
+
+  set flag 1.0
+  foreach file [list $HKL_INPUT_FILE $TNT_INPUT_FILE] {
+    if { [OpenFile $file f r]  <= 0 } {
+      TerminateScript 0 -report "Can not open file $file"
+    }
+
+# Do we need to skip any lines at top of file?  
+# Don't bother writing them to temporary file
+
+    if { $SKIPLINE > 0 } {
+      for { set n  1 }  { $n <= $SKIPLINE } { incr n } {
+        gets $f line
+      }
+    }
+
+    while { [gets $f line] >= 0 } {
+      append line "     " $flag
+      puts $fo $line
+    }
+    CloseFile $f
+    set flag 0.0
+  }
+  CloseFile $fo
+  set SKIPLINE 0
+  set HKL_INPUT_FILE $tmptnt
+}
+
+#=====================================================================
+#
+# Run F2MTZ
+#
+#=====================================================================
+
+if { $FORMAT ==  "MTZ" } {
+
+  # Make a temporary copy of the input file
+  set tmpmtz [GetTmpFileName -ext mtz ]
+  CopyFile $MTZ_INPUT_FILE $tmpmtz
+
+} elseif { $FORMAT ==  "MTZNA4" } {
+
+  set tmpmtz [GetTmpFileName -ext mtz ]
+
+  set status [Execute "[BinPath na4tomtz] HKLIN \"$HKL_INPUT_FILE\" \
+                 HKLOUT \"$tmpmtz\"" {} program_status report ]
+
+# Read the columns from the ascii file and see if any are FreeR
+
+  set FREER_MODE 0
+
+  if { [ReadFile $HKL_INPUT_FILE mtzfil -split] } {
+    set n 0
+    while { ![regexp MTZENDOFHEADERS [lindex $mtzfil $n] ] } {
+      if { [regexp ^COLUMN [lindex $mtzfil $n] ] } {
+        if { [lindex [lindex $mtzfil $n] 2] == "I" && \
+             [regexp -nocase free [lindex [lindex $mtzfil $n] 1] ] } {
+          set LABIN_FREER [lindex [lindex $mtzfil $n] 1]
+          set FREER_MODE 1
+          WriteToLog "Using existing FreeR column from file: $LABIN_FREER"
+        }
+      }
+      incr n
+    }
+  }
+  if { !$FREER_MODE } { 
+    WriteToLog "No FreeR column found in file. Will be added automatically" }
+
+} elseif { $FORMAT ==  "CIF" } {
+
+  set tmpmtz [GetTmpFileName -ext mtz ]
+
+  CreateComScript cif2mtz cif2mtz_script
+
+  set status [Execute "[BinPath cif2mtz] HKLIN \"$CIF_INPUT_FILE\" HKLOUT \"$tmpmtz\"" \
+                 $cif2mtz_script program_status report ]
+
+} else {
+
+  set tmpmtz [GetTmpFileName -ext mtz ]
+
+  CreateComScript f2mtz f2mtz_script
+
+  set status [Execute "[BinPath f2mtz] HKLIN \"$HKL_INPUT_FILE\" HKLOUT \"$tmpmtz\"" \
+                 $f2mtz_script program_status report ]
+
+# We have just created the MTZ file with the FreeR label possibly
+# FreeRflag
+
+  for { set n 1 } { $n <= $NCOL } { incr n } { 
+    if [regexp -nocase free $COLUMN_NAME($n)] {
+      set LABIN_FREER $COLUMN_NAME($n)
+    }
+  }
+
+}
+
+#=====================================================================
+#
+#  Run Truncate to convert I's to F's
+#
+#=====================================================================
+
+  if { $RUN_TRUNCATE && $IMPORT_TRUNCATE_PROG == "TRUNCATE" } {
+    set INPUT_DATA ""
+
+    set truncatemtz [GetTmpFileName -ext mtz ]
+    CreateComScript truncate truncate_script
+    set cmd "[BinPath truncate] HKLIN \"$tmpmtz\" HKLOUT \"$truncatemtz\""
+    set status [Execute $cmd $truncate_script program_status report]
+
+
+# Truncate does not carry over all input columns so
+# Run CAD to merge the Is and SIGI's back into the input file 
+
+  set mergemtz [GetTmpFileName -ext mtz ]
+
+  WriteComFile merge_script \
+"LABIN FILE 1 ALL
+LABIN FILE 2 E1=F E2=SIGF
+LABOUT FILE 2 E1=F E2=SIGF
+CTYPIN FILE 2 E1=F E2=Q
+END\n"
+
+  set status [Execute "[BinPath cad] HKLIN1 \"$tmpmtz\" HKLIN2 \"$truncatemtz\" HKLOUT \"$mergemtz\"" \
+                 $merge_script program_status report ]
+
+  set tmpmtz $mergemtz
+
+  HandleHarvestFile $HARVEST_MODE $HARVEST_PNAME $HARVEST_DNAME truncate
+
+  }
+  
+#=====================================================================
+#
+#  Run Ctruncate to convert I's to F's
+#
+#=====================================================================
+
+  if { $RUN_TRUNCATE && $IMPORT_TRUNCATE_PROG == "CTRUNCATE" } {
+      set INPUT_DATA ""
+    
+      set truncatemtz [GetTmpFileName -ext mtz ]
+      CreateComScript ctruncate ctruncate_script
+      set cmd "[BinPath ctruncate] -hklin \"$tmpmtz\" -hklout \"$truncatemtz\""
+      append cmd " -colin \"/*/*/\\\[$IMEANIN,$SIGIMEANIN\\\]\""
+      if { $CONTENTS_NRES != "" } {
+          append cmd " -nres $CONTENTS_NRES "  
+      }
+        
+      set status [Execute $cmd $ctruncate_script program_status report  ]
+
+      # Copy the output mtz from Ctruncate to the tmpmtz variable so that it will become 
+      # HKLOUT. Note that ctruncate carries over the I/SIGI columns by default.
+
+      set tmpmtz $truncatemtz
+  }
+
+#=====================================================================
+#
+#  Run Uniquefy
+#
+#=====================================================================
+
+if { $RUN_UNIQUE <= 0 } { 
+
+  MoveFile $tmpmtz $HKLOUT
+
+} else {
+
+  source [SearchPath TOP utils phasing_utils.tcl ]
+  set cmd "Uniqueify \"$tmpmtz\" \"$HKLOUT\""
+  if { [IfSet $RESOLUTION_MAX] } { append cmd " -extend $RESOLUTION_MAX"}
+  switch $FREER_MODE \
+  1 {
+    append cmd " -keep $LABIN_FREER"
+  } 3  {
+    append cmd " -copy $IMPORT_FREER_MTZ $IMPORT_FREER_LABIN"
+  } 2 {
+    append cmd " -fraction $FREER_FRACTION"
+  }
+  if { [IfSet $INCL_SYS_ABS] } {
+    append cmd " -sysa"
+  }
+  eval "$cmd"
+}
+
+if $CHECKHKL {
+
+  WriteComFile sftools_script  \
+"MODE BATCH
+READ \"$HKLOUT\" mtz
+CHECKHKL CCP4
+SELECT PHAERR
+LIST REFLECTIONS
+EXIT
+YES"
+
+  set status [ Execute [BInPath sftools] $sftools_script program_status report ]
+
+}

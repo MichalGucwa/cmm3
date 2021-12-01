@@ -1,0 +1,109 @@
+#!/usr/bin/env ccp4-python
+#
+#     Copyright (C) 2005 Ronan Keegan 
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Application.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+
+# Master executable for running MrBUMP. To be placed in the CCP4 bin directory or else in the users
+# local CCP4 folder.
+# Ronan Keegan 05/05/05
+
+# setup the environment
+
+import os, sys, string, time
+import shutil
+import urllib
+
+# Test for environment variables
+
+if not "CCP4" in sorted(os.environ.keys()):
+    raise RuntimeError('CCP4 not found')
+if not "http_proxy" in sorted(os.environ.keys()):
+    sys.stdout.write("http_proxy not specified in environemnt\n")
+
+# Output OS and Python version info for debugging
+#sys.stdout.write("\n")
+#sys.stdout.write("Operating System: %s\n" % sys.platform)
+#sys.stdout.write("Python Version:\n%s\n" % sys.version)
+#sys.stdout.write("\n")
+
+# Update the python path with the mrbump folders
+if os.path.isdir(os.path.join(os.environ["CCP4"], "share", "mrbump")):
+   mrbump = os.path.join(os.environ["CCP4"], "share", "mrbump") 
+elif os.path.isdir(os.path.join(os.environ["MRBUMP"], "share", "mrbump")):
+   mrbump = os.path.join(os.environ["MRBUMP"], "share", "mrbump") 
+else:
+    sys.stdout.write("Error: MrBUMP installation not found\n")
+    sys.stdout.write("\n")
+
+mrbump_incl = os.path.join(mrbump, "include")
+mrbump_data = os.path.join(mrbump, "data")
+
+# Set the envionment deubg flag and any python specific variables
+os.environ['MRBUMP_CLUSTBIN'] = os.path.join(mrbump_incl, "cluster")
+os.environ['MRBUMP_DEBUG'] = "False"
+os.environ['MRBUMP_CLUSTER'] = "False"
+os.environ['PYTHONUNBUFFERED'] = "True"
+os.environ["GFORTRAN_UNBUFFERED_ALL"] = "Y"
+
+if 'CCP4_BIN' not in os.environ:
+   os.environ['CCP4_BIN'] = os.path.join(os.environ['CCP4'], "bin")
+#os.environ['PATH'] = os.environ["PATH"] + ":" + os.path.join(mrbump_incl, "dbccp4i", "bin")
+#os.environ['DBCCP4I_TOP'] = os.path.join(mrbump_incl, "dbccp4i")
+
+# Import the MRBUMP classes
+sys.path.append(os.path.join(mrbump_incl, 'dev'))
+sys.path.append(os.path.join(mrbump_incl, 'file_info'))
+sys.path.append(os.path.join(mrbump_incl, 'modelling'))
+sys.path.append(os.path.join(mrbump_incl, 'mr'))
+sys.path.append(os.path.join(mrbump_incl, 'output'))
+sys.path.append(os.path.join(mrbump_incl, 'seq_align'))
+sys.path.append(os.path.join(mrbump_incl, 'ccp4'))
+sys.path.append(os.path.join(mrbump_incl, 'structures'))
+sys.path.append(os.path.join(mrbump_incl, 'tools'))
+sys.path.append(os.path.join(mrbump_incl, 'initialisation'))
+sys.path.append(os.path.join(mrbump_incl, 'building'))
+sys.path.append(os.path.join(mrbump_incl, 'cluster'))
+sys.path.append(os.path.join(mrbump_incl, 'dispatchers'))
+sys.path.append(os.path.join(os.environ['DBCCP4I_TOP']))
+sys.path.append(os.path.join(os.environ['DBCCP4I_TOP'], 'dbccp4i'))
+sys.path.append(os.path.join(os.environ['DBCCP4I_TOP'], 'ClientAPI'))
+
+# Import the MRBUMP classes
+import MRBUMP_initialise
+import MRBUMP_master
+import Matches, MRBUMP_target_info
+
+# Call the inialisation class
+init=MRBUMP_initialise.Initialise()
+
+# Initialise the mstat and target_info structures
+mstat=Matches.Match_struct()
+target_info=MRBUMP_target_info.TargetInfo()
+
+# Set the environment variables
+init.setMRBUMP(mrbump)
+init.setMRBUMP_INCL(mrbump_incl)
+init.setMRBUMP_DATA(mrbump_data)
+
+mstat,target_info = init.mrbump_initialisation(sys.argv, mstat, target_info)
+
+# Call the master script for doing a full search and Molecular Replacement
+master=MRBUMP_master.Master()
+
+
+if init.ONLYMODELS:
+   # Call the search and prepare function (split these at a later date)
+   master.fast_search_MR(init, target_info, mstat)
+elif init.MRONLY:
+   # Call the MR function with the models from the prep step
+   master.runMR(init, target_info, mstat)
+else:
+   # Call the search and prepare function (split these at a later date)
+   queue = master.fast_search_MR(init, target_info, mstat)
+   # Call the MR function with the models from the prep step
+   master.runMR(init, target_info, mstat, queue)

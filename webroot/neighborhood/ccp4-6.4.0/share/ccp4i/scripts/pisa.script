@@ -1,0 +1,103 @@
+#
+#     Copyright (C) 2008 Martyn Winn
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#=========================================================================
+#
+# pisa.script
+#
+#=========================================================================
+
+   if { [StringSame $INPUT "ANALYSE"] } {
+     set cmd "pisa $SESSION "
+     append cmd " -analyse \"$XYZIN\"" 
+  
+     WriteToLog "Running command \"$cmd\""
+     set status [Execute $cmd {} program_status report ]
+   }
+
+   if { [StringSame $INPUT "ANALYSE"] \
+	 || ( [StringSame $INPUT "REVIEW"] && [StringSame $OPTION "LIST"] ) } {
+# use -list command to summarise results
+
+     set cmd "pisa $SESSION "
+     append cmd "-list interfaces " 
+  
+     WriteToLog "Running command \"$cmd\"" 
+     set status [Execute $cmd {} program_status report ]
+
+     set cmd "pisa $SESSION "
+     append cmd "-list monomers " 
+  
+     WriteToLog "Running command \"$cmd\"" 
+     set status [Execute $cmd {} program_status report ]
+
+     set cmd "pisa $SESSION "
+     append cmd "-list assemblies " 
+  
+     WriteToLog "Running command \"$cmd\"" 
+     set status [Execute $cmd {} program_status report ]
+   }
+
+   if { [StringSame $INPUT "REVIEW"] && [StringSame $OPTION "VIEW"] } {
+# use -view command to view an interface, monomer or assembly
+# at the moment this is Rasmol
+
+     set cmd "pisa $SESSION "
+     append cmd "-view $SPEC $SERIAL_NO "
+
+     WriteToLog "Running command \"$cmd\"" 
+     set status [Execute $cmd {} program_status report ]
+   }
+   if { [StringSame $INPUT "REVIEW"] && [StringSame $OPTION "MG"] } {
+# use -mg command to view an interface, monomer or assembly with MG
+
+     set cmd "pisa $SESSION "
+     append cmd "-mg $SPEC $SERIAL_NO "
+
+     WriteToLog "Running command \"$cmd\"" 
+     set status [Execute $cmd {} program_status report ]
+   }
+
+   if { [StringSame $INPUT "REVIEW"] && [StringSame $OPTION "DOWNLOAD"] } {
+# use -download command to download an interface, monomer or assembly
+
+     set xyz_file [GetTmpFileName]
+     set cmd "pisa $SESSION "
+     append cmd "-download $SPEC $SERIAL_NO" 
+  
+     WriteToLog "Running command \"$cmd\"" 
+     set status [Execute $cmd {} program_status report -log $xyz_file ]
+# in this case, the log file is actually the requested download file
+     if { [file exists $xyz_file] } { MoveFile $xyz_file $XYZOUT }
+     WriteToLog "PISA successfully produced the download file: $XYZOUT" 
+   }
+
+   if { [StringSame $INPUT "REVIEW"] && [StringSame $OPTION "DETAIL"] } {
+# use -detail command to get details of an interface, monomer or assembly
+
+     set cmd "pisa $SESSION "
+     append cmd "-detail $SPEC_2 $SERIAL_NO " 
+  
+     WriteToLog "Running command \"$cmd\"" 
+     set status [Execute $cmd {} program_status report ]
+   }
+
+   if { [StringSame $INPUT "REVIEW"] && [StringSame $OPTION "XML"] } {
+# use -xml command to get xml output file
+
+     set xml_file [GetTmpFileName]
+     set cmd "pisa $SESSION "
+     append cmd "-xml " 
+  
+     WriteToLog "Running command \"$cmd\"" 
+     set status [Execute $cmd {} program_status report -log $xml_file ]
+# in this case, the log file is actually the requested XML file
+     if { [file exists $xml_file] } { MoveFile $xml_file $XMLOUT }
+     WriteToLog "PISA successfully produced the XML file: $XMLOUT" 
+   }

@@ -1,0 +1,1729 @@
+<html>
+<head>
+<title>Description of CCP4 DB Handler
+</title>
+</head>
+<body>
+<! -- CVS_Id: $Id: description_of_DBHandler.html,v 1.9 2008/08/12 10:48:16 pjx Exp $ -->
+<center><h1>Description of CCP4i DB handler</h1>
+<p><em>Wanjuan Yang </em></p><p><em>January 5, 2007</em></p>
+</center>
+<h2>Overview</h2>
+<p>CCP4i DB handler is a server application. It serves clients which need to
+access ccp4i database. Currently DB hanlder supports ccp4i database.def file
+and SQLite database. </p>
+
+<h2>Usage of DB handler </h2>
+<h3>Components of DB handler:</h3>
+<p>DB handler includes modules dbccp4i.py, manager.py, DBcommand.py, ccp4i.py,
+dbapi_sqlite.py, schema.sql. </p>
+<h3>Running DB handler</h3>
+<p>First, you need to set environment variables.</p>
+<ul>
+<li>set CCP4I_TOP point to CCP4i directory.
+<p>To do this, source ccp4.setup in the ccp4 installation.
+         e.g. source /home/wy45/ccp4-6.0.2/include/ccp4.setup </p>
+<li>Set DBCCP4I_TOP point to the dbccp4i directory. Also set
+         GRAPHVIZ_BIN to point to the directory containing the
+         Graphviz dot program (see http://www.graphviz.org) if you want
+         to use the dbviewer application.
+<p> To do this, source dbccp4i.setup in $DBCCP4I_TOP/etc.
+         e.g  source /home/wy45/Bioxhit_db/dbccp4i/etc/dbccp4i.setup </p>
+</ul>
+<p>There is a command line script 'dbccp4i' in  $DBCCP4I_TOP/bin
+directory:</p>
+<ul>
+<li>dbccp4i  --- run the handler and the output is written in the
+                 file dbhandler.log in the directory .CCP4.
+<li>dbccp4i debug --- run the handler and the output is on the 
+                                 screen.
+</ul>
+<p>Alternatively, go to the directory  $DBCCP4I_TOP/dbccp4i, type:</p>
+<p>python dbccp4i.py </p>
+<p>Once the DB handler is running, it is waiting for clients to connect to
+it. If there is no any client to connect it, it will stop automatically after
+30 seconds.</p>
+
+<h3>Communication between db handler and client</h3>
+Client sends requests to the db handler. DB handler receives requests,
+processes them and sends back a response to client. Apart from the response
+for specific request, db handler also sends broadcast message to
+clients if there is any update in the database. All the requests, responses and broadcasts must be in a pre-defined
+XML form. Detailed communication protocols are described in <a href="communications.html">dbCCP4i: Communication Protocols</a>
+<h3>Requests and corresponding responses</h3>
+<p>This section lists all the requests which are accepted by db handler. A
+request consists of command and arguments. As mentioned above, requests are
+sent to the handler in the form of XML, but the requests listed here are without the XML, in the form: </p>
+<p>command arg1 arg2...</p>
+<h4>Commands for interacting with the handler<h4>
+<ul>
+<li><a href="#DbRegister">DbRegister</a></li> 
+<li><a href="#DbRequestStatus">DbRequestStatus</a></li>
+<li><a href="#DbSupported">DbSupported</a></li>
+<li><a href="#DbDisconnect">DbDisconnect</a></li>
+<li><a href="#ShutDown">ShutDown</a></li>
+</ul>
+<h4>Commands for accessing to database.def backend</h4>
+<ul>
+<li><a href="#NewDb">NewDb</a></li>
+<li><a href="#DbOpen">DbOpen</a></li>
+<li><a href="#DbNewJob">DbNewJob</a></li>
+<li><a href="#DbDeleteJob">DbDeleteJob</a></li>
+<li><a href="#DbSetData">DbSetData</a></li>
+<li><a href="#Updatetime">Updatetime</a></li>
+<li><a href="#DbGetData">DbGetData</a></li>
+<li><a href="#DbItemExists">DbItemExists</a></li>
+<li><a href="#DbSelectJobs">DbSelectJobs</a></li>
+<li><a href="#ListJobs">ListJobs</a></li>
+<li><a href="#DbReturnJob">DbReturnJob</a></li>
+<li><a href="#ListProjects">ListProjects</a></li>
+<li><a href="#GetNProjects">GetNProjects</a></li>
+<li><a href="#ImportProject">ImportProject</a></li>
+<li><a href="#DeleteProject">DeleteProject</a></li>
+<li><a href="#AddDataDirRef">AddDataDirRef</a></li>
+<li><a href="#DeleteDataDirRef">DeleteDataDirRef</a></li>
+<li><a href="#GetProjectDir">GetProjectDir</a></li>
+<li><a href="#ListDataDirs">ListDataDirs</a></li>
+<li><a href="#GetDataDir">GetDataDir</a></li>
+<li><a href="#GetDirectoriesData">GetDirectoriesData</a></li>
+<li><a href="#GetNJOB">GetNJOB</a></li>
+<li><a href="#GetNextJobList">GetNextJobList</a></li>
+<li><a href="#GetAllFileLinks">GetAllFileLinks</a></li>
+<li><a href="#GetFileLinks">GetFileLinks</a></li>
+<li><a href="#DbGetListofRecords">DbGetListofRecords</a></li>
+<li><a href="#GetAllChildren">GetAllChildren</a></li>
+<li><a href="#GetAllParents">GetAllParents</a></li>
+<li><a href="#GetChildren">GetChildren</a></li>
+<li><a href="#GetParents">GetParents</a></li>
+<li><a href="#GetAllParentsChildren">GetAllParentsChildren</a></li>
+<li><a href="#GetNotebook">GetNotebook</a></li>
+<li><a href="#GetFiles">GetFiles</a></li>
+<li><a href="#ListInputFile">ListInputFile</li>
+<li><a href="#ListOutputFile">ListOutputFile</a></li>
+<li><a href="#AddInputFile">AddInputFile</a></li>
+<li><a href="#AddOutputFile">AddOutputFile</a></li>
+<li><a href="#DbClose">DbClose</a></li>
+</ul>
+
+<h4>Commands for accessing to Parallel SQLite backend</h4>
+<ul>
+<li><a href="#SetJobQuality">SetJobQuality</a></li>
+<li><a href="#SetSQLdbData">SetSQLdbData</a></l>
+<li><a href="#GetSQLdbData">GetSQLdbData</a></li>
+<li><a href="#GetAllSQLdbData">GetAllSQLdbData</a></li>
+<li><a href="#NewTableRecord">NewTableRecord</a></li>
+<li><a href="#DeleteTableRecord">DeleteTableRecord</a></li>
+</li><a href="#DeleteTableRecords">DeleteTableRecords</a></li>
+<li><a href="#SetTableData">SetTableData</a></li>
+<li><a href="#GetTableData">GetTableData</a></li>
+<li><a href="#GetTablePrimaryKey">GetTablePrimaryKey</a></li>
+<li><a href="#GetAllTableRecords">GetAllTableRecords</a></li>
+<li><a href="#GetTableRecords">GetTableRecords</a></li>
+</ul>
+<h4>Commands for accessing to Central SQLite backend</h4>
+<ul>
+<li><a href="#NewDB">NewDB</a></li>
+<li><a href="#OpenDB">OpenDB</a></li>
+<li><a href="#GetJobData">GetJobData</a></li>
+<li><a href="#GetProjectId">GetProjectId</a></li>
+<li><a href="#GetData">GetData</a></li>
+<li><a href="#GetProjectList">GetProjectList</a></li>
+<li><a href="#GetJobList">GetJobList</a></li>
+<li><a href="#GetRowofTable">GetRowofTable</a></li>
+<li><a href="#NewProject">NewProject</a></li>
+<li><a href="#NewJob">NewJob</a></li>
+<li><a href="#SetJobData">SetJobData</a></li>
+<li><a href="#SetData">SetData</a></li>
+<li><a href="#NewRecord">NewRecord</a></li>
+<li><a href="#CloseDB">CloseDB</a></li>
+</ul>
+
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbRegister"></a>
+<p><b>DbRegister</b> <em>username</em><em> useragent  [ broadcast_flag ]</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Client registers with the handler. This is the first
+request that a client should send to db handler before sending any other requests.</p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>username</td>   <td>user name of the system</td></tr>
+<tr><td>useragent</td>        <td>The application name that connects to the handler</td></tr>
+<tr><td>broadcast_flag</td><td>True if client wishes handler to send
+broadcast message to it. False otherwise.</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>True or 'data locked, force to override, data
+loaded'</td><td>If everything ok, handler return True. If there is a lock in
+directories.def, handler will override the lock and send back message.</td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If something goes wrong,
+handler sends back error messages.  </td></tr>
+</table>
+<p></p>
+
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbRequestStatus"></a>
+<p><b>DbRequestStatus</b> </p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b> Get the status of the handler<pre>
+                                                                               </pre>  </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>None</td>  </tr>
+</table>
+<table border=1>
+<tr><td colspan=2 align="center"><b>Response</b></td><td rowspan=2
+align="center"><pre>                          Description                      </pre></td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>Active</td><td>This should return 'Active'.</td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If something goes wrong,
+handler sends back error messages.  </td></tr>
+</table>
+
+<p></p>
+
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbSupported"></a>
+<p><b>DbSupported</b> <em>dbtype</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b> Check if handler supports the given db backend. <pre>                      
+                                                        </pre>  </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>dbtype</td><td>database backend, e.g def, SQLite</td>  </tr>
+</table>
+<table border=1>
+<tr><td colspan=2 align="center"><b>Response</b></td><td rowspan=2
+align="center"><pre>                          Description                      </pre></td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>True or False</td><td>If the handler supports the specified
+database, it returns True. If the handler doesn't support the specified database, it returns 'False'. </td></tr>
+<tr><td>ERROR  </td><td>error message</td><td>If anything goes wrong,
+handler returns error message.</td></tr>
+</table>
+
+<p></p>
+
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbDisconnect"></a>
+<p><b>DbDisconnect</b> </p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b> Disconnect to the handler. Handler sends 'True' to client for this request.                            </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>None</td>  </tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="ShutDown"></a>
+<p><b>ShutDown</b> </p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b> Shutdown the handler. Handler doesn't send any
+response to client for this request.                            </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>None</td>  </tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="NewDb"></a>
+<p><b>NewDb</b> <em>project</em><em> dir</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Create a new project in def backend. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>project</td>   <td>the name of the project</td></tr>
+<tr><td>dir</td>        <td>directory of the project</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>True</td><td>Handler returns True if this operation is
+successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbOpen"></a>
+<p><b>DbOpen</b> <em>project</em><em>  [ -grablock/-readonly ]</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Create a new project in def backend. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>project</td>   <td>the name of the project</td></tr>
+<tr><td>-grablock</td>        <td>Optional. If the database is locked, with
+this option, the lock will be overwritten. </td></tr>
+<tr><td>-readonly</td>        <td>Optional. If the database is locked, with
+this option, the database is readonly. </td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>True</td><td>Handler returns True if this operation is
+successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbNewJob"></a>
+<p><b>DbNewJob</b><em>  project</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Create a job in database. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>project</td>   <td>the name of the project</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>Job id</td><td>Handler returns job id if this operation is
+successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbDeleteJob"></a>
+<p><b>DbDeleteJob</b><em>  project</em><em> jobid</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Delete a job in database. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>project</td>   <td>the name of the project</td></tr>
+     <td>jobid</td>   <td>the id of the job to be deleted.</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>True</td><td>Handler returns True if this operation is
+successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbSetData"></a>
+<p><b>DbSetData</b><em>  project</em><em> jobid</em><em>
+item</em><em> value</em><em> [ item2 value2 [...] ]</p>
+</tr></td>
+<tr><td colspasn=3>
+<p><b>Summary: </b> Set the value(s) of one or more data item(s) for a job in project.</p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td>
+    <td>project</td>   <td>the name of the project</td></tr>
+     <td>jobid</td>   <td>the id of the job to be set data.</td></tr>
+     <td>item</td>   <td>item name of the job.</td></tr>
+     <td>value</td>   <td>value of the item.</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>True</td><td>Handler returns True if this operation is
+successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbGetData"></a>
+<p><b>DbGetData</b><em>  project</em><em> jobid</em><em>
+item</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Retrieve the values of one or more data item(s) from a job in a project.</p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>project</td>   <td>the name of the project</td></tr>
+     <td>jobid</td>   <td>the id of the job.</td></tr>
+     <td>item</td>   <td>item name of the job.</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>value(s) of the specified item(s)</td><td>Handler returns
+value(s) if this operation is
+successful. If retrieve mutiple items, a list of values is returned. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="Updatetime"></a>
+<p><b>Updatetime</b><em>  project</em><em> jobid</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Update the time of a job.</p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>project</td>   <td>the name of the project</td></tr>
+     <td>jobid</td>   <td>the id of the job.</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>True</td><td>Handler return True if this operation is successful.</td></tr>
+<tr><td>ERROR  </td><td>False or error message  </td><td>If this operation fails,
+handler sends back 'False' or error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbItemExists"></a>
+<p><b>DbItemExists</b><em>  project</em><em> jobid</em><em> item</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Check that item exists for a job. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>project</td>   <td>the name of the project</td></tr>
+    <td>jobid</td>   <td>the id of the job.</td></tr>
+    <td>item</td>   <td>the item name of the job.</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>True</td><td>Handler return True if this operation is successful.</td></tr>
+<tr><td>ERROR  </td><td>False or error message  </td><td>If this operation
+fails, handler sends back 'False' or error messages.  </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbSelectJobs"></a>
+<p><b>DbSelectJobs</b><em>  project</em><em> item</em><em> pattern</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b>Retrieve a list of jobs based on some selection criterion. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>project</td>   <td>the name of the project</td></tr>
+    <td>item</td>   <td>the item name of the job.</td></tr>
+    <td>pattern</td>   <td>regular expression pattern.</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>a list of job ids.</td><td>Handler return a list of job ids
+where the values of the given item match the supplied regular expression.</td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation
+fails, handler sends back error messages.  </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="ListJobs"></a>
+<p><b>ListJobs</b><em>  project</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b>List all the job ids of a project. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>project</td>   <td>the name of the project. </td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>a list of job ids.</td><td>Handler returns a list of job
+ids if this operation is successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation
+fails, handler sends back error messages.  </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbReturnJob"></a>
+<p><b>DbReturnJob</b><em>  project</em><em> joblist</em><em>
+itemlist</em><em> format</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b>Given a list of job ids, return a list of descriptions
+       which are generated from the suppied lists of data items in itemlist
+       and format. </p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td>
+    <td>project</td>   <td>the name of the project</td></tr>
+    <td>joblist</td>   <td>a list of job ids to be retrived description. </td></tr>
+    <td>itemlist</td>   <td>a list of items to be retrived.</td></tr>
+    <td>format</td><td> the format in which to display the result - this is
+                        a list of integers (one integer per item specified in
+			the itemlist) that specifies the field width (number
+			of characters) to allocate to the corresponding
+			datat item.</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>a list of formatted string populated with job
+data.</td><td>Handler returns a list of formatted string populated with job data.</td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation
+fails, handler sends back error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="ListProjects"></a>
+<p><b>ListProjects</b></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> List all the project names which are recorded in directories.def.</p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>None</td> </tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>a list of project names. </td><td>Handler returns a list of
+project names.</td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation
+fails, handler sends back error messages.  </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetNProject"></a>
+<p><b>GetNProject</b></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Get the total number of projects.</p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>None</td> </tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>the total number of projects  </td><td>Handler returns the
+total number of projects. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation
+fails, handler sends back error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="ImportProject"></a>
+<p><b>ImportProject</b><em> alias</em><em> path</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b>  Add a reference of a project (alias and path) in the
+directories.def file. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td></tr>
+    <tr><td>alias</td><td> The alias of the project. </td> </tr>
+    <tr><td>path</td><td> The directory of the project. </td> </tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>True</td><td>Handler returns True if this operation is successful. </td></tr>
+<tr><td>ERROR  </td><td>False or error message  </td><td>If this operation
+fails, handler returns False or error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DeleteProject"></a>
+<p><b>DeleteProject</b><em> project</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b>   Delete the reference of a project in directories.def.  </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td></tr>
+    <tr><td>project</td><td> The name of the project. </td> </tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>True</td><td>Handler returns True if this operation is successful. </td></tr>
+<tr><td>ERROR  </td><td>False or error message  </td><td>If this operation
+fails, handler returns False or error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="AddDataDirRef"></a>
+<p><b>AddDataDirRef</b><em> dir_def</em><em> path</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b>  Add a reference of a default directory in the
+directories.def file. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td></tr>
+    <tr><td>dir_def</td><td> The default directory name. </td> </tr>
+    <tr><td>path</td><td> The path of the default directory. </td> </tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>True</td><td>Handler returns True if this operation is successful. </td></tr>
+<tr><td>ERROR  </td><td>False or error message  </td><td>If this operation
+fails, handler returns False or error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DeleDataDirRef"></a>
+<p><b>DeleteDataDirRef</b><em> dir_def</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b>   Delete the reference of a default directory in directories.def.  </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td></tr>
+    <tr><td>def_dir</td><td> The name of the default directory. </td> </tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>True</td><td>Handler returns True if this operation is successful. </td></tr>
+<tr><td>ERROR  </td><td>False or error message  </td><td>If this operation
+fails, handler returns False or error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetProjectDir"></a>
+<p><b>GetProjectDir</b><em> project</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Get the directory name of the project.</p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td></tr>
+    <tr><td>project</td><td> The name of the project. </td> </tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>The directory name</td><td>Handler returns the
+directory name if this operation is successful. </td></tr>
+<tr><td>ERROR  </td><td>Empty string or error message  </td><td>If this
+operation fails, handler returns empty string or error messages.  </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="ListDataDirs"></a>
+<p><b>ListDataDirs</b></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b>  Return a list of the user's default directories.</p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td></tr>
+    <tr><td>None</td> </tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>a list of the user's default directories</td><td>Handler
+returns a list of the user's default directories if this operation is successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this
+operation fails, handler returns error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetDataDir"></a>
+<p><b>GetDataDir</b><em> def_dir</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b>  Return the directory corresponding to a def dir name.</p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td></tr>
+    <tr><td>def_dir</td><td>default directory name.</td> </tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>directory</td><td>Handler
+returns directory name if this operation is successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this
+operation fails, handler returns error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetDirectoriesData"></a>
+<p><b>GetDirectoriesData</b><em> keyword alias [keyword alias ...]</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b>   Return multiple data items for many different aliases</p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td></tr>
+    <tr><td>One or more keyword-alias pairs.</td>
+        <td>A keyword can be 'ProjectDir'
+            (fetches the corresponding project directory for the
+             subsequent alias), 'ProjectDBDir' (the corresponding database
+             directory) or 'DataDir' (the corresponding data directory).</td> </tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>directory</td><td>Handler
+returns a list with one value corresponding to each keyword-alias pair that
+was supplied. If a particular keyword-alias pair was invalid (e.g. alias
+doesn't exist, or keyword is not recognised) then the value will be an empty
+string. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>This should only happen in
+exception circumstances e.g. handler internal error.  </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetNJOB"></a>
+<p><b>GetNJOB</b><em> project</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Return the last number of job in project. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td></tr>
+    <tr><td>project</td><td>The name of the project.</td> </tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>The last number of the job.</td><td>Handler
+returns the last number of the job if this operation is successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this
+operation fails, handler returns error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetNextJobList"></a>
+<p><b>GetNextJobList</b><em> project </em><em> jobid </em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Return a list of job ids which are related to the given job. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td></tr>
+    <tr><td>project</td><td>The name of the project.</td> </tr>
+    <tr><td>jobid</td><td>The id of the job. </td> </tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>a list of job ids</td><td>Handler
+returns a list of job ids which are related to the given job if this operation is successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this
+operation fails, handler returns error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetAllFileLinks"></a>
+<p><b>GetAllFileLinks</b><em> project </em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Returns a list of job pairs. Each pair of jobs
+indicates these two jobs are related to each other. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td></tr>
+    <tr><td>project</td><td>The name of the project.</td> </tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>a list of job pairs</td><td>Handler
+returns a list of job pairs if this operation is successful.</td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this
+operation fails, handler returns error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetFileLinks"></a>
+<p><b>GetFileLinks</b><em> project </em> <em> joblist</p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Given the job list, for each job id in the job list, return a list of job pairs. Each pair of jobs
+indicates these two jobs are related to each other. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td></tr>
+    <tr><td>project</td><td>The name of the project.</td> </tr>
+    <tr><td>joblist</td><td>A list of job ids.</td> </tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>a list of job pairs</td><td>Handler
+returns a list of job pairs if this operation is successful.</td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this
+operation fails, handler returns error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbGetListofRecords"></a>
+<p><b>DbGetListofRecords</b><em> project </em><em> joblist </em><em> itemlist</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Get a list of jobs' item value.</p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td></tr>
+    <tr><td>project</td><td>The name of the project.</td> </tr>
+    <tr><td>joblist</td><td>A list of job ids.</td> </tr>
+    <tr><td>itemlist</td><td>A list of item names.</td> </tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>a list of jobs' item value.</td><td>Handler
+returns a list of jobs' item value if this operation is successful.</td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this
+operation fails, handler returns error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetAllChildren"></a>
+<p><b>GetAllChildren</b><em> project </em><em> jobid</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> For a particular project, given a job id, get all the jobs
+which are children(all levels) of this job.</p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td></tr>
+    <tr><td>project</td><td>The name of the project.</td> </tr>
+    <tr><td>jobid</td><td>job id</td> </tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>a list of job ids.</td><td>Handler
+returns a list of job ids if this operation is successful.</td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this
+operation fails, handler returns error messages.  </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetAllParents"></a>
+<p><b>GetAllParents</b><em> project </em><em> jobid</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> For a particular project, given a job id, get all the jobs
+which are parent (all levels) of this job.</p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td></tr>
+    <tr><td>project</td><td>The name of the project.</td> </tr>
+    <tr><td>jobid</td><td>job id</td> </tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>a list of job ids.</td><td>Handler
+returns a list of job ids if this operation is successful.</td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this
+operation fails, handler returns error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetChildren"></a>
+<p><b>GetChildren</b><em> project </em><em> jobid</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> For a particular project, given a job id, get all the jobs
+which are children of this job.</p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td></tr>
+    <tr><td>project</td><td>The name of the project.</td> </tr>
+    <tr><td>jobid</td><td>job id</td> </tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>a list of job ids.</td><td>Handler
+returns a list of job ids if this operation is successful.</td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this
+operation fails, handler returns error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetParents"></a>
+<p><b>GetParents</b><em> project </em><em> jobid</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> For a particular project, given a job id, get all the jobs
+which are parent of this job.</p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td></tr>
+    <tr><td>project</td><td>The name of the project.</td> </tr>
+    <tr><td>jobid</td><td>job id</td> </tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>a list of job ids.</td><td>Handler
+returns a list of job ids if this operation is successful.</td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this
+operation fails, handler returns error messages.  </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetAllParentsChildren"></a>
+<p><b>GetAllParentsChildren</b><em> project </em><em> jobid</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> For a particular project, given a job id, get all the jobs
+which are related to the job, including all parents and children.</p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td></tr>
+    <tr><td>project</td><td>The name of the project.</td> </tr>
+    <tr><td>jobid</td><td>job id</td> </tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>a list of job ids.</td><td>Handler
+returns a list of job ids if this operation is successful.</td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this
+operation fails, handler returns error messages.  </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetNotebook"></a>
+<p><b>GetNotebook</b><em> project </em><em> jobid</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Return notebook name with full path for a given job.</p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td></tr>
+    <tr><td>project</td><td>The name of the project.</td> </tr>
+    <tr><td>jobid</td><td>job id</td> </tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>notebook name with full path</td><td>Handler
+returns notebook name with full path if this operation is successful.</td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this
+operation fails, handler returns error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetFiles"></a>
+<p><b>GetFiles</b><em> project </em><em> jobid</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Return input file or output file list for a given job.</p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td></tr>
+    <tr><td>project</td><td>The name of the project.</td> </tr>
+    <tr><td>jobid</td><td>job id</td> </tr>
+    <tr><td>tyoe</td><td>file type</td> </tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>a list of files</td><td>Handler
+returns a list of files if this operation is successful.</td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this
+operation fails, handler returns error messages.  </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="AddFile"></a>
+<p><b>AddFile</b><em> project </em><em> jobid</em> <em>type</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> .</p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td></tr>
+    <tr><td>project</td><td>The name of the project.</td> </tr>
+    <tr><td>jobid</td><td>job id</td> </tr>
+    <tr><td>type</td><td>file type</td> </tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>True</td><td>Handler returns True if this operation is successful. </td></tr>
+<tr><td>ERROR  </td><td>False or error message  </td><td>If this operation fails,
+handler return False or error messages.  </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbClose"></a>
+<p><b>DbClose</b> <em>project</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Close a project. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>project</td>   <td>the name of the project</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>True</td><td>Handler returns True if this operation is
+successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="SetJobQuality"></a>
+<p><b>SetJobQuality</b> <em>project</em> <em>jobid</em> <em>quality</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b>Set the value of 'JobQuality' in 'Jobs' table  </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>project</td>   <td>the name of the project</td></tr>
+    <td>jobid</td>   <td>Job id</td></tr>
+    <td>quality</td>   <td>The quality of the job</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>True</td><td>Handler returns True if this operation is
+successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="SetSQLdbData"></a>
+<p><b>SetSQLdbData</b> <em>project</em> <em>jobid</em> <em>item</em> <em>value</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b>Set data in 'Jobs' table.  </p>
+</tr></td>
+<tr><td rowspan=5><b>Arguments</b></td>
+    <tr><td>project</td>   <td>the name of the project</td></tr>
+    <tr><td>jobid</td>   <td>Job id</td></tr>
+    <tr><td>item</td>   <td>The attribute of the table. </td></tr>
+    <tr><td>value</td>   <td>The value of the attribute. </td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>True</td><td>Handler returns True if this operation is
+successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetSQLdbData"></a>
+<p><b>GetSQLdbData</b> <em>project</em> <em>jobid</em> <em>item [item1
+item2...] </em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b>Get data in 'Jobs' table.  </p>
+</tr></td>
+<tr><td rowspan=5><b>Arguments</b></td>
+    <tr><td>project</td>   <td>the name of the project</td></tr>
+    <tr><td>jobid</td>   <td>Job id</td></tr>
+    <tr><td>item</td>   <td>The attribute of the table. </td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>a list of value(s)</td><td>Handler returns a list of value(s) if this operation is
+successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetAllSQLdbData"></a>
+<p><b>GetAllSQLdbData</b> <em>project</em> <em>item [item1
+item2...] </em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b>Get all data in 'Jobs' table.  </p>
+</tr></td>
+<tr><td rowspan=5><b>Arguments</b></td>
+    <tr><td>project</td>   <td>the name of the project</td></tr>
+    <tr><td>item</td>   <td>The attribute of the table. </td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>a list of value(s)</td><td>Handler returns a list of value(s) if this operation is
+successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="NewTableRecord"></a>
+<p><b>NewTableRecord</b> <em>table</em> <em>item</em> <em> value </em> <em>
+[item2 value2 ...]</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Create a new record in given table.
+ </p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td>
+    <tr><td>table</td><td> the table name</td></tr>
+     <tr><td>item</td><td> the attribute of the table</td></tr>
+     <tr><td>value</td><td> the value of the attribute</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>record id </td><td>Handler returns a record id if this
+operation is successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DeleteTableRecord"></a>
+<p><b>DeleteTableRecord</b> <em>table</em> <em>recordId</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Remove a record in given table.
+ </p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td>
+    <tr><td>table</td><td> the table name</td></tr>
+     <tr><td>recordId</td><td> the id of the record</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>True </td><td>Handler returns True if this
+operation is successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DeleteTableRecords"></a>
+<p><b>DeleteTableRecords</b> <em>table</em> <em>condition</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Remove records in given table based on a certain conditions.
+ </p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td>
+    <tr><td>table</td><td> the table name</td></tr>
+     <tr><td>condition</td><td>a SQL 'where' statement</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>True </td><td>Handler returns True if this
+operation is successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="SetTableData"></a>
+<p><b>SetTableData</b> <em> table</em><em> recordId</em><em> attribute</em><em>
+value</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Set value for a table record. 
+ </p>
+</tr></td>
+<tr><td rowspan=5><b>Arguments</b></td></tr>
+    <tr><td>table</td><td> the table name</td></tr>
+    <tr><td>recordId</td><td> record id.</td></tr>
+    <tr><td>attribute</td><td> the attribute of the item. </td></tr>
+    <tr><td>value</td><td> the value of the attribute</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>True </td><td>Handler returns True if this operation is successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetTableData"></a>
+<p><b>GetTableData</b> <em> table</em><em> recordId</em><em> attribute</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Get value for a table record. 
+ </p>
+</tr></td>
+<tr><td rowspan=5><b>Arguments</b></td></tr>
+    <tr><td>table</td><td> the table name</td></tr>
+    <tr><td>recordId</td><td> record id.</td></tr>
+    <tr><td>attribute</td><td> the attribute of the item. </td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>value </td><td>Handler returns the value if this operation is successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetTablePrimaryKey"></a>
+<p><b>GetTablePrimaryKey</b> <em>table</em> <em>condition</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Retrieve primary key(s) in a given table based on a certain conditions.
+ </p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td>
+    <tr><td>table</td><td> the table name</td></tr>
+     <tr><td>condition</td><td>a SQL 'where' statement</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>record id(s) </td><td>Handler returns record id(s)/primary
+key(s) if this operation is successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetAllTableRecords"></a>
+<p><b>GetAllTableRecords</b> <em>projectname</em> <em>table</em> <em>itemlist</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Retrieve all the records in a given table
+ </p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td>
+    <tr><td>projectname</td><td> the project name.</td></tr>
+    <tr><td>table</td><td> the table name</td></tr>
+     <tr><td>itemlist</td><td>The list of items.</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>a list of records</td><td>Handler returns a list of records if this operation is successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetTableRecords"></a>
+<p><b>GetTableRecords</b> <em>projectname</em> <em>table</em> <em>itemlist</em>
+<em>condition</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Retrieve records in a given table based on a certain conditions.
+ </p>
+</tr></td>
+<tr><td rowspan=6><b>Arguments</b></td>
+    <tr><td>projectname</td><td> the project name.</td></tr>
+    <tr><td>table</td><td> the table name</td></tr>
+     <tr><td>itemlist</td><td>The list of items.</td></tr>
+      <tr><td>condition</td><td>a SQL 'where' statement.</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>a list of records</td><td>Handler returns a list of records if this operation is successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="NewDB"></a>
+<p><b>NewDB</b> <em>dbname</em><em> dir</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Create a new database in SQLite.</p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>dbname</td>   <td>the name of the database</td></tr>
+    <td>dir</td>   <td>the directory of the database</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>True</td><td>Handler returns True if this operation is
+successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="OpenDB"></a>
+<p><b>OpenDB</b> <em>dbname</em><em> dir</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Open an existing database in SQLite.</p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>dbname</td>   <td>the name of the database</td></tr>
+    <td>dir</td>   <td>the directory of the database</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>True</td><td>Handler returns True if this operation is
+successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetJobData"></a>
+<p><b>GetJobData</b> <em> jobid</em><em> item</em><em> [ item2 ...]</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b>  Return the value(s) of one or more items in a job.
+ </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>jobid</td>   <td>the id of job.</td></tr>
+    <td>item</td>   <td>item name of the job. Could specify one or more item names. </td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>a list of item value(s)</td><td>Handler returns a list of
+item value(s) if this operation is
+successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetProjectId"></a>
+<p><b>GetProjectId</b> <em> projectname</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Given a project name, return project id.
+ </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>projectname</td>   <td>the name of the project.</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>project id</td><td>Handler returns project id if this operation is
+successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetData"></a>
+<p><b>GetData</b> <em> table</em><em> id</em><em> attribute</em><em> [
+attribute1 ...]</p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Given a table name and id of the record and attribute(s),,
+return the value of the attribute(s). 
+ </p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td>
+    <td>table</td>   <td>the table name.</td></tr>
+    <td>id</td> <td>the id of the record</td></tr>
+    <td>attribute</td><td> attribute of the table, could specify one or more
+    attributes. </td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>a list of value(s) </td><td>Handler returns a list of value(s) if this operation is
+successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetProjectList"></a>
+<p><b>GetProjectList</b> </p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Return a list of projects in the database.
+ </p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td>
+    <td>None</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>a list of project names. </td><td>Handler returns a list of
+project names if this operation is
+successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetJobList"></a>
+<p><b>GetJobList</b> project</p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Return a list of job records for a given proejct.
+ </p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td>
+    <td>project</td><td> the name of project.</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>a list of job records. </td><td>Handler returns a list of jobrecords if this operation is
+successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetRowofTable"></a>
+<p><b>GetRowofTable</b> table</p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Return a row of a table..
+ </p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td>
+    <td>id</td><td> the id of record.</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>record </td><td>Handler returns a record
+of a table if this operation is
+successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="NewProject"></a>
+<p><b>NewProject</b> projectname</p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Create a new project.
+ </p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td>
+    <td>projectname</td><td> the project name</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>project id </td><td>Handler returns a project id if this operation is
+successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="NewJob"></a>
+<p><b>NewJob</b> projectname</p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Create a new job in a project.
+ </p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td>
+    <td>projectname</td><td> the project name</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>job id </td><td>Handler returns a job id if this operation
+is successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="NewRecord"></a>
+<p><b>NewRecord</b> <em>table</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Create a new record in table.
+ </p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td>
+    <td>table</td><td> the table name</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>record id </td><td>Handler returns a record id if this
+operation is successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="SetJobData"></a>
+<p><b>SetJobData</b> <em> jobid</em><em> item</em><em> value</em><em>
+[item1 value1 ... ]</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Set item/attribute value for a given job.
+ </p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td></tr>
+    <tr><td>jobid</td><td> the job id</td></tr>
+    <tr><td>item</td><td> the item/attribute of job. Could set one or more
+    item/value at a time.</td></tr>
+    <tr><td>value</td><td> the value of the item</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>True </td><td>Handler returns True if this operation is successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="SetData"></a>
+<p><b>SetData</b> <em> table</em><em> recordid</em><em> attribute</em><em>
+value</em><em> [ attribute1 value1 ...]</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Set one or more item/attribute value for a table record. 
+ </p>
+</tr></td>
+<tr><td rowspan=5><b>Arguments</b></td></tr>
+    <tr><td>table</td><td> the table name</td></tr>
+    <tr><td>recordid</td><td> record id.</td></tr>
+    <tr><td>attribute</td><td> the attribute of the item, could set one or
+    more pairs of attribute/value.</td></tr>
+    <tr><td>value</td><td> the value of the attribute</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>True </td><td>Handler returns True if this operation is successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="CloseDB"></a>
+<p><b>CloseDB</b></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Close database in SQLite.</p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>None</td></tr>
+</table>
+
+<table border=1>
+<tr><td colspan=2 align="center"><b> Response</b></td><td rowspan=2 align="center">Description</td></tr>
+<tr><td><b>  status</b></td><td> <b> result</b></td></tr>
+<tr><td>OK</td><td>True</td><td>Handler returns True if this operation is
+successful. </td></tr>
+<tr><td>ERROR  </td><td>error message  </td><td>If this operation fails,
+handler sends back error messages.  </td></tr>
+</table>
+
+
+
+<p>Last Update: $Date: 2008/08/12 10:48:16 $</p>
+</body>
+</html>

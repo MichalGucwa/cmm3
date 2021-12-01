@@ -1,0 +1,47 @@
+#!/bin/sh
+
+set -e
+
+# An example of a map cutting procedure, e.g. for use in a
+# molecular replacement search.
+
+# I'm not entirely sure if this is a sensible example,
+# but so far it's our only runnable test of maprot
+
+# The basic idea is to cut out the part of the 3fo2fc map
+# which covers one molecule, and place it in a virtual cell
+
+if test ! -f $CCP4_SCR/3fo2fc.map; then
+  echo '! Run 3fo2fcmap first' 1>&2
+  exit 1
+fi
+
+# Start with 3fo2fc.map from 3fo2fcmap example.
+# This map has true spacegroup and cell, and covers 1 asymmetric unit
+
+# Create mask covering just one molecule
+
+# select protein only
+pdbset XYZIN $CEXAM/toxd/toxd.pdb XYZOUT $CCP4_SCR/toxd_protein.pdb << eof
+SELECT CHAIN A 
+eof
+
+# Now make mask in P1
+ncsmask xyzin $CCP4_SCR/toxd_protein.pdb mskout $CCP4_SCR/toxd.msk << eof
+eof
+
+# change the extent of MAPIN to match that of MAPLIM
+mapmask MAPIN $CCP4_SCR/3fo2fc.map MAPLIM $CCP4_SCR/toxd.msk MAPOUT $CCP4_SCR/toxd_1.map <<EOF
+XYZLIM MATCH
+EOF
+
+# transfer density from WRKIN into a virtual 75A cell, output to CUTOUT
+maprot WRKIN $CCP4_SCR/toxd_1.map MSKIN $CCP4_SCR/toxd.msk CUTOUT $CCP4_SCR/toxd_cut.map <<EOF
+MODE TO
+CELL XTAL 75.0 75.0 75.0 90 90 90
+GRID XTAL 80 80 80
+AVERAGE
+ROTATE POLAR 0.0 0.0 0.0
+TRANS 0.0 0.0 0.0
+EOF
+#

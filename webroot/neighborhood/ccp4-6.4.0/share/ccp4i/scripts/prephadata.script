@@ -1,0 +1,155 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#===========================================================================
+#
+# prephadata.script
+#
+#===========================================================================
+
+# Run revise to convert anomalous data and ecalc to convert Fs to Is
+
+  if [StringSame $REVISE_INPUT MADFS MADDS ] {
+
+    set HKL_REVISE [GetTmpFileName -ext mtz_revise ]
+
+# Generate names for output labels
+    set mod "mod_"
+    if { [StringSame $REVISE_INPUT MADFS] } {
+      for { set n 1 } { $n <= $N_WAVELENGTHS } { incr n } {
+        append  FPHMp($n)  $mod $FPHp($n)
+        append  SIGFPHMp($n)  $mod $SIGFPHp($n)
+        append  FPHMm($n)  $mod $FPHm($n)
+        append  SIGFPHMm($n)  $mod $SIGFPHm($n)
+      }
+    } else {
+      for { set n 1 } { $n <= $N_WAVELENGTHS } { incr n } {
+        append  FPHM($n)  $mod $FPH($n)
+        append  SIGFPHM($n)  $mod $SIGFPH($n)
+        append  DPHM($n)  $mod $DPH($n)
+        append  SIGDPHM($n)  $mod $SIGDPH($n)
+      }
+    }
+
+    set FM FM
+    set SIGFM SIGFM
+
+    CreateComScript revise revise_script
+
+    set status [Execute "revise HKLIN \"$MTZIN\" HKLOUT \"$HKL_REVISE\""  \
+                  $revise_script program_status report ]
+
+# Set output column label names - and set input FPH/SIGFPH for ecalc
+    unset FPH
+    unset SIGFPH
+    set FPH FM
+    set SIGFPH SIGFM
+
+  } else {
+    unset FPH
+    unset SIGFPH
+
+    if {![StringSame $REVISE_INPUT NATIVE]} {
+      set FPH $ECALC_FPH
+      set SIGFPH $ECALC_SIGFPH
+    }
+    set HKL_REVISE $MTZIN
+
+  }
+
+#--------------------------------------------------------ECALC normalisation
+
+  if { [StringSame $REVISE_OUTPUT RANTAN] }  {
+
+    set HKL_ECALC [GetTmpFileName -ext mtz_ecalc ]
+    if [StringSame $REVISE_INPUT MADFS MADDS ] {
+      set LABIN "FP SIGFP"
+      set FP FM
+      set SIGFP SIGFM
+    } elseif [StringSame $REVISE_INPUT SADFS ] {
+      set LABIN "FP SIGFP FPH SIGFPH"
+      set FPH $FPHp0
+      set SIGFPH $SIGFPHp0
+      set FP $FPHm0
+      set SIGFP $SIGFPHm0
+    } elseif [StringSame $REVISE_INPUT SADDS ] {
+      set LABIN "DPH SIGDPH"
+      unset DPH
+      unset SIGDPH
+      set DPH $ECALC_DPH0
+      set SIGDPH $ECALC_SIGDPH0
+    } elseif [StringSame $REVISE_INPUT NATIVE ] {
+      set LABIN "FP SIGFP"
+    } else {
+      set LABIN "FP SIGFP FPH SIGFPH"
+    }
+
+# Script expects the root name of the output labels and will build 
+# labout statement from them
+    set LABOUT "E"
+    set E E
+      
+    CreateComScript ecalc ecalc_script
+
+    set status [Execute "ecalc HKLIN \"$HKL_REVISE\" HKLOUT \"$HKL_ECALC\""  \
+                  $ecalc_script program_status report ]
+
+  } else {
+    set HKL_ECALC $HKL_REVISE
+  }
+
+#-------------------------------------------------------Convert to shelx
+
+  if { [StringSame $REVISE_OUTPUT SHELX SHELXD ]  } {
+
+
+  if [StringSame $REVISE_INPUT MADFS MADDS ] {
+    set LABIN "FP SIGFP"
+    set FP FM
+    set SIGFP SIGFM
+  } elseif { [StringSame $REVISE_INPUT SADFS] } {
+    set LABIN "FPH SIGFPH FP SIGFP"
+    set FPH $FPHp0
+    set SIGFPH $SIGFPHp0
+    set FP $FPHm0
+    set SIGFP $SIGFPHm0
+  } elseif { [StringSame $REVISE_INPUT SADDS] } {
+    set LABIN "DP SIGDP"
+    unset DP
+    unset SIGDP
+    set DP $ECALC_DPH0
+    set SIGDP $ECALC_SIGDPH0
+  } elseif { [StringSame $REVISE_INPUT SIR] } {
+    set LABIN "FPH SIGFPH FP SIGFP"
+  } elseif { [StringSame $REVISE_INPUT NATIVE] } {
+    set LABIN "FP SIGFP"
+  }
+
+  if { [StringSame $REVISE_OUTPUT SHELX ]  } {
+    set OUTPUT_FORMAT SHELX
+  }
+
+  if { [StringSame $REVISE_OUTPUT SHELXD ]  } {
+    if [StringSame $REVISE_INPUT SADFS SADDS ] {
+      set OUTPUT_FORMAT SHELXDA
+    } else {
+      set OUTPUT_FORMAT SHELXD
+    }
+  }
+
+  CreateComScript  mtz2various export_script
+
+  set status [Execute "[BinPath mtz2various] HKLIN \"$HKL_ECALC\" HKLOUT \"$HKLOUT\"" \
+                $export_script program_status report ]
+
+  } elseif { [info exists MTZOUT] } {
+
+    MoveFile $HKL_ECALC $MTZOUT
+
+  }

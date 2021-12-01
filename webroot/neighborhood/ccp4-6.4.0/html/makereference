@@ -1,0 +1,100 @@
+#!/bin/sh
+
+set -e
+
+# CVS Id $Id$
+#
+#    Martyn Winn      Jul. 1997
+#
+# make an html list of references
+# 
+# **** Not intended for public release ****
+# 
+
+referencefile=REFERENCES.html
+
+cat <<\+ >$referencefile          # header
+<!doctype html system "html.dtd">
+<html>
+<head><title>CCP4 Program References</title></head>
+<body  BGCOLOR="#FFFFFF">
+<FONT COLOR="#FF0000"><H1>CCP4 v6.4.0 Program References</H1></FONT>
+<P>
+Any publication arising from use of the CCP4 software suite should include 
+both references to the specific programs used (see below) and the following 
+reference to the CCP4 suite:</P>
+<P>
+M. D. Winn et al. <em>Acta. Cryst.</em> <b>D67</b>, 235-242 (2011)<br>
+"Overview of the CCP4 suite and current developments" <br>
+[ doi:10.1107/S0907444910045749 ]</P>
+<P>
+Such citations are vital to the CCP4 project, and individual program authors, 
+in maintaining funding and thus being able to develop CCP4 further.</P>
+<P>
+The following list is meant as an aid to citation of individual programs, but 
+<em>is not complete</em>. It has been extracted from the individual program
+documentation, so look there for more details. In addition, many relevant 
+articles can be found in the proceedings of the 2010 Study Weekend, published 
+as a special issue of Acta Cryst D.</P>
+
+<HR>
++
+
+# Loop over all html files
+
+for name in refmac5/references.html *.html ; do
+
+# Do not look at files without "startreferencelist" string.
+
+if test `grep startreferencelist $name | wc -l` -lt 1 ; then
+   continue
+elif test $name = "REFERENCE.html" ; then
+   continue
+elif test $name = "REFERENCE_tmp.html" ; then
+   continue
+fi
+
+echo "Examining $name ..."
+
+# Write program name
+
+awk '                      
+/INDEX_INFO/ { 
+   numfields = split($0,array,/::/)
+   for (count = 1; count <= numfields; count++) {
+     if (array[count]=="INDEX_INFO") title = tolower(array[count+1])
+   }
+   print "<h2> " title " </h2>"
+   exit
+   } ' $name  >>$referencefile
+
+# Write references between <ul> </ul> 
+# Takes everything between <!-- KEEP startreferencelist -->
+# and <!-- KEEP endreferencelist -->
+
+cat <<\+ >>$referencefile
+<ul>
++
+
+awk '                      
+/startreferencelist/ { 
+   getline
+   while (index($0,"endreferencelist") == 0) {
+     print $0      
+     getline }
+   } ' $name  >>$referencefile
+
+cat <<\+ >>$referencefile
+</ul>
++
+
+done
+
+cat <<\+ >>$referencefile
+</body></html>
++
+
+echo " "
+echo "Writing to REFERENCES.html"
+
+#

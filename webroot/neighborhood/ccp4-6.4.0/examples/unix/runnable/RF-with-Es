@@ -1,0 +1,160 @@
+#!/bin/sh
+
+# Straightforward amore rotation function for a single model molecule
+# using Es (after Ian Tickle), somewhat automated.  You can set the
+# parameters below as environment variables (see the toxd example).
+# Using Es rather than Fs is an improvement demonstrated in a CCP4
+# newsletter article by Huub and Tickle.
+
+# It's possible (as originally) to do the RF by generating an HKLPCK0
+# and HKLPCK1 for the target and model respectively, but a subsequent
+# TF needs the table from the sorting step.
+
+# Script by Dave Love, March, Nov. '95
+# $Id$
+
+set -e
+
+######### parameter section
+
+# Names of the data files:
+#modelpdb=${modelpdb:-$CEXAM/unix/runnable/1aal.brk}
+#mtzdata=${mtzdata:-$CEXAM/toxd/toxd.mtz}
+test "$modelpdb" = "" && echo "`basename $0`: Set variable modelpdb." && exit 1
+test "$mtzdata" = "" && echo "`basename $0`: Set variable mtzdata." && exit 1
+
+# Where to put the generated files.  If you want to give them a unique
+# prefix, use something like OPDIR=./am1_
+OPDIR=${OPDIR-"./"}
+
+# Column names in the $mtzdata file
+FPin=${FPin:-FP}
+SIGFPin=${SIGFPin:-SIG$FPin}    # conventional derivation from FP
+
+# Resolution limits -- worth experimenting.
+hires=${hires:-3.0}
+lores=${lores:-10.0}
+
+# This is a factor by which to multiply the default integration radius
+# to try different radii (worth doing) .
+Rmult=${Rmult:-1.0}
+
+# Maximum BETA angle to consider.  Set it to 90 if you have a 2 fold
+# axis perpendicular to the first rotation axis (e.g.in spacegroup
+# P212121, P6522, P41212 etc). If in doubt use 180.
+BMAX=${BMAX:-180}
+
+# If $keepmap is non-null the RF map won't be deleted.
+
+############# you shouldn't need to touch below here
+
+# NB use an explicit extension for mtz and pdb file names.  Otherwise, if
+# OPDIR contains a dot, the names will be taken as having an extension and
+# cuase considerable confusion.
+
+# Find the minimum dimension of the box containing the model and use
+# 75% of it for the integration radius $R (after IJT).  Also provide
+# model cell dimensions for keyworded i/p as $CELL.
+
+eval `pdbset xyzin $modelpdb xyzout /dev/null </dev/null |
+  awk '/On X/ {minD=$7; a=$7}
+       /On Y :/ {if ($7<minD) minD=$7; b=$7}
+       /On Z :/ {if ($7<minD) minD=$7; c=$7}
+       END {R=0.75*minD*fudge;
+            print "R=" R, ";CELL=\"CELL " a+R+res, b+R+res, c+R+res "\"" }' \
+      res=$hires fudge=$Rmult -`
+
+cat <<+
+
+Using integration radius of $R
+and $CELL
+
++
+
+# Put model coords in P1 cell.
+pdbset  XYZIN $modelpdb  XYZOUT ${OPDIR}model_rfcell.brk <<EOD
+SPACEG P1
+$CELL
+EOD
+
+# and calculate SFs
+# fixme: should the resolution range here be wider and the range cut down in
+# the rotfun step, to avoid running this step again if just changing
+# resolution?
+sfall  XYZIN ${OPDIR}model_rfcell.brk  HKLOUT ${OPDIR}model_rfcell.mtz <<EOD
+TITLE  Structure factors in P1 cell.
+MODE   SFCALC XYZIN
+SFSG   1
+SYMMETRY 1
+RESOLUTION $hires $lores
+BADD   10                       # fixme: is this appropriate?
+LABOUT PHIC=PC
+EOD
+
+# and then Es
+ecalc  HKLIN ${OPDIR}model_rfcell.mtz  HKLOUT ${OPDIR}model_ecalc1.mtz  <<EOD
+TITLE  ** Ecalc for model**
+LABIN   FP=FC
+EOD
+
+# Amore SORTING MODEL requires changed sort order and limits on HKL.
+# Use silly large HKL limits where necessary.
+cad hklin1 ${OPDIR}model_ecalc1.mtz hklout ${OPDIR}model_ecalc.mtz <<+
+labin file 1 all
+sort l k h
+outlim hkl -1 1000 -1000 1000 -1000 1000
++
+
+# Es for data
+ecalc  HKLIN $mtzdata  HKLOUT ${OPDIR}data_ecalc.mtz <<EOD
+TITLE  ** Ecalc for target crystal**
+LABIN   FP=$FPin SIGFP=$SIGFPin
+EOD
+
+# You wouldn't need to repeat the next three stages if changing the
+# integration radius, but they're relatively fast.
+
+# pack the reflexion data to amore internal form
+amore  HKLIN ${OPDIR}data_ecalc.mtz  HKLPCK0 ${OPDIR}data_ecalc.hkl  <<EOD
+TITLE  ** Packing h k l E for target crystal **
+SORTING
+LABIN  FP=E
+EOD
+
+# For the model, produce a TABLE
+amore  HKLIN ${OPDIR}model_ecalc.mtz TABLE1 ${OPDIR}model_ecalc.tab  <<EOD
+TITLE  ** Packing h k l E for model **
+SORTING MODEL
+LABIN  FC=E PHIC=PC
+EOD
+
+# and an HKLPCK file, which is also needed.
+amore  HKLIN ${OPDIR}model_ecalc.mtz  HKLPCK0 ${OPDIR}model_ecalc.hkl <<EOD
+TITLE  ** Packing h k l E for model **
+SORTING
+LABIN  FP=E
+EOD
+
+# and do the RF
+amore  HKLPCK0 ${OPDIR}data_ecalc.hkl  TABLE1 ${OPDIR}model_ecalc.tab  \
+       CLMN0 ${OPDIR}data_ecalc.clmn  CLMN1 ${OPDIR}model_ecalc.clmn  \
+       HKLPCK1 ${OPDIR}model_ecalc.hkl \
+       MAPOUT ${OPDIR}data_ecalc_rotfun  <<EOD  | tee ${OPDIR}roting.log
+ROTFUN
+TITLE  Rotation function with Es
+CLMN   CRYST  RESO $lores $hires  SPHERE $R
+CLMN   MODEL 1  RESO $lores $hires  SPHERE $R
+ROTATE CROSS  MODEL 1  NPIC 20 BMAX $BMAX
+EOD
+
+grep SOLUTIONRC ${OPDIR}roting.log > ${OPDIR}solutionrc
+
+rm -f ${OPDIR}roting.log
+test "$keepmap" || rm -f ${OPDIR}data_ecalc_rotfun.map
+
+echo; echo "RF solutions are in ${OPDIR}solutionrc"
+
+
+rm -f ${OPDIR}model_rfcell.mtz  ${OPDIR}model_rfcell.brk \
+      ${OPDIR}model_ecalc1.mtz ${OPDIR}data_ecalc.mtz ${OPDIR}model_ecalc.mtz
+#

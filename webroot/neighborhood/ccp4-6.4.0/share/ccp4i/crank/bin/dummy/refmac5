@@ -1,0 +1,244 @@
+#!/usr/bin/env python
+#switch between usual refmac5 and crank specific use of SAD/SIRAS etc functions
+
+import os,sys,re,subprocess,shutil
+sys.path.append( os.path.join(os.getenv('CRANK'),'plugins','solomon') )
+import phdmmb
+
+# find refmac executable in PATH or from CCP4_BIN as fallback
+if os.environ.has_key('CCP4'):
+  cbin=os.path.join(os.getenv('CCP4'),'bin')
+  refmac_executable = os.path.join(cbin, "refmac5")
+for path in os.environ["PATH"].split(os.pathsep)[1:]:
+  test_exe = os.path.join(path, "refmac5")
+  if os.path.isfile(test_exe) and os.access(test_exe, os.X_OK):
+    refmac_executable = test_exe
+    break
+
+# find input.par file
+input_par_file = os.path.join(os.pardir,"input.par")
+if not os.path.isfile(input_par_file):
+  input_par_file = os.path.join(os.getcwd(),"input.par")
+  if not os.path.isfile(input_par_file):
+    sys.exit('crank_refmac_switch: input.par file not found')
+
+all_argv = []
+all_lines, new_data, new_anom, new_labin, dm_keys, exper = "", "", "", "", "", ""
+# remove treat_heavy_specific when it is approved to be unnecessary
+deal_heavy, treat_heavy_specific, separate_heavy, ncyc_now, par_restrref, par_side = 0, 0, 0, 0, 5, 0
+solv_cont = 0.0
+no_ncs_det = 1
+
+# read input and output files
+for i,argv in enumerate(sys.argv[1:]):
+  all_argv.append(argv)
+  if re.search('XYZIN',argv):
+    xyzin=sys.argv[i+2]
+  if re.search('XYZOUT',argv):
+    xyzout=sys.argv[i+2]
+  if re.search('HKLIN',argv):
+    hklin=sys.argv[i+2]
+  if re.search('HKLOUT',argv):
+    hklout=sys.argv[i+2]
+    srch = re.search(r'arp_(\d+)\.pdb',xyzout)
+    if srch:
+      ncyc_now = int(srch.group(1))
+
+# check whether we use direct targets or not
+crank_own=0
+if not sys.stdin.isatty():
+ for line in sys.stdin:
+  mtch = re.match(r'^\s*REFI.+ (SADH|SAD|SIR|SRAS|MAD|AUTO)',line)
+  if mtch:
+    crank_own=1
+    new_refi="REFI {0}".format(mtch.group(1))
+    if re.match('SRAS',mtch.group(1)):
+      separate_heavy=1
+    exper=mtch.group(1)
+  mtch = re.match(r'^\s*(LABI.+)$',line)
+  if mtch:
+    new_labin = mtch.group(1)
+  else:
+    all_lines = "{0}{1}".format(all_lines,line)
+
+
+if not crank_own:
+  # runs usual arpwarp+refmac
+  args = [refmac_executable,]
+  args.extend(all_argv)
+  if all_lines:
+    refm = subprocess.Popen( args, stdin=subprocess.PIPE )
+  else:
+    refm = subprocess.Popen( args, stdin=subprocess.PIPE, stdout=subprocess.PIPE )
+  out,err=refm.communicate(input="{0}\n{1}\nEND\n".format(new_labin,all_lines))
+  if out:
+    sys.stdout.write(out)
+else:
+  # runs crank specific recycling
+  #this works also with multiple occurances of "DATA" in .par file 
+  #but it must be changed (f.i. to DATA1 etc) if .par file is parsed directly!
+  # anaf is here for compatibility reasons with older development versions
+    # it seems that (at least the newer versions of) arpwarp treat different heavy atoms differently...
+
+  # read the crank specific keys and prepare
+  new_keys = ("HEAVYIN","DATA","F_","SIGF_","ANOM","DM","ANAF","HREF")
+  with open(input_par_file) as f:
+    for line in f:
+      srch = re.search(r'\s*set\s*(\S+)\s*=\s*(\'(.*)\'|(\S*))', line)
+      if srch:
+        e1, e3, e4 = srch.group(1), srch.group(3), srch.group(4)
+        if e3:
+          e34 = e3
+        else:
+          e34 = e4
+        globals()['par_'+e1] = e34
+        # some preparations based on number of refmac cycles
+        if e1 == 'restrref' and ncyc_now>0:
+          par_restrref=int(par_restrref)
+          if ncyc_now==1 or (ncyc_now-2)%par_restrref==0 :
+            deal_heavy=1
+          if ncyc_now==1 or (ncyc_now-3)%(par_restrref*2)==0 :
+            no_ncs_det=0
+        # process HEAVYIN
+        if e1 == new_keys[0]:
+          heavyin = "{0}.ref".format(e34)
+        # process DATA
+        if e1 == new_keys[1]:
+          new_data = "{0}{1} {2}\n".format(new_data,e1,e34)
+        # process F_i,SIGF_i
+        for i in range(2,4):
+          if re.match(r'^{0}\d+$'.format(new_keys[i]), e1):
+            new_labin = "{0} {1}={2}".format(new_labin,e1,e34)
+        # process ANOM
+        if e1==new_keys[4]: 
+          # this is only for refinement of fpp - not used by default
+          if os.path.isfile('fpp'):
+            srch = re.search('(\s*\S+\s*\S+\s*\S+\s*)(\S+)',e3)
+            if srch:
+              e3=srch.group(1)
+              with open('fpp') as fpp:
+                e34=e3+fpp.read().strip()
+          new_anom = "{0} {1} {2}".format(new_anom, e1, e34)
+          # remember heavy atom type and fp,fpp
+          srch=re.search('FORM\s+(\S+)\s+(\S+)\s+(\S+)', e34)
+          if srch:
+            heavy_type = srch.group(1)
+            heavy_fp = float(srch.group(2))
+            heavy_fpp = float(srch.group(3))
+            #if deal_heavy:
+            #  if ( ncyc_now>par_restrref*int(par_side)+1 and heavy_type!='CA' ) or \
+            #     heavy_type=='HG' or heavy_type=='S':
+            #    treat_heavy_specific=1
+          else:
+            sys.exit('Wrong form factor: {0}'.format(e34))
+        # DM combined
+        if e1==new_keys[5] and exper=='SADH':
+          new_labin = "{0} FPART1=mod.F_phi.F PHIP1=mod.F_phi.phi".format(new_labin)
+          solv_cont = float(e34)
+          dm_be=phdmmb.density_mod(solv_cont=solv_cont, prog='parrot', bigcyc=4, bias_est=1, mtzinit=hklin)
+          dm=phdmmb.density_mod.from_dmbe(dm_be, bigcyc=7)
+          if os.path.isfile('beta_act'):
+            with open('beta_act','r') as f:
+              dm.beta=float(f.read())
+          ph_intcyc=1
+          if os.path.isfile('R_act'):
+            with open('R_act','r') as f:
+              R_now=float(f.read())
+              if R_now<0.49 and (ncyc_now-2)/par_restrref>=3:
+                ph_intcyc=3
+                dm.bigcyc=5
+              if R_now<0.44 and (ncyc_now-2)/par_restrref>=5:
+                ph_intcyc=6
+                dm.bigcyc=4
+                dm.beta=1
+                dm_be.bigcyc=0
+          if ncyc_now==1:
+            mtzin_col=phdmmb.mtz_cols( hl_recomb=('HLA_DUM','HLB_DUM','HLC_DUM','HLD_DUM'), fom=par_fom, fph_b=(par_fbest,par_phibest), fsigf_o=(par_fp,par_sigfp) )
+          else:
+            if deal_heavy:
+              mtzin_col=phdmmb.mtz_cols( hl_recomb=('HLA_DUM','HLB_DUM','HLC_DUM','HLD_DUM'), fom='FOM', fph_b=('FB','PHIB'), fsigf_o=(par_fp,par_sigfp) )
+            else:
+              mtzin_col=phdmmb.mtz_cols( hl_recomb=('HLA_DUM','HLB_DUM','HLC_DUM','HLD_DUM'), fom='FOM', fph_b=('FWT','PHWT'), fsigf_o=(par_fp,par_sigfp) )
+            sft = subprocess.Popen( 'sftools', stdin=subprocess.PIPE )
+            sft.communicate(input="read {0}\ndelete col FOM PHIB FB\ndelete col FWT PHWT\nread refmac.mtz col FOM FWT PHWT PHIB FB\nwrite {1}\nY\nquit\nY\nEND\n".format(hklin,hklin+'_',par_fp))
+            shutil.move(hklin+'_', hklin)
+          sft = subprocess.Popen( 'sftools', stdin=subprocess.PIPE )
+          sft.communicate(input="read {0}\ncalc A col HLA_DUM=1\ncalc A col HLB_DUM=0\ncalc A col HLC_DUM=0\ncalc A col HLD_DUM=0\nwrite {1}\nY\nquit\nY\nEND\n".format(hklin,hklin+'_'))
+          shutil.move(hklin+'_', hklin)
+          if deal_heavy:
+            mtzin_col.fsigf_op=(par_F_1, par_SIGF_1)
+            mtzin_col.fsigf_om=(par_F_2, par_SIGF_2)
+            if par_freelabin.strip():
+              mtzin_col.free=(par_freelabin.strip().split('=')[1])
+            heavy_atoms = [ phdmmb.heavy_atom(heavy_type,heavy_fp,heavy_fpp), ]
+            pdb_heavy=""
+            #if treat_heavy_specific:
+            pdb_heavy=os.path.join(os.path.pardir, heavyin)
+            subprocess.call(['del_heavy',xyzin,xyzin,heavy_type])
+            ph=phdmmb.phase_ref(prog='refmac', exper='SAD', intcyc=ph_intcyc, heavy_atoms=heavy_atoms, pdb_heavy=pdb_heavy, binary=refmac_executable)
+            dmbr=phdmmb.dm_br(ph,dm_be,dm)
+            subprocess.call(['get_heavy',xyzin,'dum','DUM'])
+            subprocess.call(['del_heavy',xyzin,xyzin+'remdum','DUM'])
+            dmbr.Run(partial_model=xyzin+'remdum', mtzin_col=mtzin_col)
+            #dmbr.Run(partial_model=xyzin, mtzin_col=mtzin_col)
+            #subprocess.call('../cphasematch-final.com_')
+            shutil.copy('refmac.mtz', hklin)
+            shutil.copy('refmac.pdb', xyzin)
+            subprocess.call(['add_heavy',xyzin,'dum','DUM'])
+            mtzin_col.hl_recomb=('HLACOMB','HLBCOMB','HLCCOMB','HLDCOMB')
+            with open('beta_act','w') as f:
+              f.write(str(dm.beta))
+            with open('R_act','w') as f:
+              f.write(str(ph.R))
+          dm_keys = "DM2\nscpa 0 1\nDMBL {0}\nPHOUT\nREFI SUBSTR YES\nRIDGE DIST DMAX 0.001".format(dm.beta)
+          #dm_keys = "DM2\nscpa 0 1\nDMBL {0}\nPHOUT\nREFI SUBSTR YES".format(dm.beta)
+        # REFI keywords
+        for i in range(6,len(new_keys)):
+          if (e1==new_keys[i]):
+            new_refi = "{0} {1} {2}".format(new_refi,e1,e34)
+        # the following is only for removal of dummy atoms which is done afterwards
+        if e1 == "cell":  cell = e34
+        if e1 == "sym":   spgnum = e34
+        if e1 == "ANAF":  heavyatom = e34
+
+
+  # now run refmac and sort out heavy atom addition/removal if needed
+  if deal_heavy and not separate_heavy:
+    # Removes dummy atoms close to heavy atoms.
+    # disabled as of now - refmac throws error messages if some atoms are missing
+    # failure not critical - may happen if perl is not installed etc
+    #try:
+    #  pdbs = subprocess.Popen( ['pdbset','XYZIN',heavyin,'XYZOUT',heavyin+'.exp'], stdin=subprocess.PIPE, stdout=subprocess.PIPE )
+    #  pdbs.communicate('CELL {0}\nSYMGEN {1}\nEND\n'.format(cell,spgnum))
+    #  subprocess.call( ['remove_dummy',heavyin+'.exp',xyzin] )
+    #except:
+    #  print 'Dummy atoms close to heavy atoms were not removed.'
+    #Adds heavy atoms to the pdb (necessary since ARP/wARP removes them as of now...)
+    subprocess.call( ['get_heavy',heavyin,heavyin+'.ref',heavy_type] )
+    #if treat_heavy_specific:
+    subprocess.call( ['add_heavy',xyzin,heavyin+'.ref'] )
+  # runs dm if asked for
+  if dm_keys:
+    dm.Run(mtz_in=hklin, pdb_heavy=heavyin, no_ncs=no_ncs_det, mtzin_col=mtzin_col)
+    sft = subprocess.Popen( 'sftools', stdin=subprocess.PIPE )
+    sft.communicate(input="read {0}\ndelete col mod.F_phi.F mod.F_phi.phi\nread {1} col mod.F_phi.F mod.F_phi.phi\nwrite {2}\nY\nquit\nY\nEND\n".format(hklin,dm.mtz_out,hklin+'_'))
+    shutil.move(hklin+'_', hklin)
+    shutil.copy(dm.prog+'.log', dm.prog+str(ncyc_now)+'.log')
+  all_lines = "#\n{0}\n\n{1}\n{2}\n{3}\n{4}\n{5}\n".format(new_labin,new_data,new_refi,new_anom,dm_keys,all_lines)
+  if separate_heavy:
+    all_argv.extend(['XYZIN2', heavyin, 'XYZOUT2', heavyin+'.ref'])
+  # runs refmac with our options
+  args = [refmac_executable,]
+  args.extend(all_argv)
+  refm = subprocess.Popen( args, stdin=subprocess.PIPE )
+  refm.communicate(input="{0}\nEND\n".format(all_lines))
+  shutil.copy(hklout, 'refmac.mtz')
+  #!!!!!!!!!!1
+  ###shutil.copy(hklin,hklout)
+  ###shutil.copy(xyzin,xyzout)
+  #subprocess.call('../cphasematch-final.com_')
+  #Parses the new pdb and copies the heavy atoms into separate file to be used in the next cycle
+  if not separate_heavy:
+    subprocess.call(['get_heavy',heavyin,heavyin+'.ref',heavy_type])
+  else:
+    shutil.move(heavyin+'.ref', heavyin)

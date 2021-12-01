@@ -1,0 +1,53 @@
+#!/bin/sh 
+#
+# run rebatch
+# 
+set -e
+
+na4tomtz hklin $CEXAM/data/aucn.na4 hklout \
+   $CCP4_SCR/aucn.mtz
+
+# used to distinguish different runs in html logfile
+CCP_PROGRAM_ID=run1
+export CCP_PROGRAM_ID
+#
+# REBATCH - alter batch numbers in an unmerged MTZ file
+# 
+rebatch hklin $CCP4_SCR/aucn.mtz \
+   hklout $CCP4_SCR/aucn_rebatch1.mtz <<EOF-rebat
+batch add 10 
+batch all maxw 0.7
+title DMSO red aucn Data
+EOF-rebat
+#
+# Alternative keyword commands for REBATCH
+# 
+# batch 6 to 8 start 101 step 2
+# batch 5 6 7 add 10
+# batch all add 10
+# batch maxwidth 1.0
+#
+CCP_PROGRAM_ID=run2
+rebatch hklin $CCP4_SCR/aucn.mtz \
+   hklout $CCP4_SCR/aucn_rebatch2.mtz <<EOF-rebat
+batch reject 5 
+batch all maxw 1.2
+title DMSO red aucn Data
+EOF-rebat
+#
+CCP_PROGRAM_ID=run3
+rebatch hklin $CCP4_SCR/aucn.mtz \
+   hklout $CCP4_SCR/aucn_rebatch3.mtz <<EOF-rebat
+batch start 30 
+batch maxw 1.0
+title DMSO red aucn Data
+EOF-rebat
+
+
+
+
+
+
+
+
+

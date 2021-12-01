@@ -1,0 +1,778 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+   <title>CCP4 Program Suite</title>
+   <meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+</head>
+<body>
+
+<!-- ::INDEX_INFO::TRUNCATE::Supported::Data Processing and Reduction::obtain structure factor amplitudes using Truncate procedure:::::::: -->
+
+<h1>TRUNCATE (CCP4: Supported Program)</h1>
+
+<h2>NAME</h2>
+<b>truncate </b>
+- obtain structure factor amplitudes using Truncate procedure and/or generate useful intensity statistics
+
+<h2>SYNOPSIS </h2>
+
+<p><b>truncate hklin</b> <i>foo_in.mtz</i> <b>hklout</b> <i>foo_out.mtz</i>
+[ <b>plot</b> <i>foo.plt</i> ]
+<br />
+[<a href="#keywords">Keyworded input</a>]</p>
+
+<h2><a name="description"></a>DESCRIPTION</h2>
+
+<p>The standard use of the program is to read a file of averaged intensities (output from
+<a href="scala.html">SCALA</a>, <a href="scalepack2mtz.html">SCALEPACK2MTZ</a>
+or <a href="dtrek2mtz.html">DTREK2MTZ</a>)
+and write a file containing mean amplitudes and the original intensities.
+If anomalous data is present then F(+), F(-), with the anomalous difference,
+plus I(+) and I(-) are also written out. The amplitudes are put on an approximate
+absolute scale using the scale factor taken from a Wilson plot.</p>
+
+<p>There are two ways in TRUNCATE to calculate the amplitudes from the
+intensities. The simplest is just to take the square root of the intensities,
+setting any negative ones to zero (keyword TRUNCATE NO). Alternatively,
+the "truncate" procedure (keyword TRUNCATE YES, the default) calculates a
+best estimate of F from I, sd(I), and the distribution of intensities in
+resolution shells (see <a href="#ranges">below</a>). 
+This has the effect of forcing all negative
+observations to be positive, and inflating the weakest reflections (less
+than about 3 sd), because an observation significantly smaller than the
+average intensity is likely to be underestimated. See <a href="#references">reference</a>
+below.</p>
+
+<p>If the input specified on the LABIN line includes an assignment for F, then 
+no output will be generated.  It is most undesirable to TRUNCATE a set of data 
+where the intensities have already been modified to generate amplitudes.</p>
+
+<p>This program can be used even if the "truncate" procedure is not desired,
+since it produces some useful statistics on intensity distributions. 
+These
+can indicate problems with the data; for instance if the data  is extremely
+anisotropic (see the <a href="#falloff">FALLOFF</a> keyword) or if it is likely 
+to be twinned. See the cumulative intensity distribution plot, which for a 
+perfect twinning becomes sigmoidal, and the moments of E (or Z) which are different 
+for twinned data than for untwinned. If there are indications of twinning they
+will be noted as warnings in the log file. </p>
+
+<p>The scale factor estimated from the Wilson plot is applied to the data
+and allows the data to be put on a (very approximate) absolute scale. This
+at least gives amplitudes of a sensible magnitude for further calculations.
+The calculation relies on the number of residues/atoms given by the keywords
+NRESIDUE/CONTENTS being roughly correct. The program does not, however,
+apply any temperature factor.</p>
+
+<h3>Moments of the intensities</h3>
+
+<p><b>Note:</b> this is the same test as before, but the description
+is now in terms of the normalised structure factor E or the normalised
+intensity Z, since this takes into account correctly the symmetry
+factor epsilon and the normalisation.</p>
+
+<p>We define a reduced intensity I' = I / epsilon, where epsilon is the 
+symmetry factor which increases the mean intensities for certain planes or 
+lines in reciprocal space. We also define Z = I' / &lt;I'&gt;  The general 
+formulae for the expected moments of I' and Z
+(where k-th moment of x = &lt;x^k&gt;) for untwinned acentric data are:</p>
+
+<pre>
+
+  k-th moment of I' = Gamma(k+1) * &lt;I'&gt;^k
+
+  k-th moment of Z = Gamma(k+1)
+                   = k!          if k is an integer
+
+</pre>
+The normalised structure amplitude is given by:
+<pre>
+
+  E = I'^(1/2) / &lt;I'&gt;^(1/2) = Z^(1/2)
+
+</pre>
+The moments of E can then be related to the half-integral moments of Z:
+<pre>
+
+  k-th moment of E = &lt;E^k&gt;  
+                   = &lt;Z^(k/2)&gt; 
+                   = Gamma(k/2+1)
+
+</pre>
+For k odd, this can be evaluated as:
+<pre>
+
+   k-th moment of E = Gamma(k/2+1)    with k odd
+                    =  k/2 * (k/2 - 1) * ... * 0.5 * Gamma(1/2)
+                    =  sqrt(PI) * k/2 * (k/2 - 1) * ... * 0.5
+
+  e.g. &lt;E^3&gt;  = sqrt(PI) * 1.5 * 0.5 = 1.329
+
+</pre>
+For k even, &lt;E^k&gt; is simply (k/2)!
+</p>
+
+<p>One can also calculate expected moments for acentric data in the case of 
+perfect twinning, and for untwinned and twinned centric data, giving:
+<pre>
+                    Acentric                        Centric
+              Untwinned data  Perfect twin.   Untwinned data  Perfect twin.
+  &lt;E&gt;             0.886         0.94               0.798       0.886 
+  &lt;E^3&gt;           1.329         1.175              1.596       1.329
+  &lt;E^4&gt;           2.0           1.5                3.0         2.0
+  &lt;E^6&gt;           6.0           3.0               15.0         6.0 
+  &lt;E^8&gt;          24.0           7.5              105.0        24.0 
+
+</pre>
+Truncate outputs these moments for comparison against these expected values.
+</p>
+
+<h2><a name="keywords"></a>KEYWORDED INPUT</h2>
+
+<p>The various data control lines are identified by keywords. Only the first
+4 letters of each keyword are necessary. Most keywords are optional.</p>
+
+<blockquote>
+<a href="#anomalous"><b>ANOMALOUS</b></a>, <a href="#cell"><b>CELL</b></a>,
+<a href="#contents"><b>CONTENTS</b></a>, <a href="#falloff"><b>FALLOFF</b></a>, 
+<a href="#header"><b>HEADER</b></a>,
+<a href="#history"><b>HISTORY</b></a>, <a href="#labin"><b>LABIN</b></a>,
+<a href="#labout"><b>LABOUT</b></a>, <a href="#nresidue"><b>NRESIDUE</b></a>,
+<a href="#plot"><b>PLOT</b></a>, <a href="#ranges"><b>RANGES</b></a>,
+<a href="#resolution"><b>RESOLUTION</b></a>, <a href="#rscale"><b>RSCALE</b></a>,
+<a href="#scale"><b>SCALE</b></a>, 
+<a href="#symmetry"><b>SYMMETRY</b></a>, <a href="#title"><b>TITLE</b></a>,
+<a href="#truncate"><b>TRUNCATE</b></a>, <a href="#vpat"><b>VPAT</b></a>
+</blockquote>
+
+<p>In addition, the following optional keywords control the data harvesting
+functionality:</p>
+<blockquote>
+<a href="#dname"><b>DNAME</b></a>, <a href="#noharvest"><b>NOHARVEST</b></a>,
+<a href="#pname"><b>PNAME</b></a>, <a href="#private"><b>PRIVATE</b></a>,
+<a href="#rsize"><b>RSIZE</b></a>, <a href="#usecwd"><b>USECWD</b></a>
+</blockquote>
+
+<h2>DESCRIPTION OF KEYWORDS</h2>
+
+<h3><a name="title"></a>TITLE &lt;title&gt;</h3>
+
+<p>(default TITLE='From Truncate') [OPTIONAL INPUT]</p>
+
+<p>Title to write to output reflection file</p>
+
+<h3><a name="ranges"></a>RANGES &lt;nrange&gt; | &lt;range&gt;</h3>
+
+<p>(Default &lt;nrange&gt;=60) [OPTIONAL INPUT]</p>
+
+<p>&lt;nrange&gt; is the number of resolution bins over the resolution
+range for the Wilson Plot. &lt;range&gt; is the width of the bins on 4(sin
+ theta/lambda)**2 and is an alterative to &lt;nrange&gt;. The resolution
+range used for the Wilson Plot is taken from the input data file, or set
+with the RESOLUTION keyword. A subset of these bins, covering a resolution
+range defined with the RSCALE keyword, is used to estimate the scale and
+B-factor.<br />
+The use of this card is discouraged, as the choice of the number of bins
+is important. Too few bins and the scale and overall B will be less accurate.
+Too few reflections per bin could mean a large scattering of points from
+the straight line. This would mean a large uncertainty in the values for
+scale and B.<br />
+If this card is omitted, the program divides the resolution range into
+60 bins, then checks that there are not less than 40 reflections in any
+one bin and if necessary reduces the number of bins until the above condition
+is satisfied. In all cases, the program will stop if the width of ranges
+is greater than 0.03 or the number of bins is greater than 60.</p>
+
+<h3><a name="resolution"></a>RESOLUTION &lt;Dmin&gt; &lt;Dmax&gt;</h3>
+
+<p>[OPTIONAL INPUT]</p>
+
+<p>Resolution limits - either 4(sin theta/lambda)**2 or d in Angstroms
+(either order). Reflections outside these limits will be excluded from
+all analysis and omitted on output. Defaults are taken from the range of
+data in the input file (<em>i.e.</em> all data included).</p>
+
+<h3><a name="rscale"></a>RSCALE &lt;Dmin&gt; &lt;Dmax&gt;</h3>
+
+<p>[OPTIONAL INPUT]</p>
+
+<p>Resolution limits for scaling (either 4(sin theta/lambda)**2 or d).
+This option allows you to exclude low resolution reflections from the calculation
+of the scale and B factor. However, all points in the range defined by
+RESO are plotted on the Wilson plot. It is probably a good idea to include
+only high resolution data (beyond 3A, if you have any data there) in the
+Wilson plot. This is because the assumptions behind Wilson statistics are
+invalid for low resolution data. The default high resolution limit is the
+same as RESOLUTION. The low resolution limit is, by default, set to 4.0A
+if the high res. limit is greater than 3.5A.</p>
+
+<h3><a name="scale"></a>SCALE &lt;scale&gt;</h3>
+
+<p>[OPTIONAL INPUT]</p>
+
+<p>The default is to apply a scale factor from the Wilson plot. If a scale
+factor is given here, then that is applied instead.
+This option is useful if relative scaling is already done in SCALA.</p>
+
+<p>If amplitudes rather than intensities are specified on the LABIN line,
+then the Wilson scale is <em>not</em> applied, and a default scale
+of 100 is used.</p>
+
+<h3><a name="falloff"></a>FALLOFF YES | NO [ CONE &lt;cone&gt; ] [ PLTX | PLTY ]</h3>
+
+<p>[OPTIONAL INPUT]</p>
+
+<p>The first argument of the FALLOFF keyword should be &quot;YES&quot; or &quot;NO&quot;,
+followed optionally by subkeywords controlling the detailed behaviour. 
+The default is &quot;YES&quot;, which triggers an analysis of the anisotropy of
+the data according to the &quot;falloff&quot; procedure contributed by Yorgo Modis. 
+This calculates the falloff of mean F and mean F/sigma values as a 
+function of (sin theta/lambda)**2
+in 3 orthogonal directions. An overall falloff of all reflections is also 
+calculated. The 3 mutually perpendicular directions are:</p>
+<pre> 
+
+        DIRECTION 2 = B*-AXIS 
+        DIRECTION 3 = PERPENDICULAR TO A* AND B*
+        DIRECTION 1 = PERPENDICULAR TO B* AND DIRECTION 3.
+
+</pre> 
+<p>If either of the subkeywords PLTX or PLTY are specified, then
+an output plot file (PLOT) is produced, in which Direction 1 is
+plotted as a thick line, Direction 2 is plotted as a hollow line with
+boxes at regular intervals of resolution, and Direction 3 is plotted
+as a thin line.  The resolution range and number of resolution bins
+used in the calculation can be set by the keywords <a
+href="#resolution">RESOLUTION</a> and <a href="#ranges">RANGES</a>
+respectively.</p>
+
+<p>Subkeywords:</p>
+<dl>
+<dt>CONE &lt;cone&gt;</dt>
+<dd>The falloff of mean F-values along each orthogonal direction is calculated
+using reflections falling within a cone orientated along that direction.
+&lt;cone&gt; is the angle the surface of the cone makes with the associated
+direction. Reflections which are located at a greater angle than 
+&lt;cone&gt; from the closest direction will not be included in the falloff 
+calculations.<br /> 
+Default: 30.0 degrees.</dd>
+<dt>PLTX | PLTY</dt>
+<dd>Produce an output plot file (PLOT) and orientate it horizontally 
+or vertically.<br />
+Default is horizontally (PLTX).</dd>
+</dl>
+
+<h3><a name="labin"></a>LABIN &lt;program label&gt;=&lt;file label&gt;...</h3>
+
+<p>Specify input column labels. [OPTIONAL INPUT]</p>
+
+<p>Truncate takes output from SCALA, SCALEPACK2MTZ or DTREK2MTZ which generate
+standard labels. This is the most common usage of the program, in
+which case LABIN records are not required. If F is assigned, there will be no
+reflections output. You must assign either IMEAN/SIGIMEAN or F/SIGF.</p>
+
+<p>The program labels defined are: 
+IMEAN SIGIMEAN I(+) SIGI(+) I(-) SIGI(-)  F SIGF FreeR_flag</p>
+
+<blockquote>
+<dl>
+
+<dt>IMEAN</dt>
+<dd>Original average Structure Intensity</dd>
+
+<dt>SIGIMEAN</dt>
+<dd>Standard deviation of the above</dd>
+
+<dt>I(+)</dt>
+<dd>Structure Intensity of hkl</dd>
+
+<dt>SIGI(+)</dt>
+<dd>Standard deviation of the above</dd>
+
+<dt>I(-)</dt>
+<dd>Structure Intensity of -h -k -l</dd>
+
+<dt>SIGI(-)</dt>
+<dd>Standard deviation of the above</dd>
+
+<dt>F</dt>
+<dd>Original average Structure Amplitude</dd>
+
+<dt>SIGF</dt>
+<dd>Standard deviation of the above</dd>
+
+<dt>FreeR_flag</dt>
+<dd>Column of free-R flags</dd>
+
+</dl>
+</blockquote>
+
+<h3><a name="labout"></a>LABOUT &lt;program label&gt;=&lt;file label&gt;...</h3>
+
+<p>Specify output column labels. [OPTIONAL INPUT]</p>
+
+<p>The labels allowed are F SIGF DANO SIGDANO F(+) SIGF(+) F(-) SIGF(-)
+IMEAN SIGIMEAN I(+) SIGI(+) I(-) SIGI(-) FreeR_flag ISYM. The output labels will default
+to these unless they are changed by assigning a program label to a user
+label.</p>
+
+<blockquote>
+<dl>
+<dt>F</dt>
+<dd>Structure Amplitude</dd>
+
+<dt>SIGF</dt>
+<dd>Standard deviation of the above</dd>
+
+<dt>DANO</dt>
+<dd>Anomalous difference</dd>
+
+<dt>SIGDANO</dt>
+<dd>Standard deviation of the above</dd>
+
+<dt>F(+)</dt>
+<dd>Structure Amplitude for hkl</dd>
+
+<dt>SIGF(+)</dt>
+<dd>Standard deviation of the above</dd>
+
+<dt>F(-)</dt>
+<dd>Structure Amplitude for -h -k -l</dd>
+
+<dt>SIGF(-)</dt>
+<dd>Standard deviation of the above</dd>
+
+<dt>IMEAN</dt>
+<dd>Original average Structure Intensity</dd>
+
+<dt>SIGIMEAN</dt>
+<dd>Standard deviation of the above</dd>
+
+<dt>I(+)</dt>
+<dd>Structure Intensity of hkl</dd>
+
+<dt>SIGI(+)</dt>
+<dd>Standard deviation of the above</dd>
+
+<dt>I(-)</dt>
+<dd>Structure Intensity of -h -k -l</dd>
+
+<dt>SIGI(-)</dt>
+<dd>Standard deviation of the above</dd>
+
+<dt>FreeR_flag</dt>
+<dd>Column of free-R flags</dd>
+
+<dt>ISYM</dt>
+<dd>Symmetry number for F: normally=0 but 1 or 2 if the F column arises
+entirely from F+ or F- reflections respectively</dd>
+</dl>
+</blockquote>
+
+<p>If there is no anomalous data present then only the appropriate columns
+(F, SIGF, IMEAN and SIGIMEAN) are output. Values may be given in any order
+and as either Proglabel=Userlabel or Userlabel=Proglabel.</p>
+
+<h3><a name="contents"></a>CONTENTS &lt;symbol&gt; &lt;n&gt; ...</h3>
+
+<p>[ALTERNATIVE COMPULSORY INPUT]</p>
+
+<p>followed by number of atoms in asymmetric unit, including hydrogens</p>
+
+<p>A maximum of 20 atom (element) types is allowed, each followed by a
+number, <em>e.g.</em></p>
+
+<pre>  CONTENTS  H 746 C  454  N 115    O 139   S 12  ! Must include hydrogens
+</pre>
+
+<p>The average scattering power is calculated from a table of form factors.
+By default the file $CLIBD/atomsf.lib contains this table of form factors.
+You can change the table used by assigning 'ATOMSF' to your preferred file.
+[NOTE the program <a href="rwcontents.html">RWCONTENTS</a> provides the
+information for this keyword; how many Carbons etc., from a PDB file. Also,
+it gives an estimate of the number of hydrogens there would be.]</p>
+
+<h3><a name="nresidue"></a>NRESIDUE &lt;Nres&gt;</h3>
+
+<p>[ALTERNATIVE COMPULSORY INPUT]</p>
+
+<p>&lt;Nres&gt; is the number of residues expected in the asymmetric unit</p>
+
+<p>A very approximate atom composition is calculated:</p>
+
+<pre>    mean mass of an amino acid = 110
+    add on one ordered water per amino acid = ca. 128
+</pre>
+
+<p>This is then taken as 5 C + 1.35 N + 1.5 O + 8 H /residue as number of atoms
+in asymmetric unit.</p>
+
+<h3><a name="vpat"></a>VPAT &lt;vpat&gt;</h3>
+
+<p>[OPTIONAL INPUT]</p>
+
+<p>volume per atom - default = 10</p>
+
+<h3><a name="plot"></a>PLOT [ ON | OFF ]</h3>
+
+<p>PLOT or PLOT ON produces extra ascii plots in the log output. The default
+is PLOT OFF.</p>
+
+<p>[OPTIONAL INPUT]</p>
+
+<h3><a name="header"></a>HEADER [ NONE | BRIEF | HISTORY | ALL ] [ NOBATCH
+| BATCH | ORIENTATION ]</h3>
+
+<p>[OPTIONAL INPUT]</p>
+
+<p>Controls printout from reading file and batch headers</p>
+
+<ol type="a">
+<li>file header printing:
+
+<blockquote>
+<dl>
+<dt><a name="header_none"></a>NONE</dt>
+
+<dd>no header printed</dd>
+
+<dt><a name="header_brief"></a>BRIEF</dt>
+
+<dd>brief header (default)</dd>
+
+<dt><a name="header_history"></a>HISTORY</dt>
+
+<dd>brief + history</dd>
+
+<dt><a name="header_all"></a>ALL</dt>
+
+<dd>full header printed</dd>
+</dl>
+</blockquote>
+</li>
+
+<li>batch header printing:
+
+<blockquote>
+<dl>
+<dt><a name="header_nobatch"></a>NOBATCH</dt>
+
+<dd>no batch header printed</dd>
+
+<dt><a name="header_batch"></a>BATCH</dt>
+
+<dd>batch titles printed (default)</dd>
+
+<dt><a name="header_orientation"></a>ORIENTATION</dt>
+
+<dd>batch orientation data also printed</dd>
+</dl>
+</blockquote>
+</li>
+</ol>
+
+<h3><a name="history"></a>HISTORY string</h3>
+
+<p>[OPTIONAL INPUT]</p>
+
+<p>History strings to be added to history records in output file</p>
+
+<h3><a name="anomalous"></a>ANOMALOUS YES | NO</h3>
+
+<p>[OPTIONAL INPUT]</p>
+
+<p>Controls whether anomalous differences are output. Defaults YES if anomalous
+information is present on input file, otherwise NO</p>
+
+<h3><a name="truncate"></a>TRUNCATE YES | NO</h3>
+
+<p>[OPTIONAL INPUT]</p>
+
+<p>If YES (default) the data will be truncated according to the procedure
+of <a href="#references">French and Wilson</a>. If NO the data are not
+truncated but the structure amplitudes are calculated simply by taking
+the square root of the intensities. Negative intensities are set to zero.</p>
+
+<h3><a name="symmetry"></a>SYMMETRY &lt;space_group&gt; | &lt;number&gt;</h3>
+
+<p>[OPTIONAL INPUT]</p>
+
+<p>Default is to use symmetry in input HKLIN file. (Normally OMIT this
+command.)</p>
+
+<h3><a name="cell"></a>CELL &lt;a&gt; &lt;b&gt; &lt;c&gt; [ &lt;alpha&gt;
+&lt;beta&gt; &lt;gamma&gt; ]</h3>
+
+<p>[OPTIONAL INPUT]</p>
+
+<p>The cell dimensions in Angstroms and degrees. The angles default to
+90 degrees. If this key is omitted then the cell dimensions are taken from
+the input file (normally OMIT this command)</p>
+
+<h2>Data Harvesting keywords</h2>
+
+<p>Provided a Project Name and a Dataset Name are specified (either explicitly 
+or from the MTZ file) and provided the <a href="#noharvest">NOHARVEST</a>
+keyword is not given, the program will automatically produce a data harvesting 
+file. This file will be written to</p>
+
+<p><tt>$HARVESTHOME</tt>/<tt>DepositFiles</tt>/<i>&lt;projectname&gt;</i>/<i>&lt;datasetname&gt;.truncate</i></p>
+
+<p>The environment variable <tt>$HARVESTHOME</tt> defaults to the user's
+home directory, but could be changed, for example, to a group project
+directory. When running the program through the CCP4 interface, the $HARVESTHOME variable defaults to the 'PROJECT' directory.</p>
+
+<p>Dataset information in the input MTZ file header includes a Project Name
+and a Dataset Name for each dataset. These will be used to define the
+harvest file, unless overridden by the PNAME and DNAME keywords. Note that
+the latter <b>only</b> affect the harvest file, and do not change the
+header information of the output MTZ file. Editing of dataset information
+can be done with the program <a href="cad.html">CAD</a>.</p>
+
+<h3><a name="pname">PNAME</a>&lt;project_name&gt;</h3>
+
+<p>Project Name. In most cases, this will be inherited from the MTZ file.<br />
+A dataset, as listed in the MTZ header, defines a project-name/dataset-name
+pair. The project-name specifies a particular structure solution project,
+while the dataset-name specifies a particular dataset contributing to the
+structure solution. An entry in the PNAME keyword should therefore be
+accompanied by a corresponding entry in the <a href="#dname">DNAME</a> keyword.</p>
+
+<h3><a name="dname">DNAME</a> &lt;dataset_name&gt; </h3>
+
+<p>Dataset Name. In most cases, this will be inherited from the MTZ file.<br />
+A dataset, as listed in the MTZ header, defines a project-name/dataset-name
+pair. The project-name specifies a particular structure solution project,
+while the dataset-name specifies a particular dataset contributing to the
+structure solution. An entry in the DNAME keyword should therefore be
+accompanied by a corresponding entry in the <a href="#pname">PNAME</a> keyword.</p>
+
+<h3><a name="private">PRIVATE</a></h3>
+
+<p>Set the directory permissions to '700', <em>i.e.</em> read/write/execute for
+the user only (default '755').</p>
+
+<h3><a name="usecwd">USECWD</a></h3>
+
+<p>Write the deposit file to the current directory, rather than a
+subdirectory of $HARVESTHOME. This can
+be used to send deposit files from speculative runs to the local directory
+rather than the official project directory, or can be used 
+when the program is being run on a machine without access to the directory
+<tt>$HARVESTHOME</tt>.</p>
+
+<h3><a name="rsize">RSIZE</a> &lt;row_length&gt; </h3>
+
+<p>Maximum width of a row in the deposit file (default 80).
+&lt;row_length&gt; should be between 80 and 132 characters.</p>
+
+<h3><a name="noharvest">NOHARVEST</a></h3>
+
+<p>Do not write out a deposit file; default is to do so provided Project
+and Dataset names are available.</p>
+
+<h2><a name="files"></a>INPUT AND OUTPUT FILES</h2>
+
+<p><b>The input files are:</b></p>
+
+<ol type="a">
+<li><p>Control data file.</p></li>
+
+<li>HKLIN - Input reflection data file in MTZ format.
+
+<blockquote>
+This will contain one record per reflection with the following items:
+
+<pre>
+     SCALA (with or without anomalous)
+        H K L IMEAN SIGIMEAN I(+) SIGI(+) I(-) SIGI(-)
+
+     SCALEPACK2MTZ or DTREK2MTZ (with anomalous)
+        H K L IMEAN SIGIMEAN I(+) SIGI(+) I(-) SIGI(-)
+
+  Any set of amplitudes in mtz format for which you wish to analyse statistics.
+        H K L F SIGF F(+) SIGF(+) F(-) SIGF(-)
+</pre>
+
+where I+ and I- are used for the anomalous differences</blockquote>
+</li>
+</ol>
+
+<p><b>The output files are:</b></p>
+
+<ol type="a" start="3">
+<li>HKLOUT - Output reflection data file.  Not generated if F assigned as input column.
+
+<blockquote>
+The output file is a reflection data file in standard MTZ format (<em>i.e.</em>
+one record/reflection) containing 7 or 18 items per reflection as follows
+(see above for labels used)
+
+<pre>   H K L  F SDF [DANOM SD(DANOM) F(+) SDF(+) F(-) SDF(-)] 
+          Imean SDImean [I(+) SDI(+) I(-) SDI(-) ISYM]
+</pre>
+
+The Fs are multiplied by the Wilson scale and the Is are multiplied
+by the square of the Wilson scale / 100.0.</blockquote>
+</li>
+
+<li>PLOT - plot file showing fall-off of mean F in 3 perpendicular
+directions.
+<blockquote>
+Produced if either of the subkeywords PLTX or PLTY of the
+<a href="#falloff">FALLOFF</a> keyword are specified.
+This can be viewed with <a href="xplot84driver.html">XPLOT84DRIVER</a>,
+or converted to postscript with <a href="pltdev.html">PLTDEV</a>.
+</blockquote>
+</li>
+</ol>
+
+<h2>PRINTER OUTPUT</h2>
+
+<p>The printer output starts with details of the control data and details
+of the input MTZ reflection data file. Analyses of the data against resolution
+are then given and include intensity distributions for comparison with Wilson's
+theoretical distributions. The following graphs are output (which can be
+viewed via <a href="xloggraph.html">XLOGGRAPH</a> or LOGGRAPH):</p>
+
+<ul>
+<li>Wilson plot.</li>
+<li>Moments of the intensity for acentric and centric data. These plots may
+indicate twinning, see <a href="#description">above</a>.</li>
+<li>Cumulative intensity distribution for both acentric and centric data
+compared to theoretical predictions. If twinning is present, these curves
+become sigmoidal (and will therefore be shifted to the right of the 
+theoretical curves for some or all of the plot), although anisotropic
+diffraction can confuse this picture.</li>
+<li>Plots of mean amplitude (F) and mean amplitude/standard deviation (F/sd)
+calculated for the data in resolution shells, and plotted against resolution.</li>
+<li>Mean F, mean F/sd and number of reflections calculated for data lying
+in the region of 3 orthogonal directions d1, d2, d3 (see the 
+<a href="#falloff">FALLOFF</a> keyword). Differences in the falloff rate
+in the 3 directions indicates anisotropy of the data.</li>
+</ul>
+
+<h2><a name="function"></a>PROGRAM FUNCTION</h2>
+
+<p>The program TRUNCATE reads a reflection data file of averaged intensities
+(SCALA, SCALEPACK2MTZ or DTREK2MTZ output) and outputs an MTZ reflection data file
+containing F and DeltaFanom values. The input intensities are assumed to
+follow a normal distribution with the standard deviations, <em>i.e.</em> negative
+observations must have been preserved. The truncation procedure used was
+devised by <a href="#references">French and Wilson</a> and is based on
+Bayesian statistics. The F's are calculated using the prior knowledge of
+Wilson's distributions for acentric or centric data (calculated in shells
+of reciprocal space in a first pass through the data) and the mean intensity
+and standard deviation values. The F's output are all positive and follow
+Wilson's distribution. The truncation procedure has little effect on reflections
+larger than 3 standard deviations but should give significantly better
+values for the weak data than those obtained by merely taking the square
+root of the intensities and setting negative intensities to zero. Reflections
+of less than minus four standard deviations are rejected.</p>
+
+<p>The following warnings should be heeded:</p>
+
+<ol type="a">
+<li><p>Do not truncate data more than once, <em>e.g.</em> do not merge truncated
+data with untruncated data and then truncate again.</p></li>
+
+<li><p>The standard deviations are crucial to the procedure and the standard
+deviation analysis from SCALA should be checked.</p></li>
+
+<li><p>The procedure should not be used on data which has been forced to
+be positive <em>e.g.</em> from ordinate analysis measurements on a diffractometer
+or where negative observations have been set to zero.</p></li>
+</ol>
+
+<h4>WILSON plot</h4>
+
+<p>The Wilson plot part of the program attempts to calculate an absolute
+scale and temperature factor for a set of observed intensities, using the
+theory of A C Wilson. This says that IF the atoms are randomly distributed
+through the asymmetric unit THEN</p>
+
+<p>&lt;f**2&gt; should equal scale*&lt;Fobs**2&gt; * exp -2B(sin theta/lambda)**2</p>
+
+<p>By fitting a least squares line through ln(&lt;f**2&gt;/&lt;Fobs**2&gt;)
+v 2(sin theta/lambda)**2 the program derives the scale and B value.</p>
+
+<p>For real structures the assumption that the atoms are randomly distributed
+is obviously incorrect. The effect of this is most obvious in the low resolution
+reflections. The Wilson plot will deviate from a straight line from about
+3.0A - 4.0A downwards. Although all the points on the Wilson plot are
+plotted, the scale and B are only determined from a limited resolution range
+determined by the user (see keyword <a href="#rscale">RSCALE</a>).</p>
+
+<p>There may be a problem in evaluating &lt;Fobs**2&gt; if all the weak
+data have been systematically omitted (this should NOT be the case for
+data measured in any proper manner: note that if this IS the case, the
+Truncate procedure will also fail). If this is the case then you need to
+use TRUNCATE NO. The program estimates the expected number of reflections
+in each resolution shell and then calculates &lt;Fobs**2&gt; by dividing
+by the number of predicted reflections.</p>
+
+<h2>Errors And Warnings</h2>
+
+<p>The program may stop with the following error message:</p>
+
+<pre>
+TRUNCATE:  *** Data beyond useful resolution limit ***
+</pre> 
+
+<p>This indicates that there is a resolution bin where the &lt;I&gt; is
+&lt;= 0.0 (which indeed is tantamount to having indexed the data beyond
+a useful resolution limit).</p>
+
+<p>In this situation it is worth running TRUNCATE again setting the high
+resolution limit to something below the current maximum (using the
+<a href="#reso">RESO</a> keyword). However it is also worth considering
+whether this is an indication of a more serious problem (for example,
+is the wrong cell set?).</p>
+
+<h2>SEE ALSO</h2>
+
+<p><a href="scala.html">scala</a>, <a href="scalepack2mtz.html">scalepack2mtz</a>, 
+<a href="dtrek2mtz.html">dtrek2mtz</a>, <a href="rwcontents.html">rwcontents</a>,
+<a href="harvesting.html">Data Harvesting</a></p>
+
+<h2><a name="references"></a>REFERENCES</h2>
+
+<ol>
+<p><!-- KEEP startreferencelist --></p>
+
+<li>French G.S. and Wilson K.S. Acta. Cryst. (1978), A34, 517.</li>
+
+<!-- KEEP endreferencelist -->
+</ol>
+
+<h2>AUTHORS</h2>
+
+<p>K.S. Wilson and S. French</p>
+
+<p>&quot;falloff&quot; program contributed by Yorgo MODIS, European Molecular Biology Lab
+(original program: W.G.J. HOL/SINEKE BREEN (part of the Groningen BIOMOL package).
+Incorporated into TRUNCATE by Martyn Winn.</p>
+
+<h2><a name="examples"></a>EXAMPLES</h2>
+
+<h3>unix example scripts found in $CEXAM/unix/runnable/</h3>
+
+<ul>
+<li><a href="../examples/unix/runnable/truncate.exam">truncate.exam</a></li>
+
+<li><a href="../examples/unix/runnable/scala.exam">scala.exam</a></li>
+
+<li><a href="../examples/unix/runnable/scalepack2mtz.exam">scalepack2mtz.exam</a></li>
+</ul>
+
+<h3>....and non runnable examples in $CEXAM/unix/non-runnable/</h3>
+
+<ul>
+
+<li><a href="../examples/unix/non-runnable/rotaprep.exam">rotaprep.exam</a></li>
+
+<li><a href="../examples/unix/non-runnable/texan-proc.exam">texan-proc.exam</a></li>
+</ul>
+
+</body>
+</html>

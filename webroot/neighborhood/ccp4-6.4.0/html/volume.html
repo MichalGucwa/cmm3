@@ -1,0 +1,496 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::VOLUME::Supported::Model Analysis::polyhedral volume around selected atoms:::::::: -->
+
+<H1> VOLUME (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>volume </b>
+- polyhedral volume around selected atoms
+<H2> SYNOPSIS</H2>
+<b>volume xyzin</b>
+<i>surface.out</i>
+<b>xyzout</b><i>volume.out3</i>
+<b>errout</b><i>volume.error</i>
+<b>shellfile</b><i>water.shell</i>
+<br>
+ [Key-worded input]
+<H2> DESCRIPTION</H2>
+In its present version the VOLUME program determines the
+volume of a polyhedron surrounding the selected atom or atoms when the
+polyhedral faces are determined by one of three procedures based on
+the Voronoi construction. A general description of these procedures, 
+the differences between them and which one is likely to be of use in a 
+particular situation are described below.
+<P>
+<I>NB: On some systems (e.g. some Digital/Compaq machines) there may be
+a system program also called <TT>volume</TT>, and this name clash may lead
+to problems trying to run the CCP4 version of VOLUME (depending on the
+value of your <TT>PATH</TT> environment variable). If you encounter this
+problem then try using the full path e.g. <TT>$CBIN/volume</TT> to specify
+the correct version.</I>  
+<h2>INPUT AND OUTPUT FILES</h2>
+<h3>Input file</h3>
+The program requires a formatted file as input - logical name
+XYZIN . It is written to accept the output file from the SURFACE
+program directly. This will be the normal input because of the KEY
+selection procedure described below. The file will be processed as
+follows:
+
+<p>
+All header material will be disregarded. The program searches each
+line for the starting characters 'BEGIN '. If found, the program then
+reads into the appropriate arrays the atom data starting on the
+following lines in the format:
+<p>
+ (1X,I2,7X,I2,1X,I2,1X,2A4,1X,I3,3F8.3,2F5.2,2F6.1,F5.2)
+<p>
+The arrays filled are:
+<pre>
+ KEY(I)     = atom processing flag. see below
+ NUMCHN(I)  = chain number if more than one
+       peptide in input file (not used
+       in this program)
+ NUMFIL(I)  = file number if more than one
+       protein is listed in input file
+       (not used in this program)
+ ATM(I)     = atom designation. 1 to 4
+       characters (use BNL system)
+ RES3(I)    = residue designation (three letter
+       code)
+ SEQNUM(I)  = sequence number of residue
+ X(I)       = X coordinate of atom
+ Y(I)       = Y coordinate of atom
+ Z(I)       = Z coordinate of atom
+ RVDW(I)    = van der Waals radius of atom
+ RCOV(I)    = covalent radius of atom
+ AAREA      = accessible area of atom in
+       file from ACCESS.
+ CAREA      = contact area of atom in
+       file from ACCESS.
+ FRCACC     = fractional accessibility of
+       atom in file from ACCESS.
+       (These dummy variables are
+       not used in this program.
+       Kept in list as reminder)
+</pre>
+Note that the maximum value for I is the number of atoms in the input
+list. (These may be protein atoms, 'heteroatoms', and/or water molecules
+depending on the file used.) You must ensure that the array dimensions
+in the VOLUME program are large enough no only to accommodate this list
+but also to hold the output of SHELL (see below). The relevant arrays
+are dimensioned through the parameter MAXATM which appears in the file
+VOL.CMN. Check this value and edit as required.
+<p>
+<h3>Output files</h3>
+The output of the program is provided in two files.  The successful
+calculations are put into a file designated as local name XYZOUT. The
+format of this file is:
+<pre>
+ SUMMARY INFORMATION
+BEGIN
+ (followed by data records in the following format)
+       (2I5,2I3,2A6,I5,3F8.3,2F5.2,F8.3,I5)
+
+ NCALC     = Number of atom in this output list
+ I         = Serial number of atom in full coordinate
+   list
+ NUMCHN(I) = Chain number (see INPUT)
+ NUMFIL(I) = File number  (see INPUT)
+ ATM(I)    = Atom designation - 1 to 4 characters
+ RES3(I)   = Residue designation - 3 letter code
+ SEQNUM(I) = Residue sequence number
+ X(I)      = X coordinate of atom
+ Y(I)      = Y coordinate of atom
+ Z(I)      = Z coordinate of atom
+ RVDW(I)   = van der Waal's radius of atom
+ RCOV(I)   = Covalent radius of atom
+ VOLUME    = Volume of atom as calculated by 
+   specified method
+ NS        = Number of solvent shell positions used
+   in defining the limiting polyhedron
+</pre>
+The second file, local name ERROUT, contains any error messages that
+may have been generated during the operation of the program.  If
+serious errors are encountered the calculation for that atom is
+aborted (VOLUME and NS are both set equal to 1000), error messages
+listed, and the calculations continued with the next atom in the list.
+Occasionally less serious errors are found, the messages are listed,
+but the calculation is continued. The decision on whether or not to
+keep the result is made by the investigator.  Normally, the cause of
+the problem can be identified, corrected and the calculation rerun.
+
+<h2>KEYWORDED INPUT</h2>
+<h3>EDGE &lt;edge&gt;</h3>
+Length of the edge of the shell (default=2.80).
+<h3>SRAD &lt;srad&gt;</h3>
+Search radius              (default=6.50).
+<h3>METHOD VORO | RICH | RADI</h3>
+Method. VORO is Standard Voronoi Procedure (default),
+RICH is Richards Method B, and RADI is Radical Plane Procedure.
+<h3>OUTER &lt;outer&gt;</h3>
+For Surface Volume Adjustment  (default=0.0).
+<h3>SHELL | NOSHELL</h3>
+(default = NOSHELL).
+<h3>CALC  | NOCALC</h3>
+(default = CALC).
+<h3>VERB  | NOVERB</h3>
+Don't activate this unless you want a very big .error file
+(default = NOVERBOSE).
+<h3>WATER | NOWATER</h3>
+Use this if you want to add the extra shell
+of water from the file SHELLFILE.
+<h3>RUN | END</h3>
+End input.
+
+<h2>PROGRAM FUNCTION</h2>
+After reading the input file, the next step is to surround the 
+protein with a hypothetical
+'solvent' shell which serves to define the volume of the surface atoms
+on the protein. The positions assigned to these 'molecules' are loaded
+onto the end of the protein atom file. They are used to define the
+limiting polyhedron, but, except in the case of cavity calculations,
+they are not used as centers for volume calculations themselves. This
+layer is set up by the subroutine SHELL.
+<p>
+The program then cycles through each atom in turn whose volume is to
+be calculated (as designated by the KEY array).
+<p>
+  a) The Subroutine FILBOX selects all atoms within a defined radius
+which might contribute to the limiting polyhedron surrounding the
+target atom.  Potential defining planes of this polyhedron are
+perpendicular to the interatomic vectors between the target atom and
+the atoms in this list. The position of these planes along the vectors
+will depend on the procedure for calculation chosen at the time of
+program initiation. FILBOX sets up these planes and loads then into
+the array BOX in the order of increasing distance from the target
+atom.
+<p>
+  b) The Subroutine ATMPOL examines the list BOX and selects those
+planes which actually make up the limiting polyhedron. It computes the
+coordinates of all the vertices of the polyhedron and stores these
+coordinates, and the vertex identification numbers, in the arrays
+POLYHN AND IPOLYH. This is the heart of the program and its most
+complex component.
+<p>
+  c) The Subroutine POLVOL examines the arrays POLYHN and IPOLYH and
+computes the volume of this limiting polyhedron.
+<p>
+  d) The program then cycles through a), b) and c) until the atom list
+has been completed.
+<h2>PROGRAM DETAILS</h2>
+ A) INPUT ARRAY KEY(I):
+ The KEY array is normally set up in the SURFACE program
+but it can be hand edited or supplied otherwise.
+
+ KEY(I) = -1  Atom I is omitted entirely from all 
+       calculations.
+ KEY(I) =  0  Atom I is included as part of the 
+       protein and its volume is calculated.
+ KEY(I) =  1  Atom I is included as part of the 
+       protein and is thus used in defining
+       the polyhedra, but its volume is not
+       calculated.
+<p>
+(The (-1) value can be used to asses the affect of a particular atom
+or atom group on the volume available to surrounding atoms without any
+other change in the program, for example.) Only the atoms of interest
+need have their volumes calculated.  If the SURFACE program is used to
+generate the input file, these atoms can be selected on the basis of
+atom name, residue name, residue sequence number, or individually by
+serial number in the coordinate list.
+<p>
+Principal Components:
+<p>
+VOLUME Main calling program. Sets up GETNUM, input and output files,
+queries SHELL,FILBOX, for changes in default parameters ATMPOL,POLVOL
+and method of calculation. Cycles through atom list and writes output
+file.  PRNTBX, PRNTPN
+<p>
+SHELL Sets up hypothetical solvent boundary to 'define' protein
+surface.
+<p>
+FILBOX Selects atoms from coordinate BXLOAD, list that may define the
+GETNUM limiting polyhedron. Constructs all potential face planes.
+<p>
+ATMPOL Establishes the limiting poly- ERROR,VERTEX, hedron from the
+list supplied SAMSID by FILBOX. Provides list of coordinates of all
+vertices and their identities.
+<p>
+POLVOL Calculates volume of the limiting VOLTET polyhedron.
+<p>
+ERROR Puts out error messages in  response to certain types of
+geometrical errors or array dimension problems found in program run.
+(i.e. three points defining a plane are collinear; three planes do not
+intersect at a point etc.)
+<p>
+Utility Routines:
+<p>
+GETNUM Identifies residue type number and atom type number for an atom
+specified by serial number in the coordinate list.
+<p>
+BXLOAD From the normal components and a point P associated with atom
+J, the constant factor in the equation for the plane is calc and
+loaded in BOX(5,J)
+<p>
+PRNTBX Prints out contents of arrays IBOX and BOX after return from
+FILBOX
+<p>
+PRNTPN Prints out contents of arrays POLYHN and IPOLYH after return
+from ATMPOL.
+<p>
+Mathematical Subroutines:
+<p>
+VERTEX Calculates the point of  inter-   POINT
+ section of three planes defined
+ by four specified atoms.
+<p>
+INSIDE Logical function set to .TRUE.    SAMSID
+ if a point P is inside a 
+ tetrahedron formed by four
+ specified planes.
+<p>
+SAMSID Logical function set to .TRUE.     None
+ if two points P1 and P2 are on
+ the same side of a specified 
+ plane.
+<p>
+VOLTET Returns the volume of a tetra-    DET3C
+ hedron specified by its four 
+ vertices.
+<p>
+PLANE Returns the equation of the plane DET3R,ERROR
+ determined by three given points.
+ (error if three points collinear)
+<p>
+POINT Returns the point of intersection DET3R,ERROR
+ of three given planes.(error if 
+ point is indeterminate)
+<p>
+CENTRD Computes the centroid of a tetra- None
+ hedron identified by its 4 
+ vertices (not used in present
+ version of program)
+<p>
+DET3C For the 3x4 array A, the values   None
+ of the four 3x3 unique 
+ determinants are returned.
+<p>
+DET3R For the 4x3 array A, the values   None
+ of the four 3x3 unique
+ determinants are returned.
+<p>
+         C) SUBROUTINE SHELL
+<p>
+ Positions in a cubic lattice, ICL, just outside of, but
+adjacent to, the protein atoms are identified.  These will serve to
+define the protein surface for the purpose of the volume calculations
+as described later.  In principle, there is no particular restriction
+on the size of the lattice, although the calculated volumes of the
+surface atom will depend to some extent on the lattice dimensions.  In
+the current version, the default value of the lattice edge is 2.8 A
+giving a cube which is about 3/4 of the volume occupied by a water
+molecule.  The uncertainty in the eventual Voronoi volume increases
+with lattice size while the computation time increases rapidly as the
+lattice size is decreased.
+<p>
+ The size of the lattice, ICL, in the three dimensions is made
+larger than the protein so that there are at least two empty cubes in
+each direction outside of the protein.  The protein atoms are then
+loaded into the lattice positions.  With the default size about half
+of the lattice positions that contain any protein atom contain only a
+single atom.  A few cubes contain as many as five atoms.  When the
+loading is complete each entry in the array ICL contains either 0 or a
+positive integer.  The latter is an index to a location in the array
+JSERN.  That entry in JSERN gives the number of following positions in
+JSERN that contain the serial numbers of the atoms whose centers are
+located in the lattice cube identified by the ICL array index.
+<p>
+ The entire array ICL is now checked.  All positions whose 26
+nearest neighbors are not protein-containing locations are loaded with
+the flag -1.  These positions represent bulk solvent remote from the
+protein.
+<p>
+ Of the remaining positions containing 0s some may be inside
+the protein and represent potential cavities.  These are identified as
+positions which have among their 26 neighbors one or more pairs of
+opposing positions both of which contain a protein atom(s).  Such
+positions are loaded with the flag -2.
+<p>
+ At this point both the 0 ad -2 lattice positions, while not
+containing any protein atoms, may have the cube center inside the van
+der Waals envelope of a protein atom.  This is checked and any solvent
+(i.e. 0) positions so found are flagged -3, and any such -2 positions
+are shifted to -4.  The -3 and -4 positions are not considered further
+in this program but are flagged should the need arise to refer to
+them.  The remaining 0 and -2 positions are now both empty and outside
+the van der Waals envelope of the protein.
+<p>
+ In most calculations the -2 positions will be disregarded and
+the space that they represent is assigned to the protein.  The
+positions labelled 0 are all face, edge or corner connected to
+themselves and to cubes containing protein atoms.  They thus form a
+connected envelope around the protein.
+<p>
+ If SHELL the final contents of ICL will be listed in the
+output file on LUN2.  The three dimensional array is sectioned
+perpendicular to Z (K index).  The X axis (I index) is horizontal and
+Y (J index) vertical.
+<p>
+Each lattice position is labelled with -4, -3, -2, -1, 0 or 
+**, the last for protein containing positions.
+<p>
+         D) SUBROUTINE FILBOX
+<p>
+ This subroutine is entered with the identity and coordinate of
+the target atom whose volume is to be calculated.  Its location in the
+ICL lattice is established as are the 26 surrounding cubes which would
+contain the relevant 'solvent' positions, if any.
+<p>
+ The coordinate file is then checked and all atoms whose
+centers are within the selected distance, ARANGE, of the target atom
+are loaded into the arrays TEMP and ITEMP.  Any of these atoms which
+are 'solvent' positions have their distance adjusted such that the
+Voronoi plane to be drawn will be tangent to the van der Waals sphere.
+This group of atoms is now loaded into the array as BOX and IBOX in
+order of their increasing distance from the target atom.
+<p>
+ At this point the serial number in the coordinate lists of the
+atom and a code to indicate whether it is a 'solvent' shell position
+or not is contained in IBOX.  In BOX the distance to the target atom
+is located in BOX(1,I) and the X, Y and Z components of this distance
+in BOX(2,-4, I).  The latter represents the interatomic vector and are
+the direction components of the normal to the Voronoi plane.  This
+plane is completely defined by specifying the point where it
+intersects the interatomic vector.
+<p>
+ One of three procedures is chosen to define this point of
+intersection.  In the original Voronoi procedure the plane bisects the
+interatomic vector.  In Richards' method B the ratio of van der Waals
+or covalent radii of the atoms are used.  In the radical plane
+procedure only the van der Waals radii of the atoms are used whether
+they are covalently connected or not.  The details of these procedures
+are discussed in Appendix A.
+<p>
+ The final section of FILBOX loads into the highest index
+positions of BOX, four hypothetical planes surrounding the target
+atom.  These represent a very large tetrahedron which is simply used
+as a starting point for the interactive determination of the limiting
+polyhedron by the next subroutine.
+<p>
+         E) SUBROUTINE ATMPOL
+<p>
+ This subroutine operates on the contents of the array BOX and
+loads the arrays POLYHN and IPOLYH with the vertex positions and
+identifications of the developing polyhedron.  Each vertex represents
+the point of intersection of three planes.  The X, Y, Z coordinates of
+this point are placed in POLYHN.  The vertex is identified by the three
+planes, each of which, in turn, is associated with a particular atom
+surrounding the target atom.  For the purpose of this subroutine,
+these atoms are identified by their index in the array BOX.  The
+vertex can thus be identified by three such indices.  These indices
+are stored in IPOLYH.  The initial set of 4 vertices are produced from
+the large tetrahedron loaded in positions 97-100 in BOX.
+<p>
+ ATMPOL then starts checking each plane in BOX to see if it
+forms part of the limiting polyhedron.  This is accomplished by
+examining each vertex with respect to the plane.  If the vertex is on
+the same side of the plane as the target atom, then it remains part of
+the polyhedron.  If the plane separates no vertices from the target
+atom, then it is not part of the polyhedron and is disregarded.  If
+the plane does separate one or more vertices, then this vertex or
+vertices are discarded and the new vertices produced by the plane are
+added to the list.  This last operation is the most complex.
+<p>
+ For this purpose, the vertices are identified as the
+intersection of three lines (the array LINES), rather than three
+planes.  Each line represents the intersection of two of the planes
+that form the vertex.  Each line is represented by an index pair.
+When a vertex is eliminated, the three lines that identify that vertex
+form 3 new vertices through their interaction with the new plane.
+When more than one vertex is removed by a single plane, it is
+necessary to keep track of which lines are kept and thus form new
+vertices with the plane.  Some lines will be eliminated completely,
+that is they do not intersect the plane within the region of interest.
+<p>
+ As each plane is tested, the polyhedron is unaffected or made
+smaller.  The total number of vertices generally increases but varies
+erratically during the computation.  Normally by the end of the
+calculation less than one half of the entries in BOX actually are used
+to define the limiting polyhedron.  This indicates that the limit has
+indeed been reached, and that no other atoms in the structure, which
+have not been explicitly examined, would contribute to the polyhedron
+if tested.
+<p>
+         F) SUBROUTINE POLVOL
+<p>
+ This subroutine takes the contents of POLYHN and IPOLYH and
+calculates the volume of the limiting polyhedron.
+<p>
+ The vertices of each face have one index in common, the index
+that identifies the atom associated with the face normal. All index
+pairs in IPOLYH that contain that common index are collected.  The
+other pair of indices associated with each vertex are then arranged in
+sequence to define the perimeter of the face. The face is then divided
+into triangles with a common apex at one vertex. The volume of the
+tetrahedra formed by these triangles and the target atom at the center
+of the polyhedron are then calculated and summed.  This procedure is
+repeated for each face of the polyhedron yielding, finally, the total
+volume.
+<p>
+ It might be noted here that if one wishes to draw one or more
+of the polyhedra with a graphics program, the necessary data can be
+obtained from this subroutine. The coordinates of all the vertices are
+contained in POLYHN and the subroutine orders the vertices in the
+sequence in which the vectors would be drawn.
+<p>
+ADDENDUM
+<p>
+ The volume of the -2 positions provided by SHELL may be
+calculated separately, treating these positions as additional "protein
+atoms". Note that such calculations, of course, will change the volume
+calculated for adjacent protein atoms. No van der Waals radius is
+assigned to these positions.  The defining planes are drawn tangent to
+the surrounding protein atoms. The "cavity" volume so calculated is
+only a crude approximation to the real void space because of the
+coarseness of the lattice used.  (See: F.M.Richards, Carlsberg
+Research Communications 44: 47-63 (1979)).  This option has NOT been
+activated in this version of the VOLUME program.
+<H2> SEE ALSO</H2>
+ <A HREF=surface.html>surface</A>.
+<H2> AUTHORS</H2>
+19-IX-92 Alliant UNIX version (mbg/kxh)
+of Fred Richard's VOLUME program.
+<H2> EXAMPLE </H2>
+<pre>
+#
+#Volume:
+#
+volume xyzin surface.out     \
+       xyzout volume.out3     \
+       errout volume.error   \
+       shellfile water.shell \
+       << eof
+!
+! The default settings mean you can run it with
+!  just the Key_Word RUN
+!
+EDGE 3.05      ! length of the edge of the shell (default=2.80)
+SRAD 6.10      ! pick search radius              (default=6.50)
+METHOD  VORO   !        ==>>  Standard Voronoi Procedure (default)
+!              or  RICH ==>>  Richards" Method B
+!              or  RADI ==>>  Radical Plane Procedure
+OUTER  0.0     ! For Surface Volume Adjustment  (default)
+NOSHELL        ! or SHELL   (default = NOSHELL)
+CALCLUATE      ! or NOCALCULATE but why  (default = CALCULATE VOLUMES)
+!VERBOSE       ! dont activate this unless you want a very big .error file
+!               default = NOVERBOSE
+!WATER          ! use this if you want to add the extra shell
+!                 of water from the file SHELLFILE
+NOWATER         ! default 
+RUN
+eof
+#
+</pre>
+</body></html>

@@ -1,0 +1,979 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4I Documentation for Programmers: Core Documentation</title>
+<link rel="stylesheet" type="text/css" href="../../ccp4idocs.css" title="CCP4i" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+</head>
+<body>
+<H2>CCP4i Documentation for Programmers: Core Documentation</H2>
+<H3>Contents</H3>
+<h3>Database Utilities (src/database.tcl)</h3>
+<a name="Database_Utilities"><h3> Database Utilities </h3> 
+<p>This file contains the various commands for interacting with the underlying job database within CCP4i. The actual database commands are in the projectdb.tcl file. These functions are concerned with the provision of tools and interfaces for viewing and modifying the database contents.<p>
+<a name="DbInterrogateLock" ><h4><font color="#CC3333">DbInterrogateLock</font> <em>Obtain the status of the lock for the given project database</em></h4> 
+<p><em>Argument list:  &lt;project&gt; &lt;db&gt; &lt;statusVar&gt; &lt;userVar&gt; &lt;timeVar&gt;</em></p>
+<p>Returns the status in statusVar - "unlocked" or "locked"<p>
+<p><strong>project</strong>  Alias for project<p>
+<p><strong>db</strong>  Directory for corresponding database<p>
+<p><strong>statusVar</strong>  Name of variable to return status in<p>
+<p><strong>userVar</strong>  Name of variable to return user in<p>
+<p><strong>timeVar</strong>  Name of variable to return time in<p>
+<h3>APIs to Access the Database</h3>
+<a name="APIs_to_Access_the_Database"><h3> APIs to Access the Database </h3> 
+<p>These are CCP4i-specific commands to interact with the database. They are built on top of the core database commands.<p>
+<a name="DbRegisterJob" ><h4><font color="#CC3333">DbRegisterJob</font> <em>Register a new job with the project database.</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;taskname&gt; &lt;status&gt; &lt;STARTING&gt;</em></p>
+<p>This procedure will automatically extract data from the array associated with a task and load it into the database.  The data in the task array must have the appropriate parameter names:<p>
+<p>TITLE  A title for the job<p>
+<p>INPUT_FILES A list of the *parameter* names in the task array for input files (NB not the file names themselves)<p>
+<p>OUTPUT_FILES A list of the *parameter* names in the task array for input files (NB not the file names themselves)<p>
+<p>The procedure returns the job id.<p>
+<p><strong>arrayname</strong>  The name of the task array<p>
+<p><strong>taskname</strong>  The name of the task<p>
+<p><strong>status</strong>  Optional status - default is 'STARTING'<p>
+<a name="DbUnregisterJob" ><h4><font color="#CC3333">DbUnregisterJob</font> <em>Unregister job at some stage in job startup </em></h4> 
+<p><em>Argument list:  &lt;job_id&gt;</em></p>
+<p>This should only be used if job_id is the last job in the project. This procedure is usually called if the user has opted to abort running a job.<p>
+<p><strong>job_id</strong>  Job id<p>
+<a name="DbGetJobFileRoot" ><h4><font color="#CC3333">DbGetJobFileRoot</font> <em>Return the root name for files such as script and log files</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt; &lt;dir&gt;</em></p>
+<p>There are standard file names for log file of the form jobid_taskname<p>
+<p>This does not return the file extension and only includes the full directory path if the dir parameter is set.  This will generally be used when you want to create the file.<p>
+<p><strong>job_id</strong>  Job id<p>
+<p><strong>dir</strong>  Optional project/directory alias or the word 'PROJECT' which will use the current project directory.<p>
+<a name="GetLogFileName" ><h4><font color="#CC3333">GetLogFileName</font> <em>Return the full file name for the log file</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt;</em></p>
+<p>If the file does not exists then return null. This will generally be used when you want to read the file.<p>
+<p><strong>job_id</strong>  Job id<p>
+<a name="GetLogFileFormat" ><h4><font color="#CC3333">GetLogFileFormat</font> <em>Return the full file name for the log file and its format</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt; &lt;logfileVar&gt; &lt;formatVar&gt;</em></p>
+<p>If the file does not exist or can not be read then the format is returned as 'NOFILE'.  The format will otherwise be 'TEXT' or 'HTML'.<p>
+<p>This procedure reads the first few lines of the file to determine its format. <p>
+<p><strong>job_id</strong>  Job id<p>
+<p><strong>logfileVar</strong>  Returned full path name for log file<p>
+<p><strong>formatVar</strong>  Returned file format<p>
+<a name="DbGetJobFiles" ><h4><font color="#CC3333">DbGetJobFiles</font> <em>Return a list of either INPUT/OUTPUT files </em></h4> 
+<p><em>Argument list:  &lt;job_id&gt; &lt;mode&gt; &lt;filelistVar&gt; &lt;args&gt;</em></p>
+<p>By default only files are returned in the lists. If the -all argument is specified then any directories are also included in the list that is returned.<p>
+<p><strong>job_id</strong>  Job id<p>
+<p><strong>mode</strong>  either 'INPUT' or 'OUTPUT'<p>
+<p><strong>filelistVar</strong>  Returned list of files with full path names<p>
+<p><strong>-all</strong><p>
+<p>Include all files and directories<p>
+<h3>Database GUI</h3>
+<a name="Database_GUI"><h3> Database GUI </h3> 
+<p> These are procedures to draw the job list from the database in the ccp4i main window.<p>
+<a name="ssdb_setup" ><h4><font color="#CC3333">ssdb_setup</font> <em>Create the window containing the tools for searching and sorting</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>The sort/search window consist in choice between a search and a sort  and between simple or advanced one. Depending on the user's choice the parameters  that can be tuned are different and can help the user to refine a search step by step  or to do many different search and sorts. The results of the sorting and searching  are displayed in this window, not in the main task window.<p>
+<a name="ssdb_handler" ><h4><font color="#CC3333">ssdb_handler</font> <em>Handle action when user clicks "Execute" or "Refine" buttons</em></h4> 
+<p><em>Argument list:  &lt;mode&gt; &lt;ssdb_w&gt; &lt;arrayname&gt;</em></p>
+<p>This procedure deals with the execution or refinement of a search or sort request when the user clicks on the action button in the window.<p>
+<p><strong>mode</strong>  0 (execute a new search) or 1 (refine existing results),2 resetting<p>
+<p><strong>ssdb_w</strong>  The path of the toplevel searching window<p>
+<p><strong>arrayname</strong>  The name of the array at global level holding the searching parameters<p>
+<a name="update_ssdb_list" ><h4><font color="#CC3333">update_ssdb_list</font> <em>update the list from jobs inside the search/sort tool</em></h4> 
+<p><em>Argument list: None</em></p>
+<a name="db_sort_handler" ><h4><font color="#CC3333">db_sort_handler</font> <em>Handle a simple or advanced sorting triggered by the search/sort tool</em></h4> 
+<p><em>Argument list:  &lt;want_refine&gt; &lt;win_path&gt; &lt;arrayname&gt;</em></p>
+<p>This method deal both with the simple and advanced sorting, and enables  to sort on the result of previous searches through its parameters.<p>
+<p><strong>want_refine</strong>  is a boolean value used to see if it is a new sorting or if the user want to sort on previous results. Set to 1 for refining, 0 otherwise.<p>
+<p><strong>win_path</strong>  is the pathname of the search/sort windows used to feed the result<p>
+<a name="ssdb_reordering_array" ><h4><font color="#CC3333">ssdb_reordering_array</font> <em>Reorder the entries of an array.</em></h4> 
+<p><em>Argument list:  &lt;value_list&gt; &lt;unordered_val&gt; &lt;unorder_ids&gt; &lt;backup_val&gt; &lt;bound&gt; &lt;start&gt;</em></p>
+<p>This procedure take the value from a list to compare them to the entries  of an array, and reorder all the arrays in the parameters to match the order of the  list<p>
+<p><strong>value_list</strong>  is a list containing the ordered values.<p>
+<p><strong>unordered_val</strong>  is the name of the array containing the currently unordered values<p>
+<p><strong>unordered_ids</strong>  is the name of the array containing the currently unordered job ids<p>
+<p><strong>backup_val</strong>  is the name of an array containing values for advanced sort<p>
+<p><strong>bound</strong>  is the upperbound for the index in the array to match the values of the list<p>
+<p><strong>start</strong>  is the index in the array where the search need to start to find matching values<p>
+<a name="db_search_handler" ><h4><font color="#CC3333">db_search_handler</font> <em>Handles a simple or advanced search triggered by the sort/search tool</em></h4> 
+<p><em>Argument list:  &lt;want_refine&gt; &lt;win_path&gt; &lt;arrayname&gt;</em></p>
+<p>This procedure deal with both simple and advanced search, fetching the  jobs corresponding to the different values and retaining only those which match all  criteria. It deals with an unfructuous search by displaying a message<p>
+<p><strong>want_refine</strong>  is a boolean value used to see if it is a new search or if the user want to sort on previous results. Set to 1 for refining, 0 otherwise.<p>
+<p><strong>win_path</strong>  is the pathname of the search/sort windows used to feed the result<p>
+<a name="ScheduleDbUpdateList" ><h4><font color="#CC3333">ScheduleDbUpdateList</font> <em>Schedule an update of the job list.</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>When this command is invoked initially it sets up an invocation of DbUpdateList (which updates the list of jobs in the main window) to happen a second later. Any additional calls in this time are essentially ignored. Once the list display has been updated, new calls will set up the next update to happen.<p>
+<p>This mechanism is intended to prevent a sequence of distracting updates to the job display occurring each time a set of update requests are recieved in rapid succession.<p>
+<a name="DbUpdateList" ><h4><font color="#CC3333">DbUpdateList</font> <em>Update the list of jobs displayed and save data to file.</em></h4> 
+<p><em>Argument list:  &lt;args&gt;</em></p>
+<p>This procedure defines the parameters and format to be listed and calls db_update_list which actually draws the list.<p>
+<p>Note that the -nosave option no longer does anything, as the save operations are handled internally by the database functions.<p>
+<p><strong>-nosave </strong><p>
+<p>Does nothing but is retained for backwards compatibility.<p>
+<a name="db_update_list" ><h4><font color="#CC3333">db_update_list</font> <em>Draw any generic list of parameters from database to the job list window.</em></h4> 
+<p><em>Argument list:  &lt;project&gt; &lt;db_display&gt; &lt;db_display_format&gt; &lt;\&gt;</em></p>
+<p><strong>project</strong>  The alias for the project to access<p>
+<p><strong>db_display</strong>  A list of the database parameters to be displayed<p>
+<p><strong>db_display_format</strong>  A list of the field widths (as integers) to use for displaying the items in the db_display list.<p>
+<p><strong>no_jobs_message</strong>  The message to display if there are currently no jobs in the database.<p>
+<a name="db_handle_selection" ><h4><font color="#CC3333">db_handle_selection</font> <em>Handler for user picking a job from list</em></h4> 
+<p><em>Argument list:  &lt;mode&gt; &lt;w&gt; &lt;args&gt;</em></p>
+<p>save current selection in archive(CURRENT_SELECTION)<p>
+<p><strong>mode</strong>  Usually 'select' for if user selected job or 'clear' if user clicked F2<p>
+<p><strong>w</strong>  The widget identifier for the listbox which displays the job list<p>
+<p><strong>-ssdb</strong><p>
+<p>Indicates that the selection is coming from the search/sort tool<p>
+<a name="db_update_selection" ><h4><font color="#CC3333">db_update_selection</font> <em>Update the internal array elements for the current job selection</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>This procedure updates the CURRENT_SELECTION element in the archive global array by checking that each item in the selection actually exists.<p>
+<a name="db_context_menu" ><h4><font color="#CC3333">db_context_menu</font> <em>Handler for user right-clicking on job window</em></h4> 
+<p><em>Argument list:  &lt;w&gt; &lt;x&gt; &lt;y&gt; &lt;ysel&gt;</em></p>
+<p>This procedure generates a "context menu" presenting appropriate actions available to the user to manipulate the currently selected set of jobs in the database job list.<p>
+<p>The available operations depend upon the number of selected jobs.<p>
+<p><strong>w</strong>  The name of the window that the menu was invoked from<p>
+<p><strong>x</strong>  The screen X position of the mouseclick<p>
+<p><strong>y</strong>  The screen Y position of the mouseclick<p>
+<p><strong>ysel</strong>  The y position of the mouseclick within the window<p>
+<a name="db_handle_doubleclick" ><h4><font color="#CC3333">db_handle_doubleclick</font> <em>Handler for user double-clicking on job window</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>This procedure attempts to display the logfile for the job, if it has one.<p>
+<a name="db_handle_shiftdoubleclick" ><h4><font color="#CC3333">db_handle_shiftdoubleclick</font> <em>Handler for user double-clicking on job window while pressing shift</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>This procedure attempts to rerun the job that has been double clicked by the user in the job database list, provided that the job has a status other than REPORTED.<p>
+<a name="db_command_handler" ><h4><font color="#CC3333">db_command_handler</font> <em> Handle a user pick of the utility menu</em></h4> 
+<p><em>Argument list:  &lt;command&gt;</em></p>
+<p>All of the utility menu items invoke this procedure when picked. This procedure checks that the appropriate  number of jobs for the utility have been selected. <p>
+<p><strong>command</strong>  Keyword to identify the utility that the user has selected.<p>
+<a name="DbDrawUtilityMenu" ><h4><font color="#CC3333">DbDrawUtilityMenu</font> <em>Draw the utility menu</em></h4> 
+<p><em>Argument list: None</em></p>
+<p> This procedure defines the menu content and then call db_draw_utilities which does the drawing.<p>
+<a name="db_draw_utilities" ><h4><font color="#CC3333">db_draw_utilities</font> <em>Draw a utility menu on the right side of main window.</em></h4> 
+<p><em>Argument list:  &lt;optionlist&gt; &lt;commandlist&gt; &lt;messagelist&gt; &lt;\&gt;</em></p>
+<p>All information for drawing the menus is input as lists with one list item per menu item.  This approach makes it easy to change the menu but ccp4i currently does not do this (it's probably a bad thing anyway).  It ought to be possible to write a similar procedure which draws the utilities as pull down menus and the user can then have the option on how to lay out the main window.<p>
+<p><strong>optionlist</strong>  A list of the text to appear in menu. If the menu item has a submenu then the item is a list.<p>
+<p><strong>commandlist</strong>  A list of the command keywords to be used by db_command_handler to invoke the right utility procedure.<p>
+<p><strong>messagelist</strong>  A list of the messages associated with each menu item. Note that there are no distinct messages for each submenu item.<p>
+<p><strong>activelist</strong>  A list of 0/1 to indicate if a menu item is active. Currently all input has these set to 1.<p>
+<p><strong>helpfile</strong>  Name of a help file.<p>
+<p><strong>helplist</strong>  List of the targets in the help file for each menu.<p>
+<p><strong>-ssdb</strong><p>
+<p>Indicates that the menu is drawn from search/sort tool<p>
+<a name="DbViewJobMenu" ><h4><font color="#CC3333">DbViewJobMenu</font> <em> Update "View Job File" menu to list the in/output files for selected job</em></h4> 
+<p><em>Argument list:  &lt;args&gt;</em></p>
+<p>This procedure is called when the user  selects a job.  The id of the menu is saved as SystemVar VIEW_JOB_JOBID.<p>
+<p>The procedure tries to give appropriate options dependent on format of log file (? is it html) but does not look for tables in log file as this can be slow for big log files.<p>
+<p><strong>-ssdb</strong><p>
+<p>Indicates that the view is in the search/sort tool<p>
+<a name="dbviewjobmenu_cascade_dirs" ><h4><font color="#CC3333">dbviewjobmenu_cascade_dirs</font> <em>Append cascading menus for subdirectory contents</em></h4> 
+<p><em>Argument list:  &lt;mm&gt; &lt;directories&gt;</em></p>
+<p>This procedure is used from within DbViewJobMenu, to add a cascading menu to the end of the "View Files From Job" menu for each output subdirectory that is associated with the job.<p>
+<p>The cascading menu lists the files contained within the subdirectory, and further cascading menus for each of the subdirectories within the current subdirectory. The procedure is called recursively to add further layers of nesting as required.<p>
+<p><strong>mm</strong>  The window name for the Tk menu to add the cascades to<p>
+<p><strong>directories</strong>  A list of directories to be added<p>
+<h3>Initialising, Loading & Saving the Database</h3>
+<a name="DbGetCurrentProject" ><h4><font color="#CC3333">DbGetCurrentProject</font> <em>Return the project alias and database directory for the current project.</em></h4> 
+<p><em>Argument list:  &lt;projectVar&gt;</em></p>
+<p>Just a wrapper for GetCurrentProject.<p>
+<p><strong>projectVar</strong>  Name of variable in which the project alias will be returned.<p>
+<a name="DbInitialise" ><h4><font color="#CC3333">DbInitialise</font> <em>Initialise project database. </em></h4> 
+<p><em>Argument list: None</em></p>
+<p>Called from taskbrowser or whatever is main program<p>
+<a name="DbOpen" ><h4><font color="#CC3333">DbOpen</font> <em>Open a project database within CCP4i</em></h4> 
+<p><em>Argument list:  &lt;args&gt;</em></p>
+<p>This is essentially a wrapper to DbOpenDatabase which also performs some CCP4i-specific admin tasks, and invokes graphical components if prompting is required from the user.<p>
+<p><strong>-init</strong><p>
+<p>Should be specified the first time the procedure is invoked. It forces drawing of the utility menu if CCP4i is running in taskbrowser mode.<p>
+<a name="DbClose" ><h4><font color="#CC3333">DbClose</font> <em>Close the currently open project database within CCP4i</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>This is essentially a wrapper to DbCloseDatabase.<p>
+<a name="DbChangeFile" ><h4><font color="#CC3333">DbChangeFile</font> <em>Change the project database</em></h4> 
+<p><em>Argument list:  &lt;project&gt;</em></p>
+<p>The user has changed the project so update the current project directory and database.<p>
+<h3>Handling Input from Running Jobs</h3>
+<a name="Handling_Input_from_Running_Jobs"><h3> Handling Input from Running Jobs </h3> 
+<p>Jobs which are run external to the main graphical ccp4i process return status updates using socket connections.<p>
+<p>The information returned, the job status, finish time, and output files, is entered into the database using these procedures.<p>
+<a name="DbReceive" ><h4><font color="#CC3333">DbReceive</font> <em>Update database parameters after receiving status report from external job</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt; &lt;project&gt; &lt;args&gt;</em></p>
+<p>If the update information is that STATUS is FINISHED then this procedure will update the job time to the finish time and call the task review procedures. Any task can optionally define a review procedure which is called after the job has finished  (only a handful of tasks do have review procedures).  Finally redraw the job list.<p>
+<p><strong>job_id</strong>  The job number<p>
+<p><strong>project</strong>  The database project of the job - beware if user has changed project then cannot update database<p>
+<p><strong>parameter_1,data_1,parameter_2,data_2..</strong>  List of pairs of parameter name and value.<p>
+<a name="DbAddOutputFile" ><h4><font color="#CC3333">DbAddOutputFile</font> <em>Update list of job output files after receiving command from external job.</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt; &lt;project&gt; &lt;args&gt;</em></p>
+<p><strong>job_id</strong>  Job id<p>
+<p><strong>project</strong>  The database project of the job - beware if user has changed project then cannot update database<p>
+<p><strong>file_1,dir_1,file_2,dir_2..</strong>  A list of pairs of parameters, the first is the file name and the second the project/directory alias. The file name should ordinarily be just the file name and not the full pathname. The dir is a project or directory alias. If a full path is given then only the trailing filename is used unless the directory alias is {"Full} path..\" or an empty string (in which case the directory is set to {"Full} path..\". If the filename is an empty string then this is still stored along with the directory name.<p>
+<a name="DbUpdateOutFiles" ><h4><font color="#CC3333">DbUpdateOutFiles</font> <em>Check the existence of the listed output files for a job</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt; &lt;start_time&gt; &lt;0&gt;</em></p>
+<p>If the job start time is defined then also check that any file with the appropriate name was created between the job start and finish time. If the file does not exist or has wrong creation time then remove it from the list of output files.<p>
+<p>Nb The output 'files' can also include directories. In this case the filename should be an empty string.<p>
+<p><strong>job_id</strong>  Job id<p>
+<p><strong>start_time</strong>  Optional job start time in machine time.<p>
+<a name="DbCheckOutputFiles" ><h4><font color="#CC3333">DbCheckOutputFiles</font> <em>Look through all jobs and check uniqueness of output file name</em></h4> 
+<p><em>Argument list:  &lt;filename&gt; &lt;args&gt;</em></p>
+<p>Return a list of job ids which have output files with the given name<p>
+<p>This procedure is most useful in checking that a currently running job not create a file of the same name.<p>
+<p><strong>-running </strong><p>
+<p>Only search through currently running jobs <p>
+<a name="DbUpdateStatus" ><h4><font color="#CC3333">DbUpdateStatus</font> <em>For any job with status RUNNING check log file to see it it has finished</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>This procedure is usually called when ccp4i is started<p>
+<p>Checks jobs with status RUNNING REMOTE ON_HOLD<p>
+<a name="ReportJobFinish" ><h4><font color="#CC3333">ReportJobFinish</font> <em>Read end of logfile to find termination status</em></h4> 
+<p><em>Argument list:  &lt;logfile&gt; &lt;statusVar&gt; &lt;timeVar&gt; &lt;output_filesVar&gt;</em></p>
+<p>ccp4i scripts put a short section of termination status on end of log file which is usually not needed but may be checked for jobs which have RUNNING status when ccp4i graphical process is started.<p>
+<p><strong>logfile</strong>  Name of log file<p>
+<p><strong>statusVar</strong>  Returned status for job<p>
+<p><strong>timeVar</strong>  Returned finish time for job<p>
+<p><strong>output_filesVar</strong>  Returned list of output files (this will be list of file/dir alias pairs)<p>
+<a name="DbHandleOverwrite" ><h4><font color="#CC3333">DbHandleOverwrite</font> <em>Remove filename from database for file that user has opted to overwrite</em></h4> 
+<p><em>Argument list:  &lt;filename&gt;</em></p>
+<p>When specified output file already exists and user has opted to overwrite it then check thru all jobs in database to see if the overwritten file is a recognised output file.  If it is then delete it from the output_file list of the previous job.<p>
+<p><strong>filename</strong>  File name - NOT the full path name<p>
+<h3>Database Utility GUIs</h3>
+<a name="db_archive_window" ><h4><font color="#CC3333">db_archive_window</font> <em> Draw the window with archive/delete options </em></h4> 
+<p><em>Argument list:  &lt;job_id_list&gt;</em></p>
+<p>call db_cleanup_handler and db_archive_handler to do the business<p>
+<p>NB code from this procedure has been hacked together in the db_removeoutput_handler (which is used to delete files when the "Kill&Remove" option is selected). The common code should probably be farmed out to separate procedures in the future.<p>
+<p><strong>job_id_list</strong>  List of job ids<p>
+<a name="db_archive_window_update" ><h4><font color="#CC3333">db_archive_window_update</font> <em>Update archive/delete window if user changes default</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt; &lt;job_id_list&gt;</em></p>
+<p><strong>job_id</strong>  Job id for job with changed default options or 'ALL' if overall default is changed<p>
+<p><strong>job_id_list</strong>  List of ids for all jobs currently in archive/delete window<p>
+<a name="db_archive_handler" ><h4><font color="#CC3333">db_archive_handler</font> <em>Delete/archive output files & log file as specified in archive window</em></h4> 
+<p><em>Argument list:  &lt;job_id_list&gt;</em></p>
+<p><strong>job_id_list</strong>  List of the ids for jobs in archive/delete window<p>
+<a name="db_removeoutput_handler" ><h4><font color="#CC3333">db_removeoutput_handler</font> <em>Delete all output files for the selected job</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt;</em></p>
+<p>This procedure is called when the user selects to Kill a running job and remove all output. It prepares input for and then calls db_archive_handler, which does the removal.<p>
+<p>The procedure uses code hacked from db_archive_window. The common code should probably be farmed out to separate procedures in the future.<p>
+<p><strong>job_id</strong>  The id of the job being removed<p>
+<a name="db_cleanup_handler" ><h4><font color="#CC3333">db_cleanup_handler</font> <em>Apply the defined cleanup after a job</em></h4> 
+<p><em>Argument list:  &lt;job_id_list&gt; &lt;action&gt; &lt;&gt;</em></p>
+<p>This procedure will delete temporary files and directories, def files, com files (the input scripts for the programs) and remove the job from the database. If action is not set then apply the cleanup defined by archive(DELETE_OPTIONS) parameter<p>
+<p><strong>job_id_list</strong>  List of the ids for jobs in archive/delete window<p>
+<p><strong>action</strong>  Action to apply to the jobs in list (optional)<p>
+<a name="db_lock_and_archive" ><h4><font color="#CC3333">db_lock_and_archive</font> <em>Perform archive/delete operations while the interface is locked</em></h4> 
+<p><em>Argument list:  &lt;job_id_list&gt;</em></p>
+<p>This command should be invoked when the used clicks Apply&Exit in the Delete/Archive Files window - the interface is locked while the operations are in progress, to prevent the user exiting partway through.<p>
+<p><strong>job_id_list</strong>  List of job ids<p>
+<a name="db_restore_window" ><h4><font color="#CC3333">db_restore_window</font> <em> Draw the window with file restore options </em></h4> 
+<p><em>Argument list:  &lt;job_id_list&gt;</em></p>
+<p> Calls db_restore_handler to do the business<p>
+<p><strong>job_id_list</strong>  List of the ids for jobs in archive/delete window<p>
+<a name="db_select_warning" ><h4><font color="#CC3333">db_select_warning</font> <em>Write warning message if user picks utility menu without selecting job(s)</em></h4> 
+<p><em>Argument list:  &lt;nselect&gt; &lt;text&gt;</em></p>
+<p><strong>nselect</strong>  Text defining number of jobs that must be selected<p>
+<p><strong>text</strong>  Text describing utility that user picked<p>
+<a name="db_rerun" ><h4><font color="#CC3333">db_rerun</font> <em>Draw interface for rerunning a selected job</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt;</em></p>
+<p><strong>job_id</strong>  Job id<p>
+<a name="db_edit_info" ><h4><font color="#CC3333">db_edit_info</font> <em>Edit the information stored for a job </em></h4> 
+<p><em>Argument list:  &lt;job_id&gt;</em></p>
+<p>Use a conventional task interface called taskinfo<p>
+<p><strong>job_id</strong>  Id for job to edit. If it is 0 then enter info for a 'REPORTED' job<p>
+<a name="db_load_taskinfo" ><h4><font color="#CC3333">db_load_taskinfo</font> <em>Load database data for job into a task array</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;job_id&gt;</em></p>
+<p>This procedure used by db_edit_info<p>
+<p><strong>arrayname</strong>  Array name for task array<p>
+<p><strong>job_id</strong>  Job id<p>
+<a name="DefFileName" ><h4><font color="#CC3333">DefFileName</font> <em>Return the full path name of a def file in project database directory</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt;</em></p>
+<p><strong>job_id</strong>  Job id<p>
+<a name="DbArchiveExists" ><h4><font color="#CC3333">DbArchiveExists</font> <em>Look if there is archive file for filename</em></h4> 
+<p><em>Argument list:  &lt;filename&gt; &lt;job_id&gt;</em></p>
+<p>An archive file is one that has been gzipped and move to the project database directory.  Return 0 (no archive file) or 1 (archive file exists)<p>
+<p><strong>filename</strong>  File name (NOT full path name)<p>
+<p><strong>job_id</strong>  Job id.<p>
+<a name="DbArchiveFile" ><h4><font color="#CC3333">DbArchiveFile</font> <em>Archive or restore a file</em></h4> 
+<p><em>Argument list:  &lt;filename&gt; &lt;job_id&gt; &lt;action&gt;</em></p>
+<p>Either archive or restore filename dependent on action<p>
+<p>return a status for the file:<p>
+<p>  "null"  can't find copy of file<p>
+<p>  "project"  file in project directory (i.e. file with name filename exists)<p>
+<p>  "archive"  archived version of file exists<p>
+<p>  "both"  both project and archive version of file exist<p>
+<p><strong>filename</strong>  Full path file name for file<p>
+<p><strong>job_id</strong>  Job id<p>
+<p><strong>action</strong>  Action required : 'archive' 'restore' or '' (do nothing)<p>
+<a name="ArchiveFileName" ><h4><font color="#CC3333">ArchiveFileName</font> <em>Return the appropriate name for an archive file</em></h4> 
+<p><em>Argument list:  &lt;filename&gt; &lt;job_id&gt; &lt;args&gt;</em></p>
+<p><strong>filename</strong>  File name (can be full path name)<p>
+<p><strong>job_id</strong>  Job id<p>
+<p><strong>-ext</strong><p>
+<p>Append appropriate extension for compressed file<p>
+<a name="db_job_has_notebook" ><h4><font color="#CC3333">db_job_has_notebook</font> <em>Check for existance of notebook entry for a job</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt;</em></p>
+<p>Return 1 if a notebook entry exists and 0 otherwise<p>
+<p><strong>job_id</strong>  Job id<p>
+<a name="db_edit_notebook" ><h4><font color="#CC3333">db_edit_notebook</font> <em>Display & allow edit of the notebook for one job</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt;</em></p>
+<p><strong>job_id</strong>  Job id<p>
+<a name="DbMergeComFiles" ><h4><font color="#CC3333">DbMergeComFiles</font> <em>Merge com files for a job so they can be displayed</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt;</em></p>
+<p>The  com files are the scripts which are input to the programs<p>
+<p><strong>job_id</strong>  Job id<p>
+<a name="db_sort_tmpfiles" ><h4><font color="#CC3333">db_sort_tmpfiles</font> <em>Comparison command for lsort in DbMergeComFiles</em></h4> 
+<p><em>Argument list:  &lt;f1&gt; &lt;f2&gt;</em></p>
+<p>See the Tcl documentation on lsort.<p>
+<p><strong>f1,f2</strong>  The com file names<p>
+<a name="DbKillJob" ><h4><font color="#CC3333">DbKillJob</font> <em>Kill a job whose current status is REMOTE or RUNNING</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt;</em></p>
+<p>Use the KillScript or KillRemoteScript prcedures in the local.tcl<p>
+<p><strong>job_id</strong>  Job id<p>
+<a name="DbStopJob" ><h4><font color="#CC3333">DbStopJob</font> <em>Not implemented - stop job cleanly after next program finish</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt;</em></p>
+<a name="db_view_session_log" ><h4><font color="#CC3333">db_view_session_log</font> <em>Display the session log file</em></h4> 
+<p><em>Argument list: None</em></p>
+<a name="db_config_window" ><h4><font color="#CC3333">db_config_window</font> <em>Present a window for the user to configure the connection to the db</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>This generates a window which gives the user information about the current configuation of CCP4i with respect to accessing the project database.<p>
+<p>In the case that CCP4i is connected to the database handler, it also monitors the status of the connection.<p>
+<a name="db_update_startup" ><h4><font color="#CC3333">db_update_startup</font> <em>Update the user preference for database access mode on startup</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;startupVar&gt;</em></p>
+<p>This sets the USE_DBCCP4I_ON_STARTUP parameter in configure to a new value specified by element startupVar in the array supplied by the calling procedure.<p>
+<p>The configure parameters are then saved to file and reloaded into the interface. The mode of database access isn't changed until the next time CCP4i is started.<p>
+<p><strong>arrayname</strong>  Name of the array used in the database configuration window<p>
+<p><strong>startupVar</strong>  Name of the parameter storing the user's startup preference<p>
+<a name="db_monitor_connection" ><h4><font color="#CC3333">db_monitor_connection</font> <em>Check and update the status of the connection in the db config window</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;statusVar&gt; &lt;infoVar&gt;</em></p>
+<p>This is initially called from the database configuration window. Subsequently it calls itself periodically to update the status and information parameters, essentially monitoring the connection to the database server in real time.<p>
+<p><strong>arrayname</strong>  Name of the array used in the database configuration window<p>
+<p><strong>statusVar</strong>  Name of the parameter displaying the connection status<p>
+<p><strong>infoVar</strong>  Name of the parameter displaying the server information<p>
+<h3>Autotest Utilities</h3>
+<a name="DbAutotest" ><h4><font color="#CC3333">DbAutotest</font> <em>Handle command line running of autotest</em></h4> 
+<p><em>Argument list:  &lt;args&gt;</em></p>
+<a name="db_autotest" ><h4><font color="#CC3333">db_autotest</font> <em>Interface to automatic regression testing - rerun jobs in project</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>the real work is done by db_autotest_handler<p>
+<a name="db_autotest_handler" ><h4><font color="#CC3333">db_autotest_handler</font> <em> Automatic regression testing - rerun jobs in project</em></h4> 
+<p><em>Argument list:  &lt;args&gt;</em></p>
+<p>Create a new project directory which is a sub-directory of the current project directory.  Create a new database directory and database.def.  Run all tasks in the project putting output files into the new project subdirectory.<p>
+<p><strong>-nographics</strong><p>
+<p>Running in command line (nographics) mode<p>
+<a name="AutotestRunjob" ><h4><font color="#CC3333">AutotestRunjob</font> <em>Check status of automatic test jobs and start new job</em></h4> 
+<p><em>Argument list:  &lt;mode&gt; &lt;job_id&gt; &lt;last_job&gt; &lt;old_project&gt; &lt;project&gt; &lt;args&gt;</em></p>
+<p>While the auto tests are running this procedure calls itself every couple of seconds and test if the current job is finished and if so then starts the next job<p>
+<p><strong>mode</strong>  Mode is either 'init' for first time procedure is called or 'watch' thereafter<p>
+<p><strong>job_id</strong>  The job id of the currently running job<p>
+<p><strong>last_job</strong>  The id of the final job that the procedure is required to run.<p>
+<p><strong>old_project</strong>  The project alias of the master project that is being rerun<p>
+<p><strong>project</strong>  The project alias for the working project<p>
+<p><strong>-exit</strong><p>
+<p>Exit from ccp4i after completely the tests in this project<p>
+<p><strong>-remote</strong><em>  machine</em><p>
+<p>Run jobs on remote machine<p>
+<a name="UpdateAutoTestDef" ><h4><font color="#CC3333">UpdateAutoTestDef</font> <em>Update the def file when running regression tests</em></h4> 
+<p><em>Argument list:  &lt;old_project&gt; &lt;project&gt; &lt;job_id&gt; &lt;run_mode&gt;</em></p>
+<p>Change the directory aliases to that of the working project<p>
+<p><strong>old_project</strong>  The project alias of the master project that is being rerun<p>
+<p><strong>project</strong>  The project alias for the working project<p>
+<p><strong>job_id</strong>  The job id<p>
+<p><strong>run_mode</strong>  Set to 'remote' or 'background' - required to set the def file header<p>
+<a name="db_query_lock" ><h4><font color="#CC3333">db_query_lock</font> <em>Create a dialogue window for overriding database lock</em></h4> 
+<p><em>Argument list:  &lt;project&gt; &lt;user&gt; &lt;time&gt;</em></p>
+<p><strong>project</strong>  Alias of project<p>
+<p><strong>user</strong>  Name of user who currently owns the lock<p>
+<p><strong>time</strong>  Time when the lock was created<p>
+<a name="DbFlushCommandBuffer" ><h4><font color="#CC3333">DbFlushCommandBuffer</font> <em>Flush the command buffer and execute the commands</em></h4> 
+<p><em>Argument list:  &lt;project&gt;</em></p>
+<p>Socket commands e.g. from running scripts which could not be executed immediately due to the main process being inaccessible, may be stored in a buffer file. DbFlushCommandBuffer flushes the buffer file and executes the commands using the "ccp4ish -socket" mechanism.<p>
+<p><strong>project</strong>  Project alias<p>
+<h3>Handling Delayed Execution of Buffered Commands</h3>
+<a name="DbGetBufferFile" ><h4><font color="#CC3333">DbGetBufferFile</font> <em>Return the name of the database command buffer file</em></h4> 
+<p><em>Argument list:  &lt;project&gt;</em></p>
+<p>Clone of GetBufferFile in execute.tcl<p>
+<p><strong>project</strong>  Alias for project<p>
+<h3>Starting Jobs (src/runjob.tcl)</h3>
+<a name="Starting_Jobs"><h3> Starting Jobs </h3> 
+<p>The procedures in runjob.tcl will initiate the running of a job after the user has clicked the 'Run' button on a task interface.<p>
+<a name="run_command" ><h4><font color="#CC3333">run_command</font> <em>Create a def file, add new job to database and  run a job</em></h4> 
+<p><em>Argument list:  &lt;mode&gt; &lt;taskname&gt; &lt;arrayname0&gt;</em></p>
+<p>This procedure checks that a script file script/taskname.tcl exists and will fail if it is not found unless running in interactive mode. In future it is feasible that scripts could be written in other languages and run_command would need to be intelligent about this to ensure the script was started appropriately.  There is currently some unused code to handle the case of csh script.<p>
+<p><strong>mode</strong>  can be: background: run in background as separate process on same machine, edit: as background but show user program scripts to edit, remote: Give user options to choose to run remote/batch, interactive: create the database entry but return control to the task interface to run the job interactively, #d_arg taskname The name of the task<p>
+<p><strong>arrayname</strong>  Task interface array<p>
+<a name="RunScript" ><h4><font color="#CC3333">RunScript</font> <em>Run a job - start a new ccp4i process and pass it the def file name</em></h4> 
+<p><em>Argument list:  &lt;mode&gt; &lt;format&gt; &lt;def_file&gt; &lt;script_file&gt; &lt;job_id&gt;</em></p>
+<p>The command to run start a ccp4i process is taken from the configure array - inappropriate setting of this value is a likely cause for jobs not running.  The RunRemote procedure is invoked to run jobs remotely.<p>
+<p>Note regarding the "mode" argument: this is a list that can contain between one and three elements. The first element indicates the mode of use (either "background" or "remote"). If the mode of use is "remote" then there must be a second element which is the name of the remote machine, and there may also be an optional third element that indicates the protocol to use to connect to that machine (either "rsh" or "ssh").<p>
+<p><strong>mode</strong>  = background or remote<p>
+<p><strong>def_file</strong>  Name of def file containing parameters for job<p>
+<p><strong>script_file</strong>  Script file - usually only required for running Python<p>
+<p><strong>job_id</strong>  The project database id for the job<p>
+<a name="RunFileCheck" ><h4><font color="#CC3333">RunFileCheck</font> <em>Before running a task check input files exist and output files do not.</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;input_files&gt; &lt;output_files&gt;</em></p>
+<p>A list of array elements for the names of input and output files are keep in the array elements INPUT_FILES and OUTPUT_FILES respectively.<p>
+<p><strong>arrayname</strong>  Task interface array<p>
+<p><strong>input_files</strong>  List of array elements containing the names of input files<p>
+<p><strong>output_files</strong>  List of array elements containing the names of output files<p>
+<a name="InputFileCheck" ><h4><font color="#CC3333">InputFileCheck</font> <em>Check task input file exists and warn user if not</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;file&gt;</em></p>
+<p><strong>arrayname</strong>  Task interface array<p>
+<p><strong>filename</strong>  Name of one input file<p>
+<a name="OutputFileCheck" ><h4><font color="#CC3333">OutputFileCheck</font> <em>Check if task output file does not exist and offer to delete or abort</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;file&gt;</em></p>
+<p><strong>arrayname</strong>  Task interface array<p>
+<p><strong>filename</strong>  Name of one output file<p>
+<a name="RunParameterCheck" ><h4><font color="#CC3333">RunParameterCheck</font> <em></em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt;</em></p>
+<p><p>
+<p><strong>arrayname</strong>  Task interface array<p>
+<a name="RunAborted" ><h4><font color="#CC3333">RunAborted</font> <em>Invoke the cleanup handler to deal with an aborted job</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt; &lt;project&gt;</em></p>
+<p>When a job is aborted by the user, this command will be invoked by a message received by ServerAcceptInput in order to perform clean up of the job by invoking the cleanup handler.<p>
+<p><strong>job_id</strong>  Number of the aborted job<p>
+<p><strong>project</strong>  Name of the project that the job was running in<p>
+<a name="RunCompleted" ><h4><font color="#CC3333">RunCompleted</font> <em>Trigger post-run operations once a running job has finished</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt; &lt;project&gt; &lt;status&gt;</em></p>
+<p>When a job finishes running, this command will be invoked by a message received by ServerAcceptInput in order to perform any post-run operations - for example, running the task review procedures defined in the task file and finalising the status of the output files.<p>
+<p>Completion in this context includes both successful and failed jobs.<p>
+<p><strong>job_id</strong>  Number of the aborted job<p>
+<p><strong>project</strong>  Name of the project that the job was running in<p>
+<p><strong>status</strong>  Status of the job on completion e.g. FINISHED or FAILED.<p>
+<a name="SetDefaultTitle" ><h4><font color="#CC3333">SetDefaultTitle</font> <em>Set a task title if user has not entered one</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;text&gt;</em></p>
+<p>only used in few tasks so far<p>
+<p><strong>arrayname</strong>  Task interface array<p>
+<p><strong>text</strong>  text to insert in task title<p>
+<a name="ChooseRunMode" ><h4><font color="#CC3333">ChooseRunMode</font> <em>Present 'Remote' window for user to choose remote/batch mode</em></h4> 
+<p><em>Argument list:  &lt;script_file&gt; &lt;job_id&gt; &lt;args&gt;</em></p>
+<p><strong>script_file</strong>  Name of def file containing task parameters<p>
+<p><strong>job_id</strong>  The project database id for the job<p>
+<p><strong>-machine</strong><em>  machine</em><p>
+<p>Set a default remote machine<p>
+<a name="handle_chooserunmode" ><h4><font color="#CC3333">handle_chooserunmode</font> <em>Run remote/batch after user clicks 'Run' in 'Remote' window</em></h4> 
+<p><em>Argument list:  &lt;w&gt; &lt;arrayname&gt; &lt;action&gt; &lt;def_file&gt; &lt;job_id&gt; &lt;args&gt;</em></p>
+<p>There is a fragment of code to run in 'SERVER' mode - this would be an implementation to allow running 'remotely' on the Windows platform.<p>
+<p><strong>w</strong>  The id of the window<p>
+<p><strong>arrayname</strong>  'Remote' window array<p>
+<p><strong>action</strong>  User selection: 'abort' or 'run'<p>
+<p><strong>def_file</strong>  Name of def file containing task parameters<p>
+<p><strong>job_id</strong>  The project database id for the job<p>
+<h3>Project Directory Utilities (src/projectdirs.tcl)</h3>
+<a name="Project_Directory_Utilities"><h3> Project Directory Utilities </h3> 
+<p>Within CCP4i the user's work is divided into 'project directories' with each directory being referenced by a 'project alias'. A project also has an associated job database.<p>
+<h3>Core Project Directory Functions</h3>
+<a name="Core_Project_Directory_Functions"><h3> Core Project Directory Functions </h3> 
+<p>These functions handle initialisation and saving of the overall project directory information. The data is stored in the global 'directories' array.<p>
+<a name="InitialiseDirectories" ><h4><font color="#CC3333">InitialiseDirectories</font> <em>Initialise the directories data</em></h4> 
+<p><em>Argument list:  &lt;args&gt;</em></p>
+<p>This is a wrapper for InitialisePreferences directories, with some additional functionality to initialise the user's projects if necessary.<p>
+<p>If the database handler is being used as the source of directories data then a connection is established with the handler, and status 1 is returned if there are no projects currently defined or 2 if there is at least one project already defined.<p>
+<p>If a connection to the handler is not requested, or if a connection cannot be made, then InitialisePreferences is called and the status from that call is returned.<p>
+<p>InitialiseDirectories accepts the same arguments as InitialisePreferences, although in the case of the database handler being used these are essentially ignored.<p>
+<p><strong>-lock</strong><p>
+<p>Check whether directories.def file is locked<p>
+<p><strong>-host</strong><em>  hostname</em><p>
+<p>Connect to a handler running on the specified host<p>
+<p><strong>-port</strong><em>  port_number</em><p>
+<p>Connect via a specific port number<p>
+<h3>Accessing Project Directory Data</h3>
+<a name="Accessing_Project_Directory_Data"><h3> Accessing Project Directory Data </h3> 
+<p>These functions handle interactions with the information about the project directories.<p>
+<a name="ListProjects" ><h4><font color="#CC3333">ListProjects</font> <em>Return a list of project aliases</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>This returns a list of all the available project names (aka aliases) that are currently defined. If there are no projects currently defined then an empty list is returned.<p>
+<p>Note that the projects are sorted into alphabetical (dictionary) order regardless of the order that they are retrieved from the database.<p>
+<a name="AddProject" ><h4><font color="#CC3333">AddProject</font> <em>Add a new project to list of projects</em></h4> 
+<p><em>Argument list:  &lt;alias&gt; &lt;dir&gt;</em></p>
+<p>This adds a new project to the user's list, if necessary also creating a new directory and a database subdirectory.<p>
+<p>It returns 1 on success, 0 on failure.<p>
+<p><strong>alias</strong>  The one-word alias for the project<p>
+<p><strong>dir</strong>  The full path for the project directory<p>
+<a name="DeleteProject" ><h4><font color="#CC3333">DeleteProject</font> <em>Remove an existing project from list of projects</em></h4> 
+<p><em>Argument list:  &lt;alias&gt;</em></p>
+<p>Only the reference to the project is deleted - the project directory and contents are left intact.<p>
+<p><strong>alias</strong>  The one-word alias for the project<p>
+<a name="GetProjectPath" ><h4><font color="#CC3333">GetProjectPath</font> <em>Return the project directory corresponding to a project alias</em></h4> 
+<p><em>Argument list:  &lt;project&gt;</em></p>
+<p>Returns the directory path associated with the project name or an empty string if the project is not defined.<p>
+<p><strong>project</strong>  Alias/name of the project<p>
+<a name="GetProjectDBPath" ><h4><font color="#CC3333">GetProjectDBPath</font> <em>Return the database directory corresponding to a project alias</em></h4> 
+<p><em>Argument list:  &lt;project&gt;</em></p>
+<p>Returns the directory path for the database associated with the project name, or an empty string if the project is not defined.<p>
+<p><strong>project</strong>  Alias/name of the project<p>
+<a name="SetProjectPath" ><h4><font color="#CC3333">SetProjectPath</font> <em>(Re)set the directory for the specified project.</em></h4> 
+<p><em>Argument list:  &lt;project&gt; &lt;dir&gt;</em></p>
+<p>The project alias must already be defined.<p>
+<p>This command should be used with caution as it could have side effects for reviewing and rerunning jobs in this and other projects.<p>
+<p><strong>project</strong>  Alias/name of the project being updated<p>
+<p><strong>dir</strong>  The full path for the new directory<p>
+<a name="get_indx_project" ><h4><font color="#CC3333">get_indx_project</font> <em>Internal: get an index value for a project name</em></h4> 
+<p><em>Argument list:  &lt;project&gt;</em></p>
+<p>This is an internal function that does a lookup of the array index value for a project name in the directories array.<p>
+<p>If the project name isn't defined then an empty string is returned.<p>
+<p><strong>project</strong>  Alias/name of the project being indexed<p>
+<h3>Accessing DefDir Data</h3>
+<a name="Accessing_DefDir_Data"><h3> Accessing DefDir Data </h3> 
+<p>These functions handle interactions with the information about the 'default directories' (defdirs).<p>
+<p>'Default directories' are directories with associated aliases which are not project directories - that is, that have no associated job database.<p>
+<a name="ListDefdirs" ><h4><font color="#CC3333">ListDefdirs</font> <em>Return a list of defdir aliases</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>This returns a list of all the available defdir names (aka aliases) that are currently defined. If there are no defdirs currently defined then an empty list is returned.<p>
+<p>The returned list will have TEMPORARY as the first def dir, if it exists.<p>
+<p>A 'defdir' is a data directory i.e. a directory that has a shortcut name/alias but doesn't have an associated project database.<p>
+<p>Note that the def dirs are sorted such that TEMPORARY will always be listed first (if it exists) and subsequent aliases will be in alphabetical (i.e. dictionary) order.<p>
+<a name="AddDefdir" ><h4><font color="#CC3333">AddDefdir</font> <em>Add a new defdir to list of default directories</em></h4> 
+<p><em>Argument list:  &lt;alias&gt; &lt;dir&gt;</em></p>
+<p>This adds a new defdir to the user's list. The directory doesn't have to exist when it is added.<p>
+<p>It returns 1 on success, 0 on failure.<p>
+<p><strong>alias</strong>  The one-word alias for the defdir<p>
+<p><strong>dir</strong>  The full path for the directory<p>
+<a name="DeleteDefdir" ><h4><font color="#CC3333">DeleteDefdir</font> <em>Remove an existing def dir from list of def dirs</em></h4> 
+<p><em>Argument list:  &lt;alias&gt;</em></p>
+<p>Only the reference to the def dir is deleted - the directory and contents are left intact.<p>
+<p><strong>alias</strong>  The one-word alias for the def dir<p>
+<a name="GetDefdirPath" ><h4><font color="#CC3333">GetDefdirPath</font> <em>Return the directory corresponding to a defdir alias</em></h4> 
+<p><em>Argument list:  &lt;defdir&gt;</em></p>
+<p>Returns the directory path associated with the defdir name or an empty string if the defdir is not defined.<p>
+<p><strong>defdir</strong>  Alias/name of the defdir<p>
+<a name="SetDefdirPath" ><h4><font color="#CC3333">SetDefdirPath</font> <em>(Re)set the directory for the specified defdir.</em></h4> 
+<p><em>Argument list:  &lt;defdir&gt; &lt;dir&gt;</em></p>
+<p>The defdir alias must already be defined.<p>
+<p>This command is currently deprecated as it could have unpredictable results.<p>
+<p><strong>defdir</strong>  Alias/name of the defdir being updated<p>
+<p><strong>dir</strong>  The full path for the new directory<p>
+<a name="get_indx_defdir" ><h4><font color="#CC3333">get_indx_defdir</font> <em>Internal: get an index value for a defdir name</em></h4> 
+<p><em>Argument list:  &lt;defdir&gt;</em></p>
+<p>This is an internal function that does a lookup of the array index value for a defdir name in the directories array.<p>
+<p>If the defdir name isn't defined then an empty string is returned.<p>
+<p><strong>defdir</strong>  Alias/name of the defdir being indexed<p>
+<h3>Project and DefDir Utility Functions</h3>
+<a name="Project_and_DefDir_Utility_Functions"><h3> Project and DefDir Utility Functions </h3> 
+<p>These functions provide simple interrogations of the project and default directory data.<p>
+<a name="ProjectIsDefined" ><h4><font color="#CC3333">ProjectIsDefined</font> <em>Check if a project is defined</em></h4> 
+<p><em>Argument list:  &lt;project&gt;</em></p>
+<a name="ProjectIsDefined" ><h4><font color="#CC3333">ProjectIsDefined</font> <em>Return 1 if the project name is already defined, 0 if not.</em></h4> 
+<p><em>Argument list:  &lt;project&gt;</em></p>
+<p><strong>project</strong>  Alias/name of the project<p>
+<a name="DirIsProject" ><h4><font color="#CC3333">DirIsProject</font> <em>Check whether a directory is a project directory</em></h4> 
+<p><em>Argument list:  &lt;dir&gt;</em></p>
+<p>Returns 1 if dir is a project or default directory, 0 if not.<p>
+<p><strong>dir</strong>  Full path of the directory to check<p>
+<h3>Functions for handing default dir menus</h3>
+<a name="Functions_for_handing_default_dir_menus"><h3> Functions for handing default dir menus </h3> 
+<p>These functions deal with the internal details of setting and getting the DEFDIR_MENU parameter.<p>
+<a name="SetDefdirMenu" ><h4><font color="#CC3333">SetDefdirMenu</font> <em>Set the value of the DEFDIR_MENU internal parameter</em></h4> 
+<p><em>Argument list:  &lt;menu&gt;</em></p>
+<p><strong>menu</strong>  A list containing the items in the menu<p>
+<a name="GetDefdirMenu" ><h4><font color="#CC3333">GetDefdirMenu</font> <em>Return the value of the DEFDIR_MENU internal parameter</em></h4> 
+<p><em>Argument list: None</em></p>
+<h3>Functions for handling database specifics</h3>
+<a name="Functions_for_handling_database_specifics"><h3> Functions for handling database specifics </h3> 
+<p>These functions handle the specifics of the job database implementation.<p>
+<a name="CreateNewProjectDb" ><h4><font color="#CC3333">CreateNewProjectDb</font> <em>Create new database file</em></h4> 
+<p><em>Argument list:  &lt;dbfile&gt; &lt;utility_name&gt; &lt;identifier&gt;</em></p>
+<p>This is a copy of the DbCreateNewFile command in database.tcl, and creates a new database.def file.<p>
+<p><strong>dbfile</strong>  Name of database file<p>
+<p><strong>utility_name</strong>  type of database - expect it to be 'database'<p>
+<p><strong>identifier</strong>  Identifier to write to file header - usually 'CCP4_Project_Database' - this is equivalent to the taskname in the usual task def files. A more descriptive identifier is used here in attempt to explain the file to anyone who reads the file itself.<p>
+<a name="DirectoriesRegisterCallback" ><h4><font color="#CC3333">DirectoriesRegisterCallback</font> <em>Specify a procedure that will be invoked on save</em></h4> 
+<p><em>Argument list:  &lt;callbackProc&gt;</em></p>
+<p>This allows a callback procedure to be specified, so that whenever the directories data is saved to persistent storage the callback will be invoked immediately afterwards.<p>
+<p>See also the SaveDirectories procedure.<p>
+<p><strong>callbackProc</strong>  Name of the command to be invoked.<p>
+<h3>Commands for Handling Automatic Directories Saves</h3>
+<a name="Commands_for_Handling_Automatic_Directories_Saves"><h3> Commands for Handling Automatic Directories Saves </h3> 
+<p>These commands are used internally by the directories functions to manage scheduling automatic saves of the directories data to persistent storage as required.<p>
+<p>DirectoriesModified is called by 'write' operations (e.g. adding or deleting projects). This schedules calls to SaveDirectories, which manages the actual saving operation.<p>
+<a name="DirectoriesModified" ><h4><font color="#CC3333">DirectoriesModified</font> <em>Register that the directories data has been modified.</em></h4> 
+<p><em>Argument list:  &lt;broadcast&gt;</em></p>
+<p>This command is called by the directories 'write' operations. It sets a flag to indicate that the directories data needs saving to file, and schedules a call to SaveDirectories to perform the operation (if one is not currently scheduled).<p>
+<p>This is an internal command and should not normally be called directly.<p>
+<p><strong>broadcast</strong>  (Optional) The broadcast data received from the database handler<p>
+<a name="SaveDirectories" ><h4><font color="#CC3333">SaveDirectories</font> <em>Save the directories data</em></h4> 
+<p><em>Argument list:  &lt;args&gt;</em></p>
+<p>This is a wrapper for SavePreferences directories and takes the same arguments.<p>
+<h3>Internal functions for dealing with the state of CCP4i</h3>
+<a name="Internal_functions_for_dealing_with_the_state_of_CCP4i"><h3> Internal functions for dealing with the state of CCP4i </h3> 
+<p>These are internal functions used to keep information on the current project that CCP4i is operating with.<p>
+<a name="SetProjectDatabase" ><h4><font color="#CC3333">SetProjectDatabase</font> <em>Set the value of the PROJECT_DATABASE internal parameter</em></h4> 
+<p><em>Argument list:  &lt;project_database&gt;</em></p>
+<p><strong>project_database</strong>  New value for PROJECT_DATABASE<p>
+<a name="GetProjectDatabase" ><h4><font color="#CC3333">GetProjectDatabase</font> <em>Fetch the value of the PROJECT_DATABASE internal parameter</em></h4> 
+<p><em>Argument list: None</em></p>
+<h3>Commands for switching the database access mode</h3>
+<a name="Commands_for_switching_the_database_access_mode"><h3> Commands for switching the database access mode </h3> 
+<p>These commands can be used to change the method that the interface is using to access the database. The choice of commands is dependent only on the target mode, and not on the current access mode.<p>
+<a name="switch_to_direct_db" ><h4><font color="#CC3333">switch_to_direct_db</font> <em>Switch to CCP4i accessing the database directly</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>Direct access is when CCP4i reads and writes the project database files directly.<p>
+<a name="switch_to_remote_db" ><h4><font color="#CC3333">switch_to_remote_db</font> <em>Switch to using a database handler on a remote machine</em></h4> 
+<p><em>Argument list:  &lt;host&gt; &lt;port&gt;</em></p>
+<p>Resets the database connection mode to connect to a handler running on a remote machine. The handler must already be running on the remote machine.<p>
+<p><strong>host</strong>  The hostname of the remote machine with the handler instance<p>
+<p><strong>port</strong>  The port number used by the remote handler<p>
+<a name="switch_to_local_db" ><h4><font color="#CC3333">switch_to_local_db</font> <em>Switch to using a database handler on the local machine</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>This is the default mode for CCP4i when using the database handler to access the database.<p>
+<a name="InitialiseDatabaseOptions" ><h4><font color="#CC3333">InitialiseDatabaseOptions</font> <em>Reset database configuration options after startup.</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>This command should be called after startup in graphical mode. It checks whether the current configuration for database access is consistent with the expected configuration when the database handler is being used.<p>
+<p>In the event that the interface is configured to use the handler but the actual operating mode has automatically switched to direct access it offers the user the option of updating the configuration to use this mode on startup in future.<p>
+<h3>Internal functions for interacting with the database handler</h3>
+<a name="Internal_functions_for_interacting_with_the_database_handler"><h3> Internal functions for interacting with the database handler </h3> 
+<p>These are internal functions used to keep information on the current project that CCP4i is operating with.<p>
+<a name="using_dbccp4i" ><h4><font color="#CC3333">using_dbccp4i</font> <em>Determine if we're using the db handler as the database backend</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>Returns 1 if the database handler is being used as the database source and 0 if CCP4i is accessing the database files directly (i.e. via the directories and database global arrays).<p>
+<p>Initially the preferred access mode is set according to the setting in configure.def.<p>
+<a name="connect_to_dbccp4i" ><h4><font color="#CC3333">connect_to_dbccp4i</font> <em>Initialise the connection to the database handler</em></h4> 
+<p><em>Argument list:  &lt;args&gt;</em></p>
+<p>Establishes a connection to the database handler using the client API commands. If the connection is successfully made then the internal parameter USE_DBCCP4I is set to one, otherwise it is set to zero (meaning that no connection is available). The return value of this command is the final setting of the USE_DBCCP4I parameter.<p>
+<p>By default the connection is made to a local handler instance i.e. one on the current machine. If the -host and -port arguments are specified then the connection will instead be made to a remote handler instance. Note that the -host and -port arguments must be used together.<p>
+<p>In either case if a connection has already been established then no action will be taken.<p>
+<p><strong>-host</strong><em>  host_name</em><p>
+<p>Connect to a handler running on hostname, rather than locally<p>
+<p><strong>-port</strong><em>  port_number</em><p>
+<p>Connect to port_number<p>
+<a name="handle_dbccp4i_broadcast" ><h4><font color="#CC3333">handle_dbccp4i_broadcast</font> <em>Receive a broadcast from the handler and determine how to react</em></h4> 
+<p><em>Argument list:  &lt;broadcast&gt;</em></p>
+<p>This is invoked by the dbccp4i client API when the database changes. It shouldn't be invoked directly from within CCP4i.<p>
+<a name="dbccp4i_verify_connection" ><h4><font color="#CC3333">dbccp4i_verify_connection</font> <em>Check there is a working connection to the database handler</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>Returns 1 if the connection to the database handler is still active, and zero otherwise.<p>
+<a name="dbccp4i_list_projects" ><h4><font color="#CC3333">dbccp4i_list_projects</font> <em>Return a list of projects from the database handler</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>Returns a list of the project names that can be accessed using the database handler connection. Note that it is possible not to have any projects defined, in which case an empty list will be returned.<p>
+<a name="dbccp4i_add_project" ><h4><font color="#CC3333">dbccp4i_add_project</font> <em>Add a project to the list of projects in the handler.</em></h4> 
+<p><em>Argument list:  &lt;alias&gt; &lt;dir&gt;</em></p>
+<p>This command will first ask the database handler to create a new project with the supplied name and directory. If this fails it then attempts to import the project instead. If either of these steps succeeds then 1 is returned, otherwise zero is returned.<p>
+<p><strong>alias</strong>  Name of the project<p>
+<p><strong>dir</strong>  Full path of the project directory<p>
+<a name="dbccp4i_delete_project" ><h4><font color="#CC3333">dbccp4i_delete_project</font> <em>Remove a project from the list of projects in the handler.</em></h4> 
+<p><em>Argument list:  &lt;alias&gt;</em></p>
+<p>This command attempts to remove the reference to a specified project from the list of all the projects that the handler currently knows about. It returns 1 on successful removal and zero on failure.<p>
+<p>Note that deleting the project reference doesn't remove the project directory or any of the files from the system. Deleted projects can therefore be added back later using the dbccp4i_add_project command.<p>
+<p><strong>alias</strong>  Name of the project<p>
+<a name="dbccp4i_get_project_path" ><h4><font color="#CC3333">dbccp4i_get_project_path</font> <em>Return the directory path for a project.</em></h4> 
+<p><em>Argument list:  &lt;project&gt;</em></p>
+<p>Returns an empty string if the specified project isn't found.<p>
+<p><strong>project</strong>  Name of the project<p>
+<a name="dbccp4i_get_project_db_path" ><h4><font color="#CC3333">dbccp4i_get_project_db_path</font> <em>Return the directory path for a project database directory.</em></h4> 
+<p><em>Argument list:  &lt;project&gt;</em></p>
+<p>Returns the path to the database directory associated with a project (typically /path/to/project/CCP4_DATABASE/), or an empty string if the project isn't found.<p>
+<p><strong>project</strong>  Name of the project<p>
+<a name="dbccp4i_list_defdirs" ><h4><font color="#CC3333">dbccp4i_list_defdirs</font> <em>Return a list of "default" (data) directories from the db handler</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>Returns a list of the data directory names that can be accessed using the database handler connection. Note that it is possible not to have any data directories defined, in which case an empty list will be returned.<p>
+<a name="dbccp4i_add_defdir" ><h4><font color="#CC3333">dbccp4i_add_defdir</font> <em>Add a "default" (data) directory to the list in the handler.</em></h4> 
+<p><em>Argument list:  &lt;alias&gt; &lt;dir&gt;</em></p>
+<p>This command associates an alias with a directory where data is normally stored. If the add operation succeeds then 1 is returned, otherwise zero is returned.<p>
+<p><strong>alias</strong>  Name of the data dir<p>
+<p><strong>dir</strong>  Full path of the data directory<p>
+<a name="dbccp4i_delete_defdir" ><h4><font color="#CC3333">dbccp4i_delete_defdir</font> <em>Remove a "default" (data) directory from the handler.</em></h4> 
+<p><em>Argument list:  &lt;alias&gt;</em></p>
+<p>This command attempts to remove the reference to a specified data directory from the list of all data directories that the handler currently knows about. It returns 1 on successful removal and zero on failure.<p>
+<p>Note that deleting the directory reference doesn't remove the actual directory or any of the files from the system. Deleted data dirs can therefore be added back later using the dbccp4i_add_defdir command.<p>
+<p><strong>alias</strong>  Name of the data directory<p>
+<a name="dbccp4i_get_defdir_path" ><h4><font color="#CC3333">dbccp4i_get_defdir_path</font> <em>Return the directory path for a "default" (data) directory.</em></h4> 
+<p><em>Argument list:  &lt;defdir&gt;</em></p>
+<p>Returns the path to the data directory associated with the specified name, or an empty string if the data dir isn't found.<p>
+<p><strong>defdir</strong>  Name of the data directory<p>
+<a name="dbccp4i_dir_is_project" ><h4><font color="#CC3333">dbccp4i_dir_is_project</font> <em>Check whether a directory path is a project or data directory</em></h4> 
+<p><em>Argument list:  &lt;dir&gt;</em></p>
+<p>Returns 1 if the specified directory path corresponds to a known project directory or data directory, and zero if it doesn't.<p>
+<p><strong>dir</strong>  The directory path to check<p>
+<a name="dbccp4i_project_is_defined" ><h4><font color="#CC3333">dbccp4i_project_is_defined</font> <em>Check whether a project name is already defined in the handler</em></h4> 
+<p><em>Argument list:  &lt;project&gt;</em></p>
+<p>If the specified project name is already in the list of projects available to the handler then returns 1, otherwise returns 0.<p>
+<p><strong>project</strong>  Name of the project<p>
+<a name="DbReport" ><h4><font color="#CC3333">DbReport</font> <em>Handle reporting diagnostic messages for database code</em></h4> 
+<p><em>Argument list:  &lt;level&gt; &lt;text&gt;</em></p>
+<p><strong>level</strong>  A messaging level (with 0 being most serious)<p>
+<p><strong>text</strong>  Text to report<p>
+<h3>Database cache for database handler</h3>
+<a name="Database_cache_for_database_handler"><h3> Database cache for database handler </h3> 
+<p>The commands in this section are used to set up and maintain a cache of data for the current database, to speed up interactions with the job database (particularly for updating the job list).<p>
+<a name="dbccp4i_populate_dirs_cache" ><h4><font color="#CC3333">dbccp4i_populate_dirs_cache</font> <em>Initialise the directories data in the cache</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>This clears any current contents of the cache and repopulates it with data for the specified project from the handler.<p>
+<p>Once the cache is populated, data about individual projects and def dirs should be kept up-to-date automatically in response to broadcasts received from the handler.<p>
+<p>Based on the dbccp4i_populate_cache command in projectdb.tcl.<p>
+<a name="dbccp4i_dirs_is_cached" ><h4><font color="#CC3333">dbccp4i_dirs_is_cached</font> <em>Check whether the directories data has been cached</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>This returns 1 if the directories caches has been loaded indicating that the data is cached, and zero otherwise.<p>
+<a name="dbccp4i_update_dirs_cache" ><h4><font color="#CC3333">dbccp4i_update_dirs_cache</font> <em>Update the directories cache in response to a handler broadcast</em></h4> 
+<p><em>Argument list:  &lt;broadcast&gt;</em></p>
+<p>Given a broadcast message from the handler, this command determines which project or defdir has been updated and the operation that has been performed. It then calls the appropriate command to update the cached data.<p>
+<p><strong>broadcast</strong>  Broadcast message received from the database handler<p>
+<a name="dbccp4i_cache_addproject" ><h4><font color="#CC3333">dbccp4i_cache_addproject</font> <em>Add the data for a new project into the cache</em></h4> 
+<p><em>Argument list:  &lt;project&gt;</em></p>
+<p>This command retrieves the data for the specified project from the handler and inserts it into the cache.<p>
+<p><strong>project</strong>  The name of the project being cached<p>
+<a name="dbccp4i_cache_deleteproject" ><h4><font color="#CC3333">dbccp4i_cache_deleteproject</font> <em>Remove a project from the cache</em></h4> 
+<p><em>Argument list:  &lt;project&gt;</em></p>
+<p>This command deletes the specified project from the cache.<p>
+<p><strong>project</strong>  The name of the project to be removed<p>
+<a name="dbccp4i_cache_adddefdir" ><h4><font color="#CC3333">dbccp4i_cache_adddefdir</font> <em>Add the data for a new def dir into the cache</em></h4> 
+<p><em>Argument list:  &lt;defdir&gt;</em></p>
+<p>This command retrieves the data for the specified def dir from the handler and inserts it into the cache.<p>
+<p><strong>defdir</strong>  The name of the def dir being cached<p>
+<a name="dbccp4i_cache_deletedefdir" ><h4><font color="#CC3333">dbccp4i_cache_deletedefdir</font> <em>Remove a def dir from the cache</em></h4> 
+<p><em>Argument list:  &lt;defdir&gt;</em></p>
+<p>This command deletes the specified def dir from the cache.<p>
+<p><strong>defdir</strong>  The name of the def dir to be removed<p>
+<h3>Core Database Functions (src/projectdb.tcl)</h3>
+<a name="Core_Database_Functions"><h3> Core Database Functions </h3> 
+<p>The database of user's jobs is stored in the array called 'database'  and this saved to a file project_directory/CCP4_DATABASE/database.def in a standard def format file.  It is strongly discouraged to access the database array directly from any procedure outside of this file.  An empty database is defined in the file $CCP4I_TOP/etc/database.def.  Each job in a project is given a job id which is an integer which is incremented, from 1, for every new job.  The currently supported database parameters are NJOBS (the number of the highest job id in the database) and then parameters *,$n where n is the job id and the required values of * are given below.  These parameters are written to the project database file, there are additional parameters may be saved in the database array but not be saved to file.<p>
+<p>TASKNAME	The name of the type of task <p>
+<p>DATE		The date that the job started (if still running) or finished saved as the machine time.<p>
+<p>STATUS		A one-word job status<p>
+<p>LOGFILE	The file name of the log file (NOT the full path name)<p>
+<p>TITLE		A text string of the job title provided by the user<p>
+<p>INPUT_FILES	A list of the input file names (not paths UNLESS the user has specified Full path rather than used a directory alias)<p>
+<p>INPUT_FILES_DIR A list of the project/directory aliases for the input files<p>
+<p>INPUT_FILES_STATUS Currently unused<p>
+<p>OUTPUT_FILES    A list of the output file names (not paths UNLESS the user has specified Full path rather than used a directory alias)<p>
+<p>INPUT_FILES_DIR A list of the project/directory aliases for the output files<p>
+<p>OUTPUT_FILES_STATUS Currently unused<p>
+<p>Each project that the user creates will have its own database.def file and the appropriate file is loaded whenever the user changes between projects.  The database.def file is updated from memory after every significant change.  The time taken to read a database.def file is significant for projects with many jobs.<p>
+<h3>Commands for Handling Database Files</h3>
+<a name="Commands_for_Handling_Database_Files"><h3> Commands for Handling Database Files </h3> 
+<p>These commands deal with loading and saving the job database information from the persistent storage on disk i.e. the database.def file.<p>
+<p>They are specific to CCP4i handling the database.def files directly by itself.<p>
+<a name="DbLoadFile" ><h4><font color="#CC3333">DbLoadFile</font> <em>Load a database.def file into the database array</em></h4> 
+<p><em>Argument list:  &lt;project&gt; &lt;args&gt;</em></p>
+<p>Returns 1 for success, 0 for failure, -1 if project is already locked by another process.<p>
+<p>In the event of a lock not being overriden, the user and time information can be retrieved ysing the DbGetMessage command.<p>
+<p><strong>project</strong>  Alias of project to load<p>
+<p><strong>-grablock</strong><p>
+<p>Override and grab the lock from another process (if necessary)<p>
+<a name="DbSaveFile" ><h4><font color="#CC3333">DbSaveFile</font> <em>Save the current contents of the database to database.def</em></h4> 
+<p><em>Argument list:  &lt;project&gt; &lt;args&gt;</em></p>
+<p>This procedure contains a messy bit of code to set the status of jobs in the output file to 'ON_HOLD' without changing the status in the loaded database.  This is used for creating regression test directories and databases in db_autotest_handler<p>
+<p>Return 1 if save was successful, 0 if not<p>
+<p><strong>project</strong>  Alias of the project for which the database is to be saved<p>
+<p><strong>-hold</strong><p>
+<p>Set job status in output file to ON_HOLD<p>
+<p><strong>-range</strong><em>  first last</em><p>
+<p>if -hold also set, set job status of jobs in range first to last to ON_HOLD<p>
+<h3>Commands for handling messages and callbacks</h3>
+<a name="Commands_for_handling_messages_and_callbacks"><h3> Commands for handling messages and callbacks </h3> 
+<p>These functions provide a mechanism for getting additional information back from the underlying database functions, particularly in the event of a failure or other problem.<p>
+<p>Functions call DbSetMessage to record details in addition to the status or other values that they might return. Higher level functions can then fetch the message using DbGetMessage in the event of an error.<p>
+<p>An example of this is when a database fails to load because of a lock, DbLoadFile records the user and time from the lock file using DbSetMessage. The calling function can retrieve this data using DbGetMessage in order to report it to the end user.<p>
+<p>This isn't a particularly pretty way of doing things but it should work.<p>
+<p>The DbRegisterCallback function provides a way for the top-level application to bind one or more commands which are invoked each time the database is updated by a write operation.<p>
+<a name="DbSetMessage" ><h4><font color="#CC3333">DbSetMessage</font> <em>(Re)set the internal message from the core database functions.</em></h4> 
+<p><em>Argument list:  &lt;message&gt;</em></p>
+<p><strong>message</strong>  The message to be reported<p>
+<a name="DbGetMessage" ><h4><font color="#CC3333">DbGetMessage</font> <em>Fetch and clear the last internal message from the core db functions.</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>This returns the last message that was recorded by a call to DbSetMessage, and then clears the stored message.<p>
+<a name="DbRegisterCallback" ><h4><font color="#CC3333">DbRegisterCallback</font> <em>Specify a procedure that will be invoked on save</em></h4> 
+<p><em>Argument list:  &lt;callbackProc&gt;</em></p>
+<p>This allows a callback procedure to be specified, so that whenever the database is saved to persistent storage the callback will be invoked immediately afterwards.<p>
+<p>See also the DbSave procedure.<p>
+<p><strong>callbackProc</strong>  Name of the command to be invoked.<p>
+<h3>Commands for Handling Automatic Database Saves</h3>
+<a name="Commands_for_Handling_Automatic_Database_Saves"><h3> Commands for Handling Automatic Database Saves </h3> 
+<p>These commands are used internally by the database functions to manage scheduling automatic saves of the job database to persistent storage as required.<p>
+<p>DbModified is called by 'write' operations (e.g. adding or deleting jobs, and modifying the value of data items). This schedules calls to DbSave, which manages the actual saving operation.<p>
+<a name="DbModified" ><h4><font color="#CC3333">DbModified</font> <em>Register that the database has been modified.</em></h4> 
+<p><em>Argument list:  &lt;broadcast&gt;</em></p>
+<p>This command is called by the database 'write' operations. It sets a flag to indicate that the database needs saving to file, and schedules a call to DbSave to perform the operation (if one is not currently scheduled).<p>
+<p>This is an internal command and should not normally be called directly.<p>
+<p><strong>broadcast</strong>  (Optional) The broadcast data received from the database handler<p>
+<a name="DbSave" ><h4><font color="#CC3333">DbSave</font> <em>Save the currently open project database within CCP4i</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>This command is used internally and should not normally be called directly. Instead a save of the data to persistent storage is scheduled by a call to the DbModified command - typically this is done automatically by the 'write' database operations.<p>
+<p>The actual save of the data is done by a call to DbSaveFile. The save operation will only be performed if the DB_NEEDS_SAVE flag is set, to reduce the overhead of redundant saves that might be incurred otherwise.<p>
+<p>Each time DbSave is called it checks for and invokes any callback procedures that were previously specified using the DbRegisterCallback command. The callbacks are invoked regardless of whether the database was saved.<p>
+<h3>Commands for Handling Database Locking</h3>
+<a name="Commands_for_Handling_Database_Locking"><h3> Commands for Handling Database Locking </h3> 
+<p>These commands handle creating, interrogating and removing lock files associated with CCP4i project database.def files.<p>
+<a name="DbLockFileName" ><h4><font color="#CC3333">DbLockFileName</font> <em>Return the lock file name</em></h4> 
+<p><em>Argument list:  &lt;project&gt;</em></p>
+<p>Lock file name is database.LOCK<p>
+<p><strong>project</strong>  Alias of project<p>
+<a name="DbLockStatus" ><h4><font color="#CC3333">DbLockStatus</font> <em>Return status of lock file</em></h4> 
+<p><em>Argument list:  &lt;project&gt; &lt;userVar&gt; &lt;timeVar&gt; &lt;pidVar&gt; &lt;&gt;</em></p>
+<p>Return 0 is lock file exists and 1 (i.e. OK to open database file) if it does not.<p>
+<p><strong>project</strong>  Alias of project<p>
+<p><strong>userVar</strong>  Return name of user who created lock file<p>
+<p><strong>timeVar</strong>  Return time of creation of lock file<p>
+<p><strong>pidVar</strong>  (Optional) Return id of process which owns the lock file<p>
+<a name="DbCreateLock" ><h4><font color="#CC3333">DbCreateLock</font> <em>Create a lock file</em></h4> 
+<p><em>Argument list:  &lt;project&gt;</em></p>
+<p>Returns 1 if lock was created, 0 otherwise<p>
+<p><strong>project</strong>  Alias of project<p>
+<a name="DbDeleteLock" ><h4><font color="#CC3333">DbDeleteLock</font> <em>Delete lock file for specified project database</em></h4> 
+<p><em>Argument list:  &lt;project&gt; &lt;args&gt;</em></p>
+<p><strong>-force</strong><p>
+<p>Force deletion of the lock even if not owned by the current process<p>
+<h3>Commands for Opening and Closing the Job Database</h3>
+<a name="Commands_for_Opening_and_Closing_the_Job_Database"><h3> Commands for Opening and Closing the Job Database </h3> 
+<p>These commands handle opening and closing of the job database for a project.<p>
+<a name="DbOpenDatabase" ><h4><font color="#CC3333">DbOpenDatabase</font> <em>Open a project database</em></h4> 
+<p><em>Argument list:  &lt;project&gt; &lt;args&gt;</em></p>
+<p>Returns status from DbLoadFile: 1 for success, 0 for failure, -1 if project is already locked by another process.<p>
+<p><strong>project</strong>  Project name (i.e. alias) for project<p>
+<p><strong>-grablock</strong><p>
+<p>Grab the lock from another process<p>
+<a name="DbCloseDatabase" ><h4><font color="#CC3333">DbCloseDatabase</font> <em>Close the current database</em></h4> 
+<p><em>Argument list:  &lt;project&gt;</em></p>
+<p>If there is a current 'open' database then make sure it is up to date and then unset the database array<p>
+<p><strong>project</strong>  Alias for project<p>
+<h3>Core Database Functions</h3>
+<a name="Core_Database_Functions"><h3> Core Database Functions </h3> 
+<p>These functions handle direct interactions with the database information stored in the global database array.<p>
+<a name="DbNewRecord" ><h4><font color="#CC3333">DbNewRecord</font> <em>Creates a new record in the database and returns handle (=job id)</em></h4> 
+<p><em>Argument list:  &lt;taskname&gt; &lt;status&gt; &lt;STARTING&gt;</em></p>
+<a name="DbJobExists" ><h4><font color="#CC3333">DbJobExists</font> <em>Check whether a job exists in the database</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt;</em></p>
+<p>Checks for the existence of the specified job and returns 1 if found, 0 if not.<p>
+<p>Currently just a wrapper for DbItemExists job_id STATUS.<p>
+<p><strong>job_id</strong>  Job id<p>
+<a name="DbItemExists" ><h4><font color="#CC3333">DbItemExists</font> <em>Check whether a data item is defined in the database</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt; &lt;type&gt;</em></p>
+<p><strong>job_id</strong>  Job id (Ignored if type = NJOBS)<p>
+<p><strong>type</strong>  The type of data to be checked - see<p>
+<a href=#Database Utilities>Introduction</a><a name="DbSetJobData" ><h4><font color="#CC3333">DbSetJobData</font> <em>Assign a value to database item(s)</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt; &lt;args&gt;</em></p>
+<p>There is no content checking in this procedure - the user is responsible for sensible input.  There can be one or more pairs of input param_name/param_value arguments.<p>
+<p><strong>job_id</strong>  Job id<p>
+<p><strong>param_name</strong>  Name of database parameter - see<p>
+<a href=#Database Utilities>Introduction</a><p><strong>param_value</strong>  Value for database parameter<p>
+<a name="DbGetNJOBS" ><h4><font color="#CC3333">DbGetNJOBS</font> <em>Return the value of the NJOBS parameter</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>NJOBS is an integer value corresponding to the highest assigned job id in the current project. If zero is returned then there are no jobs currently assigned to the project.<p>
+<a name="DbGetJobData" ><h4><font color="#CC3333">DbGetJobData</font> <em>Return a data item from the database</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt; &lt;args&gt;</em></p>
+<p><strong>job_id</strong>  Job id (Ignored if type = NJOBS)<p>
+<p><strong>type</strong>  The type of data to be returned - see<p>
+<a href=#Database Utilities>Introduction</a><a name="DbJobHasSubjobs" ><h4><font color="#CC3333">DbJobHasSubjobs</font> <em>Check if a job has any associated subjobs</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt;</em></p>
+<p>Returns 1 if the specified job has a subjob database associated with it, and zero otherwise.<p>
+<p>Subjob databases can only be accessed if the database handler is being used. Otherwise subjob databases cannot be accessed, even if they exist.<p>
+<p><strong>project</strong>  Name of the project<p>
+<p><strong>job_id</strong>  Job number<p>
+<a name="DbGetNotebookFile" ><h4><font color="#CC3333">DbGetNotebookFile</font> <em>Return the filename for the notebook file associated with a job</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt;</em></p>
+<p>This command returns the full path and filename for a notebook file associated with the specified job in the current project.<p>
+<p>Note that the file may not actually exist.<p>
+<p><strong>job_id</strong>  Job for which the notebook is requested<p>
+<a name="DbSelectJobs" ><h4><font color="#CC3333">DbSelectJobs</font> <em>Return list of jobs based on selection criteria</em></h4> 
+<p><em>Argument list:  &lt;type&gt; &lt;pattern&gt;</em></p>
+<p>By default the jobs are sorted on job number in descending order.<p>
+<p><strong>type</strong>  Name of data item to select on<p>
+<p><strong>pattern</strong>  Regular expression pattern to match against<p>
+<a name="DbJobDescription" ><h4><font color="#CC3333">DbJobDescription</font> <em>Append all database information for one job into one string for display</em></h4> 
+<p><em>Argument list:  &lt;project&gt; &lt;job_id&gt; &lt;db_display&gt; &lt;db_display_format&gt;</em></p>
+<p><strong>project</strong>  The alias for the project to access<p>
+<p><strong>job_id</strong>  Job id<p>
+<p><strong>db_display</strong>  A list of the database parameters to be displayed<p>
+<p><strong>db_display_format</strong>  A list of the field widths (as integers) to use for displaying the items in the db_display list.<p>
+<a name="DbDeleteJob" ><h4><font color="#CC3333">DbDeleteJob</font> <em>Remove the record of a job from the database</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt;</em></p>
+<p><strong>job_id</strong>  id for the job record to be removed<p>
+<a name="DbVerifyLock" ><h4><font color="#CC3333">DbVerifyLock</font> <em>Verify that the current process owns the lock on the database</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>Returns 1 if the lockfile has the same process id (pid) as the current process (in which case it is assumed that this process owns the database lock) and 0 if the lockfile has a different pid (in which case it is assumed that a different process owns the lock).<p>
+<p>If no lock is found then assume that the current process cannot access the project i.e. it doesn't own the lock.<p>
+<h3>Internal functions for interacting with the database handler</h3>
+<a name="Internal_functions_for_interacting_with_the_database_handler"><h3> Internal functions for interacting with the database handler </h3> 
+<p>These are internal functions used to keep information on the current project that CCP4i is operating with.<p>
+<a name="dbccp4i_open_project" ><h4><font color="#CC3333">dbccp4i_open_project</font> <em>Open an existing project via the database handler.</em></h4> 
+<p><em>Argument list:  &lt;project&gt; &lt;args&gt;</em></p>
+<p>Projects must exist and must be opened before they can be accessed. This command is a wrapper for the OpenProject client API command and so accepts the same arguments as that command, see below.<p>
+<p>Return values are 1 (the project was opened successfully), 0 (the open operation failed for some reason), or -1 (the project wasn't opened because another process has a lock on it and the -force, -grablock or -readonly operations weren't specified).<p>
+<p>This command will always try to open the project with both read and write access privileges. If the project is opened successfully but does not have write access, and the -readonly option was not specified, then an attempt will be made to acquire write privileges automatically.<p>
+<p><strong>project</strong>  Name of the project to open<p>
+<p><strong>-grablock</strong><p>
+<p>Forces the handler to open a locked database<p>
+<p><strong>-force</strong><p>
+<p>An alias for -grablock<p>
+<p><strong>-readonly</strong><p>
+<p>Open project with read only mode<p>
+<a name="dbccp4i_close_project" ><h4><font color="#CC3333">dbccp4i_close_project</font> <em>Close access to an open project.</em></h4> 
+<p><em>Argument list:  &lt;project&gt;</em></p>
+<p>Once the project has been closed, read/write operations will not work. The project must already be open in order to close it.<p>
+<p><strong>project</strong>  Name of the project to close<p>
+<a name="dbccp4i_project_is_writable" ><h4><font color="#CC3333">dbccp4i_project_is_writable</font> <em>Check whether write access is available for a project.</em></h4> 
+<p><em>Argument list:  &lt;project&gt;</em></p>
+<p>Returns 1 if write operations can be performed (i.e. creating or deleting jobs and setting job data) and 0 if not.<p>
+<p><strong>project</strong>  Name of the project to check<p>
+<a name="dbccp4i_new_job" ><h4><font color="#CC3333">dbccp4i_new_job</font> <em>Create a new job record in a project.</em></h4> 
+<p><em>Argument list:  &lt;project&gt; &lt;taskname&gt; &lt;status&gt;</em></p>
+<p>If successful, this command creates a new job record in the specified project and returns the job id number for that job. Otherwise a job id of zero is returned, indicating that the operation failed.<p>
+<p><strong>project</strong>  Name of the project<p>
+<p><strong>taskname</strong>  Task being run<p>
+<p><strong>status</strong>  Status to assign to the job<p>
+<a name="dbccp4i_item_exists" ><h4><font color="#CC3333">dbccp4i_item_exists</font> <em>Check whether a data item is defined for a given job.</em></h4> 
+<p><em>Argument list:  &lt;project&gt; &lt;job_id&gt; &lt;item&gt;</em></p>
+<p>Returns 1 if both the job and the specified data item are found in the specified project, or 0 otherwise.<p>
+<p><strong>project</strong>  Name of the project<p>
+<p><strong>job_id</strong>  Job number<p>
+<p><strong>item</strong>  The data item of interest<p>
+<a name="dbccp4i_set_data" ><h4><font color="#CC3333">dbccp4i_set_data</font> <em>Set the value of one or more data items for a job.</em></h4> 
+<p><em>Argument list:  &lt;project&gt; &lt;job_id&gt; &lt;args&gt;</em></p>
+<p>Given a set of one or more item-value pairs, this attempts to set the value of each item.<p>
+<p><strong>project</strong>  Name of the project<p>
+<p><strong>job_id</strong>  Job number<p>
+<p><strong>item</strong><p>
+<p>The name of a data item in the project database e.g. TASKNAME, TITLE, STATUS etc<p>
+<p><strong>value</strong><p>
+<p>The new value to set the data item to.<p>
+<a name="dbccp4i_get_njobs" ><h4><font color="#CC3333">dbccp4i_get_njobs</font> <em>Return the highest job id number for the project.</em></h4> 
+<p><em>Argument list:  &lt;project&gt;</em></p>
+<p>This returns the highest job id number, not the number of jobs in the project.<p>
+<p><strong>project</strong>  Name of the project<p>
+<a name="dbccp4i_get_data" ><h4><font color="#CC3333">dbccp4i_get_data</font> <em>Fetch the value of one or more data items associated with a job.</em></h4> 
+<p><em>Argument list:  &lt;project&gt; &lt;job_id&gt; &lt;args&gt;</em></p>
+<p>Given a list of one or more data items, this attempts to fetch the value of each.<p>
+<p>If a single data item is requested then the return value will also be a single item, otherwise the command returns a list with each list item corresponding to the value of the requested data item.<p>
+<p><strong>project</strong>  Name of the project<p>
+<p><strong>job_id</strong>  Job number<p>
+<p><strong>item</strong><p>
+<p>The name of a data item in the project database e.g. TASKNAME, TITLE, STATUS etc<p>
+<a name="dbccp4i_job_has_subjobs" ><h4><font color="#CC3333">dbccp4i_job_has_subjobs</font> <em>Check if a job has associated subjobs</em></h4> 
+<p><em>Argument list:  &lt;project&gt; &lt;job_id&gt;</em></p>
+<p>Returns 1 if the specified job has a subjob database associated with it, and zero otherwise.<p>
+<p><strong>project</strong>  Name of the project<p>
+<p><strong>job_id</strong>  Job number<p>
+<a name="dbccp4i_select_jobs" ><h4><font color="#CC3333">dbccp4i_select_jobs</font> <em>Return a list of jobs where data items match a regular expression.</em></h4> 
+<p><em>Argument list:  &lt;project&gt; &lt;item&gt; &lt;pattern&gt;</em></p>
+<p>Given a regular expression pattern and the name of a data item this command returns a list of jobs where the value of the data item matches that pattern.<p>
+<p>Note that this command expects Python regular expression syntax which may differ in details from Tcl for more complex expressions.<p>
+<p><strong>project</strong>  Name of the project<p>
+<p><strong>job_id</strong>  Job number<p>
+<p><strong>pattern</strong>  A regular expression pattern<p>
+<a name="dbccp4i_job_description" ><h4><font color="#CC3333">dbccp4i_job_description</font> <em>Return a formatted description of a list of jobs.</em></h4> 
+<p><em>Argument list:  &lt;project&gt; &lt;job_list&gt; &lt;db_display&gt; &lt;db_display_format&gt;</em></p>
+<p>Given a list of jobs, a set of data items and a format descriptor this command returns a list where each item corresponds to one of the jobs in the original list, and consists of a string with values of each of the data items specified in db_display formatted using field widths given in db_display_format.<p>
+<p><strong>project</strong>  Name of the project<p>
+<p><strong>job_list</strong>  List of one or more job ids to get the description for<p>
+<p><strong>db_display</strong>  List of database items<p>
+<p><strong>db_display_format</strong>  List of field widths corresponding to the items in db_display<p>
+<a name="dbccp4i_delete_job" ><h4><font color="#CC3333">dbccp4i_delete_job</font> <em>Deletes the specified job record from the project.</em></h4> 
+<p><em>Argument list:  &lt;project&gt; &lt;job_id&gt;</em></p>
+<p>This removes a job from the project database. Note that any associated input or output files are NOT removed by this command - only the record of the job.<p>
+<p><strong>project</strong>  Name of the project<p>
+<p><strong>job_id</strong>  Job record to be deleted<p>
+<h3>Database cache for database handler</h3>
+<a name="Database_cache_for_database_handler"><h3> Database cache for database handler </h3> 
+<p>The commands in this section are used to set up and maintain a cache of data for the current database, to speed up interactions with the job database (particularly for updating the job list).<p>
+<a name="dbccp4i_populate_cache" ><h4><font color="#CC3333">dbccp4i_populate_cache</font> <em>Initialise the job data in the database cache</em></h4> 
+<p><em>Argument list:  &lt;project&gt;</em></p>
+<p>This clears any current contents of the cache and repopulates it with data for the specified project from the handler.<p>
+<p>Once the cache is populated, individual job records should be kept up-to-date automatically in response to broadcasts received from the handler.<p>
+<p><strong>project</strong>  Name of the project to cache<p>
+<a name="dbccp4i_update_cache" ><h4><font color="#CC3333">dbccp4i_update_cache</font> <em>Update the cache in response to a broadcast from the handler</em></h4> 
+<p><em>Argument list:  &lt;broadcast&gt;</em></p>
+<p>Given a broadcast message from the handler, this command determines which job has been updated and the operation that has been performed. It then calls the appropriate command to perform the update on the cache data.<p>
+<p><strong>broadcast</strong>  Broadcast message received from the database handler<p>
+<a name="dbccp4i_cache_updatejob" ><h4><font color="#CC3333">dbccp4i_cache_updatejob</font> <em>Update the data for a single job in the cache</em></h4> 
+<p><em>Argument list:  &lt;project&gt; &lt;job&gt;</em></p>
+<p>This command retrieves the latest data for the specified job from the handler and inserts it into the cache. The job doesn't need to exist before it is updated - it will exist afterwards (if it also exists in the persistent database).<p>
+<p><strong>project</strong>  The name of the project which has been changed<p>
+<p><strong>job</strong>  The id of the job to be updated<p>
+<a name="dbccp4i_cache_addjob" ><h4><font color="#CC3333">dbccp4i_cache_addjob</font> <em>Add a new job to the database cache</em></h4> 
+<p><em>Argument list:  &lt;project&gt; &lt;job&gt;</em></p>
+<p>This is a wrapper to dbccp4i_cache_updatejob. It is possible that in future additional data may need to be associated with new jobs, in which case it should be done here. <p>
+<p><strong>project</strong>  The name of the project which has been changed<p>
+<p><strong>job</strong>  The id of the job to be added<p>
+<a name="dbccp4i_cache_deletejob" ><h4><font color="#CC3333">dbccp4i_cache_deletejob</font> <em>Delete a job from the database cache</em></h4> 
+<p><em>Argument list:  &lt;project&gt; &lt;job&gt;</em></p>
+<p>Remove the data stored for the specified job, essentially removing the record from the cache.<p>
+<p><strong>project</strong>  The name of the project which has been changed<p>
+<p><strong>job</strong>  The id of the job to be deleted<p>
+</body>
+</html>
+

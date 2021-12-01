@@ -1,0 +1,91 @@
+DROP TABLE atomneighbors;
+DROP TABLE neighbors;
+DROP TABLE atoms;
+DROP TABLE residues;
+DROP TABLE pdbfile;
+
+
+CREATE TABLE pdbfile(
+    pdbfileid           integer,
+    filename            text NOT NULL,
+    pdbid               char(4),
+    numofresidues       integer,
+    numofatoms          integer,
+    numofneighbors      integer,
+    numofatomneighbors  integer,
+    status              boolean,
+    updated             timestamp DEFAULT CURRENT_DATE,
+    PRIMARY KEY (pdbfileid)
+);
+
+CREATE TABLE residues(
+    id                  serial,
+    pdbfileid           integer NOT NULL REFERENCES pdbfile (pdbfileid) ON UPDATE NO ACTION ON DELETE NO ACTION,
+    residueid           integer NOT NULL,
+    residuetype         integer,
+    resname             char(3),
+    chainid             char(1),
+    resseq              integer NOT NULL,
+    numofatoms          integer,
+    PRIMARY KEY (pdbfileid, residueid)
+);
+CREATE INDEX idx_id_residues ON residues(id);
+
+CREATE TABLE atoms(
+    id                  serial,
+    pdbfileid           integer NOT NULL REFERENCES pdbfile (pdbfileid) ON UPDATE NO ACTION ON DELETE NO ACTION,
+    residueid           integer NOT NULL,
+    atomid              integer NOT NULL,
+    atomtype            integer,
+    atomname            char(4),
+    atomelem            char(4),
+    atomseq             integer NOT NULL,
+    occup               float,
+    bfactor             float,
+    charge              float,
+    PRIMARY KEY (pdbfileid, atomid)
+);
+CREATE INDEX idx_id_atoms ON atoms(id);
+
+CREATE TABLE neighbors(
+    id                  serial,
+    pdbfileid           integer NOT NULL REFERENCES pdbfile (pdbfileid) ON UPDATE NO ACTION ON DELETE NO ACTION,
+    neighborid          integer NOT NULL,
+    residueid_a         integer NOT NULL,
+    residueid_b         integer NOT NULL,
+    resname_a           char(3),
+    resname_b           char(3),
+    neighbortype        integer,
+
+    atomid_a            integer,
+    atomid_b            integer,
+    atomname_a          char(4),
+    atomname_b          char(4),
+    atomneighbortype    integer,
+    distance            float,
+    PRIMARY KEY (pdbfileid, residueid_a, residueid_b)
+);
+CREATE INDEX idx_id_neighbors ON neighbors(id);
+CREATE INDEX idx_neighborid_neighbors ON neighbors(neighborid);
+
+CREATE TABLE atomneighbors(
+    id                  serial,
+    pdbfileid           integer NOT NULL REFERENCES pdbfile (pdbfileid) ON UPDATE NO ACTION ON DELETE NO ACTION,
+    atomneighborid      integer NOT NULL,
+    residueid_a         integer NOT NULL,
+    residueid_b         integer NOT NULL,
+    resname_a           char(3),
+    resname_b           char(3),
+    neighbortype        integer,
+
+    atomid_a            integer NOT NULL,
+    atomid_b            integer NOT NULL,
+    atomname_a          char(4),
+    atomname_b          char(4),
+    atomneighbortype    integer,
+    distance            float,
+    PRIMARY KEY (pdbfileid, atomid_a, atomid_b)
+);
+CREATE INDEX idx_id_atomneighbors ON atomneighbors(id);
+CREATE INDEX idx_atomneighborid_atomneighbors ON atomneighbors(atomneighborid);
+CREATE INDEX idx_residueid_atomneighbors ON atomneighbors(residueid_a, residueid_b);

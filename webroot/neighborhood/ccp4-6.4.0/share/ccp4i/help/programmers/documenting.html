@@ -1,0 +1,268 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html>
+<head>
+<title>How to document CCP4i commands</title>
+<link rel="stylesheet" type="text/css" href="../ccp4idocs.css" title="CCP4i" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+</head>
+<body><html>
+<head>
+<title></title>
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="3" class="logopic"><img src="../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</font></td></tr>
+<tr><td class="logoprog">Documentation for Programmers</td></tr>
+</table>
+
+<h1>How to document core CCP4i commands</h1>
+
+<ul>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#doc_comment_tags">Doc Comment Tags</a>
+    <ul>
+    <li><a href="#tags_overview">Overview</a></li>
+    <li><a href="#tags_individual">Documenting individual commands</a></li>
+    <li><a href="#tags_groups">Documenting groups of commands</a></li>
+    </ul>
+    </li>
+<li><a href="#examples">Examples</a></li>
+<li><a href="#create_docs">Usage of the create_docs script</a>
+</ul>
+
+<a name="introduction"></a>
+<h2>Introduction</h2>
+
+<p>Documentation for the core CCP4i commands is generated from the
+Tcl source code by running a script called
+<a href="#create_docs">create_docs</a>. This script
+scans the Tcl source code files and builds HTML documentation in the
+<tt>$CCP4I_TOP/help/programmers/progdocs</tt> directory, based on the Tcl
+procedure definitions plus any
+<a href="#doc_comment_tags">doc comments tags</a>
+written by the programmer within the source code file.</p>
+
+<p>This document outlines how to add doc comments to Tcl source code so that
+useful HTML documentation can be generated. Information on the usage of
+the create_docs script can be found <a href="#create_docs">below</a>.</p>
+
+<a name="doc_comment_tags"></a>
+<h2>Doc Comment Tags</h2>
+
+<a name="tags_overview"></a>
+<h3>Overview</h3>
+
+<p>The doc comments are based on a set of tags within Tcl comments in the
+source code. These tags are placed in particular parts of the source code and
+have their own syntax and meaning.</p>
+
+<p>In this document <b>bold text</b> indicates the name of a doc comment tag
+and <em>italicized text</em> indicates the option text that follows it.</p>
+
+<p>Each doc comment tag is terminated by a newline (so all other whitespace is
+ignored). If you wish to write a comment line which is longer than a "physical"
+line, then use the Tcl continuation character "\". (Note that the next line
+after the "\" character doesn't have to start with a comment character "#" -
+the line is still treated as part of the comment.)</p>
+
+<p>There are currently two sets of tags, which are explained below:</p>
+
+<ul>
+<li><a href="#tags_individual">Documenting individual commands</a></li>
+<li><a href="#tags_groups">Documenting groups of commands</a></li>
+</ul>
+
+<p>There are also some <a href="#examples">examples</a> of usage.</p>
+
+<a name="tags_individual"></a>
+<h3>Documenting individual commands</h3>
+
+<p>The following tags are used to provide information on the arguments
+and function for individual commands, which are defined as Tcl
+procedures.</p>
+
+<dl>
+<dt><b>#d_sum</b> <em>Summary text</em></dt>
+<dd>
+<p>A single line of text which concisely summarises the purpose of the
+command.</p>
+</dd>
+<dt><b>#d_desc</b> <em>Description of the command function</em></dt>
+<dd>
+<p>This is a longer description of the command which should include
+how it functions and what it returns, plus any additional information
+which might be useful in explaining how the command should be
+used (for example, its relationship with other commands).</p>
+<p>Multiple #d_desc tags can be used - each tag creates a new paragraph
+in the HTML document.</p>
+</dd>
+<dt><b>#d_arg</b> <em>parameter_name Description of the parameter</em></dt>
+<dd>
+<p>This tag documents each of the compulsory arguments of the command.</p>
+<p>There should be one #d_arg tag for each parameter in the argument
+list of the command which is explicitly defined. The first word after the
+#d_arg tag is the parameter name as it appears in the argument list of the
+<tt>proc</tt> command, and the remaining text is a brief description of the
+parameter.</p>
+<p>Multiple #d_arg tags can be used (one for each argument).</p>
+</dd>
+<dt><b>#d_opt0</b> <em>argument_name</em><br>
+    <b>#d_opt1</b> <em>Description of the function of the argument</em></dt>
+<dd>
+<p>These tags appear in pairs and document each of the optional arguments of
+the command.</p>
+<p>There should be one #d_opt0 tag for each optional argument, immediately
+followed by the #d_opt1 tag which provides a brief description of the
+parameter's function.</p>
+<p>Multiple #d_opt0/#d_opt1 tag pairs can be used (one for each argument).</p>
+</dd>
+</dl>
+
+<a name="tags_groups"></a>
+<h3>Documenting groups of commands</h3>
+
+<p>The following tags are used at the head of a block of commands which
+are grouped because for example together they offer a related set of
+functions:</p>
+
+<dl>
+
+<dt><b>#d_index_title</b> <em>Title text</em></dt>
+<dd>
+<p>This labels the start of a header in the HTML documentation which contains
+the text supplied after the tag. This also creates a link from the index file
+to this header.</p>
+<p>If this is the first #d_index_title in a file then it is usual to add the
+name of the file in parentheses at the end of the text.</p>
+</dd>
+
+<dt><b>#d_intro_title</b> <em>Title text</em></dt>
+<dd>
+<p>This labels the start of a header in the HTML documentation which contains
+the text supplied after the tag. This also creates a link from the index file
+to this header.</p>
+</dd>
+
+<dt><b>#d_intro</b> <em>Text ...</em></dt>
+<dd>
+<p>Used for explanatory text (e.g. an overview of a group of commands)
+which is written into the HTML documentation.</p>
+<p>Multiple #d_intro tags can be used - each tag creates a new paragraph
+in the HTML document.</p>
+</dd>
+
+</dl>
+
+<a name="examples"></a>
+<h2>Examples</h2>
+
+<p>The following is an example of documenting a simple command:</p>
+
+<table noborder>
+<tr><td bgcolor="white">
+<pre>
+<font color="red">#-----------------------------------------------------------------------</font>
+<font color="green">proc</font> <font color="blue">AddNumbers</font> { x y args } {
+<font color="red">#-----------------------------------------------------------------------
+#d_sum Adds together two numbers
+#d_desc This command adds together two numbers and returns their sum.
+#d_desc The result is unreliable if either of the arguments is not \
+a valid integer or float.
+#d_arg x First number to be added
+#d_arg y Second number to be added
+#d_opt0 -subtract
+#d_opt1 Subtract the second number from the first (instead of adding)</font>
+  set operation "+"
+  <font color="green">if</font> { [lsearch -exact $args "-subtract"] > -1 } {
+    set operation "-"
+  } 
+  <font color="green">return</font> [expr $x $operation $y]
+}
+</pre>
+</td></tr>
+</table>
+
+<p>Using these doc comments, create_docs would generate something which looked
+like:</p>
+
+<table noborder>
+<tr><td bgcolor="white">
+<p><b><font color="red">AddNumbers</font> <em>Adds together two numbers</em></b></p>
+
+<p><em>Argument list: &lt;x&gt; &lt;script&gt; &lt;args&gt;</em></p>
+
+<p>This command adds together two numbers and returns their sum.</p>
+
+<p>The result is unreliable if either of the arguments is not
+a valid integer or float.</p>
+
+<p><b>x</b> First number to be added</p>
+<p><b>y</b> Second number to be added</p>
+<p><b>-subtract</b></p>
+<p>Subtract the second number from the first (instead of adding)</p>
+</table>
+
+<p>The following is an example of documenting a group of commands:</p>
+
+<table noborder>
+<tr><td bgcolor="white">
+<pre>
+<font color="red">#d_index_title Maths Functions and Utilities (utils/maths.tcl)
+#d_intro_title Maths Functions
+
+#d_intro These are a set of commands for performing useful mathematical \
+operations.
+#d_intro They act as wrappers for the Tcl expr command.</font>
+</pre>
+</td></tr>
+</table>
+
+<p>In the HTML index file this would create a link to the documentation
+for this file which would include:</p>
+
+<table noborder>
+<tr><td bgcolor="white">
+<h3>Maths Functions</h3>
+
+<p>These are a set of commands for performing useful mathematical operations.</p>
+<p>They act as wrappers for the Tcl expr command.</p>
+</table>
+
+<a name="create_docs"></a>
+<h2>Usage of the <tt>create_docs</tt> script</h2>
+
+<p>The create_docs script is located in the <tt>$CCP4/bin</tt> directory,
+and generates HTML documentation from the doc comments and procedure
+definitions which it finds in the Tcl source code.</p>
+
+<p>create_docs can be run without any arguments, in which case it will
+by default look for Tcl source code files in subdirectories of the
+directory <tt>$CCP4I_TOP</tt>, writing HTML documentation in the
+directory <tt>$CCP4I_TOP/help/programmers/progdocs</tt> with an index file
+named <tt>index.html</tt>.
+
+<p>These settings can be over-ridden by specifying them on the command
+line:</p>
+
+<pre>
+create_docs [ srcPath [ docPath [ indexfile ] ] ]
+</pre>
+
+<p>where the arguments have the following meanings:</p>
+
+<ul>
+<li><b>srcPath:</b> where to look for the Tcl source code</li>
+<li><b>docPath:</b> where to write for the HTML documents</li>
+<li><b>indexfile:</b> the name to use for the index file</li>
+</ul>
+
+<p>The names of the subdirectories and the source code files (as well as
+the names of the output HTML files) are hard-coded within the script.
+This means that any new source code files will have to be added to the
+create_docs script manually in order to extract the documentation in this
+way.</p>
+
+</body>
+</html>

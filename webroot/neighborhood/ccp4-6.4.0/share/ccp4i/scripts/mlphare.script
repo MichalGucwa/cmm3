@@ -1,0 +1,339 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#======================================================================
+#
+# mlphare script
+#
+#======================================================================
+
+# Source pdb_utils for harvest handling & move to project directory 
+# if we are going to dump harvest file to current directory 
+  source [SearchPath TOP utils pdb_utils.tcl ] 
+  if { [StringSame $HARVEST_MODE  CURRENTDIR ] } { ChangeDirectory [GetDefaultDirPath] } 
+
+# Source file with utility procedures
+  source [SearchPath TOP src CCP4_utils.tcl]
+  source [SearchPath TOP utils map_utils.tcl]
+# Read the crystal parameters files
+  ReadSymops [FileJoin [GetEnvPath CLIBD] symop.lib]
+  ReadCrystalData [SearchPath TOP etc crystal.lib]
+
+#-----------------------------------------------------------------------
+# If necessary run mtzutils to change the space group of the input file
+
+  if { $CHANGE_HAND } {
+    GetMtzParam $HKLIN SPACE_GROUP_NAME mtz_space_group
+    set status [ GetChangeHandData $mtz_space_group new_space_group cx ]
+    switch -- $status \
+    0 {
+       WriteToLog "ERROR getting data from CCP4I_TOP/etc/crystal.lib
+Can not change space group"
+    } -1 {
+       WriteToLog "ERROR the MTZ space group $mtz_space_group can not change hand"
+    } default {
+      set TMP_HKLIN [GetTmpFileName -ext mtz]
+      WriteToLog "Changing the MTZ space group to $new_space_group and writing to $TMP_HKLIN"
+      WriteFile [set mtzutils_script [GetTmpFileName -ext _com ]] \
+                      "SYMMETRY $new_space_group"
+      set status [Execute "[BinPath mtzutils] HKLIN \"$HKLIN\" HKLOUT \"$TMP_HKLIN\"" \
+	 $mtzutils_script program_status report]
+      set HKLIN $TMP_HKLIN
+    }
+  }
+
+#-----------------------------------------------------------------------
+
+  for { set n 1 } { $n <= $N_DERIVS } { incr n } {
+    if { ![regexp NONE $USE_DERIV($n) ] && [regexp FILE $DERIV_DATA_MODE($n)] } {
+      set N_ATOMS($n) 0
+      if { [ReadFile $DERIV_DATA_FILE($n) file_list -split] } {
+        set na 0
+        foreach line0 $file_list {
+          set line [string trim $line0]
+          if { [regexp ^ATOM $line ] } { 
+            incr na; set ATOM_LIST($n,$na) "$line" 
+          } elseif { [regexp ^ISOE $line] } {
+            for { set i 1 } { $i <= 8 } { incr i } { 
+              set ISOERROR_[subst $i]($n) [lindex $line $i]
+            }
+          } elseif { [regexp ^ANOE $line] } {
+            for { set i 1 } { $i <= 8 } { incr i } { 
+              set ANOERROR_[subst $i]($n) [lindex $line $i]
+            }
+          } elseif { [regexp {^SCALE  FPH} $line ] } {
+            set DERIV_SCALE($n) [lindex $line 2]
+            set DERIV_SCALE_B($n) [lindex $line 3]
+## Do something about scaling
+          }
+        }
+        set N_ATOMS($n) $na
+        WriteToLog "Reading $na heavy atoms from file $DERIV_DATA_FILE($n)"
+#        puts "N_ATOMS $N_ATOMS($n)"
+      } else {
+        WriteToLog "ERROR could not read HA file $DERIV_DATA_FILE($n)"
+      }
+    }
+  }
+
+  set tmp_log_file [GetTmpFileName -ext log]
+
+  CreateComScript  mlphare mlphare_script
+
+  set cmd "[BinPath mlphare] HKLIN \"$HKLIN\" HKLOUT \"$HKLOUT\""
+
+  set status [ Execute $cmd $mlphare_script program_status report \
+		-copy_log $tmp_log_file ]
+
+# Extract the HA file(s) from the log file
+
+  set nd 0
+  set outfiles AddOutputFile
+  set writeout 0
+  set thefiles {}
+  set thedatasets {}
+  if { [ReadFile $tmp_log_file log_text -split ] } {
+    set ha_file [SetOutputFileRoot]_$nd.ha
+    set ha_text ""
+    foreach l0 $log_text {
+      set line [string trim $l0]
+      if { [regexp "^DERIV  " "$line"] } {
+# If already creating file for one deriv then finish it off
+        if { $writeout } { 
+          WriteFile $ha_file $ha_text 
+          append outfiles " $ha_file PROJECT"
+	    lappend thefiles $ha_file
+	    GetMtzDatasetFromLabel $HKLIN $FPH($nd) thextal thedataset
+	    lappend thedatasets "$thextal $thedataset"
+        }
+        incr nd;  set writeout 1
+        set ha_file [SetOutputFileRoot]_$nd.ha
+        DeleteFile $ha_file
+        set ha_text "$line\n"
+      } elseif { [regexp ^MLPHARE "$line" ] } {
+        WriteFile $ha_file $ha_text
+    	  lappend thefiles $ha_file
+		  if {$nd ==0} {
+		    set mynd 1
+		  } else {
+		    set mynd $nd
+		  }
+	  GetMtzDatasetFromLabel $HKLIN $FPH($mynd) thextal thedataset
+	  lappend thedatasets "$thextal $thedataset"
+        append outfiles " $ha_file PROJECT"
+        set writeout 0
+      } elseif { $writeout } {
+        append ha_text "$line\n"
+      }
+    }
+  }
+  if { $nd > 0 } {eval "$outfiles"}
+for {set nn 0} {$nn < $nd} {incr nn} {
+#Firstly running coordconv to get from HA to PDB
+	set ha_file [lindex $thefiles $nn]
+	set thextal [lindex [lindex $thedatasets $nn] 0]
+	set thedataset [lindex [lindex $thedatasets $nn] 1]
+	set ha2pdb [SetOutputFileRoot]_ha_[expr $nn + 1].pdb
+	set cmd "coordconv XYZIN \"$ha_file\" XYZOUT \"dummy.pdb\""
+	set INPUT_FORMAT HA
+	set OUTPUT_FORMAT PDB
+	set ORTH_CODE 1
+	GetMtzParamFromDataset $HKLIN $thextal $thedataset DCELL_1 CELL_1
+	GetMtzParamFromDataset $HKLIN $thextal $thedataset DCELL_2 CELL_2
+	GetMtzParamFromDataset $HKLIN $thextal $thedataset DCELL_3 CELL_3
+	GetMtzParamFromDataset $HKLIN $thextal $thedataset DCELL_4 CELL_4
+	GetMtzParamFromDataset $HKLIN $thextal $thedataset DCELL_5 CELL_5
+	GetMtzParamFromDataset $HKLIN $thextal $thedataset DCELL_6 CELL_6
+	CreateComScript  coordconv conv_script
+	set status [ Execute $cmd $conv_script program_status report \
+		-copy_log $tmp_log_file ]
+#Then run pdbset to add the spacegroup information
+	set cmd "pdbset XYZIN \"dummy.pdb\" XYZOUT \"$ha2pdb\""
+	set IF_CELL 1
+	GetMtzParam $HKLIN SPACE_GROUP_NAME mygroup
+	set SPACE_GROUP "\"$mygroup\""
+	CreateComScript pdbset pdbset_script
+	set status [ Execute $cmd $pdbset_script program_status report \
+		-copy_log $tmp_log_file ]
+	file delete "dummy.pdb"
+	eval "AddOutputFile $ha2pdb PROJECT"
+}
+
+
+
+### Fix me, add an extra step to convert the ha files to PDB files and add spacegroup
+### I.e, firstly run coordconv, and run pdbset with the keyword SPAC
+
+
+
+  DeleteFile $tmp_log_file
+
+  HandleHarvestFile $HARVEST_MODE $HARVEST_PNAME $HARVEST_DNAME mlphare
+
+# ===================================== Run fft to generate heavy atom maps
+
+  if { $IFMAPOUT } {
+
+    set mapout [SetOutputFileRoot -map]_final.map
+
+    CreateMap $MAPOUT_FORMAT $HKLOUT mapout "Final Mlphare Phased Map" \
+        [list F1 W PHI ] [list $FP FOM_$LABOUT_ID PHIB_$LABOUT_ID] \
+		-xtal [list FP FOM PHIB]
+    AddOutputFile $mapout MAP_DEFAULT
+
+  }
+
+
+  if { $FHOUT } {
+
+  set THRESHHOLD 3.0
+  set THRESHHOLD_RMS 1
+  set NUMPEAKS 50
+  set NEGATIVES 1
+  set PATTERSON 1
+  set IFFRACOUT 1
+
+  for { set n 1 } { $n <= $N_DERIVS } { incr n } {
+
+    if { [regexp ANOMALOUS $MAP_MODE] } {
+      set CCPMAP [SetOutputFileRoot -tmp]_[subst $DPH($n)].map.tmp
+      set MAPOUT [SetOutputFileRoot -map]_[subst $DPH($n)].map
+      set PEAKSOUT [SetOutputFileRoot]_[subst $DPH($n)]_peaks.pdb
+      set XYZFRC "[SetOutputFileRoot]_[subst $DPH($n)].ha"
+    } else {
+      set CCPMAP [SetOutputFileRoot -tmp]_[subst $FPH($n)].map.tmp
+      set MAPOUT [SetOutputFileRoot -map]_[subst $FPH($n)].map
+      set PEAKSOUT [SetOutputFileRoot]_[subst $FPH($n)]_peaks.pdb
+      set XYZFRC "[SetOutputFileRoot]_[subst $FPH($n)].ha"
+    }
+    set title ""
+    if { [regexp ANOMALOUS $MAP_MODE] } {
+      set labin [list DANO SIG1 PHI W]
+      set colin [list $DPH($n) $SIGDPH($n) PHIB_$LABOUT_ID FOM_$LABOUT_ID ]
+      set title "Anomalous "
+    } else {
+      set labin [list F1 SIG1 F2 SIG2 PHI W]
+      set colin [list $FPH($n) $SIGFPH($n) $FP $SIGFP \
+         PHIB_$LABOUT_ID FOM_$LABOUT_ID ]
+      if { [regexp DOUBLE $MAP_MODE] } {
+        lappend labin FH PHIH
+        lappend colin \
+         [subst $FPH($n)]_$LABOUT_ID PHI_[subst $FPH($n)]_$LABOUT_ID
+        set title "Double "
+      }
+      append title "Difference "
+    }
+    append title "map for $DERIV_TITLE($n)"
+
+    if { $EXCLUDE_SIGFP || $EXCLUDE_SIGFPH($n) || $MAP_RESOLUTION } {
+      set fftargs ""
+      if { $EXCLUDE_SIGFPH($n) } { 
+        append fftargs "EXCLUDE SIG1 $EXCLUDE_SIGFPH_CUTOFF($n)\n" }
+      if { $EXCLUDE_SIGFP } { 
+        append fftargs "EXCLUDE SIG2 $EXCLUDE_SIGFP_CUTOFF\n" }
+      if { $MAP_RESOLUTION } {
+        append fftargs "resolution $MAP_RESOLUTION_MIN $MAP_RESOLUTION_MAX\n" }
+
+      CreateMap $MAPOUT_FORMAT $HKLOUT MAPOUT \
+        $title $labin $colin \
+        -fftargs "$fftargs" -saveccp4  $CCPMAP
+
+    } else {
+
+      CreateMap $MAPOUT_FORMAT $HKLOUT MAPOUT \
+        $title $labin $colin \
+        -saveccp4  $CCPMAP
+    }
+
+    if { [regexp CCP4 $MAPOUT_FORMAT] } {
+      set MAPIN $MAPOUT
+    } else {
+      set MAPIN $CCPMAP
+    }
+
+    CreateComScript peakmax peaks_script
+    set status [Execute "[BinPath peakmax] MAPIN \"$MAPIN\" XYZOUT \"$PEAKSOUT\" XYZFRC \"$XYZFRC\"" \
+	$peaks_script program_status report ]
+
+    set peaks_script ""
+    DeleteFile $CCPMAP
+
+    AddOutputFile $MAPOUT MAP_DEFAULT $PEAKSOUT PROJECT $XYZFRC PROJECT
+
+
+
+#    if { $ANOMALOUS_DATA && ![regexp Unass $DPH($n)] } {
+#      set MAPOUT [subst $MAPROOT]_[subst $DPH($n)].map
+#      CreateMap CCP4 $HKLOUT MAPOUT \
+#        "Anomalous Difference map for $DERIV_TITLE($n)" \
+#        [list DANO SIGDANO PHI W ] \
+#        [list [subst $DPH($n)]_$LABOUT_ID [subst $SIGDPH($n)]_$LABOUT_ID
+#          PHI_[subst $DPH($n)]_$LABOUT_ID ] \
+#    }
+  }
+
+
+  }
+
+#======================================================================Cross peaks
+
+  if { $CROSS_PEAKS && $N_CROSS_PEAKS > 0 } {
+
+  for { set n 1 } { $n <= $N_CROSS_PEAKS } { incr n } {
+
+    WriteToLog "Generating cross-peak maps for $XPEAK_FPH($n)"
+
+    set CCPMAP [SetOutputFileRoot -tmp]_[subst $XPEAK_FPH($n)].map.tmp
+    set MAPOUT [SetOutputFileRoot -map]_[subst $XPEAK_FPH($n)].map
+    set PEAKSOUT [SetOutputFileRoot]_[subst $XPEAK_FPH($n)]_peaks.pdb
+    set XYZFRC "[SetOutputFileRoot]_[subst $XPEAK_FPH($n)].ha"
+
+    if { $MAP_RESOLUTION } {
+      set fftargs ""
+      if { $MAP_RESOLUTION } {
+        append fftargs "resolution $MAP_RESOLUTION_MIN $MAP_RESOLUTION_MAX\n" }
+
+      CreateMap $MAPOUT_FORMAT $HKLOUT MAPOUT \
+       "Cross peaks map for $XPEAK_FPH($n)"  \
+       [list F1 SIG1 F2 SIG2 PHI W ] \
+       [list $XPEAK_FPH($n) $XPEAK_SIGFPH($n) $FP $SIGFP \
+         PHIB_$LABOUT_ID FOM_$LABOUT_ID ] \
+        -fftargs "$fftargs" -saveccp4  $CCPMAP
+
+    } else {
+
+    CreateMap $MAPOUT_FORMAT $HKLOUT MAPOUT \
+       "Cross peaks map for $XPEAK_FPH($n)"  \
+       [list F1 SIG1 F2 SIG2 PHI W ] \
+       [list $XPEAK_FPH($n) $XPEAK_SIGFPH($n) $FP $SIGFP \
+         PHIB_$LABOUT_ID FOM_$LABOUT_ID ] \
+        -saveccp4  $CCPMAP
+
+    }
+
+    if { [regexp CCP4 $MAPOUT_FORMAT] } {
+      set MAPIN $MAPOUT
+    } else {
+      set MAPIN $CCPMAP
+    }
+
+    CreateComScript peakmax peaks_script
+    set status [Execute "[BinPath peakmax] MAPIN \"$MAPIN\" XYZOUT \"$PEAKSOUT\" XYZFRC \"$XYZFRC\"" \
+        $peaks_script program_status report ]
+
+    set peaks_script ""
+    DeleteFile $CCPMAP
+
+    AddOutputFile $MAPOUT MAP_DEFAULT \
+        $PEAKSOUT PROJECT $XYZFRC PROJECT
+
+
+  }
+
+  }

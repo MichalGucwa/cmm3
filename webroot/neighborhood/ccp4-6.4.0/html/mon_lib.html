@@ -1,0 +1,1095 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4 Program Suite: MON_LIB</title>
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX64 6.2 IP19) [Netscape]" />
+</head>
+<body>
+
+<!-- ::INDEX_INFO::mon_lib::Library::Model refinement::description of multi-purpose monomer dictionary used by REFMAC:::::::: -->
+<!--This is 'dictionary.html' from A. Vagin's website-->
+
+<h1>MON_LIB (CCP4: Library)</h1>
+<h2>NAME</h2>
+<p><b>mon_lib</b>
+- multi-purpose dictionary for macromolecules</p>
+
+<h2>Version 3.0.1 /31.05.00</h2>
+
+<h2>CONTENTS</h2>
+<ul>
+<li><a href="#introduction"><b>Introduction</b></a>
+<li><a href="#dictionary"><b>Dictionary</b></a>
+  <ul>
+  <li><a href="#dictionary_monomer"><b>Description of monomer</b></a>
+  <li><a href="#dictionary_links"><b>Description of links</b></a>
+  <li><a href="#dictionary_mods"><b>Description of modifications</b></a>
+  </ul>
+<li><a href="#examples"><b>Examples</b></a>
+  <ul>
+  <li><a href="#examples_mon"><b>Example of monomer description</b></a>
+  <li><a href="#examples_mod"><b>Example of modification</b></a>
+  <li><a href="#examples_link"><b>Example of link</b></a>
+  </ul>
+<li><a href="#ener_lib"><b>Energetic parameters</b></a>
+  <ul>
+  <li><a href="#ener_lib_atom_types"><b>Atom types</b></a>
+  <li><a href="#ener_lib_bond_param"><b>Bond parameters</b></a>
+  <li><a href="#ener_lib_angle_param"><b>Angle parameters</b></a>
+  <li><a href="#ener_lib_tors_param"><b>Torsion parameters</b></a>
+  <li><a href="#ener_lib_vdw_param"><b>VDW parameters</b></a>
+  <li><a href="#ener_lib_hbond_param"><b>H-bond parameters</b></a>
+  </ul>
+<li><a href="#programs"><b>Programs</b></a>
+<li><a href="lib_list.html"><b>Full list of monomers, links, modifications</b></a>
+</ul>
+
+<a name="description"></a><h2>DESCRIPTION</h2>
+
+<a name="introduction"></a><h2>Introduction</h2>
+
+<p>This dictionary can be use for several purposes: refinement, graphics,
+validation. The extended mmCIF format makes the dictionary
+self-explanatory, easy to adapt and to add new information.</p>
+
+<p>The <a href="libcheck.html">LIBCHECK</a> program was developed to manage and check
+the information in the dictionary, and can also create new dictionary entries from
+different sources: PDB, CDS, CIF, SMILE.</p>
+
+<a name="dictionary"></a><h2>Dictionary</h2>
+
+<p>MON_LIB  defines:</p>
+<ol>
+<li>the chemical structure of the monomers (atom types, bond lengths, angles, chirality, planarity)</li>
+<li>the tree-like structure of each monomer</li>
+<li>the possible links between monomers (peptide bond, disulfide bridges, ...)</li>
+<li>the possible modifications of monomers (<em>e.g.</em> termini of polypeptide chains, ...)</li>
+</ol>
+ 
+<p>All this information is constant, <em>i.e.</em> independent of the
+conformation of the molecule. A CIFile, describing a macromolecule,
+must contain the variable information (coordinates, occupancy,
+B-factors) and the list of modifications to and links between
+actual monomers.</p>
+ 
+<p>The information about the names of chains and monomers, and 
+the serial numbers of monomers for the links must be present
+in the CIFile or PDB file of coordinates.</p>
+ 
+<p>The values for the amino acid bond lengths
+and angles have been taken from Engh and Huber,
+Acta Cryst. A47, 392-400 (1991).<br />
+The values for the purine and pyrimidine bond lengths
+and angles have been taken from  O. Kennard &amp; R. Taylor (1982),
+J. Am. Soc. Chem.  vol. 104, pp. 3209-3212.<br />
+The values for the sugar-phosphate backbone bond lengths
+and bond angles have been taken from the W. Saenger's &quot;Principles
+of Nucleic Acid Structure&quot; (1983), Springer-Verlag, pp. 70,86.</p>
+
+<a name="dictionary_monomer"></a><h3>Description of monomer</h3>
+
+<p>Definition:</p>
+<blockquote>A monomer is a set of atoms connected by bonds, or a single atom.</blockquote>
+<p>For example, it may be an amino acid, a polypeptide chain, or a polypeptide chain and
+a substrate connected by hydrogen bonds.</p>
+
+<p>It is useful for some programs (dynamics, graphics and
+so on) to define a tree-like structure of the monomers.
+The specification for each atom of the monomer of a 'back atom'
+and a 'forward atom' defines the tree-like structure of the
+monomer. The 'back atom' of a given atom is its preceding atom in the
+tree. If an atom has some forward branches, their order is
+<ol>
+<li>the first one is the shortest branch;</li>
+<li>the last one is the backbone branch or the longest branch.</li>
+</ol>
+The 'forward atom' of a given atom is an atom of the last
+branch. The first and the last atom of the tree must be a non-hydrogen atom.</p>
+ 
+<p>The following categories describe the monomers:</p>
+<dl> 
+<dt><tt>_chem_comp.</tt></dt>
+<dd>list of the monomers with their general description (name, type, number of atoms):</dd>
+<dd>
+<dl>
+<dt><tt>_chem_comp.id</tt></dt><dd>monomer identifier</dd>
+<dt><tt>_chem_comp.one_letter_code</tt></dt><dd>one letter code of the monomer</dd>
+<dt><tt>_chem_comp.name</tt></dt><dd>full name of the monomer</dd>
+<dt><tt>_chem_comp.type</tt></dt><dd>type of the monomer:
+<ul>
+<li>&quot;D-peptide&quot;</li>
+<li>&quot;L-peptide&quot;</li>
+<li>&quot;DNA&quot;</li>
+<li>&quot;RNA&quot;</li>
+<li>&quot;D-saccharide&quot;</li>
+<li>&quot;L-saccharide&quot;</li>
+<li>&quot;solvent&quot;</li>
+<li>&quot;non-polymer&quot;</li>
+</ul></dd>
+<dt><tt>_chem_comp.number_atoms_all</tt></dt><dd>number of atoms in the monomer</dd>
+<dt><tt>_chem_comp.number_atoms_nh</tt></dt><dd>number of non-hydrogen atoms in the monomer</dd>
+</dl>
+</dd>
+ 
+<dt><tt>_chem_comp_synonym.</tt></dt>
+<dd>for each monomer, the list of the synonyms of names of monomers and atoms</dd>
+<dd>
+<dl>
+<dt><tt>_chem_comp_synonym.comp_id</tt></dt>
+<dt><tt>_chem_comp_synonym.comp_alternative_id</tt></dt>
+<dt><tt>_chem_comp_synonym.mod_id</tt></dt>
+<dt><tt>_chem_comp_synonym.atom_id</tt></dt>
+<dt><tt>_chem_comp_synonym.atom_alternative_id</tt></dt>
+</dl>
+</dd>
+ 
+<dt><tt>_chem_comp_atom.</tt></dt>
+<dd>for each monomer, the list of the atoms and their types</dd>
+<dd>
+<dl>
+<dt><tt>_chem_comp_atom.comp_id</tt></dt><dd>monomer identifier</dd>
+<dt><tt>_chem_comp_atom.atom_id</tt></dt><dd>atom name</dd>
+<dt><tt>_chem_comp_atom.type_symbol</tt></dt><dd>element symbol</dd>
+<dt><tt>_chem_comp_atom.type_energy</tt></dt><dd>the atom type; it is used in
+the energetic parameters library <em>ener_lib</em></dd>
+<dt><tt>_chem_comp_atom.charge</tt></dt><dd>charge assigned to atom</dd>
+</dl>
+</dd>
+ 
+<dt><tt>_chem_comp_tree.</tt></dt>
+<dd>for each monomer the definition of its tree-like structure</dd>
+<dd>
+<dl> 
+<dt><tt>_chem_comp_tree.comp_id</tt></dt>
+<dt><tt>_chem_comp_tree.atom_id</tt></dt>
+<dt><tt>_chem_comp_tree.atom_back</tt></dt><dd>previous atom in the tree-like
+structure of the monomer; for the first atom the value is '.'</dd>
+<dt><tt>_chem_comp_tree.back_type</tt></dt>
+<dt><tt>_chem_comp_tree.atom_forward</tt></dt><dd>forward atom in the tree-like
+structure of the monomer; if the atom hasn't a forward atom the value is '.';
+the value of the last atom of the tree must be 'END'</dd>
+<dt><tt>_chem_comp_tree.additional_connect_atom_id_1</tt></dt>
+<dt><tt>_chem_comp_tree.additional_connect_atom_id_2</tt></dt>
+<dt><tt>_chem_comp_tree.additional_connect_type</tt></dt>
+</dl>
+</dd>
+ 
+<dt><tt>_chem_comp_bond.</tt></dt>
+<dd>for each monomer, the list of bonds and their standard value</dd>
+<dd>
+<dl>
+<dt><tt>_chem_comp_bond.comp_id</tt></dt><dd>monomer identifier</dd>
+<dt><tt>_chem_comp_bond.atom_id_1, _chem_comp_bond.atom_id_2</tt></dt><dd>the two atoms that form a bond</dd>
+<dt><tt>_chem_comp_bond.type</tt></dt><dd>the chemical type of the bond: &quot;coval&quot;,
+&quot;disulf&quot;, &quot;soltbr&quot;, &quot;hydrog&quot;, &quot;metal&quot;.</dd>
+<dt><tt>_chem_comp_bond.value_dist</tt></dt><dd>standard bond length in angstroms</dd>
+<dt><tt>_chem_comp_bond.value_dist_esd</tt></dt><dd>standard deviation of the bond length</dd>
+</dl>
+</dd>
+ 
+<dt><tt>_chem_comp_angle.</tt></dt>
+<dd>for each monomer, the list of the valence angles and their standard value</dd>
+<dd>
+<dl>
+<dt><tt>_chem_comp_angle.chem_id</tt></dt><dd>monomer identifier</dd>
+<dt><tt>_chem_comp_angle.atom_id_1, _chem_comp_angle.atom_id_2, _chem_comp_angle.atom_id_3</tt></dt><dd>the
+angles are designated by three atoms, with the second atom forming the vertex of the angle</dd>
+<dt><tt>_chem_comp_angle.value_angle</tt></dt><dd>standard value of the angle in degrees</dd>
+<dt><tt>_chem_comp_angle.value_angle_esd</tt></dt><dd>standard deviation of the angle value</dd>
+</dl>
+</dd>
+ 
+<dt><tt>_chem_comp_tor.</tt></dt>
+<dd>for each monomer, the list of torsion angles, their label and
+their standard value; an angle may be variable or constant;
+the label gives the standard name for variable angles, it is
+'.' for constant angles; the order of atoms must follow the
+tree-like structure.</dd>
+<dd>
+<dl>
+<dt><tt>_chem_comp_tor.comp_id</tt></dt><dd>monomer identifier</dd>
+<dt><tt>_chem_comp_tor.label</tt></dt><dd>torsion label, it must uniquely identify a
+torsion angle if it is variable; if the torsion angles is constant the value
+of label must be equal to '.'</dd>
+<dt><tt>_chem_comp_tor.atom_id_1, _chem_comp_tor.atom_id_2, _chem_comp_tor.atom_id_3,
+_chem_comp_tor.atom_id_4</tt></dt><dd>the four atoms that form a torsion</dd>
+<dt><tt>_chem_comp_tor.value_angle</tt></dt><dd>standard value of the angle in degrees; the
+value of variable angles is arbitrary and describes some conformation</dd>
+<dt><tt>_chem_comp_tor.value_angle_esd</tt></dt><dd>standard deviation of the angle value</dd>
+<dt><tt>_chem_comp_tor.period</tt></dt>
+</dl>
+</dd>
+ 
+<dt><tt>_chem_comp_chir.</tt></dt>
+<dd>the chirality of monomer atoms and the type of the chirality. Chirality: 
+<pre>         Let the vector direction atom_1 to atom_2 be v1, 
+         the vector direction atom_1 to atom_3 be v2, 
+         the vector direction atom_1 to atom_4 be v3;
+         the chiral volume is the volume of the parallelepiped 
+         formed by the three vectors: v1,v2,v3.
+ 
+            VOLUME = v1 . [ v2 x v3 ]</pre>
+The type is the sign of the chiral volume</dd>
+<dd>
+<dl>
+<dt><tt>_chem_comp_chir.comp_id</tt></dt><dd>monomer identifier</dd>
+<dt><tt>_chem_comp_chir.atom_id_1, _chem_comp_chir.atom_id_2, _chem_comp_chir.atom_id_3,
+_chem_comp_chir.atom_id_4</tt></dt><dd>the atom designated by_chem_comp_chir.atom_id_1 is
+the chiral atom; the atoms bonded to the chiral atom are specified by
+_chem_comp_chir.atom_id_2, _lib_mon_chiral_atom_id_3 and _chem_comp_chir.atom_id_4</dd>
+<dt><tt>_chem_comp_chir.volume_sign</tt></dt><dd>the value of type must be equal 'positive' or 'negative'</dd>
+</dl>
+</dd>
+ 
+<dt><tt>_chem_comp_plane.</tt></dt>
+<dd>the list of the atoms lying in the same plane and their standard deviation from the plane</dd>
+<dd>
+<dl>
+<dt><tt>_chem_comp_plane.comp_id</tt></dt><dd>monomer identifier</dd>
+<dt><tt>_chem_comp_plane.id</tt></dt><dd>the label must uniquely identify a plane in a monomer</dd>
+<dt><tt>_chem_comp_plane.atom_id</tt></dt><dd>an atom of the plane</dd>
+<dt><tt>_chem_comp_plane.esd</tt></dt><dd>standard deviation of the atom distance to the plane</dd>
+</dl>
+</dd>
+</dl>
+ 
+<a name="dictionary_links"></a><h3>Description of links</h3>
+
+<p>Categories to describe the type of links between two atoms of different monomers.
+They describe only the type of the link, the atom names and the monomer flags.
+The information about the names of the chains and monomers, and the serial numbers of
+the monomers is given in the CIFile.</p>
+ 
+<p>The monomer flag designates the first or the second monomer in the category
+<em>_entity_link_</em> having its value given in the CIFile.</p>
+ 
+<pre>                        _entity_link_id
+                        _entity_link_entity_id_1
+                        _entity_link_mon_id_1
+                        _entity_link_set_num_1
+                        _entity_link_entity_id_2
+                        _entity_link_mon_id_2
+                        _entity_link_set_num_2
+                        SS  Ach  CYS  20  Cch  CYS  40</pre>
+ 
+<p>The link &quot;TRANS&quot; is the default for polypeptide chain, &quot;pd&quot;,
+the default for DNA, &quot;pr&quot;, the default for RNA.</p>
+ 
+<dl>
+<dt><tt>_chem_link.</tt></dt>
+<dd><tt>_chem_link.link_id</tt></dd>
+<dd><tt>_chem_link.one_letter_code</tt></dd>
+<dd><tt>_chem_link.name</tt></dd>
+<dd><tt>_chem_link.comp_id_1</tt></dd>
+<dd><tt>_chem_link.type_comp_1</tt></dd>
+<dd><tt>_chem_link.mod_id_1</tt></dd>
+<dd><tt>_chem_link.comp_id_2</tt></dd>
+<dd><tt>_chem_link.type_comp_2</tt></dd>
+<dd><tt>_chem_link.mod_id_2</tt></dd>
+ 
+<dt><tt>_chem_link_tree.</tt></dt>
+<dd><tt>_chem_link_tree.link_id</tt></dd>
+<dd><tt>_chem_link_tree.atom_comp_id</tt></dd>
+<dd><tt>_chem_link_tree.atom_id</tt></dd>
+<dd><tt>_chem_link_tree.atom_back_comp_id</tt></dd>
+<dd><tt>_chem_link_tree.atom_back</tt></dd>
+<dd><tt>_chem_link_tree.back_type</tt></dd>
+<dd><tt>_chem_link_tree.atom_forward_comp_id</tt></dd>
+<dd><tt>_chem_link_tree.atom_forward</tt></dd>
+<dd><tt>_chem_link_tree.additional_connect_atom_1_comp_id</tt></dd>
+<dd><tt>_chem_link_tree.additional_connect_atom_id_1</tt></dd>
+<dd><tt>_chem_link_tree.additional_connect_atom_2_comp_id</tt></dd>
+<dd><tt>_chem_link_tree.additional_connect_atom_id_2</tt></dd>
+<dd><tt>_chem_link_tree.additional_connect_type</tt></dd>
+ 
+<dt><tt>_chem_link_bond.</tt></dt>
+<dd><tt>_chem_link_bond.link_id</tt></dd>
+<dd><tt>_chem_link_bond.atom_1_comp_id</tt></dd>
+<dd><tt>_chem_link_bond.atom_id_1</tt></dd>
+<dd><tt>_chem_link_bond.atom_2_comp_id</tt></dd>
+<dd><tt>_chem_link_bond.atom_id_2</tt></dd>
+<dd><tt>_chem_link_bond.type</tt></dd>
+<dd><tt>_chem_link_bond.value_dist</tt></dd>
+<dd><tt>_chem_link_bond.value_dist_esd</tt></dd>
+ 
+<dt><tt>_chem_link_angle.</tt></dt>
+<dd><tt>_chem_link_angle.link_id</tt></dd>
+<dd><tt>_chem_link_angle.atom_1_comp_id</tt></dd>
+<dd><tt>_chem_link_angle.atom_id_1</tt></dd>
+<dd><tt>_chem_link_angle.atom_2_comp_id</tt></dd>
+<dd><tt>_chem_link_angle.atom_id_2</tt></dd>
+<dd><tt>_chem_link_angle.atom_3_comp_id</tt></dd>
+<dd><tt>_chem_link_angle.atom_id_3</tt></dd>
+<dd><tt>_chem_link_angle.value_angle</tt></dd>
+<dd><tt>_chem_link_angle.value_angle_esd</tt></dd>
+ 
+<dt><tt>_chem_link_tor.</tt></dt>
+<dd><tt>_chem_link_tor.link_id</tt></dd>
+<dd><tt>_chem_link_tor.label</tt></dd>
+<dd><tt>_chem_link_tor.atom_1_comp_id</tt></dd>
+<dd><tt>_chem_link_tor.atom_id_1</tt></dd>
+<dd><tt>_chem_link_tor.atom_2_comp_id</tt></dd>
+<dd><tt>_chem_link_tor.atom_id_2</tt></dd>
+<dd><tt>_chem_link_tor.atom_3_comp_id</tt></dd>
+<dd><tt>_chem_link_tor.atom_id_3</tt></dd>
+<dd><tt>_chem_link_tor.atom_4_comp_id</tt></dd>
+<dd><tt>_chem_link_tor.atom_id_4</tt></dd>
+<dd><tt>_chem_link_tor.value_angle</tt></dd>
+<dd><tt>_chem_link_tor.value_angle_esd</tt></dd>
+<dd><tt>_chem_link_tor.period</tt></dd>
+ 
+<dt><tt>_chem_link_chir.</tt></dt>
+<dd><tt>_chem_link_chir.link_id</tt></dd>
+<dd><tt>_chem_link_chir.atom_1_comp_id</tt></dd>
+<dd><tt>_chem_link_chir.atom_id_1</tt></dd>
+<dd><tt>_chem_link_chir.atom_2_comp_id</tt></dd>
+<dd><tt>_chem_link_chir.atom_id_2</tt></dd>
+<dd><tt>_chem_link_chir.atom_3_comp_id</tt></dd>
+<dd><tt>_chem_link_chir.atom_id_3</tt></dd>
+<dd><tt>_chem_link_chir.atom_4_comp_id</tt></dd>
+<dd><tt>_chem_link_chir.atom_id_4</tt></dd>
+<dd><tt>_chem_link_chir.volume_sign</tt></dd>
+ 
+<dt><tt>_chem_link_plane.</tt></dt>
+<dd><tt>_chem_link_plane.link_id</tt></dd>
+<dd><tt>_chem_link_plane.id</tt></dd>
+<dd><tt>_chem_link_plane.atom_comp_id</tt></dd>
+<dd><tt>_chem_link_plane.atom_id</tt></dd>
+<dd><tt>_chem_link_plane.esd</tt></dd>
+</dl>
+ 
+<a name="dictionary_mods"></a><h3>Description of modifications</h3>
+
+<p> Categories to describe the possible modifications of monomers:
+the 'function' (add, delete, change), and the atoms, bonds, angles,
+chirality, planarity that will be modified.
+The information about the names and serial numbers of monomers
+is described in the CIFile. For example:</p>
+<pre>                        _entity_mod_id
+                        _entity_mod_entity_id 
+                        _entity_mod_mon_id 
+                        _entity_mod_set_num
+                        COO  Cchain  CYS  30</pre>
+ 
+<p>The modifications &quot;NH3&quot; and &quot;COO&quot; are the default for
+the polypeptide chain termini.<br />
+The modifications &quot;d5*END&quot; and &quot;d3*END&quot; are the default for
+DNA termini.<br />
+The modifications &quot;r5*END&quot; and &quot;r3*END&quot; are default for
+RNA termini.</p>
+
+<dl>
+<dt><tt>_chem_mod.</tt></dt>
+<dd>
+<dl>
+<dt><tt>_chem_mod.mod_id</tt></dt><dd>identifier of the modification</dd>
+<dt><tt>_chem_mod.one_letter_code</tt></dt>
+<dt><tt>_chem_mod.name</tt></dt>
+<dt><tt>_chem_mod.sub_mod_id</tt></dt>
+<dt><tt>_chem_mod.sub_mod_order</tt></dt>
+</dl>
+</dd>
+ 
+<dt><tt>_chem_mod_atom.</tt></dt>
+<dd>
+<dl>
+<dt><tt>_chem_mod_atom.mod_id</tt></dt><dd>identifier of the modification</dd>
+<dt><tt>_chem_mod_atom.function</tt></dt><dd>the function describing the type of modification:
+&quot;add&quot;, &quot;delete&quot;, &quot;change&quot;</dd>
+<dt><tt>_chem_mod_atom.atom_id</tt></dt><dd>atom that will be modified</dd>
+<dt><tt>_chem_mod_atom.new_atom_id</tt></dt><dd>new atom that will be added</dd>
+<dt><tt>_chem_mod_atom.new_type_energy</tt></dt>
+<dt><tt>_chem_mod_atom.new_type_symbol</tt></dt>
+<dt><tt>_chem_mod_atom.new_charge</tt></dt>
+</dl>
+</dd>
+ 
+<dt><tt>_chem_mod_tree.</tt></dt>
+<dd><tt>_chem_mod_tree.mod_id</tt></dd>
+<dd><tt>_chem_mod_tree.function</tt></dd>
+<dd><tt>_chem_mod_tree.atom_id</tt></dd>
+<dd><tt>_chem_mod_tree.atom_back</tt></dd>
+<dd><tt>_chem_mod_tree.back_type</tt></dd>
+<dd><tt>_chem_mod_tree.atom_forward</tt></dd>
+<dd><tt>_chem_mod_tree.additional_connect_atom_id_1</tt></dd>
+<dd><tt>_chem_mod_tree.additional_connect_atom_id_2</tt></dd>
+<dd><tt>_chem_mod_tree.additional_connect_type</tt></dd>
+ 
+<dt><tt>_chem_mod_bond.</tt></dt>
+<dd><tt>_chem_mod_bond.mod_id</tt></dd>
+<dd><tt>_chem_mod_bond.function</tt></dd>
+<dd><tt>_chem_mod_bond.atom_id_1</tt></dd>
+<dd><tt>_chem_mod_bond.atom_id_2</tt></dd>
+<dd><tt>_chem_mod_bond.new_type</tt></dd>
+<dd><tt>_chem_mod_bond.new_value_dist</tt></dd>
+<dd><tt>_chem_mod_bond.new_value_dist_esd</tt></dd>
+ 
+<dt><tt>_chem_mod_angle.</tt></dt>
+<dd><tt>_chem_mod_angle.mod_id</tt></dd>
+<dd><tt>_chem_mod_angle.function</tt></dd>
+<dd><tt>_chem_mod_angle.atom_id_1</tt></dd>
+<dd><tt>_chem_mod_angle.atom_id_2</tt></dd>
+<dd><tt>_chem_mod_angle.atom_id_3</tt></dd>
+<dd><tt>_chem_mod_angle.new_value_angle</tt></dd>
+<dd><tt>_chem_mod_angle.new_value_angle_esd</tt></dd>
+ 
+<dt><tt>_chem_mod_tor.</tt></dt>
+<dd><tt>_chem_mod_tor.mod_id</tt></dd>
+<dd><tt>_chem_mod_tor.function</tt></dd>
+<dd><tt>_chem_mod_tor.label</tt></dd>
+<dd><tt>_chem_mod_tor.atom_id_1</tt></dd>
+<dd><tt>_chem_mod_tor.atom_id_2</tt></dd>
+<dd><tt>_chem_mod_tor.atom_id_3</tt></dd>
+<dd><tt>_chem_mod_tor.atom_id_4</tt></dd>
+<dd><tt>_chem_mod_tor.new_value_angle</tt></dd>
+<dd><tt>_chem_mod_tor.new_value_angle_esd</tt></dd>
+<dd><tt>_chem_mod_tor.new_period</tt></dd>
+ 
+<dt><tt>_chem_mod_chir.</tt></dt>
+<dd><tt>_chem_mod_chir.mod_id</tt></dd>
+<dd><tt>_chem_mod_chir.function</tt></dd>
+<dd><tt>_chem_mod_chir.atom_id_1</tt></dd>
+<dd><tt>_chem_mod_chir.atom_id_2</tt></dd>
+<dd><tt>_chem_mod_chir.atom_id_3</tt></dd>
+<dd><tt>_chem_mod_chir.atom_id_4</tt></dd>
+<dd><tt>_chem_mod_chir.new_volume_sign</tt></dd>
+ 
+<dt><tt>_chem_mod_plane.</tt></dt>
+<dd><tt>_chem_mod_plane.mod_id</tt></dd>
+<dd><tt>_chem_mod_plane.function</tt></dd>
+<dd><tt>_chem_mod_plane.id</tt></dd>
+<dd><tt>_chem_mod_plane.atom_id</tt></dd>
+<dd><tt>_chem_mod_plane.new_esd</tt></dd>
+</dl>
+
+<h2><a name="examples"></a>EXAMPLES</h2>
+
+<a name="examples_mon"></a><h3>Example of monomer description</h3>
+
+<pre>
+ 
+  ---   LIST OF MONOMERS ---
+ 
+data_comp_list
+loop_
+_chem_comp.id
+_chem_comp.three_letter_code
+_chem_comp.name
+_chem_comp.group
+_chem_comp.number_atoms_all
+_chem_comp.number_atoms_nh
+. . . . 
+CYS      CYS 'CYSTINE            ' L-peptide  10   6 
+. . . .
+
+ 
+  --- DESCRIPTION OF MONOMERS ---
+ 
+data_comp_CYS
+ 
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.type_energy
+_chem_comp_atom.partial_charge
+ CYS      N    N    NH1      -0.204
+ CYS      H    H    HNH1      0.204
+ CYS      CA   C    CH1       0.058
+ CYS      HA   H    HCH1      0.046
+ CYS      CB   C    CH2      -0.096
+ CYS      HB1  H    HCH2      0.046
+ CYS      HB2  H    HCH2      0.058
+ CYS      SG   S    S         0.004
+ CYS      C    C    C         0.318
+ CYS      O    O    O        -0.422
+loop_
+_chem_comp_tree.comp_id
+_chem_comp_tree.atom_id
+_chem_comp_tree.atom_back
+_chem_comp_tree.atom_forward
+_chem_comp_tree.connect_type
+ CYS      N    n/a          CA   START
+ CYS      H    N            .    .
+ CYS      CA   N            C    .
+ CYS      HA   CA           .    .
+ CYS      CB   CA           SG   .
+ CYS      HB1  CB           .    .
+ CYS      HB2  CB           .    .
+ CYS      SG   CB           .    .
+ CYS      C    CA           .    END
+ CYS      O    C            .    .
+loop_
+_chem_comp_bond.comp_id
+_chem_comp_bond.atom_id_1
+_chem_comp_bond.atom_id_2
+_chem_comp_bond.type
+_chem_comp_bond.value_dist
+_chem_comp_bond.value_dist_esd
+ CYS        N    H       coval       0.860    0.020
+ CYS        N    CA      coval       1.458    0.019
+ CYS        CA   HA      coval       0.980    0.020
+ CYS        CA   CB      coval       1.530    0.020
+ CYS        CB   HB1     coval       0.970    0.020
+ CYS        CB   HB2     coval       0.970    0.020
+ CYS        CB   SG      coval       1.808    0.023
+ CYS        CA   C       coval       1.525    0.021
+ CYS        C    O       coval       1.231    0.020
+loop_
+_chem_comp_angle.comp_id
+_chem_comp_angle.atom_id_1
+_chem_comp_angle.atom_id_2
+_chem_comp_angle.atom_id_3
+_chem_comp_angle.value_angle
+_chem_comp_angle.value_angle_esd
+ CYS        H    N    CA    114.000    3.000
+ CYS        HA   CA   CB    109.000    3.000
+ CYS        CB   CA   C     110.100    1.900
+ CYS        HA   CA   C     109.000    3.000
+ CYS        N    CA   HA    110.000    3.000
+ CYS        N    CA   CB    110.500    1.700
+ CYS        HB1  CB   HB2   110.000    3.000
+ CYS        HB2  CB   SG    108.000    3.000
+ CYS        HB1  CB   SG    108.000    3.000
+ CYS        CA   CB   HB1   109.000    3.000
+ CYS        CA   CB   HB2   109.000    3.000
+ CYS        CA   CB   SG    114.400    2.300
+ CYS        N    CA   C     111.200    2.800
+ CYS        CA   C    O     120.800    1.700
+loop_
+_chem_comp_tor.comp_id
+_chem_comp_tor.id
+_chem_comp_tor.atom_id_1
+_chem_comp_tor.atom_id_2
+_chem_comp_tor.atom_id_3
+_chem_comp_tor.atom_id_4
+_chem_comp_tor.value_angle
+_chem_comp_tor.value_angle_esd
+_chem_comp_tor.period
+ CYS   chi1     N    CA   CB   SG    0.000   15.000   3
+loop_
+_chem_comp_chir.comp_id
+_chem_comp_chir.id
+_chem_comp_chir.atom_id_centre
+_chem_comp_chir.atom_id_1
+_chem_comp_chir.atom_id_2
+_chem_comp_chir.atom_id_3
+_chem_comp_chir.volume_sign
+ CYS chir_01  CA   N    CB   C       negativ
+
+</pre>
+
+<a name="examples_mod"></a><h3>Example of modification</h3>
+
+<pre>
+ 
+  ---   LIST OF MODIFICATIONS ---
+ 
+data_mod_list
+loop_
+_chem_mod.id
+_chem_mod.name
+_chem_mod.comp_id
+_chem_mod.group_id
+. . . . 
+COO      COO-terminus         .        peptide
+. . . . 
+ 
+  --- DESCRIPTION OF MODIFICATIONS ---
+ 
+ 
+data_mod_COO
+ 
+loop_
+_chem_mod_atom.mod_id
+_chem_mod_atom.function
+_chem_mod_atom.atom_id
+_chem_mod_atom.new_atom_id
+_chem_mod_atom.new_type_symbol
+_chem_mod_atom.new_type_energy
+_chem_mod_atom.new_partial_charge
+ COO      change   C    C    .    C       0.340
+ COO      change   O    O    .    OC     -0.350
+ COO      add      .    OXT  O    OC     -0.350
+loop_
+_chem_mod_tree.mod_id
+_chem_mod_tree.function
+_chem_mod_tree.atom_id
+_chem_mod_tree.atom_back
+_chem_mod_tree.atom_forward
+_chem_mod_tree.connect_type
+ COO      add      OXT  C          .      END
+ COO      change   C    .          OXT    .
+loop_
+_chem_mod_bond.mod_id
+_chem_mod_bond.function
+_chem_mod_bond.atom_id_1
+_chem_mod_bond.atom_id_2
+_chem_mod_bond.new_type
+_chem_mod_bond.new_value_dist
+_chem_mod_bond.new_value_dist_esd
+ COO      change   C     O       coval       1.231    0.020
+ COO      add      C     OXT     coval       1.231    0.020
+loop_
+_chem_mod_angle.mod_id
+_chem_mod_angle.function
+_chem_mod_angle.atom_id_1
+_chem_mod_angle.atom_id_2
+_chem_mod_angle.atom_id_3
+_chem_mod_angle.new_value_angle
+_chem_mod_angle.new_value_angle_esd
+ COO      change   CA    C     O     121.000    3.000
+ COO      add      CA    C     OXT   121.000    3.000
+loop_
+_chem_mod_tor.mod_id
+_chem_mod_tor.function
+_chem_mod_tor.id
+_chem_mod_tor.atom_id_1
+_chem_mod_tor.atom_id_2
+_chem_mod_tor.atom_id_3
+_chem_mod_tor.atom_id_4
+_chem_mod_tor.new_value_angle
+_chem_mod_tor.new_value_angle_esd
+_chem_mod_tor.new_period
+ COO      add      psi      N    CA   C    OXT   160.00  30.0 2
+loop_
+_chem_mod_plane_atom.mod_id
+_chem_mod_plane_atom.function
+_chem_mod_plane_atom.plane_id
+_chem_mod_plane_atom.atom_id
+_chem_mod_plane_atom.new_dist_esd
+ COO        add       oxt      C       0.020
+ COO        add       oxt      CA      0.020
+ COO        add       oxt      O       0.020
+ COO        add       oxt      OXT     0.020
+</pre>
+
+<a name="examples_link"></a><h3>Example of link</h3>
+
+<pre> 
+  ---   LIST OF LINKS ---
+ 
+data_link_list
+loop_
+_chem_link.id
+_chem_link.name
+_chem_link.comp_id_1
+_chem_link.mod_id_1
+_chem_link.group_comp_1
+_chem_link.comp_id_2
+_chem_link.mod_id_2
+_chem_link.group_comp_2
+. . . . 
+SS       SS-bridge             CYS .  .        CYS .  .
+TRANS    default-peptide-link  .   .  peptide  .   .  peptide
+. . . .
+ 
+  --- DESCRIPTION OF LINKS ---
+ 
+ 
+data_link_SS
+ 
+loop_
+_chem_link_bond.link_id
+_chem_link_bond.atom_1_comp_id
+_chem_link_bond.atom_id_1
+_chem_link_bond.atom_2_comp_id
+_chem_link_bond.atom_id_2
+_chem_link_bond.type
+_chem_link_bond.value_dist
+_chem_link_bond.value_dist_esd
+ SS       1 SG    2 SG      disulf      2.031    0.020
+loop_
+_chem_link_angle.link_id
+_chem_link_angle.atom_1_comp_id
+_chem_link_angle.atom_id_1
+_chem_link_angle.atom_2_comp_id
+_chem_link_angle.atom_id_2
+_chem_link_angle.atom_3_comp_id
+_chem_link_angle.atom_id_3
+_chem_link_angle.value_angle
+_chem_link_angle.value_angle_esd
+ SS       1 CB    1 SG    2 SG    110.000    3.000
+ SS       1 SG    2 SG    2 CB    110.000    3.000
+loop_
+_chem_link_tor.link_id
+_chem_link_tor.id
+_chem_link_tor.atom_1_comp_id
+_chem_link_tor.atom_id_1
+_chem_link_tor.atom_2_comp_id
+_chem_link_tor.atom_id_2
+_chem_link_tor.atom_3_comp_id
+_chem_link_tor.atom_id_3
+_chem_link_tor.atom_4_comp_id
+_chem_link_tor.atom_id_4
+_chem_link_tor.value_angle
+_chem_link_tor.value_angle_esd
+_chem_link_tor.period
+ SS    ss    1 CB   1 SG   2 SG   2 CB   90.00  10.0 2
+ 
+data_link_TRANS
+ 
+loop_
+_chem_link_bond.link_id
+_chem_link_bond.atom_1_comp_id
+_chem_link_bond.atom_id_1
+_chem_link_bond.atom_2_comp_id
+_chem_link_bond.atom_id_2
+_chem_link_bond.type
+_chem_link_bond.value_dist
+_chem_link_bond.value_dist_esd
+ TRANS    1 C     2 N       coval    1.329    0.014
+loop_
+_chem_link_angle.link_id
+_chem_link_angle.atom_1_comp_id
+_chem_link_angle.atom_id_1
+_chem_link_angle.atom_2_comp_id
+_chem_link_angle.atom_id_2
+_chem_link_angle.atom_3_comp_id
+_chem_link_angle.atom_id_3
+_chem_link_angle.value_angle
+_chem_link_angle.value_angle_esd
+ TRANS    1 O     1 C     2 N     123.000    1.600
+ TRANS    1 CA    1 C     2 N     116.200    2.000
+ TRANS    1 C     2 N     2 H     124.300    3.000
+ TRANS    1 C     2 N     2 CA    121.700    1.800
+loop_
+_chem_link_tor.link_id
+_chem_link_tor.id
+_chem_link_tor.atom_1_comp_id
+_chem_link_tor.atom_id_1
+_chem_link_tor.atom_2_comp_id
+_chem_link_tor.atom_id_2
+_chem_link_tor.atom_3_comp_id
+_chem_link_tor.atom_id_3
+_chem_link_tor.atom_4_comp_id
+_chem_link_tor.atom_id_4
+_chem_link_tor.value_angle
+_chem_link_tor.value_angle_esd
+_chem_link_tor.period
+ TRANS   psi    1 N    1 CA   1 C    2 N    160.00  30.0 2
+ TRANS   omega  1 CA   1 C    2 N    2 CA   180.00  10.0 0
+ TRANS   .      1 CA   1 C    2 N    2 H      0.00  10.0 0
+ TRANS   phi    1 C    2 N    2 CA   2 C     60.00  20.0 3
+loop_
+_chem_link_plane.link_id
+_chem_link_plane.plane_id
+_chem_link_plane.atom_comp_id
+_chem_link_plane.atom_id
+_chem_link_plane.dist_esd
+ TRANS   plane1    1 CA    0.02
+ TRANS   plane1    1 C     0.02
+ TRANS   plane1    1 O     0.02
+ TRANS   plane1    2 N     0.02
+ TRANS   plane2    1 C     0.02
+ TRANS   plane2    2 N     0.02
+ TRANS   plane2    2 CA    0.02
+ TRANS   plane2    2 H     0.02
+</pre>
+
+<a name="ener_lib"></a><h2>Energetic parameters</h2>
+
+<pre>
+  ---------------------------------------------------
+              ener_lib.cif              4-APR-95
+  ---------------------------------------------------
+</pre>
+
+<a name="ener_lib_atom_types"></a><h3>Atom types</h3>
+
+<pre>
+    -----------   Description of atom type --------     
+ HEADER        C Carbon PI
+ ATOMTYPE CSP  = with triple bond
+ HEADER        C Carbon SP2
+ ATOMTYPE C    = without hydrogen ( carbonyl C )
+ ATOMTYPE C1   = connected to 1 hydrogen  
+ ATOMTYPE C2   = connected to 2 hydrogens 
+ ATOMTYPE CR1  = between two pyrrole units 
+ ATOMTYPE CR1H = CR1 connected to 1 hydrogen ( CHA of HEME )
+ ATOMTYPE CR15 = connected to 1 hydrogen in 5 atoms ring ( CE1 of HIS)
+ ATOMTYPE CR16 = connected to 1 hydrogen in 6 atoms ring ( CE1 of PHE)
+ ATOMTYPE CR6  = without hydrogen in 6 atoms ring 
+ ATOMTYPE CR5  = without hydrogen in 5 atoms ring 
+ ATOMTYPE CR56 = between two atoms in 5-6 rings ( CD2 CE2 of TRP )
+ ATOMTYPE CR55 = between two atoms in 5-5 rings 
+ ATOMTYPE CR66 = between two atoms in 6-6 rings 
+ HEADER        C Carbon SP3
+ ATOMTYPE CH1  = connected to 1 hydrogen  ( CA of most amono acids )
+ ATOMTYPE CH2  = connected to 2 hydrogens ( CB of most amono acids)
+ ATOMTYPE CH3  = connected to 3 hydrogens ( CD1 CD2 of LEUCINE)
+ ATOMTYPE CT   = without hydrogen
+ HEADER        H Hydrogen
+ ATOMTYPE HCH  = hydrogen of aliphatic group
+ ATOMTYPE HCR  = hydrogen of aromatic group
+ ATOMTYPE HNC1 = hydrogen connected to NC1
+ ATOMTYPE HNC2 = hydrogen connected to NC2
+ ATOMTYPE HNC3 = hydrogen connected to NC3
+ ATOMTYPE HNH1 = hydrogen connected to NH1
+ ATOMTYPE HNH2 = hydrogen connected to NH2
+ ATOMTYPE HNR5 = hydrogen connected to NR15
+ ATOMTYPE HNR6 = hydrogen connected to NR16
+ ATOMTYPE HOH1 = hydrogen connected to OH1
+ ATOMTYPE HOH2 = hydrogen of water
+ ATOMTYPE HSH1 = hydrogen of sulphur
+ HEADER        N Nitrogen PI
+ ATOMTYPE NS   = without hydrogen ( triple bond )
+ ATOMTYPE NS1  = connected to 1 hydrogen
+ HEADER        N Nitrogen SP2
+ ATOMTYPE N    = without hydrogen ( N  of PRO )
+ ATOMTYPE NC1  = connected to 1 hyd. in a charged group ( NE of ARG )
+ ATOMTYPE NC2  = connected to 2 hyd. in a charged group ( NH2 of ARG )
+ ATOMTYPE NH1  = connected to 1 hydrogen ( N of main chain )
+ ATOMTYPE NH2  = connected to 2 hydrogen ( NE2 of GLU )
+ ATOMTYPE NPA  = without hydrogen ( NA and NC of HEME )
+ ATOMTYPE NPB  = without hydrogen ( NB and ND of HEME )
+ ATOMTYPE NRD5 = without hydrogen but with electronic doublet in 5 atoms ring
+ ATOMTYPE NRD6 = without hydrogen but with electronic doublet in 6 atoms ring 
+ ATOMTYPE NR15 = connected to 1 hyd. in 5 atoms ring ( ND1 of HIS )
+ ATOMTYPE NR16 = connected to 1 hyd. in 6  atoms ring 
+ ATOMTYPE NR5  = connected to 3 atoms in 5 atoms ring ( N9 of ADE )
+ ATOMTYPE NR6  = connected to 3 atoms in 6 atoms ring ( N1 of CYT )
+ HEADER        N Nitrogen SP3
+ ATOMTYPE NT   = without hydrogen
+ ATOMTYPE NT1  = connected to 1 hydrogen
+ ATOMTYPE NT2  = connected to 2 hydrogens
+ ATOMTYPE NT3  = connected to 3 hydrogens
+ HEADER        O Oxygen SP2
+ ATOMTYPE O    = without  NET charge ( O of main chain )
+ ATOMTYPE OC   = with a NET charge   ( OE1 OE2 of GLU )
+ ATOMTYPE OP   = with a NET charge connected to P (O1P of phosphate group )
+ ATOMTYPE OS   = with a NET charge connected to S ( O1 of sulphate group )
+ ATOMTYPE OB   = with a NET charge connected to B
+ HEADER        O Oxygen SP3
+ ATOMTYPE O2   = connected to 2 atoms ( O4' of ribose )
+ ATOMTYPE OC2  = with a NET charge connected to 2 ATOMS ( O3' of ribose )
+ ATOMTYPE OH1  = oxygen of alcohol groups ( OG1 of THR )
+ ATOMTYPE OH2  = oxygen of water
+ ATOMTYPE OHA  = oxygen of water in MO6
+ ATOMTYPE OHB  = oxygen of water in MO6
+ ATOMTYPE OHC  = oxygen of water in MO6
+ HEADER        S Sulphur 
+ ATOMTYPE S    = sulphur without hydrogen 
+ ATOMTYPE SH1  = sulphur with a hydrogen ( SG of CYS )
+ HEADER        Fe
+ ATOMTYPE FE   = iron
+ HEADER        P
+ ATOMTYPE P    = phosphorus
+ HEADER        Zn
+ ATOMTYPE ZN   = zinc
+ END
+ 
+ 
+  --- ATOM ---
+ 
+loop_
+_lib_atom.type
+_lib_atom.weight
+_lib_atom.hb_type
+_lib_atom.vdw_radius
+_lib_atom.vdwh_radius
+_lib_atom.ion_radius
+_lib_atom.element
+_lib_atom.valency
+ 
+   _type         atomic chemical type
+   _weight       atomic weight
+   _hb_type      donor/acceptor type:   
+                      N=neither
+                      D=donor
+                      A=acceptor
+                      B=both
+                      H=hydrogen candidate to hydrogen bonding
+    _vdw_radius  Van der Waals radius
+    _vdwh_radius  Van der Waals radius for atom+H
+   Ionic radii for most of the atoms without hydrogens are:
+   <a href="http://www.webelements.com/webelements/elements/text/radii/N.html">WebElements</a>
+   
+   or 
+   Chemistry of the elements by Greenwood and Earnshaw
+   VDW radii of carbon atoms with hydrogen have been taken from
+    Li and Nussinov, Proteins, 32 111-127 (1998)
+ 
+ CSP     12.01150  N     1.700     1.700     .     C   4
+ C       12.01150  N     1.700     1.750     .     C   4
+ C1      12.01150  N     1.700     1.820     .     C   4
+ C2      12.01150  N     1.700     1.800     .     C   4
+. . . . . 
+
+</pre>
+
+<a name="ener_lib_bond_param"></a><h3>Bond parameters</h3>
+
+<pre>
+ 
+  ---  BONDS ---
+ 
+loop_
+_lib_bond.atom_type_1
+_lib_bond.atom_type_2
+_lib_bond.type
+_lib_bond.const
+_lib_bond.length
+   
+   _atom_type  atomic chemical type
+   _const      constant KBOND
+   _value     equilibrium length of this bond BOND0
+               BOND - actual bond length 
+ 
+               ENERGY = KBOND * ( BOND - BOND0 )**2
+ 
+ 
+     Values for bond distances and sigmas are from (where it is possible):
+    International tables for crystallography
+     Volume C, 1992, 
+     Edited by AJC Wilson
+     Published for IUCr by Kluwer Academic Publishers, Dordrecht/Boston/London
+     For carbon-carbon etc
+     Section: Typical Interatomic distances: Organic compounds
+     Authors: FH Allen, O Kennard, DG Watson, L Brammer, AG Orpen and R Taylor
+     pages:   685-706
+ 
+     For metal radii and distances.
+     Section: Typical interatomic distances: Organometallic Compounds and 
+              Coordination complexes of the d- and f-block metals
+     Authors: AG Orpen, L Brammer, FH Allen, O Kennard, DG Watson and R Taylor
+     pages:   707-791
+ 
+ C    C    single    420.0      1.550  0.025
+ C    C    double    420.0      1.330  0.020
+. . . . . 
+
+</pre>
+
+<a name="ener_lib_angle_param"></a><h3>Angle parameters</h3>
+
+<pre>
+  ---  ANGLES ---
+ 
+loop_
+_lib_angle.atom_type_1
+_lib_angle.atom_type_2
+_lib_angle.atom_type_3
+_lib_angle.const
+_lib_angle.value
+ 
+  _atom_type atomic chemical type
+  _const     constant KTHETA
+  _value     equilibrium value for the angle THETA0
+            THETA - actual angle    
+ 
+            ENERGY = KTHETA * ( THETA - THETA0 )**2
+ 
+ NS   CSP  CH3      .     180.000
+ NS   CSP  SH1      .     180.000
+. . . . . . . 
+
+</pre>
+
+<a name="ener_lib_tors_param"></a><h3>Torsion parameters</h3>
+
+<pre>
+
+
+  ---  TORSIONS ---
+ 
+loop_
+_lib_tors.atom_type_1
+_lib_tors.atom_type_2
+_lib_tors.atom_type_3
+_lib_tors.atom_type_4
+_lib_tors.label
+_lib_tors.const
+_lib_tors.angle
+_lib_tors.period
+ 
+  _atom_type atomic chemical type
+  _const     Constant KPHI
+  _period    NPH number of minima in the function
+  _angle     target angle DELTA
+             PHI - actual angle 
+ 
+           ENERGY = KPHI * ( 1 - COS( NPH * (PHI -   DELTA) ) )
+ 
+ .    CH1  NH1  .    .           0.000    0.000     3     
+ .    C    CH1  .    .           0.000  180.000     3   
+. . . . . . .. 
+
+</pre>
+
+<a name="ener_lib_vdw_param"></a><h3>VDW parameters</h3>
+
+<pre>
+
+ 
+  ---  VDW contacts ---
+ 
+loop_
+_lib_vdw.atom_type_1
+_lib_vdw.atom_type_2
+_lib_vdw.energy_min
+_lib_vdw.radius_min
+_lib_vdw.H_flag
+ 
+   _atom_type      atomic chemical type
+   _energy_min     EPSij  minimum of energy parameter
+   _radius_min     Rmin radius of the minimum of energy parameter
+                   Rij - actual distance
+   _H_flag         "h" - the parameters for atoms with hydrogens 
+ 
+                       Lennard-Jones potential
+ 
+              ENERGY =  EPSij * ( (Rmin/Rij)**12 - 2 * (Rmin/Rij)**6 )
+ 
+ C    C       -0.19686     3.600   .
+ C    C       -0.19686     3.600   h
+. . . . .
+
+</pre>
+
+<a name="ener_lib_hbond_param"></a><h3>H-bond parameters</h3>
+
+<pre>
+ 
+  ---  H-BONDS ---
+ 
+loop_
+_lib_hbond.atom_type_1
+_lib_hbond.atom_type_2
+_lib_hbond.min
+_lib_hbond.dist
+ 
+   _atom_type     atomic chemical type
+   _hbond_min     EPSHij  energy at minimum
+   _hbond_dist    RHmin distance at minimum of energy
+                  RHij - actual distance
+ 
+              ENERGY =  EPSHij * ( (RHmin/RHij)**12 - 2 * (RHmin/RHij)**10 )
+ 
+ NRD5 NH1    -1.500    2.850
+ NRD5 NT3    -1.500    2.850
+. . . . . .
+</pre>
+
+<a name="programs"></a><h2>Programs</h2>
+
+<p><a href="libcheck.html">LIBCHECK</a></p>
+<blockquote><ul>
+<li>reads library of monomers, gives information about some monomer</li>
+<li>creates PostScript file with picture and information about bonds, angles, ...</li>
+<li>can read additional library, combine two libraries and write to a new library file</li>
+<li>can create description of new monomer reading coordinates from PDB file of CIFile</li>
+</ul></blockquote>
+
+<h2>AUTHOR</h2>
+
+<pre>
+
+  Authors:
+          A.Vagin and
+          G.Murshudov, E.Dodson, K.Henrick,
+          J.Richelle, S.Wodak.
+</pre>
+
+</body>
+</html>

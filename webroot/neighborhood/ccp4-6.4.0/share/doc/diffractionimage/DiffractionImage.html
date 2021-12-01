@@ -1,0 +1,746 @@
+<html>
+	<head>
+		<title>CCP4 Program Suite: diffImage</title>
+		<meta content="Microsoft Visual Studio .NET 7.1" name="GENERATOR">
+		<meta content="http://schemas.microsoft.com/intellisense/ie5" name="vs_targetSchema">
+	</head>
+	<body>
+<!-- ::INDEX_INFO::Diffraction Image::Library::::CCP4 Diffraction Image Handling Library:::::::: -->
+		<H1 align="left">DiffractionImage&nbsp;Library (CCP4: Library)</H1>
+		<H2>NAME</H2>
+		<b>diffImage </b>- CCP4&nbsp;Diffraction Image Handling Library&nbsp;
+		<P></P>
+		<H2>DESCRIPTION</H2>
+		<P><STRONG>diffImage </STRONG>contains a set of C++ classes to handle different 
+			diffraction image format.&nbsp;The library is organised in a 
+			generic&nbsp;classe "DiffractionImage" that internally handle all the formats 
+			by using specific methods dedicated to each format.&nbsp;
+			<H2>Contents of this file</H2>
+			<UL>
+				<LI>
+					<A href="#general">General information
+						<LI>
+							<A href="#supported">Supported Image Formats</A>
+						<LI>
+							<A href="#using">Using the DiffractionImage Object</A>
+						<LI>
+							<A href="#usingPythonTcl">Using the DiffractionImage Tcl-Tk, Java&nbsp;and Python 
+								Modules</A>
+						<LI>
+							<A href="#classes">Classes Description</A>
+						<LI>
+							<A href="#printheader">Examples of programs</A>
+						</LI>
+			</UL>
+			<H2>General Information</H2>
+			<a name="general"></a>
+		<p>The Diffraction Image was originally part of XIA-DPA automation project and is 
+			still used by it. However, it has been decided to include this library with the 
+			other CCP4 core libraries because of a wider possible interest among the 
+			comunity.</p>
+		<p>Even if the library contains several different files implementing similar 
+			methods for different types of images it has been designed so that you only 
+			need to use a single object. This object will perform internal checks and will 
+			load the data according to the image types. Then accessing any information, is 
+			done in a single way on this general object therefore hiding the unnecessary 
+			complexity of the internal loading.</p>
+		<P>The classes comes with a Tcl, Java and Python modules available so that the 
+			library can be used with&nbsp;these languages as well.
+		</P>
+		<p>The library also contains the a PeakList object that can be populated with the 
+			peaks found on particular images.</p>
+		<H2>Supported Detectors</H2>
+		<a name="supported"></a>
+		<p>Currently the following detector/image format are implemented in this library:
+			<UL>
+				<li>
+				ADSC
+				<li>
+				MAR/MARCCD
+				<li>
+				RIGAKU
+				<li>
+				CBF/MINI-CBF
+				<LI>
+				BRUKER
+				<LI>
+					OXFORD-DIFFRACTION</LI></UL>
+		<P></P>
+		<H2>Using the Diffraction Image Object</H2>
+		<a name="using"></a>
+		<P>Firstly, below is the description of the classes from the Diffraction Image 
+			library, there are only two classes / objects availables which make things a 
+			lot simple to use.</P>
+		<P>The are different ways for initialising a diffraction Image Object. Which one is 
+			more appropriate mainly depends on what you want to do.</P>
+		<UL>
+			<LI>
+				You can create an empty object and load an image in the object via the
+				<PRE>load</PRE>
+			method.
+			<LI>
+			You can create an object giving the filename as a parameter to have everything 
+			already loaded (i.e. header and image).
+			<LI>
+				You can create an object and only load the header via the
+				<PRE>loadHeader</PRE>
+				method. This is useful if you just need to access information from the header.</LI></UL>
+		<H2>Using the Diffraction Image Tcl-Tk, Java&nbsp;and Python Modules</H2>
+		<a name="usingPythonTcl"></a>
+		<P>Firstly, you need to load or import the module. In tcl, this is done with
+			<pre>		load DiffractionImage.[ext]
+		</pre>
+			Where [ext] is so, dll, or dylib depending on your platform. In Python, you 
+			need to import the class definition that is in the Diffraction.py file with the 
+			command.
+			<pre>		from DiffractionImage import *
+		</pre>
+			In Java, just as in tcl you need to import the shared library with the command
+			<pre>       System.loadLibrary("DiffractionImaJ");
+			</pre>
+		Note that you do not need to add the dll/so/dylib extension, nor do you need to 
+		add the "lib" prefix that is part of the shared library filename. N.B.: Make 
+		sure that the tcl module is not at the same place as DiffractionImage.py file 
+		otherwise python will try to use the shared library instead of the python file.
+		<P></P>
+		<p>Next you need to create an "object" to work with. In tcl this is done with one 
+			the following syntax
+			<pre>		set mydiffractionimage [new_DiffractionImage]
+		   or
+		set mydiffractionimage [new_DiffractionImage filename]
+		</pre>
+			where <i>mydiffractionimage</i> is the name of the tcl variable you want to use 
+			as a pointer and where filename is the name of the diffraction image file. Any 
+			function call on the diffraction image can then be done with the following 
+			syntax
+			<pre>		set returnval [$mydiffractionimage functionname functionargs]
+		</pre>
+			where <i>returnval</i> is the possible return value of the function, <i>functionname</i>
+			the name of the function and <i>functionargs</i>
+		a list of all its arguments.
+		<P></P>
+		<p>In Python the creation of the object is done with one of the following syntax
+			<pre>		mydiffractionimage = DiffractionImage()
+		   or
+		mydiffractionimage = DiffractionImage(filename)
+		</pre>
+			Any other function call is then done with the following syntax.
+			<pre>		returnval=mydiffractionimage.functionname(arg1,...,argn)
+		</pre>
+			Where <i>arg1</i> to <i>argn</i> are the arguments of the function <i>functionname</i>
+		.
+		<p>In Java the creation and use of function is very similar to the C++ one.
+			<pre>		mydiffractionimage = new DiffractionImage();
+		   or
+		mydiffractionimage = new DiffractionImage(filename);
+		</pre>
+		The functions calls are identical to the way you do them in C++. To finish here 
+		are three examples of how to display the diffraction image objects variables in 
+		python, java and tcl.
+		<P></P>
+		<table>
+			<tr>
+				<td vAlign="top"><pre>if {$tcl_platform(platform) == "windows"} {
+	load DiffractionImage.dll
+} else {
+	load libDiffractionImage.so
+	}
+
+set diff [new_DiffractionImage]
+$diff loadHeader "[lindex $argv 1]"
+set format [$diff getFormat]
+set epoch [$diff getDate]
+set exposure [$diff getExposureTime]
+set SN [$diff getSerialNo]
+set wl [$diff getWavelength]
+set BeamX [$diff getBeamX]
+set BeamY [$diff getBeamY]
+set dist [$diff getDistance]
+set width [$diff getWidth]
+set height [$diff getHeight]
+set pixX [$diff getPixelX]
+set pixY [$diff getPixelY]
+set oscS [$diff getOscStart]
+set oscE [$diff getOscEnd]
+set oscAx [$diff getOscAxis]
+set twoTheta [$diff getTwoTheta]
+
+puts "Image type: $format \nExposure Epoch: $epoch"
+puts "Exposure Time: $exposure \nDetector S/N: $SN"
+puts "Wavelength: $wl \nBeam Center: ($BeamX, $BeamY)"
+puts "Distance to detector: $dist"
+puts "Image size: ($width px, $height px)"
+puts "Pixel size: ($pixX mm, $pixY mm)"
+puts "Oscillation($oscAx): $oscS -&gt; $oscE"
+if {$twoTheta &gt; 0} {
+	puts "Two theta value: $twoTheta\n"
+} else {
+	puts "Two theta value (not in header): 0.0\n"
+	}
+</pre>
+				</td>
+				<td vAlign="top"><pre>from DiffractionImage import *
+import sys
+diff=DiffractionImage()
+diff.loadHeader(sys.argv[1])
+print "Image type: ",diff.getFormat()
+print "Exposure Epoch: ",diff.getDate()
+print "Exposure Time: ",diff.getExposureTime()
+print "Detector S/N: ",diff.getSerialNo()
+print "Wavelength: ",diff.getWavelength()
+print "Beam Center: (",diff.getBeamX(),", ",diff.getBeamY(),")"
+print "Distance to Detector: ",diff.getDistance()
+print "Image size : (",diff.getWidth()," px, ",diff.getHeight()," px)"
+print "Pixel size : (",diff.getPixelX()," mm, ",diff.getPixelY()," mm)"
+print "Oscillation(",diff.getOscAxis(),") : ",diff.getOscStart()," -&gt; ",diff.getOscEnd()
+if diff.getTwoTheta() &gt; 0 :
+	print "Two theta value: ", diff.getTwoTheta()
+else :
+	print "Two theta value (not in header) : 0.0"
+</pre>
+				</td>
+			</tr>
+			<tr>
+				<td vAlign="top" colspan="2"><pre>public class diffdump
+	{
+	public static void main(String[] args) 
+		{
+		System.loadLibrary("DiffractionImaJ");
+		DiffractionImage diff=new DiffractionImage();
+		diff.loadHeader(args[0]);
+		System.out.println("Format : "+diff.getFormat());
+		System.out.println("Manufacturer : "+diff.getManufacturer());
+		System.out.println("Collection date: "+diff.getDate());
+		System.out.println("Exposure Time: "+Float.toString(diff.getExposureTime()));
+		System.out.println("Detector S/N: "+diff.getSerialNo());
+		System.out.println("Wavelength: "+Float.toString(diff.getWavelength());
+		System.out.println("Beam Center: ("+Float.toString(diff.getBeamX())+
+		                   ", "+Float.toString(diff.getBeamY())+")");
+		System.out.println("Distance to Detector: "+Float.toString(diff.getDistance()));
+		System.out.println("Image size : ("+Integer.toString(diff.getWidth())+
+		                   " px, "+Integer.toString(diff.getHeight())+" px)");
+		System.out.println("Pixel size : ("+Float.toString(diff.getPixelX())+
+		                   " mm, "+Float.toString(diff.getPixelY())+" mm)");
+		System.out.println("Oscillation ("+diff.getOscAxis()+") :"+
+						   +Float.toString(diff.getOscStart())+" -> "+
+						   +Float.toString(diff.getOscEnd()));
+		if(diff.getTwoTheta() >= 0)
+			System.out.println("Two theta value: "+Float.toString(diff.getTwoTheta()));
+		else
+			System.out.println("Two theta value (not in header) : 0.0");
+		}
+	}
+				
+				</pre>
+				</td>
+		</table>
+		<H2>Classes Descriptions</H2>
+		<a name="classes"></a>
+		<UL>
+			<LI>
+				<FONT size="4">DiffractionImage</FONT>
+				<BR>
+				<BR>
+				<table id="TABLE1" borderColor="#000000" border="1">
+					<UL>
+						<TBODY>
+							<TR>
+								<TD style="WIDTH: 254px">
+									<P align="center"><FONT size="4"><STRONG>Method</STRONG></FONT></P>
+								</TD>
+								<TD>
+									<P align="center"><FONT size="4"><STRONG>Description</STRONG></FONT></P>
+								</TD>
+							</TR>
+							<tr>
+								<td style="WIDTH: 254px">DiffractionImage()</td>
+								<td>Default constructor of a Diffraction Image.</td>
+							<tr>
+								<td style="WIDTH: 254px">DiffractionImage(<STRONG>string</STRONG>
+								filename)
+								<td>Create and load everything available from the image file called "filename".</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>int</STRONG> getWidth()</td>
+								<td>Return the width of image in&nbsp;pixels.</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>int</STRONG> getHeight()</td>
+								<td>Return the&nbsp;height of image in&nbsp;pixels.</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>float</STRONG> getBeamX()</td>
+								<td>Return the x position of the beam center in milimeters.</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>float </STRONG>getBeamY()</td>
+								<td>Return the&nbsp;y position of the beam center in milimeters.</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>float</STRONG> getWavelength()</td>
+								<td>Return the wavelength of X-Ray source in Angstroms.</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>float </STRONG>getDistance()</td>
+								<td>Return the crystal to detector distance in milimeters.</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>float</STRONG> getTwoTheta()</td>
+								<td>Return the two-theta angle used in data collection</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>float</STRONG> getOscStart()</td>
+								<td>Return the scanning angle at the beginning of the oscillation</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>float </STRONG>getOscEnd()</td>
+								<td>Return the scanning angle at the end of the oscillation</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>char* </STRONG>getOscAxis()</td>
+								<td>Return the name of the scanning axis</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>float</STRONG> getPixelX()</td>
+								<td>Return the&nbsp;width of a pixel in milimeters.</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>float</STRONG> getPixelY()</td>
+								<td>Return the&nbsp;height of a pixel in milimeters.</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>float</STRONG> getExposureTime()</td>
+								<td>Return the exposure time in miliseconds.</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>char*</STRONG> getFormat()</td>
+								<td>Return the image format as defined by the detector manufacturer</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>char*</STRONG> getManufacturer()</td>
+								<td>Return the named of the detector manufacturer.</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>char*</STRONG> getDate()</td>
+								<td>Return the date of the image collection using a formatted string 
+									(dd-mm-YYYY).&nbsp;</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>char*</STRONG> getSerialNo()</td>
+								<td>Return the detector serial number if available return "N/A" otherwise.</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>unsigned long *</STRONG> getImage()</td>
+								<td>Return a pointer to the image.</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>int</STRONG> getPixelAt(<strong>int</strong> x, <strong>
+										int</strong> y)</td>
+								<td>Return the value of the pixel in position x,y on the raster image.</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>void </STRONG>setBeamX(<STRONG>float </STRONG>x)</td>
+								<td>Sets the x-position of the beam center in milimeters.</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>void</STRONG> setBeamY(<STRONG>float</STRONG> y)</td>
+								<td>Sets the y-position of the beam center in milimeters.</td>
+							</tr>
+							<TR>
+								<TD style="WIDTH: 254px"><STRONG>int</STRONG> setWidth()</TD>
+								<TD>Sets&nbsp;the width of image in&nbsp;pixels.</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 254px"><STRONG>int</STRONG> setHeight()</TD>
+								<TD>Sets&nbsp;the&nbsp;height of image in&nbsp;pixels.</TD>
+							</TR>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>void</STRONG> setWavelength(<STRONG>float</STRONG> 
+									wave)</td>
+								<td>Sets the&nbsp;wavelength in Angstroms.</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>void</STRONG> setDistance(<STRONG>float</STRONG> dist)</td>
+								<td>Sets the crystal to detector distance in milimeters.</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>void</STRONG> setTwoTheta(<STRONG>float</STRONG> twotheta)</td>
+								<td>Sets the two-theta angle used in data collection.</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>void </STRONG>setOscStart(<STRONG>float</STRONG> oscstart)</td>
+								<td>Sets the value of the oscillation angle at the beginning of the oscillation</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>void</STRONG> setOscEnd(<STRONG>float</STRONG> oscend)</td>
+								<td>Sets the value of the oscillation angle at the end of the oscillation</td>
+							</tr>
+							<TR>
+								<TD style="WIDTH: 254px"><STRONG>void</STRONG> setOscAxis(<STRONG>char*</STRONG> oscaxis)</TD>
+								<TD>Sets the name of the scanning axis</TD>
+							</TR>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>void </STRONG>setPixelX(<STRONG>float</STRONG> pixelwidth)</td>
+								<td>Sets the pixel size in milimeters</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>void</STRONG> setPixelY(<STRONG>float </STRONG>pixelheight)</td>
+								<td>Sets the pixel size in milimeters</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>void </STRONG>setExposureTime(<STRONG>float</STRONG>
+									time)</td>
+								<td>Sets the exposure time in miliseconds</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>void</STRONG> load(<STRONG>string</STRONG> fileName)</td>
+								<td>Load in an image from the file "filename".</td>
+							</tr>
+							<tr>
+								<td style="WIDTH: 254px"><STRONG>void</STRONG> loadHeader(<STRONG>string</STRONG> fileName)</td>
+								<td>Load header information only from the file "filename".</td>
+							</tr>
+							<TR>
+								<TD style="WIDTH: 254px"><STRONG>float*</STRONG> assymetry(<STRONG>void</STRONG>)</TD>
+								<TD>Measure how "symmetric" the distribution of intensity is as a function of 
+									rotation about the
+									<BR>
+									beam centre
+								</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 254px"><STRONG>float*</STRONG> radial(<STRONG>int</STRONG> bins)</TD>
+								<TD>Produce a radial profile of the image with the average pixel count in each bin 
+									as the
+									<BR>
+									measurement, from the beam centre</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 254px"><STRONG>int</STRONG> corner(<STRONG>void</STRONG>)</TD>
+								<TD>Determine whether the image is squared or round.</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 254px"><STRONG>int*</STRONG> histogram(<STRONG>void</STRONG>)</TD>
+								<TD>Calculate an histogram of the pixel values encountered in the image.</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 254px"><STRONG>float</STRONG> resolRingRadius(<STRONG>float</STRONG>
+									resolution)</TD>
+								<TD>Calculate the radius of a ring in mm around the beam centre given a resolution 
+									in angstroms.</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 254px"><STRONG>float</STRONG> resolOnRadius(<STRONG>float</STRONG>
+									radius)</TD>
+								<TD>Calculate the resolution in angstroms on ring given its radius in mm around the 
+									beam centre.</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 254px"><STRONG>double</STRONG> gain(<STRONG>void</STRONG>)</TD>
+								<TD>Calculate an estimation of the detector gain <STRONG><FONT color="#ff3300">(under 
+											development)</FONT></STRONG></TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 254px"><STRONG>char*</STRONG> autoMask(<STRONG>int</STRONG> beamX,
+									<STRONG>int</STRONG> beamY)</TD>
+								<TD>
+									<P>Attempt to automagically generate a mask for the backstop area and the arm of<BR>
+										the backstop. The return value is of the form "-circlemask a b c -polymask ..."<BR>
+										where a&nbsp;b are the centre of the circle in pixels and c is the radius. 
+										There can be<BR>
+										several instance of "-polymask" followed by the coordinates in pixels of the 
+										vertices<BR>
+										of a quad.</P>
+								</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 254px">
+									<P><STRONG>void</STRONG> min(<STRONG>DiffractionImage*</STRONG>&nbsp; other)</P>
+								</TD>
+								<TD>
+									<P>Uses the image of the current object and the image from <i>other</i> to load the 
+										minimum image<BR>
+										in the current object. The minimum image is an image where each pixel is 
+										defined as the
+										<BR>
+										minimum between the two corresponding pixel from the current object and other.</P>
+								</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 254px"><STRONG>void</STRONG> max(<STRONG>DiffractionImage*</STRONG>&nbsp; 
+									other)</TD>
+								<TD>
+									<P>Uses the image of the current object and the image from <i>other</i> to load the 
+										maximum image<BR>
+										in the current object. The maximum image is an image where each pixel is 
+										defined as the
+										<BR>
+										minimum between the two corresponding pixel from the current object and <i>other</i>.</P>
+								</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 254px">
+									<P><STRONG>void</STRONG> diff(<STRONG>DiffractionImage*</STRONG>&nbsp; other)</P>
+								</TD>
+								<TD>
+									<P>Uses the image of the current object and the image from <i>other</i> to load the 
+										difference image
+										<BR>
+										in the current object. The difference image is an image where each pixel is 
+										defined as the
+										<BR>
+										corresponding pixel from the current object minus the one from <i>other</i>.</P>
+								</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 254px"><STRONG>void</STRONG> sum(<STRONG>DiffractionImage*</STRONG>&nbsp; 
+									other)</TD>
+								<TD>
+									<P>Uses the image of the current object and the image from <i>other</i> to load the 
+										sum image
+										<BR>
+										in the current object. The sum image is an image where each pixel is defined as 
+										the
+										<BR>
+										sum of the two corresponding pixel from the current object and from <i>other</i>.</P>
+								</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 254px"><STRONG>void</STRONG> jpeg(<STRONG>string</STRONG> filename)</TD>
+								<TD>Write out a jpeg&nbsp;file, named "filename"&nbsp;of the same size as the image 
+									data with a quality
+									<BR>
+									factor of 85%</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 254px"><STRONG>void </STRONG>jpeg(<STRONG>string</STRONG> filename,<STRONG>int</STRONG>
+									quality)</TD>
+								<TD>Same as previous function but the quality factor can be specified</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 254px"><STRONG>void</STRONG> jpeg(<STRONG>string</STRONG> filename,<STRONG>int</STRONG>
+									quality,<BR>
+									&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<STRONG>
+										int</STRONG> zoom)</TD>
+								<TD>Same as previous function but the zoom level can be specified (-2 means 50%, -3 
+									means
+									<BR>
+									33%, 2 means 200%,...)</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 254px"><STRONG>void </STRONG>jpeg(<STRONG>string</STRONG> filename,<STRONG>int
+									</STRONG>quality,<BR>
+									&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+									<STRONG>int</STRONG> zoom,<STRONG>bool</STRONG> optmise)</TD>
+								<TD>Same as previous function but you can specify whether or not to do a cycle of 
+									optimisation<BR>
+									before writing out the image.</TD>
+							</TR>
+							<UL>
+							</UL>
+							<UL>
+							</UL>
+							<UL>
+							</UL>
+							<UL>
+							</UL>
+							<UL>
+							</UL>
+							<UL>
+							</UL>
+							<UL>
+							</UL>
+							<UL>
+							</UL>
+							<UL>
+							</UL>
+							<UL>
+							</UL>
+							<UL>
+							</UL>
+					</UL>
+				</table>
+				<FONT size="4"></FONT>
+			</LI>
+		</UL>
+		<UL>
+			<LI>
+				<FONT size="4">PeakList</FONT>
+				<BR>
+				<br>
+				<TABLE id="Table2" style="WIDTH: 688px; HEIGHT: 427px" borderColor="#000000" border="1">
+					<UL>
+						<TBODY>
+							<TR>
+								<TD style="WIDTH: 290px; HEIGHT: 24px">
+									<P align="center"><FONT size="4"><STRONG>Method</STRONG></FONT></P>
+								</TD>
+								<TD style="HEIGHT: 24px">
+									<P align="center"><FONT size="4"><STRONG>Description</STRONG></FONT></P>
+								</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 290px">PeakList()</TD>
+								<TD>Default constructor of a empty PeakList.</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 290px">PeakList(<STRONG>DiffractionImage*</STRONG> diffractionimage)</TD>
+								<TD>Construct a PeakList from the given DiffractionImage object.</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 290px"><STRONG>int </STRONG>length()</TD>
+								<TD>Gives the length of the list.</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 290px"><STRONG>void</STRONG> clear()</TD>
+								<TD>Clears the list.</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 290px"><STRONG>void</STRONG> add(<STRONG>float</STRONG> x, <STRONG>float</STRONG>
+									y, <STRONG>float</STRONG> intensity)</TD>
+								<TD>Add a peak the image coordinates (x,y) and with the specified intensity.</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 290px"><STRONG>void</STRONG> remove(<STRONG>int</STRONG> offset)</TD>
+								<TD>Remove the Peak at the specified position in the list.</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 290px"><STRONG>void</STRONG> add(<STRONG>Peak</STRONG> peak)</TD>
+								<TD>Add the specified peak to the list.</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 290px"><STRONG>void</STRONG> find(<STRONG>DiffractionImage*</STRONG>
+									diffractionimage)</TD>
+								<TD>Search for the peaks in the specified DiffractionImage object.</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 290px"><STRONG>void</STRONG> find(<STRONG>DiffractionImage*</STRONG>
+									diffractionimage,
+									<BR>
+									&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+									<STRONG>int</STRONG> maxPeaks)</TD>
+								<TD>Search for the peaks in the specified DiffractionImage object with a maximum of 
+									maxPeaks results.</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 290px"><STRONG>void</STRONG> find(<STRONG>DiffractionImage*</STRONG>
+									diffractionimage,
+									<BR>
+									&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+									<STRONG>int</STRONG> maxPeaks,
+									<BR>
+									&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+									<STRONG>float</STRONG> intensityThreshold)</TD>
+								<TD>Search for the peaks in the specified DiffractionImage object with a maximum of 
+									maxPeaks results having an intensity of at least intensityTreshold.</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 290px"><STRONG>void</STRONG> reciprocal(<STRONG>float</STRONG> dist,
+									<STRONG>float</STRONG> wave)</TD>
+								<TD>Convert the peak coordinates from dectetor coordinates to reciprocal space 
+									coordinates.</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 290px"><STRONG>void</STRONG> detector(<STRONG>float</STRONG> dist,
+									<STRONG>float</STRONG> wave)</TD>
+								<TD>Convert the peak coordinates&nbsp;from reciprocal space coordinates to detector 
+									coordinates.</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 290px"><STRONG>Peak</STRONG> pop(<STRONG>int</STRONG> offset)</TD>
+								<TD>Gets the peak from the specified position&nbsp;and removes it from the list.</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 290px"><STRONG>Peak *</STRONG> getPeaks()</TD>
+								<TD>Return the content of the PeakList as a vector of Peak.</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 290px">
+									<P><STRONG>int</STRONG> circle(<STRONG>int</STRONG> iter, <STRONG>float</STRONG> width,
+										<BR>
+										&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <STRONG>
+											float</STRONG>&amp; x, <STRONG>float</STRONG>&amp; y, <STRONG>float</STRONG>&amp; 
+										r)</P>
+								</TD>
+								<TD>Find a circle in the spot using a stochastic process and return the most 
+									promising candidate. Width determines how close to the arc a spot must be to be 
+									accepted. Iter is the number of attemps in fitting a circle.</TD>
+							</TR>
+							<TR>
+								<TD style="WIDTH: 290px"><STRONG>int</STRONG> remove(<STRONG>float</STRONG> width, <STRONG>
+										float</STRONG> x, <STRONG>float</STRONG> y, <STRONG>float</STRONG> r)</TD>
+								<TD>Removes the spots that were found to be on the circle fitted with the circle() 
+									method described above.</TD>
+							</TR>
+							<UL>
+							</UL>
+							<UL>
+							</UL>
+							<UL>
+							</UL>
+							<UL>
+							</UL>
+							<UL>
+							</UL>
+					</UL>
+				</TABLE>
+			</LI>
+		</UL>
+		<UL>
+			<LI>
+				Peak is a structure having the following&nbsp;7 fields,
+				<UL>
+					<LI>
+						<STRONG>float</STRONG>
+					x :&nbsp;x coordinate of the peak on the image
+					<LI>
+						<STRONG>float</STRONG>
+					y&nbsp;:&nbsp;y coordinate of the peak on the image
+					<LI>
+						<STRONG>float</STRONG>
+					theta : Theta? what is&nbsp;theta on this context?&nbsp;
+					<LI>
+						<STRONG>float</STRONG>
+					phi : phi? what is&nbsp;phi on this context?
+					<LI>
+						<STRONG>float</STRONG>
+					kappa : kappa? what is&nbsp;kappa on this context?
+					<LI>
+						<STRONG>float</STRONG>[3] p : Array containing the reciprocal spaces 
+					coordinates of the Peak
+					<LI>
+						<STRONG>float</STRONG> intensity : Intensity of the Peak
+					</LI>
+				</UL>
+			</LI>
+		</UL>
+		<H2>Programs</H2>
+		<a name="printheader"></a>
+		<p>Currently the library provides also four simple programs called "diffdump", 
+			"printpeaks", automask and diff2jpeg. These are respectively used to display 
+			all the "standard" information of a Diffraction Image, printing the list of 
+			peaks found on the image, wrapping the Automask function from the library and 
+			converting the image data to a jpeg file. These are also simple code examples 
+			of how to use the object from the library.</p>
+		<P>printpeaks&nbsp;usage:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			<PRE>"printpeaks [-th &lt;intensity_threshold&gt;] &lt;filename&gt;"</PRE>
+		-th is an optional keyword to specify the intensity threshold for peak 
+		searching.
+		<P></P>
+		<P>diffdump usage:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			<PRE>"diffdump [-gain] &lt;filename&gt;"</PRE>
+		&nbsp;-gain is an optional keyword to ask for a detector gain estimation.
+		<P></P>
+		<P>automask usage:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			<PRE>"automask [-beam &lt;x&gt; &lt;y&gt;] &lt;filename&gt;"</PRE>
+		&nbsp;-beam is an optional keyword to speficy the start point (in pixels 
+		coordinates) for the algorithm.
+		<P></P>
+		<P>diff2jpeg usage:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			<PRE>"diff2jpeg [-thumbnail] &lt;filename&gt;"</PRE>
+		&nbsp;-thumbnail is an optional keyword to ask for the creation of a thumbnail 
+		version of the image in addition to the real image The thumbnail image is 
+		created to be as near as 400x400 as possible.
+		<P></P>
+	</body>
+</html>

@@ -1,0 +1,413 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::MAPROT::Supported::Map calculation and manipulation::map skewing, interpolating, rotating, averaging and correlation masking program:::::::: -->
+
+<H1> MAPROT (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>maprot </b>
+- map skewing, interpolating, rotating, averaging and
+correlation masking program
+<H2> SYNOPSIS</H2>
+<b>maprot MAPIN</b>
+<i>foo.map</i>
+[
+<b>WRKIN</b>
+<i>bar.map</i>
+]
+[
+<b>MSKIN</b>
+<i>bar.msk</i>
+]
+[
+<b>MAPOUT</b>
+<i>foobar.map</i>
+]
+[
+<b>WRKOUT</b>
+<i>foobar.map</i>
+]
+[
+<b>CUTOUT</b>
+<i>foobar.map</i>
+]
+<BR>[<A HREF="#keywords">Keyworded input</A>]
+<H2><A NAME="description"></A> DESCRIPTION</H2>
+`maprot' is a general map skewing, interpolating, rotating and
+averaging program. It can be used to interpolate a map onto a coarser
+or finer grid, to skew density into a different unit cell, to rotate a
+map to allow plotting of arbitrary sections, to rotate fragments for
+molecular replacement or NCS searching, or as part of a single- or
+multi-crystal averaging calculation. It can also be used to generate
+`correlation maps' for the automatic determination of averaging masks
+(<A HREF="#reference1">reference [1]</A>). Finally, it may be used to
+'cut' density from a map and transfer it into another cell with or
+without a rotation. This is a step in the identification of
+cross-crystal translations, and general 6-d ncs searches.
+<P> 
+`maprot' works with two maps. The first is the `cell' map, which obeys
+the crystal symmetry and unit cell repeat. The second is 'work' map
+which does NOT have any symmetry or repeat. The input cell map (MAPIN)
+must generally cover exactly one unit cell. The work map may store
+density copied from the cell map, or supply density to be copied into
+the cell map.
+<P>
+Multiple transformation operators may be supplied. When copying density
+from the cell map into the work map, then all the related regions of the
+cell map are all averaged onto the work map. If a mask is specified for
+the work map, then it is only filled within this mask. 
+<P> 
+It is also possible to expand from the work map onto the crystal
+map. This allows a full map averaging calculation to be performed in
+two steps, or multi-xtal averaging to be performed by multiple runs of
+the program.
+<P> 
+The correlation mode produces a `local correlation map' from the input
+density (either from the crystal-map in the case of a single crystal with
+NCS, or between the crystal- and work-maps in the multi-crystal
+case). This can be contoured in a graphics program to locate the
+NCS-related part of the unit cell, and/or used to generate an
+averaging mask using <A HREF="mapmask.html">`mapmask'</A>. Multiple
+correlation maps from different combinations of operators can be
+combined by summation in `mapmask' (Note: In the case of proper NCS, a
+correlation mask will show the multimer. In the case of improper NCS
+it will give just one monomer).
+<P>
+Finally, `maprot' can be used to cut a region of density out of a map
+and insert it into a blank map, as a step in a phased NCS
+determination or cross-crystal translation function. In this mode only
+the work map and mask are supplied. The crystal map cell and grid are set
+by program keywords. The masked density is transferred from the work
+map into the crystal map using `MODE TO' and the supplied operator (which
+may be the identity operator). Only that portion of the crystal map
+covering the masked density is output to `CUTOUT'.
+<P> 
+Remember that &quot;cell&quot; maps will obey crystal symmetry and unit
+cell repeats; &quot;work&quot; maps do not. See
+the <A HREF="#examples">examples</A> for the calculation you are performing.
+
+<H2><A NAME="files"></A> INPUT/OUTPUT FILES</H2>
+
+<H3><A NAME="mapin"></A> MAPIN</H3>
+Input crystal map. This must cover the whole unit cell (not an asymmetric
+unit). A suitable map may be prepared using the `mapmask' with just the
+`XYZLIM CELL' keyword.
+
+<H3><A NAME="wrkin"></A> WRKIN</H3>
+Optional starting density for the work map. If this map is not
+supplied, the density in the work map defaults to zero, and the grid
+sampling and extent will be determined from <A HREF="#mskin">MSKIN</A>
+or the user keywords (BE CAREFUL if you have created a
+&quot;dummy&quot; map using a set of atomic coordinates; it is
+important to scale that map by 0.00 to avoid transferring unwanted
+electron density into the output work map. See
+<A HREF="#examples">example</A>). The values of WRKIN outside any input
+mask will remain unchanged in <A HREF="#wrkout">WRKOUT</A>, the values
+inside a mask will be scale * (initial value + rotated density 1 +
+rotated density 2 + ...) 
+
+<H3><A NAME="mskin"></A> MSKIN</H3>
+Optional mask for the work map. This can determine the grid and cell
+for the work map, and must be consistent with WRKIN. If neither WRKIN
+nor MSKIN are specified, then the work map must be described by the <A
+HREF="#cell">CELL</A>, <A HREF="#grid">GRID</A>, <A
+HREF="#xyzlim">XYZLIM</A> cards. If a mask is not specified, then the
+whole of the work map will be considered inside the mask and filled
+with rotated density.
+
+<H3><A NAME="mapout"></A> MAPOUT</H3>
+is the final crystal map. This will only differ from <A
+HREF="#mapin">MAPIN</A> if the <A HREF="#mode_to">MODE TO</A> or <A
+HREF="#mode_both">MODE BOTH</A> options are used.
+
+<H3><A NAME="wrkout"></A> WRKOUT</H3>
+is the output work map, which will contain rotated density from the
+cell <A HREF="#mapin">MAPIN</A> plus density transferred from
+<A HREF="#wrkin">WRKIN</A>.
+
+<H3><A NAME="cutout"></A> CUTOUT</H3>
+is the output map from density cutting, containing the rotated masked
+data. This map only covers the volume of the rotated mask.
+<P> 
+Either <A HREF="#mapout">MAPOUT</A> or <A HREF="#wrkout">WRKOUT</A> or
+both may be assigned.
+<H2><A NAME="keywords"></A> KEYWORDED INPUT</H2>
+<P>Possible keywords are:
+<BLOCKQUOTE>
+<A HREF="#average"><B>AVERAGE</B></A>, <A HREF="#cell"><B>CELL</B></A>,
+<A HREF="#grid"><B>GRID</B></A>,
+<A HREF="#invert"><B>INVERT</B></A>, <A HREF="#mode"><B>MODE</B></A>,
+<A HREF="#radius"><B>RADIUS</B></A>, <A HREF="#scale"><B>SCALE</B></A>,
+<A HREF="#symmetry"><B>SYMMETRY</B></A>, <A HREF="#xyzlim"><B>XYZLIM</B></A>
+</BLOCKQUOTE>
+<H3><A NAME="mode"></A> MODE FROM/TO/BOTH/CORR</H3>
+Sets the mode of operation.<BR>
+<A NAME="mode_from"></A>`FROM' signals that one or more copies
+of the electron density from a cell map (<A HREF="#mapin">MAPIN</A>) will be
+transferred to a work map (<A HREF="#wrkout">WRKOUT</A>). The cell map is
+transformed by each set of operators in turn, and all copies are summed in
+the <A HREF="#wrkout">WRKOUT</A> map.<BR>
+<A NAME="mode_to"></A>`TO'' signals that density from a work map
+(<A HREF="#wrkin">WRKIN</A>) will be transferred to a cell map
+(<A HREF="#mapout">MAPOUT</A>) using symmetry operators and unit cell repeats
+obtained from the <A HREF="#mapin">MAPIN</A> header. It overwrites the density
+in the input cell map with the masked density from the work map.<BR>
+<A NAME="mode_both"></A>`BOTH' performs both operations in turn and is only
+useful if you have multiple copies of a molecule in the asymmetric unit. It
+first averages the electron density from the cell map (<A HREF="#mapin">MAPIN</A>)
+to <A HREF="#wrkout">WRKOUT</A>, then recreates the cell map
+(<A HREF="#mapout">MAPOUT</A>) with the averaged and (hopefully improved) electron
+density. It requires a mask.<BR>
+<A NAME="mode_corr"></A>`CORR' calculates a local correlation over the whole of the work
+map. If two averaging operators are given, then the two regions of
+density mapped from the cell to the work map by those operators are
+correlated, otherwise the density of the input work map is correlated
+with the density of the cell map mapped by the one operator (the
+first case is used when identifying a non-crystallographic symmetry
+mask, the second can be used to identify correlated density between
+crystal forms).
+
+<H3><A NAME="cell"></A> CELL [ WORK | XTAL ] &lt;a&gt; &lt;b&gt; &lt;c&gt; &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt;</H3>
+Set the unit cell parameters for the work map (CELL WORK) or the crystal
+map (CELL XTAL). CELL WORK should be specified if and only if neither
+<A HREF="#mskin">MSKIN</A> nor <A HREF="#wrkin">WRKIN</A> are set. CELL
+XTAL should only be specified if <A HREF="#mapin">MAPIN</A> is not set.
+
+<H3><A NAME="grid"></A> GRID [ WORK | XTAL ] &lt;nx&gt; &lt;ny&gt; &lt;nz&gt;</H3>
+Set the grid for the work map (GRID WORK) or the crystal map (GRID XTAL).
+GRID WORK should be specified if and only if neither
+<A HREF="#mskin">MSKIN</A> nor <A HREF="#wrkin">WRKIN</A> are set. GRID
+XTAL should only be specified if <A HREF="#mapin">MAPIN</A> is not set.
+
+<H3><A NAME="xyzlim"></A> XYZLIM &lt;x1&gt; &lt;x2&gt; &lt;y1&gt; &lt;y2&gt; &lt;z1&gt; &lt;z2&gt;</H3>
+Set the work map extent. &lt;x1&gt;-&lt;z2&gt; are given in grid units or in
+fractional coordinates. This should be specified if and only if
+neither <A HREF="#mskin">MSKIN</A> nor <A HREF="#wrkin">WRKIN</A> are set.
+
+<H3><A NAME="symmetry"></A> SYMMETRY [ WORK | XTAL ] &lt;spacegroup name or number&gt;</H3>
+Set spacegroup symmetry of the work or crystal map. Unlike the normal
+SYMMETRY cards, the spacegroup MUST be given by number.
+Alternatively, the conventional SYMM &lt;spacegroup name&gt; keyword may
+be used to set the symmetry of the work map only.
+
+<H3><A NAME="scale"></A> SCALE &lt;s&gt;</H3>
+Set scale factor to apply to the work map inside the mask between
+rotating FROM and TO the cell map.
+
+<H3><A NAME="radius"></A> RADIUS &lt;r&gt;</H3>
+Set the radius of with the local correlation is performed in <A HREF="#mode_corr">`MODE
+CORR'</A>. Increase this if the correlation mask shows many spurious
+peaks. Default &lt;r&gt;=8.0 Angstrom.
+
+<H3><A NAME="average"></A> AVERAGE </H3>
+<P>Set a density rotation and translation operator. This keyword is
+followed by a rotation/translation matrix on subsequent lines
+in either CCP4 or O/RAVE format. One AVERGE keyword, followed by the
+corresponding operator, is given for each rotation/translation
+operation to be performed. The format is the same as the
+<A HREF="dm.html#average">`dm'</A> and
+<A HREF="ncsmask.html#average">`ncsmask'</A> `AVERAGE' cards).
+<dl>
+<dt> CCP4 Formats: (see also the program <A HREF="lsqkab.html">`lsqkab'</A>)<dd>
+<pre>
+ROTATE EULER &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt;     (Euler angles)
+TRANSLATE &lt;t1&gt; &lt;t2&gt; &lt;t3&gt;
+</pre>
+<dt> or<dd>
+<pre>
+ROTATE POLAR &lt;omega&gt; &lt;phi&gt; &lt;kappa&gt;      (Polar angles)
+TRANSLATE &lt;t1&gt; &lt;t2&gt; &lt;t3&gt;
+</pre>
+<dt> or<dd>
+<pre>
+ROTATE MATRIX &lt;r11&gt; &lt;r12&gt; &lt;r13&gt; &lt;r21&gt; &lt;r22&gt; &lt;r23&gt; &lt;r31&gt; &lt;r32&gt; &lt;r33&gt;
+TRANSLATE &lt;t1&gt; &lt;t2&gt; &lt;t3&gt;
+</pre>                                
+<dt> O/RAVE Format<dd>
+<br>
+OMAT
+<br>
+&lt;r11&gt;  &lt;r21&gt;  &lt;r31&gt;
+<br>
+&lt;r12&gt;  &lt;r22&gt;  &lt;r32&gt;
+<br>
+&lt;r13&gt;  &lt;r23&gt;  &lt;r33&gt;
+<br>
+&lt;t1&gt;   &lt;t2&gt;   &lt;t3&gt;
+<br>
+where
+<br>
+  x' = &lt;r11&gt;x + &lt;r12&gt;y + &lt;r13&gt;z + &lt;t1&gt;
+<br>
+  y' = &lt;r21&gt;x + &lt;r22&gt;y + &lt;r23&gt;z + &lt;t2&gt;
+<br>
+  z' = &lt;r31&gt;x + &lt;r32&gt;y + &lt;r33&gt;z + &lt;t3&gt;
+<br>
+(note that the rotation matrix is transposed with respect to CCP4
+matrix format.)
+</dl>
+<P> 
+These are the operations which map the density in the region covered
+by the input mask onto the other equivalent regions. The first
+operator must be the identity matrix. The mask is input in CCP4 mask
+(mode 0) format on the input file label <A HREF="#mskin">MSKIN</A>, and should cover
+just one monomer or averaging domain, NOT the whole unit cell.
+
+<H3><A NAME="invert"></A> INVERT</H3>
+Invert all the operators.
+
+<H2><A NAME="examples"></A> EXAMPLES</H2>
+<H3><A NAME="example1"></A> To interpolate a map to a different grid:</H3>
+<pre>
+#
+maprot mapin ins.map wrkout ins_fine.map &lt;&lt; eof
+MODE FROM
+CELL WORK 82.5 82.5 34 90 90 120
+GRID WORK 120 120 60
+XYZLIM 0 119 0 119 0 59
+SYMM WORK 146
+AVER
+ROTA POLAR 0 0 0
+TRANS 0 0 0
+eof
+</pre>
+<H3><A NAME="example2"></A> To rotate a map 30 degrees about z for plotting (note cell and symm are no longer useful)</H3>
+<pre>
+#
+maprot mapin ins.map wrkout ins_fine.map &lt;&lt; eof
+MODE FROM
+CELL WORK 100 100 50 90 90 120
+GRID WORK 180 180 90
+XYZLIM 0 179 0 179 0 89
+SYMM WORK P1
+AVER
+ROTA MATRIX  0.866  0.500  0.000  -
+            -0.500  0.866  0.000  -
+             0.000  0.000  1.000
+TRANS    0.000  0.000  0.000
+eof
+</pre>
+<H3><A NAME="example3"></A> To make an averaged copy of the molecule covered by MSKIN to look at on the graphics</H3>
+<pre>
+#
+maprot mapin chm.map mskin chm.msk wrkout chm_for_graf.map &lt;&lt; eof
+MODE FROM
+AVER
+OMAT
+  1.000  0.000  0.000
+  0.000  1.000  0.000
+  0.000  0.000  1.000
+  0.000  0.000  0.000
+AVER
+OMAT
+ -0.43073    -0.62689    -0.64921
+  0.04987     0.70173    -0.71070
+  0.90110    -0.33850    -0.27099
+  43.635 38.059 62.726
+AVER
+OMAT
+ -0.43073     0.04987     0.90110
+ -0.62689     0.70173    -0.33850
+ -0.64921    -0.71070    -0.27099
+  82.989 15.401 -8.928
+eof
+</pre>
+<H3><A NAME="example4"></A> To make an averaged map which can be back-transformed for phase improvement</H3>
+<pre>
+#
+maprot mapin chm.map mskin chm.msk mapout chm_av.map &lt;&lt; eof
+MODE BOTH
+SCALE 0.33333
+AVER
+ROTA POLAR  0.0  0.0  0.0
+TRANS  0.0  0.0  0.0
+AVER
+ROTA POLAR  113.28130 103.41944 120.33858
+TRANS  43.635 38.059 62.726
+AVER
+ROTA POLAR   66.58067 -76.78019 119.69176
+TRANS  82.989 15.401 -8.928
+eof
+</pre>
+<H3><A NAME="example5"></A> To make a correlation map, convert it to a mask, and tidy up the mask</H3>
+<pre>
+#
+maprot mapin $SCRATCH/chm_mir.map 
+       wrkout $SCRATCH/chmcorrel.map &lt;&lt; eof
+SYMM WORK 1
+CELL WORK 90.3 90.3 129.8 90 90 90
+XYZLIM     -20 80 24 120 -60 48 
+GRID WORK 80 80 120
+RADI 6
+MODE CORR
+AVER
+ROTA POLAR  0.0  0.0  0.0
+TRANS  0.0  0.0  0.0
+AVER
+ROTA POLAR  113.28130 103.41944 120.33858
+TRANS  43.635 38.059 62.726
+END
+eof
+#
+# now mask the multimer: multimer is 6% of unit cell
+#
+mapmask mapin $SCRATCH/chmcorrel.map 
+        mskout $SCRATCH/chmcorrel.msk &lt;&lt; eof
+MASK VOLU 0.06
+eof
+#
+# Now we might edit this mask by hand, or use ncsmask to get rid of
+# all but the largest lump of mask
+#
+ncsmask mskin $SCRATCH/chmcorrel.msk 
+        mskout $SCRATCH/cmncs.msk &lt;&lt; eof
+PEAK 1
+eof
+</pre>
+
+<H3><A NAME="example6"></A> Density cutting: density is cut from one cell and placed in a new cell</H3>
+<pre>
+#
+# Cut density into a 100A virtual cell.
+# The density could be moved by specifying a non-identity operator.
+# For cross-crystal translation function, give the rotation
+# operator and the cell from the alternate crystal form.
+#
+maprot wrkin gmtocut.map mskin gmtocut.msk cutout cut.map &lt;&lt; eof
+MODE TO
+CELL XTAL 100. 100. 100. 90. 90. 90.
+GRID XTAL 150 150 150
+AVER
+ROTA POLAR  0.0  0.0  0.0
+TRANS  0.0  0.0  0.0
+eof
+</pre>
+
+<H2><A NAME="bugs"></A> BUGS</H2>
+<P>
+Since the work map will take the same grid as the mask, it is
+necessary to use a fine grid for the mask, especially when doing
+averaging calculations. The grid should be at least as fine as the
+cell map. </P>
+<P>
+When performing density cutting, If the masked region is larger
+than the dimensions of the crystal map in any direction, the
+overlapped density will appear at the edges of the CUTOUT map. </P>
+
+<H2><A NAME="references"></A>REFERENCES</H2>
+
+<OL>
+<P><!-- KEEP startreferencelist --></P>
+
+<LI><A NAME="reference1"></A>Stein <EM>et al.</EM>, <I>Structure</I> <B>2</B>, 45-47 (1994)</LI>
+
+<!-- KEEP endreferencelist -->
+</OL>
+
+<H2> SEE ALSO</H2>
+ <A HREF=mapmask.html>mapmask</A>,
+ <A HREF=ncsmask.html>ncsmask</A>,
+ <A HREF=rotmat.html>rotmat</A>,
+ <A HREF=dm.html>dm</A>
+</body></html>

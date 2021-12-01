@@ -1,0 +1,170 @@
+<html>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 draft//EN">
+<HEAD><TITLE>CCP4 Program Suite: loggraph format</title></head>
+<body>
+
+<!-- ::INDEX_INFO::LOGGRAPHFORMAT::File Formats::::Loggraph file format for CCP4:::::::: -->
+
+<h1>LOGGRAPH FORMAT: (CCP4: Formats)</h1>
+<h2> NAME</h2>
+<b> Loggraph format for CCP4</b>
+- the format for tables and graphs as used in CCP4 log files
+ 
+<ol>
+<li><a href="#introduction">INTRODUCTION</a>
+<li><a href="#graphsyntax">Syntax of the Graph description in a log file</a>
+<li><a href="#parsingtables">Parsing algorithm for the table</a>
+<li><a href="#textsyntax">Syntax of the Text description in log file</a>
+<li><a href="#keytextsyntax">Syntax of the Key Text description in log file</a>
+<li><a href="#summarysyntax">Syntax of Summary description</a>
+<li><a href="#see_also">SEE ALSO</a>
+</ol>
+
+<A NAME="introduction"></A>
+<H2>1. INTRODUCTION</H2>
+
+<p>This document describes the formats recognised by the CCP4 programs
+<a href="loggraph.html">loggraph</a> and
+<a href="xloggraph.html">xloggraph</a>, and the <em>Jloggraph</em>
+Java applet (see the <a href="libhtml.html#log_graphs">libhtml</a>
+documentation, where embedding loggraphs with HTML log files is described
+further).</p>
+
+<A NAME="graphsyntax"></A>
+<H2>2. Syntax of the Graph description in a log file</H2>
+
+<p>The following sections describe the syntax of TABLEs and
+GRAPHs.</p>
+
+<pre>
+$TABLE :table name:
+$GRAPHS :graph1 name:graphtype:column_list: :graph2 name:graphtype:column_list:
+        :graph 3 ...: ... $$
+column1_name column2_name ... $$ any_characters $$ numbers $$
+</pre>
+
+<p>where:</p>
+
+<dl>
+<dt> table name, graphN name<dd>
+are arbitrary strings (without newline)
+<dt> columnN_name<dd>
+are arbitrary strings without tab, space, newline
+<dt> graphtype<dd>
+is
+<dt> A[UTO]<dd>
+for fully automatic scaling (e.g. ... :A:1,2,4,5:)
+<dt> N[OUGHT]<dd>
+for automatic y coordinate scaling, where y lowest limit is 0
+(e.g. ... :N:1,2,4,5:)
+<dt> XMIN|XMAXxYMIN|YMAX <dd>
+for user defined scaling where XMIN ... are axis limits
+(e.g. ... :0|100x-1|1:1,2,4,5:)
+<dt> any_characters<dd>
+are treated as a comment. They can be eventually used as a human
+oriented table header
+<dt>  numbers<dd>
+represents the table itself. (See parsing algorithm below)
+</dl>
+
+<h3>Scatter Plots</h3>
+
+<p>loggraph can be directed to plot graphs as scatter plots (i.e.
+points only, not connected by lines) by substituting the keyword
+<tt>SCATTER</tt> for the <tt>GRAPHS</tt> keyword:</p>
+
+<pre>
+$TABLE :table name:
+$SCATTER :graph1 name:graphtype:column_list: :graph2 name:graphtype:column_list:
+        :graph 3 ...: ... $$
+column1_name column2_name ... $$ any_characters $$ numbers $$
+</pre>
+
+<p>This functionality is not supported in either Xloggraph or
+Jloggraph.</p>
+
+<A NAME="parsingtables"></A>
+<H2>3. Parsing algorithm for the table</H2>
+
+<p>The table values (numbers) are read in free format.  This
+implies, that they MUST be separated by space(s) and/or tab(s) and/or
+newline(s).  Parsing is performed on a logical line basis, where a logical
+line begins with a newline, followed by a number of values corresponding
+to the number of table columns, an optional comment (any characters)
+up to the next newline delimiter.  The term `logical' is used, because
+this 'logical' line can consist of several `physical' lines, where
+newlines between values are treated as ordinary delimiters.</p>
+
+<h3>Loggraph parsing algorithm</h3>
+
+<p>Loggraph differs from Xloggraph and Jloggraph in that any table
+value which is not recognised as a numerical value is counted but
+is not read. This means it is possible to use non-numerical values
+as placeholders in tables, e.g.:</p>
+
+<pre>
+$TABLE: Example table from loggraph format documentation :
+$GRAPHS:Example graph 1:A:1,4,5:  $$
+
+    N Run.Rot      Value1       Value2    Value3
+$$ $$
+    1   1.1        343.50       1.1230    1.1044
+    2   1.2        344.50       1.1632    *
+    3   1.3        345.50       1.2099    1.1799
+    4   1.4        346.50       1.2636    *
+    5   1.5        347.50       1.3180    *
+    6   1.6        348.50       1.3613    1.3061
+$$
+</pre>
+
+<p>Any non-numerical token can be used, however in practice the
+characters *, ? and . are most commonly used in CCP4.</p>
+
+<A NAME="textsyntax"></A>
+<H2>4. Syntax of the Text description in log file</H2>
+
+<p>These tags are only recognised by Xloggraph and their use is
+deprecated.</p>
+
+<pre>
+$TEXT :text name: $$ junk (ignored) text $$any text characters$$
+</pre>
+
+<A NAME="keytextsyntax"></A>
+<H2>5. Syntax of the Key Text description in log file</H2>
+
+<p>These tags are only recognised by Xloggraph and their use is
+deprecated.</p>
+
+<pre>
+$KEYTEXT :text name: $$any text characters$$keyword_with_values$$
+  any_characters        - are the descriptive text
+  keyword_with_values   - is a keyworded format of data
+</pre>
+
+<A NAME="summarysyntax"></A>
+<H2>6. Syntax of Summary description</H2>
+
+<p>These tags are only recognised by Xloggraph and their use is
+deprecated. Use the appropriate functions described in section 6
+(<a href="libhtml.html#log_summary">Delimiting summary sections</a>)
+in the <tt>libhtml</tt> documentation, to write summary tags
+which are recognised by CCP4i.</p>
+
+<pre>
+$SUMMARY :summary_name: $$ any characters $$
+     :component_type:component_name: :component_type:component_name: ...$$
+  component_type        - is `TEXT` either `KEYTEXT`
+  component_name        - is its name
+</pre>
+
+<p>Due to the single-pass parsing all TEXTs and KEYTEXTs must be defined
+BEFORE the SUMMARY.</p>
+
+<h2><a name="see_also">7. SEE ALSO</a></h2>
+
+<p><a href="loggraph.html">loggraph</a>,
+<a href="xloggraph.html">xloggraph</a>,
+<a href="libhtml.html">libhtml</a></p>
+
+</body></html>

@@ -1,0 +1,95 @@
+#!/bin/sh
+
+# A short test for mrbump. Requires that clustalw and fasta be installed.
+# The first test does not require internet connectivity.
+
+# Test first for the clustalw and fasta executables in the PATH
+
+clustalw_found=False
+mafft_found=False
+fasta_found=False
+
+PATH_list=`echo $PATH | sed s'|:| |'g | xargs` 
+
+# Look for new location of clustalw2 and mafft
+if test -x $CCP4/libexec/clustalw2; then clustalw_found=True; fi;
+if test -x $CCP4/libexec/mafft; then mafft_found=True; fi;
+
+# Look for clustalw
+for i in $PATH_list; do if test -x $i/clustalw; then clustalw_found=True; fi; done
+for i in $PATH_list; do if test -x $i/clustalw2; then clustalw_found=True; fi; done
+
+# Look for fasta
+for i in $PATH_list; do if test -x $i/fasta34; then fasta_found=True; fi; done
+for i in $PATH_list; do if test -x $i/fasta35; then fasta_found=True; fi; done
+for i in $PATH_list; do if test -x $i/fasta36; then fasta_found=True; fi; done
+
+# If both are missing
+if [ ${fasta_found} = False ] && [ ${clustalw_found} = False ] 
+then
+   echo "Error: Clustalw executable not found. MrBUMP requires the alignment"  1>&2
+   echo "       program Clustalw be installed in order to run this test." 1>&2
+   echo "" 1>&2
+   echo "Error: Fasta executable not found. MrBUMP requires the Fasta"  1>&2
+   echo "       program (fasta34 or fasta35 or fasta36) be installed in order to" 1>&2
+   echo "       run this test." 1>&2
+   echo "" 1>&2
+   exit
+fi
+
+# If clustalw is missing
+if [ $clustalw_found = False ] 
+then
+   echo "Error: Clustalw executable not found. MrBUMP requires the alignment" 1>&2 
+   echo "       program Clustalw be installed in order to run this test." 1>&2
+   echo "" 1>&2
+   exit
+else
+   echo "Clustalw executable found in PATH."
+   echo ""
+fi
+
+# If fasta is missing
+if [ $fasta_found = False ] 
+then
+   echo "Error: Fasta executable not found. MrBUMP requires the Fasta"  1>&2
+   echo "       program (fasta34 or fasta35 or fasta36) be installed in order to" 1>&2
+   echo "       run this test." 1>&2
+   echo "" 1>&2
+   exit
+else
+   echo "Fasta executable found in PATH."
+   echo ""
+fi
+
+# Remove any files left over from a previous run of this test
+
+rm -rf $CCP4_SCR/mrbump_test_temp.mtz $CCP4_SCR/mrbump_test_temp.pdb $CCP4_SCR/search_test_mrbump
+
+# Run the simple test (Toxd example)
+
+mrbump HKLIN $CEXAM/toxd/toxd.mtz SEQIN $CEXAM/toxd/toxd.seq HKLOUT $CCP4_SCR/mrbump_test_temp.mtz XYZOUT $CCP4_SCR/mrbump_test_temp.pdb <<eof
+JOBID test_mrbump
+LABIN F=FTOXD3 SIGF=SIGFTOXD3 FreeR_flag=FreeR_flag
+MAPROGRAM clustalw
+MRPROGRAM molrep phaser 
+USEENSEM False
+MRNUM 1
+MDLP False
+MDLC False
+MDLM True
+MDLS False
+MDLD False
+LOCALFILE $CEXAM/toxd/toxd.pdb CHAIN A
+DOFASTA False
+SSMSEARCH False
+PQSSEARCH False
+SCOPSEARCH False
+CHECK False
+ROOTDIR $CCP4_SCR
+TRYALL True
+DEBUG True
+END
+eof
+
+exit

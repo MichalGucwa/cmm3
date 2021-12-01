@@ -1,0 +1,117 @@
+#!/bin/sh
+#
+# Rotation search (full) for toxd using 1BIK.pdb
+# This is a quick test to see if the program's working properly.
+# It happens to find the right orientation by luck, but the sampling
+# of orientations is much too coarse.  A sampling interval of 3.6 is
+# my normal default at the moment.  Eventually, the program will supply
+# a sensible default based on size, resolution and model quality.
+# SEARCH mol1 ROTATE FULL 
+#
+beast HKLIN $CEXAM/toxd/toxd.mtz << eof 
+LABIN F=FTOXD3
+MOLECULE mol1 1.0
+MODEL mol1 $CEXAM/data/1BIK.pdb IDENT 0.377
+SEARCH mol1 ROTATE FULL 15.
+BEST 20 0
+END
+eof
+
+#******************************************************************************
+
+#
+# Rotation search (limited) of toxd using the solution toxd.pdb file (!)
+# Search restricted to around the origin because using a model pre-aligned
+#   to the solution
+# SEARCH mol1 ROTATE AROUND 0.0 0.0 0.0 3.0
+#
+beast HKLIN $CEXAM/toxd/toxd.mtz << eof 
+LABIN F=FTOXD3
+MOLECULE mol1 1.0
+MODEL mol1 $CEXAM/toxd/toxd.pdb IDENT 1.00
+SEARCH mol1 ROTATE AROUND 0.0 0.0 0.0 15.0
+END
+eof
+
+#******************************************************************************
+
+#
+# Rotation search of toxd data using an ensemble of 2 models
+# The two models are 1BIK.pdb and the B chain of 1D0D.pdb
+# The models must be aligned to each other:
+#   here 1BIK has been aligned to the B chain of 1D0D.pdb
+# SEARCH mol1 ROTATE FULL 3.6
+#
+beast HKLIN $CEXAM/toxd/toxd.mtz << eof
+LABIN F=FTOXD3
+MOLECULE mol1 1.0
+MODEL mol1 $CEXAM/data/1D0D_B.pdb IDENT 0.364
+MODEL mol1 $CEXAM/data/1BIK_2_1D0D_B.pdb IDENT 0.377
+SEARCH mol1 ROTATE FULL 15.0
+END
+eof
+
+#******************************************************************************
+
+#
+# Rotation search (refinement of previous rotation search solutions)
+#
+beast HKLIN $CEXAM/toxd/toxd.mtz << eof
+LABIN F=FTOXD3
+MOLECULE mol1 1.0
+MODEL mol1 $CEXAM/data/1D0D_B.pdb IDENT 0.364
+SEARCH mol1 ROTATE AROUND LIST 3.0 1.0 
+RLIST mol1 146.38  23.86 197.31 
+RLIST mol1 130.15  17.99 219.53
+RLIST mol1 138.39  20.92 205.97
+END
+eof
+
+#******************************************************************************
+
+#
+# Translation search (full) around one rotation search solution  
+# Normally should use a sampling of dmin/4 or finer.
+#            TRANSLATE REGION 0.0 0.5 0.0 0.5 0.0 0.5 0.5
+#
+beast HKLIN $CEXAM/toxd/toxd.mtz << eof
+LABIN F=FTOXD3
+MOLECULE mol1 1.0
+MODEL mol1 $CEXAM/data/1BIK.pdb IDENT 0.377
+SEARCH mol1 ROTATE 171.26 17.99 226.09 \
+            TRANSLATE REGION 0.0 0.5 0.0 0.5 0.0 0.5 1.5
+END
+eof
+
+#******************************************************************************
+
+#
+# Translation search (full) around three rotation search solutions
+#
+beast HKLIN $CEXAM/toxd/toxd.mtz << eof
+LABIN F=FTOXD3
+MOLECULE mol1 1.0
+MODEL mol1 $CEXAM/data/1D0D_B.pdb IDENT 0.364
+SEARCH mol1 ROTATE LIST \
+            TRANSLATE REGION 0.0 0.5 0.0 0.5 0.0 0.5 0.8 0.2
+RLIST mol1 143.55  22.57 200.87
+RLIST mol1 128.86  18.42 219.80
+RLIST mol1 130.15  17.99 219.53
+END
+eof
+
+#******************************************************************************
+
+#
+# Final refinement search (6D) around a specific rotation and translation
+#
+beast HKLIN $CEXAM/toxd/toxd.mtz << eof
+LABIN F=FTOXD3
+MOLECULE mol1 1.00
+MODEL mol1 $CEXAM/data/1BIK.pdb IDENT 0.377
+SEARCH mol1 ROTATE AROUND 171.26 17.99 226.09 1.0 0.3 \
+            TRANSLATE AROUND 0.4931 0.0842 0.0425 0.4 0.1 
+BEST 10 3
+END
+eof
+

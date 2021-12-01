@@ -1,0 +1,171 @@
+#!/bin/csh -f
+#
+#   How to take Denzo scalepack output to MTZ..
+rotaprep HKLIN S52.SCA HKLOUT s52br << 'END-mtzrwrot'
+MONI 100
+INPUT SCALEPACK
+BATCH 1
+SYMM 19
+TITLE  s52br
+END
+'END-mtzrwrot'
+#
+sortmtz    HKLOUT s52br_sort.mtz << EOF-sortmtz
+# 
+# Sort keys since default keys are H K L
+#
+    H K L M/ISYM BATCH
+s52br.mtz
+EOF-sortmtz
+#
+
+agrovata \
+HKLIN s52br_sort.mtz		\
+HKLOUT s52br_agr.mtz		\
+ ROGUES baddies << 'END-agrovata'
+BATCHES  1  
+BINS 10
+BADREJECT_FLAGS NOBS =      3  PERCENT =      50 FTWO
+MEAN ALL
+ANOMALOUS ALL
+SCALE UNITY
+WIDTH 50  
+SHIFTS 0.0 0.0
+FMAXR 1.0
+FSAFE 0.0
+ICRYST 100
+PROCESS FULL PARTIAL
+RECORDS TRUNCATE
+TITLE s52br
+SDINFLATE SDFAC = 1.00 SDADD = 0.00
+SDREJECT 3.0
+SDMONITOR  3.0
+SOUT 1.0
+FRCMAX 3.0
+'END-agrovata'
+
+truncate \
+HKLIN s52br_agr.mtz		\
+HKLOUT s52br_trun.mtz		\
+ << 'END-truncate'
+SYM  19
+LABOUT F=FBr_mo SIGF=SIGFBr_mo DANO=DBr_mo SIGDANO=SIGDBr_mo
+TITLE
+RSCALE 9.0  2.3
+CONTENTS C 196 H 180 N 46 O 100 P 10
+WILSON
+TRUNCATE YES
+ANOM YES
+'END-truncate'
+#
+rotaprep    			\
+HKLIN $SCRATCH/raxis.dump  \
+HKLOUT $SCRATCH/junk.mtz	\
+<< 'END-mtzrwrot' 
+CELL 63 63 264 90 90 90
+MONI 1000 
+NBATCHES 21            # number of batches
+BATCH 1                # first batch number
+INPUT RAXISDUMP
+RESO 0 0.137
+SYMM 89
+TITLE   Test rota_prep
+END 
+'END-mtzrwrot'
+
+exit
+
+### exampes of rotaprep with other input formats:
+#
+rotaprep    			\
+HKLIN eleanor.hkl \
+HKLOUT $SCRATCH/junk.mtz	\
+<< 'END-mtzrwrot' 
+SCALE 0.1
+CELL 38.06 55.54 76.20 90 90 90
+MONI 100 
+BATCH 101
+INPUT XDSFULL
+RESO 0 0.137
+SYMM 18
+TITLE   Test rota_prep
+END 
+'END-mtzrwrot'
+#exit
+
+rotaprep    			\
+HKLIN $SCRATCH/zn215h.mtz	\
+HKLOUT $SCRATCH/junk.mtz	\
+<< 'END-mtzrwrot' 
+SCALE 0.1
+BATCH 101
+INPUT MTZF
+RESO 0 0.137
+TITLE   Test rota_prep
+LABI F=FP SIGF=SDFP  
+END 
+'END-mtzrwrot'
+#
+
+rotaprep     	\
+HKLIN /usr/disk3/scratch/tame/japan/ticoa/ticoa20.hkl        \
+HKLOUT ticoa20.mtz	\
+<< 'END-mtzrwrot'
+SCALE 1.0
+CELL 65.2 79.8 122.9 90 90 90
+BATCH 220
+RESOL 100 2.0
+INPUT WEISS
+SYMM 16
+TITLE   ticoa
+END 
+'END-mtzrwrot'
+#
+
+rotaprep    			\
+HKLIN /usr/disk3/scratch/swift/pa_new2/pa_new2_only.mui  \
+HKLOUT $SCRATCH/junk.mtz	\
+<< 'END-mtzrwrot'
+SCALE 0.1
+CELL 38.06 55.54 76.20 90 90 90
+MONI 1000
+BATCH 101
+INPUT MUI
+RESO 0 0.137
+SYMM 16
+TITLE   Test rota_prep
+END 
+'END-mtzrwrot'
+#exit
+#
+
+rotaprep    			\
+HKLIN /y/people/moore/gmt/afc5/texsan/gmton1_ccp4.dat        \
+HKLOUT $SCRATCH/junk.mtz	\
+<< 'END-mtzrwrot'
+SCALE 0.1
+CELL 38.06 55.54 76.20 90 90 90
+BATCH 101
+INPUT TEXSAN
+RESO 0 0.137
+SYMM 16
+TITLE   Test rota_prep
+END 
+'END-mtzrwrot'
+#
+
+rotaprep    			\
+HKLIN /y/people/moody/lyso/lyso_nat_diffo.hkl        \
+HKLOUT $SCRATCH/lyso_nat_diffo.mtz	\
+<< 'END-mtzrwrot'
+SCALE 1.0
+CELL 79.16 79.16 37.9 90.0  90.0  90.00
+BATCH 101
+INPUT DATRED
+RESO 0 1.0
+SYMM 96
+TITLE   lysozyme diffo nat data
+END 
+'END-mtzrwrot'
+#
+

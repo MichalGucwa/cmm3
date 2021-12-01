@@ -1,0 +1,292 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4i Interface: Implementation</title>
+<link rel="stylesheet" type="text/css" href="../ccp4idocs.css" title="CCP4i" />
+<link rev="made" href="mailto:mgwt@ysbl.york.ac.uk" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 5.3 IP22) [Netscape]" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="3" class="logopic"><img src="../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logoprog">Documentation for Programmers</td></tr>
+<tr><td class="logotitle">Implementation</td></tr>
+</table>
+<br />
+<table border="0">
+<tr><td>
+<a href="indexframeset.html" target="_PROGRAMMERSDOCS">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="tcl_intro.html" target="_PROGMAIN">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="intro.html" target="_PROGMAIN">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td></tr>
+</table>
+
+<p><a href="#file_organisation" target="_self">
+File Organisation</a></p>
+<dl>
+<dt><a href="#general_utility_files" target="_self">
+General Utility Files</a></dt>
+<dd><a href="#defining_modules" target="_self">
+Defining Modules</a></dd>
+</dl>
+<dl>
+<dt><a href="#general_description_of_task_interfaces"
+target="_self">General Description of Task Interfaces</a></dt>
+<dd><a href="#create_task_window" target="_self">
+CreateTaskWindow</a></dd>
+<dd><a href="#create_line" target="_self">
+CreateLine</a></dd>
+</dl>
+<p><a href="#parameter_types"
+target="_self">Parameter Types</a></p>
+<p><a href="#running_tasks" target="_self">
+Running Tasks</a></p>
+
+<h3><a name="file_organisation"></a>File Organisation</h3>
+
+<p>The CCP4 Interface release area has the following subdirectories and
+contents:
+
+<table border="0">
+<tr><td><strong>bin</strong></td><td>scripts to start CCP4i and other utilities</td></tr>
+<tr><td><strong>loggraph</strong></td><td>source code for loggraph utility</td></tr>
+<tr><td><strong>mapslicer</strong></td><td>source code for mapslicer utility</td></tr>
+<tr><td><strong>sketch</strong></td><td>source code for Monomer Sketcher utility</td></tr>
+<tr><td><strong>templates</strong></td><td>templates to generate program command scripts</td></tr>
+<tr><td><strong>utils</strong></td><td>utility source code</td></tr>
+<tr><td><strong>src</strong></td><td>general source code</td></tr>
+<tr><td><strong>tasks</strong></td><td>definition of each task interface</td></tr>
+<tr><td><strong>scripts</strong></td><td>template scripts to run each task</td></tr>
+<tr><td><strong>icons</strong></td><td>utility files such as icon bitmaps</td></tr>
+<tr><td><strong>help</strong></td><td>HTML help files</td></tr>
+<tr><td><strong>test</strong></td><td>some test data</td></tr>
+<tr><td><strong>etc</strong></td><td>other utilities, <em>e.g.</em> the setup
+script and <strong>.def</strong> files (which contain parameter definitions)</td></tr>
+</table>
+
+<p>The conventions for file extensions are:
+
+<table border="0">
+<tr><td><strong>tcl</strong></td>
+<td>source file in Tcl/Tk scripting language</td></tr>
+<tr><td><strong>def</strong></td>
+<td>initialisation parameters for a Tcl&nbsp;array - interpreted by
+<tt>InitialiseArray</tt> procedure</td></tr>
+<tr><td><strong>script</strong></td>
+<td>template script file which is basically Tcl but
+with some keywords which are interpreted by the <tt>CreateScript</tt> procedure</td></tr>
+<tr><td><strong>run</strong></td>
+<td>an independent Tcl script to run tasks - requires
+the utility functions in <strong>system.tcl</strong></td></tr>
+<tr><td><strong>modules</strong></td>
+<td>defines the modules and their component tasks
+for the Interface - interpreted by <tt>ReadTaskList</tt> procedure</td></tr>
+</table>
+
+<h3><a name="general_utility_files"></a>General Utility Files</h3>
+
+<p>These are in the directory <strong>src</strong>.</p>
+
+<dl>
+<dt><strong>system.tcl</strong></dt>
+<dd>contains system dependent procedures - these generally employ the Tcl
+<tt>exec</tt> function to invoke system commands. The file also contains
+some functions such as <tt>InitialiseArray</tt> which are needed to bootstrap
+the Interface.</dd>
+
+<dt><strong>utils.tcl</strong></dt>
+<dd>most of the utilities for the main Interface window, the task windows
+and for creating and running task scripts.</dd>
+
+<dt><strong>CCP4_utils.tcl</strong></dt>
+<dd>CCP4 specific utilities mostly for handling MTZ files.</dd>
+
+<dt><strong>taskbrowser.tcl</strong></dt>
+<dd>create and handle the main Interface window.</dd>
+</dl>
+
+<h4><a name="defining_modules"></a>Defining Modules</h4>
+
+<p>The <strong>taskbrowser.tcl</strong> script requires a <strong>.modules</strong>
+file which defines the modules and their component tasks. The default file is
+<strong>$CCP4I_top/etc/ccp4i.modules</strong>.</p>
+
+<h3><a name="general_description_of_task_interfaces"></a>General Description of Task Interfaces</h3>
+
+<p>The parameters controlled by each task interface are stored in a Tcl&nbsp;array
+which is initialised with the parameter values in the file
+<strong>$CCP4I_top/tasks/<em>taskname</em>.def</strong>. The
+<strong><tt>Save&Restore</tt></strong> button on each task interface gives the user
+the option to save the parameters in a file which will have the same format
+as the <strong><em>taskname</em>.def</strong> file. On each line of the file are
+three fields:</p>
+
+<dl>
+<dt><strong>parameter name</strong></dt><dd>single word, upper case characters
+with underscores</dd>
+<dt><strong>parameter type</strong></dt><dd>single word, beginning with underscore</dd>
+<dt><strong>parameter value</strong></dt><dd>single word or phrase enclosed in quotes</dd>
+</dl>
+
+<p>The parameter type is a cross reference to the file
+<strong>$CCP4I_top/etc/types.def</strong> which contains definitions of all recognised
+parameter types. Some
+parameter types are fairly generic (<em>e.g.</em> <em>_logical</em>) but others are
+specific to a given task interface (<em>e.g.</em> <em>_imprfx_fortran_format</em> is
+specific to the &quot;Convert to MTZ&quot; task interface).</p>
+
+<p>The task interface is defined by the file
+<strong>$CCP4I_top/tasks/<em>taskname</em>.tcl</strong>.
+This file is Tcl&nbsp;script but uses generic procedures to define the
+interface and contains a minimum of raw Tcl. This file contains the definition
+of two procedures: <strong><em>taskname</em>_run</strong> and
+<strong><em>taskname</em>_review</strong>
+which are invoked immediately before and immediately after the task script
+is run (ideally these procedures should not be necessary but, for now,
+they are useful place markers and catch alls!).</p>
+
+<p><font color="#ff3333">The procedures used to create the task interface
+need to be thoroughly documented. But are not yet.</font> The two most
+significant procedures are:</p>
+
+<h4><a name="create_task_window"></a>CreateTaskWindow window taskname arrayname {folder_titles}</h4>
+
+<p>Initialise the task parameters by reading the <em>taskname</em><strong>.def</strong>
+file, create the outline task window, and set up the handling of options such
+as <tt>Help</tt> or <tt>Run</tt>. The procedure arguments are:</p>
+
+<dl>
+<dt><strong>window</strong></dt><dd>input a window identifier</dd>
+<dt><strong>taskname</strong></dt><dd>used to identify files such as help files
+and script files</dd>
+<dt><strong>arrayname</strong></dt><dd>the name of Tcl array associated with this
+interface</dd>
+<dt><strong>folder titles</strong></dt><dd>title lines for the variable number of
+folders in the task window</dd>
+</dl>
+
+<h4><a name="create_line"></a>CreateLine line message {arguments }</h4>
+
+<p>Create an interface line at the bottom of the current open frame:
+<dl>
+<dt><strong>line</strong></dt><dd>return line id</dd>
+<dt><strong>message</strong></dt><dd>a text message line which will appear when
+the mouse is over the line</dd>
+</dl>
+
+<p>then a variable number of parameters which take the form:
+<dl>
+<dt><strong>label</strong> <em>labeltext</em></dt><dd>define text which will appear
+on the line</dd>
+<dt><strong>widget</strong> <em>parameter_name { arguments }</em></dt>
+<dd>define a widget for the parameter <em>parameter_name</em>. The nature
+of the widget will depend on the parameter type as defined in the
+<em>taskname</em><strong>.def</strong> file.</dd>
+<dt><strong>format</strong> <em>format_mode {arguments}</em></dt>
+<dd>define the line format</dd>
+</dl>
+
+<h3><a name="parameter_types"></a>Parameter Types</h3>
+
+<p>Parameter types are defined in the file <strong>$CCP4I_top/etc/types.def</strong>.
+Each parameter type has a name which begins with an underscore, and an associated
+list of properties. The first element in the list of properties is the
+class of the parameter type.</p>
+
+<p>Different types of data have different properties dependent on their
+class - there are currently seven classes: <em>integer, real, logical, text,
+file, menu</em> and <em>mtz_label</em>. All parameter types belong to one
+of these classes and have the list of properties associated with their
+class. The classes and their associated properties are defined at the top
+of the <em>types</em><strong>.def</strong> file. Other classes could be added as
+necessary.</p>
+
+<p>Some of the parameter types are generic (<em>e.g.</em> <em>_logical</em>) but others
+probably only apply to one parameter in one task interface (<em>e.g.</em>
+<em>_imprfx_fortran_format</em>). The class of the parameter type determines
+the sort of widget which will be drawn for the parameter in the user interface.
+Currently the mapping of class to widget type is:
+<table border="0">
+<tr><td><em>integer</em></td><td>-</td><td>entry box</td></tr>
+<tr><td><em>real</em></td><td>-</td><td>entry box</td></tr>
+<tr><td><em>logical</em></td><td>-</td><td>checkbutton</td></tr>
+<tr><td><em>text</em></td><td>-</td><td>entry box</td></tr>
+<tr><td><em>file</em></td><td>-</td><td>entry box</td></tr>
+<tr><td><em>menu</em></td><td>-</td><td>pop-up menu</td></tr>
+<tr><td><em>mtz_label</em></td><td>-</td><td>pop-up menu or entry box</td></tr>
+</table>
+
+<p>The data checking applied to user input of parameters is determined
+by the parameter type information.</p>
+
+<p><font color="#ff3333">There is currently very little checking of user
+input (WG2 don't seem to think they want it!). I think that at least a minimal
+checking that the user has input something to the fields where data is
+required would be useful. In the current implementation some data is considered
+to be OBLIGATORY&nbsp;- the input field is in contrast colour until the
+user enters something reasonable but the job will still be run even if
+no data has been entered (it would be better called ADVISORY&nbsp;rather
+than OBLIGATORY!). There is currently a problem in that the
+OBLIGATORY/NOT&nbsp;OBLIGATORY&nbsp;property
+is a static but it should be variable. The best example of what is currently
+implemented is in the &quot;Convert to MTZ&quot; task interface if you select
+any file format other than the default MTZ.</font></p>
+
+<p><font color="#ff3333">It is not really necessary to make a final decision
+on how much data checking goes on as the parameter types are currently
+defined to support checking and it would require small change in one place
+to implement it. BUT to support the OBLIGATORY&nbsp;fields indication properly
+will probably need some additional code in all the individual task interfaces
+so it would save hassle to define what is required now.</font></p>
+
+<h3><a name="running_tasks"></a>Running Tasks</h3>
+
+<!--<p><a name="run_file_format"></a>****run file format, explained by Liz****</p>
+
+<p>There is a template script file to run each task:
+<strong>$CCP4I_top/scripts/<em>taskname</em>.script</strong>. When the task is run this
+file is read and the parameters entered by
+the user are substituted for the <strong>??PRAMETER_NAME</strong> text. The rest
+of the file is copied, unaltered, to create a <strong><em>taskname</em>.run</strong> script
+which is then run by Tcl shell with the command:</p>
+
+<p><strong>tclsh <em>taskname</em>.run</strong></p>
+
+<p>Note that the first line of <strong><em>taskname</em>.run</strong> always sources the
+<tt>system.tcl</tt> file which contains many of the procedures used by the
+run script.</p>
+
+<p>The run script contains a minimum of Tcl - mostly control structures
+and simple commands.</p>
+
+<p><font color="#ff3333">The procedures in system.tcl and the basic Tcl
+used in the run scripts needs to be documented to make this script more
+user friendly. Is it desirable to make these scripts as independent as
+possible from the scripting language? Yes. It might be worthwhile to write
+extra system.tcl precedures to wrap up all of the Tcl commands but it
+is difficult to think how to wrap up the control structures - you must
+have these and Tcl format is as good as any other. I think it would be
+possible to write automatic procedures to convert run scripts to any alternative
+scripting language.</font></p>
+
+<p><font color="#ff3333">In the current implementation the run script is
+quite hard to read (look at the runfft script!) because a lot of the input
+to the CCP4 program is provisional on some flag. This could be made more
+readable by packaging in a procedure but there is also the option to do
+some editing at the stage of copying the template script to a run file.
+The advantage of this would be the creation of a more readable run script
+- the disadvantage is that the user might want to change the run script
+by just changing one of the input parameters at the top of the file and
+there is a risk that the change they make is not supported by the cut-down
+run script.</font></p>
+-->
+<p>See <a href="../general/runjob.html" target="_MAIN">Running a Job</a>,
+part of the main Interface Documentation.</p>
+
+</body>
+</html>

@@ -1,0 +1,312 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4 Interface: Installing New Task Interfaces</title>
+<link rel="stylesheet" type="text/css" href="../ccp4idocs.css" title="CCP4i" />
+<link rev="made" href="mailto:mgwt@ysbl.york.ac.uk" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta name="AUTHOR" content="Peter Briggs" />
+</head>
+<body>
+
+<!-- dummy target -->
+<a name="install_task"></a>
+
+<table border="0">
+<tr><td rowspan="2"><img src="../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logotitle">Installing New Task Interfaces</td></tr>
+</table>
+<br />
+<table border="0">
+<tr><td>
+<a href="../programmers/progframeset.html" target="_PROGRAMMERSDOCS">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="configure.html" target="_PROGRAMMERSDOCS">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+</td></tr>
+</table>
+
+<p><a href="#install_options" target="_self">Introduction - Installation Options</a></p>
+<dl>
+<dt><a href="#install_tasks" target="_self">Installing New Task Interfaces</a></dt>
+<dd><a href="#install_area" target="_self">Installation area: &quot;main&quot; versus &quot;private&quot; CCP4i areas</a></dt>
+<dd><a href="#automatic_or_custom" target="_self">Automatic versus customised installation</a></dd>
+<dd><a href="#task_archive" target="_self">Task Archive Files</a></dd>
+</dl>
+<p><a href="#uninstall_tasks" target="_self">Reviewing and Uninstalling Tasks</a></p>
+<p><a href="#import_tasks" target="_self">Importing Tasks from Previous CCP4 Installations</a></p>
+<p><a href="#export_tasks" target="_self">Exporting Tasks</a></p>
+<dl>
+<dt><a href="#task_archive_contents" target="_self">Task Archive File Contents</a></dt>
+<dd><a href="#ccp4i_packages_file" target="_self">CCP4i Packages Files</a></dd>
+<dd><a href="#install_scripts" target="_self">Install Scripts</a></dd>
+</dl>
+<p><a href="#command_line_install">Command Line Installation, Uninstallation
+and Import</a></p>
+
+
+<h3><a name="install_options"></a>Introduction - Installation options</h3>
+
+<p>The installation window gives four options:</p>
+
+<dl>
+<dt><a href="#install_tasks">Install a new task</a></dt>
+<dd>Installs new task interface files from a task archive file</dd>
+<dt><a href="#uninstall_tasks">Uninstall an existing task</a></dt>
+<dd>Removes the files for a task interface which have previously been
+    installed using the install procedure.<br />
+    This option also lets you review the files that have been installed
+    for each task, without performing the uninstallation</dd>
+<dt><a href="#import_tasks">Import tasks from previous CCP4 installations</a></dt>
+<dd>Allows tasks that were installed in a previous CCP4 installation to
+    be automatically copied into the current version of CCP4i.</dd>
+<dt><a href="#export_tasks">Export a task</a></dt>
+<dd><em>For interface developers</em> Create a task archive file which
+    can be installed by other users</dd>
+</dl>
+
+<h3><a name="install_tasks"></a>Installing New Task Interfaces</h3>
+
+<p>CCP4 may occasionally distribute the necessary code for an individual task interface
+between full releases. Non-CCP4 programs may also have CCP4i interfaces which are
+distributed independently of the CCP4 suite. These should be distributed as compressed
+.tar files which are referred to as <a href="#task_archive">task archives</a>,
+and there is a tool to install them at the bottom of the <strong>System Administration</strong>
+menu, on the right hand side of the main window.</p>
+
+<p>Using this tool you should be able to do an automatic installation - only needing
+to select the task source file and then hit the <tt>Apply</tt> button to install
+the necessary files. A record is kept of the installation so that it is
+easy to uninstall previously installed tasks.</p>
+
+<h4><a name="install_area"></a>Installation area: &quot;main&quot; versus &quot;private&quot; CCP4i
+areas</h4>
+
+<p>All the distributed code for CCP4i resides in the directory pointed to by
+the <tt>$CCP4I_TOP</tt> environment variable. This is referred to as the <em>main
+CCP4i area</em>. Files placed in this area will be accessible by all CCP4i users,
+so installing new interfaces here will make them available to everyone.</p>
+
+<p>However, each user also has a &quot;private&quot; CCP4i area, which resides in the
+directory <tt>$USER/.CCP4</tt>. This area contains files which are specific only
+to the individual user (for example, their preferences). It also contains a copy
+of the main CCP4i directory structure (but <em>not</em> copies of the files).</p>
+
+<p>Installing new task interfaces to this area means that only that user will be
+able to access them. Also, a version of the task interface installed here will be
+used in preference to any in the main CCP4i area.</p>
+
+<h4><a name="automatic_or_custom"></a>Automatic versus customised installation</h4>
+
+<p>The installation tool will read the task archive file and determine what files
+should be installed in which subdirectories. Choosing an <strong>automatic
+installation</strong> simply installs the files in the appropriate places and
+adds the new tasks to the modules file without any further user intervention. This
+is the recommended method.</p>
+
+<p>Alternatively a <strong>customised installation</strong> can be performed. The
+user can choose to omit files from the installation, prevent the running of any
+<a href="#install_script" target="_self">install script</a> supplied with the
+tasks, and can edit the task references which are to be added to the modules file.
+Alternatively it can be used as a way of reviewing what will be installed before
+proceeding with the full installation.</p>
+
+<p>In both cases, the installation of each package is recorded in the
+<a href="#ccp4i_packages_file">CCP4i Packages File</a>. This records key
+information which allows the package to be
+<a href="#uninstall_tasks">uninstalled</a> in future.</p>
+
+<h4><a name="task_archive"></a>Task Archive Files</h4>
+
+<p>The <em>task archive</em> file is a compressed archive file (file extension
+<em>.tar.gz</em>) containing all the files which are needed for the new interface.
+This file should have been prepared by whoever wrote the new interface.</p>
+
+<p>The installation procedure should automatically unpack this file, in order
+to examine its contents and to perform the install. (The install should also
+work if the archive &quot;file&quot; is actually the unpacked directory.)
+
+<p>Details of the contents of the task archive file can be found
+<a href="#task_archive_contents" target="_self">below</a>.</p>
+
+<h3><a name="uninstall_tasks"></a>Reviewing and Uninstalling Tasks</h3>
+
+<p>Once a task has been installed it is easy to remove it again using the
+<em>uninstall</em> option. You may wish to do this for example if you have
+previously installed the task in your &quot;private&quot; CCP4i area (see the
+information on <a href="#install_area">Installation areas</a> for a detailed
+explanation).</p>
+
+<p>The uninstall is completely automatic. Simply select the name of the task
+package that you want to uninstall - the window will update to show the
+associated files for that package, and any task references which were also
+installed. Clicking the <tt>Apply</tt> button will then remove all the files and
+task references, and will restore any backup files that it finds.</p>
+
+<h3><a name="import_tasks"></a>Importing Tasks from Previous CCP4 Installations</h3>
+
+<p>This utility allows tasks that were installed in one version of CCP4i
+to be easily copied and installed into the current CCP4i. This is intended
+to make it easier to update CCP4i with previously installed interfaces for
+Arp/Warp and other "third-party" packages.</p>
+
+<p>Once you have specified the top-level directory or folder for the old
+CCP4 installation where the tasks were already installed previously, the
+interface will automatically detect which packages are available for
+importing, and display these in a list.</p>
+
+<p>You can then select or deselect individuals packages to be imported, using
+the check buttons next to each package name. When your selection is
+complete, click the "Apply" button to perform the import.</p>
+
+<p>(Note that if packages with the same name are already installed
+in the current CCP4i version then the equivalent package will <em>not</em>
+be listed as available for import. If you do wish to import these packages
+then you will need to uninstall the existing ones first.)</p>
+
+<p>Tasks that are imported in this way can be uninstalled in the same way
+as those installed from CCP4i package archives.</p>
+
+<h3><a name="export_tasks"></a>Exporting Tasks</h3>
+
+<p>This utility is intended for interface developers, and allows them to create
+a task archive file for a new task by selecting the files to be included, and the
+task references that should be installed. It also allows the specification of
+attributes such as the version number of the task, and an install script -
+see the information on <a href="#task_archive_contents" target="_self">Task
+Archive File Contents</a>.</p>
+
+<p>Note that as of CCP4i 1.5, it is possible to export tasks in subfolders
+in the tasklists for modules. <b>If you choose to export tasks with subfolders
+then it is very likely that there will be problems with installing the
+exported package into earlier versions of CCP4i</b>.</p>
+
+<h3><a name="task_archive_contents"></a>Task Archive File Contents</h3>
+
+<p><em>This information should be of interest to developers.</em></p>
+
+<p>There may be additional
+files which CCP4i uses when installing the task.</p>
+
+<p>The distribution may contain files with the following extensions, which will
+normally be installed in the following directories:</p>
+
+<table border="2">
+<tr><th>File Type</th><th>File Extension</th><th>Subdirectory</th></tr>
+<tr><td>Task file</td><td>.def</td><td>$CCP4I_TOP/tasks</td></tr>
+<tr><td>Def file</td><td>.tcl</td><td>$CCP4I_TOP/tasks</td></tr>
+<tr><td>Script file</td><td>.script</td><td>$CCP4I_TOP/scripts</td></tr>
+<tr><td>Run/template file</td><td>.com</td><td>$CCP4I_TOP/templates</td></tr>
+<tr><td>Help file</td><td>.html</td><td>$CCP4I_TOP/help/extra</td>
+</table>
+
+<p>There should also be a file called <em>modules.def</em> (or just <em>modules</em>,
+for older style task packages) which contains the task references to be added into
+the file
+<a href="../programmers/modules.html" target="_self">$CCP4I_top/etc/modules.def</a>.
+The task references define the buttons in the list of tasks in the main window, which
+are normally used to launch a task.</p>
+
+<p>Normally the new task name will appear at the bottom of the list of tasks in the
+module menu on the left hand side of the main window. This may not be appropriate and
+you may need to use the <a href="database.html#edit_modules_file" target="_self">Edit
+Modules File</a> utility to change the order. (If the new task interface is
+intended to completely replace an existing task interface you may wish to delete
+the reference to the old task interface using this utility.)</p>
+
+<p>Task archives created with the Export Task facility will also contain a
+<a href="#ccp4i_pacakages_file" target="_self">CCP4i packages file</a>
+(<em>ccp4i_packages.def</em>) which contains additional information about the
+task, for example the version number (if any).</p>
+
+<h4><a name="ccp4i_packages_file"></a>CCP4i Packages Files</h4>
+
+<p>The CCP4i packages file <em>ccp4i_packages.def</em> in a task archive
+contains additional information about the new task which is used in
+installation:</p>
+
+<table border="2">
+<tr><th>Attribute</th><th>Description</th><th>Comments</th></tr>
+<tr><td>Package name</td>
+    <td>Identifier for the new task</td>
+    <td>Used to group together files and task references which define the
+        new task interface, for review and uninstall purposes</td></tr>
+<tr><td>Package version</td>
+    <td>Version control string of the form <em>a[.b[.c]]</em></td>
+    <td>Not compulsory but recommended. You cannot install an older version
+        of a task over a newer version - in these cases you will need to
+        uninstall the existing version first.</td></tr>
+<tr><td>Install script</td>
+    <td>Script supplied by the task author which will be run before the
+        installation is allowed to proceed.</td>
+    <td>See the section on <a href="#install_scripts" target="_self">Install
+        Scripts</a>.</td></tr>
+</table>
+
+<h4><a name="install_scripts"></a>Install Scripts</h4>
+
+<p>Some task archives may include an <em>install script</em>. This is a small
+script supplied by the developer of the new task, which will be run automatically
+prior to the installation being performed.</p>
+
+<p>The install script should perform any necessary checks on the system, to make
+sure that the task interface will work once it is installed - for example, if
+the new task runs a program called <em>my_prog</em> then the install script
+should check that <em>my_prog</em> is installed.</p>
+
+<p>Install scripts are not compulsory - for most tasks it is not expected that
+they will be necessary.</p>
+
+<p>A simple example of an install script in C-shell is:</p>
+<pre>
+#!/bin/csh
+# Check that new_prog is in CBIN
+if (-e ${CBIN}/new_prog) then
+  # new_prog was found - exit normally
+  exit 0
+else
+  # new_prog was not found - print a message and
+  # exit with non-zero status
+  echo "new_prog not found"
+  echo "Install new_prog before installing this interface"
+  exit 1
+endif
+</pre>
+<p>If the install script returns a non-zero exit status then the installation
+procedure will display the message from the script and then halt the install.</p>
+
+<h3><a name="command_line_install"></a>Command Line Installation, Import and Uninstallation</h3>
+
+<p>It is possible to perform the installation or uninstallation of a task
+automatically from the command line, using the <em>-install</em> and
+<em>-uninstall</em> options of <em>ccp4ish</em>.</p>
+
+<p>These options are intended for developers of third-party software, to
+incorporate into their own installation procedures - for example, in a Makefile
+the <em>install</em> and <em>uninstall</em> targets could include (un)installation
+of the new interface for that software.</p>
+
+<p>Since the command line procedures are completely automatic, it is
+important that the task archive has been produced using the
+<a href="#export_tasks" target="_self">Export Task</a> function.</p>
+
+<p>A third option is to automatically copy all the tasks previously installed
+in another CCP4i installation to the current installation, using the
+<em>-import_packages</em> option of ccp4ish.</p>
+
+<p>See the <a href="../../../../html/ccp4i.html">ccp4i.sh documentation</a> for
+more information.</p>
+
+<table border="0">
+<tr><td>
+<a href="../programmers/progframeset.html" target="_PROGRAMMERSDOCS">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="configure.html" target="_PROGRAMMERSDOCS">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+</td></tr>
+</table>
+
+</body>
+</html>

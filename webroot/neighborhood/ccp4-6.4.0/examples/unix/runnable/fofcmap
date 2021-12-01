@@ -1,0 +1,108 @@
+#!/bin/sh
+
+set -e
+
+coords=$CEXAM/toxd/toxd.pdb	     # coordinates
+resmax=2.7			     # high resolution limit
+fobs=$CCP4_SCR/toxd_phase_mir.mtz    # file including Fobs
+base=$CCP4_SCR/toxd		     # base file name for all files
+
+if test ! -f $fobs; then
+  echo '! Run mlphare.exam first' 1>&2
+  exit 1
+fi
+
+#   Calculate an Fo-Fc map and find position of significant peaks
+
+###################################################################
+#   Add Fc and Phic to the reflection file
+###################################################################
+
+sfall xyzin $coords hklin $fobs \
+      hklout ${base}_fc <<eof-sfall
+	TITLE Fc and Phic calculation from ${coords}
+	MODE SFCALC HKLIN XYZIN
+	RESOLUTION 10.0 $resmax
+	GRID 100 60 32
+	LABIN FP=FTOXD3 SIGFP=SIGFTOXD3 FREE=FreeR_flag
+	LABOUT FC=TOXFC PHIC=TOXPHIC
+	END
+eof-sfall
+
+###################################################################
+#  Scale the Fc's to the Fo's
+###################################################################
+
+rstats hklin ${base}_fc hklout ${base}_fofc <<eof-rstats
+	LABIN FP=FTOXD3 SIGFP=SIGFTOXD3 FC=TOXFC PHIC=TOXPHIC FREE=FreeR_flag
+	TITLE Fc scaled to Fo
+	RESOLUTION 10.0 ${resmax}
+eof-rstats
+
+sigmaa  hklin ${base}_fofc hklout ${base}_fofc_sa <<eof-sigmaa
+	partial
+	ranges 10
+	labin FP=FTOXD3 SIGFP=SIGFTOXD3 FC=TOXFC PHIC=TOXPHIC
+eof-sigmaa
+
+###################################################################
+#  Calculate the "2Fo-Fc  map for an asymmetric unit
+###################################################################
+
+fft hklin ${base}_fofc_sa mapout ${base}_2fofc.map <<eof-fft
+	LABIN  F1=FWT SIG1=FWT PHI=TOXPHIC
+	TITLE Toxd Sigmaa 2MFo-DFc difference map using FTOXD3 data
+	END
+eof-fft
+
+###################################################################
+#  Extend the difference map to cover the molecule + 4 Ang
+###################################################################
+
+mapmask mapin ${base}_2fofc.map  mapout ${base}_2fofc_ext.map  \
+   xyzin ${coords} <<eof-mapmask
+	border 4
+        mode mapin
+eof-mapmask
+
+###################################################################
+#  Calculate the difference map for an asymmetric unit
+###################################################################
+
+fft hklin ${base}_fofc_sa mapout ${base}_fofc.map <<eof-fft
+	LABIN   F1=DELFWT SIG1=DELFWT PHI=TOXPHIC
+	TITLE Toxd Sigmaa Fo-Fc difference map using FTOXD3 data
+	END
+eof-fft
+
+###################################################################
+#  Extend the difference map to cover the molecule + 4 Ang
+###################################################################
+
+mapmask mapin ${base}_fofc.map  mapout ${base}_fofc_ext.map  \
+   xyzin ${coords} <<eof-mapmask
+	border 4
+        mode mapin
+eof-mapmask
+
+
+###################################################################
+#  Find position of significant peaks (more than 3.5 sigma) in extended map
+###################################################################
+
+peakmax mapin ${base}_fofc_ext.map xyzout ${base}_fofc.peaks <<eof-peakmax
+NUMPEAKS 200
+THRESHOLD RMS 3.5 NEGATIVES
+eof-peakmax
+
+
+########################################################
+#  Which residues are near (within 3.5 Ang) these peaks? 
+########################################################
+
+watpeak xyzin $coords peaks ${base}_fofc.peaks xyzout ${base}_watpeaks.pdb <<eof-watpeak
+	TITLE Peak positions using FTOXD3 data and final pdb
+	DISTANCE 3.5
+        SYMM 19
+eof-watpeak
+#

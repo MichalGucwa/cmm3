@@ -1,0 +1,522 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::MTZUTILS::Supported::MTZ manipulations / conversions::Reflection data files utility program:::::::: -->
+
+<H1> MTZUTILS (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>mtzutils </b>
+- Reflection data files utility program
+<H2> SYNOPSIS</H2>
+<b>mtzutils  hklin[1]  </b>
+<i>foo_in_i.mtz</i>
+[
+<b>hklin2 </b>
+<i>foo_in_j.mtz</i>
+]  
+<b>hklout  </b>
+<i>foo.mtz</i>
+<br>
+ [<A HREF="#keywords">Keyworded input</A>]
+<H2> <A NAME="description"></A>DESCRIPTION</H2>
+The MTZ utility program MTZUTILS is provided for the purpose of
+creating a new re-arranged or edited MTZ reflection data file from one or
+two existing files.  Consider also <a href="cad.html">CAD</a>, which has
+similar functions and should be used if you are not sure your input files
+are in the same region of reciprocal space.
+<H2> <A NAME="keywords"></A>KEYWORDED INPUT</H2>
+The program reads one or two input reflection data files and creates a
+single output reflection data file. The basic functions are selected using
+the file control option specification keywords. The available keywords and
+options are:
+<dl>
+<dt> (i)  General options<dd>
+<B><a href="#general_axis">AXIS</a></B>,
+<B><a href="#general_cell">CELL</a></B>,
+<B><a href="#general_column">COLUMN</a></B>,
+<B><a href="#general_header">HEADER</a></B>,
+<B><a href="#general_history">HISTORY</a></B>,
+<B><a href="#general_onefile">ONEFILE</a></B>,
+<B><a href="#general_resolution">RESOLUTION</a></B>,
+<B><a href="#general_run">RUN | GO | END</a></B>,
+<B><a href="#general_rzone">RZONE</a></B>,
+<B><a href="#general_scale">SCALE</a></B>,
+<B><a href="#general_sort">SORT</a></B>,
+<B><a href="#general_symmetry">SYMMETRY</a></B>,
+<B><a href="#general_title">TITLE</a></B>
+<dt> (ii) File Control Options<dd>
+<B><a href="#file_concat">CONCAT</a></B>,
+<B><a href="#file_exclude">EXCLUDE</a></B>,
+<B><a href="#file_include">INCLUDE</a></B>,
+<B><a href="#file_merge">MERGE</a></B>,
+<B><a href="#file_onefile">ONEFILE</a></B>,
+<B><a href="#file_unique">UNIQUE</a></B>
+</dl>
+<H3><a name="general_run"> RUN | GO | END</a></H3>
+Terminate the keyworded input and start processing.  [Optional, but
+advisable.]
+<H3><a name="general_symmetry"> SYMMETRY</a> </H3>
+Space group name or number.  Replace Symmetry information in the
+output MTZ file.
+<p>
+<i>Note that MTZUTILS should not be used to change the spacegroup of
+multirecord MTZ files, since it will not update the reflection indices
+or symmetry flags appropriately for the new spacegroup - use
+<a href="reindex.html">REINDEX</a> instead.</i>
+<H3><a name="general_sort"> SORT_ORDER h,k,l</a></H3>
+Input a combination of the strings H, K, and L.
+This is stored but not currently used.
+
+<H3><a name="general_cell"> CELL &lt;a&gt; &lt;b&gt; &lt;c&gt; [ &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt; ]</a></H3>
+Replace cell information in the output MTZ file (alpha, beta, gamma default 
+to 90.00). This will update the cell dimensions for <em>all</em> datasets
+in the output file. If you want finer control, then use the
+<a href="cad.html">CAD</a> program, or the corresponding CCP4i interface
+"Edit MTZ Datasets".
+
+<H3><a name="general_history"> HISTORY &lt;string&gt;</a></H3>
+Add to the history stack.
+<br>
+The string is added to existing history, in order.
+<br>
+Key_Word History
+<br>
+File_Number_1 History
+<br>
+File_Number_2 History
+<br>
+up until MAXHIS reached
+<H3><a name="general_title"> TITLE &lt;title&gt;</a>   </H3>
+Edit MTZ Titles.
+Examples:
+<pre>
+   TITLE 1 NOCHANGE 
+   TITLE 2 NOCHANGE
+   TITLE NOCHANGE            # ==&gt; from File_Number_1
+   TITLE REPLACE string    # ==&gt; from File_Number_1
+   TITLE 1 REPLACE string  # ==&gt; from File_Number_1
+   TITLE 2 REPLACE string  # ==&gt; from File_Number_2
+   TITLE ADD string        # ==&gt; from File_Number_1
+   TITLE 1 ADD string      # ==&gt; from File_Number_1
+   TITLE 2 ADD string      # ==&gt; from File_Number_2
+
+</pre>
+<H3><a name="general_column"> COLUMN_LABELS [ &lt;file&gt; ] &lt;program label&gt;=&lt;file label&gt;...</a></H3>
+Edit column label names.
+Examples:
+<pre>
+
+  COLUMN_LABELS Tom=Huey Dick=Dewey Harry=Luey     
+                       # ==&gt; from File_Number_1
+  COLUMN_LABELS 1 Tom=Huey Dick=Dewey Harry=Luey   
+                       # ==&gt; from File_Number_1
+  COLUMN_LABELS 2 Tom=Huey Dick=Dewey Harry=Luey   
+                       # ==&gt; from File_Number_2
+
+</pre>
+For the <A HREF="#file_merge">MERGE</A> option NO column editing is allowed.
+<P> 
+For Column Editing FIRST for assignments with a set of files
+with column labels:
+<pre>
+      File_1    H K L A B
+      File_2    H K L A C
+
+   using keywords as:
+       COLU 2 A=D
+       INCLUDE 1 A B
+       INCLUDE 2 D C
+
+</pre>
+<H3><a name="general_header"> HEADER BRIEF | HIST | ALL</a>   </H3>
+Controls printing of MTZ information.  STRING is one of following:
+<dl>
+<dt> NONE  (default)<dd>
+no header output
+<dt>   BRIEF<dd>
+brief header output
+<dt>   HIST<dd>
+brief, with MTZ history
+<dt>   ALL<dd>
+full header o/output from MTZ reads
+</dl>
+<H3><a name="general_resolution"> RESOLUTION &lt;limit1&gt; &lt;limit2&gt;</a></H3>
+Followed by minimum and maximum resolution for the output file.
+<br>
+resmin resmax (any order) OR smin smax (any order)
+resolution limits for output file.
+<H3><a name="general_axis"> AXIS &lt;zone&gt;</a></H3>
+Output reflection file restricted to given zone(s)
+<br>
+Use one or more of:
+<B>H00</B>, <B>0K0</B>, <B>00L</B>, <B>HH0</B>, <B>-HH0</B>, <B>HHH</B>, <B>HK0</B>, <B>0KL</B>, <B>H0L</B>, <B>HHL</B><br>
+<H3> <a name="general_rzone">RZONE &lt;rzone&gt;</a></H3>
+To select a zone then RZONE must be followed by 5 integers <EM>e.g.</EM>
+<pre>
+
+              +h +k +l = 3n
+
+==&gt;      RZONE 1  1  1   3    0
+
+and
+                     l = 2n + 1
+
+==&gt;      RZONE 0  0  1   2    1
+</pre>
+<H3><a name="general_scale"> SCALE ...</a></H3>
+Scale column labels by multiplying them with an input scale factor.
+<br>
+Input may be in one of the following styles:
+<DL>
+<DT> SCALE ALL J scale_value OR SCALE ALL I scale_value
+<DD>
+This option scales all intensities in the file (column type = J)
+by the value 'scale_value'.
+<DT>
+ SCALE ALL F scale_value
+<DD>
+As above but scales all column type = F
+<DT>
+ SCALE ALL D -1
+<DD>
+Reverses the sign of all anomalous values in the mtz file.
+<DT>
+ SCALE label_a1 label_an scale_value1 ... label_n1 label_nn scale_valuen
+<DD>
+ Applies scale values to specified labels.
+</DL>
+Scale in mtzutils is useful if you wish to scale columns in
+multi-record mtz files.  Warning: For the SCALE ALL F and SCALE ALL J
+options an attempt is made by the program to also scale any associated
+sigma values, anomalous differences and
+their sigmas (if present). If the labels are not in a standard format then the 
+program may try to scale the wrong columns. 
+In this case you may need to scale specific column
+labels as in the final example above. The SCALE input may only be used
+with the <A HREF="#file_onefile">ONEFILE</A> option.
+<H3> <A NAME="general_onefile"></A>ONEFILE </a>    </H3>
+This is compulsory if only one file is
+being used with the EXCLUDE/INCLUDE options and you have assigned
+HKLIN2.  If HKLIN2 isn't assigned, ONEFILE will be assumed.
+<H2> <A NAME="file_control_option_specification"></A>FILE CONTROL OPTION SPECIFICATION</H2>
+These options enable the user to select a particular task. Available
+options are <A HREF="#file_include">INCLUDE</A>, <A HREF="#file_exclude">EXCLUDE</A>, <A HREF="#file_unique">UNIQUE</A>, <A HREF="#file_concat">CONCAT</A> and <A HREF="#file_merge">MERGE</A>. Options INCLUDE and
+EXCLUDE are specific to a single input file, while options UNIQUE, CONCAT
+and MERGE apply to both input files. Option <A HREF="#file_onefile">ONEFILE</A> is required if there is
+just a single input file. As only two input files are allowed, the
+file specification options INCLUDE and EXCLUDE cannot be used with
+options UNIQUE, MERGE or CONCAT.
+<P> 
+If there is only one input file then the ONEFILE option is needed
+after the keywords for the first input file and succeeding keywords
+(except the cell dimensions, if required) are omitted.
+<P> 
+When operating on two files, the data items that are not defined in a record,
+will be set to the missing number flag. For instance when using the MERGE 
+option, the unique columns in file 2 will not be defined when writing out
+a record from file 1. The converse is also true. Note that multi-record files
+should not contain missing reflections, thus the output file could not be used
+as a normal multi-record file.
+<H3><a name="file_include"> (a) File control option INCLUDE</a></H3>
+This option applies to one of the input files. The file control
+option keyword containing the code INCLUDE containing a list of column 
+labels of data items to be copied to the output file. Column labels 
+for h, k and l should not be given among these labels. If the 
+input file has not got any of the labels requested for inclusion, 
+the job will be aborted. Title editing and column label editing 
+instructions are allowed.
+<H3><a name="file_exclude"> (b) File control option EXCLUDE</a></H3>
+This option applies to one of the input files. The file control
+option keyword containing the code EXCLUDE containing a list of 
+column labels of data items to be excluded when creating the 
+output file. Column labels corresponding to h, k and l
+should not appear among these label strings as they are taken
+care of automatically. The program is aborted if any requested
+label string is not found among edited column labels of the
+file. Title editing and column label editing keywords are allowed.
+<P> 
+Examples:
+<pre>
+
+   EXCLUDE Tom Dick Harry     # ==&gt; from File_Number_1
+   EXCLUDE 1 Tom Dick Harry   # ==&gt; from File_Number_1
+   EXCLUDE 2 Tom Dick Harry   # ==&gt; from File_Number_2
+
+   INCLUDE Tom Dick Harry     # ==&gt; from File_Number_1
+   INCLUDE 1 Tom Dick Harry   # ==&gt; from File_Number_1
+   INCLUDE 2 Tom Dick Harry   # ==&gt; from File_Number_2
+   INCLUDE                    # ==&gt; ALL columns from File_Number_1
+   INCLUDE ALL                # ==&gt; ALL columns from File_Number_1
+   INCLUDE 1 ALL              # ==&gt; ALL columns from File_Number_1
+   INCLUDE 2 ALL              # ==&gt; ALL columns from File_Number_2
+
+</pre>
+<H3><a name="file_onefile"> (c) File control option ONEFILE</a></H3>
+If the option INCLUDE or EXCLUDE is used when only one input file
+is required, the file control option ONEFILE should be used to
+indicate to the program that only one input file exists. 
+<H3><a name="file_unique"> (d) File control option UNIQUE</a></H3>
+This file control option specifies that each column of the two
+input files with a unique label is to be copied to the output
+file and that whenever a particular reflection appears in both
+the input files, the data should be merged into a single record
+of the output file.  Note that unique columns are recognised from
+the edited labels of the input files. If a column label is
+found in both the input files then the data value from the first
+file is copied to the output record unless it is the distinguished
+missing value, in which case the value from the second file (HKLIN2)
+will be copied to the output.
+<P> 
+Both the input files should
+have identical labels for h, k and l otherwise the output file
+will contain three extra columns containing the values of h, k
+and l derived from the second input file. The output file from
+this option is of the single record/reflection type (a normal MTZ
+file).
+<P> 
+WARNING: if the input data sets are not
+properly sorted on h, k and l (the first three columns), the
+output file may become of mixed type with both types of record
+present.
+<H3><a name="file_concat"> (e) File control option CONCAT</a></H3>
+This file control option specifies that the data records of the
+two input files are to be copied to the output file. The option
+is used to create a multiple record type output file from the two
+input files by merging them. The output file contains edited
+titles from both the input files and edited labels from the first
+input file. The labels of the first input file should be edited
+to become identical with the existing labels in the second input
+file failing which the program will abort.
+<P> 
+In this option the reflections are sorted. For sorting purposes the 
+missing number flag, for both files, is changed to a large negative value. 
+This is similar to <A HREF="sortmtz.html">SORTMTZ</A>. The missing number flag is then reset to that of
+the first file or the default (NaN).
+<H3><a name="file_merge"> (f) File control option MERGE</a></H3>
+This option creates a multi-record type merged MTZ file from two
+input MTZ files. The columns in the two input files need not be
+identical. The column labels in the output file will be the
+common labels from the two files, the unique labels from file 1
+and the unique labels from file 2.
+<H2> <A NAME="title_editing_option"></A>Title Editing Option</H2>
+The title of the output file is derived from the titles of the input
+files after appropriate editing based on the title editing options. At 
+present, the available options are REPLACE, NOCHANGE and ADD. For 
+each input
+file there may be one keyword of this type. The option REPLACE indicates
+that the existing title of the input file should be replaced by a new title
+before copying to the output file. The new title information is given on
+the same line. The option NOCHANGE (default) indicates that the title 
+information of the input file should be copied as it is the
+output file. The option ADD indicates that the output file should have all
+the title information supplied on the rest of the line, along 
+with that of the input file.
+<H2> <A NAME="column_label_editing_options"></A>Column Label Editing Options</H2>
+These keywords allow the re-naming of column labels of an input file
+before copying to the output file.
+For the options UNIQUE and CONCAT, these apply to the first input file. 
+The keywords contain entries of the type
+<pre>
+
+           label1=label2
+
+</pre>
+where label1 is an existing column label and label2 is the replacing label
+for the particular column. There should be at least one blank between two 
+such assignment statements. The statements may be spread over <A HREF="#general_column">COLUMN</A>
+keywords if required and are terminated by. If label1 is not found for a 
+particular assignment then label2 is tried and if still a failure the
+program will continue after giving an error message. 
+<H2> <A NAME="files"></A>INPUT AND OUTPUT FILES</H2>
+The input files are:
+<dl>
+<dt> HKLIN1<dd>
+The first input reflection data file
+<dt> HKLIN2<dd>
+The optional second input reflection data file
+<dt>   HKLOUT<dd>
+The output reflection data file
+</dl>
+<P>  
+The output file is a reflection data file which is normally in
+standard MTZ format though it may be of mixed record type if the option
+<A HREF="#file_unique">UNIQUE</A> is used with unsorted input files or will be of multiple record type
+if the option <A HREF="#file_concat">CONCAT</A> is used. The missing number flag for the output file is
+either defined as the one set in the first file or the default NaN. The input
+files need not have the same missing number flag.
+<H2> <A NAME="notes"></A>NOTES</H2>
+Where a value is not taken from an input file, a default value of 0
+will be supplied for the output file.
+<H2> <A NAME="output"></A>PRINTER OUTPUT</H2>
+The line printer output gives details of the input reflection data
+files as they are read, details of the commands input to the program and
+details of the output reflection data file which has been created.
+<H2> <A NAME="function"></A>PROGRAM FUNCTION</H2>
+The MTZ utility program is provided for the purpose of creating a new
+re-arranged or edited MTZ file from one or two existing files.
+The programs cannot perform any calculation on the data items appearing in
+the data records. The program is meant to create a new file with
+<ol>
+<li>
+re-arranged columns
+<li>
+re-named column labels
+<li>
+changed title information
+<li>
+items selected from one or two existing files
+<li>
+multiple records for each reflection from two single record files.
+</ol>
+<P>  
+The program cannot be used to exclude any data records or to create a
+file with multiple header labels. The program leaves the input files
+unaltered and deletes dummy labels before copying to the output file.
+<H2> <A NAME="bugs"></A>BUGS</H2>
+<! --  Dave Love dixit (following Jan Zelinka): -- >
+The functions of this program should be expressed in terms of the
+relational calculus operations (join, project, select etc.).  (MTZ
+files basically contain two RDB tables, the header information keyed
+on keywords (like CELL) and the reflections keyed on the combined H, K
+and L columns.)  If it was rewritten with this in mind it might be
+clearer and less buggy.
+<H2> SEE ALSO</H2>
+ <A HREF=cad.html>cad</A>
+<H2> <A NAME="examples"></A>EXAMPLES</H2>
+<H3> UNIQUE example</H3>
+<pre>
+
+    #!/bin/sh
+    mtzutils     hklin1 fvb_f.mtz 
+                 hklin2 2hfl_vhsearch.mtz 
+                 hklout unique.mtz 
+                 &lt;&lt; eof
+    HISTORY  testing unique
+    CELL 86.16 111.93 71.71 90.0 90.0 90.0
+    HEADER ALL
+    UNIQUE
+    RUN
+    eof
+
+</pre>
+<H3> UNIQUE with column editing</H3>
+<pre>
+    #!/bin/sh
+    mtzutils     hklin1 fvb_f.mtz 
+                 hklin2 2hfl_vhsearch.mtz 
+                 hklout unique.mtz 
+                 &lt;&lt; eof
+    SYMMETRY P21212
+    HISTORY  testing unique
+    CELL 86.16 111.93 71.71 90.0 90.0 90.0
+    HEADER ALL
+    COLUMNS fvb_F=tom fvb_SIGF=Harry
+    COLUMNS 2 2hfl_F=DiCK
+    UNIQUE
+    RUN
+    eof
+</pre>
+<H3> EXCLUDE example</H3>
+<pre>
+    #!/bin/sh
+    mtzutils     hklin1 fvb_f.mtz 
+                 hklin2 2hfl_vhsearch.mtz 
+                 hklout unique.mtz 
+                 &lt;&lt; eof
+    SYMMETRY P21212
+    HISTORY  testing unique
+    CELL 86.16 111.93 71.71 90.0 90.0 90.0
+    HEADER ALL
+    COLUMNS fvb_F=tom fvb_SIGF=Harry
+    COLUMNS 2 2hfl_F=DiCK
+    EXCLUDE fvb_DANO
+    EXCLUDE 2 2hfl_PHCAL
+    RUN
+    eof
+</pre>
+<H3> AXIS example</H3>
+<pre>
+#!/bin/sh
+mtzutils     hklin1 iv96.mtz 
+             hklout h0l_0kl.mtz 
+             &lt;&lt; eof
+ONEFILE
+INCLUDE ALL
+AXIS H0L 0KL 
+RUN
+eof
+</pre>
+<H3> RZONE example</H3>
+<pre>
+#!/bin/sh
+mtzutils     hklin1 iv96.mtz 
+             hklout zone.mtz 
+             &lt;&lt; eof
+ONEFILE
+INCLUDE ALL
+! h+k = 2n
+RZONE 1 1 0   2 0
+RUN
+eof
+</pre>
+<H3> SCALE example</H3>
+<pre>
+#!/bin/csh -f
+mtzutils     hklin1 int1.mtz 
+             hklout int1-3.mtz 
+             &lt;&lt; eof
+ONEFILE
+SCALE ALL I 3.0  ! could also use SCALE ALL J here
+RUN
+eof
+-- This will attempt to find the sigmas columns to scale as well --
+</pre>
+<H3> SCALE example - changing the sign of your anomalous data</H3>
+<br>
+(This is sometimes necessary if your detector software hasn't been set up
+correctly.)
+<br>
+<pre>
+#!/bin/sh
+mtzutils     hklin1 int.mtz 
+             hklout int_new.mtz 
+             &lt;&lt; eof
+ONEFILE
+SCALE ALL D -1
+RUN
+eof
+</pre>
+<H3> SCALE example - choosing specific columns</H3>
+<pre>
+#!/bin/csh -f
+mtzutils     hklin1 int.mtz 
+             hklout int_new.mtz 
+             &lt;&lt; eof
+ONEFILE
+SCALE F1 SIGF1 1.5 F2 2.0
+RUN
+eof
+-- This will print a warning that you are scaling a column 
+   without its sigma value - but proceeds anyway --
+value. 
+</pre>
+<H3>MERGE examples -combine merged native and sorted derivative data</H3>
+<pre>
+#!/bin/csh -f
+mtzutils hklin2 m6cb3_sort.mtz \
+         hklin1 m6c8_r \
+         hklout temp_m6cb3_resort << eof
+merge
+eof
+#
+sortmtz hklin temp_m6cb3_resort hklout m6cb3_resort << eof
+H K L M/ISYM BATCH
+eof
+-- Combine together merged native & sorted derivative data, by
+   interleaving reflection records
+   Must resort data after this step
+</pre>
+<H2> AUTHORS</H2>
+Eleanor Dodson and Howard Terry
+</body></html>

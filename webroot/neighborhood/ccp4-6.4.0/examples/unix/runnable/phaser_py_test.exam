@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# This is a short test script to test python binding
+# of phaser
+
+# The setpaths is included in ccp4.setup
+#. $CCP4/src/phaser/phaser-${phaser_version}/build/${phaser_mtype}/setpaths.sh
+
+cctbx.python <<EOF  
+import os          
+from phaser import *
+i = InputMR_DAT()
+i.setHKLI(os.environ['CEXAM']+"/toxd/toxd.mtz")
+i.addLABI("FTOXD3","SIGFTOXD3")
+o = Output()
+r = runMR_DAT(i,o)
+print r.summary()
+i = InputMR_AUTO()
+i.setSPAC_HALL(r.getSpaceGroupHall())
+i.setCELL6(r.getUnitCell())
+i.setREFL(r.getMiller(),r.getFobs(),r.getSigFobs())
+i.setROOT("toxd")
+i.addPDB_ID("toxd",os.environ['CEXAM']+"/toxd/toxd.pdb",1.0)
+i.addPROT(7071,1)
+i.addSEAR(["toxd"])
+del(r)
+r = runMR_AUTO(i,o)
+print r.summary()
+EOF

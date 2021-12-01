@@ -1,0 +1,220 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+    <META NAME="Generator" CONTENT="Microsoft FrontPage 4.0">
+    <TITLE>CCP4 Program Suite</TITLE>
+</HEAD>
+<BODY>
+<P>
+<!-- ::INDEX_INFO::ROTAMER::Supported::Model Analysis::List amino acids whose side chain torsion angles deviate from the Penultimate Rotamer Library:::::::: --></P>
+<H1>
+ROTAMER (CCP4: Supported Program)</H1>
+<H2>
+NAME</H2>
+<P>
+<B>rotamer </B>- list amino acids whose side chain torsion angles 
+deviate from the &quot;Penultimate Rotamer Library&quot;</P>
+<H2>
+SYNOPSIS </H2>
+<P>
+<B>rotamer xyzin </B><I>foo_in.pdb</I><BR>
+[<A HREF="#keywords">Keyworded input</A>] </P>
+<H2>
+<A NAME="description">DESCRIPTION</A></H2>
+<P>
+This program reads a protein coordinate file in PDB format and lists 
+all amino acids whose side chain torsion angles deviate more than a 
+user-defined threshold from the <a href="rotamer_table.html"> rotamers</a> of the &quot;Penultimate 
+Rotamer Library&quot; (<A HREF="#reference1">ref. 1</A>, Table I, 
+&quot;common-atom values&quot;). <BR>
+An amino acid is listed if at least one side chain torsion angle deviates
+more than a user-defined threshold <A HREF="#deltachi">DELT</A>&nbsp; from the
+equivalent one of the nearest rotamer.
+Empirically, the following two-step procedure to find the nearest 
+rotamer seems to work quite reasonably, producing only a few false 
+negatives or false positives: The first step is to choose a 
+subset of potential nearest rotamers in a hierarchical order going from 
+the first side chain torsion angle Chi(1) to the last side chain 
+torsion angle Chi(n). For a side chain with four Chi-angles, first, 
+all rotamers deviating less than the user-defined threshold in Chi(1) are 
+chosen, then of those all rotamers that deviate less in 
+Chi(2) are chosen, then of those all rotamers that deviate less in 
+Chi(3) are chosen, and finally of those all rotamers that deviate less 
+in Chi(4) are chosen. If a subset for Chi(i) is empty, the subset for 
+the previous Chi(i-1) is chosen and the hierarchical search is 
+terminated. If the subset for Chi(1) is empty, simply all rotamers are 
+chosen as a &quot;subset&quot;. The second step is to find the nearest 
+rotamer out of the previously chosen subset of rotamers. Here, the nearest 
+rotamer is the one with the minimum sum over the absolute Delta-Chi(i) 
+values.
+<P>
+<H4><U>Some remarks and hints</U></H4>
+A reasonable threshold to start with is 30&#176;, which is also the 
+default. In my experience, the deviation in Chi(1) is most important. 
+So, watch out for amino acids that deviate in Chi(1). For amino acids 
+with longer side chains, it is worth to look at residues with at least 
+two torsion angle deviations in the <A HREF="#printer_output">printer 
+output</A>. This could be a hint that an alternative (rotameric) 
+conformation might fit the electron density as well. Remember, that 
+even with current maximum-likelihood refinement programs the electron 
+density maps are still somewhat biased towards the current model. So, even if 
+an alternative conformation doesn't fit the electron density map 
+perfectly, it might be worth to try a refinement of that conformation and
+inspect the electron density map again. 
+For proline residues, it would be probably much better to check for 
+possible ring pucker modes as done in the program WHAT_CHECK (<A
+ HREF="#reference2">ref. 2</A>). Here, only the Chi(1) value of proline residues
+is checked.
+<P>
+<H4><U>Known limitations:</U></H4>
+<OL>
+<LI> All necessary coordinates for calculating side chain torsion angles must
+be provided, otherwise the program issues a warning and skips the residue.</LI>
+<LI> The output side chain torsion angles for residues with multiple 
+side chain conformations depend on the order of the atoms: the 
+last atoms in the coordinate file of all alternate conformations determine the
+values. For example, the following order of atom 
+records in a valine residue with two alternate side chain conformations 
+will result in the output of the side chain torsion angle of conformation B:</P>
+<font FACE="Courier New" SIZE="2">
+<p>ATOM&nbsp;&nbsp;&nbsp; 650&nbsp; CG1AVAL C
+444&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 4.997&nbsp; -1.309&nbsp;&nbsp;
+3.806&nbsp; 0.60 19.67&nbsp;<br>
+ATOM&nbsp;&nbsp;&nbsp; 651&nbsp; CG1BVAL C
+444&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2.959&nbsp; -1.564&nbsp;&nbsp;
+5.384&nbsp; 0.40 29.48&nbsp;<br>
+ATOM&nbsp;&nbsp;&nbsp; 652&nbsp; CG2AVAL C
+444&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3.111&nbsp; -1.499&nbsp;&nbsp;
+5.347&nbsp; 0.60 12.83&nbsp;<br>
+ATOM&nbsp;&nbsp;&nbsp; 653&nbsp; CG2BVAL C
+444&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 5.395&nbsp; -2.257&nbsp;&nbsp;
+5.300&nbsp; 0.40 12.68&nbsp;</p>
+</font>
+<P>
+whereas the following order of atom records will produce nonsense:</P>
+<P>
+<font FACE="Courier New" SIZE="2">ATOM&nbsp;&nbsp;&nbsp; 651&nbsp; CG1BVAL C
+444&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2.959&nbsp; -1.564&nbsp;&nbsp;
+5.384&nbsp; 0.40 29.48&nbsp;<br>
+ATOM&nbsp;&nbsp;&nbsp; 650&nbsp; CG1AVAL C
+444&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 4.997&nbsp; -1.309&nbsp;&nbsp;
+3.806&nbsp; 0.60 19.67&nbsp;<br>
+ATOM&nbsp;&nbsp;&nbsp; 652&nbsp; CG2AVAL C
+444&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3.111&nbsp; -1.499&nbsp;&nbsp;
+5.347&nbsp; 0.60 12.83&nbsp;<br>
+ATOM&nbsp;&nbsp;&nbsp; 653&nbsp; CG2BVAL C
+444&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 5.395&nbsp; -2.257&nbsp;&nbsp;
+5.300&nbsp; 0.40 12.68&nbsp;</font></P></LI>
+</OL>
+<H2>
+<A NAME="files">INPUT AND OUTPUT FILES</A></H2>
+<DL>
+    <DT>
+    XYZIN 
+    <DD>
+    Input coordinates in PDB format. 
+</DL>
+<H2>
+<A NAME="keywords">KEYWORDED INPUT</A></H2>
+<H3>
+<A NAME="deltachi">DELT &lt;threshold&gt;</A></H3>
+<P>
+List all amino acids with at least one side chain torsion angle 
+deviating more than |threshold| from its nearest <a href="rotamer_table.html">rotamer</a>. If this 
+keyword is not supplied or if its value is outside the allowed range of 
+[0,180]&#176;, the default value of 30&#176; is taken.</P>
+<H3>
+<A NAME="end">END</A></H3>
+<P>
+(Optional) Specifies the end of keyworded input and starts ROTAMER 
+running. </P>
+<H2>
+<A NAME="examples">EXAMPLES</A></H2>
+<P>
+List all amino acids with at least one side chain torsion angle 
+deviating more than 40&#176; from its nearest rotamer: </P>
+<PRE><font face="Courier New">
+  rotamer XYZIN foo_in.pdb &lt;&lt; eof 
+  delt 40
+  end
+  eof
+</font>
+</PRE>
+<p>
+<h3>Unix examples script found in $CEXAM/unix/runnable/</h3>
+
+          <li><a href="../examples/unix/runnable/rotamer.exam">rotamer.exam</a>
+<H2>
+<A NAME="printer_output">PRINTER OUTPUT</A></H2>
+<P>
+Each amino acid is listed with its chain name, residue number, residue 
+name, a flag, and the observed Chi(i) values followed by the Chi(i) 
+values of the nearest <a href="rotamer_table.html"> rotamer</a> in brackets. The output flag has a &quot;*&quot;
+in column &quot;i&quot; if the absolute value of Delta-Chi(i) is 
+greater than the user-defined threshold, and a &quot;o&quot; otherwise. 
+In the example below of a partially refined protein, the two residues A444 Val and
+C450 Arg were 
+intentionally modelled with wrong side chain torsion angles into the 
+electron density map. The residues A461 Lys and B461 Lys are very 
+poorly defined in the electron density map.</P>
+<P>
+<font FACE="Courier New" SIZE="2">Rotamer list with |Delta-Chi| = 30</P>
+<p>&nbsp; Residue&nbsp; Flag&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Chi1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Chi2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Chi3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Chi4<br>
+===================================================================<br>
+A 434 GLU&nbsp; oo*&nbsp;&nbsp;&nbsp; -71 ( -67)&nbsp;&nbsp; 174 (
+180)&nbsp;&nbsp; -74 ( -10)<br>
+A 444 VAL&nbsp; *&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 104 ( 63)<br>
+A 445 GLN&nbsp; oo*&nbsp;&nbsp;&nbsp; -79 ( -67)&nbsp;&nbsp; 178 (
+180)&nbsp;&nbsp; 122 ( -25)<br>
+A 446 LYS&nbsp; ooo*&nbsp;&nbsp; -71 ( -67)&nbsp; -179 ( 180)&nbsp;&nbsp; 178 (
+180)&nbsp; -145 ( 180)<br>
+A 448 GLN&nbsp; oo*&nbsp;&nbsp;&nbsp; -80 ( -67)&nbsp;&nbsp; 174 (
+180)&nbsp;&nbsp;&nbsp; 96 ( -25)<br>
+A 453 ARG&nbsp; ooo*&nbsp;&nbsp; -73 ( -67)&nbsp;&nbsp; 171 ( 180)&nbsp; -169 (
+180)&nbsp; -143 ( 180)<br>
+A 461 LYS&nbsp; *ooo&nbsp; -146 (-177)&nbsp;&nbsp;&nbsp; 83 ( 68)&nbsp;&nbsp;
+-177 ( 180)&nbsp;&nbsp; 179 ( 180)<br>
+B 445 GLN&nbsp; oo*&nbsp;&nbsp;&nbsp; 178 (-177)&nbsp;&nbsp; 180 ( 180)&nbsp;
+-121 ( 0)<br>
+B 448 GLN&nbsp; oo*&nbsp;&nbsp;&nbsp; -75 ( -67)&nbsp; -177 (
+180)&nbsp;&nbsp;&nbsp; 83 ( -25)<br>
+B 461 LYS&nbsp; oo**&nbsp;&nbsp; -60 ( -67)&nbsp; -176 ( 180)&nbsp;&nbsp; 148 (
+180)&nbsp;&nbsp; 145 ( 180)<br>
+C 432 ARG&nbsp; ooo*&nbsp;&nbsp; 175 (-177)&nbsp;&nbsp;&nbsp; 71 (
+65)&nbsp;&nbsp; -161 ( 180)&nbsp;&nbsp; -88 ( 180)<br>
+C 445 GLN&nbsp; oo*&nbsp;&nbsp;&nbsp; -73 ( -67)&nbsp; -177 (
+180)&nbsp;&nbsp;&nbsp; 62 ( -25)<br>
+C 448 GLN&nbsp; oo*&nbsp;&nbsp; -175 (-177)&nbsp;&nbsp; 161 ( 180)&nbsp; -103 (
+0)<br>
+C 450 ARG&nbsp; o***&nbsp;&nbsp; -72 ( -67)&nbsp; -135 ( 180)&nbsp; -101 (
+-65)&nbsp;&nbsp; 138 ( 105)</p>
+</font>
+<H2>
+<A NAME="references">REFERENCES</A></H2>
+<OL>
+<!-- KEEP startreferencelist -->
+    <LI>
+    <A NAME="reference1">Lovell</A>, S.C., Word, J.M., Richardson, J.S. 
+    &amp; Richardson, D.C. &quot;The penultimate rotamer library&quot;, 
+    Proteins: Structure, Function and Genetics, Vol.40, 389-408 (2000).
+    <LI>
+    <a NAME="reference2">Hooft</a>, R.W.W., Vriend, G., Sander, C. 
+    &amp; Abola, E.E. &quot;Errors in protein structures&quot;, Nature, 
+    Vol. 381, 272 (1996).
+<!-- KEEP endreferencelist --> 
+</OL>
+<H2>
+AUTHORS</H2>
+<P>
+Dirk Kostrewa, Paul Scherrer Institute, Villigen, March 2002</P>
+
+<H2>SEE ALSO</H2>
+
+<P><A HREF="rotamer_table.html">Rotamer tables</a>
+</P>
+
+</BODY>
+</HTML>

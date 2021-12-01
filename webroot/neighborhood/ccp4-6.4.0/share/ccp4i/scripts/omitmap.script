@@ -1,0 +1,56 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#===========================================================================
+#
+# omitmap.script
+#
+#===========================================================================
+
+# Go to scratch directory because sfcheck dumps files in current directory
+
+  ChangeDirectory [GetEnvPath CCP4_SCR]
+
+    # Set the output file basename
+    set basename [SetOutputFileRoot -tmp]
+
+    CreateComScript omitmap omitmap_script -nocontinue
+
+    DeleteFile sfcheck.log
+
+    # Generate command line
+    set cmd "[BinPath sfcheck]"
+    append cmd " HKLIN \"$HKLIN\""
+    append cmd " XYZIN \"$XYZIN\""
+    append cmd " PATH_SCR \"$basename\" PATH_OUT \"$basename\""
+
+    # Run Sfcheck
+    set status [Execute $cmd $omitmap_script program_status report]
+
+
+    # It is possible that sfcheck 6.0.3+ no longer writes out
+    # sfcheck.log - pjx 03-04-2002
+    if { [file exists sfcheck.log] } {
+      TranscribeFile sfcheck.log $LOG_FILE
+      DeleteFile sfcheck.log
+    }
+    
+    append map_file $basename sfcheck_ext.map
+    if { $map_file != "" && [file exists $map_file] } {
+      MoveFile $map_file $MAPOUT_FILE
+    }
+    
+    append hklout $basename sfcheck.hkl
+    if { $map_file != "" && [file exists $hklout] } {
+      MoveFile $hklout $HKLOUT
+   }
+    
+
+
+

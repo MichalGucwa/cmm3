@@ -1,0 +1,295 @@
+<html>
+<!DOCTYPE HTML PUBLIC "//IETF//DTD HTML 2.0//EN">
+<head><title>CCP4 Program Suite : revise</title></head>
+<body>
+
+<!-- ::INDEX_INFO::REVISE::Supported::Multiwavelength Anomalous Dispersion::estimates optimised value of the normalised anomalous scattering using MAD data:::::::: -->
+
+<H1> REVISE (CCP4: Supported Program)</H1>
+<h2>NAME</h2>
+<b>revise</b>
+- estimates FM using MAD data, where FM is an optimised value of the normalised anomalous scattering.
+<h2>SYNOPSIS</h2>
+<b>revise hklin</b>
+<i>foo_in.mtz</i>
+<b>hklout</b>
+<i>foo_out.mtz</i>
+<br>
+[<A HREF="#keywords">Keyworded input</A>]
+
+<h2><a name="description"> DESCRIPTION</a></h2> 
+<font color="red">REVISE is for MAD data only.</font> 
+<p>
+When anomalous data are collected at a variety of wavelengths such as in a  
+MAD experiment the relative scale of the data can be affected in different 
+ways such as different absorption effects or changes in the beam intensity. 
+These fluctuations could ultimately lead to the success or failure of the 
+data to solve the structure as the accuracy required of MAD data is 
+extremely high. If the data could be re-scaled in some way to smooth out  
+or remove these fluctuations it may be easier to determine the positions 
+of the anomalous scatterers. This is what the program REVISE aims to do. 
+<p>
+ 
+REVISE is used to modify MAD data in order to  estimate FM, the
+normalised anomalous scattering magnitude as defined in <A HREF="#equation2">Equation (2)</A>. The 
+difference
+between FM and the normalised structure factor E is that FM contains a
+scale factor and a temperature factor. FM can be used to calculate
+anomalous Patterson maps or for input to Direct Methods to locate
+the positions of anomalous scatterers. 
+<p>
+The program is based on two features which only exist in MAD data.
+For each reflection, one can write these equations: 
+<pre>
+<A NAME="equation1"></A>  [(FPHn(-))**2 - (FPHn(+))**2]/f"n = constant              (1)
+
+<A NAME="equation2"></A>  [(FH'n)**2 + (FH"n)**2]/[(f'n)**2 + (f"n)**2] = (FM)**2   (2)
+
+where:
+
+ FPHn(+) - total structure factor for h,k,l.
+ FPHn(-) - total structure factor for -h,-k,-l.
+ FH'n - real part of anomalous scattering structure factor.
+ FH"n - imaginary part of anomalous scattering structure factor.
+ n - wavelength n.
+ f'n - real component of anomalous scatterer.
+ f"n - imaginary component of anomalous scatterer. 
+</pre>
+and both should be independent of wavelength. 
+<p>
+The FPHn(+) and FPHn(-) can be modified to satisfy <A HREF="#equation1">Equation (1)</A>
+minimizing any fluctuations. Equation (2) is used to estimate the total
+anomalous scattering for each reflection [<A HREF="#reference1">reference 1</A>]. The program uses trial and 
+error to find a suitable range and aims to minimize differences in FM 
+between all the wavelengths. A figure of merit indicates the minimum point 
+and then the program takes the average value of FM for each wavelength 
+as a final value of FM. In general the use of FM rather than anomalous 
+differences can lead to better results in the determination of the 
+positions of the anomalous scatterers.
+<p>
+The program can handle up to ten wavelength anomalous scattering data sets.
+A minimum of at least two sets are required. REVISE does not require native 
+protein data, FP, and can only copy FP from input file to output file.
+
+<h2><a name="keywords">KEYWORDED INPUT</a></h2>
+The various data control lines are identified by keywords. Only the
+first 4 characters of a keyword are significant. The keywords can
+be in any order, except END (if present) which must be the last.
+Numbers and characters in "[ ]" are optional. 
+The compulsory keywords are <b>LABIN</b> and <b>WAVE</b>. The available 
+keywords are:
+<blockquote>
+<A HREF="#end"><b>END</b></A>, <A HREF="#excl"><b>EXCL</b></A>,
+<A HREF="#labin"><b>LABIN</b></A>, <A HREF="#labout"><b>LABOUT</b></A>,
+<A HREF="#reso"><b>RESO</b></A>,
+<A HREF="#title"><b>TITLE</b></A>, <A HREF="#wave"><b>WAVE</b></A>
+</blockquote>
+<h3><a name="title">TITLE</a> &lt;title&gt;</h3>
+This is a character title which replaces the old title in the MTZ file.
+
+<h3><a name="reso">RESO</a> &lt;rmax&gt;</H3>
+<P>&lt;rmax&gt; the high resolution limit in Angstrom.  
+If this command is absent, the default is to use all reflections in
+the file. 
+
+<h3><a name="labin">LABIN</a> &lt;program label&gt;=&lt;file label&gt;...</h3>
+
+This COMPULSORY keyword defines which entries in the MTZ file are to be 
+used in the calculation. The following <b>&lt;program label&gt;</b> can be  
+assigned:
+<pre>
+  FP        SIGFP        DP        SIGDP
+  FPH1(+)   SIGFPH1(+)   FPH1(-)   SIGFPH1(-)
+  FPH1      SIGFPH1      DPH1      SIGDPH1
+  FPH2(+)   SIGFPH2(+)   FPH2(-)   SIGFPH2(-)
+  FPH2      SIGFPH2      DPH2      SIGDPH2
+...........
+  FPH10(+)  SIGFPH10(+)  FPH10(-)  SIGFPH10(-)
+  FPH10     SIGFPH10     DPH10     SIGDPH10
+</pre>
+Example:
+<pre>
+  LABI -
+  FPH1(+)=FP1 SIGFPH1(+)=SFP1 FPH1(-)=FN1 SIGFPH1(-)=SFN1 -
+  FPH2(+)=FP2 SIGFPH2(+)=SFP2 FPH2(-)=FN2 SIGFPH2(-)=SFN2 -
+  FPH3(+)=FP3 SIGFPH3(+)=SFP3 FPH3(-)=FN3 SIGFPH3(-)=SFN3
+</pre>
+<p>
+<h3><a name="labout">LABOUT</a> &lt;program label&gt;=&lt;file label&gt;...</h3>
+This keyword allows the user to assign their own labels to the extra 
+entries created in the output file. All labels specified in <b>LABIN</b> will  
+automatically be in the output file. The following <b>&lt;program 
+label&gt;</b> can be assigned:
+<pre>
+  FPHM1(+)  SIGFPHM1(+)  FPHM1(-)  SIGFPHM1(-)
+  FPHM1     SIGFPHM1     DPHM1     SIGDPHM1
+  FPHM2(+)  SIGFPHM2(+)  FPHM2(-)  SIGFPHM2(-)
+  FPHM2     SIGFPHM2     DPHM2     SIGDPHM2
+....................
+  FPHM10(+) SIGFPHM10(+) FPHM10(-) SIGFPHM10(-)
+  FPHM10    SIGFPHM10    DPHM10    SIGDPHM10
+  FM        SIGFM
+</pre>
+Example:
+<pre>
+  LABO -
+  FPHM1(+)=FP1_mod  SIGFPHM1(+)=SFP1_mod - 
+  FPHM1(-)=FN1_mod  SIGFPHM1(-)=SFN1_mod - 
+  FPHM2(+)=FP2_mod  SIGFPHM2(+)=SFP2_mod -
+  FPHM2(-)=FN2_mod  SIGFPHM2(-)=SFN2_mod -  
+  FPHM3(+)=FP3_mod  SIGFPHM3(+)=SFP3_mod -  
+  FPHM3(-)=FN3_mod  SIGFPHM3(-)=SFN3_mod -
+  FM=FM_RE SIGFM=SFM_RE
+</pre>
+<p>
+<h3><a name="wave">WAVE</a> &lt;No. of data set&gt; [LAM &lt;wavelength&gt;] 
+[FPR &lt;f'&gt;] [FDP &lt;f"&gt;]</h3>
+The COMPULSORY keyword <b>WAVE</b> specifies the wavelength each data set was 
+collected at (WAVE 1..... WAVE 10). It is essential to specify the  
+f' (<b>FPR</b>) and f" (<b>FDP</b>) at each of these wavelengths. The values
+do not need to be very accurate, but it is important that they are at least
+in the correct order of magnitude.
+<pre>
+Example:
+
+  WAVE 1 LAM 0.9000  FPR -1.622  FDP 3.285
+  WAVE 2 LAM 0.9795  FPR -8.198  FDP 2.058
+  WAVE 3 LAM 0.9809  FPR -6.203  FDP 3.663
+</pre>
+<p>
+<h3><a name="excl">EXCL</a> [RISO &lt;riso&gt;] [RANO &lt;rano&gt;] [SIGM &lt;sigm&gt;]</h3>
+
+This optional keyword allows the criteria for excluding data to be set. 
+
+<p>
+
+If <b>[|DISO|/FPH]</b> <font size=4>&gt;</font> <b>&lt;riso&gt;</b> 
+then rejection occurs. 
+Default: <b>&lt;riso&gt;</b> = 0.10 (10%);
+<br>
+If  <b>[|DANO|/FPH]</b><font size=4> &gt;</font><b> &lt;rano&gt;</b> then 
+rejection occurs. Default: <b>&lt;rano&gt;</b> = 0.50 (50%);
+<br>
+If <b>[|FPH|/SIGFPH|]</b><font size=4> &lt;</font><b> &lt;sigm&gt;</b> then 
+rejection occurs. Default: <b>&lt;sigm&gt;</b> = 0.0.
+<pre>
+Example:
+
+EXCL RISO 0.15 RANO 0.40 SIGM 3.0
+</pre>
+<p>
+<h3><a name="end">END</a></h3>
+This states that the end of input has been reached. If present, this must  
+be last keyword.
+
+<h2><a name="files">INPUT AND OUTPUT FILES</a></h2>
+The input files are the keyword file and a standard MTZ reflection
+data file.
+<br>
+Input:
+<br>
+HKLIN input data file(MTZ).
+<br>
+Output:
+<br>
+HKLOUT output data file(MTZ).
+<p>
+Here are the definitions for each label:
+<pre>
+ Name           Item
+
+ H, K, L        Miller indices.
+
+ FP             F value for native protein.
+ SIGFP          Sigma(FP).
+ DP             Anomalous difference for native data.
+ SIGDP          Sigma(DP).
+
+ FPHn(+)        FPH(h,k,l) for wavelength 'n'.
+ SIGFPHn(+)     Sigma(FPHn(+)).
+ FPHn(-)        FPH(-h,-k,-l) for wavelength 'n'.
+ SIGFPHn(-)     Sigma(FPHn(-)).
+
+ FPHn           FPHn = 0.5 * (FPHn(+) + FPHn(-)).
+ SIGFPHn        Sigma(FPHn).
+ DPHn           DPHn = FPHn(+) - FPHn(-).
+ SIGDPHn        Sigma(DPHn).
+
+ FPHMn(+)       Modified FPH(h,k,l) for wavelength 'n'.
+ SIGFPHMn(+)    Sigma(FPHMn(+)).
+ FPHMn(-)       Modified FPH(-h,-k,-l) for wavelength 'n'.
+ SIGFPHMn(-)    Sigma(FPHMn(-)).
+
+ FPHMn          FPHMn = 0.5 * (FPHMn(+) + FPHMn(-)).
+ SIGFPHMn       Sigma(FPHMn).
+ DPHMn          DPHMn = FPHMn(+) - FPHMn(-).
+ SIGDPHMn       Sigma(DPHMn).
+
+ FM             anomalous contributions after applying REVISE.
+ SIGFM          Sigma(FM).
+</pre>
+<h2><a name="output">PRINTER OUTPUT</a></h2>
+The log output starts with details of the input keyword data
+lines. Information from the input MTZ file follows. An error
+message will be printed if any illegal input in the keyword
+data lines have been found and the program will stop. 
+<p>
+Statistics of the ratio 
+<p>
+[(FPHn(-))**2 - (FPHn(+))**2] / [(FPHm(-))**2 - (FPHm(+))**2]
+<p>
+between data set n and data set m are then printed in 10 resolution 
+ranges, for both before and after the revise procedure. It follows
+from <A HREF="#equation1">equation (1)</A> that this ratio should be equal to the ratio of f"n/f"m,
+and the revise procedure will tend to ensure this. Distributions
+of the ratios before the revise procedure are also given as
+<a href="xloggraph.html">XLOGGRAPH</a> plots, and these can be used
+as a guide to data quality. 
+<p>
+Details of the output file are printed at the end of log file.
+
+<h2><a name="references"> REFERENCE</a></h2>
+<ol>
+<!-- KEEP startreferencelist -->
+<li><A NAME="reference1"></A>
+Fan Hai-fu, Woolfson, M.M. &amp; Yao Jia-xing, (1993). <i>Proc. R.
+Soc. Lond.</i>
+<b>A</b> 442, 13-32.
+<!-- KEEP endreferencelist -->
+</ol>
+<h2><a name="authors">AUTHORS</a></h2>
+Yao Jia-xing and Eleanor Dodson.
+
+<h2><a name="examples">EXAMPLES</a></h2>
+<pre>
+revise \
+hklin $HOME/test.mtz \
+hklout $SCRATCH/test-revise.mtz\
+&lt;&lt; eof
+TITLE   testing revise
+LABI -
+FPH1=FSe1 SIGFPH1=SIGFSe1 DPH1=DSe1 SIGDPH1=SIGDSe1 -
+FPH2=FSe2 SIGFPH2=SIGFSe2 DPH2=DSe2 SIGDPH2=SIGDSe2 -
+FPH3=FSe3 SIGFPH3=SIGFSe3 DPH3=DSe3 SIGDPH3=SIGDSe3
+
+
+LABO -
+FPHM1=FSe1_mod SIGFPHM1=SIGFSe1_mod DPHM1=DSe1_mod -
+SIGDPHM1=SIGDSe1_mod FPHM2=FSe2_mod SIGFPHM2=SIGFSe2_mod -
+DPHM2=DSe2_mod SIGDPHM2=SIGDSe2_mod FPHM3=FSe3_mod -
+SIGFPHM3=SIGFSe3_mod DPHM3=DSe3_mod SIGDPHM3=SIGDSe3_mod -
+FM=FM_RE SIGFM=SFM_RE
+
+
+WAVE 1 LAM 0.9000  FPR -1.622  FDP 3.285
+WAVE 2 LAM 0.9795  FPR -8.198  FDP 2.058
+WAVE 3 LAM 0.9809  FPR -6.203  FDP 3.663
+
+EXCL RISO 0.15 RANO 0.40 SIGM 3.0
+
+END
+eof
+</pre>
+</body>
+</html>
+

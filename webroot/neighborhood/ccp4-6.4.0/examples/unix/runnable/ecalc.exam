@@ -1,0 +1,38 @@
+#!/bin/sh 
+
+set -e
+#
+#  Generate Es from input Fs
+#
+
+#  Minimal example:
+
+ecalc hklin $CEXAM/toxd/toxd.mtz hklout $CCP4_SCR/toxd_e.mtz << EOF
+LABIN FP=FTOXD3  SIGFP=SIGFTOXD3
+EOF
+
+#  Generating Es from anomalous data
+
+ecalc hklin $CEXAM/toxd/toxd.mtz hklout $CCP4_SCR/toxd_e_anom.mtz << EOF
+LABIN DPH=ANAU20  SIGDPH=SIGANAU20
+END
+EOF
+
+#  Example preparing input for Shake-and-Bake:
+
+ecalc hklin $CEXAM/toxd/toxd.mtz hklout $CCP4_SCR/toxd_snb.hkl << EOF
+LABIN FP=FTOXD3  SIGFP=SIGFTOXD3
+SNB                     ! select output for SnB
+REFLECTIONS 1500        ! will produce 1500 largest Es.
+EOF
+
+# Extract sample results for testing purposes - these can
+# be compared with runs with different versions or on different
+# platforms
+
+echo " " >> $CCP4_SCR/sample_results
+echo " *** ecalc.exam *** " >> $CCP4_SCR/sample_results
+echo " " >> $CCP4_SCR/sample_results
+mtzdmp $CCP4_SCR/toxd_e.mtz | grep "F  F_ecalc"  >> $CCP4_SCR/sample_results
+mtzdmp $CCP4_SCR/toxd_e.mtz | grep "E  E"  >> $CCP4_SCR/sample_results
+mtzdmp $CCP4_SCR/toxd_e.mtz | grep "Q  SIGE"  >> $CCP4_SCR/sample_results

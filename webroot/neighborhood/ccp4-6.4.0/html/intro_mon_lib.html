@@ -1,0 +1,145 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4 Program Suite: libcheck - introduction to monomer description</title>
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX64 6.2 IP19) [Netscape]" />
+</head>
+<body>
+
+<!-- ::INDEX_INFO::INTRO_MON_LIB::File Formats::Model Refinement::description of monomer library used in CCP4:::::::: -->
+
+<h1>MON_LIB (CCP4: Formats)</h1>
+<h1>INTRODUCTION TO MON_LIB</h1>
+
+<h2>Version 4.11</h2>
+<h2><a name="definition_monomer_description" id="definition_monomer_description"></a>What is a Monomer Description?</h2>
+
+<p>The refinement program <a href="refmac5.html">REFMAC</a> requires a complete chemical description of 
+all <strong>monomers</strong> (<em>i.e.</em> any molecular entity, <em>e.g.</em> 'protein residue' or 'ligand')
+which are referred to in the input coordinates.</p>
+
+<h3><a name="complete_description" id="complete_description"></a>Complete description</h3>
+
+<p>The <strong>complete description</strong> of a monomer includes lists of:</p>
+<ul>
+<li>all atoms with 
+<ul>
+<li>identifier (<em>i.e.</em> name)</li>
+<li>element symbol</li>
+<li>chemical type - Libcheck/Refmac has a set of defined atom chemical types which have
+properties such as VdW and ionic radii. The chemical type assigned to an atom depends on the
+chemical environment of the atom, <em>e.g.</em> an oxygen atom in an alcohol has a different
+type to an oxygen atom in carboxy group.</li>
+<li>partial_charge: Current version used as a whole unit of charge
+(<em>e.g.</em> PO4 as P=O1 P-O2 P-O3 P-O4).</li>
+</ul>
+</li>
+<li>covalent bonds, target bond lengths and standard deviations (SDs)</li>
+<li>angles, target bond angles and SDs</li>
+<li>torsion angles, target values and SDs</li>
+<li>chiral centres, with sign</li>
+<li>planes, with definitions of which atoms lie in a plane</li>
+<li>the tree structure of the monomer - an alternative representation of connectivity</li>
+</ul>
+
+<p>Note that values of VDW and ionic radii and definitions of inter-monomer restraints
+(<em>e.g.</em> to maintain a peptide bond) are not 
+in the monomer description but in alternative files described <a href="#library_files">below</a>.</p>
+
+<p>There are descriptions for commonly occurring residues and ligands in
+the library files in the directory $CLIBD_MON (<em>i.e.</em> $CCP4/lib/data/monomer)
+but for any novel monomer the crystallographer must provide the program Libcheck with a
+<strong>minimal description</strong> of the monomer from which the program can derive
+a <strong>complete description</strong>.</p>
+
+<h3><a name="minimal_description" id="minimal_description"></a>Minimal description</h3>
+
+<p>A <strong>minimal description</strong> must include a list of all
+non-hydrogen atoms (with the atom identifiers and element names), and all bonds and some
+extra information which can have any one of three forms:</p>
+<ul>
+<li>the bond order (<em>i.e.</em> single, double <em>etc.</em>); from this information the 'missing' hydrogen atoms
+can be deduced</li>
+<li>a list of all atoms, including hydrogens, and their connectivity; from this the bond orders can be deduced</li>
+<li>the atom chemical types which effectively define the hydrogen atoms and
+the bond order of bonds around an atom</li>
+</ul>
+
+<p>Practically, the user can provide this information:</p>
+<ul>
+<li>Using the CCP4i Sketcher to draw the monomer from scratch or by editing a similar
+monomer extracted from the library. The Sketcher acts as an interface to Libcheck.</li>
+<li>As a PDB file which includes all hydrogen atoms.</li>
+<li>As a PDB file without hydrogen atoms, read into the CCP4i Sketcher for the user to
+provide the bond order which is not defined in the PDB file.</li>
+<li>As a CIF file which contains one of the required combinations of information.</li>
+<li>As a SMILES string which is converted to a minimal description in
+CIF format by the program <a href="smiles2dict.html">SMILES2DICT</a>.</li>
+</ul>
+
+<p>The easiest way to interact with Libcheck is using the CCP4i Sketcher even if
+you already have either a PDB or CIF coordinate file.</p>
+
+<p>Please note that after generating a complete description from a minimal one
+it is advisable to check the complete description carefully. Also note
+that some of the entries in the library files are only minimal descriptions
+from which the complete description is derived. The minimal descriptions are
+derived from the
+<a href="ftp://ftp.rcsb.org/pub/pdb/data/monomers/components.cif">PDB dictionary of ligands</a>,
+which may contain errors for which the author(s) cannot take responsibility.</p>
+
+<a name="library_files" id="library_files"></a><h2>Library Files</h2>
+
+<p>The format of monomer descriptions and all library files is an extension of mmCIF.
+All attribute values in a CIF file are preceded by the name for that attribute.
+The recognised types of attribute are defined in a
+<a href="http://www.iucr.org/iucr-top/cif/index.html">dictionary file</a>
+which gives a definition for each attribute, and which should make the library files
+self-explanatory.</p>
+
+<p> The <strong>monomer library files</strong> describe the internal geometry of
+a monomer - they may contain complete or minimal descriptions of the monomers.
+CCP4 distributed library files are in the directory $CLIBD_MON ($CCP4/lib/data/monomer).
+Do not alter these files in any way, as this would corrupt the running of Refmac!
+If you want to change some description, you can use your own additional library
+with the correct description. In this case the last correct description will be
+used instead of the distributed one.</p>
+
+<p>See an <a href="libcheck.html#examples_complete">example of a complete monomer description</a>.</p>
+
+<p>Distributed library files containing complete and minimal descriptions:</p>
+<dl>
+<dt><strong><i>3code</i>.cif</strong></dt>
+<dd>The descriptions are arranged in a directory structure according to, in general, their 3 letter code, eg <i>l/LAT.cif</i>
+</dd>
+</dl>
+
+<p>There are two additional files in the <strong>$CLIBD_MON</strong> directory:</p>
+
+<dl>
+<dt><strong>ener_lib.cif</strong></dt>
+<dd>contains a complete list of VdW and ionic radii
+and target values for bond distances, angles and torsions for the different atom
+chemical types. When Libcheck generates a complete
+monomer description from a minimal one, target values are usually taken from ener_lib.cif
+and associated with the bond, angle or torsion in the monomer description file.
+Alternatively Libcheck can extract target values from an input coordinate file (see
+<a href="libcheck.html#coor">COOR</a> keyword). The user can edit the values in the monomer
+description file or they could change the values in ener_lib.cif.<br />
+When applying the monomer descriptions, the refinement procedure uses the chemical type
+in the monomer description to cross-reference the VdW and ionic radii in ener_lib.cif.</dd>
+
+<dt><strong>mon_lib_com.cif</strong></dt>
+<dd>contains
+<li>The chemical structure of links between polymers (<em>e.g.</em> <i>cis-</i> and
+<i>trans-</i>peptide bonds,
+disulfide bridges, glycosidic bonds for sugars, phosphate bridges for DNA)</li>
+<li>Chemical details of common modifications of monomers (<em>e.g.</em> termini of
+polypeptide chains, sugar modifications, termini of DNA/RNA)</li>
+</dd>
+</dl>
+
+<p>See details in <a href="mon_lib.html"><b>library of monomers</b></a>.</p>
+
+</body>
+</html>

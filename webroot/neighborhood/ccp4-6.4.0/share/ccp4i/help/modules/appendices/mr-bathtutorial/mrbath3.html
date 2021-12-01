@@ -1,0 +1,201 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4 Interface: I. Tickle tutorial MR (continuation 3)</title>
+<link rel="stylesheet" type="text/css" href="../../../ccp4idocs.css" title="CCP4i" />
+<link rev="made" href="mailto:mgwt@yorvic.york.ac.uk" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta name="AUTHOR" content="Maria and Liz" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="2"><img src="../../../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logotitle">MR Tutorial Bath - Operations summary</td></tr>
+</table>
+
+<table class="bathbuttons" width="100%">
+<tr>
+<td><a href="mrbath2.html"><img src="back.gif" /></a></td>
+<td align="center"><a href="mrbath98.html">BACK TO INDEX</a></td>
+<td align="right"><a href="mrbath4.html"><img src="forward.gif" /></a></td>
+</tr>
+</table>
+
+<h1>3. Summary of operations</h1>
+
+<p>This section details flowcharts for the various operations required for structure solution, using
+as examples the programs for MR in the <strong>CCP4</strong> package, assuming that a merged reflection data
+file (in &quot;MTZ&quot; format) and a coordinate file (in &quot;PDB&quot; format) are available. In fact two
+alternative strategies are presented, the only essential difference being that the first uses <em>F</em>'s
+(possibly &quot;sharpened&quot;), and the second uses <em>E</em>'s (normalised amplitudes). The first is more of
+a &quot;black box&quot; procedure in that it uses only the <strong>AMORE</strong> program, and it will no doubt easily
+solve the majority of structures. The second is more complicated in that some auxiliary
+programs are needed; however it will be demonstrated that it succeeds in some difficult cases
+(such as NCS) where the &quot;black box&quot; procedure has difficulty.</p>
+
+<h3>3.1. AMoRe rotation function using <em>F</em>'s</h3>
+
+<h4>3.1.1. AMoRe SORTFUN</h4>
+
+<p>Convert the reflection data file into the internal format used by the <strong>AMORE</strong> program
+(<strong>AMORE / SORTFUN</strong>).</p>
+
+<h4>3.1.2. AMoRe TABFUN</h4>
+
+<p>Optionally rotate the search model so that its principal axes of inertia are parallel to the
+coordinate axes, and the centroid of the coordinates is shifted to the origin. This helps to
+minimise the size of cell required in the next step. Also compute a molecular Fourier transform
+for use in structure factor calculation by interpolation (<strong>AMORE / TABFUN</strong>).</p>
+
+<h4>3.1.3. AMoRe ROTFUN GENERATE</h4>
+
+<p>Compute structure factor amplitudes for the search model in space group P1 in a large
+rectangular cell (<strong>AMORE / ROTFUN / GENERATE</strong>).</p>
+
+<h4>3.1.4. AMoRe ROTFUN CLMN</h4>
+
+<p>Compute spherical harmonic coefficients for the target and model Pattersons, optionally
+using &quot;sharpened&quot; <em>F</em>'s (<strong>AMORE / ROTFUN / CLMN</strong>).</p>
+
+<h4>3.1.5. AMoRe ROTFUN ROTATE</h4>
+
+<p>Think about the expected asymmetric unit of the cross-RF, and compute it as a function
+of the Eulerian angles
+(<a href="../chargifs/al.gif"><font face="symbol">a</font></a>,
+<a href="../chargifs/be.gif"><font face="symbol">b</font></a>,
+<a href="../chargifs/ga.gif"><font face="symbol">g</font></a>).
+There should be a peak for each molecule in the asymmetric
+unit (<strong>AMORE / ROTFUN / ROTATE</strong>).</p>
+
+<h3>3.2. Rotation function using <em>E</em>'s</h3>
+
+<h4>3.2.1. PDBSET</h4>
+
+<p>Modify the PDB header in the coordinate file, so that it has CRYST and SCALE records
+for the chosen cell in the RF (<strong>PDBSET</strong>).</p>
+
+<h4>3.2.2. SFALL</h4>
+
+<p>Compute structure factor amplitudes in space group P1 for the search model in a large
+rectangular cell (<strong>SFALL</strong>).</p>
+
+<h4>3.2.3. ECALC</h4>
+
+<p><strong>Normalise both</strong> the observed and calculated amplitudes (<strong>ECALC</strong> - 2 runs).</p>
+
+<h4>3.2.4. AMoRe SORTFUN</h4>
+
+<p>Convert the normalised observed and calculated reflection data files into the internal
+format used by the <strong>AMORE</strong> program (<strong>AMORE / SORTFUN</strong> - 2 runs).</p>
+
+<h4>3.2.5. AMoRe ROTFUN CLMN</h4>
+
+<p>Compute spherical harmonic coefficients for the target and model Pattersons, (<strong>AMORE
+/ ROTFUN / CLMN</strong>).</p>
+
+<h4>3.2.6. AMoRe ROTFUN ROTATE</h4>
+
+<p>Think about the expected asymmetric unit of the cross-RF, and compute it as a function
+of the Eulerian angles
+(<a href="../chargifs/al.gif"><font face="symbol">a</font></a>,
+<a href="../chargifs/be.gif"><font face="symbol">b</font></a>,
+<a href="../chargifs/ga.gif"><font face="symbol">g</font></a>).
+There should be a peak for each molecule in the asymmetric
+unit, usually the highest (<strong>AMORE / ROTFUN / ROTATE</strong>).</p>
+
+<p>In each case, the low and high resolution cutoffs and the radius of integration should be varied,
+and the peak lists examined for consistency. If possible also check for consistency between
+different models (rotate first into a common orientation).</p>
+
+<h4>3.2.7. POLARRFN &amp; PLTDEV, then AMoRe ROTFUN ROTATE RFCORR</h4>
+
+<p>In the case of NCS, using <em>E</em>'s compute and plot the self-Rotation function in terms of
+spherical polar angles (<strong>POLARRFN</strong> &amp; <strong>PLTDEV</strong>). Then recompute the self-Rotation function
+in terms of Euler angles and check for consistency with the cross-RF peak list (<strong>AMORE /
+ROTFUN / ROTATE, RFCORR</strong>).</p>
+
+<h3>3.3. AMoRe translation function using <em>F</em>'s</h3>
+
+<h4>3.3.1. AMoRe TRAFUN</h4>
+
+<p>For the best 10-20 RF solutions, compute the TF; in case of difficulty, try varying the
+resolution cutoffs and sharpening factors (<strong>AMORE / TRAFUN</strong>).</p>
+
+<h4>3.3.2. AMoRe TRAFUN 2</h4>
+
+<p>In the case of NCS, fix the first molecule found and compute the TF for the second;
+proceed stepwise in the same manner for the remaining molecules (<strong>AMORE / TRAFUN</strong>).</p>
+
+<h4>3.3.3. AMoRe FITFUN</h4>
+
+<p>For the best 10-20 TF solutions, do rigid-body refinements and choose the solution with
+the highest <strong>correlation coefficient (AMORE / FITFUN</strong>).</p>
+
+<h4>3.3.4. AMoRe TABFUN / PDBSET</h4>
+
+<p>Apply the <strong>rotation matrix</strong> and <strong>translation vector</strong> to the model coordinates output by
+<strong>AMORE / TABFUN</strong> (<strong>PDBSET</strong>).</p>
+
+<h3>3.4. Translation function using <em>E</em>'s</h3>
+
+<h4>3.4.1. PDBSET</h4>
+
+<p>For each molecule in the asymmetric unit apply the appropriate rotation matrix,
+calculated from the Eulerian angles of the peak(s) in the RF, to the model coordinates. Also
+modify the PDB header in the coordinate file, so that it has CRYST and SCALE records for the
+<strong>target</strong> cell (<strong>PDBSET</strong> - run for each molecule in the asymmetric unit).</p>
+
+<h4>3.4.2. SFALL</h4>
+
+<p>Calculate structure factor amplitudes and phases (<strong>SFALL</strong> - run for each molecule in the
+asymmetric unit).</p>
+
+<h4>3.4.3. CAD</h4>
+
+<p>Combine all the columns for the observed reflection data with those for the calculated
+molecules into a single file (<strong>CAD</strong>).</p>
+
+<h4>3.4.4. TFFC</h4>
+
+<p>Normalise all the columns of amplitudes and compute the Fourier coefficients for the
+<strong>intra-molecular vector subtracted full-symmetry Translation function</strong> (<strong>TFFC</strong>).</p>
+
+<h4>3.4.5. FFT</h4>
+
+<p>Think about the asymmetric unit of the TF. This is usually a fraction of the unit cell, for
+example in polar space groups the TF map is 2-dimensional. Compute the Fourier transform
+to get the <strong>Translation function map</strong> (<strong>FFT</strong>). </p>
+
+<h4>3.4.6. MAPSIG</h4>
+
+<p>Search the Translation function map for peaks; one peak should stand out from the rest
+with relative signal/noise &gt; 1 (<strong>MAPSIG</strong>).</p>
+
+<h4>3.4.7. TFFC, then FFT and MAPSIG</h4>
+
+<p>In cases of non-crystallographic symmetry it is necessary to place all molecules relative
+to the same origin with <strong>non-crystallographic Translation functions</strong>; note that the asymmetric
+unit is always a whole primitive cell (<strong>TFFC</strong>, then <strong>FFT</strong> and
+<strong>MAPSIG</strong> as before for each molecule in the asymmetric unit).</p>
+
+<h4>3.4.8. PDBSET</h4>
+
+<p>Apply this <strong>translation vector</strong> to the rotated model coordinates (<strong>PDBSET</strong>).</p>
+
+<h3>3.5. Computer graphics</h3>
+
+<p>Finally, view the transformed molecules in the unit cell on the <strong>computer graphics</strong> and
+check for good packing.</p>
+
+<table class="bathbuttons" width="100%">
+<tr>
+<td><a href="mrbath2.html"><img src="back.gif" /></a></td>
+<td align="center"><a href="mrbath98.html">BACK TO INDEX</a></td>
+<td align="right"><a href="mrbath4.html"><img src="forward.gif" /></a></td>
+</tr>
+</table>
+
+</body></html>

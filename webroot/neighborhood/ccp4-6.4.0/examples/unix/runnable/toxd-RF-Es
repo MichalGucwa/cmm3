@@ -1,0 +1,43 @@
+#! /bin/sh
+
+set -e
+set -a
+
+# Rotation function for toxd with the model referred to in the toxd paper
+# (which didn't yield a MR solution).  Expository only -- no attempt to
+# optimise the parameters (Dave Love doesn't know what he's doing...) .
+
+# The list of solutions output can be used to calculate the translation
+# function either with Fs using amore or with Es using tffc.
+
+# Invariant parameters:
+modelpdb=$CEXAM/unix/runnable/1aal
+mtzdata=$CEXAM/toxd/toxd
+FPin=FTOXD3
+Rmult=0.8
+BMAX=90                         # in P212121
+keepmap=yes                     # enable plotting RF map
+
+# Four runs at combinations of high and low resolution cutoffs, output in
+# tagged files tagged with the resolution range:
+for hires in 3 4.5; do
+  for lores in 12 15; do
+    OPDIR=$CCP4_SCR/$lores-$hires-
+    hires=$hires
+    lores=$lores
+
+    $CEXAM/unix/runnable/RF-with-Es
+done; done
+
+# Plot (one of) the resulting RF maps.  The parameters could doubtless
+# be improved and the solutions should be marked...
+npo mapin 12-3-data_ecalc_rotfun plot $CCP4_SCR/rf <<+
+title 12 -- 3 A RF (x,y,z)==(alpha,beta,gamma)
+cell 360 360 360
+map scale .8
+grid 25 25
+contrs sig 1 2
+sectns 0 10 1
+plot
++
+#

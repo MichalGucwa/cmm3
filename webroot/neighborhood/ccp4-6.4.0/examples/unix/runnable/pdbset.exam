@@ -1,0 +1,91 @@
+#!/bin/sh
+
+set -e
+
+# Run PDB file through PDBSET with no keywords.
+# PDBSET will tidy the format where possible.
+# In this case, the TER card is re-written according to full PDB specification.
+
+pdbset XYZIN $CEXAM/toxd/toxd.pdb XYZOUT $CCP4_SCR/toxd_tidy.pdb <<EOF
+END
+EOF
+
+###################  Take output from O into a form suitable for refinement
+
+pdbset xyzin $CEXAM/toxd/toxd.pdb xyzout $CCP4_SCR/toxd_junk.pdb << eof
+cell    132.02  115.21   96.20   90.00   90.00   90.00
+NCODE 1
+# New cell in junk.pdb, it is recommended that a spgrp is also given
+spacegroup P212121
+eof
+
+if false; then
+
+###################  Take output from Xplor into a form suitable for refinement
+
+pdbset xyzin $CEXAM/toxd/toxd_xplor.pdb xyzout $CCP4_SCR/junk.pdb << eof
+cell    132.02  115.21   96.20   90.00   90.00   90.00
+spacegroup P212121
+xplor
+eof
+
+fi
+
+################### Re-label chains in toxd.pdb ##############
+
+# First we give waters unique residue numbers
+
+pdbset xyzin $CEXAM/toxd/toxd.pdb xyzout $CCP4_SCR/toxd_relabel1.pdb << eof
+# renumber residues for waters
+renumber 101 1 to 59 chain W
+end
+eof
+
+# Second we do several chain name edits. Net effect should be zero in this example!
+
+pdbset xyzin $CCP4_SCR/toxd_relabel1.pdb xyzout $CCP4_SCR/toxd_relabel2.pdb << eof
+# label all chains 'q'
+chain q
+# change label 'q' to 'A' for 59 residues
+renumber 1 1 to 59 chain q to A
+# change label 'q' to 'W' or 'S' for remaining waters & sulphurs
+renumber 60 60 to 64 chain q to S
+renumber 101 101 to 159 chain q to W
+eof
+
+# Reset B values to a given range
+
+pdbset xyzin $CEXAM/toxd/toxd.pdb xyzout $CCP4_SCR/toxd_bfac.pdb << eof
+bfac range 10.0 50.0
+end
+eof
+
+if false; then
+
+######################## Expand dimer to tetramer, rename chains, transform
+#
+#  Make tetramer from dimer
+#
+pdbset xyzin ecrproducts268.pdb xyzout ecrprodpqrtet.pdb <<eof-1
+remark  Tetramer generated from AB dimer
+remark   rotated to pqr frame
+remark
+! Generate other dimer by z-dyad in P21212
+symgen  x,y,z
+symgen -x,-y,z
+! Rename chains in second dimer: V & W are water chains
+chain symmetry 2   A C
+chain symmetry 2   B D
+chain symmetry 2   V X
+chain symmetry 2   W Y
+! transform to molecular frame
+transform -
+  0.87831   0.47808   0  -
+    0         0     -1.  -
+ -0.47808   0.87831   0  -
+ 0.0  -2.713  0.0
+! can also be done with shift & rotate
+eof-1
+
+fi
+#

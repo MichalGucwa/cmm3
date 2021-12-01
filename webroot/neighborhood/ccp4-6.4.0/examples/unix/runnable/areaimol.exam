@@ -1,0 +1,78 @@
+#!/bin/sh
+
+#
+# Example scripts for areaimol using toxd data
+#
+
+# used to distinguish different runs in html logfile
+CCP_PROGRAM_ID=run1
+export CCP_PROGRAM_ID
+##################################################
+#
+# Simple area calculation (verbose output)
+#
+##################################################
+areaimol XYZIN $CEXAM/toxd/toxd.pdb \
+         XYZOUT $CCP4_SCR/sarea1.brk <<eof-area
+VERB      ! Verbose output
+OUTPUT    ! Output pseudo-pdb file
+END
+eof-area
+#
+##################################################
+#
+# Water differences with lattice symmetry contacts
+# and probe radius set to 1.6 A
+#
+##################################################
+CCP_PROGRAM_ID=run2
+areaimol XYZIN $CEXAM/toxd/toxd.pdb  <<eof-area
+DIFFMODE WATER
+SMODE IMOL
+SYMMETRY 19
+TRANS
+PROBE 1.6
+END
+eof-area
+#
+##################################################
+#
+# Differences due to intermolecular lattice
+# contacts, ignoring waters
+#
+##################################################
+CCP_PROGRAM_ID=run3
+areaimol XYZIN $CEXAM/toxd/toxd.pdb \
+         XYZOUT $CCP4_SCR/sdiff1.brk <<eof-area
+DIFFMODE IMOL
+MODE NOHOH
+OUTPUT
+SYMMETRY 1
+SYMMETRY 19
+TRANS 2
+END
+eof-area
+#
+##################################################
+#
+# Area change due to absence of a residue
+#
+##################################################
+#
+# First: make an altered version of toxd by
+# cutting out LYS A residues using the unix
+# 'grep' command
+#
+grep -v 'LYS A   5' $CEXAM/toxd/toxd.pdb > $CCP4_SCR/toxd_1.pdb
+#
+# Then obtain the resulting area differences
+#
+CCP_PROGRAM_ID=run4
+areaimol XYZIN $CEXAM/toxd/toxd.pdb \
+         XYZIN2 $CCP4_SCR/toxd_1.pdb \
+         XYZOUT $CCP4_SCR/sdiff2.brk <<eof-area
+DIFFMODE COMPARE
+OUTPUT
+END
+eof-area
+#

@@ -1,0 +1,31 @@
+#!/bin/sh
+
+set -e
+
+# Simple example using data from the tutorial
+# Atom coordinates are taken from nat_sul_ref.ha
+# This also works with other wavelengths, but the
+# peak gives the clearest solution (most positive C)
+
+abs HKLIN $CEXAM/tutorial/data/gere_peak.mtz  << eof | tee $CCP4_SCR/abs_check.log
+TITLE check hand of Se substructure
+LABIN F=F_peak SIGF=SIGF_peak DANO=DANO_peak SIGDANO=SIGDANO_peak
+RESO 4.0
+ATOM   0.257  0.000  0.245 
+ATOM   0.206  0.392  0.859
+ATOM   0.430  0.182  0.881
+ATOM   0.469  0.244  0.245 
+ATOM   0.184  0.069  0.530
+ATOM   0.324  0.401  0.610
+ATOM   0.282  0.232  0.921 
+ATOM   0.080  0.146  0.986
+ATOM   0.071  0.222  0.808
+ATOM   0.335  0.157  0.317
+ATOM   0.497  0.177  0.416   
+ATOM   0.141  0.165  0.219
+eof
+
+if test -z "`grep "\*correct" $CCP4_SCR/abs_check.log`"; then 
+  echo '! abs has given incorrect configuration' 1>&2
+  exit 1
+fi

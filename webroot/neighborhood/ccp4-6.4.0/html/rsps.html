@@ -1,0 +1,1381 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>CCP4 Program Suite: rsps</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]">
+</HEAD>
+<BODY>
+
+<!-- ::INDEX_INFO::RSPS::Supported::Multiple Isomorphous Replacement::heavy atom positions from derivative difference Patterson maps:::::::: -->
+
+<H1>RSPS (CCP4: Supported Program)</H1>
+<H2>NAME</H2>
+<B>rsps </B>
+- heavy atom positions from derivative difference Patterson maps.
+<BR><BR>
+
+<H2>SYNOPSIS</H2>
+
+<P><B>rsps</B> <BR>
+<a href="#keywords">[Keyworded input]</a> </P>
+<BR><BR>
+
+<H2>IDENTIFICATION</H2>
+
+<DL>
+<DT>Program name: 
+
+<DD>RSPS, Version 4.2 
+
+<DT>Language: 
+
+<DD>F77 with exceptions as listed <A HREF="#known_exceptions">below</A> 
+
+<DT>Availability: 
+
+<DD>Unix, Windows, MacOS X
+
+<DT>Spacegroups: 
+
+<DD>All acentric spacegroups 
+
+<DT>Originator: 
+
+<DD>Stefan D.  Knight 
+
+<DT>Contact: 
+
+<ADDRESS>Stefan Knight,<BR>
+SLU, Dept. of Mol. Biol.,<BR>
+BMC, Box 590,<BR>
+S-751 24 Uppsala, Sweden.<BR>
+Phone: + 46 - (0)18 471 45 54<BR>
+Email: <A HREF="mailto:stefan@xray.bmc.uu.se">STEFAN@XRAY.BMC.UU.SE</A></ADDRESS>
+
+<DT>Reference: 
+<DD>Knight, S.D. (1999): <I>RSPS version 4.0: a semi-interactive vector-search program for solving
+heavy-atom derivatives</I>, Acta Cryst. D 
+<DD>Knight, S.D. (1989): <I>Ribulose 1,5-Bisphosphate Carboxylase/ Oxygenase - A
+Structural Study</I>, Thesis, Swedish University of Agricultural Sciences, Uppsala. 
+</DL>
+<BR><BR>
+
+<H2><A NAME="contents">CONTENTS</A></H2>
+<H3>
+<MENU>
+<LI><A HREF="#description">Description</A>
+<LI><A HREF="#keywords">Commands</A>
+<LI><A HREF="#files">Input and output files</A>
+<LI><A HREF="#map_requirements">Patterson map requirements</A>
+<LI><A HREF="#options">Summary of RSPS search options</A>
+<LI><A HREF="#examples">Examples</A>
+<LI><A HREF="#structure">Program structure</A>
+<LI><A HREF="#comments">Miscellaneous comments on the use of the program</A>
+<LI><A HREF="#changes">Input changes from 3.2 to 4.2</A>
+</MENU>
+</H3>
+<BR><BR>
+
+<H2><A NAME="description"></A>DESCRIPTION</H2>
+<P>
+RSPS is a command-driven program intended to help protein crystallographers solve their heavy atom derivatives.
+The program can also be used as an interactive tool to examine the fit of potential heavy atom sites to the
+difference Patterson map. The program can handle all acentric spacegroups. RSPS version 4.0 may also be used to
+locate molecules with NCS. The goal of RSPS is not to generate a complete solution to the heavy atom difference
+Patterson, but rather to find enough sites to allow initial phases to be calculated for difference Fourier
+analysis. The program as such will not provide absolute answers and it is therefore very useful if you have at
+least a rudimentary understanding of the Patterson function, and of how to solve it, before you start using RSPS.
+See for example <A HREF="#reference4">Stout &amp; Jensen (1989), chapter 12</A>;
+<A HREF="#reference3">Blundell &amp; Johnson (1976), chapter 11</A>.
+</P>
+<P>
+RSPS is a <B>grid search program</B> that provides search options as well as options for examining potential
+solutions. All options operate in real and vector space. Searches can be performed to locate either heavy atom
+positions, or, under certain conditions, to locate the position of molecules with internal symmetry. Searches are
+carried out by assigning trial positions on a grid covering the asymmetric unit of the crystal, and then computing
+a score for each trial position, based on the Patterson densities at the positions corresponding to the predicted
+vectors for each position. From the symmetry operators (crystallographic and/or non-crystallographic) all unique
+transformations that map a point in real (crystal) space to a point in vector (Patterson) space are generated. In
+other words, these transformations map a point in real space to the Patterson vectors associated with that point. 
+</P>
+<P>
+Search options are divided into six groups depending on the vector set to be used in the search. The available
+sets are of two main types: <B>atom vector sets</B> that are used to search for the position of heavy atoms, and
+<B>molecule vector sets</B> that are used to find the position of molecules with NCS when at least one NCS axis is
+closely parallel to a crystallographic symmetry axis. The two main types of vector sets each have three
+subcategories termed <B>single</B>, <B>more</B>, and <B>translate</B>. With single vector sets (selected by
+<A HREF="#vectorset_single">VECTORSET SINGLE</A>), the position of one site at a time is determined by considering
+vectors between symmetry related positions. This type of search is referred to as a single site search. When only
+SGS (spacegroup symmetry) is used in a single site search, this corresponds to using only Harker vectors, <EM>i.e.</EM>
+vectors between SGS-related positions. When NCS is applied, cross vectors that may be termed pseudo-Harker vectors
+will be generated between NCS-related positions. The combination of SGS and NCS will in addition generate cross
+vectors between positions on different copies of the NCS protein molecule. Once at least one atom position (or NCS
+molecule) has been found, it may be fixed and used to search for further sites by considering cross vectors from
+trial sites to the fixed site(s) (using <A HREF="#vectorset_more">VECTORSET MORE</A>).
+<A HREF="#vectorset_translate">VECTORSET TRANSLATE</A> is used to search simultaneously for two or more atoms
+provided that their inter-atomic vectors are known. Both SGS and NCS may be independently switched on and off,
+giving a very flexible means of controlling the type of vectors to be used in the search.
+</P>
+<P>
+With the search options, a volume of the unit cell (usually one asymmetric unit) is scanned, and test points assigned
+on a grid within this volume. In single and more site searches, the scan parameter is the coordinates of a heavy atom
+position whereas in translate mode the scan parameter is the translation of the rigid fragment. For each test point,
+the values of the Patterson function at the predicted Patterson vector positions are collected and combined in some
+way (presently <B>sum</B>, <B>product</B> and <B>harmonic mean</B> functions are available). All or only the minimum
+<I>N</I> peaks may be used in the scoring function. The value of the combining function (the &quot;score&quot;) is
+stored on a CCP4 format map (the &quot;scoremap&quot;, defined with the <A HREF="#scorfile">SCORFILE</A> command).
+A rejection level for peaks may be specified (<A HREF="#reject">REJECT</A> command) together with a limit for the
+maximum number of peaks allowed to be less than the rejection level (<A HREF="#low">LOW</A> command). When this limit
+is passed, further work on that test position is aborted and it is given a score of zero. In this way computation for
+obviously wrong solutions may be aborted at an early stage which may considerably reduce the time needed for the
+search. The combined use of this rejection scheme and judicious use of the minimum function leads to a flexible set of
+scoring options well suited to accommodate the varying degree of &quot;vectorness&quot; of a protein difference
+Patterson function.
+</P>
+<P>The map resulting from a search will contain peaks at the positions of possible heavy atom (or molecule) sites and
+at positions related to these by a shift in origin or by inversion. The scoremap may be picked using the
+<A HREF="#pick_scoremap">PICK SCOREMAP</A> command to generate a list of potential heavy atom sites. Coordinates of
+(potential) heavy atom sites may also be read from an external file using the <A HREF="#read">READ</A> command.
+Coordinates are stored in the main coordinate array (<A HREF="#xyzstore">see below</A>). Picking or reading new
+coordinates will overwrite any previously stored coordinates. Coordinates for up to 800 positions may be stored. Each
+position is given <B>position</B> number which is just a sequential numbering of the stored coordinates, and a
+<B>site</B> number that groups together positions that generate the same set of Harker vectors. The site number
+thus groups positions related by inversion and/or origin shift (or spacegroup symmetry), <EM>i.e.</EM> different
+representations of the same solution. The assignment of site numbers may be quite slow for high-symmetry spacegroups.
+Also note that due to rounding errors positions with the same site number will not necessarily have exactly the same
+score, although in most cases they will. The position and site number may be used to reference position for use with
+the <A HREF="#vlist">VLIST</A> and <A HREF="#fixxyz">FIXXYZ</A> commands. 
+</P>
+<P>
+Given a list of potential heavy atom positions, the <A HREF="#getsets">GETSETS</A> option may be used to search for
+sets of positions. This is done by looking at the cross vectors between all pairs of atoms (and their symmetry related
+equivalents) in the list. If a pair of positions pass the rejection criteria as specified by <A HREF="#reject">REJECT</A>
+and <A HREF="#low">LOW</A> they are flagged as <I>connected</I>, otherwise they are flagged as <I>unconnected</I>. The
+program then finds all sets where all pairs of positions are flagged as connected. The output from
+<A HREF="#getsets">GETSETS</A> consists of, for each set, the coordinates of the positions in the set and a score table
+giving the score for the vectors generated by these positions. The <A HREF="#table">TABLE</A> command may be used to
+write out the score table for any currently stored set, or for a user defined set. The command <A HREF="#list_sets">LIST
+SETS</A> will give a summary listing of all stored sets. 
+</P>
+<P>
+A single site search in a polar spacegroup will result in a list of potential positions where one coordinate has not
+been determined (this will have been arbitrarily set to zero by the program). The <A HREF="#polarscan">POLARSCAN</A>
+option may then be used to try and relate different solutions from the single site search to the same origin by fixing
+one position and translating the others, one at a time, along the polar axis. Scores based on all the cross vectors
+between the fixed and the translated position (and their symmetry-related equivalents) are computed as a function of
+displacement along the polar axis and stored. This type of search does not produce a scoremap, instead the coordinates
+are put directly in the main positions storage area where they will overwrite any previously stored coordinates. 
+</P>
+<P>
+The <A HREF="#vlist">VLIST</A> option is used to examine potential solutions. If the Patterson map has been picked
+(<A HREF="#pick_patterson">PICK PATTERSON</A>) the list of stored peaks is searched to find peaks close to the
+predicted vectors. The largest peak within 2.5 grid divisions from a predicted vector is listed together with the
+distance (in Angstrom) from the predicted vector. Note that the Patterson peaks as such are never used in a search.
+</P>
+<P>
+<A NAME="xyzstore"></A>There are two areas for storing coordinates: the main coordinate array and the
+<A HREF="#fixxyz">FIXXYZ</A> coordinate array. Coordinates from picking the scoremap, as well as coordinates read from
+a file using the <A HREF="#read">READ</A> command are stored in the main coordinate array. When new positions are stored
+here these will overwrite any previously stored coordinates. Coordinates may be inserted in the <A HREF="#fixxyz">FIXXYZ</A>
+coordinate array by copying from the main coordinate array or by explicitly giving the fractional coordinates.
+Coordinates in the FIXXYZ area are stored until explicitly deleted (<A HREF="#delete_fixxyz">DELETE FIXXYZ</A>). The
+number of positions that may be stored in the different coordinate storage areas are defined by the MXPICK and MXIPSN
+parameters. These parameters are set in the include file rspsdim4.inc. Values of the parameters in the distributed
+program are listed under &quot;<A HREF="#spacelimits">Space limitations</A>&quot; below. 
+</P>
+<BR><BR>
+<H2><A NAME="keywords"></A>COMMANDS</H2>
+<P>
+Commands are listed below in <B>bold face</B>, arguments in <I>italics</I>, optional subcommands and arguments are
+given in parenthesis (), and defaults in square brackets []. Angular brackets &lt; &gt; are used to enclose a list of
+alternative subcommands or arguments, separated by |. Curly brackets {} indicate that the enclosed subcommand may be
+repeated, a suffixed number sometimes indicating the maximum number of repetitions. Several commands may be entered on
+a single line separated by a semicolon (&quot;;&quot;) (exception: the macro command &quot;@ <I>filename</I>&quot;
+must be on a line by itself) and may be abbreviated. A command line may be continued over several input lines by
+appending a hyphen (&quot;-&quot;) or ampersand (&quot;&amp;&quot;) at the end. Arguments and subcommands should be
+separated by tabs or spaces. Both upper case and lower case is OK. Entering a command without its argument(s) echoes
+back the current value of the argument(s). Anything following an exclamation mark (&quot;!&quot;) or a hash sign
+(&quot;#&quot;) is treated as a comment and ignored, as are blank lines. 
+</P>
+
+<P>The available commands are:</P>
+
+<DL>
+<DT><a href="#keywords_scoring">Scoring commands:</a>
+    <DD><a href="#score">Score</a>,
+        <a href="#weight">Weight</a>,
+        <a href="#tolerance">Tolerance</a>,
+        <a href="#bump">Bump</a>,
+        <a href="#reject">Reject</a>,
+        <a href="#low">Low</a>.
+</DL>
+
+<DL>
+<DT><a href="#keywords_symmetry">Symmetry commands:</a>
+    <DD><a href="#cell">Cell</a>,
+        <a href="#spacegroup">Spacegroup</a>,
+        <a href="#sgsymm">Sgsymm</a>,
+        <a href="#ncsrot">Ncsrot</a>,
+        <a href="#ncsymm">Ncsymm</a>.
+</DL>
+
+<DL>
+<DT><a href="#keywords_patterson">Patterson and score map commands:</a>
+    <DD><a href="#patfile">Patfile</a>,
+        <a href="#scorfile">Scorfile</a>.
+</DL>
+
+<DL>
+<DT><a href="#keywords_coordinate_manipulation">Coordinate manipulation commands:</a>
+    <DD><a href="#fixxyz">Fixxyz</a>,
+        <a href="#rotate">Rotate</a>,
+        <a href="#addsub">Add/Subtract</a>,
+        <a href="#read">Read</a>,
+        <a href="#write">Write</a>.
+</DL>
+
+<DL>
+<DT><a href="#keywords_searching">Searching and checking commands:</a>
+    <DD><a href="#vectorset">Vectorset</a>,
+        <a href="#scan">Scan</a>,
+        <a href="#polarscan">Polarscan</a>,
+        <a href="#getsets">Getsets</a>,
+        <a href="#vlist">Vlist</a>,
+        <a href="#table">Table</a>,
+        <a href="#pick">Pick</a>.
+</DL>
+
+<DL>
+<DT><a href="#keywords_misc">Miscellaneous commands:</a>
+    <DD><a href="#macro">@ filename</a>,
+        <a href="#print">Print</a>,
+        <a href="#status">Status</a>,
+        <a href="#list">List</a>,
+        <a href="#delete">Delete</a>,
+        <a href="#help">Help</a>,
+        <a href="#exit">Exit</a>,
+        <a href="#quit">Quit</a>.
+</DL>
+
+<P>Alphabetic listing:
+<BLOCKQUOTE>
+<A HREF="#macro"><B>@ filename</B></A>, 
+<A HREF="#addsub"><B>add/subtract</B></A>, 
+<A HREF="#bump"><B>bump</B></A>, 
+<A HREF="#cell"><B>cell</B></A>, 
+<A HREF="#delete"><B>delete</B></A>, 
+<A HREF="#exit"><B>exit</B></A>, 
+<A HREF="#fixxyz"><B>fixxyz</B></A>, 
+<A HREF="#getsets"><B>getsets</B></A>, 
+<A HREF="#help"><B>help</B></A>, 
+<A HREF="#list"><B>list</B></A>, 
+<A HREF="#low"><B>low</B></A>, 
+<A HREF="#ncsrot"><B>ncsrot</B></A>, 
+<A HREF="#ncsymm"><B>ncsymm</B></A>, 
+<A HREF="#patfile"><B>patfile</B></A>, 
+<A HREF="#pick"><B>pick</B></A>, 
+<A HREF="#polarscan"><B>polarscan</B></A>, 
+<A HREF="#print"><B>print</B></A>, 
+<A HREF="#quit"><B>quit</B></A>, 
+<A HREF="#read"><B>read</B></A>, 
+<A HREF="#reject"><B>reject</B></A>, 
+<A HREF="#rotate"><B>rotate</B></A>, 
+<A HREF="#scan"><B>scan</B></A>, 
+<A HREF="#score"><B>score</B></A>, 
+<A HREF="#scorfile"><B>scorfile</B></A>, 
+<A HREF="#sgsymm"><B>sgsymm</B></A>, 
+<A HREF="#spacegroup"><B>spacegroup</B></A>, 
+<A HREF="#status"><B>status</B></A>, 
+<A HREF="#table"><B>table</B></A>, 
+<A HREF="#tolerance"><B>tolerance</B></A>, 
+<A HREF="#vectorset"><B>vectorset</B></A>, 
+<A HREF="#vlist"><B>vlist</B></A>, 
+<A HREF="#weight"><B>weight</B></A>, 
+<A HREF="#write"><B>write</B></A>
+</BLOCKQUOTE>
+</P>
+<BR>
+
+<H3><A NAME="keywords_scoring"></A>Scoring commands</H3>
+<DL>
+<DT><A NAME="score"></A><B>Score</B> (&lt; [<B>sum</B> <I>n</I> [all]] | <B>product</B> <I>n</I> [all] |
+<B>harmonic</B> <I>n</I> [all] | <B>minimum</B> <I>n</I> [1] &gt;)<BR><BR>
+<A NAME="score_sum"></A><A NAME="score_product"></A><A NAME="score_harmonic"></A><DD>Selects scoring function:<BR>
+<B>Sum</B> = sum function, <B>product</B> = product function, <B>harmonic</B> = harmonic mean function. An argument
+<I>n</I> may be given to specify that only the <I>n</I> smallest peaks should be used in scoring (the default is to
+use all peaks).
+<A NAME="score_minimum"></A> The command <B>score minimum</B> <I>n</I> may alternatively be given as a separate
+command to select the min(<I>n</I>) function. 
+<BR><BR><BR>
+
+<DT><A NAME="weight"></A><B>Weight</B> (<I>n</I> [1])<BR><BR>
+<DD>Determines how the peaks are weighted in the score function: <BR>
+<PRE>
+<I>n</I>   = 1    w(i) = 1.0
+<I>n</I>   = 2    w(i) = mult(i) ; the multiplicity of peak i.
+</PRE>
+The Patterson peaks are multiplied by w(i) before forming the score so that using <B>weight</B> 2 with the sum
+function results in a correlation function between the observed and predicted (but unscaled) Patterson vectors. 
+<BR><BR><BR>
+
+<DT><A NAME="tolerance"></A><B>Tolerance</B> (<I>pektol</I> [0])<BR><BR>
+<A NAME="tolerance_pektol"></A><DD>When scoring, the peak density used is the maximum value found within
+a box +- <I>pektol</I> grid units around the predicted vector position. By setting
+<I>pektol</I> = 1 this allows for slight initial misplacement of positions in the <B><A HREF="#getsets">getsets</A></B>
+and <B><A HREF="#polarscan">polarscan</A></B> options where cross vectors between pairs of fixed positions are used,
+and also for small errors in non-crystallographic symmetry.
+<BR><BR><BR>
+
+<DT><A NAME="bump"></A><B>Bump</B> (<I>dist</I> [3.5])<BR><BR>
+<A NAME="bump_dist"></A><DD>Shortest allowed minimum distance (in Angstrom) between symmetry related
+positions (using <A HREF="#vectorset_single"><B>single vectorset</B></A> and
+<A HREF="#vectorset_translate"><B>translate vectorset</B></A>), or between a fixed position
+and a new position (using <A HREF="#vectorset_more"><B>more vectorsets</B></A>). If a negative value is given then
+null vectors are still allowed, <EM>i.e.</EM> special positions will be included in the search (applies to single
+vectorsets only; when using more vectorsets no check is made for special positions).
+<BR><BR><BR>
+
+<DT><A NAME="reject"></A><B>Reject</B> (<I>rlevel</I> [1*sigma])<BR><BR>
+<DD>Rejection level for peaks, in units of the standard deviation of the Patterson map.
+<BR><BR><BR>
+
+<DT><A NAME="low"></A><B>Low</B> (<I>n</I> [0])<BR><BR>
+<DD>Maximum number of peaks/search point (peaks/atom pair with <B><A HREF="#getsets">getsets</A></B>) allowed to be
+less than <I>rlevel</I> (the value specified with the <B><A HREF="#reject">reject</A></B> command).
+</DL>
+<BR>
+
+<H3><A NAME="keywords_symmetry"></A>Symmetry commands</H3>
+<DL>
+<DT><A NAME="cell"></A><B>Cell</B> (<I>a b c alpha beta gamma</I>)<BR><BR>
+<DD>Unit cell parameters in Angstrom and degrees. Cell parameters are normally read from the Patterson map header
+or the coordinate file header but for some operations it may be necessary to specify them explicitly. The best thing
+to do is probably to stick them at the top of a &quot;startup&quot; <A HREF="#macro">macro</A> together with the
+spacegroup definition, file names <EM>etc.</EM>
+<BR><BR><BR>
+
+<DT><A NAME="spacegroup"></A><B>Spacegroup</B> (&lt; <I>spgnum</I> | <I>spgnam</I> &gt;)<BR><BR>
+<DD>Read spacegroup symmetry from library file. The spacegroup may be specified by number or name. The spacegroup
+command must be specified <B>before</B> the <B><A HREF="#patfile">patfile</A></B> command.
+<BR><BR><BR>
+
+<DT><A NAME="sgsymm"></A><B>Sgsymm</B> (&lt; <B>on</B> | <B>off</B> &gt;)<BR><BR>
+<DD>Switch use of crystallographic symmetry on/off. 
+<BR><BR><BR>
+
+<DT><A NAME="ncsrot"></A><B>Ncsrot</B> (&lt; <B>matrix</B> <I>r11 r12 r13 r21 r22 r23 r31 r32 r33 t1 t2 t3</I> |
+<B>polar</B> <I>omega phi kappa t1 t2 t3</I> | <I>n</I>-<B>fold along</B> &lt; <B>x</B> | <B>y</B> | <B>z</B> |
+<I>l m n</I> &gt; (<B>through</B> <I>t1 t2 t3</I>) | <B>ortho</B> <I>code</I> [1] &gt;)<BR><BR>
+<DD>Read non-crystallographic symmetry. NCS may be specified in one of three different formats: either
+<BR><BR>
+<OL>
+<LI><A NAME="ncsrot_matrix"></A>as a <B>matrix</B> given row by row followed by three translational components
+(fractional),</LI>
+<BR><BR>
+<LI><A NAME="ncsrot_polar"></A>as <B>polar angles</B> + translations (translation applied after rotation:
+xrot = Rx + t ),</LI>
+<BR><BR>
+<LI><A NAME="ncsrot_nfoldalong"></A>or by defining the order of the rotation axis using the <I>n</I>-<B>fold along</B>
+construct, where <I>n</I> = 2, 3, 4, or 6. The direction of the rotation axis can be given as three direction cosines
+<I>l</I>, <I>m</I>, <I>n</I>, or in shorthand notation as <B>x</B>, <B>y</B>, or <B>z</B> if the rotation axis is
+parallel to one of the crystallographic axes.
+<A NAME="ncsrot_through"></A>The location of the axis is specified by giving the fractional coordinates
+of a point on the axis with the <B>through</B> subcommand.</LI>
+</OL>
+<BR>
+Each symmetry operation except the identity must be explicitly given, even in the case of proper symmetry.
+<BR><BR>
+<A NAME="ncsrot_ortho"></A><B>Ortho</B> <I>code</I> specifies the orthogonalized frame in which the given
+non-crystallographic symmetry operates:<BR>
+<PRE>
+code = 1,  orthogonal x y z  along  a,c*xa,c*  (Brookhaven, default)
+     = 2                            b,a*xb,a*
+     = 3                            c,b*xc,b* 
+     = 4                            a+b,c*x(a+b),c*
+     = 5                            a*,cxa*,c  (Rollett)
+</PRE>
+To initialize the NCS arrays use <B><A HREF="#delete_ncs">delete ncs</A></B>. The
+<B><A HREF="#cell">cell dimensions</A></B> must be known prior to reading non-crystallographic symmetry. It is useful
+to put the NCS definition in a macro.
+<BR><BR><BR>
+
+<DT><A NAME="ncsymm"></A><B>Ncsymm</B> (&lt; <B>on</B> | <B>off</B> &gt;)<BR><BR>
+<DD>Switch use of non-crystallographic symmetry on/off.
+</DL>
+<BR>
+
+<H3><A NAME="keywords_patterson"></A>Patterson and score map commands</H3>
+<DL>
+<DT><A NAME="patfile"></A><B>Patfile</B> (<I>filename</I> [patterson] (<B>type</B> &lt; [<B>ccp4</B>] |
+<B>protein</B> &gt;) (<B>scale</B> <I>s1</I> [1.0] (<I>s2</I> [0.0])) (<B>truncate</B> <I>from to</I>)
+({<B>reset</B> &lt; <B>origin</B> | <I>u v w</I> &gt; <I>radius level</I>}))<BR><BR>
+<DD>This command is used to read and (possibly) at the same time modify the Patterson map by scaling, truncation,
+and resetting peaks.
+<A NAME="patfile_type"></A>The <B>type</B> subcommand specifies the type of map file to be read. At present
+<B>ccp4</B> and <B>protein</B> format maps are recognized.
+<A NAME="patfile_scale"></A>The <B>scale</B> subcommand is used to specify a scale to be
+applied to the Patterson densities such that rho_scaled = <I>s1</I> x rho + <I>s2</I>.
+<A NAME="patfile_truncate"></A>The <B>truncate</B> subcommand sets a maximum for the densities in the map. Densities
+above <I>from</I> are then truncated to <I>to</I>.
+<A NAME="patfile_reset"></A>The subcommand <B>reset</B> is used to reset the densities within the specified
+<I>radius</I> (in Angstrom) of the origin or position <I>u v w</I> (fractional coordinates) to <I>level</I>. The default
+is to not reset any points in the map, but it is recommended that the origin peak, and any strong peaks arising from
+non-crystallographic translations, are reset to zero or a low value (in the background).  The spacegroup must be known
+prior to reading the Patterson map (<B><A HREF="#spacegroup">spacegroup</A></B> command). 
+<BR><BR><BR>
+
+<DT><A NAME="scorfile"></A><B>Scorfile</B> (<I>filename</I> [rsps.map] (<B>sect</B> <I>fast slow sect</I> [Y X Z])
+(<B>title</B> <I>string</I> [Real Space Patterson Search Map]))<BR><BR>
+<DD>Define <B><A HREF="#scan">scan</A></B> output file (the &quot;scoremap&quot;).
+<A NAME="scorfile_sect"></A>Optionally, the sectioning of the scoremap may be specified here by using the <B>sect</B>
+subcommand.
+<A NAME="scorfile_title"></A>A title string (maximum length 80 characters) to be written on the scoremap header may
+also be specified using the <B>title</B> subcommand. The actual title written also contains a string stating the type
+of scan and the run date. If the title contains any words that are also RSPS command words, the title must be enclosed
+by quotes.
+</DL>
+<BR>
+
+<H3><A NAME="keywords_coordinate_manipulation"></A>Coordinate manipulation
+commands</H3>
+<DL>
+<DT><A NAME="fixxyz"></A><B>Fixxyz</B> (&lt; <B>site</B> <I>n1</I> (<I>n2</I>) | <B>position</B> <I>n1</I> (<I>n2</I>) |
+<B>set</B> <I>n1</I> (<I>n2</I>) | <B>peak</B> <I>n1</I> (<I>n2</I>) | <I>x y z</I> &gt;)<BR><BR>
+<DD>Up to 30 positions may be stored in the <B>fixxyz</B> area. These coordinates are kept in core until explicitly
+deleted (<B><A HREF="#delete_fixxyz">delete fixxyz</A></B>). With <A HREF="#vectorset_more"><B>more vectorsets</B></A>
+the  positions stored in this area are used as the fixed positions; in
+<A HREF="#vectorset_translate"><B>translate vectorsets</B></A> they define the rigid fragment to be translated.
+<A NAME="fixxyz_site"></A><A NAME="fixxyz_position"></A><A NAME="fixxyz_set"></A><A NAME="fixxyz_peak"></A>Coordinates
+may be  specified explicitly (fractional) or by reference to <B>site</B>, <B>position</B>, <B>set</B> or <B>peak</B>
+numbers. Giving just one number selects one position whereas giving  two numbers selects a range.
+<BR><BR><BR>
+
+<DT><A NAME="rotate"></A><B>Rotate</B> &lt; <B>position</B> <I>n1</I> (<I>n2</I>) | <B>fixxyz</B> <I>n1</I> (<I>n2</I>)
+&gt; &lt; <B>sgs</B> <I>m1</I> (<I>m2</I>) | <B>ncs</B> <I>m1</I> (<I>m2</I>) | <B>matrix</B> <I>r11...r33</I>
+(<I>t1 t2 t3</I>) &gt; (<B>fixxyz</B> (<I>k1</I>))<BR><BR>
+<A NAME="rotate_position"></A><A NAME="rotate_fixxyz"></A><DD>Rotate position(s) <I>n1</I> through <I>n2</I> from the
+main coordinate area (<B>positions</B> subcommand) or from the <B>fixxyz</B> area by spacegroup symmetry (<B>sgs</B>)
+or non-crystallographic symmetry (<B>ncs</B>) operation(s) <I>m1</I> through <I>m2</I>,
+<A NAME="rotate_matrix"></A>or by <B>matrix</B> explicitly given (row by row). The rotated coordinates may optionally
+be stored in the fixxyz area starting at location <I>k1</I> (if no location is specified the first empty slot will be used).
+<BR><BR><BR>
+
+<DT><A NAME="addsub"></A> &lt; <B>Add</B> | <B>subtract</B> &gt; &lt; <B>fixxyz</B> <B>position</B> <I>n</I> |
+<B>fixxyz</B> <B>vector</B> <I>u v w</I> &gt;<BR><BR>
+<DD><B>Add</B> or <B>subtract</B> a vector to each of the stored <B>fixxyz</B> positions. The vector may  be taken either
+from positions stored in a <B><A HREF="#pick_scoremap">pick scoremap</A></B> list, or can be explicitly  given (in
+fractional coordinates) following the keyword <B>vector</B>. The main use of the <B>add/subtract</B> command is to
+add/subtract a translation vector found in a <A HREF="#vectorset_translate"><B>vectorset translate</B></A> search.
+<BR><BR><BR>
+
+<DT><A NAME="read"></A><B>Read</B> (<I>filename</I> [rsps.pdb])<BR><BR>
+<DD>Read coordinates from PDB format file. The file must have a CRYST card defining
+the cell parameters and three SCALE cards specifying the transformation from the stored Angstrom orthogonal coordinates
+to fractional crystallographic coordinates.  The ATOM cards should contain position number, (site number), x, y, z, and
+score in the atom number, residue name, x, y, z, and occupancy fields, respectively. If the site field is missing, the
+program will assign site numbers. The coordinates are stored in the main coordinate storage area and will overwrite any
+previously stored positions. A file that can be read with this command is produced by the
+<B><A HREF="#write">write</A></B> command described below.
+<BR><BR><BR>
+
+<DT><A NAME="write"></A><B>Write</B> ( &lt; [ <B>positions</B>  (<I>filename</I> [positions.pdb]) ]  |
+<B>peaks</B> (<I>filename</I> [peaks.pdb]) | <B>set</B> (<I>iset</I> [1] <I>filename</I> [set.pdb]) |
+<B>fixxyz</B> (<I>filename</I> [fixxyz.pdb]) &gt; )<BR><BR>
+<DD>Write position, peak, <B><A HREF="#getsets">getsets</A></B> set, or <B><A HREF="#fixxyz">fixxyz</A></B> coordinates
+to a pdb file.
+</DL>
+<BR>
+
+<H3><A NAME="keywords_searching"></A>Searching and checking commands</H3>
+<DL>
+<DT><A NAME="vectorset"></A><B>Vectorset</B> (&lt; [ <B>single</B> ] &lt; [ <B>atoms</B> ] | <B>molecules</B> &gt; |
+<B>more</B> &lt; <B>atoms</B> | <B>molecules</B> &gt; | <B>translate</B> &lt; <B>atoms</B> | <B>molecules</B> &gt; &gt;)
+<BR><BR>
+<DD>Determines the type of vectors to be computed.
+<A NAME="vectorset_single"></A><B>Single</B> vectorsets consist of Harker vectors, and pseudo-Harker vectors if
+non-crystallographic symmetry is loaded (see <B><A HREF="#ncsrot">ncsrot</A></B>) and switched on (see
+<B><A HREF="#ncsymm">ncsymm on</A></B>).
+<A NAME="vectorset_more"></A><B>More</B> vectorsets consist of cross-vectors to one or more fixed
+(<B><A HREF="#fixxyz">fixxyz</A></B>) positions.
+<A NAME="vectorset_translate"></A><B>Translate</B> vectorsets consist of Harker and cross-vectors for a
+several-atom fragment as defined by the <B><A HREF="#fixxyz">fixxyz</A></B> positions. These positions will be
+translated as a rigid body in a search using this vectorset.
+<A NAME="vectorset_atoms"></A><A NAME="vectorset_molecules"></A><B>Atoms</B> vectorsets use all relevant vectors
+whereas <B>molecules</B> vectorsets only use the subset of structure-invariant vectors.
+ <BR><BR><BR>
+
+<DT><A NAME="scan"></A><B>Scan</B> (&lt; [<B>au</B>] | <B>limits</B> <I>ui uf vi vf wi wf</I> &gt; (<B>grid</B>
+<I>nx ny nz</I> [n*nu n*nv n*nw]))<BR><BR>
+<A NAME="scan_au"></A><A NAME="scan_limits"></A><DD>Scan asymmetric unit (<B>au</B>) or volume defined by <B>limits</B>
+<I>ui uf vi vf wi wf</I> along x, y, z; in fractions of the unit cell.
+<A NAME="scan_grid"></A> Optionally the search <B>grid</B> along x, y, z may be specified. The default search grid is
+twice the Patterson grid when using <A HREF="#vectorset_single"><B>single vectorsets</B></A>, <EM>i.e.</EM>  n = 2.
+When using <A HREF="#vectorset_more"><B>more</B></A> or <A HREF="#vectorset_translate"><B>translate vectorsets</B></A>
+the default grid is identical to the Patterson grid, <EM>i.e.</EM> n = 1.  In <B>single</B> vectorsets, directions that
+are indeterminate from the Harker sections (polar spacegroups) are identified by the program and the scan limits reset
+as necessary. A <B><A HREF="#score">score</A></B> is computed for each trial position, and the result stored as a
+<A HREF="#scorfile"><B>score map</B></A> which then has to  be picked (<B><A HREF="#pick_scoremap">pick scoremap</A></B>)
+to get the positions. The score map may become very big, particularly when using <B>single</B> vectorsets where the
+default search grid is twice the Patterson grid.
+<BR><BR><BR>
+
+<DT><A NAME="polarscan"></A><B>Polarscan</B> &lt; <B>positions</B> <I>n1</I> (<I>n2</I>) | <I>x y z</I> &gt;<BR><BR>
+<A NAME="polarscan_positions"></A><DD>This is a special for polar spacegroups. Positions selected from the main
+positions area using the <B>positions</B> subcommand, or explicitly given as fractional coordinates <I>x y z</I>,
+will be translated along the polar axis. Cross-vectors to one or more fixed positions stored in the
+<B><A HREF="#fixxyz">fixxyz</A></B> area are computed and used to form a <B><A HREF="#score">score</A></B>. In polar
+spacegroups the origin may be freely defined along the polar direction. One position from a single site search may
+then be fixed and the other positions translated to put them on the same origin as the fixed position. This type of
+search <I>does not produce a scoremap</I>, instead the coordinates are put directly in the main positions storage
+area where they will overwrite any coordinates previously stored.
+<BR><BR><BR>
+
+<DT><A NAME="getsets"></A><B>Getsets</B> (<I>minset</I> [3] <I>numuse</I> [50])<BR><BR>
+<DD>Using the positions stored in the main coordinate area, find sets of positions where the Patterson map at all
+predicted cross-vector positions satisfy the rejection criteria specified by commands
+<B><A HREF="#reject">reject</A></B> and <B><A HREF="#low">low</A></B> for all pairs of positions in the set.
+<I>Minset</I> is the minimum number of members in a set. The <I>numuse</I> top positions of those stored are used.
+<BR><BR><BR>
+
+<DT><A NAME="vlist"></A><B>Vlist</B> &lt; <B>site</B> <I>n1</I> (<I>n2</I>) | <B>set</B> <I>n1</I> (<I>n2</I>) |
+<B>position</B> <I>n1</I> (<I>n2</I>) | <B>fixxyz</B> <I>n1</I> (<I>n2</I>) | <I>x y z</I> &gt;<BR><BR>
+<DD>This command is used to inspect individual solutions. With <A HREF="#vectorset_single"><B>single vectorsets</B></A>,
+vectors between symmetry related positions (= Harker vectors if only SGS is being used) are listed for each
+<B>vlist</B> position. With <A HREF="#vectorset_more"><B>more vectorsets</B></A>, cross vectors to fixed positions are
+listed. With <A HREF="#vectorset_translate"><B>translate vectorsets</B></A>, all vectors for the positions stored in the
+<B><A HREF="#fixxyz">fixxyz</A></B> area are listed for the specified translation(s).
+<A NAME="vlist_site"></A><A NAME="vlist_set"></A><A NAME="vlist_position"></A><A NAME="vlist_fixxyz"></A>Coordinates may
+be specified explicitly (fractional) or by reference to <B>site</B>, <B>set</B>, <B>position</B> or <B>fixxyz</B>
+numbers. Giving just one number selects one position, whereas giving two numbers selects a range.
+<BR><BR><BR>
+
+<DT><A NAME="table"></A><B>Table</B> &lt; <B>set</B> (<I>n1</I> (<I>n2</I>)) | positions <I>n1 n2</I> ... <I>nk</I> |
+<B>fixxyz</B> &gt;<BR><BR>
+<DD>Print scoretable for <B><A HREF="#getsets">getsets</A> set</B>(s) <I>n1</I> (through <I>n2</I>), or for
+<B>positions</B> <I>n1, n2</I> <EM>etc.</EM> in the main coordinate area, or for
+<B><A HREF="#fixxyz">fixed positions</A></B>.
+<BR><BR><BR>
+
+<DT><A NAME="pick"></A><B>Pick</B> &lt; <B>scoremap</B> (<I>n</I> [50]) | <B>patterson</B> (<I>n</I> [50])
+(<B>harker</B>) &gt; (<B>level</B> <I>rhomin</I>) (<B>limits</B> <I>xi xf yi yf zi zf</I>)
+({<B>exclude</B> {<B>x</B>|<B>y</B>|<B>z</B>}<SUB>3</SUB> <I>value</I>})<BR><BR>
+<A NAME="pick_patterson"></A><A NAME="pick_scoremap"></A><DD>Command used to pick the
+<B><A HREF="#patfile">Patterson</A></B> map or the <A HREF="#scorfile"><B>scoremap</B></A>. The <I>n</I> highest peaks
+above <I>rhomin</I> are picked.
+<A NAME="pick_level"></A>If the <B>level</B> subcommand is omitted the program will try to set an appropriate minimum
+level. When the scoremap is picked, peaks found are stored in the main coordinate array and any previously stored
+coordinates are overwritten.
+<A NAME="pick_harker"></A>Peaks reported by the <B>pick patterson</B> command may be limited to peaks on Harker
+sections by using the subcommand <B>harker</B>. The position and peak lists may be deleted with the
+<B><A HREF="#delete">delete</A></B> command.
+<A NAME="pick_limits"></A>The <B>limits</B> subcommand defines the part of the map to be picked (the default is to
+pick peaks from the whole map) and  should be given as fractional coordinates.
+<A NAME="pick_exclude"></A>The <B>exclude</B> subcommand is used to  specify areas of the map to be excluded from
+picking. For example, <B>exclude xyz</B> 0.0 excludes all points where any coordinate is zero, whereas
+<B>exclude y</B> 0.5 excludes points where y = 0.5.
+</DL>
+<BR>
+
+<H3><A NAME="keywords_misc"></A>Miscellaneous commands</H3>
+<DL>
+<DT><A NAME="macro"></A><B>@</B> <I>filename</I><BR><BR>
+<DD>Read commands from macro file. Must be entered on a line by itself. Nesting of macro commands is not allowed.
+<BR><BR><BR>
+
+<DT><A NAME="print"></A><B>Print</B> (<I>n</I> [1])<BR><BR>
+<DD>Determines the amount of output.<BR>
+<PRE>
+<I>n</I> = 0   minimum output
+<I>n</I> = 1   a little more output (default)
+<I>n</I> = 2   prints out symmetry operations and score statistics
+             for each section during a scan. 
+<I>n</I> = 3   prints out real to vector space transformations
+</PRE>
+<BR><BR><BR>
+
+<DT><A NAME="status"></A><B>Status</B><BR><BR>
+<DD>Gives a summary of current parameter settings, number of stored positions
+etc. 
+<BR><BR><BR>
+
+<DT><A NAME="list"></A><A NAME="list_positions"></A><A NAME="list_peaks"></A><A NAME="list_sets"></A><A
+NAME="list_symops"></A><A NAME="list_vectors"></A><B>List</B> &lt; <B>positions</B> (<I>n1 n2</I>) | <B>peaks</B>
+(<I>n1 n2</I>) | <B>sets</B> (<I>n1 n2</I>) | <B>symops</B> | <B>vectors</B> &gt;<BR><BR>
+<DD>List positions, Patterson peaks, <B><A HREF="#getsets">getsets</A></B> sets, symmetry operators, or vector operators
+(defined by the <B><A HREF="#vectorset">vectorset</A></B> command).
+<BR><BR><BR>
+
+<DT><A NAME="delete"></A><A NAME="delete_peaks"></A><A NAME="delete_fixxyz"></A><A NAME="delete_sets"></A><A
+NAME="delete_ncs"></A><B>Delete</B> &lt; <B>peaks</B> | <B>fixxyz</B> (<I>n1</I>) (<I>n2</I>) | <B>sets</B> |
+<B>ncs</B> &gt;<BR><BR>
+<DD>Delete picked Patterson peaks, <B><A HREF="#fixxyz">fixxyz</A></B> coordinates,
+<B><A HREF="#getsets">getsets</A></B> sets, or non-crystallographic symmetry operators. The subcommands can not be
+abbreviated. Specific <B>fixxyz</B> positions, or a range of positions, may be deleted by giving the (range of)
+<B>fixxyz</B> position number.
+<BR><BR><BR>
+
+<DT><A NAME="help"></A><B>Help</B> (<I>command</I>)<BR><BR>
+<DD>Simple online help. The environment variable rspshlp4 should point to the help file (rsps4.hlp).
+<BR><BR><BR>
+
+<DT><A NAME="exit"></A><B>Exit</B><BR><BR>
+<DD>Leave RSPS.
+<BR><BR><BR>
+
+<DT><A NAME="quit"></A><B>Quit</B><BR><BR>
+<DD>Leave RSPS.
+</DL>
+<BR><BR>
+
+<H2><A NAME="files"></A>INPUT AND OUTPUT FILES</H2>
+
+<H3>Input</H3>
+
+<DL>
+<DT>Patterson map
+
+<DD> Difference Patterson map in CCP4 format. The map must of course cover at least one asymmetric unit. File name
+defined with the <B><A HREF="#patfile">patfile</A></B> command. Default file name: patterson 
+
+<DT>Coordinate file
+
+<DD> Positions may be read from a PDB format file using the <B><A HREF="#read">read</A></B> command. The file is
+expected to have a CRYST card defining the cell parameters
+and three SCALE cards specifying the transformation from the stored Angstrom
+orthogonal coordinates to fractional crystallographic coordinates. The ATOM cards should contain position number,
+(site number), x, y, z, and score in the atom number, residue name, x, y, z, and occupancy fields, respectively
+(format (6x,i5,11x,i4,4x,3f8.3,f6.2)). Default file name: rsps.pdb. 
+
+<DT>Spacegroup symmetry library
+
+<DD> Library file of crystallographic symmetry operations (logical name SYMOP). For each entry in the library file
+there is a header line containing five entries: spacegroup number, total number of lines of symmetry operators,
+number of lines of primitive symmetry operators, spacegroup name, name of corresponding point group. After the header,
+symmetry operators follow line by line in the style of the International Tables for X-ray Crystallography. The identity
+must be included and should be first. A <A HREF="symlib.html">SYMOP library</A> suitable for most purposes without
+modification is included in the CCP4 package.
+</DL>
+<BR>
+
+<H3>Output</H3>
+
+<DL>
+<DT>Scoremap
+
+<DD> Output map of scores in CCP4 map format. File name defined with the
+<B><A HREF="#scorfile">scorfile</A></B> command. Note that this file can become VERY BIG. Default file name: rsps.map 
+
+<DT>Coordinate file
+
+<DD> Positions stored in the main coordinate array may be written to this file using the
+<B><A HREF="#write">write</A></B> command. Coordinates for <B><A HREF="#getsets">getsets</A></B> sets, positions stored
+in the <B><A HREF="#fixxyz">fixxyz</A></B> area, as well as Patterson peaks may alternatively be written. The file
+produced is in PDB format but a few of the ATOM card fields are missing, while others have non-standard entries. The
+currently stored RSPS title is written on a HEADER card at the top of the file. The file will also have a CRYST card
+defining the cell parameters and three SCALE cards specifying the transformation from the stored Angstrom orthogonal
+coordinates to fractional crystallographic coordinates. The ATOM cards contain position number, atom type
+(&quot;ME&quot;), residue type (&quot;MTL&quot;), site number, x, y, z, and score in the atom number, atom type, residue
+type, residue name, x, y, z, and occupancy fields, respectively (format (6x,i5,2x,2a,2x,a3,2x,i4,4x,3f8.3,f6.2)).
+Default file name: rsps.pdb
+</DL>
+<BR><BR>
+
+<H2><A NAME="map_requirements"></A>PATTERSON MAP REQUIREMENTS</H2>
+
+<P>The volume of the Patterson function needed is listed below for each spacegroup. In all cases this volume is the
+smallest possible box that includes at least one full asymmetric unit. The limits correspond to the default limits used
+in the CCP4 <A HREF="fft.html">FFT</A> programs. If a map covering a full unit cell is provided, the program will
+recognize this and skip the reduction of peaks to the asymmetric unit, thus saving computing time at the cost of space.</P>
+
+<PRE>
+Patterson symmetry      Spacegroups                     Limits along x, y, z
+================================================================================
+P-1                     P1                              0 1     0 1/2   0 1
+P2/m unique axis b      P2, P21                         0 1/2   0 1/2   0 1
+C2/m                    C2                              0 1/2   0 1/4   0 1
+Pmmm                    P222, P2221, P21212,            0 1/2   0 1/2   0 1/2
+                        P212121
+Cmmm                    C2221, C222                     0 1/2   0 1/4   0 1/2
+Fmmm                    F222                            0 1/4   0 1/4   0 1/2
+Immm                    I222, I212121                   0 1/2   0 1/4   0 1/2
+P4/m                    P4, P41, P42, P43               0 1/2   0 1/2   0 1/2
+I4/m                    I4, I41                         0 1/2   0 1/2   0 1/4
+P4/mmm                  P422, P4212, P4122,             0 1/2   0 1/2   0 1/2
+                        P41212, P4222, P42212,
+                        P4322, P43212
+I4/mmm                  I422, I4122                     0 1/2   0 1/2   0 1/4
+P-3                     P3, P31, P32                    0 2/3   0 2/3   0 1/2
+R-3 hexagonal axes      R3 hexagonal axes               0 2/3   0 2/3   0 1/6
+P-31m                   P312, P3112, P3212              0 2/3   0 1/2   0 1/2
+P-3m1                   P321, P3121, P3221              0 2/3   0 1/3   0 1
+R-3m hexagonal axes     R32 hexagonal axes              0 2/3   0 2/3   0 1/6
+P6/m                    P6, P61, P65, P62, P64,         0 2/3   0 1/2   0 1/2
+                        P63
+P6/mmm                  P622, P6122, P6522,             0 2/3   0 1/3   0 1/2
+                        P6222, P6422, P6322
+Pm-3                    P23, P213                       0 1/2   0 1/2   0 1/2
+Fm-3                    F23                             0 1/2   0 1/2   0 1/4
+Im-3                    I23, I213                       0 1/2   0 1/2   0 1/2
+Pm-3m                   P432, P4232, P4332,             0 1/2   0 1/2   0 1/2
+                        P4132                   
+Fm-3m                   F432, F4132                     0 1/2   0 1/4   0 1/4
+Im-3m                   I432, I4132                     0 1/2   0 1/2   0 1/4
+================================================================================
+
+</PRE>
+<BR><BR>
+
+
+<H2><A NAME="options"></A>SUMMARY OF POSSIBLE SEARCH OPTIONS</H2>
+
+<P>The table below is a summary of the search options available using the
+<B><A HREF="#scan">scan</A></B> command. In addition, the special search options
+<B><A HREF="#polarscan">polarscan</A></B> and <B><A HREF="#getsets">getsets</A></B> are available.</P>
+
+<TABLE BORDER>
+<TR>
+<TH ALIGN=LEFT>VECTORSET</TH><TH ALIGN=LEFT>SGSYMM</TH><TH ALIGN=LEFT>NCSYMM</TH><TH ALIGN=LEFT>Description</TH>
+</TR>
+<TR>
+<TD>SINGLE ATOMS</TD>
+<TD>ON</TD>
+<TD>ON/OFF</TD>
+<TD>Single-site search using vectors between symmetry-related positions.
+When only SGS is used, this will be a search using Harker vectors only.
+NCS symmetry in addition generates pseudo-Harker cross vectors between 
+NCS-related positions, and cross vectors between different NCS copies of the protein molecule.</TD>
+</TR>
+<TR>
+<TD></TD><TD>OFF</TD>
+<TD>ON using only rotational part</TD>
+<TD>Locate positions related by NCS from the translation-independent cross vectors (pseudo-Harker vectors)
+between NCS-related positions. The positions will be displaced from their true position by a vector t which
+may be found in a TRANSLATE ATOMS scan.</TD>
+</TR>
+<TR>
+<TD>MORE ATOMS</TD>
+<TD>ON/OFF</TD>
+<TD>ON/OFF</TD>
+<TD>Given one or more fixed positions, find additional sites by looking at cross-vectors to
+the fixed sites. Harker vectors for potential solutions may then be examined by using the
+<A HREF="#vlist">VLIST</A> command.</TD>
+</TR>
+<TR>
+<TD>TRANSLATE ATOMS</TD>
+<TD>ON/OFF</TD>
+<TD>ON/OFF</TD>
+<TD>Translate two or more positions as a rigid body. These positions may come from
+<OL>
+<LI>single site search with SGSYMM OFF, NCSYMM ON</LI>
+<LI>cross-vector =&gt; two-site search</LI>
+<LI>known (oriented) fragment.</LI>
+</OL>
+</TD>
+</TR>
+<TR>
+<TD>SINGLE MOLECULES</TD>
+<TD>ON</TD>
+<TD>ON using only rotational part</TD>
+<TD>Find location of symmetric molecule using the structure-invariant subset of Harker vectors</TD>
+</TR>
+<TR>
+<TD>MORE MOLECULES</TD>
+<TD>ON</TD>
+<TD>ON using only rotational part</TD>
+<TD>Given the position of one or more molecules with NCS, find the position of additional
+molecules using the structure-invariant subset of cross vectors</TD>
+</TR>
+<TR>
+<TD>TRANSLATE MOLECULES</TD>
+<TD>ON</TD>
+<TD>ON using only rotational part</TD>
+<TD>Translate two or more NCS molecules with a fixed separation as a rigid body</TD>
+</TR>
+</TABLE>
+<BR><BR>
+
+<H2><A NAME="examples"></A>EXAMPLES</H2>
+
+<H3>Sample command procedures</H3>
+
+<P>1) Command procedure to run <B>single atom</B> search, then <B>more atom</B> search to top position from single
+atom search: </P>
+
+<PRE>
+# Command procedure file starts here
+#!/bin/csh -f
+#
+#
+#
+rsps04_2  &lt;&lt; eof-rsps &gt;& rsps_fre1.log
+
+
+# RSPS example script for flavin oxidase/reductase
+# Au anomalous (peak) data to 4.0 A
+spacegroup P212121
+patfile  auanopatt.map reset origin 8 0
+scorfile /nfs/scr_slu5/stefan/rsps.map
+pick patterson 200
+
+# Single site scan of asymmetric unit
+# Only Harker vectors will be considered
+scan
+pick scoremap 
+vlist site 1 4
+write positions fre_single.pdb
+
+# Fix top site and look for more atoms
+# Now only cross vectors will be considered
+fix site 1
+vectorset more atoms
+scan
+pick scoremap
+vlist site 1 20
+write positions fre_more.pdb
+
+# Check Harker vectors for sites found in more atoms scan
+vec si at
+vlist site 1 20
+
+exit
+
+eof-rsps
+#
+# The command procedure file ends here
+
+</PRE>
+
+<P>2) One could alternatively make the following macros: </P>
+
+<PRE>
+fre:
+# RSPS example script for flavin oxidase/reductase
+# Au anomalous (peak) data to 4.0 A
+# spacegroup and file definitions
+spacegroup P212121
+patfile  auanopatt.map reset origin 8 0
+scorfile /nfs/scr_slu5/stefan/rsps.map
+pick patterson 200
+
+sscan:
+# Single atom scan of asymmetric unit
+scan
+pick scoremap 
+vlist site 1 4
+write positions fre_single.pdb
+
+mscan:
+# Fix top site and look for more atoms
+# Now only cross vectors will be considered
+fix site 1
+vectorset more atoms
+scan
+pick scoremap
+vlist site 1 20
+write positions fre_more.pdb
+
+hvlist:
+# List Harker vectors for top sites
+vectorset single atoms
+vlist site 1 20
+
+</PRE>
+
+<P>and then run the command procedure </P>
+
+<PRE>
+# Command procedure file starts here
+# This procedure for flavin oxidase/reductase Au anomalous
+# 
+#
+rsps04_2 &lt;&lt; eof-rsps
+@ fre
+@ sscan
+@ mscan
+@ hvlist
+exit
+eof-rsps
+#
+#
+# The command procedure file ends here
+
+</PRE>
+<P>
+In reality, one would run RSPS interactively rather than as a batch job, starting with a vectorset single scan as
+above, and then keep adding more and more atoms by repeatedly fixing sensible looking sites and carrying out more
+atoms scans. As more atoms are added to the fixxyz list, more and more vectors will be considered in the search,
+and rejection criteria may have to be relaxed in order to find additional sites. But remember that the goal is not
+to find all of the sites, just enough to start phasing.</P>
+
+
+<P>3) Command procedure to run single atom and polarscan search in P2<SUB>1</SUB> </P>
+
+<PRE>
+# Command procedure file starts here
+# This procedure for Mutase spacegroup P21
+#
+rsps04_2 &lt;&lt; eof-rsps
+spacegroup P21
+patfile mmcm_hgac.pat reset origin 8 0
+scorfile /nfs/scr_slu5/stefan/rsps.map title "HgAc - M483 diff patt 15 - 6 A"
+
+# Run single site search - this will be over one section perpendicular
+# to the y axis for P21 second setting
+scan
+pick scoremap
+write positions harker.pdb
+
+# The top position is fixed and all positions translated along the
+# polar axis (b). The vectorset is automatically set to MORE ATOMS when 
+# issuing the  POLARSCAN command. The positions found are put 
+# directly into the main coordinate storage area and so no
+# PICK SCOREMAP command is needed.
+fix pos 1 ; polarscan pos 1 50
+write positions polarscan.pdb
+exit
+eof-rsps
+#
+# The command procedure file ends here
+
+</PRE>
+
+<P>4) Often the direction of a non-crystallographic symmetry (NCS) axis may be found from <EM>e.g.</EM> a rotation
+function whereas the position of the NCS axis is harder to find. The vectors between heavy atom positions related
+by  NCS  are independent of the position of the NCS axis, and thus these vectors may be used to find such heavy
+atom positions. To do this in RSPS, the spacegroup symmetry is switched off and a single atom scan carried out using
+only the NCS.  The positions related by the NCS may then be located in the cell by translating  them as a rigid
+fragment and considering the vectors to positions in SGS related fragments. The following command procedure is an
+example of such a search for spinach Rubisco in spacegroup C222<SUB>1</SUB>  with a 4-fold NCS axis almost parallel
+to the c axis. </P>
+
+<PRE>
+# Command procedure file starts here
+#
+rsps04_2 &lt;&lt; eof-rsps
+ CELL   157.20  157.20  201.30   90.00   90.00   90.00
+ SPACEGROUP C2221
+ PATFILE merc.pat RESET ORIGIN 8 0 RESET 0.5 0.0 0.5 6 0
+
+# Define non-crystallographic symmetry.
+# Translations set to 0,0,0
+#
+ NCSROT POLAR   -1.8   0.0  90.0  0  0  0
+ NCSROT POLAR   -1.8   0.0 180.0  0  0  0
+ NCSROT POLAR   -1.8   0.0 270.0  0  0  0
+
+#
+# Set scoring parameters
+# LOW is set very high to allow any number of low peaks
+# (alternatively REJECT could have been set at zero).
+#
+ LOW    100
+ WEIGHT   2
+
+#
+# First select single atom vectorset and switch spacegroup symmetry off
+# and non-crystallographic symmetry on; scan asymmetric unit.
+#
+ VECTORSET SINGLE ATOMS
+   SGSYMM OFF
+   NCSYMM ON
+   SCORFILE rsps_ncs.map ; SCAN AU
+ PICK SCOREMAP
+
+#
+# Select top position and apply the four-fold rotation;
+# store the resulting four positions in the FIXXYZ area.
+#
+ ROTATE POS 1 NCS 1 4 FIX 1
+
+#
+# Now select the translate atoms vectorset, and switch non-crystallographic
+# symmetry  off and spacegroup symmetry on. The four positions in the FIXXYZ 
+# area will be translated through the unit cell as a rigid body, 
+# and vectors (Harker and cross) to positions in symmetry related 
+# fragments used to form the score. High values in the resulting
+# scoremap will indicate possible translation vectors to be added to
+# the FIXXYZ positions to give the correct coordinates of the
+# four-fold related sites.
+#
+ VECTORSET TRANSLATE ATOMS
+   SGSYMM ON
+   NCSYMM OFF
+   SCORFILE rsps_tran.map ; SCAN LIMITS 0 1 0 1 0 1
+ PICK SCOREMAP
+
+ QUIT
+eof-rsps
+#
+#Command procedure file ends here
+
+</PRE>
+
+<P>5) If a cross vector <B>u</B> can be identified in the Patterson function a &quot;two-site&quot; search may be
+carried out. One position is then set to <B>x</B> (<EM>e.g.</EM> 0,0,0) and another is placed at <B>x</B> + <B>u</B>.
+The two positions are stored in the <B>fixxyz</B> area, and a vectorset translate scan carried out to find the
+translation that correctly locates the two sites in the unit cell. Note that the search is over the entire unit cell
+since the atoms related by the selected cross vectors could be anywhere in the cell (by  selecting a Patterson peak
+from the peak list we have arbitrarily chosen coordinates for the cross vector reduced to the asymmetric unit of the
+Patterson.)</P>
+
+<PRE>
+# Command procedure file starts here
+#
+rsps04_2 &lt;&lt; eof-rsps
+ CELL   157.20  157.20  201.30   90.00   90.00   90.00
+ SPACEGROUP C2221
+ PATFILE merc.pat RESET ORIGIN 8. 0. RESET 0.5 0 0.5 6. 0.
+
+#
+# A cross vector at 0.3041 0.0541 0.000  was identified in the
+# Patterson function. Thus one site is fixed at 0,0,0 and another at
+# 0.3041 0.0541 0.000 (alternatively if the Patterson had been picked
+# the second position could have been fixed using the FIXXYZ PEAK
+# command).
+#
+FIXXYZ 0. 0. 0.
+FIXXYZ 0.3041 0.0541 0.000 
+
+#
+# The two sites are translated as a rigid fragment to
+# find their location in the unit cell
+#
+ VECTORSET TRANSLATE ATOMS
+   SGSYMM ON
+   NCSYMM OFF
+   SCORFILE rsps_tran.map ; SCAN LIMITS 0 1 0 1 0 1 
+ PICK SCOREMAP
+
+ EXIT
+eof-rsps
+#
+#Command procedure file ends here
+
+</PRE>
+
+<H3><A NAME="output"></A>Sample output</H3>
+<P>Output generated by <B><A HREF="#pick_patterson">pick patterson</A></B> (flavin reductase Au anomalous Patterson,
+spacegroup P2<SUB>1</SUB>2<SUB>1</SUB>2<SUB>1</SUB>). Only the top 10 peaks are shown.</P>
+<PRE>
+PICK &gt;&gt; The 200 highest peaks above      0.0 are listed in descending order
+
+ Peak       Fractional coordinates     Angstrom coordinates         Grid coordinates       Value      S/N
+ ----      ------------------------  ------------------------    ----------------------  ---------  -------
+   1        0.0000  0.1532  0.2009      0.00   15.26   43.43         0      11      32        1.41     6.0
+   2 H      0.5000  0.4499  0.1256     25.78   44.81   27.16        18      32      20        1.33     5.6
+   3        0.1704  0.0000  0.0203      8.78    0.00    4.39         6       0       3        1.13     4.8
+   4 H      0.2882  0.5000  0.1675     14.86   49.80   36.22        10      36      27        1.04     4.4
+   5        0.1395  0.0000  0.0303      7.19    0.00    6.56         5       0       5        1.02     4.3
+   6        0.1922  0.0300  0.0000      9.91    2.99    0.00         7       2       0        1.02     4.3
+   7 H      0.2632  0.5000  0.4225     13.57   49.80   91.33         9      36      68        1.01     4.3
+   8        0.0548  0.0990  0.0000      2.82    9.86    0.00         2       7       0        0.99     4.2
+   9 H      0.5000  0.4175  0.3705     25.78   41.58   80.09        18      30      59        0.94     4.0
+  10 H      0.5000  0.3715  0.1043     25.78   37.00   22.55        18      27      17        0.90     3.8
+
+</PRE>
+<P>An &quot;H&quot; after the peak number in the &quot;Peak&quot; column indicates that the peak is on a Harker section.</P>
+<BR><BR>
+
+<P>Output generated by <B><A HREF="#pick_scoremap">pick scoremap</A></B> on a single site scoremap: </P>
+<PRE>
+PICK &gt;&gt;    50 peaks found; these are listed in descending order
+
+  PosnN      Fractional coordinates     Angstrom coordinates      Score    Site
+  -----     ------------------------  ------------------------  ---------  ----
+    1        0.6322  0.5519  0.0385     32.60   54.97    8.31      3.39       1
+    2        0.6322  0.9481  0.0385     32.60   94.43    8.31      3.39       1
+    3        0.6322  0.0519  0.0385     32.60    5.17    8.31      3.39       1
+    4        0.6322  0.4481  0.0385     32.60   44.63    8.31      3.39       1
+    5        0.8678  0.5519  0.0385     44.74   54.97    8.31      3.39       1
+    6        0.8678  0.9481  0.0385     44.74   94.43    8.31      3.39       1
+    7        0.8678  0.0519  0.0385     44.74    5.17    8.31      3.39       1
+    8        0.8678  0.4481  0.0385     44.74   44.63    8.31      3.39       1
+    9        0.1322  0.5519  0.0385      6.82   54.97    8.31      3.39       1
+   10        0.1322  0.9481  0.0385      6.82   94.43    8.31      3.39       1
+   11        0.1322  0.0519  0.0385      6.82    5.17    8.31      3.39       1
+   12        0.1322  0.4481  0.0385      6.82   44.63    8.31      3.39       1
+   13        0.3678  0.5519  0.0385     18.96   54.97    8.31      3.39       1
+   14        0.3678  0.9481  0.0385     18.96   94.43    8.31      3.39       1
+   15        0.3678  0.0519  0.0385     18.96    5.17    8.31      3.39       1
+   16        0.3678  0.4481  0.0385     18.96   44.63    8.31      3.39       1
+                                       :
+                                       :
+</PRE>
+<P>Only the 16 first positions (8 possible origins in P2<SUB>1</SUB>2<SUB>1</SUB>2<SUB>1</SUB> x 2 hands),
+representing one unique site, are shown here.</P>
+<BR><BR>
+
+<P>Output generated by <B><A HREF="#vlist">vlist</A> site 1</B> with positions above stored: </P>
+<PRE>
+****************************************************************************
+ Harker vectors for a heavy atom position at   0.6322  0.5519  0.0385: 
+
+
+ Vec       U       V       W        Rho     Multiplicity     Peak   Distance
+ ---    ------  ------  ------    -------   ------------     ----   --------
+  1     0.2355  0.1038  0.5000      0.65          1           31       0.22
+  2     0.2645  0.5000  0.4231      0.98          1            7       0.14
+  3     0.5000  0.3962  0.0769      0.77          1           12       0.13
+
+ Score               =     3.39 with     0 low peaks
+ Rmsd peak positions =   0.1694
+ Rmsd peak heights   =   0.6132
+ Matching index      =   0.8297
+****************************************************************************
+
+</PRE>
+<P>The fractional coordinates along the cell axes of the three Harker vectors are listed together with the value of
+the Patterson function and the relative multiplicity of each vector. The &quot;Peak&quot; column shows the number
+of the highest stored Patterson peak within 2.5 grid divisions from the calculated position and &quot;Distance&quot;
+is the actual distance (in Angstrom). (If the Patterson map hasn't been picked these columns are absent). The
+&quot;matching index&quot; is calculated as<BR><BR>
+M = ( 1 + ihit ) / ( 1 + rmspsw*rmspos )( 1 + rmshtw*rmshgt )( 1 + ntrans )
+<BR><BR>
+where
+</P>
+<DL>
+<DT>ihit = </DT>
+<DD>number of predicted vectors with Patterson peaks within cutoff distance on peak list</DD>
+<DT>rmspos = </DT>
+<DD>r.m.s.d. between predicted and observed peak positions</DD>
+<DT>rmshgt = </DT>
+<DD>r.m.s.d. between predicted and observed peak heights</DD>
+<DT>rmspsw, rmshtw = </DT>
+<DD>weights for the positional and height r.m.s. values, respectively (the higher the weight,
+the bigger the influence of the corrsponding r.m.s.d. value on the matching index)<BR>
+In the distributed version<BR>
+rmspsw = 0.8<BR>
+rmshtw = 0.1</DD>
+<DT>ntrans =</DT>
+<DD>total number of vectors predicted for this set</DD>
+</DL>
+<P>
+The idea for the matching index was stolen from G. Kleywegt's LSQMAN program. The matching index assumes values
+between 0 and 1, where &quot;0&quot; indicates a &quot;perfect mis-match&quot; and &quot;1&quot; a perfect match.
+Note that because the matching index is based on the match between predicted vectors, and peaks on the Patterson
+peak list, the value may depend on the number of peaks on the list. 
+</P>
+<BR><BR>
+
+<P>PDB file generated by the <B><A HREF="#write">write positions</A></B> command: </P>
+<PRE>
+HEADER  RSPS MORE ATOMS SCAN  7/12/99 &gt; Real Space Patterson Search Map                
+REMARK File written by RSPS on  7/12/99
+CRYST    51.560   99.600  216.166  90.00  90.00  90.00
+SCALE1       0.01939   0.00000   0.00000
+SCALE2       0.00000   0.01004   0.00000
+SCALE3       0.00000   0.00000   0.00463
+REMARK  POSNN   TYPE   SITE       X       Y       Z    SCORE
+ATOM      1  HG  MTL     1       7.897  11.561  46.892  2.11 20.00
+ATOM      2  HG  MTL     2       5.729   9.683  33.776  1.62 20.00
+ATOM      3  HG  MTL     3      17.187  47.033   5.404  1.51 20.00
+ATOM      4  HG  MTL     4      22.916  70.550  18.915  1.42 20.00
+ATOM      5  HG  MTL     5       0.000  13.833   6.755  1.37 20.00
+ATOM      6  HG  MTL     5      51.560  13.833   6.755  1.37 20.00
+ATOM      7  HG  MTL     6      50.128  94.067  25.670  1.05 20.00
+END
+
+</PRE>
+<BR><BR>
+
+<P>Sample scoretable. A scoretable is generated as part of the <B><A HREF="#getsets">getsets</A></B> output,
+or may be explicitly generated using the <B><A HREF="#table">table</A></B> command, as in the example below.</P>
+<PRE>
+********************************************************************************
+ Set number   0;    3 members , overall score     2.35
+
+ PosnN      Fractional coordinates     Angstrom coordinates
+ -----     ------------------------  ------------------------
+   1        0.6322  0.5519  0.0385     32.60   54.97    8.31
+   2        0.1567  0.1008  0.1698      8.08   10.04   36.70
+   3        0.1532  0.1111  0.2188      7.90   11.07   47.29
+
+
+ Score table
+ -----------
+ PosnN    1     2     3   &lt;Score&gt;
+   1   3.39  2.84  1.80     2.61
+   2         2.92  2.18     2.62
+   3               1.37     1.82
+
+
+ Number of vectors      =         33 (all)         9 (Harker)        24 (Cross)
+ Number of low vectors  =          0 (all)         0 (Harker)         0 (Cross)
+ Score                  =       2.35 (all)      2.56 (Harker)      2.27 (Cross)
+ Peak hit frequency     =     0.9697 (all)    0.8889 (Harker)    1.0000 (Cross)
+ Rmsd peak positions    =     1.5657 (all)    1.3821 (Harker)    1.6223 (Cross)
+ Rmsd peak heights      =     0.9805 (all)    1.0586 (Harker)    0.9496 (Cross)
+ Matching index         =     0.3924
+********************************************************************************
+
+
+</PRE>
+<P>The score table gives the scores for the Harker (and pseudo-Harker in the case of NCS) vectors for each position
+along the diagonal, the off-diagonal entries are pairwise cross-vector scores. If Patterson peaks have been picked
+(as in this example), details of the fit between predicted and observed vectors are also given. This is often a
+useful guide to the correctness of a solution. In particular, correct solutions tend to have a rather high peak hit
+frequency, in contrast to incorrect solutions. The matching index, in the author's limited experience, is usually
+above 0.3 for correct solutions.</P>
+
+<BR><BR>
+<H2><A NAME="structure"></A>PROGRAM STRUCTURE</H2>
+
+<P>RSPS is written in Fortran 77 with a few commonly accepted extensions that are detailed below. The program has been
+implemented and successfully run on Digital/VAX systems as well as a host of Unix machines such as the Alliant FX 2800
+and the SGI 4D series. RSPS is designed so that it can easily be run interactively, although, depending on the symmetry,
+the size of the cell and the computer, the response may be far from interactive. Thus, a vector search for heavy atom
+positions would normally be run as a batch job, whereas checking of results can in most cases be done interactively.
+</P>
+
+<P>The structure of the RSPS program is highly modular to allow for flexibility in debugging and future development.
+At the lowest level are a number of library routines that handle matrix and vector algebraic operations as well as
+elementary operations on positions and peaks in direct and vector space respectively. At the heart of the program is
+the command interpreter which is based on the CCP4 parser and terminal i/o routines from the library package FORLIB
+((C) Per Kraulis 1990). Higher level routines carry out the various search and checking options available in RSPS.
+Definitions of default values for parameters, dimensioning statements, and common block statements have been collected
+in a number of include files and may thus easily be modified. </P>
+
+<H3>Include files</H3>
+
+<P>The following include files are used in the RSPS program: </P>
+
+<PRE>
+rspsctl4.inc             RSPS control variables
+rspsdef4.inc             RSPS definition of defaults
+rspsdim4.inc             RSPS dimensioning parameters
+rspsfil4.inc             RSPS file definitions
+rspsgrd4.inc             RSPS grid information
+rspsmap4.inc             RSPS map information
+rspspos4.inc             RSPS position information
+rspssym4.inc             RSPS symmetry information
+
+</PRE>
+
+<H3><A NAME="spacelimits"></A>Space limitations</H3>
+<P>Dimensioning parameters are defined in the file 'rspsdim4.inc'. In the distributed version this gives the
+following space limitations: </P>
+<TABLE>
+<TR><TD>Maximum number of spacegroup symmetry operations</TD><TD ALIGN=RIGHT>48</TD></TR>
+<TR><TD>Maximum number of pseudo symmetry operations</TD><TD ALIGN=RIGHT>60</TD></TR>
+<TR><TD>Maximum number of points in Patterson map</TD><TD ALIGN=RIGHT>800000</TD></TR>
+<TR><TD>Maximum number of points along fast and slow axis in search map</TD><TD ALIGN=RIGHT>600</TD></TR>
+<TR><TD>Maximum number of <A HREF="#vlist">VLIST</A> positions</TD><TD ALIGN=RIGHT>30</TD></TR>
+<TR><TD>Maximum number of <A HREF="#fixxyz">FIXXYZ</A> positions</TD><TD ALIGN=RIGHT>30</TD></TR>
+<TR><TD>Maximum number of input positions to <A HREF="#getsets">GETSETS</A></TD><TD ALIGN=RIGHT>800</TD></TR>
+<TR><TD>Maximum number of <A HREF="#pick">PICK</A>able peaks</TD><TD ALIGN=RIGHT>800</TD></TR>
+</TABLE>
+
+<H3><A NAME="known_exceptions"></A>Known exceptions from Fortran 77</H3>
+<PRE>
+Lower case code
+Longwords
+IMPLICIT NONE statement
+INCLUDE statement
+END DO statement
+CARRIAGECONTROL = 'LIST' element in open statement control list (s/r rswpdb)
+The &#36; format descriptor is used in the FORLIB library package.
+
+</PRE>
+
+<H3>Known bugs</H3>
+<P>None </P>
+
+<BR><BR>
+<H2><A NAME="comments"></A><A NAME="hints"></A>MISCELLANEOUS COMMENTS ON THE USE OF THE PROGRAM</H2>
+
+<P>The Patterson grid should be chosen as ca 1/3 of the resolution. </P>
+
+<P>It is probably a good idea to initially run the program with rather strict rejection criteria (reject 1. ; low 0;
+this is the default) to see if anything shows up. If nothing is then found re-run the search with looser rejection
+criteria until a sufficient number of possible solutions is found. On the other hand, if too many solutions are found
+then re-run the search using a higher rejection level. It is worthwhile to use the <B><A HREF="#vlist">vlist</A></B>
+option to examine the Patterson peaks predicted by potential solutions. Note that by default special positions are not
+considered in a single atoms search, but may be included by specifiying a negative <B><A HREF="#bump">bump</A></B> argument.
+</P>
+
+<P>It is recommended to always use a search scheme that maximizes the number of vectors used for each trial position.
+Thus, if non-crystallographic symmetry is present, use it. If a cross vector can be identified, do a two-site search
+rather than a single-site search. </P>
+
+<P>Positions from a cross scan should be checked for Harker vectors using the <B><A HREF="#vlist">vlist</A></B> option
+before they are added to the list of fixed positions.
+</P>
+
+<P>In polar spacegroups where one coordinate is indeterminate from the Harker section it is only necessary to perform
+the search scan over one section. This means that positions that only differ in the polar coordinate will be unresolved.
+As long as at least one position can be found this should not be a big problem however, since that position can then be
+used to find further sites by doing a cross-vector (<A HREF="#vectorset_more"><B>vectorset more atoms</B></A>) or
+<B><A HREF="#polarscan">polarscan</A></B> search.</P>
+
+<P><B><A HREF="#tolerance">Tolerance</A></B> &gt; 0 gives an increased number of junk solutions.</P>
+
+<P>Densities around the origin, and any NCS translational peaks, should always be <B><A HREF="#patfile_reset">reset</A></B>
+or a lot of junk solutions will appear. </P>
+
+<P>If vectors fall between grid points the nearest grid point will be used. If this is a serious problem the
+<A HREF="#scorfile_sect"><B>scoremap sectioning</B></A> or the <A HREF="#scan_grid"><B>scan grid</B></A> may be
+adjusted accordingly.
+</P>
+
+<P>In <A HREF="#vectorset_translate"><B>vectorset translate</B></A> scans different representations of the same solution
+may not necessarily have the same site number.</P>
+
+<P>In a difference Patterson map between two heavy atom derivatives the cross-vectors between sites in different
+derivatives will appear as negative densities whereas the Harker peaks and the cross-vectors between sites within
+each derivative will be positive. This implies that a derivative could be solved by looking at cross-vectors between
+sites in this derivative and known sites in the second derivative. To do this apply a scale factor of -1 to the map
+and then perform a more atoms scan.</P>
+
+<P>When running RSPS interactively use a wide screen (132 characters) to avoid scrambled output.</P>
+<BR><BR>
+
+
+<H2><A NAME="changes"></A>INPUT CHANGES FROM 3.2 TO 4.2</H2>
+
+<P>The most important change to the keyword input in RSPS 4.2 is that the old
+MODE keyword is no longer used; it has been replaced with the new
+<a href="#vectorset">vectorset</a>
+command. The functionality of the old command can be recovered as follows:</P>
+
+<P>
+<TABLE>
+<TR><TH ALIGN="LEFT">Old command:    <TH ALIGN="LEFT">New command:
+<TR><TD>MODE HARKER     <TD>vectorset single atoms
+<TR><TD>MODE CROSS      <TD>vectorset more atoms
+<TR><TD>MODE TRANSLATE  <TD>vectorset translate atoms
+</TABLE>
+</P>
+
+<P>The old WRITEX command has also been changed slightly; it is now called
+<a href="#write">write</a> and has a different syntax (see main documentation).
+</P>
+
+<P>The old SAVE command is obsolete.</P>
+
+<BR><BR>
+
+<H2><A NAME="references"></A>REFERENCES</H2>
+
+<OL>
+<!-- KEEP startreferencelist --> 
+<LI><A NAME="reference1"></A>Knight, S.D. (2000): <I>RSPS version 4.0: a semi-interactive vector-search program
+for solving heavy-atom derivatives</I>, Acta Cryst. D <B>52</B>, 42-47</LI>
+<LI><A NAME="reference2"></A>Knight, S.D. (1989): <I>Ribulose 1,5-Bisphosphate Carboxylase/ Oxygenase - A
+Structural Study</I>, Thesis, Swedish University of Agricultural Sciences, Uppsala.</LI>
+<LI><A NAME="reference3"></A>Blundell, T.L. &amp; Johnson, L.N. (1976). <I>&quot;Protein Crystallography&quot;</I>,
+Academic Press, London. </LI>
+<LI><A NAME="reference4"></A>Stout, G.H. &amp; Jensen, L.H. (1989). <I>&quot;X-Ray Structure Determination.
+A Practical Guide&quot;</I>, 2nd edition, John Wiley &amp; Sons, New York.</LI>
+<!-- KEEP endreferencelist -->
+</OL>
+<BR><BR>
+
+<H2>AUTHOR</H2>
+<P>Stefan Knight.</P>
+<BR><BR>
+
+<H2>SEE ALSO</H2>
+<P><A HREF="fft.html">FFT</A>, <A HREF="vectors.html">VECTORS</A> </P>
+
+</BODY>
+</HTML>

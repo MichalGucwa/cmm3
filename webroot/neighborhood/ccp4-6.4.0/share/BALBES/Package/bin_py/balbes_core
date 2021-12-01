@@ -1,0 +1,188 @@
+#!/usr/bin/python
+# Python script
+#
+#
+#
+#     Copyright (C) 2007 --- 2012 Fei Long, A. Vagin, G. Murshudov
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#====================================================================
+## The date of last modification: 29/03/2007
+#  Report any problem to fei@ysbl.york.ac.uk
+
+import os, sys
+import glob, re, shutil
+import math
+import string
+import time
+import select, fcntl
+if not os.environ.has_key("BALBES_ROOT"):
+    print "balbes.setup is not sourced. Re-install BALBES and don't "
+    print "forget do what setup.py reminds you to do"
+    sys.exit() 
+
+# modules (XML DOM) related to handle XML style files
+xml_path1= os.path.join(os.getenv("BALBES_ROOT"),"PyXML-0.8.4","xml","dom")
+xml_path2= os.path.join(os.getenv("BALBES_ROOT"),"PyXML-0.8.4","xml","dom","ext")
+xml_path3= os.path.join(os.getenv("BALBES_ROOT"),"PyXML-0.8.4","xml","dom","ext","reader")
+sys.path.append(xml_path1)
+sys.path.append(xml_path2)
+sys.path.append(xml_path3)
+
+from StripXml import StripXml
+import PyExpat
+from xml.parsers.expat  import ExpatError
+
+#except ImportError :
+#
+#    print "++++++++++++++++++++++++++++++++++++++++++++++++++"
+#    print "+           BALBES requires PyXml                +"
+#    print "+     You need to install it. See README.SETUP   +"
+#    print "+     in your downloaded BALBES package          +"
+#    print "++++++++++++++++++++++++++++++++++++++++++++++++++"
+#    sys.exit()
+
+# modules defined for structural hierachy
+
+py_path= os.path.join(os.getenv("BALBES_ROOT"),"bin_py")
+sys.path.append(py_path)
+from StructHierachy import Chain
+from StructHierachy import Model
+from StructHierachy import Structure
+from StructHierachy import Sequence
+from StructHierachy import SF_info
+
+# utility modules
+from UtilitiesClasses    import CPathDict
+from UtilitiesClasses    import MoveFile
+from UtilitiesClasses    import CopyFile
+from UtilitiesClasses    import WriteFile
+from UtilitiesClasses    import WriteSummaryFile
+from UtilitiesClasses    import ShowNameConv
+
+# manager modules
+from Managers    import CManagers
+
+# classes for structural factor analysis
+from exeCodeClasses import CSFCHECK
+
+# classes for cell and space group check and structure selection
+from ModuleCSG import CCellSgFinder
+
+# classes for sequence and model data base analysis
+from exeCodeClasses import SEQ_Analysis
+from exeCodeClasses import CSEARCH_DB
+
+from Solvers   import CMRSolver
+from Solvers   import CSolutionManager
+
+#--------------------------------------------------
+#
+#   __main__ part starts from here
+#
+#--------------------------------------------------
+
+#  Start managers
+
+gManager = CManagers(sys.argv)
+if gManager.mode == 3:
+    modelFinder = CSEARCH_DB(gManager)
+    modelFinder.controller()
+    sys.exit()
+    
+# ---Stage 1. Initial structural factor analysis ------------------
+# Create a structural analysis object of SF_Analysis class
+sfAnalysisIni = CSFCHECK(gManager.pathDict)
+sfAnalysisIni.controller()
+
+
+# ---Stage 2. Check the similarities of space group and cell parameters between 
+# the input structure and  the release structures in the database.
+if not sfAnalysisIni.idx_err:
+    gManager.pathDict['infile_fobs'] = sfAnalysisIni.fobs_name
+    sg_now   = sfAnalysisIni.info_strucFactor.get_space_group()
+    cell_now = sfAnalysisIni.info_strucFactor.get_cell() 
+    if sg_now and cell_now and gManager.pathDict.has_key("infile_seq"):
+        checkCellSg = CCellSgFinder(gManager.pathDict, cell_now, sg_now)
+        if checkCellSg.chain_found :
+            # for statistics, solution_check done
+            gManager.pathDict['chain_found']    = checkCellSg.chain_found
+            gManager.pathDict['chain_expected'] = checkCellSg.chain_expected
+      
+    if not gManager.pathDict['chain_found'] :
+        # ---Stage 3 Sequence database search and analysis -----------
+        # ShowNameConv(gManager.pathDict['process_log_name'])
+        seqAnalysis = SEQ_Analysis(gManager)
+        seqAnalysis.execute(sfAnalysisIni.info_strucFactor.get_cell(),
+                            sfAnalysisIni.info_strucFactor.get_space_group(),
+                            sfAnalysisIni.info_strucFactor.get_volume(),
+                            sfAnalysisIni.info_strucFactor.get_nsym(),
+                            sfAnalysisIni.info_strucFactor.get_resmax(),
+                            sfAnalysisIni.info_strucFactor.get_resmin(),
+                            sfAnalysisIni.info_strucFactor.get_opt_res(),
+                            sfAnalysisIni.info_strucFactor.get_b_overall())
+
+
+        # ---Stage 4  molecule replacement  and result analysis -------
+        if not seqAnalysis.SearchDB.idx_err:
+            mr = CSolutionManager(gManager)
+            mr.controller(seqAnalysis.SearchDB.allMODELS)
+            if gManager.pathDict.has_key("infile_sol") :
+                if gManager.pathDict["infile_sol"] and gManager.pathDict['best_model']:      
+                    gManager.pathDict['chain_expected'] = gManager.pathDict['best_model'].chain_expected
+                    gManager.pathDict['chain_found']    = gManager.pathDict['best_model'].chain_found
+        else :
+            print "BALBES exits after searching the internal database "
+            gManager.pathDict['process_log_content'] += \
+                    "BALBES exits after searching the internal database \n"
+
+    # for statistics, internal use only
+    if gManager.pathDict.has_key("infile_sol") :
+        if gManager.pathDict.has_key('chain_expected') :
+            if gManager.pathDict['chain_expected']:
+                if gManager.pathDict['chain_found']:
+                    print "Automatic MR: expect %d  found %d " \
+                           % (gManager.pathDict['chain_expected'], gManager.pathDict['chain_found'])
+                    gManager.pathDict['process_log_content'] += \
+                                 "Automatic MR: expect %d  found %d \n"\
+                           % (gManager.pathDict['chain_expected'], gManager.pathDict['chain_found'])
+                else :
+                    print "Automatic MR found no chain "
+                    gManager.pathDict['process_log_content'] += \
+                                      "Automatic MR found no chain \n"
+            elif not seqAnalysis.SearchDB.idx_err :
+                    print "Can not find the number of chains in the deposited PDB file %s " \
+                          % gManager.pathDict["infile_sol"]
+                    gManager.pathDict['process_log_content'] += \
+                                      "Can not found number of chains in the deposited PDB file %s  \n" \
+                                      % gManager.pathDict["infile_sol"]
+ 
+else :
+    print "Problem in the reflection file, Job stoped "
+    gManager.pathDict['process_log_content'] += \
+          "Problem in the reflection file, Job stoped \n"
+
+WriteFile(gManager.pathDict['process_log_name'],gManager.pathDict['process_log_content'])
+
+#if gManager.pathDict.has_key('scr_path'):
+#    if glob.glob(gManager.pathDict['scr_path']):
+#        shutil.rmtree(gManager.pathDict['scr_path'])   
+
+#if gManager.pathDict.has_key('xml_path'):
+#    if glob.glob(gManager.pathDict['xml_path']):
+#        shutil.rmtree(gManager.pathDict['xml_path'])   
+
+#---------------------------------------------------#
+#  BALBES section finished!                         #
+#---------------------------------------------------#
+      
+
+
+
+
+
+

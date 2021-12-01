@@ -1,0 +1,3373 @@
+<html>
+<head><title>CCP4 Program Suite: restrain</title></head>
+<body>
+
+<!-- ::INDEX_INFO::RESTRAIN::Deprecated::Model Refinement::macromolecular refinement program:::::::: -->
+
+<H1> RESTRAIN (CCP4: Deprecated Program)</H1>
+<H2> NAME</H2>
+<b>restrain </b>
+- refinement program including restraints, rigid body refinement,
+non-crystallographic symmetry, atomic and group isotropic, anisotropic
+and TLS thermal parameters, group and coupled occupancies <EM>etc.</EM>
+
+<H2> SYNOPSIS</H2>
+<b>restrain XYZIN </b>
+<i>foo_in.brk </i>
+<b>TLSIN </b>
+<i>foo_in.tls </i>
+<b>HKLIN </b>
+<i>foo_in.mtz </i>
+<b>XYZOUT </b>
+<i>foo_out.brk </i>
+<b>TLSOUT </b>
+<i>foo_out.tls </i>
+<b>HKLOUT </b>
+<i>foo_out.mtz </i>
+<br>
+[<A HREF="#keywords">Keyworded input</A>]
+
+<H2><A NAME="identification"></A> IDENTIFICATION</H2>
+
+<pre>
+
+                      RESTRAIN version 4.6
+
+
+           A MACROMOLECULAR REFINEMENT PROGRAM MINIMISING
+               A FUNCTION CONTAINING TERMS INVOLVING:
+
+                      STRUCTURE AMPLITUDES
+                             PHASES
+                      INTERATOMIC DISTANCES
+                         GROUP PLANARITY
+               ISOTROPIC THERMAL PARAMETER DIFFERENCES
+              ANISOTROPIC THERMAL PARAMETER DIFFERENCES
+
+                         with respect to
+
+                      OVERALL SCALE FACTOR
+               OVERALL ISOTROPIC THERMAL PARAMETER
+              OVERALL ANISOTROPIC THERMAL PARAMETERS
+                     BULK SOLVENT PARAMETERS
+                       ATOMIC COORDINATES
+              RIGID BODY ROTATIONS AND TRANSLATIONS
+             NON-CRYSTALLOGRAPHIC SYMMETRY OPERATORS
+               ATOMIC ISOTROPIC THERMAL PARAMETERS
+              ATOMIC ANISOTROPIC THERMAL PARAMETERS
+                GROUP ISOTROPIC THERMAL PARAMETERS
+               GROUP ANISOTROPIC THERMAL PARAMETERS
+                    GROUP TLS TENSOR COMPONENTS
+              ATOMIC, GROUP AND COUPLED OCCUPANCIES
+
+</pre>
+
+<H2> AUTHORS</H2>
+
+Major Contributors:
+<dl><dt>
+<dd>                          N Borkakoti
+<dd>                          S A Butler
+<dd>                          H P C Driessen
+<dd>                          M I J Haneef
+<dd>                          G W Harris
+<dd>                          B Howlin
+<dd>                          G Khan
+<dd>                          R Laskowski
+<dd>                          A J Morffew
+<dd>                          D S Moss
+<dd>                          A Sali                         
+<dd>                          I J Tickle
+</dl>
+<address>
+               Laboratory of Molecular Biology<br>
+               Department of Crystallography<br>
+               Birkbeck College, Malet Street<br>
+               London WC1E 7HX, UK<br>
+</address>
+<p>
+Contact: Ian Tickle (tickle@mail.cryst.bbk.ac.uk).
+<p><br>
+
+<H2><A NAME="overview"></A>OVERVIEW</H2>
+
+<OL>
+<LI>
+<A HREF="#section1">INTRODUCTION</A>
+   <OL>
+   <LI><A HREF="#section1.1">REFINEMENT FACILITIES</A></LI>
+   <LI><A HREF="#section1.2">PROGRAM IMPLEMENTATION</A></LI>
+   </OL>
+</LI>
+<LI>
+<A HREF="#section2">THE USE OF RESTRAIN</A>
+   <OL>
+   <LI><A HREF="#section2.1">GETTING STARTED</A></LI>
+   <LI><A HREF="#section2.2">GEOMETRIC REGULARISATION</A></LI>
+   <LI><A HREF="#section2.3">REFINING WITH THE USE OF REFLECTION DATA</A>
+      <OL>
+      <LI><A HREF="#section2.3.1">The options available</A></LI>
+      <LI><A HREF="#section2.3.2">Initial refinement from MIR and MIRAS models</A></LI>
+      <LI><A HREF="#section2.3.3">Initial refinement from molecular replacement models</A></LI>
+      <LI><A HREF="#section2.3.4">Initial refinement of macromolecule-ligand complexes</A></LI> 
+      <LI><A HREF="#section2.3.5">Refinement at intermediate resolution</A></LI>
+      <LI><A HREF="#section2.3.6">Group isotropic and anisotropic thermal parameters</A></LI>
+      <LI><A HREF="#section2.3.7">Individual atomic anisotropic thermal parameters</A></LI>
+      <LI><A HREF="#section2.3.8">Occupancy refinement</A></LI>
+      </OL>
+   </LI>
+   <LI><A HREF="#section2.4">WEIGHTING</A>
+      <OL>
+      <LI><A HREF="#section2.4.1">Structure amplitude weighting</A></LI>
+      <LI><A HREF="#section2.4.2">Phase weighting</A></LI>
+      <LI><A HREF="#section2.4.3">Energy weighting</A></LI>
+      <LI><A HREF="#section2.4.4">Thermal parameter restraint weighting</A></LI>
+      </OL>
+   </LI>
+   </OL>
+</LI>
+<LI>
+<A HREF="#section3">INPUT FILES</A>
+   <OL>
+   <LI><A HREF="#section3.1">CONTROL and STEERING DATA</A>
+      <OL>
+      <LI><A HREF="#section3.1.1">Description of control data</A></LI>
+      <LI><A HREF="#section3.1.2">List of steering data</A></LI>
+      <LI><A HREF="#section3.1.3">Full description of the steering data</A></LI>
+      </OL>
+   </LI>
+   <LI><A HREF="#section3.2">DICTIONARY</A></LI>
+   <LI><A HREF="#section3.3">ATOMIC COORDINATES</A></LI>
+   <LI><A HREF="#section3.4">GROUP THERMAL PARAMETER CONTROL DATA</A>
+      <OL>
+      <LI><A HREF="#section3.4.1">Description of the data records in the TLSIN file</A></LI>
+      </OL>
+   </LI>
+   <LI><A HREF="#section3.5">AMPLITUDE AND PHASE DATA</A></LI>
+   </OL>
+</LI>
+<LI>
+<A HREF="#section4">OUTPUT FILES</A>
+   <OL>
+   <LI><A HREF="#section4.1">LINE PRINTER OUTPUT</A></LI>
+   <LI><A HREF="#section4.2">REFINED COORDINATES</A></LI>
+   <LI><A HREF="#section4.3">REFINED GROUP THERMAL PARAMETERS</A></LI>
+   <LI><A HREF="#section4.4">STRUCTURE FACTORS</A></LI>
+   <LI><A HREF="#section4.5">NORMAL MATRIX</A></LI>
+   <LI><A HREF="#section4.6">SCRATCH FILES</A></LI>
+   </OL>
+</LI>
+<LI>
+<A HREF="#section5">JOB FAILURES</A>
+   <OL>
+   <LI><A HREF="#section5.1">ARRAY DIMENSION ERRORS</A></LI>
+   <LI><A HREF="#section5.2">COORDINATE FILE ERRORS</A></LI>
+   <LI><A HREF="#section5.3">REFLECTION FILE ERRORS</A></LI>
+   </OL>
+</LI>
+<LI>
+<A HREF="#section6">EXAMPLES</A>
+</LI>
+<LI>
+<A HREF="#section7">REFERENCES</A>
+</LI>
+</OL>
+
+<H2><A NAME="introduction"><A NAME="section1"></A>1.&nbsp; INTRODUCTION</H2>
+
+<H3><A NAME="section1.1"></A>1.1 REFINEMENT FACILITIES</H3>
+
+RESTRAIN is a computer program for the least-squares refinement
+of protein and nucleic acid structures using X-ray or neutron
+single crystal diffraction data.&nbsp; It incorporates facilities for
+<ul>
+<li>          restrained geometry refinement
+<li>          restrained isotropic &amp; anisotropic thermal parameters
+<li>          rigid body refinement
+<li>          non-crystallographic symmetry refinement
+<li>          use of amplitude and phase observations
+<li>          individual anisotropic thermal parameters
+<li>          group anisotropic thermal parameters (TLS)
+<li>          disordered bulk solvent corrections
+<li>          accumulation of full normal matrix for e.s.d.'s
+</ul>
+<p>
+The design and implementation follow papers by <A HREF="#reference13">Waser (1963)</A>,
+<A HREF="#reference12">Rollett (1969)</A>, <A HREF="#reference8">Moss (1981)</A>, <A HREF="#reference9">Moss &amp; Morffew (1982)</A>, <A HREF="#reference4">Haneef et al.
+(1985)</A> and <A HREF="#reference2">Driessen et al. (1989)</A>.
+<p>
+The function minimised is of the form:
+<A NAME="equation1"></A><pre>
+M =  SUM [w(f) (|Fo| - G.|Fc|)<sup>2</sup>]
+   + SUM [w(p) (PHIo - PHIc)<sup>2</sup>]
+   + SUM [w(d) (d(t) - d(c))<sup>2</sup>]
+   + SUM [w(b) (b(o) - b(min))<sup>2</sup>]
+   + SUM [w(U) delta-U<sup>2</sup>]
+   + SUM [w(Ua) delta-Ua<sup>2</sup>]
+   + SUM [w(v) V]
+   + SUM [w(c) (d(t) - d(c))<sup>2</sup>]            (1)
+</pre>
+where
+<dl><dt><dd>
+w(f)     = weight for structure amplitude,<br>
+Fo       = observed structure amplitude,<br>
+G        = scale factor,<br>
+Fc       = calculated structure amplitude,<br>
+w(p)     = weight for phase,<br>
+PHIo     = estimated phase (from isomorphous and/or anomalous data),<br>
+PHIc     = calculated phase,<br>
+w(d)     = weight for restrained distance,<br>
+d(t)     = target interatomic distance,<br>
+d(c)     = calculated interatomic distance,<br>
+w(b)     = weight for non-bonded interactions,<br>
+b(o)     = observed distance between two non-bonded atoms,<br>
+b(min)   = minimum distance allowed for such atoms,<br>
+w(U)     = weight for isotropic thermal parameter difference,<br>
+delta-U  = isotropic thermal parameter difference for restrained atoms,
+<br>
+w(Ua)    = weight for anisotropic thermal parameter difference,<br>
+delta-Ua = along-bond component of anisotropic thermal parameter
+difference for restrained atoms,<br>
+w(v)     = weight for planarity restraints,<br>
+V        = mean square deviation from best plane of a planar group of
+atoms,<br>
+w(c)     = weight for chirality restraints.
+</dl>
+<p>
+The non-bonded interaction is only operational when b(o) &lt; b(min)
+and chirality restraints are applied as distance restraints along
+the edges of chiral tetrahedra.
+<A HREF="#equation1">Equation (1)</A> may be written as a function of three terms:
+M = M(a) + M(b) + M(c).&nbsp; M(a) is the first term and is the one
+conventionally found in crystallographic least-squares
+procedures.&nbsp; M(b) is the second term which allows the use of
+estimates of phases from isomorphous and/or anomalous data.&nbsp; M(c)
+is the sum of the remaining terms and represents pseudo-potential energy
+terms.
+<p>
+The function M may be minimised with respect to a selection of the
+following parameters:
+<ul>
+<li>overall scale factor
+<li>overall atomic isotropic parameter
+<li>overall atomic anisotropic parameter
+<li>bulk solvent parameters
+<li>atomic coordinates
+<li>rigid body rotations and translations
+<li>non-crystallographic symmetry operators
+<li>atomic and group isotropic thermal parameters
+<li>atomic and group anisotropic thermal parameters
+<li>group TLS tensors
+<li>atomic, group and coupled occupancies
+</ul>
+<p>
+Although RESTRAIN has been written primarily for refinement of
+macromolecular structures, the use of a user defined dictionary
+for interatomic and planar restraints and other options allows the user
+to specify additional interatomic restraints and planes, and
+means that virtually any structure can be refined by the program.
+The program at present uses a four-Gaussian expansion of scattering
+factors (INTERNATIONAL TABLES FOR X-RAY CRYSTALLOGRAPHY, Vol.
+IV).&nbsp; Coefficients for this expansion suitable for X-ray or
+neutron diffraction may be read from the dictionary.
+<p>
+The program is completely general and may be used for any number
+of reflections in any space group.&nbsp; The program can be used for
+any size of problem.&nbsp; The number of atoms which may be refined is
+only limited by the available memory of the computer used.&nbsp; Array
+sizes are increased by a global change of the relevant variables
+in <A HREF="#program_implementation">PARAMETER statements in an INCLUDE file</A> (common.inc), followed by
+re-compilation of the source file.
+<p>
+At Birkbeck College this program has been used for refinement of
+protein and nucleic acid structures using X-ray or neutron
+diffraction data.&nbsp; It has generally been used in conjunction with
+model building using an interactive graphics system.&nbsp; The
+program has been set up so that the input/output interfaces
+easily with the graphics model building program O (Jones 1991) and FFT
+programs.&nbsp; Coordinate files have the standard PDB format.&nbsp;
+Reflection input files may be either formatted or unformatted (CCP4
+MTZ).
+<p><br>
+
+<h3><A NAME="section1.2"><A NAME="program_implementation"></A>1.2 PROGRAM IMPLEMENTATION</h3>
+
+RESTRAIN has been written in standard FORTRAN 77 (ANSI X3.9-1978) with
+the sole exception of the INCLUDE facility for inserting the common
+blocks in the individual subroutines.&nbsp; The program has been
+designed to take advantage of vector or scalar processing
+computers.&nbsp;
+To obtain the highest speed, space group specific
+versions of SG0001 have been written for some of the most common space
+groups.&nbsp; However, not all options of RESTRAIN are possible when
+using them (NCS, anisotropic and TLS).&nbsp; There is no difference in
+the steering parameters when using them.&nbsp; Currently there are
+subroutines available for:
+<dl><dt><dd>
+P2 &amp; C2 (nos. 3 &amp; 5)<br>
+P2<sub>1</sub> (4)<br>
+P222 (16), C222 (21), F222 (22) &amp; I222 (23)<br>
+P222<sub>1</sub> (17) &amp; C222<sub>1</sub> (20)<br>
+P2<sub>1</sub>2<sub>1</sub>2 (18)<br>
+P2<sub>1</sub>2<sub>1</sub>2<sub>1</sub> (19) &amp;
+I2<sub>1</sub>2<sub>1</sub>2<sub>1</sub> (24)<br>
+P4<sub>2</sub> (77)<br>
+P4<sub>1</sub>2<sub>1</sub>2 (92)<br>
+P4<sub>2</sub>2<sub>1</sub>2 (94)<br>
+P4<sub>3</sub>2<sub>1</sub>2 (96)<br>
+P6<sub>1</sub> (169)<br>
+P6<sub>5</sub> (170)<br>
+P6<sub>1</sub>22 (178)<br>
+P6<sub>5</sub>22 (179)<br>
+</dl>
+<p>
+Note that some of these subroutines (the monoclinic and orthorhombic
+ones) may be used for a higher symmetry space group provided it is a
+super-group with the same origin.&nbsp; For example P2<sub>1</sub>3 is a
+super-group of P2<sub>1</sub>2<sub>1</sub>2<sub>1</sub> with no origin
+shift.
+<p>
+User friendliness of input/output has been an important criterion in the
+design of RESTRAIN.&nbsp; No preparation programs need be used.&nbsp;
+The authors have endeavoured to print sensible error messages on job
+failure, and to intercept lethal input.&nbsp; Any suggestions for
+improvement will be welcome.
+<p><br>
+
+<H2><A NAME="section2"></A>2.&nbsp; THE USE OF RESTRAIN</H2>
+
+<h3><A NAME="section2.1"></A>2.1 GETTING STARTED</h3>                       
+
+In order to run RESTRAIN you will need either 3, 4 or 5 input
+files.&nbsp; These are listed below together with the names by which
+they are referenced in the RESTRAIN output.
+<pre>
+   File                   File name        Explanation
+
+ - Script with control      none           <A HREF="#section3.1">section 3.1</A>
+   and steering data
+ - Dictionary              DICTION         <A HREF="#section3.2">section 3.2</A>
+ - Coordinates              XYZIN          <A HREF="#section3.3">section 3.3</A>
+ - Optional group           TLSIN          <A HREF="#section3.4">section 3.4</A>
+   thermal parameters
+ - Optional reflections  HKLIN or REFIN    <A HREF="#section3.5">section 3.5</A>
+</pre>
+<p>
+Alternatively you may have the control and steering data in an input
+file separate from the job script. 
+<p>
+Care must be taken in preparing the coordinates for refinement.&nbsp;
+After each polymer chain a TER record must be inserted.&nbsp; This
+includes breaks in the chain due to one or more missing residues.&nbsp;
+The residues need not be numbered sequentially and the residue labels
+may contain non-numeric characters at any position.&nbsp; However, to
+maintain compatibility with the PDB standard format it is advisable to
+restrict the use of non-numeric characters to alphabetic characters, and
+then only in the last character position (residue insertion code).
+<p>
+The C-terminal residue of a protein chain may have an extra O (carboxyl)
+or N (amide) atom, but it must be put in a separate residue (CAR or CAM)
+with the atom label OXT or NXT.&nbsp; All atoms not contained in chains
+must be supplied as HETATMs.&nbsp; The atom labels in a residue must
+correspond exactly (<i>i.e.</i> in case and justification) with the
+supplied dictionary, and there must be no missing or extra atoms.&nbsp;
+Missing atoms can be dealt with by temporarily renaming the residue
+(<i>e.g.</i> for missing protein side-chain rename to GLY or ALA).&nbsp;
+Extra disordered atoms must be supplied after the TER record as HETATMs;
+extra distance restraints will have to be supplied for these atoms.
+<p>
+The PDB file may contain either U<sub>iso</sub>'s or B<sub>iso</sub>'s, but the appropriate
+steering parameter must be specified (<A HREF="#var_iso">ISO</A>=true and <A HREF="#var_binput">BINPUT</A>=false or true
+respectively).&nbsp; The file may also contain anisotropic U's in the
+standard PDB format.
+<p>
+After previous refinement and extensive rebuilding you may want to
+reset large U or B values for atoms incorrectly positioned before
+rebuilding (<i>e.g.</i> U &gt; 0.8 or B &gt; 64A<sup>2</sup>) to more
+reasonable starting values (<i>e.g.</i> U=0.2 or B=16A<sup>2</sup>).
+<p>
+The atomic coordinates in the polymer chains need not be ordered in
+each residue in the same way as the atoms in the residue are ordered in
+the dictionary.&nbsp; If they are not they will be re-ordered and the
+output file of atomic coordinates will then be produced in dictionary
+order for subsequent cycles.&nbsp; Alternatively, set <A HREF="#var_testin">TESTIN</A>=true and
+<A HREF="#var_order">ORDER</A>=true to use the program to order and analyse the file without
+carrying out any refinement.
+<p>
+After each run (1 or more cycles) 1 or more output files will be
+created:
+<pre>
+      File                  Filename       Explanation
+
+ - coordinates               XYZOUT        <A HREF="#section4.2">section 4.2</A>
+ - TLS parameters            TLSOUT        <A HREF="#section4.3">section 4.3</A>
+ - reflections           HKLOUT or REFOUT  <A HREF="#section4.4">section 4.4</A>
+ - normal matrix             MATOUT        <A HREF="#section4.5">section 4.5</A>
+</pre>
+<p>
+Furthermore the listing of the run (section <A HREF="#section4.1">4.1</A>) will have to be
+examined closely, since the steering data may need to be updated
+for the next run, especially <A HREF="#var_g">G</A>, <A HREF="#var_u">U</A>, <A HREF="#var_sb1">SB1</A> and <A HREF="#var_sb2">SB2</A> (section 3.1.3).&nbsp;
+You should update the cycle number <A HREF="#var_cycno">CYCNO</A>, so that you keep track of
+how many cycles you have done, and later relate this to the
+R-factor.&nbsp;
+<p>
+If you are refining NCS parameters you will need to supply updated
+parameters.&nbsp; You may also want to change the weighting coefficients
+for the reflections <A HREF="#var_wf">WF(i)</A>, section 3.1.3.&nbsp; All the required
+parameters are always printed at the end of every log file whenever new
+values have been computed; these can be pasted into the steering data
+ready for the next run.&nbsp; Refined coordinates and group thermal
+parameters can be read back in by the program without
+modification.&nbsp; In order to obtain output reflections define <A HREF="#hklout">HKLOUT</A>
+or <A HREF="#refout">REFOUT</A> (section 3.1.1).
+<p>
+The input that is necessary and the sections that are relevant
+to you depend on the application for which you intend to use
+RESTRAIN.&nbsp; There are basically two categories:
+<ul>
+<li> regularising the geometry of a structure according to the
+dictionary where no reflection data are used;
+
+<li> refining a structure where reflection data are used, and
+restraints are optional.
+</ul>
+<p><br>
+
+<h3><A NAME="section2.2"></A>2.2 GEOMETRIC REGULARISATION</h3>                  
+
+If you wish to regularise the geometry of your model structure, omit the
+definition of <A HREF="#hklin">HKLIN</A> or <A HREf="#refin">REFIN</A>, or set <A HREF="#var_fref">FREF</A>=false, which disables
+structure factor refinement.&nbsp; Regularisation may be useful after
+heavy rebuilding of a coordinate set, and may point to gross errors
+(look at the weighted differences between calculated and observed
+distances), which need manual correction on the graphics before
+continuing.&nbsp; Usually a few cycles suffice before reflections are
+used.&nbsp; You may have to raise <A HREF="#var_mfacr">MFACR</A> to 0.2 or 0.3 to assist the
+solution of the normal equations, bearing in mind that
+the larger the value of MFACR the smaller the shifts in your output
+coordinates will be.
+<p><br>
+
+<h3><A NAME="section2.3"></A>2.3 REFINING WITH THE USE OF REFLECTION DATA</h3>             
+
+For refinement against X-ray or neutron diffraction data, use the
+default <A HREF="#var_fref">FREF</A>=true .&nbsp; Again the input you need will depend on the
+application for which you intend to use RESTRAIN.&nbsp; The most common
+categories are outlined below.&nbsp; If your category does not appear,
+or you are not sure what you want to do, seek assistance.
+<p><br>
+
+<h4><A NAME="section2.3.1"></A>2.3.1 The options available.</h4>
+<p>
+The following options are available, either separately or in
+combination to refine a set of coordinates from low to high
+resolution.&nbsp; However note that some combinations do not make sense,
+and will cause abnormal program termination, for example if both RIGID
+coordinate groups and UISO/UANISO/TLS thermal parameter groups are
+defined, the thermal parameter groups must be completely contained
+within the coordinate groups, otherwise application of the refined
+RIGID body rotations and translations to the thermal parameters would
+destroy the correlations within the thermal parameter group.
+<p>
+<dl><dt>
+THERMAL PARAMETERS:
+<dd><dl compact>
+<dt>  i. <dd>refining an overall thermal parameter
+     (<A HREF="#var_iso">ISO</A>=false, <A HREF="#var_isoref">ISOREF</A>=false);
+<dt> ii. <dd>reading individual atomic isotropic thermal parameters
+     without refining
+     (ISO=true, ISOREF=false);
+<dt>iii. <dd>refining individual atomic isotropic thermal parameters
+     (ISOREF=true);
+<dt> iv. <dd>refining group isotropic, anisotropic or TLS parameters for
+     selected groups;
+<dt>  v. <dd>refining individual atomic anisotropic thermal parameters
+     (<A HREF="#aniso">ANISO</A>).
+</dl>
+<p>
+
+<dt>
+ATOMIC POSITIONS:
+<dd><dl compact>
+<dt> vi. <dd>refining rigid body rotations and translations:
+     CONSTRAINED REFINEMENT
+     (<A HREF="#var_rigid">RIGID</A>=true + <A HREF="#rigid">RIGID</A> group specification(s));
+<dt>vii. <dd>refining rigid body rotations and translations and
+     individual atomic positions:
+     CONSTRAINED-RESTRAINED REFINEMENT
+     (RIGID=false + RIGID group specification(s));
+<dt>viii.<dd>refining non-crystallographic symmetry:
+     CONSTRAINED REFINEMENT
+     (RIGID=true + <A HREF="#ncsymm">NCSYMM</A> specification(s));
+<dt> ix. <dd>refining individual atomic positions with averaging of non-
+     crystallographic symmetry:
+     CONSTRAINED-RESTRAINED REFINEMENT
+     (RIGID=false + NCSYMM specification(s));
+<dt>  x. <dd>refining individual atomic positions:
+     RESTRAINED REFINEMENT
+     (RIGID=false, no RIGID groups).
+</dl>
+<p>
+
+<dt>
+OCCUPANCIES:
+<dd><dl compact>
+<dt> xi. <dd>refining atomic, group and coupled occupancies.
+</dl>
+</dl>
+<p><br>
+
+<h4><A NAME="section2.3.2"></A>2.3.2 Initial refinement from MIR and MIRAS models.</h4>
+<p>
+You will normally start by setting <A HREF="#var_iso">ISO</A>=false to get an overall
+thermal parameter <A HREF="#var_u">U</A> and scale factor <A HREF="#var_g">G</A>.&nbsp; At this stage you may
+still want to include the MIR or MIRAS phases in the refinement.
+Set <A HREF="#var_phas">PHAS</A>=true and make sure that the input reflection file
+contains these phases.&nbsp; However, if your low-resolution model is
+reasonable, you may not want to use these data.
+<p>
+Unless phasing extends to a resolution of better than 3&Aring; you may
+find that progress should begin by breaking the structure up into
+rigid body segments and refining these as strictly rigid bodies.
+Set <A HREF="#var_rigid">RIGID</A>=true and specify <A HREF="#rigid">RIGID</A> groups; structure outside the
+rigid groups will not be refined.&nbsp; Such segments may be as small
+as one residue or one side chain.
+<p>
+If the bonds between such segments become seriously disrupted
+during rigid body refinement, then those parts may have to be
+rebuilt on a graphics system; otherwise the structure may be
+annealed by restrained refinement.&nbsp; Remember that refinement
+cannot usually correct errors which are larger than one third of
+the high resolution cut-off.
+<p>
+Regions of the structure which are more highly disordered may
+have to be omitted initially if maps show no clear main chain
+density.&nbsp; In this case the structure will have to be broken up
+into extra chains with TER records at the end of each chain.&nbsp; If
+the main chain density is clear and the side chain is unclear or
+the sequence at this point is uncertain then the residue should
+be treated as ALA or GLY in the case of proteins.&nbsp; Remember that
+the number of atoms in a residue in the coordinates must
+correspond with the number of atoms in the residue of that name
+in the dictionary.
+<p>
+Initially the data-parameter ratio will be unfavourable and the normal
+matrix for the positional parameters ill-conditioned.&nbsp; In the first
+cycles at low resolution you will normally get large shifts.
+<p><br>
+
+<h4><A NAME="section2.3.3"></A>2.3.3 Initial refinement from molecular replacement models.</h4>
+<p>
+In the case where only one molecule is present in the asymmetric
+unit it is best to start by refining the six rigid body
+parameters from the molecular replacement by using <A HREF="#var_rigid">RIGID</A>=true and the
+<A HREF="#rigid">RIGID</A> specification to delineate the molecule.&nbsp; After
+convergence it may be possible to break the structure up into large
+chunks, <EM>e.g.</EM> in the case of domains.&nbsp; See sections <A HREF="#section2.3.2">2.3.2</A> and <A HREF="#section2.3.5">2.3.5</A>
+for further information.
+<p>
+In the case where more than one molecule is present in the
+asymmetric unit, one may want to proceed as with one molecule.
+However, it is possible at low to intermediate resolution to save
+on time and parameters by refining the structure making use of
+non-crystallographic symmetry and then only to rebuild one
+molecule on the graphics before further refinement.&nbsp; There are two
+modes to deal with non-crystallographic symmetry.
+<p><br>
+<A NAME="mode_1"></A>MODE 1:
+<br>
+The sole purpose of MODE 1 is to enable the refinement of the
+relative positions of up to 14 identical molecules (or
+subunits) in the crystallographic asymmetric unit by applying
+rigid body refinement.&nbsp; MODE 1 is usually used in the earlier
+stages of refinement in which case the transformations relating
+the molecules may come from molecular replacement studies.
+<p>
+The orthogonal coordinates of one molecule are supplied along
+with the transformations operating on these coordinates which
+generate the coordinates of up to 14 molecules.&nbsp; 
+<p>
+Set <A HREF="#var_rigid">RIGID</A>=true and define one or more <A HREF="#rigid">RIGID</A> bodies as before, and the
+molecules will then be refined as independent rigid bodies.&nbsp;
+Output will be the refined coordinates of the generated molecules, and
+the refined transformations, which should be input to the next cycle.
+<p>
+Note that the program will not notify you if the same molecule
+is generated twice.&nbsp; This may happen if a dimer is supplied and
+also generated.&nbsp; You therefore must make sure that only one
+molecule and the correct transformation are used by the program. 
+<p><br>
+<A NAME="mode_2"></A>MODE 2:
+<br>
+The purpose of MODE 2 is to assist a user who has more than one
+molecule (or subunit) in the asymmetric unit and who wishes to
+refine these molecules while imposing the condition that they
+are structurally identical.&nbsp; This is useful in the earlier stages
+of refinement (possibly after the use of MODE 1) as it saves
+having to manually adjust the coordinates of more than one
+molecule.&nbsp;
+<p>
+Input is the same as for MODE 1 except that <A HREF="#var_rigid">RIGID</A>=false and <A HREF="#rigid">RIGID</A>
+specifications are absent (see <A HREF="#section2.3.1">above</A>).&nbsp; The transformations
+supplied are used as extra "equivalent positions" and the refinement
+produces an asymmetric unit where the molecules are identical and tend
+to an average of the real molecules.
+<p>
+The coordinates of only one molecule are written out and the
+same transformations are supplied for subsequent cycles.&nbsp;
+As in MODE 1, it is important to make sure that you do not
+generate a molecule that has already been read in.
+<p>
+See sections <A HREF="#section2.3.2">2.3.2</A> and <A HREF="#section2.3.5">2.3.5</A> for further information.
+<p><br>
+
+<h4><A NAME="section2.3.4"></A>2.3.4 Initial refinement of macromolecule-ligand complexes.</h4>
+<p>
+When small errors in isomorphism are present, it may be useful
+to refine the protein in CONSTRAINED mode before difference
+Fouriers are calculated.&nbsp; Set <A HREF="#var_rigid">RIGID</A>=true and use <A HREF="#rigid">RIGID</A>
+groups.&nbsp; Use only an overall U<sub>iso</sub>.&nbsp; After
+difference Fouriers and building in the ligand, it may be
+advisable to refine the ligand and the macromolecule in
+CONSTRAINED-RESTRAINED mode by setting RIGID=false and defining RIGID
+groups (see <A HREF="#section2.3.1">above</A>).&nbsp; See sections <A HREF="#section2.3.2">2.3.2</A> and <A HREF="#section2.3.5">2.3.5</A> for further information.
+<p><br>
+
+<h4><A NAME="section2.3.5"></A>2.3.5 Refinement at intermediate resolution.</h4>
+<p>
+How to proceed at intermediate resolution has already been
+discussed partially in sections <A HREF="#section2.3.3">2.3.3</A> and <A HREF="#section2.3.4">2.3.4</A>.&nbsp; Generally it may
+be still useful to do some cycles of CONSTRAINED-RESTRAINED
+refinement before proceeding to RESTRAINED refinement only.&nbsp; Set
+<A HREF="#var_rigid">RIGID</A>=false and use <A HREF="#rigid">RIGID</A> records to delineate "rigid"
+bodies.&nbsp; This will accelerate convergence.&nbsp; Finally RESTRAINED
+refinement is obtained by removing the definitions of any RIGID groups.
+<p>
+It may now be useful to refine individual isotropic thermal
+parameters.&nbsp; When these are already present in the input
+coordinates they can be used and refined using <A HREF="#var_iso">ISO</A>=true together with
+<A HREF="#var_binput">BINPUT</A>=false (if U<sub>iso</sub>'s are present in the PDB file), or BINPUT=true
+(the default, if B's are present), together
+with the default <A HREF="#var_isoref">ISOREF</A>=true.&nbsp; When not present in your input
+coordinate data set, use ISO=false and ISOREF=true in the initial
+run.&nbsp; Having ISO=true and ISOREF=false will merely
+indicate that you want to read isotropic thermal parameters, but not
+refine them.&nbsp; This can be useful for molecular replacement
+models.&nbsp; In order to get meaningful isotropic thermal parameters it
+is usually necessary to include data higher than 3&Aring;
+resolution.&nbsp; Note that <A HREF="#var_mfacr">MFACR</A> (see section 3.1.3) is used to remove
+ill-conditioning.&nbsp; The input U<sub>iso</sub> for each atom is
+checked and reset if necessary.&nbsp; The lowest allowed
+U<sub>iso</sub> is set with <A HREF="#var_uliml">ULIML</A>; the highest by <A HREF="#var_ulimh">ULIMH</A>.
+<p><br>
+
+<h4><A NAME="section2.3.6"></A>2.3.6 Group isotropic and anisotropic thermal parameters.</h4>
+<p>
+Physical background:
+<p>
+In this option the thermal parameters of atomic groups are refined using
+the approximation that the groups possess, either partly or wholly,
+"correlated amplitude" motion.&nbsp; This is not necessarily the same
+as "rigid body" motion because the Bragg scattering is sensitive only
+to the amplitudes of vibrating atoms, not to their relative
+phases.&nbsp; Small rigid groups of bonded atoms such as the planar
+aromatic rings in HIS, PHE, TYR and TRP are likely to vibrate as rigid
+bodies, because the mean square vibration amplitude of a typical bond
+is very small (~ 0.002&Aring;<sup>2</sup>).  However larger groups such
+as secondary structure elements or domains are likely to have larger
+internal motions, where sub-structures have vibration amplitudes which
+are correlated, but whose relative phases are not (<i>e.g.</i> in
+anti-phase, as opposed to in phase); this correlated amplitude motion
+will be indistinguishable from true in-phase rigid body motion if only
+Bragg scattering data is used.
+<p>
+The atomic groups may be whole molecules, units of secondary
+structure (<i>e.g.</i> alpha helices) or they may be pseudo-rigid side
+groups such as phenyl rings, imidazole, carboxylate, guanidinium
+or amide groups.&nbsp; When units of secondary structure are chosen,
+there is an option to include main chain atoms only.&nbsp; For small
+groups (<i>i.e.</i> &lt; 20 atoms) data at high resolution (<i>e.g.</i>
+1.5&Aring;) may be required for success.&nbsp; It should also be remembered
+that the model assumes harmonic thermal parameters and this may not be
+valid for side groups on the surface of a macromolecule.
+<p>
+There are three <A HREF="#section3.4">group thermal parameter options</A>: UISO, UANISO and
+TLS.&nbsp; The UISO option refines 1 parameter per group, the UANISO
+option 5 or 6 per group, and the TLS
+(translation/libration/screw-rotation) option 19 or 20 per group.&nbsp;
+This is still likely to be far fewer than the 6 per atom required in
+full anisotropic refinement (see section <A HREF="#section2.3.7">2.3.7</A>).&nbsp; The potentially
+rigid groups in proteins which may be suitable are aromatic rings, the
+"propellers" of ASP/ASN, GLU/GLN and ARG, ligands such as heme, the
+secondary structure elements, domains, the entire molecule, or even the
+entire contents of the asymmetric unit.
+<p>
+For the UANISO and TLS options it is possible to refine the atomic
+isotropic thermal parameters in addition to the group parameters;
+this reduces the number of group parameters from 6 to 5 and 20 to 19
+respectively (because the isotropic component of the T tensor is then
+not used, and is set to the mean U<sub>iso</sub>).&nbsp; This is in fact
+the default if atomic isotropic thermal parameters are refined
+(<A HREF="#var_isoref">ISOREF</A>=true); if this option is not desired it must be deselected (see
+option <A HREF="#tlsin_noatom">NOATOM</A> in the description of parameters).
+<p>
+In order to analyse the TLS tensors, the output files may be used as
+input to the CCP4 program <A HREF="tlsanl.html">TLSANL</A>.&nbsp; The resulting anisotropic
+tensors may be visualised by using the output coordinate file to
+compute very high atomic resolution (0.7&Aring;) structure factors, and
+then contouring the Fcalc electron density with a program such as O.
+<p><br>
+
+<h4><A NAME="section2.3.7"></A>2.3.7 Individual atomic anisotropic thermal parameters.</h4>
+<p>
+If your data extend to atomic resolution it will be possible to
+refine individual atomic anisotropic thermal parameters using a
+6 element anisotropic U tensor.&nbsp; This type of refinement can be
+started up by defining groups using the <A HREF="#aniso">ANISO</A> keyword.
+ The isotropic U value of each atom will be put in the
+diagonal elements of the anisotropic U tensor (U<sub>11</sub>,
+U<sub>22</sub>, U<sub>33</sub>) to use as a starting value.
+<p>
+After refinement the new anisotropic U tensor (U<sub>11</sub>
+U<sub>22</sub> U<sub>33</sub> U<sub>12</sub> U<sub>13</sub>
+U<sub>23</sub>) will be written to the coordinate file behind the ATOM
+record in a separate record identified by ANISOU using the standard PDB
+format.&nbsp; These records will then be used in future runs for reading
+and writing the anisotropic tensors.
+<p><br>
+
+<h4><A NAME="section2.3.8"></A>2.3.8 Occupancy refinement.</h4>
+<p>
+Uncoupled group occupancy refinement may be useful for protein-
+inhibitor complexes, where the inhibitor is not present in
+stoichiometric amounts.&nbsp; The occupancy groups are defined in the
+control data with records using keyword <A HREF="#occup">OCCUp</A>.&nbsp;
+The contiguous segment(s) comprising each group is/are specified by the
+starting atom number as present in the coordinates, the number of atoms
+in the segment (may be just 1 atom), and the group identifier using
+free format.&nbsp; Use as starting occupancy for the atoms in the group
+a value as suggested by the electron density.
+<p>
+Coupled alternative sites may be most easily created by using extra
+dictionary entries (see section <A HREF="#section3.2">3.2</A>).&nbsp; <i>e.g.</i> call the short
+alternative site residue ASX if it is the alternative site of the side
+chain for an ASP.&nbsp; These alternative site residues should then be
+added to the coordinate data set as ATOM records after chains terminated
+by TER, and effectively treated as separate protein chains themselves by
+inserting a TER record.&nbsp; Both the first and subsequent sites are
+specified as described above, but with different coupling identifiers
+appended; the group identifier must be the same for these coupled
+sites.&nbsp; It will be useful to use an extra restraint to tie
+the alternative site(s) down to the atom where it diverges, and extra
+restraints will also be required between atoms defined as HETATM's (see
+<A HREF="#xtrdist">XTRDIST</A> in section 3.1.1).&nbsp; Van der Waals repulsion is
+automatically turned off for coupled groups.&nbsp;
+It is always important to study the U values for the atoms
+in alternative sites because of the strong correlation between occupancy
+and U.&nbsp; Too large a U value with a low occupancy either means that
+the coordinates have been built in the wrong position, or that the
+site is not "real".&nbsp; A reasonable starting atomic isotropic U value
+for the second site is 0.2&Aring;<sup>2</sup>.
+<p><br>
+
+<h3><A NAME="section2.4"></A>2.4 WEIGHTING</h3>
+
+Weighting may assume two distinct purposes in the refinement of
+protein structures.&nbsp; Firstly it may be used to drive the refinement
+down the correct minimum in as few cycles as possible.&nbsp; This will
+be used in the initial stages of a refinement, where as many errors
+should be corrected as possible.&nbsp; This is achieved by coarse
+resolution cut-off, and/or by using a small amplitude cut-off
+and/or a SIGMA type cut-off, and by down-weighting higher angle
+reflections in the remainder.&nbsp; This may be called <EM>convergence
+weighting</EM>. 
+<p>
+Secondly in the latter stages of refinement, the weights may be used to
+reflect the expected discrepancies between observations and target
+values or functions and the corresponding quantities calculated from the
+model.&nbsp; As the model improves, higher resolution data may be
+included, and the higher angle data and weak reflections may be given
+higher weighting until the sum of the weighted residual squared over all
+observations and restraints equals the total number of observations and
+restraints minus the total number of variable parameters.&nbsp; This may
+be called <EM>statistical weighting</EM>.&nbsp; The weighting strategies to be
+adopted in the two cases may be quite different. 
+<p>
+When applying any weights one has to <A HREF="#equation1">recall the function that is
+minimised</A>:
+<pre>
+M = SUM [w(f) (|Fo| - G.|Fc|)<sup>2</sup>]                         [=M(a)]
+  + SUM [w(p) (PHIo - PHIc)<sup>2</sup>]                           [=M(b)]
+  + SUM [w(d) (d(t) - d(c))<sup>2</sup>] + SUM [w(b) (b(o) -b(min))<sup>2</sup>]
+  + SUM [w(U) delta-U<sup>2</sup>] + SUM [w(Ua) delta-Ua<sup>2</sup>]
+  + SUM [w(v) |V|<sup>2</sup>] + SUM [w(c) (d(t) - d(c))<sup>2</sup>]         [=M(c)]
+</pre>
+<p>
+The factors w(f), w(p), w(d), w(U), w(Ua), w(v) and w(c) are the
+weights, the choice of which determines the relative influence of the
+terms in the function M which is to be minimised.&nbsp; It should be
+noted that only relative weights are significant.&nbsp; The choice of
+the absolute value of the weights does not influence the course of
+refinement.&nbsp; The relative contributions to the residual will be
+found in the general weighting analysis table (<A HREF="#output_analysis_of_function_minimised">***ANALYSIS OF
+FUNCTION MINIMISED***</A>).&nbsp; The weights are not directly
+supplied by the user.&nbsp; Instead weighting coefficients are supplied
+which are used in a formula to generate the weights.&nbsp; The formulae
+and their use are discussed in the sections below.
+<p><br>
+
+<h4><A NAME="section2.4.1"></A>2.4.1 Structure amplitude weighting.</h4>
+<p>
+If the structure factor model perfectly described the diffraction
+of the macromolecule, the theory of least squares shows that the
+structure amplitudes should be given weights which are inversely
+proportional to their variances.&nbsp; However, due to the disorder
+present in macromolecular crystals, the structure factor model is
+always significantly in error.&nbsp; The final values of residuals and
+R factors usually owe more to errors in the model than due to
+experimental errors in the diffraction data. 
+<p>
+The object of weighting the structure amplitude terms is to ensure
+that terms heavily affected by model or experimental errors are
+down-weighted.&nbsp; Several weighting schemes may be employed. 
+<p>
+<ul>
+<li> The simplest (<A HREF="#var_scheme">SCHEME</A>=1) applies equal weights to all the
+reflections.&nbsp; For SCHEME=1 the weight is given by
+<pre>
+  w(f) = WF(1).
+</pre>
+<p>
+This is the scheme that should be employed only in the initial stages.
+<p>
+ 
+<li> A second scheme (SCHEME=2) is a modified form of one proposed
+by <A HREF="#reference11">Rees (1976)</A> and involves the use of the standard deviations of
+F(obs) which must be supplied on the reflection file.&nbsp; The weights
+are given by the formula
+<pre>
+  w(f) = WF(1).S<sup>WF(2)</sup> / [WF(3).sigma(Fo)<sup>2</sup> + WF(4).Fo<sup>2</sup>]
+</pre>
+where S = sin(theta)/lambda
+<p>
+
+<li> Scheme 3 is that of <A HREF="#reference1">Cruickshank (1965)</A>
+and can be used when experimental standard deviations are not available
+or not trusted.
+<pre>
+  w(f) = WF(1) / [WF(2) + WF(3).Fo + WF(4).Fo<sup>2</sup>]
+</pre>
+<p>
+<li> Scheme 4 is derived from <A HREF="#reference10">Nielsen (1977)</A>
+and employs a more sophisticated formula than scheme 3.
+<pre>
+  w(f) = WF(1) / [WF(2) + WF(3).Fo + WF(4).Fo<sup>2</sup> +
+                  WF(5).S + WF(6).S<sup>2</sup> + WF(7).Fo.S]
+</pre>
+</ul>
+<p>
+Note that the previously suggested procedure of adjusting the WE
+coefficients on each cycle is not recommended.&nbsp; The current
+recommendation is to leave the WE coefficients set at their default
+values, and adjust the WF coefficients only after a rebuild.&nbsp; In
+any case because the structure factor and energy weights are purely
+relative, adjusting only WF(1) to raise or lower the F weights will give
+the same effect as simultaneously adjusting the geometry weights.
+<p>
+Alternatively the weighting coefficients can be chosen manually so that
+the mean values of<br>w(f).(|Fo| - |Fc|)<sup>2</sup> are approximately
+independent of Fo and/or resolution (within a factor of two or
+three).&nbsp; These mean values may be inspected in the tables <A HREF="#output_analysis_of_structure_factor_terms">***ANALYSIS OF STRUCTURE FACTOR TERMS***</A> supplied in the output where they
+are displayed in bins dependent on sin(theta)/lambda and Fo.
+<p>
+It is recommended that the user starts with scheme 1 and then when most
+of the ordered atoms have been refined, scheme 2 should
+be selected if standard deviations are available, otherwise use scheme
+3 or 4.&nbsp; The choice of weighting coefficients is not a precise
+science but the resulting parameters are not likely to be critically
+dependent on it.
+<p>
+For schemes 2, 3 and 4, the optimum coefficients to make the mean values
+of w(f).(|Fo| - |Fc|)<sup>2</sup> approximately independent of Fo and/or
+resolution, will be calculated by Nielsen's method before the first
+refinement cycle if <A HREF="#var_usewfc">USEWFC</A> is set true, and the same values will then
+be used for all the cycles in the job.
+<p><br>
+
+<h4><A NAME="section2.4.2"></A>2.4.2 Phase weighting.</h4>
+<p>
+Phase observations from isomorphous replacement or anomalous
+scattering measurements may be weighted using the figure of merit.
+The weighting formula is designed to weight down those reflections
+according to the difference between the observed and calculated
+values.&nbsp; Centric reflections are always given zero weight as they
+cannot contribute to a refinement.&nbsp; The formula is
+<pre>
+w(p) = WP(1)*FOM*[180 - |PHIo - PHIc|<sup>WP(2)</sup>]<sup>2</sup>
+</pre>
+The figure of merit (FOM) must be read from the reflection file.
+The best way to choose WP(1) and WP(2) requires further research.
+Use the <A HREF="#output_analysis_of_function_minimised">weighting analysis table</A> for guidance.
+<p><br>
+
+<h4><A NAME="section2.4.3"></A>2.4.3 Energy weighting.</h4>
+<p>
+Energy weighting involves the application of geometric restraints to the
+structure during refinement.&nbsp; The paucity of reflection data in a
+macromolecular refinement usually means that large random errors in
+atomic coordinates occur when an unrestrained refinement is
+attempted.&nbsp; These errors result in poor molecular stereochemistry.
+<p>
+Energy weighting uses a dictionary of target interatomic distances
+and standard deviations which govern the allowed deviations from the
+target values.&nbsp; Alternatively, the weights may be controlled by use
+of weight coefficients (WE) supplied in the steering data.
+<pre>
+    Weight            Case                Ideal r.m.s deviation
+
+W(d) = WE(1)<sup>2</sup>  if d(t) &lt; 2.12&Aring;                 0.02&Aring;
+W(d) = WE(2)<sup>2</sup>  if 2.12&Aring; &lt; d(t) &lt; 2.625&Aring;        0.04&Aring;
+W(d) = WE(3)<sup>2</sup>  if d(t) &gt; 2.625&Aring;                0.05&Aring;
+W(v) = WE(4)<sup>2</sup>  for planar peptide groups       0.01&Aring;
+W(c) = WE(5)<sup>2</sup>  for all other planar groups     0.01&Aring;
+W(c) = WE(6)<sup>2</sup>  for edges of chiral tetrahedra  0.02&Aring;
+</pre>
+<p>
+Chiral restraints are applied as distance restraints along the
+edges of chiral tetrahedra with d(t)&lt;=2.12A.&nbsp; In all cases
+WE(i)<sup>2</sup> is the weighting coefficient that decides the relative
+weight of the particular energy restraint and the other terms in the
+function minimised.
+<p>
+Softer restraints than those suggested above may assist convergence at
+earlier stages.&nbsp; Note that application of harder restraints at too
+early a stage may severely reduce the rate of convergence.&nbsp;
+Because the structure factor and geometry weights are purely relative,
+the effect of reducing all the geometry weights can be obtained by
+increasing the weight coefficient WF(1).
+<p>
+Relevant information about the weighting can be found in the table under
+the heading:
+<pre>
+<A HREF="#output_analysis_of_energy_terms">***ANALYSIS OF ENERGY TERMS***</A>
+</pre>
+
+<h4><A NAME="section2.4.4"></A>2.4.4 Thermal parameter restraint weighting.</h4>
+<p>
+There are 2 weighting coefficients (WU(1) and WU(2)) for the thermal
+parameter restraints which aim to minimise the difference between
+thermal parameters of pairs of atoms whose interatomic distance is also
+restrained (<i>i.e.</i> 1-2 and 1-3 bonded atoms), though the two types
+of restraint can be applied independently.&nbsp; WU(1) applies to
+isotropic thermal parameters, and WU(2) to anisotropic thermal
+parameters (but not group thermal parameters as these are already
+constrained).
+<p>
+The standard deviation of the half-bond restraint for an atom in the
+isotropic and anisotropic cases (where d is the interatomic distance) is
+given by the equations:
+<pre>
+   s<sub>iso</sub>  = WU(1).U<sup>2</sup><sub>iso</sub>
+
+   s<sub>aniso</sub> = WU(2).d<sup>2</sup>
+</pre>
+<p>
+The weight for the restraint on the thermal parameter difference
+between atoms i and j is then:
+<pre>
+   w<sub>ij</sub> = 1/(s<sup>2</sup><sub>i</sub> + s<sup>2</sup><sub>j</sub>)
+</pre>
+<p>
+The target of the restraint is also different in the two cases; in the
+isotropic case it is simply the difference between the
+U<sub>iso</sub>'s; in the anisotropic case it is the difference between
+the components of the anisotropic tensors along the line joining the
+atoms.
+<p>
+There are sound statistical and physical reasons for using different
+forms of the weight in the isotropic and anisotropic cases.
+<p>
+In the isotropic case the differences are purely statistical in
+origin: they are almost entirely due to the assumption of
+isotropy, not to any actual difference in thermal parameters.&nbsp; In
+reality atomic vibrations in a macromolecule, in particular in loosely
+bound regions such as chain termini and side-chains will have large
+anisotropic and/or librational components, so that the isotropy
+assumption is only very approximate.&nbsp; 
+<p>
+The distribution of
+U<sub>iso</sub>'s is always very skewed, <i>i.e.</i> most cluster near
+the modal value, but with a long tail of large values.&nbsp;
+Consequently an atom with a value near the mode is most likely to find
+itself next to one with a similar value giving a small difference,
+whereas one with a value much larger than the mode will also most likely
+be near one with a value near the mode, giving a large difference.&nbsp;
+This leads to a dependence of the r.m.s. difference in U<sub>iso</sub>
+proportional to the square of the mean U<sub>iso</sub>, with a
+proportionality factor found empirically from refinement of high
+resolution (1&Aring;) structures of ~ 1; this is the weighting
+coefficient WU(1).
+<p>
+In contrast, in the anisotropic case, where the difference is between
+the along-bond components of the tensors, the differences are real and
+reflect the physical situation.&nbsp; From IR spectroscopy it is found
+that the mean square amplitude of a typical (single C-C bond) bond
+vibration at ambient temperature is about 0.002&Aring;<sup>2</sup>
+(equivalent to delta-B ~ 0.16&Aring;<sup>2</sup>), which is very rigid
+in comparison with the atomic vibrations (B typically &gt;
+5 to 10&Aring;<sup>2</sup>).&nbsp; The atomic vibrations therefore
+arise almost entirely as a consequence of bond librations.
+<p>
+In the anisotropic case, therefore, the r.m.s. difference in the thermal
+tensor components should be independent of the isotropic thermal
+parameters.&nbsp; The difference between thermal tensor components will
+however be larger across bond angles (1-3 restraints), so a dependence
+on the square of the interatomic distance is used.&nbsp; The default
+value of the weighting coefficient WU(2) (0.01) is rather larger than
+the expected difference (0.002).&nbsp; This is because if the correct
+value is used initially the restraints are so tight that the refinement
+often fails to converge.&nbsp; It may be possible to use the correct
+value of WU(2) (0.0007) once convergence has been attained.
+<p><br>
+
+<h2><A NAME="section3"><A NAME="files"><A NAME="input_files"></A>3.&nbsp; INPUT FILES</h2>                         
+
+There are 5 input files to RESTRAIN.
+<pre>
+     FILE                        FILE NAME       EXPLANATION
+
+- control and steering data                      <A HREF="#section3.1">section 3.1</A>
+- dictionary                     DICTION         <A HREF="#section3.2">section 3.2</A>
+- atomic coordinates             XYZIN           <A HREF="#section3.3">section 3.3</A>
+- group thermal parameters       TLSIN           <A HREF="#section3.4">section 3.4</A>
+- reflections                REFIN or HKLIN      <A HREF="#section3.5">section 3.5</A>
+</pre>
+<p><br>
+
+<h3><A NAME="section3.1"><A NAME="keywords"></A>3.1 CONTROL and STEERING DATA</h3>                   
+
+The control and steering data in the standard input data set both
+consist of a number of optional items.&nbsp; Within each of these data
+blocks the order of these items is immaterial.
+<p>
+Any record or part of a record can be temporarily "commented out" by
+use of the ! or # character; this causes all subsequent characters on
+the same line to be skipped.
+<p>
+Each record in the control data is identified by a keyword, but only the
+first 4 characters are significant and case-insensitive.&nbsp; Any other
+input required follows immediately in free-format (space-separated) on
+the same line, with the sole exception of the keyword STEER where the
+data must follow on the succeeding line(s).&nbsp; Data records (but not
+comments) may be continued by finishing a line with a "-".&nbsp; The
+keywords available are:
+<blockquote>
+<A HREF="#aniso"><B>ANISo</B></A>, <A HREF="#desout"><B>DESOut</B></A>,
+<A HREF="#diction"><B>DICTion</B></A>, <A HREF="#dname"><B>DNAMe</B></A>,
+<A HREF="#format"><B>FORMat</B></A>, <A HREF="#hklin"><B>HKLIn</B></A>,
+<A HREF="#hklout"><B>HKLOut</B></A>, <A HREF="#labin"><B>LABIn</B></A>,
+<A HREF="#labout"><B>LABOut</B></A>, <A HREF="#matout"><B>MATOut</B></A>,
+<A HREF="#ncsymm"><B>NCSYmm</B></A>, <A HREF="#occup"><B>OCCUp</B></A>,
+<A HREF="#pname"><B>PNAMe</B></A>, <A HREF="#private"><B>PRIVate</B></A>,
+<A HREF="#refin"><B>REFIn</B></A>, <A HREF="#refout"><B>REFOut</B></A>,
+<A HREF="#rigid"><B>RIGId</B></A>, <A HREF="#steer"><B>STEEr</B></A>,
+<A HREF="#symmetry"><B>SYMMetry</B></A>, <A HREF="#title"><B>TITLe</B></A>,
+<A HREF="#tlsin"><B>TLSIn</B></A>, <A HREF="#tlsout"><B>TLSOut</B></A>,
+<A HREF="#usecwd"><B>USECwd</B></A>, <A HREF="#xtrdist"><B>XTRDist</B></A>,
+<A HREF="#xtrplan"><B>XTRPlan</B></A>, <A HREF="#xyzin"><B>XYZIn</B></A>,
+<A HREF="#xyzout"><B>XYZOut</B></A>
+</blockquote>
+<p><br>
+
+<h4><A NAME="section3.1.1"></A>3.1.1 Description of control data.</h4>
+<p>
+Each of the keywords <A HREF="#diction">DICTION</A>, <A HREF="#xyzin">XYZIN</A>, <A HREF="#tlsin">TLSIN</A>, <A HREF="#hklin">HKLIN</A>, <A HREF="#refin">REFIN</A>, <A HREF="#xyzout">XYZOUT</A>,
+<A HREF="#tlsout">TLSOUT</A>, <A HREF="#hklout">HKLOUT</A>, <A HREF="#refout">REFOUT</A>, <A HREF="#matout">MATOUT</A> and <A HREF="#desout">DESOUT</A> specifies a filename.&nbsp;
+Files may be also connected using the CCP4 logical names matching these
+keywords.&nbsp; The keyword information overrides the logical names.
+
+<p>
+<dl><dt><A NAME="title"></A>
+TITLE (optional)
+<dd>
+This is arbitrary text.
+
+<p><dt><A NAME="private"></A>
+PRIVATE
+<dd>
+If present sets harvest directory permission for first open of
+$HOME/DepositFiles to rwx------ .&nbsp; default is rwxr-xr-x 
+
+<p><dt><A NAME="usecwd"></A>
+USECWD
+<dd>
+If present the harvest file is opened in current working
+directory.&nbsp; The default is to output the file to
+$HOME/DepositFiles/ProjectName/DataSetName.ProgramName .
+
+<p><dt><A NAME="pname"></A>
+PNAME
+<dd>
+Project name.&nbsp; If given with <A HREF="#dname">DNAME</A. then harvest will output a
+file.&nbsp; The same project name should be always used for each
+structure determination.&nbsp; No default.
+
+<p><dt><A NAME="dname"></A>
+DNAME
+<dd>
+Dataset name.&nbsp; If given with <A HREF="#pname">PNAME</A> then harvest will output a
+file.&nbsp; This dataset name is the name of one of the diffraction
+data sets used in a particular project.&nbsp; No default.
+
+<p><dt><A NAME="diction"></A>
+<A HREF="#section3.2">DICTION</A>
+<dd>
+The filename of the dictionary used (often defaulted, but see <A HREF="#clibd">below</A> for
+alternatives).
+
+<p><dt><A NAME="xyzin"></A>
+<A HREF="#section3.3">XYZIN</A>
+<dd>
+The filename of the input coordinates in PDB format.
+
+<p><dt><A NAME="tlsin"></A>
+<A HREF="#section3.4">TLSIN</A>
+<dd>
+The filename of the input group thermal parameters (optional).
+
+<p><dt><A NAME="hklin"></A>
+<A HREF="#section3.5_hklin">HKLIN</A>
+<dd>
+The filename of the input unformatted (MTZ) reflection file.
+<p>
+In the case that no HKLIN or <A HREF="#refin">REFIN</A> name is given, the only possibility
+is regularisation.
+
+<p><dt><A NAME="labin"></A>
+LABIN
+<dd>
+The input column assignments for the MTZ file.<p>
+The program labels
+are 'H', 'K', 'L', 'FP', 'SIGFP', 'PHIB', 'FOM' and 'FREE' with the
+conventional meanings.&nbsp; For conventional amplitude refinement only
+the FP and SIGFP columns need be assigned.&nbsp; To calculate free R
+factors, assign label FREE to a free R flag column generated by
+`<A HREF="freerflag.html">freerflag</A>' (or otherwise).
+
+<p><dt><A NAME="refin"></A>
+<A HREF="#section3.5_refin">REFIN</A>
+<dd>
+The filename of the input formatted reflection file; either <A HREF="#hklin">HKLIN</A> or
+REFIN may be used, but not both at the same time.
+
+<p><dt><A NAME="format"></A>
+FORMAT
+<dd>
+Reflection file format.
+<p>
+This record contains the format for the reflections when using a
+formatted reflection file (section <A HREF="#section3.5">3.5</A>).&nbsp; This record is not
+required for unformatted reflection files.
+
+<p><dt><A NAME="xyzout"></A>
+<A HREF="#section4.2">XYZOUT</A>
+<dd>
+The filename of the output coordinates.
+
+<p><dt><A NAME="tlsout"></A>
+<A HREF="#section5.3">TLSOUT</A>
+<dd>
+The filename of the output group thermal parameters.
+
+<p><dt><A NAME="hklout"></A>
+<A HREF="#section4.4">HKLOUT</A>
+<dd>
+The filename of the output unformatted (MTZ) reflection file.
+<p>
+This requires that the input reflection file be also MTZ format.&nbsp;
+It is not possible to have an input formatted and an output unformatted
+file, or <i>vice versa</i>.
+
+<p><dt><A NAME="labout"></A>
+LABOUT
+<dd>
+The optional output column assignments for the MTZ file.
+<p>
+The program labels are 'H', 'K', 'L', 'FP', 'SIGFP', 'FC', 'PHIC' and
+'FREE'.
+
+<p><dt><A NAME="refout"></A>
+<A HREF="#section4.4">REFOUT</A>
+<dd>
+The filename of the output formatted reflection file.&nbsp; This
+requires that the input reflection file be also formatted.
+
+<p><dt><A NAME="matout"></A>
+<A HREF="#section4.5">MATOUT</A>
+<dd>
+The filename of the output full normal matrix.
+<p>
+This is used to obtain individual standard deviations of the parameters
+by matrix inversion, which is performed by a separate program 
+(FUMAIN*).<br>
+<i>*FUMAIN is not yet a part of CCP4.</i>
+<p>
+Be aware that the process of accumulating the terms of the full normal
+matrix and then inverting it is extremely CPU and memory intensive!
+
+<p><dt><A NAME="desout"></A>
+<A HREF="#section4.5">DESOUT</A>
+<dd>
+The filename of the output restraint design matrix.
+<p>
+This feature is experimental.
+
+<p><dt><A NAME="aniso"></A>
+ANISO
+<dd>
+Individual atomic anisotropic thermal parameter definition.
+<p>
+Each ANISO record defines a contiguous segment of atoms in the
+coordinate file whose isotropic thermal parameters are to be converted
+to individual anisotropic parameters by setting each of the diagonal
+elements of the U tensor to U<sub>iso</sub> and the off-diagonal
+elements to zero.&nbsp; The new anisotropic tensors will be written to
+the coordinate file in the standard PDB format.&nbsp; This option should
+therefore not be used for atoms that are already defined as anisotropic
+(unless you really want to reset them).&nbsp; This option should not be
+confused with the group thermal parameter option <A HREF="#tlsin">TLSIN</A>.&nbsp; For each
+segment atoms may be selected by name or by using various
+keywords.&nbsp; Each contiguous segment is specified as:
+
+<dl><p><dt><dd>
+- Keyword ANISo
+<dd>
+- Starting atom identifier of anisotropic segment           (character string)
+<dd>
+- Ending atom identifier of anisotropic segment             (character string)
+<dd>
+- Optional selection character string                                 (character string)
+</dl>
+
+<p>
+An atom identifier is interpreted as a character string, not as
+an integer, and is matched with the atom number in columns 7 to 11 of
+the PDB ATOM or HETATM record.&nbsp;  Alternatively (and probably more
+conveniently, as some programs may change the atom numbers), the atoms
+may be specified by their residue and atom labels joined by a ".",
+for example: 34A.CG1 .&nbsp; If the coordinate file contains chain
+identifiers, the chain id must be prepended, including the correct
+number of spaces.&nbsp; If the resulting string contains any spaces it
+must be completely enclosed by apostrophes, for example:
+'C  13.N'.&nbsp; The atom name may also be omitted leaving both the
+residue label and the final "."; in that case the range specified either
+starts at the first atom of the residue or ends at the last atom.&nbsp
+Atom and residue labels, and also residue names are always case
+sensitive (usually only capital letters are used).
+<p>
+If the second component of the range specification is omitted or given
+as a null string (<i>i.e.</i> double apostrophe:&nbsp; ' ' in the
+input), it is set equal to the first component, <i>i.e.</i> specifying
+a single atom or residue.&nbsp; If both are omitted or given as nulls,
+the range is set to the entire coordinate file.&nbsp; Note that if you
+want to specify the optional selection string, you can't leave out
+either of the range components, you must supply both of them as either
+non-null or null, so that the selection string is then the third one on
+the line after the keyword.
+<p>
+Beware that the range specification applies to the file AFTER any
+re-ordering is done, so it is probably safer to re-order first, then
+check the coordinate file and specify the ANISO ranges in a separate
+job.
+<p>
+In the optional selection string, atom names have to conform to the PDB
+convention.&nbsp; All atom codes found in the PDB atom files
+can be used.&nbsp; Additionally, four group codes can also be
+specified: SDCH, MNCH, ALL and NOT.&nbsp; MNCH will select
+all mainchain atoms (' N  ', ' CA ', ' C  ' and ' O  '), SDCH
+selects all non-mainchain atoms, ALL selects all atoms and
+NOT negates the selection of atom types on the line.&nbsp; The order
+of atom specifiers is not important.&nbsp; If no atom specifier is
+given, the default is ALL.&nbsp;
+
+<p><dt><A NAME="ncsymm"></A>
+NCSYMM
+<dd>
+Non-crystallographic symmetry operator.
+<p>
+Each record contains either the rotation or the translation component
+of an orthogonal non-crystallographic symmetry operator.&nbsp; The 9
+elements for the rotation matrix are read in ROW-wise (beware other
+programs which read and write column-wise matrices!).&nbsp; In the case
+of two molecules in the asymmetric unit the input would be:
+<pre>
+NCSY MATRIX R<sub>11</sub> R<sub>12</sub> R<sub>13</sub> R<sub>21</sub> R<sub>22</sub> R<sub>23</sub> R<sub>31</sub> R<sub>32</sub> R<sub>33</sub> (rotation 1-2)
+NCSY TRANS  T<sub>1 </sub> T<sub>2 </sub> T<sub>3 </sub>                     (translation 1-2)
+</pre>
+<p>
+For N molecules in the asymmetric unit there would be N-1 pairs of these
+records altogether.&nbsp; Alternatively it may be more convenient (and
+less error-prone!) to use polar angles to specify the rotation
+component.&nbsp; The use of Eulerian angles to specify the rotation has
+not been implemented because there are so many different Eulerian angle
+conventions in use.
+<pre>
+NCSY POLAR  theta phi chi                 (rotation 1-2)
+NCSY TRANS  T<sub>1 </sub>  T<sub>2 </sub>  T<sub>3 </sub>                   (translation 1-2)
+</pre>
+<p>
+Note that the identity operator is always assumed and may be
+omitted.&nbsp;
+
+<p><dt><A NAME="occup"></A>
+OCCUP
+<dd>
+Occupancy segment definition.
+<p>
+Each record defines a contiguous "occupancy segment" by means of a
+starting atom number, the number of atoms in the segment, an optional
+segment "group identifier" and an optional segment "coupling
+identifier".&nbsp;
+One or more occupancy segments with the same group and coupling
+identifiers comprise an "occupancy group".&nbsp; All atoms belonging to
+the same occupancy group have the same shift applied during occupancy
+refinement.&nbsp; Two or more occupancy groups may be coupled so that
+the sum of their occupancies is constrained to be constant; this is done
+by giving the groups the same group identifier but different coupling
+identifiers.&nbsp; If occupancy coupling is not required, the coupling
+identifiers may be omitted.&nbsp; Note that the content of a group
+identifier carries no significance; only its equality or inequality
+as compared with the other group identifiers is significant.&nbsp; The
+same applies to the coupling identifiers; in addition their
+equality or inequality is only significant when they share a common
+group identifier.
+<p>
+Each contiguous occupancy segment is specified as:
+
+<dl><p><dt><dd>
+- Keyword OCCUp
+<p>
+<dd>
+- Starting atom number of occupancy segment.&nbsp; (character string)
+<p>
+  Alternatively, the atom may be specified by its residue and atom
+  labels; for details see <A HREF="#aniso">above</A> under &quot;ANISO&quot;.
+<p>
+<dd>
+- Number of atoms in segment (may be 1).&nbsp; (integer)
+<p>
+<dd>
+- Optional arbitrary group identifier; if occupancies are to be coupled
+  then this will be the same for all the coupled occupancy segment(s).&nbsp; (character string)
+<p>
+<dd>
+- Optional arbitrary coupling identifier; if occupancies are to be
+  coupled then this is different for each coupled group.&nbsp; (character string)
+</dl>
+<p>
+Note that non-unit occupancies must be specified in OCCUP records even
+if they are only to be used in structure factor calculation and not in
+refinement (in which case <A HREF="#var_occref">OCCREF</A>=false).
+
+<p><dt><A NAME="rigid"></A>
+RIGID
+<dd>
+Rigid body segment definition.
+<p>
+Each RIGID record defines a contiguous segment of atoms in the
+coordinate file whose rigid-body parameters (3 rotations and 3
+translations) are to be refined.&nbsp; Each contiguous segment is
+specified as:
+
+<dl><p><dt><dd>
+- Keyword RIGId
+<p><dd>
+- Starting atom number of rigid segment                  (character string)
+<p><dd>
+- Ending atom number of rigid segment                    (character string)
+<p>
+  Alternatively, the atoms may be specified by their residue and atom
+  labels; for details see <A HREF="#aniso">above</A> under &quot;ANISO&quot;.
+<p><dd>
+- Optional identifier of rigid group                         (character string)
+</dl>
+<p>
+The purpose of the optional identifier is to allow consolidation of
+several segments into one rigid body, because a rigid body does not
+necessarily consist of contiguous atoms in the file.&nbsp; To do this
+just give the same identifier to segments that are to be part of the
+same rigid body.&nbsp; Many rigid bodies may be present, but nesting is
+not allowed. 
+
+<p><dt><A NAME="symmetry"></A>
+SYMMETRY
+<dd>
+General equivalent position.
+<p>
+Each record contains a general equivalent position for the space group
+typed as in INTERNATIONAL TABLES FOR X-RAY CRYSTALLOGRAPHY, Vol
+A.&nbsp; If symmetry information is not given here, the <A HREF="#var_sgroup">SGROUP</A>
+parameter is used; if that is not defined, the CRYST1 record in the PDB
+file is searched for the space group name; if none is found then the
+symmetry information in the MTZ file (if given) is used.&nbsp;
+Use of this option is discouraged as it is very error-prone; it is
+better to update the &quot;A HREF="symlib.html">symop.lib</A>&quot; file, and then thoroughly test your
+modifications.
+
+<p><dt><A NAME="xtrdist"></A>
+XTRDIST
+<dd>
+Extra non-dictionary restraint.
+<p>
+Each record contains an extra interatomic restraint.&nbsp; This is
+specified as
+
+<dl><p><dt><dd>
+- Keyword XTRD
+<dd>
+- Atom number 1     (character string)
+<dd>
+- Atom number 2     (character string)
+<dd>
+- Distance (&Aring;)      (real)
+</dl>
+<p>
+The atoms either may be specified by their atom numbers in the
+coordinate file, or by their residue and atom labels; for details see
+<A HREF="#aniso">above</A> under &quot;ANISO&quot;.
+<p>
+If the distance is given as negative it is interpreted as a repulsion-
+only restraint, <i>i.e.</i> it is only applied if the calculated
+distance is less than the specified target distance.&nbsp; This
+explicit extra restraint may be required because the implicit repulsion
+restraints (when <A HREF="#var_repel">REPEL</A>=true) are not applied to pairs of atoms in the
+same residue; nor are they applied to an atom involved in any explicit
+extra restraints, whether repulsion or not.
+
+<p><dt><A NAME="xtrplan"></A>
+XTRPLAN
+<dd>
+Extra non-dictionary planar restraint definition.
+<p>
+Each record contains an extra plane.&nbsp; This is specified as:
+
+<dl><dt><dd>
+- keyword XTRP
+<p><dd>
+- First atom number of plane   (character string)
+<p>
+Alternatively, the atom may be specified by its residue and atom
+labels; for details see <A HREF="#aniso">above</A> under &quot;ANISO&quot;.
+<p><dd>
+- Number of atoms in plane     (integer)
+</dl>
+
+<p><dt><A NAME="steer"></A>
+STEER
+<dd>
+<p><p>
+This keyword introduces the steering data.&nbsp; It must appear on a
+line by itself after all of the keywords in the above list.
+</dl>
+<p><br>
+
+<h4><A NAME="section3.1.2"></A>3.1.2 List of steering data.</h4>
+<p>
+After the record with the single keyword <A HREF="#steer">STEER</A>, the data follows on the
+next line and consists of a series of "name=value" specifications
+separated either by a comma or by the end of the line (a comma at the
+end of a line is optional) <i>e.g.</i>:
+<pre>
+     A=10.8, Gamma =90,  ISO= f , isoref = T, Aniso=    False
+       G=2 ,High=2.8, dxyzlm=.02 ,
+                      wF(1)=1.234e-6
+</pre>
+<p>
+The read statement makes use of a simulated version of the FORTRAN
+NAMELIST facility and thus the order in which the variables are given
+is immaterial.&nbsp;
+The letter case and spacing do not matter, and there may be any number
+of "name=value" specifications per record, up to 80 columns.&nbsp;
+However a "name=value" specification may not be split across two or
+more lines, and the use of the "-" continuation character is not
+allowed.
+<p>
+Only those items which you want to differ from default values need be
+entered.&nbsp; For example cell parameters are not normally supplied in
+the steering data because the values in the reflection and/or coordinate
+files are usually the correct ones.&nbsp; A list of variables which can
+be input to the program is given <A HREF="#list_of_variables">below</A>.&nbsp; A detailed explanation of
+each variable is given in section <A HREF="#section3.1.3">3.1.3</A>.
+<p>
+The steering data may be terminated either by end-of-file, or by a
+variable name &amp;EOF (without a value).&nbsp; In either case, this will
+cause refinement to be initiated.&nbsp; Additional steering data items
+(starting on a new line) may follow the &amp;EOF variable.&nbsp; The
+refinement will then be restarted from the point that it was
+terminated.&nbsp; The values of the variables used will be those at the
+termination of the original refinement updated by the new supplied
+values.&nbsp; This may be repeated as often as desired.
+<p><A NAME="list_of_variables"></A>
+<dl><dt><dd>
+<table border>
+
+<tr>
+<th> VARIABLE  </th><th> DEFAULT VALUE </th>
+</tr><tr align=center>
+<td> <A HREF="#var_a">A</A>         </td><td>    (see <A HREF="#var_note">note</A>) </td></tr><tr align=center>
+<td> <A HREF="#var_alpha">ALPHA</A>     </td><td>            90 </td></tr><tr align=center>
+<td> <A HREF="#var_aniso">ANISO</A>     </td><td>          true </td></tr><tr align=center>
+<td> <A HREF="#var_b">B</A>         </td><td>    (see <A HREF="#var_note">note</A>) </td></tr><tr align=center>
+<td> <A HREF="#var_beta">BETA</A>      </td><td>            90 </td></tr><tr align=center>
+<td> <A HREF="#var_binput">BINPUT</A>    </td><td>          true </td></tr><tr align=center>
+<td> <A HREF="#var_c">C</A>         </td><td>    (see <A HREF="#var_note">note</A>) </td></tr><tr align=center>
+<td> <A HREF="#var_cgfacr">CGFACR</A>    </td><td>            25 </td></tr><tr align=center>
+<td> <A HREF="#var_creact">CREACT</A>    </td><td>         false </td></tr><tr align=center>
+<td> <A HREF="#var_cycno">CYCNO</A>     </td><td>             1 </td></tr><tr align=center>
+<td> <A HREF="#var_desmat">DESMAT</A>    </td><td>         false </td></tr><tr align=center>
+<td> <A HREF="#var_dicpri">DICPRI</A>    </td><td>         false </td></tr><tr align=center>
+<td> <A HREF="#var_difs">DIFS</A>      </td><td>          true </td></tr><tr align=center>
+<td> <A HREF="#var_dxyzlm">DXYZLM</A>    </td><td>          0.05 </td></tr><tr align=center>
+<td> <A HREF="#var_flibr">FLIBR</A>     </td><td>             0 </td></tr><tr align=center>
+<td> <A HREF="#var_fmax">FMAX</A>      </td><td>             0 </td></tr><tr align=center>
+<td> <A HREF="#var_fobmin">FOBMIN</A>    </td><td>             0 </td></tr><tr align=center>
+<td> <A HREF="#var_freerflag">FREERFLAG</A> </td><td>             0 </td></tr><tr align=center>
+<td> <A HREF="#var_fref">FREF</A>      </td><td>          true </td></tr><tr align=center>
+<td> <A HREF="#var_fulmat">FULMAT</A>    </td><td>         false </td></tr><tr align=center>
+<td> <A HREF="#var_g">G</A>         </td><td>    (see <A HREF="#var_note">note</A>) </td></tr><tr align=center>
+<td> <A HREF="#var_gamma">GAMMA</A>     </td><td>            90 </td></tr><tr align=center>
+<td> <A HREF="#var_gsfacr">GSFACR</A>    </td><td>             ? </td></tr><tr align=center>
+<td> <A HREF="#var_high">HIGH</A>      </td><td>             0 </td></tr><tr align=center>
+<td> <A HREF="#var_illcon">ILLCON</A>    </td><td>         false </td></tr><tr align=center>
+<td> <A HREF="#var_iso">ISO</A>       </td><td>          true </td></tr><tr align=center>
+<td> <A HREF="#var_isoref">ISOREF</A>    </td><td>          true </td></tr><tr align=center>
+<td> <A HREF="#var_isym">ISYM</A>      </td><td>             0 </td></tr><tr align=center>
+<td> <A HREF="#var_lattyp">LATTYP</A>    </td><td>             1 </td></tr><tr align=center>
+<td> <A HREF="#var_low">LOW</A>       </td><td>          9999 </td></tr><tr align=center>
+<td> <A HREF="#var_maxfmt">MAXFMT</A>    </td><td>             5 </td></tr><tr align=center>
+<td> <A HREF="#var_mfacr">MFACR</A>     </td><td>           0.1 </td></tr><tr align=center>
+<td> <A HREF="#var_modulo">MODULO</A>    </td><td>             5 </td></tr><tr align=center>
+<td> <A HREF="#var_ncsref">NCSREF</A>    </td><td>          true </td></tr><tr align=center>
+<td> <A HREF="#var_ncyc">NCYC</A>      </td><td>             1 </td></tr><tr align=center>
+<td> <A HREF="#var_normat">NORMAT</A>    </td><td>         false </td></tr><tr align=center>
+<td> <A HREF="#var_occref">OCCREF</A>    </td><td>          true </td></tr><tr align=center>
+<td> <A HREF="#var_offdia">OFFDIA</A>    </td><td>         false </td></tr><tr align=center>
+<td> <A HREF="#var_onlyfc">ONLYFC</A>    </td><td>         false </td></tr><tr align=center>
+<td> <A HREF="#var_onlyfr">ONLYFR</A>    </td><td>         false </td></tr><tr align=center>
+<td> <A HREF="#var_order">ORDER</A>     </td><td>         false </td></tr><tr align=center>
+<td> <A HREF="#var_phas">PHAS</A>      </td><td>         false </td></tr><tr align=center>
+<td> <A HREF="#var_prtall">PRTALL</A>    </td><td>         false </td></tr><tr align=center>
+<td> <A HREF="#var_repel">REPEL</A>     </td><td>          true </td></tr><tr align=center>
+<td> <A HREF="#var_rigid">RIGID</A>     </td><td>         false </td></tr><tr align=center>
+<td> <A HREF="#var_rmerge">RMERGE</A>    </td><td>           0.1 </td></tr><tr align=center>
+<td> <A HREF="#var_rmsmin">RMSMIN</A>    </td><td>          0.03 </td></tr><tr align=center>
+<td> <A HREF="#var_rsize">RSIZE</A>     </td><td>          true </td></tr><tr align=center>
+<td> <A HREF="#var_rwdmin">RWDMIN</A>    </td><td>           100 </td></tr><tr align=center>
+<td> <A HREF="#var_rwlmin">RWLMIN</A>    </td><td>             4 </td></tr><tr align=center>
+<td> <A HREF="#var_sb1">SB1</A>       </td><td>             5 </td></tr><tr align=center>
+<td> <A HREF="#var_sb2">SB2</A>       </td><td>           1.6 </td></tr><tr align=center>
+<td> <A HREF="#var_scheme">SCHEME</A>    </td><td>             1 </td></tr><tr align=center>
+<td> <A HREF="#var_sfacr">SFACR</A>     </td><td>           0.8 </td></tr><tr align=center>
+<td> <A HREF="#var_sftlim">SFTLIM</A>    </td><td>          0.02 </td></tr><tr align=center>
+<td> <A HREF="#var_sgroup">SGROUP</A>    </td><td>    (see <A HREF="#var_note">note</A>) </td></tr><tr align=center>
+<td> <A HREF="#var_sigma">SIGMA</A>     </td><td>             0 </td></tr><tr align=center>
+<td> <A HREF="#var_testin">TESTIN</A>    </td><td>         false </td></tr><tr align=center>
+<td> <A HREF="#var_tlsref">TLSREF</A>    </td><td>          true </td></tr><tr align=center>
+<td> <A HREF="#var_tprest">TPREST</A>    </td><td>          true </td></tr><tr align=center>
+<td> <A HREF="#var_tsfacr">TSFACR</A>    </td><td>          0.01 </td></tr><tr align=center>
+<td> <A HREF="#var_u">U</A>         </td><td>             0 </td></tr><tr align=center>
+<td> <A HREF="#var_uhigh">UHIGH</A>     </td><td>          0.15 </td></tr><tr align=center>
+<td> <A HREF="#var_ulimh">ULIMH</A>     </td><td>           2.5 </td></tr><tr align=center>
+<td> <A HREF="#var_uliml">ULIML</A>     </td><td>             0 </td></tr><tr align=center>
+<td> <A HREF="#var_ulow">ULOW</A>      </td><td>          0.02 </td></tr><tr align=center>
+<td> <A HREF="#var_usedsd">USEDSD</A>    </td><td>          true </td></tr><tr align=center>
+<td> <A HREF="#var_usefr">USEFR</A>     </td><td>         false </td></tr><tr align=center>
+<td> <A HREF="#var_usewfc">USEWFC</A>    </td><td>         false </td></tr><tr align=center>
+<td> <A HREF="#var_water">WATER</A>     </td><td>          true </td></tr><tr align=center>
+<td> <A HREF="#var_we">WE(1)</A>     </td><td>          0.02 </td></tr><tr align=center>
+<td> <A HREF="#var_we">WE(2)</A>     </td><td>          0.04 </td></tr><tr align=center>
+<td> <A HREF="#var_we">WE(3)</A>     </td><td>          0.05 </td></tr><tr align=center>
+<td> <A HREF="#var_we">WE(4)</A>     </td><td>          0.01 </td></tr><tr align=center>
+<td> <A HREF="#var_we">WE(5)</A>     </td><td>          0.01 </td></tr><tr align=center>
+<td> <A HREF="#var_we">WE(6)</A>     </td><td>             0 </td></tr><tr align=center>
+<td> <A HREF="#var_wf">WF(1)</A>     </td><td>    (see <A HREF="#var_note">note</A>) </td></tr><tr align=center>
+<td> <A HREF="#var_wf">WF(2)</A>     </td><td>    (see <A HREF="#var_note">note</A>) </td></tr><tr align=center>
+<td> <A HREF="#var_wf">WF(3)</A>     </td><td>    (see <A HREF="#var_note">note</A>) </td></tr><tr align=center>
+<td> <A HREF="#var_wf">WF(4)</A>     </td><td>    (see <A HREF="#var_note">note</A>) </td></tr><tr align=center>
+<td> <A HREF="#var_wf">WF(5)</A>     </td><td>    (see <A HREF="#var_note">note</A>) </td></tr><tr align=center>
+<td> <A HREF="#var_wf">WF(6)</A>     </td><td>    (see <A HREF="#var_note">note</A>) </td></tr><tr align=center>
+<td> <A HREF="#var_wf">WF(7)</A>     </td><td>    (see <A HREF="#var_note">note</A>) </td></tr><tr align=center>
+<td> <A HREF="#var_wfref">WFREF</A>     </td><td>         false </td></tr><tr align=center>
+<td> <A HREF="#var_wp">WP(1)</A>     </td><td>            20 </td></tr><tr align=center>
+<td> <A HREF="#var_wp">WP(2)</A>     </td><td>           0.2 </td></tr><tr align=center>
+<td> <A HREF="#var_wu">WU(1)</A>     </td><td>             1 </td></tr><tr align=center>
+<td> <A HREF="#var_wu">WU(2)</A>     </td><td>          0.01 </td></tr><tr align=center>
+<td> <A HREF="#var_eof">&amp;EOF</A>      </td><td>             - </td></tr><tr align=center>
+
+</table>
+</dl>
+</dl>
+<p><A NAME="var_note"></A>
+Note for table: refer to full explanation of variable in the next section.
+<p><br>
+
+<h4><A NAME="section3.1.3"></A>3.1.3 Full description of the steering data.</h4>
+<p>
+Default values are given in brackets immediately after the variable
+name.
+<p>
+
+<dl><dt><A NAME="var_a"></A>
+A
+<dd>
+Cell parameter a (&Aring;).&nbsp;<p>
+Cell parameters default first to those defined by the SCALE matrix in
+the input PDB coordinate file; if one is not supplied the values given
+in the steering data are used; if none are supplied the values given on
+the CRYST1 record in the PDB file are used; finally if one is not given,
+the values read from the reflection file are used.&nbsp; If cell
+parameters cannot be found anywhere the program will terminate
+abnormally.&nbsp; Usually it is not necessary to supply cell
+parameters.&nbsp; The default orthogonal setting is the standard PDB
+one, <i>i.e.</i>&nbsp;
+<i>x</i> || <b>a</b>&nbsp; and&nbsp; <i>z</i> || <b>c</b>* .
+
+<p><dt><A NAME="var_alpha"></A>
+ALPHA (90)
+<dd>
+Cell parameter alpha (deg.).
+
+<p><dt><A NAME="var_aniso"></A>
+ANISO (true)
+<dd>
+When set false, disables refinement of individual atomic anisotropic
+thermal parameters, if supplied or generated.&nbsp; The default is to
+refine any anisotropic thermal parameters.
+
+<p><dt><A NAME="var_b"></A>
+B
+<dd>
+Cell parameter b (&Aring;).
+
+<p><dt><A NAME="var_beta"></A>
+BETA (90)
+<dd>
+Cell parameter beta (deg.).
+
+<p><dt><A NAME="var_binput"></A>
+BINPUT (true)
+<dd>
+When set false, this causes the isotropic atomic thermal parameters read
+from <A HREF="#xyzin">XYZIN</A> to be used as read and not converted from B to U (divided by
+8.PI<sup>2</sup>).&nbsp;
+
+<p><dt><A NAME="var_c"></A>
+C
+<dd>
+Cell parameter c (&Aring;).
+
+<p><dt><A NAME="var_cgfacr"></A>
+CGFACR (25)
+<dd>
+This is the maximum number of conjugate gradient iterations allowed
+when solving the normal equations for the positional parameters
+(see also <A HREF="#var_sftlim">SFTLIM</A>), and also the maximum number of failures allowed for
+the iterations to converge.
+
+<p><dt><A NAME="var_creact"></A>
+CREACT (false)
+<dd>
+When set true this causes the centre of reaction of any TLS groups to
+be refined.&nbsp; At present this feature is experimental; if set true
+it is likely to cause problems with small planar groups (&lt; 6 atoms),
+because the centre of reaction may be far away from the mean
+centre.&nbsp; The default is to keep the local origin of the TLS groups
+fixed, and compensate by refining 8 components of the screw (S) tensor
+instead of 5, allowing it to become non-symmetric.
+
+<p><dt><A NAME="var_cycno"></A>
+CYCNO (1)
+<dd>
+The cycle number which may be specified by the user and is printed
+out for identification purposes.&nbsp; It is incremented automatically
+when multiple cycles are carried out.
+
+<p><dt><A NAME="var_desmat"></A>
+DESMAT (false)
+<dd>
+When set true the design matrix is written to the file <A HREF="#desout">DESOUT</A>.&nbsp; The
+output file is used by another program (FUMAIN2*) for estimation of the
+variance of the least-squares residual.&nbsp; At present this feature is
+experimental.<br>
+<i>*FUMAIN2 is not yet a part of CCP4.</i>
+<p><dt><A NAME="var_dicpri"></A>
+<A HREF="#output12">DICPRI</A> (false)
+<dd>
+When set true the dictionary is interpreted and printed as it is read
+in.&nbsp; This will be useful in the development of new dictionary
+entries.
+
+<p><dt><A NAME="var_difs"></A>
+DIFS (true)
+<dd>
+When set false reflection output on file <A HREF="#hklout">HKLOUT</A> or <A HREF="#refout">REFOUT</A> (section <A HREF="#section4.4">4.4</A>)
+is disabled.&nbsp; This output can be used for Fourier
+calculations.&nbsp; If necessary an extra cycle of structure factor
+calculation is done.
+
+<p><dt><A NAME="var_dxyzlm"></A>
+DXYZLM (0.05)
+<dd>
+This is used to control the listing of atomic shifts.&nbsp; Those less
+than DXYZLM (&Aring;) are not printed (but see also <A HREF="#var_ulow">ULOW</A> and <A HREF="#var_uhigh">UHIGH</A>).
+
+<p><dt><A NAME="var_flibr"></A>
+FLIBR (0.)
+<dd>
+This is a factor that controls libration corrections.&nbsp; At present
+it is experimental and should not be used.
+
+<p><dt><A NAME="var_fmax"></A>
+FMAX (0, defaulting to 1/3 the value of the largest Fo when available)
+<dd>
+This governs the distribution of reflection bins as a function of
+Fo in the <A HREF="#output_analysis_of_function_minimised">weighting analysis table</A>.&nbsp; The default value is 1/3 the
+value of the largest observed structure amplitude, Fo, which is
+printed on each run.&nbsp; See also <A HREF="#var_high">HIGH</A> and <A HREF="#var_low">LOW</A>.
+
+<p><dt><A NAME="var_fobmin"></A>
+FOBMIN (0)
+<dd>
+This is included to set a lower limit for |Fo| cut-off.&nbsp; The
+default includes all reflections.&nbsp; See also <A HREF="#var_high">HIGH</A> and <A HREF="#var_low">LOW</A>.
+
+<p><dt><A NAME="var_freerflag"></A>
+FREERFLAG (0)
+<dd>
+Specifies which free R set of the reflections to use in calculation of
+"Rfree".&nbsp; This only applies to MTZ input files when the `FREE'
+program label is assigned to a column generated by `<A HREF="freerflag.html">freerflag</A>'
+or similarly.
+
+<p><dt><A NAME="var_fref"></A>
+FREF (true)
+<dd>
+When set false this causes structure factor terms to be excluded
+from the least-squares minimisation function, so that only geometry
+regularisation is done.
+
+<p><dt><A NAME="var_fulmat"></A>
+FULMAT (false)
+<dd>
+If set true this causes the full normal matrix for the coordinates
+to be output to the file specified by <A HREF="#matout">MATOUT</A>, for purposes of
+error estimation.&nbsp; If necessary an extra cycle of structure factor
+and derivative calculation is done.&nbsp; Note that this option is
+likely to require a large amount of CPU time and memory (for a medium
+size structure of 300 residues (~ 3000 atoms) there will be ~ 12000
+parameters (4: x, y, z, U<sub>iso</sub> per atom), which will require
+REAL memory (not virtual!) of ~ 300 Mb!&nbsp; DON'T TRY IT UNLESS YOU
+HAVE THE MEMORY AVAILABLE - if the real memory required is not
+available, the program will really hammer the swap file!
+
+<p><dt><A NAME="var_g"></A>
+G
+<dd>
+This is the overall scale factor and should be updated in each cycle by
+replacing it with the value obtained from the previous cycle.&nbsp;
+<p>
+The scale factor G and the overall thermal parameter <A HREF="#var_u">U</A> may, as an
+alternative to least squares refinement from initial estimated
+values, be calculated ab initio by the method of Kraut.&nbsp; (See the
+documentation for the CCP4 program <A HREF="fhscal.html">FHSCAL</A> for details of the method,
+noting that FP is to be considered as Fobs and FPH as Fcalc).
+The initial values of G and U are obtained by the program in an extra
+structure factor cycle before the coordinate refinement cycle(s) (but
+if the weight calculation option <A HREF="#var_usewfc">USEWFC</A> is also set to true only
+one extra cycle is done).&nbsp; This option is activated by omitting
+both the G and U parameters from the input.
+
+<p><dt><A NAME="var_gamma"></A>
+GAMMA (90)
+<dd>
+Cell parameter gamma (deg.). 
+
+<p><dt><A NAME="var_gsfacr"></A>
+GSFACR (?)
+<dd>
+This is the maximum number of Gauss-Seidel iterations allowed
+when solving the normal equations for the positional parameters
+(see also <A HREF="#var_sftlim">SFTLIM</A>), and also the maximum number of failures allowed for
+the iterations to converge.
+
+<p><dt><A NAME="var_high"></A>
+HIGH (0)
+<dd>
+High resolution cut-off.&nbsp; No reflections of smaller interplanar
+spacing than specified by HIGH are included (see also <A HREF="#var_fobmin">FOBMIN</A> and
+<A HREF="#var_low">LOW</A>).&nbsp; The default is not to apply any high resolution
+cut-off.&nbsp; HIGH is also used to construct the resolution bins in the
+<A HREF="#output_analysis_of_function_minimised">weighting analysis table</A> (see also <A HREF="#var_fmax">FMAX</A>).
+
+<p><dt><A NAME="var_illcon"></A>
+ILLCON (false)
+<dd>
+If set true, uses only diagonal matrix elements from restraint
+derivatives; this is only required when the matrix is severely
+ill-conditioned and is not normally necessary.
+
+<p><dt><A NAME="var_iso"></A>
+ISO (true)
+<dd>
+When false the input overall isotropic thermal parameter <A HREF="#var_u">U</A> is used in
+the structure factor calculation.&nbsp; When true the individual atomic
+thermal parameters as read from the coordinate file are used (see also
+<A HREF="#var_isoref">ISOREF</A>).
+
+<p><dt><A NAME="var_isoref"></A>
+ISOREF (true)
+<dd>
+When ISO=false and ISOREF=true the input overall <A HREF="#var_u">U</A> is
+converted to individual U<sub>iso</sub>'s which are then refined independently.
+When ISO=false and ISOREF=false any isotropic thermal parameters in the
+coordinate file are totally ignored, and the overall isotropic thermal
+parameter is refined.&nbsp; When ISO=true and ISOREF=true individual
+isotropic thermal parameters are read from the coordinate file and
+refined.&nbsp; For most proteins this should not usually be attempted
+at resolutions lower than 3&Aring;.&nbsp; When ISO=true and ISOREF=false
+individual isotropic thermal parameters are read from the coordinate
+file but only the overall U is refined.&nbsp; The resulting shift is
+applied to the individual isotropic thermal parameters which are written
+to the output coordinate file. 
+
+<p><dt><A NAME="var_isym"></A>
+ISYM (0)
+<dd>
+This is the number of the structure factor subroutine to be used,
+corresponding to the number of the space group for which it is
+specific.&nbsp; However any sub-group of your space group, provided it
+has the same origin, will also work&nbsp; Space group no. 1 (P1), being
+a sub-group of all space groups, always works, and this is the only
+option when using any anisotropic thermal parameters or TLS or
+non-crystallographic symmetry.&nbsp; Presently available options are:
+1, 3, 4, 16, 17, 18, 19, 77, 92, 94, 96, 169, 170, 178 &amp; 179.&nbsp; If
+ISYM is omitted (usually the best option) or set to 0, the program
+chooses the subroutine automatically.&nbsp; 
+
+<p><dt><A NAME="var_lattyp"></A>
+LATTYP (1)
+<dd>
+Number of lattice points per unit cell: 1 for P cell, 2 for A,B,C
+and I cells, 3 for R cell indexed on hexagonal axes and 4 for F
+cells. 
+
+<p><dt><A NAME="var_low"></A>
+LOW (9999)
+<dd>
+Low resolution cut-off.&nbsp; No reflections of larger interplanar
+spacing than specified by LOW are included (see also <A HREF="#var_fobmin">FOBMIN</A> and
+<A HREF="#var_high">HIGH</A>).&nbsp; The default is not to apply any low resolution
+cut-off.&nbsp; If <A HREF="#var_water">WATER</A> is set true (solvent background correction, the
+default) you should not apply this cut-off.&nbsp; LOW is also used to
+construct the resolution bins in the <A HREF="#output_analysis_of_function_minimised">weighting analysis table</A> (see also
+<A HREF="#var_fmax">FMAX</A>).
+
+<p><dt><A NAME="var_maxfmt"></A>
+MAXFMT (5)
+<dd>
+This is the number of items to be read from the character reflection
+file (see section <A HREF="#section3.5">3.5</A>).
+
+<p><dt><A NAME="var_mfacr"></A>
+MFACR (0.1)
+<dd>
+This is the incremental value of Marquardt's factor, which is used
+when the positional parameters normal equations become ill-
+conditioned and the structure may fail to refine, <EM>e.g.</EM> when the
+data/parameter ratio is poor, or the structure is disordered.
+Initially a solution is tried with a factor of 0, then on each failure
+to solve the equations it is incremented by MFACR, up to <A HREF="#var_gsfacr">GSFACR</A> times
+(if using the Gauss-Seidel method) or <A HREF="#var_cgfacr">CGFACR</A> times (if using conjugate
+gradient).&nbsp; In difficult cases it may be necessary to increase
+MFACR to 0.2 or 0.3.
+
+<p><dt><A NAME="var_modulo"></A>
+MODULO (5)
+<dd>
+This governs the number of reflection and distance calculations
+skipped in the sampled residual calculations.&nbsp; Normally the default
+value should suffice.&nbsp; However for large structures the sampling
+error will be smaller, so MODULO can be increased, saving some time.
+
+<p><dt><A NAME="var_ncsref"></A>
+NCSREF (true)
+<dd>
+When set false, no refinement of any non-crystallographic symmetry
+operators specified by <A HREF="#ncsymm">NCSYMM</A> records is done.
+
+<p><dt><A NAME="var_ncyc"></A>
+NCYC (1)
+<dd>
+This is the number of refinement cycles to be carried out in this run.
+
+<p><dt><A NAME="var_normat"></A>
+NORMAT (false)
+<dd>
+If set true this causes the full normal matrix for the coordinates
+to be output to the file specified by <A HREF="#matout">MATOUT</A>, for purposes of
+error estimation.&nbsp; If necessary an extra cycle of structure factor
+and derivative calculation is done.&nbsp; Note that this option is
+likely to require a large amount of memory (using 3 coordinate
+parameters per atom).&nbsp; READ COMMENTS UNDER &quot;<A HREF="#var_fulmat">FULMAT</A>&quot; ABOVE BEFORE
+ATTEMPTING THIS!
+
+<p><dt><A NAME="var_occref"></A>
+OCCREF (true)
+<dd>
+When set false, no refinement of any atomic or group occupancies
+specified in <A HREF="#occup">OCCUP</A> records will be done.
+
+<p><dt><A NAME="var_offdia"></A>
+OFFDIA (false)
+<dd>
+If set true, uses contribution to off-diagonal matrix elements from
+amplitude derivatives; this is not normally necessary.
+
+<p><dt><A NAME="var_onlyfc"></A>
+ONLYFC (false)
+<dd>
+If set true no refinement, only structure factor calculation, will be
+performed.
+
+<p><dt><A NAME="var_onlyfr"></A>
+ONLYFR (false)
+<dd>
+When set true only the &quot;free set&quot; of reflections, as defined by
+<A HREF="#var_freerflag">FREERFLAG</A>, will be used.&nbsp; This is not normally a sensible option,
+and is used only for special purposes (<i>e.g.</i> R<sub>free</sub>
+statistics).
+
+<p><dt><A NAME="var_order"></A>
+ORDER (false)
+<dd>
+If the coordinates supplied to the program are in a different order
+than in the dictionary, setting this parameter true will put them
+in the right order and continue refinement.&nbsp; At the end the program
+will write the coordinates out in the correct order (see also
+<A HREF="#var_testin">TESTIN</A>).
+
+<p><dt><A NAME="var_phas"></A>
+PHAS (false)
+<dd>
+If set true phase restraints are used.&nbsp; Phase information must be
+present in the reflection file to use this option (see section <A HREF="#section3.5">3.5</A>).
+
+<p><dt><A NAME="var_prtall"></A>
+PRTALL (false)
+<dd>
+If set to true then full analyses of structure factors, geometry,
+<EM>etc.</EM> are printed every refinement cycle, otherwise this is only done
+on the last cycle with summaries on the other cycles.
+
+<p><dt><A NAME="var_repel"></A>
+REPEL (true)
+<dd>
+If set true non-bonded interactions shorter than the van der Waals
+contact distances as defined in the dictionary are restrained.&nbsp;
+This can be usefully employed when attempting to refine the
+'pucker'/stereochemistry of a group with unknown
+'pucker'/stereochemistry, or at the beginning of a protein refinement
+when the side chains may have large deviations from the true position.
+
+<p><dt><A NAME="var_rigid"></A>
+RIGID (false)
+<dd>
+If set true constrained rigid body refinement is applied to those parts
+of the molecule defined by <A HREF="#rigid">RIGID</A> records.&nbsp; All other coordinates
+will not move.&nbsp; There may in fact be no RIGID records, in which
+case all coordinates are kept fixed.
+
+<p><dt><A NAME="var_rmerge"></A>
+RMERGE (0.1)
+<dd>
+The Rmerge of the data when it was processed.&nbsp; This is only
+used to estimate <A HREF="#var_wf">WF(1)</A> when it is omitted.&nbsp; If a value for WF(1) is
+supplied then RMERGE is ignored.
+
+<p><dt><A NAME="var_rmsmin"></A>
+RMSMIN (0.03)
+<dd>
+This governs the amount of output.&nbsp; If the r.m.s. deviation from
+planarity (&Aring;) &gt; RMSMIN then the plane is printed out.
+If set to a negative value all restrained planes are listed.
+
+<p><dt><A NAME="var_rsize"></A>
+RSIZE (true)
+<dd>
+If set false sets record size for harvest file to 80, default is 132.
+
+<p><dt><A NAME="var_rwdmin"></A>
+RWDMIN (100)
+<dd>
+This governs the amount of output.&nbsp; Only those reflections are
+printed for which
+<pre>
+  (w(f)<sup>1/2</sup>) DELTA(|F|) &gt; RWDMIN
+</pre>
+where DELTA(|F|) is the absolute difference between the calculated
+and observed structure amplitudes.&nbsp; If set to a negative value all
+structure factors are listed.
+
+<p><dt><A NAME="var_rwlmin"></A>
+RWLMIN (4)
+<dd>
+This performs a similar function to <A HREF="#var_rwdmin">RWDMIN</A>.&nbsp; If
+<pre>
+ (w(d)<sup>1/2</sup>) DELTA(dist) &gt; RWLMIN
+</pre>
+<p>
+where DELTA(dist) is the absolute difference between calculated and
+observed distances then the distances are printed.&nbsp; If set to a
+negative value all distances restrained are listed. 
+
+<p><dt><A NAME="var_sb1"></A>
+SB1 (5)
+<dd>
+Solvent background scale factor.&nbsp;
+Disordered solvent makes a significant contribution to the Bragg
+scattering at low angles.&nbsp; This is allowed for by applying
+Babinet's Principle.&nbsp; Accordingly modified scattering factors f'
+are used in the structure factor calculations.
+<pre>
+  f' = f - SB1*exp(-1/2*SB2*q<sup>2</sup>)
+</pre>
+where q = 4.PI.sin(theta)/lambda.
+<p>
+The parameters SB1 and SB2 are only used if <A HREF="#var_water">WATER</A>=true.&nbsp; Their
+refined values may be used in subsequent cycles in the same
+way as <A HREF="#var_g">G</A> and <A HREF="#var_u">U</A>.&nbsp; These parameters are highly correlated and well
+defined values may not exist.&nbsp; They may also allow for disordered
+parts of a macromolecule which do not form part of the model
+currently being refined. 
+
+<p><dt><A NAME="var_sb2"></A>
+SB2 (1.6)
+<dd>
+Solvent background thermal parameter.&nbsp; See <A HREF="#var_sb1">SB1</A> above.
+
+<p><dt><A NAME="var_scheme"></A>
+SCHEME (1)
+<dd>
+The number of the amplitude weighting scheme.&nbsp; The structure
+amplitude terms in the function minimised are
+weighted with weights which are calculated from a weighting
+formula.&nbsp; Four formulae are available (see section <A HREF="#section2.4.1">2.4.1</A>) and these are
+referred to as SCHEMES 1, 2, 3 and 4.&nbsp; SCHEME 1 gives a constant
+weight to all structure amplitudes and provides the maximum rate of
+convergence, so it is usually tried first.&nbsp; In the later stages,
+one of the other schemes should be selected, so that the errors in the
+amplitudes can be more accurately represented.
+
+<p><dt><A NAME="var_sfacr"></A>
+SFACR (0.8)
+<dd>
+Initial shift factor.&nbsp; This is automatically adjusted during the
+sampling calculations.&nbsp; The frequency of sampling the observations
+and restraints is governed by the value of <A HREF="#var_modulo">MODULO</A>.&nbsp;
+
+<p><dt><A NAME="var_sftlim"></A>
+SFTLIM (0.02)
+<dd>
+The Gauss-Seidel or conjugate gradient iterations terminate either when
+<A HREF="#var_gsfacr">GSFACR</A> or <A HREF="#var_cgfacr">CGFACR</A> cycles respectively have been carried out or when all
+differences between successive solutions are less than <A HREF="#var_sftlim">SFTLIM</A>.
+
+<p><dt><A NAME="var_sgroup"></A>
+SGROUP
+<dd>
+The space group name or number.&nbsp; If one is not supplied it defaults
+first to the one given on the CRYST1 record, then to the one in the
+reflection file.&nbsp; It requires the SYMOP variable to be defined in
+order to locate the <A HREF="symlib.html">symop.lib</A> file.&nbsp; Normally it is not necessary
+to supply the space group.
+
+<p><dt><A NAME="var_sigma"></A>
+SIGMA (0)
+<dd>
+This allows the refinement with those reflections only for which
+Fobs &gt;=SIGMA*standard deviations.&nbsp; The input reflection file
+(see section <A HREF="#section3.5">3.5</A>) should contain standard deviations.
+
+<p><dt><A NAME="var_testin"></A>
+TESTIN (false)
+<dd>
+If set true this will cause all subroutines dealing with the structure
+factors and geometry to be bypassed.&nbsp; This
+will be useful when setting up input coordinates for refinement.&nbsp;
+
+<p><dt><A NAME="var_tprest"></A>
+TPREST (true)
+<dd>
+If set false, thermal parameter restraints are not used.
+
+<p><dt><A NAME="var_tlsref"></A>
+TLSREF (true)
+<dd>
+If set false, refinement of the <A HREF="#section3.4">group thermal parameters</A> (isotropic,
+anisotropic or TLS) will be skipped.&nbsp; The default is to refine the
+group thermal parameters if they are present in the input.
+
+<p><dt><A NAME="var_tsfacr"></A>
+TSFACR (0.01)
+<dd>
+This is used to determine the accuracy of the line search for the
+minimum.&nbsp; Smaller values will locate the minimum more accurately,
+but at the expense of CPU time.
+
+<p><dt><A NAME="var_u"></A>
+U (0)
+<dd>
+U is the overall thermal parameter.&nbsp; If <A HREF="#var_iso">ISO</A>=false it should be
+updated in each cycle by replacing it with the value obtained from
+the previous cycle.&nbsp; If ISO=true the effect of giving a U &gt; 0 is
+to adjust all the individual U<sub>iso</sub>'s so their mean is the input U.&nbsp;
+Note that this differs from previous versions: previously an input U
+was ignored if ISO=true.
+
+<p><dt><A NAME="var_uhigh"></A>
+UHIGH (0.15)
+<dd>
+If an atomic thermal parameter is greater than UHIGH it is
+printed.&nbsp; This allows the amount of output to be controlled when
+used in conjunction with <A HREF="#var_ulow">ULOW</A> and <A HREF="#var_dxyzlm">DXYZLM</A>.
+
+<p><dt><A NAME="var_ulimh"></A>
+ULIMH (2.5)
+<dd>
+If an atomic thermal parameter is calculated to be greater than ULIMH,
+it is reset to that value.&nbsp; A suggested value is the larger of
+0.3.<A HREF="#var_high">HIGH</A><sup>2</sup>
+and 1.5.
+
+<p><dt><A NAME="var_uliml"></A>
+ULIML (0)
+<dd>
+If an atomic thermal parameter is calculated to be less than ULIML,
+it is reset to that value.&nbsp; A suggested value is
+-0.0005.<A HREF="#var_high">HIGH</A><sup>6</sup>.
+
+<p><dt><A NAME="var_ulow"></A>
+ULOW (0.02)
+<dd>
+If an atomic thermal parameter is smaller than ULOW, then it is
+printed.&nbsp; This allows the amount of output to be
+controlled when used in conjunction with <A HREF="#var_uhigh">UHIGH</A> and <A HREF="#var_dxyzlm">DXYZLM</A>.
+
+<p><dt><A NAME="var_usedsd"></A>
+USEDSD (true)
+<dd>
+By default, the individual standard deviations of the distances given
+in the dictionary are used to weight the distance restraints (weight =
+1/s.d.<sup>2</sup>).&nbsp; However, if the standard deviation in the
+dictionary is given as 0 (because no estimate was available), then the
+weight is obtained from the corresponding WE coefficient (1, 2 or 3, see
+below).&nbsp; If USEDSD is set false, all the standard deviations in the
+dictionary are ignored, and all weights are obtained from the <A HREF="#var_we">WE</A>
+coefficients.
+
+<p><dt><A NAME="var_usefr"></A>
+USEFR (false)
+<dd>
+When set true this causes the "free set" of reflections to be used as
+normal reflections; this should be only done once the refinement is
+complete.
+
+<p><dt><A NAME="var_usewfc"></A>
+USEWFC (false)
+<dd>
+If USEWFC is set true, F-weighting scheme coefficients for weighting
+schemes 2, 3 and 4 are calculated before the first refinement cycle
+and used in subsequent cycle(s).&nbsp; The weighting coefficients to be
+calculated should not be specified in the input; if they are they
+will be ignored.
+
+<p><dt><A NAME="var_water"></A>
+WATER (true)
+<dd>
+If WATER is set to false, values of SB1 and SB2 are not used (see
+<A HREF="#var_sb1">SB1</A>).&nbsp; The default is to use and refine SB1 and SB2.&nbsp; These
+parameters allow for the bulk solvent scattering in a macromolecular
+crystal.&nbsp; You should not apply a low resolution cut-off (<A HREF="#var_low">LOW</A>) in
+that case.
+
+<p><dt><A NAME="var_we"></A>
+WE (0.02, 0.04, 0.05, 0.01, 0.01, 0)
+<dd>
+The 6 elements of this array are used for applying weights (=
+1/WE(i)<sup>2</sup>) on the geometry part of the function that is
+minimised.
+<p>
+WE(1) is used for restraints on 1-2 distances (&lt; 2.12&Aring;).<br>
+WE(2) is used for restraints on 1-3 distances across bond angles
+(&gt;= 2.12 but &lt; 2.625&Aring;).<br>
+WE(3) is used for restraints on non-bonded distances (&gt;=
+2.625&Aring;).<br>
+WE(4) is used for restraints on peptide planes.<br>
+WE(5) is used for restraints on ring and other planes.<br>
+WE(6) is used for restraints on the edges of chiral tetrahedra.<br>
+<p>
+If all these variables are set to 0 then no contribution from ideal
+geometry is included, <i>i.e</i> the refinement is based solely on the
+structure amplitudes, thermal parameters and/or phase data.&nbsp; See
+also section <A HREF="#section2.4">2.4</A>.&nbsp; If <A HREF="#var_usedsd">USEDSD</A> is set true, and the standard
+deviation of the distance restraint given in the dictionary is &gt; 0,
+then the WE coefficient (1, 2 or 3) is not used to obtain the
+weight.&nbsp; For compatibility with previous versions of the program,
+this version will also accept values of WE(i) &gt;= 1, in which case the
+value used is 1/WE(i).
+
+<p><dt><A NAME="var_wf"></A>
+WF (0, 0, 0, 0, 0, 0, 0)
+<dd>
+The 7 elements of this array are used for applying weights on
+the structure amplitude part of the function that is minimised.
+Four weighting schemes are available, one of which
+incorporates the standard deviations in Fo.&nbsp; For details see
+section <A HREF="#section2.4">2.4</A> and <A HREF="#var_scheme">SCHEME</A>.&nbsp; If WF(1) is omitted or set to 0 then an
+estimated value will be used, based on either the default or the
+supplied value of <A HREF="#var_rmerge">RMERGE</A>.&nbsp; However it is to be regarded as very
+approximate, and it will very likely need to be updated.&nbsp;
+The other elements WF(2) ... WF(7) may also be omitted; in which case if
+SCHEME is not 1, <A HREF="#var_usewfc">USEWFC</A> will be forced true and the elements of WF
+(2 ... 7) will be determined automatically before the first refinement
+cycle.&nbsp; It will save time if values from the previous run are
+inserted.&nbsp; However periodically you should omit them and let the
+program determine new values.
+
+<p><dt><A NAME="var_wfref"></A>
+WFREF (false)
+<dd>
+If set true, optimizes value of WF(1), <i>i.e.</i> scale of F-weights
+relative to restraint weights.&nbsp; However this is likely to be a very
+time-consuming process, and should only be attempted after convergence
+has been attained (use <A HREF="#var_modulo">MODULO</A>=1 and <A HREF="#var_tsfacr">TSFACR</A>=0.004).
+
+<p><dt><A NAME="var_wp"></A>
+WP (20, 0.2)
+<dd>
+The two elements of this array are used for applying weights on the
+structure factor phase part of the function that is minimised.
+These weights are only used when <A HREF="#var_phas">PHAS</A>=true and phases have been read
+from the input reflection file.&nbsp; See also section <A HREF="#section2.4">2.4</A>.
+
+<p><dt><A NAME="var_wu"></A>
+WU (1, 0.01)
+<dd>
+The two elements of this array are weighting coefficients for the
+isotropic and anisotropic thermal parameter restraints respectively.
+
+<p><dt><A NAME="var_eof"></A>
+&amp;EOF (No value)
+<dd>
+Input of steering data may be terminated and refinement initiated by
+either &amp;EOF or end-of-file.&nbsp; Further steering data on a new line
+may follow &amp;EOF.
+<dd>
+</dl>
+<p><br>
+
+<h3><A NAME="section3.2"></A>3.2 DICTIONARY</h3>                          
+
+The dictionary is read from the file <A HREF="#diction">DICTION</A>.&nbsp; The use of a user
+defined dictionary makes RESTRAIN extremely flexible with respect to the
+type of structures that can be refined.&nbsp; The dictionary is divided
+in two blocks, the first containing all residues and accompanying
+restraints, the second one containing all the information necessary
+for the program to calculate the scattering factors for each atom
+type included in the first block.&nbsp; Keyworded free format input is
+used throughout, with spaces, tabs or newlines separating items,
+and with record continuations (max 24) being specified by a "-" at
+the end of the line.&nbsp; Character strings containing leading spaces
+(<i>e.g.</i> atoms with single character atomic symbols) must be
+enclosed in quotes (&quot;...&quot;).&nbsp; REMARK records may be interspersed
+freely to make comments.
+<p>
+The first block is organised into residue types, the first entry for
+each type being &quot;RESI&quot; followed by the residue name as a three letter
+abbreviation.&nbsp; Note that these residue names must correspond to
+those present in your coordinate set (see section <A HREF="#section3.3">3.3</A>).&nbsp; Within
+each residue entry the records may appear in any order.
+<p>
+Following the residue entry record are a series of &quot;DIST&quot; records
+defining the atom names, and each distance restraint in sequence moving
+down the residue.&nbsp; Each restraint is specified by a positional
+number defining which atom following the current atom it is
+restrained to, then the distance in &Aring; and its standard deviation.
+The order of the different atoms in the residue therefore specifies
+the positional number.&nbsp; By default the restraint weights are
+calculated from the standard deviations.&nbsp; Note that the atom names
+must correspond to those present in your coordinate file (see section
+<A HREF="#section3.3">3.3</A>).
+<p>
+&quot;DIHE&quot; records define the name of each dihedral angle and the four
+positional numbers of the atoms defining this angle.&nbsp; Note that
+the names are not stored in the program.&nbsp; It is however sensible to
+use a consistent logical order, since the calculated dihedral angles
+will be printed in the same order, <i>e.g.</i> phi and psi, chi angles,
+omega for amino acid residues.
+<p>
+&quot;CHIR&quot; records define the name of each chiral centre and the four
+positional numbers of the atoms defining this centre.&nbsp; The order
+in which these atoms should be given should refer to a right-handed
+rotation when looking along the bond between the first atom (with
+the lowest positional number in the table) and the one at the centre
+of the tetrahedron.&nbsp; For Calpha chiral centres in amino acids the
+order therefore is N-Calpha-C-Cbeta.&nbsp; Note that the names are not
+stored in the program.
+<p>
+&quot;PLAN&quot; records define the name of each plane, the plane type, an
+individual plane weight (not used; for future development), and the
+atom pointers defining these planes.&nbsp; In this version of RESTRAIN
+only two types of planes are recognised.&nbsp; Planes of type 1 in the
+list will be put in the first category (PLANE1), all of type 2 in the
+second one (PLANE2).&nbsp; For amino acid residues the peptide planes
+therefore are usually put in first position.&nbsp; The reason for this
+is that RESTRAIN allows different weighting to be used for the two
+types of plane (see section <A HREF="#section2.4">2.4</A>).&nbsp; Note that the plane names are
+not stored in the program.
+<p>
+The residue entries in the first block are terminated by a record
+starting with END.
+<p>
+The second block consists of &quot;ATOM&quot; records and is organised into
+atom types, the first entry for each type being the atom name.&nbsp;
+Note that these atom names must correspond to those present in the first
+block and in your coordinate set (see section <A HREF="#section3.3">3.3</A>).&nbsp; Each atom name
+is followed by a record containing the 4 constants S(i), the 4
+constants E(i), the constant C and the closest van der Waals radius RKL.
+<p>
+These constants will be used for a four-Gaussian expansion of the
+scattering factor:
+<pre>
+f(hkl)=SUM(i) S(i)exp(-E(i)(sin(theta)/lambda)<sup>2</sup>)+C for i = 1,4
+</pre>
+These constants can be found in INTERNATIONAL TABLES FOR X RAY
+CRYSTALLOGRAPHY, Vol. IV.&nbsp; The van der Waals radius is used for
+calculation of nearest allowed distances of atoms more than three
+bond distances apart when <A HREF="#var_repel">REPEL</A>=true.&nbsp; The second
+block is terminated by a record starting with END.
+<p>
+
+<A NAME="clibd"></A>The distributed dictionaries (in $CLIBD) are:
+<p>
+<STRONG>chiral_pep4.dic</STRONG>: Main-chain chiral restraints; 4-atom peptide planes.<br>
+<STRONG>chiral_pep5.dic</STRONG>: Ditto, but 5-atom planes.<br>
+<STRONG>dna.dic</STRONG>
+<p>
+The first is the default if DICTION isn't assigned.&nbsp; A program
+&quot;<A HREF="rdent.html">rdent</A>&quot; is available to generate RESTRAIN dictionary entries from PDB
+coordinate files; however it only makes the distance records (without
+standard deviations), the user has to work out the other sections, but
+this is not difficult.
+<p>
+The peptide dictionaries use values published by <A HREF="#reference3">Engh &amp; Huber (1991)</A>.
+<p><br>
+
+<h3><A NAME="section3.3"></A>3.3 ATOMIC COORDINATES</h3>                      
+
+Cartesian orthogonal coordinates are read from file <A HREF="#xyzin">XYZIN</A>.&nbsp; The
+default set of orthogonal axes XO, YO and ZO is defined as follows:
+<pre>
+     XO || a
+     YO || c* x a
+     ZO || c*
+</pre>
+<p>
+If SCALE records are present in the file, these will override the above,
+as well as any cell parameters given in the steering data.
+<p>
+A CRYST record if present will override any crystal data (<i>i.e.</i>
+cell and space group) read from the MTZ file (if used).&nbsp; However
+any crystal data given in the steering data will override both the PDB
+and MTZ files.
+<p>
+The coordinate records must be in the format designed by the
+Brookhaven Protein Data Bank.&nbsp; The format expected is:
+<p><dl><dt>
+Record identifier (A6)
+<dd>ATOM for polymer atoms, HETATM for other atoms such as water.
+<p><dt>
+Atom number (A5)
+<dd>This may be alphanumeric.
+<p><dt>
+Atom identifier (1X, A4)
+<dd>The first two characters are the atom type right-justified.&nbsp;
+The last two characters are the remoteness indicator and the branch
+number respectively.&nbsp; These may be omitted if desired.
+<p><dt>
+Residue name (1X, A3)
+<dd>The name of the residue or the molecule  (<i>e.g.</i> ALA or H2O)
+<p><dt>
+Residue label (1X, A6)
+<dd>The residue label or number.
+<p><dt>
+Atom coordinates (3X, 3F8.0)
+<dd>The orthogonal coordinates of the atom.
+<p><dt>
+Occupancy (F6.0)
+<dd>Atomic occupancy on the scale 0 to 1.
+<p><dt>
+Isotropic thermal parameter (F6.0)
+<dd>This may be given either as U or B (8 pi<sup>2</sup>U).
+</dl>
+
+Chains are terminated with a record with &quot;TER   &quot; in the first 6
+character positions.&nbsp; The program can deal with more than one
+protein chain.&nbsp; This is particularly useful when refinement is
+carried out with certain residues missing/removed or when second sites
+are included.&nbsp;
+<p>
+Care must be taken in preparing the coordinates for refinement.
+After each polymer chain a TER record must be inserted.&nbsp; All atoms
+not contained in chains must be labelled HETATM.
+<p>
+Note that atomic thermal parameters can be read as either U's
+or B's (B=8.PI<sup>2</sup>.U); the variable BINPUT must be set
+accordingly. After previous refinement and extensive rebuilding you may
+want to reset large U or B values for atoms incorrectly positioned
+before rebuilding (<i>e.g.</i> U &gt; 0.8 or
+B &gt; 64&Aring;<sup>2</sup>) to more reasonable starting values
+(<i>e.g.</i> U=0.2 or B=16&Aring;<sup>2</sup>).
+<p>
+The number of atoms in each residue in the polymer chains must be
+the same as the number of atoms in that residue in the
+dictionary.&nbsp; The names of all atoms must correspond to the names of
+the atoms in the dictionary.&nbsp; Blanks (including leading blanks) are
+significant in assessing an atom name.
+<p>
+The atomic coordinates in the polymer chains must be ordered in
+each residue in the same way as the atoms in the residue are
+ordered in the dictionary.&nbsp; If this is not the case, set <A HREF="#var_order">ORDER</A>=true
+in the steering data in the initial cycle.&nbsp; The output file of
+atomic coordinates will then be produced in dictionary order for
+subsequent cycles.&nbsp; Alternatively, set <A HREF="#var_testin">TESTIN</A>=true and ORDER=true
+to use the program to order and analyse the file without carrying out
+any refinement.
+<p>
+<A NAME="format_u_tensor"></A>For anisotropic thermal parameters the six values defining the U
+tensor of an atom U(11) U(22) U(33) U(12) U(13) U(23) are written
+out (multiplied by 10<sup>4</sup> immediately following the coordinate
+record of that atom.&nbsp; The record containing the U tensor is
+identified by the label ANISOU.&nbsp; The format used for this record
+is (A6,22X,6I7).
+<p><br>
+
+<h3><A NAME="section3.4"></A>3.4 GROUP THERMAL PARAMETER CONTROL DATA</h3>                      
+<p>
+All information for the group thermal parameter refinement is contained
+in the file assigned to <A HREF="#tlsin">TLSIN</A>; the steering data does not contain any
+information.&nbsp; Each thermal parameter group is defined by an entry
+in the TLSIN file.&nbsp;
+<p>
+
+The layout of a UISO entry is typically:
+<pre>
+UISO    name
+RANGE   atom_id_start&nbsp; atom_id_end&nbsp; [selection]
+RANGE   . . . . . . . . . . . . . . . . . . . .
+U       Uiso                                           (&Aring;<sup>2</sup>)
+</pre>
+<p>
+
+The layout of a UANISO entry is typically:
+<pre>
+UANISO  name
+RANGE   atom_id_start&nbsp; atom_id_end&nbsp; [selection]
+RANGE   . . . . . . . . . . . . . . . . . . . .
+U       U<sub>11</sub> U<sub>22</sub> U<sub>33</sub> U<sub>23</sub> U<sub>31</sub> U<sub>12</sub>                            (&Aring;<sup>2</sup>)
+</pre>
+<p>
+
+The layout of a TLS entry is typically:
+<pre>
+TLS     name
+RANGE   atom_id_start&nbsp; atom_id_end&nbsp; [selection]
+RANGE   . . . . . . . . . . . . . . . . . . . .
+ORIGIN  x y z                                          (&Aring;)
+T       T<sub>11</sub> T<sub>22</sub> T<sub>33</sub> T<sub>23</sub> T<sub>31</sub> T<sub>12</sub>                            (&Aring;<sup>2</sup>)
+L       L<sub>11</sub> L<sub>22</sub> L<sub>33</sub> L<sub>23</sub> L<sub>31</sub> L<sub>12</sub>                            (deg.<sup>2</sup>)
+S       S<sub>1 </sub> S<sub>2 </sub> S<sub>23</sub> S<sub>31</sub> S<sub>12</sub> S<sub>32</sub> S<sub>13</sub> S<sub>21</sub>                     (&Aring;.deg.)
+</pre>
+<p>
+U<sub>ij</sub> means the element (i,j) of tensor U.&nbsp; Since X-ray
+data allow the calculation of only eight of nine S tensor elements, the
+usual constraint of setting the trace of S to zero is adopted.&nbsp;
+This means that the elements S<sub>1</sub> and
+S<sub>2</sub> are (S<sub>33</sub> - S<sub>22</sub>) and (S<sub>11</sub>
+- S<sub>33</sub>) of the S tensor as defined by the equation<br>
+U = T + A L A' + A S + S'A' (<A HREF="#reference6">Johnson and Levy, 1974</A>).
+<p>
+Note that the order of the off-diagonal terms in the group U, T and L
+tensors is different from that of the U tensor in the coordinate file
+(the 23 and 12 elements are swapped).
+<p>
+All the records of each except the first (UISO, UANISO or TLS) are
+optional, and can appear in any order.&nbsp; The data will assume
+sensible defaults if not supplied (so the TLSIN file may contain only 1
+line).&nbsp;  If the U or T record is omitted, the mean isotropic
+thermal parameter for the group is either used as is for UISO, or
+converted to the equivalent anisotropic tensor for UANISO or TLS.&nbsp;
+ORIGIN specifies the local origin of a TLS group; if omitted it is set
+to the mean centre of the group.&nbsp;  The L and S tensors if omitted
+are set to zero.  In addition to the keyworded records shown above, the
+following are also accepted: <A HREF="#tlsin_default">DEFAULT</A>,&nbsp; <A HREF="#tlsin_noatom">NOATOM</A>,&nbsp; <A HREF="#tlsin_residue">RESIDUE</A>&nbsp; (see the next section for details).
+<p><br>
+
+<h4><A NAME="section3.4.1"></A>3.4.1 Description of the data records in the TLSIN file.</h4>
+<p>
+Only the first 4 letters of the keywords are significant and they are
+case-insensitive.&nbsp; The format is free, that is items separated by
+one or more spaces.&nbsp; If items are left blank they default to zero
+values.&nbsp;
+<p><br>
+
+<A NAME="tlsin_uiso"></A>UISO&nbsp; [name]
+<br>
+Introduces U<sub>iso</sub> group.&nbsp; &quot;name&quot; is optional text used to identify
+the group in the output.
+<p>
+
+<A NAME="tlsin_uaniso"></A>UANISO&nbsp; [name]
+<br>
+Introduces Uaniso group.
+<p>
+
+<A NAME="tlsin_tls"></A>TLS&nbsp; [name]
+<br>
+Introduces TLS group.
+<p>
+
+<A NAME="tlsin_range"></A>RANGE&nbsp; atom_id_start&nbsp; atom_id_end&nbsp; [atom_selection]
+<br>
+The RANGE record contains two atom identifiers indicating the start and
+finish of a segment of the coordinate file followed optionally by the
+names of atoms to be selected from this segment for inclusion in the
+group.&nbsp; There may be any number of RANGE records per entry,
+including none (in which case the range of the group is the entire
+coordinate file).&nbsp; See section 3.1.1 under keyword <A HREF="#aniso">ANISO</A> for a
+description of the options available for defining the range and the
+atom selection.
+<p>
+
+<A NAME="tlsin_u"></A>U&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Uiso<br>
+or<br>
+U&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; U<sub>11</sub>&nbsp;
+U<sub>22</sub>&nbsp; U<sub>33</sub>&nbsp; U<sub>23</sub>&nbsp;
+U<sub>31</sub>&nbsp; U<sub>12</sub>
+<br>
+Group isotropic thermal parameter, if a UISO group, or group anisotropic
+thermal tensor components&nbsp;(6), if a UANISO group.
+<p>
+
+<A NAME="tlsin_origin"></A>ORIGIN&nbsp; x&nbsp; y&nbsp; z&nbsp;
+<br>
+Coordinates of the local origin of the TLS group.&nbsp; For an aromatic
+ring it is usually the C-beta atom; for larger groups such as
+domains it is usually the mean centre (the default).&nbsp;
+<p>
+
+<A NAME="tlsin_t"></A>T&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; T<sub>11</sub>&nbsp;
+T<sub>22</sub>&nbsp; T<sub>33</sub>&nbsp; T<sub>23</sub>&nbsp;
+T<sub>31</sub>&nbsp; T<sub>12</sub>
+<br>
+T tensor components (6) for TLS group.
+<p>
+
+<A NAME="tlsin_l"></A>L&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; L<sub>11</sub>&nbsp;
+L<sub>22</sub>&nbsp; L<sub>33</sub>&nbsp; L<sub>23</sub>&nbsp;
+L<sub>31</sub>&nbsp; L<sub>12</sub>
+<br>
+L tensor components (6) for TLS group.
+<p>
+
+<A NAME="tlsin_s"></A>S&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; S<sub>1 </sub>&nbsp;
+S<sub>2 </sub>&nbsp; S<sub>23</sub>&nbsp; S<sub>31</sub>&nbsp;
+S<sub>12</sub>&nbsp; S<sub>32</sub>&nbsp; S<sub>13</sub>&nbsp;
+S<sub>21</sub>
+<br>
+S tensor components (8) for TLS group.&nbsp; If <A HREF="#var_creact">CREACT</A>=true (refine
+centre of reaction of all TLS groups), the S tensor is symmetric, so
+only the first 5 components are needed.
+<p>
+
+<A NAME="tlsin_default"></A>DEFAULT
+<br>
+This specifies that the values in the current group may be overridden
+if a subsequent group specifies any atoms in common with this
+group.&nbsp; Otherwise it is an error to specify groups that have common
+atoms.&nbsp; For example, one could specify a default UANISO group for
+the whole coordinate file; then override it with smaller UANISO or TLS
+groups.&nbsp; Any atoms left outside these groups would get the overall
+U<sub>aniso</sub>.
+<p>
+
+<A NAME="tlsin_noatom"></A>NOATOM
+<br>
+This switches off the default option to refine isotropic thermal
+parameters for atoms in the current group at the same time as the group
+parameters.&nbsp; This is only valid for UANISO and TLS groups.
+<p>
+
+<A NAME="tlsin_residue"></A>RESIDUE
+<br>
+This causes all the range(s) specified for the current group to be
+split up into single residues, each with its own set of parameters of
+the same type as the parent group, which are then refined independently.
+<p><br>
+
+<A NAME="tlsin_example"></A>An example of the TLS record specifying a TLS group consisting of two
+mainchain segments, with atoms in residues 1 to 68 and 129 to 300 is: 
+<pre>
+TLS   N domain
+RANGE    1.   68.  MNCH
+RANGE  129.  300.  MNCH
+T     .112    .165    .131   -.052   -.003   -.003
+L    1.877   2.165   3.471   4.562   6.152   7.313
+S     .366   -.382    .147   -.981    .185    .118    .132    .140
+</pre>
+<p>
+<A NAME="tlsin_warning_and_error_messages"></A>Warning and error messages:
+<p>
+Where TLS tensors result in U tensor that is not positive-definite,
+a warning message is printed out stating the atom name, number and
+U tensor.
+<p>
+If the L tensor elements are large (&gt;20 degr<sup>2</sup>) and an atom
+is far away from the centre of origin for the calculation of the TLS
+tensors (&gt;20&Aring;), then the observed and calculated structure
+factor amplitudes can be different by several orders of magnitude.&nbsp;
+This is a consequence of the numerical instability in calculation of
+derivatives of the TLS tensors with respect to positional
+coordinates (on some machines it may also result in an overflow
+floating point error).&nbsp; These problems usually appear at the
+beginning of the TLS refinement of large groups if the user does
+not set the initial L small enough and origin of the rigid group
+sufficiently close to the centre of gravity.&nbsp; Such an error is
+checked for in two ways.&nbsp; First, a warning message is printed if
+the selected origin is more than 10&Aring; away from the gravity
+centre.&nbsp; Second, a warning message is printed if more than 30% of
+elements of U tensors for individual atoms had to be reset to an
+arbitrary interval [0, <A HREF="#var_ulimh">ULIMH</A>].
+<p>
+Note that TLS calculations, like all anisotropic calculations,
+cannot take advantage of space-group specific subroutines.&nbsp; The
+general space-group subroutine must be used.
+<p><br>
+
+<h3><A NAME="section3.5"></A>3.5 AMPLITUDE AND PHASE DATA</h3>                   
+
+The reflections are read from file <A HREF="#refin">REFIN</A> or <A HREF="#hklin">HKLIN</A>.&nbsp; These files may
+contain:
+<pre>
+H  K  L  FOBS  SIGMA(FOBS)  PHASE FOM  FREERFLAG
+
+
+Item                Description                    Form-  Unform-
+                                                   atted   atted
+
+H K L        Miller indices of reflection              I      R
+FOBS         Observed structure factor amplitude       I      R
+SIGMA(FOBS)  Standard deviation in observed amplitude  I      R
+PHASE        Estimated phase from isomorphous and/or
+             anomalous data                            I      R
+FOM          Figure of merit for phase
+             (on scale of 0-100)                       I      R
+FREERFLAG    Free R flag (MTZ only)                           I
+</pre>
+Two file types containing the amplitude and/or phase data are
+accepted.&nbsp; Which file type is actually read depends on the keyword
+<A HREF="#refin">REFIN</A> or <A HREF="#hklin">HKLIN</A> (see section <A HREF="#section3.1.1">3.1.1</A>).
+<p>
+<A NAME="section3.5_refin"></A>When REFIN is used, a formatted reflection file is read and the input
+depends on the value specified for <A HREF="#var_maxfmt">MAXFMT</A> which must be &gt;=4 and
+&lt;=7.&nbsp; When MAXFMT is 5 the items H, K, L, FOBS AND SIGMA(FOBS)
+will be read.&nbsp; The reflections are read in with the format
+specified after the steering data.&nbsp; Note that the format must be
+consistent with the value for MAXFMT.
+<p>
+<A NAME="section3.5_hklin"></A>When HKLIN is used then the input is read from an unformatted (MTZ)
+reflection file.&nbsp; The file has header information containing the
+crystal data (cell parameters and space group), which means that this
+information does not normally need to be supplied in the steering data.
+<p><br>
+
+<h2><A NAME="section4"><A NAME="output_files"></A>4.&nbsp; OUTPUT FILES</h2>
+                         
+Besides line printer output (described below in section<A HREF="#section4.1">4.1</A>) there are a number
+of output files depending on the steering data.
+<pre>
+           File                        File name    Description
+
+- refined atomic coordinates           XYZOUT       <A HREF="#section4.2">section 4.2</A>
+- refined group thermal parameters     TLSOUT       <A HREF="#section4.3">section 4.3</A>
+- structure factors               HKLOUT or REFOUT  <A HREF="#section4.4">section 4.4</A>
+- full normal matrix                   MATOUT       <A HREF="#section4.5">section 4.5</A>
+- design matrix                        DESOUT       <A HREF="#section4.5">section 4.5</A>
+</pre>
+There are also 3 scratch files used by RESTRAIN:
+<pre>
+           File                          Unit       Description
+
+- coordinates for ordering                12        <A HREF="#section4.6">section 4.6</A>
+- reflections for scaling &amp; weighting     14        <A HREF="#section4.6">section 4.6</A>
+- normal equations for positional parms.  11        <A HREF="#section4.6">section 4.6</A>
+</pre>
+<p><br>
+
+<h3><A NAME="section4.1"></A>4.1 LINE PRINTER OUTPUT</h3>
+
+The program is so designed that all possible information that could
+be required by the user is accessible.&nbsp; However, to prevent
+unnecessary output the user can manipulate parameters that control
+the amount of output (see section <A HREF="#section3.1.3">3.1.3</A>).&nbsp; Obviously
+a run will produce a limited selection of the output items,
+depending on the refinement parameters.&nbsp; The major output items for
+each cycle are summarised below.&nbsp; They are subdivided in major
+blocks indicated by a title between a pair of three asterisks. 
+<p><A NAME="output1"></A>
+1.&nbsp;   The program header stating the version number used.
+<p><A NAME="output2"></A>
+2.&nbsp;   The array dimensions which have been set using the PARAMETER
+     statements.
+<p><A NAME="output3"></A>
+3.&nbsp;   The <A HREF="#title">TITLE</A> as supplied by the user in the control data.
+<p><A NAME="output_input_output_files"></A>
+***INPUT/OUTPUT FILES***
+<p><A NAME="output4"></A>
+4.&nbsp;   The filenames for coordinates input <A HREF="#xyzin">XYZIN</A>, reflections input
+<A HREF="#refin">REFIN</A>, dictionary <A HREF="#diction">DICTION</A>, coordinates output <A HREF="#xyzout">XYZOUT</A> and reflections
+output <A HREF="#refout">REFOUT</A>.
+<p><A NAME="output5"></A>
+5.&nbsp;   FORMAT FOR INPUT:
+The format specified by the user is printed.
+<p><A NAME="output_input_parameters"></A>
+***INPUT PARAMETERS***
+<p><A NAME="output_list_of_steering_data"></A>
+LIST OF STEERING DATA
+<p><A NAME="output6"></A>
+6.&nbsp;   Under this heading there follows a list of all the steering
+     parameters, with their default values and the input values
+     which were specified by the user.&nbsp; If no value for a
+     parameter has been given, the default value is used, with the
+     exception of the cell parameters and the scale factor <A HREF="#var_g">G</A> and
+     overall thermal parameter <A HREF="#var_u">U</A>, which must be supplied by
+     the user.
+<p><A NAME="output7"></A>
+7.&nbsp;   FRACTIONAL CRYSTALLOGRAPHIC EQUIVALENT POSITIONS.&nbsp;
+The general equivalent positions are given in the format of
+International Tables Vol. A.&nbsp; It is advisable to check these at the
+beginning of a refinement.
+<p><A NAME="output8"></A>
+8.&nbsp;   When refining using non-crystallographic symmetry <A HREF="#mode_2">MODE 2</A>
+     (<A HREF="#var_rigid">RIGID</A>=false) ORTHOGONAL NON-CRYSTALLOGRAPHIC
+     EQUIVALENT POSITIONS will be printed.&nbsp; These will then be
+     followed by a list of ALL ORTHOGONAL EQUIVALENT POSITIONS
+     including those generated by the non-crystallographic
+     symmetry.
+<p><A NAME="output9"></A>
+9.&nbsp;   When extra distance restraints are to be used NUMBER
+     OF NON-DICTIONARY RESTRAINTS will be printed.&nbsp; Six restraints
+     per line are listed.&nbsp; These restraints are
+     ATOM1 ATOM2 DISTANCE <EM>e.g.</EM> 190- 638 2.08 means that the distance
+     between atoms 190 and 638 is 2.08&Aring;.&nbsp; Check that the restraints
+     are correct.
+<p><A NAME="output10"></A>
+10.&nbsp;  When extra planes are to be used NUMBER OF NON-
+     DICTIONARY PLANES will be printed.&nbsp; Check that the planes are
+     correct.&nbsp; <EM>E.g.</EM>
+<pre>
+     FIRST ATOM     ATOMS IN PLANE
+     1045           6
+</pre>
+     This means that there are 6 atoms in the extra plane, the
+     first atom being number 1045, the other 5 atoms following
+     sequentially with no atoms being skipped.
+<p><A NAME="output11"></A>
+11.&nbsp;  When atoms are to have occupancies refined (<A HREF="#var_occref">OCCREF</A>=true)
+NUMBER OF OCCUPANCY GROUPS will be printed.&nbsp; The occupancy groups
+are then listed.
+<pre>
+     FIRST ATOM     NUMBER     GROUP      COUPLING
+                    OF ATOMS   NUMBER     NUMBER
+       910          6          1           1  
+       952          5          2           1
+      1045          6          1          -1
+</pre>
+
+     This shows the two cases:
+<p><ol>
+     <li> Coupled occupancies.&nbsp; Group number 1, containing 6 atoms,
+        occupies two sites, with first atom number 910 and 1045
+        respectively.&nbsp; This group has a coupled occupancy for the 
+        two sites (as indicated by -1 for the second site).
+<p>     
+<li> Partial occupancies.&nbsp; Group number 2, containing five atoms,
+with first atom number 952.
+</ol>
+<p>     The present occupancies as read from the input coordinates are
+     then listed.
+<pre>
+     ATOM  910 HAS OCCUPANCY 0.621.
+     ATOM 1045 HAS OCCUPANCY 0.379.
+     ATOM  952 HAS OCCUPANCY 0.565.
+</pre>
+     Note that coupled occupancies should add up to 1.
+<p><A NAME="output_dictionary"></A>
+DICTIONARY
+<p><A NAME="output12"></A>
+12.&nbsp;  In case <A HREF="#var_dicpri">DICPRI</A> is true, the contents of the dictionary will
+     be printed as it is read to facilitate the development of new
+     entries.&nbsp; At the end some overall statistics are printed.
+<p><A NAME="output_coordinates"></A>
+COORDINATES
+<p><A NAME="output13"></A>
+13.&nbsp;  MOLECULAR PARAMETERS.&nbsp; This is self-explanatory.&nbsp;
+Note that (groups of) terminal atoms may be counted as extra residues.
+     This is seen when for the carboxyterminal oxygen a separate
+     residue entry in the dictionary is used.
+<p><A NAME="output14"></A>
+14.&nbsp;  If there are groups of atoms which are to have their
+     thermal parameters refined by rigid body option, the
+     header ATOMS IN THE FOLLOWING RANGES ARE TO BE REFINED
+     ANISOTROPICALLY BY RIGID BODY (TLS) is printed, followed
+     by the description of rigid bodies using the format in
+     section <A HREF="#section2.3.6">2.3.6</A>.
+<p><A NAME="output15"></A>
+15.&nbsp;  If there are groups of atoms which are to have their
+     thermal parameters refined anisotropically the header
+     ATOMS IN THE FOLLOWING RANGES ARE TO BE REFINED
+     ANISOTROPICALLY is printed, followed by 10 ranges per
+     line giving first and last atom number (internal
+     counters).
+<p><A NAME="output16"></A>
+16.&nbsp;  If there are rigid groups, these are listed under the heading
+     ATOMS IN THE FOLLOWING RANGES TO BE REFINED AS RIGID GROUPS.
+     Ten ranges per line are printed giving first and last atom
+     number (internal counters).
+<p><A NAME="output17"></A>
+17.&nbsp;  When refining using non-crystallographic symmetry <A HREF="#mode_1">MODE
+     1</A> (<A HREF="#var_rigid">RIGID</A>=true) ATOMS IN THE FOLLOWING RANGES
+     ARE TO BE REFINED AS RIGID GROUPS RELATED BY NON-
+     CRYSTALLOGRAPHIC SYMMETRY is printed.&nbsp; For each molecule
+     the atom ranges (internal counters) are given, followed
+     by a description of the non-crystallographic symmetry
+     operation in terms of a rotation and a screw
+     translation.&nbsp; This is an aid in visualising the
+     transformation involved.
+<p><A NAME="output18"></A>
+18.&nbsp;  NUMBER OF PARAMETERS TO BE REFINED.&nbsp; This gives an
+     indication of the stability of the refinement seen in
+     relation to the number of observeds and restraints.
+<p><A NAME="output19"></A>
+19.&nbsp;  The cycle number <A HREF="#var_cycno">CYCNO</A> as supplied by the user (or default
+     value 1).
+<p><A NAME="output20"></A>
+20.&nbsp;  When refining TLS parameters there is a list of those atoms 
+     within TLS groups for which are the derived anisotropic tensors
+     are not positive definite.&nbsp; This information is listed below 
+     details of the TLS group concerned.
+<p><A NAME="output_agreement_between_fo_and_fc_based_on_input_coordinates"></A>
+***AGREEMENT BETWEEN FO AND FC BASED ON INPUT COORDINATES***
+<p><A NAME="output26"></A>
+26.&nbsp; TITLES READ FROM REFLECTION FILE when a binary reflection file
+is used.
+<p><A NAME="output27"></A>
+27.&nbsp;  UNFAVOURABLE AGREEMENTS BETWEEN F(OBS) AND F(CALCS) AS
+     DETERMINED BY RWDMIN.&nbsp; Under this header structure factors are
+     listed, when their rootweighted (Fo - G.Fc) (DELTA ROOTW)
+     is larger than the user supplied value for <A HREF="#var_rwdmin">RWDMIN</A>.&nbsp; In the
+     early stages of a refinement it is advisable to print some
+     structure factors, to check whether the amplitudes and/or
+     phases are read correctly, and to see which reflections cause
+     problems.&nbsp; In later stages this output can then be suppressed.
+<p><A NAME="output28"></A>
+28.&nbsp;  TABLE OF TOTALS DERIVED FROM THE STRUCTURE FACTORS INCLUDING
+     THE R FACTOR.&nbsp; This table gives information about the number
+     of reflections (and phases) used, W DELTA SQ or SUM w(f)(Fo
+- G.Fc)<sup>2</sup> is the term being minimised.&nbsp; Then two
+residuals and a correlation coefficient are printed.
+<pre>
+R     = SUM(|Fo| - G.|Fc|) / SUM(|Fo|)
+
+RDASH = (SUM(W.(|Fo| - G.|Fc|)<sup>2</sup>) / SUM(W.|Fo|<sup>2</sup>))<sup>1/2</sup>
+
+C     = (N.SUM(|Fo|.|Fc|) - SUM(|Fo|).SUM(|Fc|)) /
+        ((N.SUM(|Fo|<sup>2</sup>) - SUM(|Fo|)<sup>2</sup>) .
+        (N.SUM(|Fc|<sup>2</sup>) - SUM(|Fc|)<sup>2</sup>))<sup>1/2</sup>
+</pre>
+     where N is the number of amplitudes used.
+<p>
+     The conventional R-factor is self-explanatory.&nbsp; However, it is
+     the weighted R-factor which gives an indication of the
+     progress of the refinement.&nbsp; As long as this residual is
+     decreasing, there is hope, even when the unweighted R-factor
+     temporarily increases (which is sometimes seen in the initial
+     cycles of a refinement).&nbsp; The correlation coefficient may have
+     a greater discerning power than the R-factors, when refining
+     potential molecular replacement solutions at low resolution.
+<p><A NAME="output_analysis_of_structure_factor_terms"></A>
+***ANALYSIS OF STRUCTURE FACTOR TERMS***
+<p><A NAME="output29"></A>
+29.&nbsp;  This table prints the mean w.delta<sup>2</sup> values for
+amplitudes (and phases if <A HREF="#var_phas">PHAS</A> is true) in batches according to the
+     resolution (columns) and amplitudes (rows).&nbsp; The table will be
+     very useful when judging the effect of the weights
+     which are printed above the table.&nbsp; Above the table the
+     weighting formula as defined by <A HREF="#var_scheme">SCHEME</A> and <A HREF="#var_wf">WF(i)</A> is shown.
+<p><A NAME="output30"></A>
+30.&nbsp;  The values of the refined scale (<A HREF="#var_g">G</A>) and overall thermal
+parameter (<A HREF="#var_u">U</A>).&nbsp; If <A HREF="#var_water">WATER</A>=true, the values of the parameters <A HREF="#var_sb1">SB1</A> AND
+<A HREF="#var_sb2">SB2</A> will also be printed.
+<p><A NAME="output_geometry_of_input_coordinates"></A>
+***GEOMETRY OF INPUT COORDINATES***
+<p><A NAME="output31"></A>
+31.&nbsp; Under this header restrained interatomic distances are listed,
+     when their rootweighted d(t) - d(c) (RWDELTA) is larger than
+     the user supplied value for <A HREF="#var_rwlmin">RWLMIN</A>.&nbsp; In the early stages of a
+     refinement it is advisable to print some differences, to check
+     whether the order of the coordinates is correct, and to see
+     which distances cause problems.&nbsp; In later stages this output
+     can then be suppressed.&nbsp; This table also gives the r.m.s
+     deviations from planarity of the peptide and ring planes where
+     they exceed 0.03&Aring;.&nbsp; If a chiral centre threatens to reverse
+     hand, or has already done so, the tetrahedral volume will be
+     printed.&nbsp; If many residues have this tendency as sometimes
+     happens in the early stages of a refinement, it may be useful
+     to use a dictionary with extra chiral restraints, and to
+     use a value for the weighting coefficient <A HREF="#var_we">WE(6) &lt; WE(1)</A>.
+<p>
+     At the right-hand side of this table the torsion angles as
+     calculated from the coordinates are listed in the order as
+     defined by the dictionary.
+<p><A NAME="output_analysis_of_energy_terms"></A>
+***ANALYSIS OF ENERGY TERMS***
+<p><A NAME="output32"></A>
+32.&nbsp; A table printing the mean w.delta<sup>2</sup> values for
+distance and planarity restraints in groups according to the target
+     distance or plane type is given.&nbsp; This table will be very
+     useful when judging the effect of the weighting coefficients
+     which are also printed in this table, with <A HREF="#var_we">WE(1) to WE(6)</A> from
+     left to right.
+<p><A NAME="output_analysis_of_function_minimised"></A>
+***ANALYSIS OF FUNCTION MINIMISED***
+<p><A NAME="output33"></A>
+33.&nbsp;  Under this heading a table prints the value of the function
+minimised (see section <A HREF="#section1.1">1.1</A>), showing the sum of the w.delta<sup>2</sup>
+values for the amplitudes, phases, distance restraints and planarity
+restraints, and their relative contribution to the total minimum.&nbsp;
+This will be useful in defining the relative weights for each
+term.&nbsp; When <A HREF="#var_fref">FREF</A>=true there will be a second table showing the
+relative residuals in dependence on the resolution.
+<p><A NAME="output_analysis_of_gauss-seidel_solution_of_normal_equations"></A>
+***ANALYSIS OF GAUSS-SEIDEL SOLUTION OF NORMAL EQUATIONS***
+<p><A NAME="output34"></A>
+34.&nbsp;  This next block of information describes the convergence of
+     the Gauss-Seidel iterative method for solving the normal
+     equations for the positional parameters.&nbsp; The first table
+     describes the condition of the matrix.
+<p>
+     This is followed by a table describing the solution of the
+     normal equations listing for each iteration : the iteration
+     number I, MEAN(Q) and MAX(Q), the mean and maximum
+     respectively of the elements of DELTA P(I) - DELTA P(I-1) and
+     DELTA P (I) - DELTA P (I-1) / DELTA P (I), where P(I) =
+     solution vector at iteration I.
+<p>
+     The ANGLE BETWEEN SHIFT VECTOR AND DIRECTION OF STEEPEST
+     DESCENT gives an indication of the progress towards the
+     minimum.
+<p>
+     In case the program cannot not solve the normal equations,
+     <A HREF="#var_mfacr">MFACR</A> will be automatically incremented, and a retry
+     will take place.&nbsp; When this leads to divergence again, some
+     suggestions are printed.
+<p><A NAME="output_analysis_of_residual_to_determine_optimum_shift_factor"></A>
+***ANALYSIS OF RESIDUAL TO DETERMINE OPTIMUM SHIFT FACTOR***
+<p><A NAME="output35"></A>
+35.&nbsp;  This table shows the results of the sampled residual
+     calculations using
+<pre>
+     Actual shift = <A HREF="#var_sfacr">SFACR</A> * calculated shift
+</pre>
+     Sampled residual calculations are made to determine the optimum
+     shift factor (ESTIMATED SHIFT FACTOR).
+<p><A NAME="output36"></A>
+36.&nbsp; The r.m.s atomic shift is printed out.&nbsp; This indicates
+whether any refinement is still taking place, or if convergence has
+been reached.
+<p><A NAME="output_analysis_of_global_parameters"></A.
+
+***ANALYSIS OF GLOBAL PARAMETERS***
+<p><A NAME="output37"></A>
+37.&nbsp;  If there are rigid groups, for each group the three
+     translations and a rotation angle around an axis, of which the
+     direction cosines are given, are printed together with the
+     r.m.s atomic shift.&nbsp; The latter value will give an indication
+     if convergence is being approached.
+<p><A NAME="output_analysis_of_non-crystallographic_symmetry"></A>
+***ANALYSIS OF NON-CRYSTALLOGRAPHIC SYMMETRY***
+<p><A NAME="output38"></A>
+38.&nbsp;  When refining using non-crystallographic symmetry <A HREF="#mode_1">MODE 1</A>
+     (<A HREF="#var_rigid">RIGID</A>=true) the program will print the new
+     transformation for each molecule, followed by a description
+     of this non-crystallographic symmetry operation in terms of
+     a rotation and a screw translation.&nbsp; This can then be compared
+     to the input value printed in <A HREF="#output17">item 17</A>.
+<p><A NAME="output_shifts_in_output_coordinates"></A>
+***SHIFTS IN OUTPUT COORDINATES***
+<p><A NAME="output39"></A>
+39.&nbsp; Next is printed a listing of all atoms, to which shifts larger
+than <A HREF="#var_dxyzlm">DXYZLM</A> have been applied, or which have <A HREF="#var_u">U</A> values not
+within the range <A HREF="#var_ulow">ULOW</A> to <A HREF="#var_uhigh">UHIGH</A>.&nbsp; In case of anisotropic atoms the
+     trace is used to determine whether the tensor is printed.&nbsp; In
+     the case of multiple cycles the shifts refer to the last cycle
+     only.
+<p><A NAME="output40"></A>
+40.&nbsp;  The r.m.s atomic shift for the original input coordinates is
+printed out.&nbsp; This will be different from the one under <A HREF="#output31">item 31</A> when
+     more than one cycle has been run, and/or when constrained-restrained
+refinement has taken place. 
+<p><A NAME="output41"></A>
+41.&nbsp;  When refining TLS parameters there is a list of the refined
+TLS groups with the derived anisotropic tensor for each atom
+in the group.&nbsp; This is checked for being positive definite.&nbsp;
+The results may be compared with those of <A HREF="#output20">item 20</A>.
+<p><br>
+
+<h3><A NAME="section4.2"></A>4.2 REFINED COORDINATES</h3>
+
+These are written out to file <A HREF="#xyzout">XYZOUT</A>.&nbsp; The coordinates are written
+out in the same format as the input coordinates (see section <A HREF="#section3.3">3.3</A>).
+Atomic anisotropic U tensors are also written to this file
+and are in the <A HREF="#format_u_tensor">format described earlier</A>.&nbsp; In the next run the file
+specified as XYZOUT should therefore be used as XYZIN.
+<p><br>
+
+<h3><A NAME="section4.3"></A>4.3 REFINED GROUP THERMAL PARAMETERS</h3>
+
+These are written out to file <A HREF="#tlsout">TLSOUT</A>, in the same format as in file
+TLSIN (section <A HREF="#section3.4">3.4</A>), provided the latter was supplied.&nbsp; In the
+next run the file specified as TLSOUT should therefore be used as
+TLSIN.
+<p><br>
+
+<h3><A NAME="section4.4"></A>4.4 STRUCTURE FACTORS</h3>
+
+These are written out to file <A HREF="#hklout">HKLOUT</A> or <A HREF="#refout">REFOUT</A>, and are ideally
+meant for FFT input.&nbsp; Each record contains
+<pre>
+H K L  40000(sin(theta)/lambda)<sup>2</sup>  Fo/G  SIGMA/G  Fc  PHASE
+</pre>
+in the format (3I4,4I6,I4) for REFOUT, or 
+<pre>
+H K L  Fo/G  SIGMA/G  Fc  PHASE
+</pre>
+unformatted for HKLOUT.&nbsp; When no sigma is read in, 1/sqrt(weight)
+replaces SIGMA in the output.
+<p><br>
+
+<h3><A NAME="section4.5"></A>4.5 NORMAL MATRIX</h3>
+
+If <A HREF="#var_fulmat">FULMAT</A> or <A HREF="#var_normat">NORMAT</A> is set true, the normal matrix is written to the
+file <A HREF="#matout">MATOUT</A>.&nbsp; This is used for calculating standard deviations of
+all parameters (FULMAT) or just coordinates (NORMAT).
+<p>
+If <A HREF="#var_desmat">DESMAT</A> is set true, the design matrix is
+written to the file <A HREF="#desout">DESOUT</A>.&nbsp; The output file is used by another
+program (FUMAIN2*) for estimation of the variance of the least-squares
+residual. At present this feature is experimental.<br><EM>*FUMAIN2 is not
+yet a part of CCP4</EM>.
+<p><br>
+
+<h3><A NAME="section4.6"></A>4.6 SCRATCH FILES</h3>
+
+A formatted scratch file (unit 12) for temporarily storing the newly
+ordered coordinates when the option <A HREF="#var_order">ORDER</A> is true.&nbsp; Otherwise this
+scratch file will not be opened.
+<p>
+An unformatted scratch file (unit 14) may be used for temporary
+reflection storage when initial calculation of the overall scale and
+thermal parameters, or of the amplitude weighting coefficients, is
+required.
+<p>
+An unformatted scratch file (unit 11) will be opened to store
+the approximation to the normal matrix where contributions to the
+off-diagonal terms are included for the energy restraints and 3x3
+blocks are used for the contribution from the position all
+parameters of the atoms.&nbsp; All other off-diagonal terms are taken as
+zero.&nbsp; This file is read several times during the solving of the
+normal equations (see variables <A HREF="#var_sftlim">SFTLIM</A>, <A HREF="#var_cgfacr">CGFACR</A> and <A HREF="#var_gsfacr">GSFACR</A> in section
+3.1.3).</P>
+
+<h2><A NAME="section5"></A>5.&nbsp; JOB FAILURES</h2>                         
+
+RESTRAIN is designed to check the input data, and to either print
+out a message informing the user what the problem is and what
+corrective action has been taken, or in more severe cases to print
+out a message and stop, as continuation would be useful in these
+cases.&nbsp; These messages are usually preceded by '***'.&nbsp; Much
+care has been taken to make the messages as informative as possible and
+thought has gone into the detection of illegal combinations of
+refinement options (see section <A HREF="#section2.3.1">2.3.1</A>).&nbsp; Obviously it is impossible
+to allow for all eventualities, so if you find an error that is not
+covered or you do not understand then please seek assistance.&nbsp; When
+starting up a refinement use low values for <A HREF="#var_rwdmin">RWDMIN</A> (the weighted
+differences between observed and calculated structure factors) and
+<A HREF="#var_rwlmin">RWLMIN</A> (the weighted differences between observed and ideal
+distances) to obtain as much information as possible about the
+input reflections and coordinates respectively (see section <A HREF="#section3.1.3">3.1.3</A>).
+In the following paragraphs some common errors are described.
+<p><br>
+
+<h3><A NAME="section5.1"></A>5.1 ARRAY DIMENSION ERRORS</h3>
+
+Depending on the number of atoms and residues in your structure a
+suitably dimensioned version of RESTRAIN will have to be used.&nbsp; The
+array dimensions of RESTRAIN dealing with problem specific
+variables are set using the PARAMETER statement.&nbsp; They are printed
+in each listing immediately after the program title.&nbsp; Exceeding the
+boundaries will produce a message telling which parameter to
+increase and a run termination.&nbsp; Recompilation will then be
+necessary.&nbsp; If you are not sure what to do seek assistance.
+<p><br>
+
+<h3><A NAME="section5.2"></A>5.2 COORDINATE FILE ERRORS</h3>
+
+Make sure that protein chains are terminated with TER records.&nbsp;
+<p><br>
+
+<h3><A NAME="section5.3"></A>5.3 REFLECTION FILE ERRORS</h3>
+
+Reflection file errors are often caused by format errors when
+reading formatted files.
+<p>
+When using weighting schemes with the standard deviation or when
+using MIR or MIRAS phases you must have these present in your
+reflection file.
+<p><br>
+
+<H2><A NAME="section6"><A NAME="examples"></A>6.&nbsp; EXAMPLES</H2>
+<h3>Illustration of input.</h3>
+This is not intended to be a working example; it contains all the
+commonly used options together in the same script, and is meant to
+illustrate the available options.&nbsp; Most restrain scripts are
+nowhere near as long as this one!&nbsp; Just change the filenames and
+column labels, and delete the other bits you don't need.&nbsp; Note
+that the script below will apply both geometric and thermal parameter
+(isotropic or anisotropic as appropriate) restraints by default.<br>
+<br>
+
+<pre>#!/bin/tcsh
+set r=$0:r
+time restrain &lt;&lt;EOF
+TITLE  Illustrating all the options in one script!
+!
+! First define the input and output files (can also do it on command line).
+! All input is free format, order and letter case of keywords don't matter.
+!
+XYZIN  hexpep.brk      ! Check section <A HREF="#section3.3">3.3</A> for preparation guide.
+TLSIN  hexpep.tls      ! Needed for group thermal parameters.
+                       ! Described in detail below.
+HKLIN  hexpepf.mtz
+LABIN  FP=FP_hexpep SIGFP=SP_hexpep FREE=FreeR_flag
+XYZOUT $r.brk
+TLSOUT $r.tls
+HKLOUT $r.mtz
+LABOUT FC=FC_hexpep PHIC=PC_hexpep
+!
+! ANISO creates individual atomic anisotropic thermal tensors (high res.only!).
+!
+ANISO  327.CA                 ! This will match either Calpha or calcium.
+ANISO   10.  50.              ! Residues 10-50, all atoms.
+ANISO  200. 250. ' CA' ' CB'  ! Calpha's (but not calcium!) &amp; Cbeta's only.
+ANISO  100. 150. mnch         ! Main chain atoms only.
+ANISO  151. 190. sdch         ! Side chain atoms only.
+!
+! NCSYMM defines NCS operators (3 molecules/a.u. here; identity is assumed).
+!
+NCSY   POLAR   25.563   87.995  127.906  ! Can also say &quot;NCSY MATRIX ...&quot;.
+NCSY   TRANS  100.076   -3.502    9.137  ! Use lsqkab to get these.
+NCSY   POLAR   65.746  117.435  180.153
+NCSY   TRANS  119.479   46.151   31.805
+!
+! OCCU allows occupancies in PDB file to be used, and creates occupancy groups.
+! Here group A consists of 4 atoms with 3 coupled occupancy parameters,
+! i.e. their sum is constant.
+! Group B consists of 6 atoms with one free occupancy parameter.
+!
+OCCU   101.CG  4  A   1  ! First atom id, no. of atoms, group id, coupling id.
+OCCU   151.CB  5  B
+OCCU    51.SG  1  B
+OCCU   251.CG  4  A   2
+OCCU   201.CG  4  A   3
+!
+! RIGID defines rigid bodies.
+!
+RIGID   10.  50.  A  ! Residues 10-50, all atoms, rigid group A.
+RIGID  200. 250.  A  ! More atoms in group A.
+RIGID  100. 150.  A  ! Yet more.
+RIGID  151. 190.  B  ! These are in rigid group B.
+!
+! XTRD defines extra distance restraints.
+! Here's a real example with a disordered cystine.
+!
+XTRD    18.N   618.CB  2.455  0.034  ! Atom 1  Atom 2  d  [sigma(d)]
+XTRD    18.CA  618.CB  1.530  0.020  ! Residue 618 is an alternate s/c of 18.
+XTRD    18.CA  618.SG  2.822  0.043
+XTRD    18.CB  622.SG  3.034  0.059
+XTRD    18.SG  622.CB  3.034  0.059
+XTRD    18.SG  622.SG  2.030  0.008
+XTRD    18.C   618.CB  2.504  0.038
+XTRD    22.N   622.CB  2.455  0.034  ! Residue 622 is an alternate s/c of 22.
+XTRD    22.CA  622.CB  1.530  0.020
+XTRD    22.CA  622.SG  2.822  0.043
+XTRD    22.C   622.CB  2.504  0.038
+XTRD   618.CB  622.SG  3.034  0.059
+XTRD   618.SG  622.CB  3.034  0.059
+XTRD   618.SG  622.SG  2.030  0.008
+!
+STEER
+!
+! &quot;Steering data&quot; follows STEER keyword (uses simulated Fortran NAMELIST).
+!
+NCYC=8, CYCNO=21, SCHEME=5  ! May want to modify these.
+EOF
+</pre>
+<br>
+Here is an illustrative example of a TLSIN file (group thermal parameters):<br>
+
+<pre>UANISO                       ! Overall anisotropic tensor.
+DEFAULT                      ! Defines default values,
+                             ! <em>i.e.</em> may be overridden.
+
+UANISO N-domain              ! Group anisotropic tensor just for one domain.
+RANGE    1.  180.            ! Domain consists of 2 contiguous segments.
+RANGE   98.  327.
+
+TLS    C-domain              ! TLS tensor for other domain.
+RANGE  191.  290.            ! This domain has just one segment.
+
+TLS    A-helix               ! TLS tensor for helix main chain.
+RANGE   30.   55.  mnch
+NOATOM                       ! Don't refine atomic U<sub>iso</sub>'s for this group.
+
+UANISO TRP 99 s/c
+RANGE   99. '' sdch          ! U tensor for individual side chain.
+NOATOM                       ! Don't refine atomic U<sub>iso</sub>'s for this group.
+
+UISO                         ! Can also do group isotropic tensors.
+RANGE  100.  130.  sdch      ! Side-chains of residues 100-130 will have
+RESIDUE                      ! separate group U<sub>iso</sub>'s.
+</pre>
+<br>
+Note that you don't need to put in any values for the tensor components; the
+program will supply sensible defaults for any undefined tensors.&nbsp; Once the job
+has been run, the refined values of all tensor components will be put in the
+TLSOUT file ready for the next run.&nbsp; Here is an example:<br>
+<br>
+
+<pre>! APP ANISO/TLS AT 2.1&Aring; no refine Creact.
+! Output from refinement cycle   5
+
+UANISO Polypro helix.
+RANGE   1. 9. ALL
+U        0.0053 -0.0086  0.0033 -0.0140  0.0044  0.0007
+!       (0.0112)(0.0127)(0.0204)&lt;0.0064&gt;(0.0063)(0.0066)
+
+TLS    Alpha helix.
+RANGE  13. 32. ALL
+ORIGIN -3.103  -8.863   3.788
+T        0.2217  0.1885  0.2016 -0.0052  0.0067  0.0045
+!       &lt;0.0083&gt;&lt;0.0090&gt;&lt;0.0145&gt;(0.0053)&lt;0.0052&gt;(0.0052)
+L          0.62    1.67    2.23   -0.45   -0.15    0.23
+!       (  1.12)&lt;  0.46&gt;&lt;  0.87&gt;&lt;  0.44&gt;(  0.82)(  0.47)
+S        -0.025   0.000   0.045  -0.008   0.048  -0.034  -0.034  -0.066
+!       ( 0.057)( 0.070)&lt; 0.034&gt;( 0.049)( 0.052)( 0.052)( 0.054)&lt; 0.033&gt;
+END
+</pre>
+<br>
+If further refinement is necessary, such as after rebuilding, one would
+normally replace the old XYZIN and TLSIN files with the new ones, and insert
+new names for the output files.&nbsp; In the script above this is done automatically
+by creating a script with a new name.&nbsp; Also certain parameters would need to
+be updated, in particular any NCS operators, the overall scale factor G, the
+solvent background parameters, SB1 &amp; SB2, and the F-weighting coefficients
+WF(2) ... WF(4).&nbsp; The new values of all updated parameters are always printed
+at the end of the standard output, <em>e.g.</em>:<br>
+<br>
+
+<pre>NCSY POLAR ...
+NCSY TRANS ...
+
+G=5.0972, SB1=3.6804, SB2=10.6158
+WF(2)= 1.94021E+03, WF(3)= 1.06121E+01, WF(4)= 1.22706E-02
+</pre>
+<br><p>
+
+<H3>Unix example script found in $CEXAM/unix/runnable/</H3>
+<ul>
+<li><a href="../examples/unix/runnable/restrain.exam">restrain.exam</a> 
+</ul>
+
+<H2><A NAME="section7"><a name="references">7.&nbsp; REFERENCES</a></H2>
+<ol>
+<!-- KEEP startreferencelist -->
+<li><A NAME="reference1"></A>
+Cruickshank D W J (1965) <i>Computing Methods in Crystallography</i>,
+(J S Rollett, ed.), pp. 112-116, Oxford, Pergamon Press.
+<li><A NAME="reference2"></A>
+Driessen H, Haneef M I J, Harris G W, Howlin B, Khan G and Moss D S
+(1989) <i>J Appl Cryst.</i>, <b>22</b>, 510-516.
+<li><A NAME="reference3"></A>
+Engh R A and Huber R (1991) <i>Acta Cryst.</i> <b>A47</b>, 392-400.
+<li><A NAME="reference4"></A>
+Haneef I, Moss D S, Stanford M J and Borkakoti N (1985)
+<i>Acta Cryst.</i>, <b>A41</b>, 426-433.
+<li><A NAME="reference5"></A>
+Howlin B, Butler S A, Moss D S, Harris G W and Driessen H P C (1993) 
+<i>J. Appl. Crystallogr.</i> <b>26</b>, 622-624.
+<li><A NAME="reference6"></A>
+Johnson C K and Levy M A (1974) in <i>International Tables for X-ray
+Crystallography</i>, Vol IV (Ibers, J.A. and Hamilton, W.C., eds.),
+pp. 320-332.
+<li><A NAME="reference7"></A>
+Jones T A, Zou J Y, Cowan S W and Kjeldgaard M (1991)
+<i>Acta Cryst.</i>, <b>A47</b>, 110-119.
+<li><A NAME="reference8"></A>
+Moss D S (1981) <i>Refinement of protein structures, Proceedings of
+the Daresbury Study Weekend</i>, (P Machin, ed.), pp. 9-12, Daresbury,
+SERC.
+<li><A NAME="reference9"></A>
+Moss D S &amp; Morffew A J (1982) <i>Comput Chem</i>, <b>6</b>, 1-3.
+<li><A NAME="reference10"></A>
+Nielsen K (1977) <i>Acta Cryst.</i>, <b>A33</b>, 1009-1010.
+<li><A NAME="reference11"></A>
+Rees B (1976) <i>Acta Cryst.</i>, <b>A32</b>, 483-488.
+<li><A NAME="reference12"></A>
+Rollett J S (1965) <i>Computing Methods in Crystallography</i>, pp.
+38-56. Oxford, Pergamon Press.
+<li><A NAME="reference13"></A>
+Waser J (1963) <i>Acta Cryst.</i>, <b>16</b>, 1091-1094.
+<!-- KEEP endreferencelist -->
+</ol>
+
+<H2> SEE ALSO</H2>
+
+Alternative refinement program:
+<ul>
+<li> <A HREF=refmac5.html>refmac</A>
+</ul>
+
+</BODY>
+</HTML>

@@ -1,0 +1,244 @@
+#======================================================================
+#
+# phaser_EP.script
+#
+#======================================================================
+
+
+  set OUTPUT_FILE_ROOT "[SetOutputFileRoot]"
+
+  set HYSS_PDB_FILE "[SetOutputFileRoot]_hyss_consensus_model.pdb"
+#delete any characeters that are not a-Z or 0-9 from space group
+#such as quotes ' added by RunParameterCheck and spaces
+  set sg $FILE_SPACEGROUP
+  while { [regsub -nocase {[^a-z^0-9]} $sg "" sg1] > 0 } { set sg $sg1 }
+  set EDIT_SPACEGROUP $sg
+
+# only use top mtz file, because there is only one substructure passed from shelxd/hyss
+  set MTZ_FILE "[SetOutputFileRoot].1.mtz" 
+  set MTZ_HAND_FILE "[SetOutputFileRoot].1.hand.mtz"
+#backwards compatibility
+  set MTZ_FILE_OLD "[SetOutputFileRoot].mtz"
+  set MTZ_HAND_FILE_OLD "[SetOutputFileRoot].hand.mtz"
+    
+  if $RUNHYSS {
+
+    WriteToLog "Finding sites with Hyss..."
+   
+    set hyss_cmd "[BinPath phenix.hyss] $HKLIN $N_HYSS $HYSS_TYPE"
+
+    append hyss_cmd  " --data-label=$Fp_SAD --space-group=$sg --root=$OUTPUT_FILE_ROOT --pdb-only"
+
+    if $TOG_HYSS_SEARCH { append hyss_cmd " --site-min-distance=$HYSS_SEARCH" }
+
+    if $TOG_MIND { append hyss_cmd " --site-min-distance=$MIND" }
+
+    if $TOG_HYSS_SOLVENT { append hyss_cmd " --solvent-content=$SCATTERING_SOLVENT" }
+
+    if $TOG_SHELXC_RESO { append hyss_cmd " --resolution=$MAX_RESO" }
+
+    if $TOG_HYSS_PHASER { append hyss_cmd " --rescore=phaser-complete --extrapolation=phaser-map" }
+    if $TOG_HYSS_PHASER { append hyss_cmd " --wavelength=$WAVELENGTH" }
+
+    set status [Execute "$hyss_cmd" {} program_status report ]
+
+   if { ![file exists $HYSS_PDB_FILE] } {
+    TerminateScript 0 -report "No consensus pdb file from hyss"
+   }
+  }
+
+  if $RUNSHELXD {
+
+    WriteToLog "Preparing data with mtz2sca..."
+
+    set SCA_FILE "[SetOutputFileRoot]_shelx.sca"
+
+    set FROOT [string trimright $Fp_SAD "(+)"]
+  
+    set cmd "[BinPath mtz2sca] $HKLIN $SCA_FILE -r $FROOT"
+
+    set status [Execute "$cmd" {} program_status report ]
+
+   if { ![file exists $SCA_FILE] } {
+    TerminateScript 0 -report "No sca file from mtz2sca"
+   }
+
+    WriteToLog "Preparing data with shelxc..."
+
+    set CMDLNE "[SetOutputFileRoot]_shelx"
+
+    CreateComScript phaser_EP_shelxc phaser_EP_shelxc_script
+
+    set cmd "[BinPath shelxc] $CMDLNE"
+
+    set status [Execute "$cmd" $phaser_EP_shelxc_script program_status report ]
+
+    set INS_FILE "[SetOutputFileRoot]_shelx_fa.ins"
+   
+    if { ![file exists $INS_FILE] } {
+     TerminateScript 0 -report "No ins file from shelxc"
+    }
+
+    WriteToLog "Preparing data with shelxc..."
+
+    set SHELXD_PDB_FILE "[SetOutputFileRoot]_shelx_fa.pdb"
+   
+    set CMDLNED "[SetOutputFileRoot]_shelx_fa"
+
+    set cmd "[BinPath shelxd] $CMDLNED"
+
+    set status [Execute "$cmd" {} program_status report ]
+
+    if { ![file exists $SHELXD_PDB_FILE] } {
+     TerminateScript 0 -report "No pdb file from shelxc"
+    }
+
+  }
+
+  CreateComScript phaser_EP phaser_EP_script -ampersand
+
+  set cmd "[BinPath phaser] "
+
+  set status [Execute $cmd $phaser_EP_script program_status report ]
+
+# Check if any pdb or mtz files have been generated,
+#   to add them to the output file list
+# Value of 100 for MAXFILES is more than Phaser default will ever be.
+#
+
+  if { (![file exists $MTZ_FILE]) &&
+       (![file exists $MTZ_FILE_OLD]) &&
+       (![file exists $MTZ_HAND_FILE]) &&
+       (![file exists $MTZ_HAND_FILE_OLD]) } {
+     WriteToLog "Phaser failed to produce mtz files"
+     TerminateScript 0 -report "No mtz files from phaser"
+  } else { WriteToLog "Phaser completed successfully" }
+
+  if $RUNPARROT {
+
+    WriteToLog "Density modification with parrot..."
+
+    set base [FileJoin [GetEnvPath CLIBD] reference_structures]
+    set code 1tqw
+    set XYZINref [FileJoin "$base" "reference-$code.pdb"]
+    set HKLINref [FileJoin "$base" "reference-$code.mtz"]
+
+    set MTZ_PARROT_FILE "[SetOutputFileRoot]_parrot.mtz"
+    set MTZ_PARROT_HAND_FILE "[SetOutputFileRoot]_parrot.hand.mtz"
+
+    if { ([file exists $MTZ_FILE] || [file exists $MTZ_FILE_OLD]) } {
+    CreateComScript phaser_EP_parrot phaser_EP_parrot_script
+    set parrot_cmd "[BinPath cparrot] -stdin"
+    append parrot_cmd " -pdbin-ref $XYZINref" 
+    append parrot_cmd " -mtzin-ref $HKLINref" 
+    append parrot_cmd " -colin-ref-fo /*/*/\\\[FP.F_sigF.F,FP.F_sigF.sigF\\\]"
+    append parrot_cmd " -colin-ref-hl /*/*/\\\[FC.ABCD.A,FC.ABCD.B,FC.ABCD.C,FC.ABCD.D\\\]"
+    append parrot_cmd " -seqin-wrk $COMP_FILE(1)" 
+    append parrot_cmd " -colin-wrk-fo /*/*/\\\[$FPwrk,$SIGFPwrk\\\]"
+    append parrot_cmd " -colin-wrk-hl /*/*/\\\[HLA,HLB,HLC,HLD\\\]"
+    if { [file exists [SetOutputFileRoot].pdb] }     { append parrot_cmd " -pdbin-wrk-ha [SetOutputFileRoot].pdb" }
+    if { [file exists [SetOutputFileRoot].1.pdb] }     { append parrot_cmd " -pdbin-wrk-ha [SetOutputFileRoot].1.pdb" }
+    if { [file exists $MTZ_FILE] }     { append parrot_cmd " -mtzin-wrk $MTZ_FILE" }
+    if { [file exists $MTZ_FILE_OLD] } { append parrot_cmd " -mtzin-wrk $MTZ_FILE_OLD" }
+    append parrot_cmd " -mtzout $MTZ_PARROT_FILE"
+    append parrot_cmd " -solvent-flatten"
+    append parrot_cmd " -histogram-match"
+    append parrot_cmd " -ncs-average"
+    append parrot_cmd " -anisotropy-correction"
+    append parrot_cmd " -cycles 3"
+    append parrot_cmd " -resolution 1.0"
+    append parrot_cmd " -ncs-mask-filter-radius 6.0"
+    WriteToLog "Density modification with parrot for first hand..."
+    set status [Execute $parrot_cmd $phaser_EP_parrot_script program_status report]
+    }
+
+    if { ([file exists $MTZ_HAND_FILE] || [file exists $MTZ_HAND_FILE_OLD]) } {
+    WriteToLog "Density modification with parrot other hand..."
+
+    CreateComScript phaser_EP_parrot phaser_EP_parrot_script
+    set parrot_cmd "[BinPath cparrot] -stdin"
+    append parrot_cmd " -pdbin-ref $XYZINref" 
+    append parrot_cmd " -mtzin-ref $HKLINref" 
+    append parrot_cmd " -colin-ref-fo /*/*/\\\[FP.F_sigF.F,FP.F_sigF.sigF\\\]"
+    append parrot_cmd " -colin-ref-hl /*/*/\\\[FC.ABCD.A,FC.ABCD.B,FC.ABCD.C,FC.ABCD.D\\\]"
+    append parrot_cmd " -seqin-wrk $COMP_FILE(1)" 
+    append parrot_cmd " -colin-wrk-fo /*/*/\\\[$FPwrk,$SIGFPwrk\\\]"
+    append parrot_cmd " -colin-wrk-hl /*/*/\\\[HLA,HLB,HLC,HLD\\\]"
+    if { [file exists [SetOutputFileRoot].hand.pdb] }     { append parrot_cmd " -pdbin-wrk-ha [SetOutputFileRoot].hand.pdb" }
+    if { [file exists [SetOutputFileRoot].1.hand.pdb] }     { append parrot_cmd " -pdbin-wrk-ha [SetOutputFileRoot].1.hand.pdb" }
+    if { [file exists $MTZ_HAND_FILE] }     { append parrot_cmd " -mtzin-wrk $MTZ_HAND_FILE" }
+    if { [file exists $MTZ_HAND_FILE_OLD] } { append parrot_cmd " -mtzin-wrk $MTZ_HAND_FILE_OLD" }
+    append parrot_cmd " -mtzout $MTZ_PARROT_HAND_FILE"
+    append parrot_cmd " -solvent-flatten"
+    append parrot_cmd " -histogram-match"
+    append parrot_cmd " -ncs-average"
+    append parrot_cmd " -anisotropy-correction"
+    append parrot_cmd " -cycles 3"
+    append parrot_cmd " -resolution 1.0"
+    append parrot_cmd " -ncs-mask-filter-radius 6.0"
+    WriteToLog "Density modification with parrot for second hand..."
+    set status [Execute $parrot_cmd $phaser_EP_parrot_script program_status report]
+    }
+
+    if $RUNBUCCANEER {
+  
+      WriteToLog "Model building with buccaneer..."
+      set PDB_BUILD_FILE "[SetOutputFileRoot]_buccaneer.pdb"
+      set PDB_BUILD_HAND_FILE "[SetOutputFileRoot]_buccaneer.hand.pdb"
+
+      if { [file exists $MTZ_PARROT_FILE] } {
+      CreateComScript phaser_EP_build phaser_EP_build_script
+      set build_cmd "[BinPath cbuccaneer] -stdin"
+      append build_cmd " -pdbin-ref $XYZINref" 
+      append build_cmd " -mtzin-ref $HKLINref" 
+      append build_cmd " -seqin $COMP_FILE(1)" 
+      append build_cmd " -colin-ref-fo /*/*/\\\[FP.F_sigF.F,FP.F_sigF.sigF\\\]"
+      append build_cmd " -colin-ref-hl /*/*/\\\[FC.ABCD.A,FC.ABCD.B,FC.ABCD.C,FC.ABCD.D\\\]"
+      append build_cmd " -colin-fo /*/*/\\\[$FPwrk,$SIGFPwrk\\\]"
+      append build_cmd " -colin-free /*/*/\\\[$FREER\\\]"
+      append build_cmd " -colin-hl /*/*/\\\[parrot.ABCD.A,parrot.ABCD.B,parrot.ABCD.C,parrot.ABCD.D\\\]"
+      append build_cmd " -mtzin-wrk $MTZ_PARROT_FILE"
+      append build_cmd " -pdbout $PDB_BUILD_FILE"
+      append build_cmd " -cycles 5"
+      append build_cmd " -find -grow -join -link -sequence -correct -filter -ncsbuild -prune -rebuild -anisotropy-correction"
+      append build_cmd " -fragments 500"
+      append build_cmd " -fragments-per-100-residues 20"
+      append build_cmd " -sequence-reliability 0.95"
+      append build_cmd " -resolution 2.0"
+      append build_cmd " -ramachandran-filter all"
+      WriteToLog "Density modification with build for first hand..."
+      set status [Execute $build_cmd $phaser_EP_build_script program_status report]
+      }
+  
+      if { [file exists $MTZ_PARROT_HAND_FILE] } {
+      CreateComScript phaser_EP_build phaser_EP_build_script
+      set build_cmd "[BinPath cbuccaneer] -stdin"
+      append build_cmd " -pdbin-ref $XYZINref" 
+      append build_cmd " -mtzin-ref $HKLINref" 
+      append build_cmd " -seqin $COMP_FILE(1)" 
+      append build_cmd " -colin-ref-fo /*/*/\\\[FP.F_sigF.F,FP.F_sigF.sigF\\\]"
+      append build_cmd " -colin-ref-hl /*/*/\\\[FC.ABCD.A,FC.ABCD.B,FC.ABCD.C,FC.ABCD.D\\\]"
+      append build_cmd " -colin-fo /*/*/\\\[$FPwrk,$SIGFPwrk\\\]"
+      append build_cmd " -colin-free /*/*/\\\[$FREER\\\]"
+      append build_cmd " -colin-hl /*/*/\\\[parrot.ABCD.A,parrot.ABCD.B,parrot.ABCD.C,parrot.ABCD.D\\\]"
+      append build_cmd " -mtzin-wrk $MTZ_PARROT_HAND_FILE"
+      append build_cmd " -pdbout $PDB_BUILD_HAND_FILE"
+      append build_cmd " -cycles 5"
+      append build_cmd " -find -grow -join -link -sequence -correct -filter -ncsbuild -prune -rebuild -anisotropy-correction"
+      append build_cmd " -fragments 500"
+      append build_cmd " -fragments-per-100-residues 20"
+      append build_cmd " -sequence-reliability 0.95"
+      append build_cmd " -resolution 2.0"
+      append build_cmd " -ramachandran-filter all"
+      WriteToLog "Density modification with build for second hand..."
+      set status [Execute $build_cmd $phaser_EP_build_script program_status report]
+      }
+
+      WriteToLog "***Choose the hand that gave the most complete model and run a more thorough model-building job in the buccanneer GUI***"
+     }
+   }
+
+  set phaserfiles [glob "[SetOutputFileRoot]*"]
+
+  foreach file $phaserfiles { AddOutputFile $file "PROJECT" }
+

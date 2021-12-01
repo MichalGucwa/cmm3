@@ -1,0 +1,142 @@
+<!DOCTYPE html
+                     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                     "DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+   <meta name="Author" content="Kevin Cowtan" />
+   <meta name="GENERATOR" content="Kevin's fingers" />
+<title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::CONVERT2MTZ::Supported::MTZ MANIPULATIONS / CONVERSIONS::CNS to MTZ conversion:::::: -->
+
+<h1>CONVERT2MTZ (CCP4: Supported Program)</h1>
+<h2>NAME</h2>
+<p><b>convert2mtz</b>
+- CNS to MTZ conversion</p><html>
+
+
+<h2>SYNOPSIS</h2>
+<p>
+<b>convert2mtz</b>
+<b>-hklin </b><i>filename</i>
+<b>-mtzout </b><i>filename</i>
+<b>-cell </b><i>a,b,c,alpha,beta,gamma</i>
+<b>-spacegroup </b><i>spacegroup</i>
+<b>-pdbin </b><i>filename</i>
+<b>-anomalous </b>
+<b>-no-complete </b>
+<b>-colin </b><i>column names</i>
+<b>-seed </b><i>seed</i>
+<br />
+[<a href="#keywords">Keyworded input</a>]</p>
+
+<h2><a name="description"></a>DESCRIPTION</h2>
+
+<p>
+Convert CNS or other formatted reflection data files to MTZ. Columns
+are identified automatically using names specified in the file or on
+the command line. A full set of CCP4 FreeR_flag information is
+generated, using existing flags if available. Data is completed to the
+resolution limit, unless you specify -no-complete. Cell and spacegroup
+information may be specified or taken from a pdb file. Anomalous data
+is merged automatically, if anomalous pairs are required add the
+-anomalous option.
+<p>
+Cell parameters and spacegroup symbols must be given in quotes if they
+contain spaces. Column names may be separated by spaces or commas,
+however if spaces are used the column names must also be in quotes.
+<p>
+Column types are deduced from the column name, whether it is present
+in the file header or specified on the command line. Column names
+containing "SIG", "FOM", "HLA", "FREE" become sigma, weight, HL coeff,
+and Free-R flag columns respectively. After that, columns beginning
+with the letters "F", "E", "I", "P", and "W" become F's, E's, I's, phases
+and weights respectively.
+<p>
+
+<h2><a name="files"></a>INPUT/OUTPUT FILES</h2>
+
+<dl>
+<dt>-hklin</dt> <dd>(Compulsory) Input reflection data file.</dd>
+
+<dt>-mtzout</dt> <dd>Output MTZ file.</dd>
+
+<dt>-pdbin</dt> <dd>Input pdb file.</dd>
+
+</dl>
+
+<h2><a name="keywords"></a>KEYWORDED INPUT</h2>
+
+<blockquote>
+<h3><a name="anomalous"></a>-anomalous</h3>
+
+<p>Data will be output for anomalous pairs</p>
+
+<h3><a name="cell"></a>-cell <i>a,b,c,alpha,beta,gamma</i></h3>
+
+<p> Cell parameters.</p>
+
+<h3><a name="colin"></a>-colin <i>column names</i></h3>
+
+<p> Column names.</p>
+
+<h3><a name="nocomplete"></a>-no-complete</h3>
+
+<p>Data will not be completed to the resolution limit.</p>
+
+<h3><a name="seed"></a>-seed <i>seed</i></h3>
+
+<p>Seed for random number generator used for Free-R flags.</p>
+
+<h3><a name="spacegroup"></a>-spacegroup <i>spacegroup</i></h3>
+
+<p>Spacegroup name or number.</p>
+
+</blockquote>
+
+
+
+<h2>Examples:</h2>
+<h3>CNS files</h3>
+<pre>
+convert2mtz -hklin test.hkl -cell 50.9,50.9,121.4 -spacegroup 96
+convert2mtz -hklin test.hkl -cell "50.9  50.9  121.4 90  90  90" -spacegroup "P 43 21 2"
+convert2mtz -hklin test.hkl -cell "50.9  50.9  121.4 90  90  90" -spacegroup "P 43 21 2" -no-complete
+convert2mtz -hklin test.hkl -pdbin test.pdb
+</pre>
+If the file has incomplete header records for column declaration, you
+can also specify -colin.
+<h3>PHS files</h3>
+<pre>
+convert2mtz -hklin test.phs -cell 50.9,50.9,121.4 -spacegroup 96 -colin "FO FC PHI"
+convert2mtz -hklin test.phs -cell 50.9,50.9,121.4 -spacegroup 96 -colin "FO FOM PHI"
+convert2mtz -hklin test.phs -cell 50.9,50.9,121.4 -spacegroup 96 -colin "FO FOM PHI SIG"
+convert2mtz -hklin test.phs -cell 50.9,50.9,121.4 -spacegroup 96 -colin FO,FOM,PHI,A,B,C,D
+</pre>
+Change -colin according to the columns actually present in the file.
+<p>
+<h3>SHELX HKL files (limited support)</h3>
+convert2mtz may work for SHELX HKL files, however it has some
+limitations. Firstly, if any number is wide enough to completely fill
+a column in the file, the program will fail. Secondly, multiple
+measurements of the same reflection (or its symmetry equivalents) are
+not merged - all but the last value are discarded.
+<pre>
+convert2mtz -hklin test.hkl -cell 50.9,50.9,121.4 -spacegroup 96 -colin "I SIGI FREE"
+convert2mtz -hklin test.hkl -cell 50.9,50.9,121.4 -spacegroup 96 -colin I,SIGI,FREE
+convert2mtz -hklin test.hkl -cell 50.9,50.9,121.4 -spacegroup 96 -colin F,SIGF
+</pre>
+If the file contains Friedel opposites, you can also specify -anomalous.
+<br>
+If you often convert shelx files to MTZ, you could set up an alias,
+e.g. in Unix C-shell
+<pre>
+alias shelx2mtz "convert2mtz -colin I,SIGI,FREE"
+</pre>
+
+<h2>AUTHOR</h2>
+<p>Kevin Cowtan, York.</p>
+</body>
+</html>

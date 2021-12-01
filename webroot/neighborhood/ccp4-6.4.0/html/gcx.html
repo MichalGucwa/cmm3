@@ -1,0 +1,958 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>GCX - Documentation</title>
+
+<style>
+
+h1  { font-family: 'Lucida Grande', Geneva, Verdana, Arial, Helvetica, sans-serif; font-size: 22px; color: #115522 }
+
+h2  { font-family: 'Lucida Grande', Geneva, Verdana, Arial, Helvetica, sans-serif; font-size: 20px; color: #113322 }
+
+h3  { font-family: 'Lucida Grande', Geneva, Verdana, Arial, Helvetica, sans-serif; font-size: 18px; color: #113322 }
+
+h4  { font-family: 'Lucida Grande', Geneva, Verdana, Arial, Helvetica, sans-serif; font-size: 16px; color: #113322 }
+
+h5  { font-family: 'Lucida Grande', Geneva, Verdana, Arial, Helvetica, sans-serif; font-size: 14px; color: #113322 }
+
+p  { font-family: 'Lucida Grande', Geneva, Verdana, Arial, Helvetica, sans-serif; font-size: 15px; margin-left: 20px }
+
+p.end { font-size: 7px; }
+
+address { font-size: 7px; }
+
+dt { font-family: 'Lucida Grande', Geneva, Verdana, Arial, Helvetica, sans-serif; font-size: 15px; margin-left: 20px; font-weight: bold }
+
+dd  { font-family: 'Lucida Grande', Geneva, Verdana, Arial, Helvetica, sans-serif; font-size: 15px; margin-left: 20px; }
+
+body { font-family: 'Lucida Grande', Geneva, Verdana, Arial, Helvetica, sans-serif; font-size: 20px; background: white ; margin: 20px }
+
+A:link { color: #3333DD } 
+A:visited { color: #AAAAFF } 
+A:active { color: #33DD33 } 
+
+
+</style>
+
+  </head>
+
+  <body>
+<center>
+    <h1>GCX Version 0.8 - Documentation</h1>
+</center>
+
+<h2>NAME</h2>
+
+<p>gcx - a program to generate a crank XML file to run crank via script</p>
+
+<h2>SYNOPSIS</h2>
+
+<p>gcx HKLIN foo.mtz SEQIN foo.pir HKLOUT foo_out.mtz</p>
+<p>Keyworded input</p>
+
+
+<h2>DESCRIPTION</h2>
+
+<p>This program will generate a crank XML file so that crank can be run via
+script.  The user can either input the number of monomers that is expected
+and the corresponding solvent content, or the program can get a first guess
+via a Kantardjieff - Rupp <A HREF="#[1]">[1]</A> probability analysis of the 
+Matthew's <A HREF="#[2]">[2]</A> coefficient.</p>
+
+<h2>GETTING STARTED</h2>
+
+<p>The best way to start is to use the <A HREF="#EXAMPLES">example</A> scripts - which 
+will start crank as well.</p>
+
+
+<h2>KEYWORDED INPUT</h2>
+<p>Note that the ordering of some keywords is important. In particular, the
+XTAL subkeywords (CELL, ATOM, DNAME) must be preceded by the corresponding XTAL
+keyword, and similarly for the ATOM and DNAME subkeywords.</p>
+
+<h3> NRES &lt;nres&gt;</h3>
+
+  <dt>&lt;nres&gt;
+  <dd>
+	  The number of residues PER MONOMER.  Either the NRES or the NNUC keyword
+	  must be set, or the (protein) sequence must be input with SEQIN. See also the NMON (optional) keyword.
+
+<h3> NNUC &lt;nnuc&gt;</h3>
+
+  <dt>&lt;nnuc&gt;
+  <dd>
+          The number of nucleotides per monomer.  If there are nucleotides, currently there is no support
+          for reading nucleic acid sequences, so the NNUC keyword must be set.  See also the NMON (optional) keyword.
+
+<h3>XTAL &lt;ID&gt;</h3>
+
+<dl>
+  <dt>&lt;ID&gt;
+  <dd>
+	  The crystal's name/identification string. 
+</dl>
+
+<h3>XTAL SUBKEYWORDS:</h3>
+
+  <h4>CELL</h4><p> &lt;a&gt; &lt;b&gt; &lt;c&gt; &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt;</p>
+
+<dl>
+  <dt>
+	  &lt;a&gt; &lt;b&gt; &lt;c&gt; &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt;
+  <dd>
+	  Cell parameters for the given XTAL.  
+	  Default: take the values from the mtz file.
+</dl>
+
+  <h4>MODL &lt;pdbfile&gt;</h4>
+
+<dl>
+  <dt>
+	  &lt;pdbfile&gt;
+  <dd>
+          Input a pdb file containing substructure coordinates in standard pdb form.  Note!  only 
+          input coordinates with MODL or XYZ or SITE.  Using any two of the keywords will result in an error.
+</dl>
+
+  <h4>ATOM &lt;ID&gt;</h4>
+
+<dl>
+  <dt>
+	  &lt;ID&gt;
+  <dd>
+       The atom's name. The name must match a (case insensitive) atom's name in 
+       $CLIBD/atomsf.lib.
+
+  <h4>ATOM SUBKEYWORDS:</h4>
+
+    <h5>NUMB  &lt;numb&gt;  </h5>
+
+<dl>
+  <dt>
+      &lt;numb&gt; 
+  <dd>
+        The number of expected atoms *PER MONOMER*. Thus the total number of
+        heavy atoms search for is &lt;numb&gt; * &lt;nmonomer&gt;.  See also the NMON keyword.  
+</dl>
+
+    <h5>XYZ &lt;Xfrac&gt; &lt;Yfrac&gt; &lt;Zfrac&gt;  [NOREf [X] [Y] [Z] ]</h5>
+
+<dl>
+  <dt>
+      &lt;Xfrac&gt; &lt;Yfrac&gt; &lt;Zfrac&gt;
+  <dd>
+        Fractional atomic coordinates. 
+  <dt>
+      NOREF X Y Z
+  <dd>
+        Including the NOREf subkeyword of XYZ indicates that the X, Y and/or Z 
+        coordinate of this atom will not be refined.  
+        Default: refine all the coordinates.
+</dl>
+
+    <h5>OCCU &lt;occ&gt; [NOREf] </h5>
+
+<dl>
+  <dt>
+      &lt;occ&gt;
+  <dd>
+        Atomic occupancy - at the moment, convergence is faster if you start with
+	a lower value (ie. 0.25)
+  <dt>
+      NOREf
+  <dd>
+        The atomic occupancy will not be refined
+</dl>
+
+    <h5>BISO &lt;bfac&gt; [NOREf]</h5>
+
+<dl>
+  <dt>
+      &lt;bfac&gt;
+  <dd>
+        Atomic isotropic B factor.  For faster convergence, use the B-factor from
+	a Wilson plot (ie. from the WILSON program).  This will be the default value
+	when using CCP4i.
+  <dd>
+      NOREf
+  <dt>
+        The atomic B factor will not be refined 
+</dl>
+
+</dl>
+
+  <h4>DNAMe &lt;ID&gt;</h4>
+<p>The dataset identifier.  This keyword is required.  If your pipeline contains
+    a SHELX program,  &lt;ID&gt; must be either NAT, SIR, SIRA, PEAK, INFL, HREM, or LREM. </p>
+
+  <h4>DNAMe SUBKEYWORDS:</h4>
+
+<p>
+    Either intensities or structure factor amplitudes can be inputted (NOT both!)
+    To input intensities use the following:
+</p>
+
+    <h5>COLUmn I=&lt;i&gt; SI=&lt;si&gt; I+=&lt;i+&gt; SI+=&lt;si+&gt; I-=&lt;i-&gt; SI-=&lt;si-&gt; </h5>
+<p>
+      Diffraction data for the XTAL and DNAMe defined. 
+      If anomalous data is not to be used, set I and SI only.  If using
+      anomalous data, set I+, SI+, I-, SI-.  Setting both I and I+ will result
+      in an error.  
+</p>
+
+<dl>
+  <dt>
+	  &lt;i&gt;
+  <dd>
+        I (observed intensity *if no anomalous data is present*). 
+  <dt>
+      &lt;si&gt;
+  <dd>
+        Corresponding sigma for &lt;i&gt;. 
+  <dt>
+      &lt;i+&gt;
+  <dd>
+        I+ (observed intensity of positive Bijvoet pair).
+  <dt>
+      &lt;si+&gt;
+  <dd>
+        Corresponding sigma of &lt;i+&gt;.
+  <dt>
+      &lt;i-&gt;
+  <dd>
+        I- (observed intensity of negative Bijvoet pair).
+  <dt>
+      &lt;si-&gt;
+  <dd>
+        Corresponding sigma of &lt;i-&gt;.
+</dl>	  
+
+    To input structure factor amplitudes, use the following:
+</p>
+
+    <h5>COLUmn F=&lt;f&gt; SF=&lt;sf&gt; F+=&lt;f+&gt; SF+=&lt;sf+&gt; F-=&lt;f-&gt; SF-=&lt;sf-&gt; </h5>
+<p>
+      Diffraction data for the XTAL and DNAMe defined. 
+      If anomalous data is not to be used, set F and SF only.  If using
+      anomalous data, set F+, SF+, F-, SF-.  Setting both F and F+ will result
+      in an error.  If only F and DANO is present in the mtz file, use the ccp4 
+      program mtzMADmod to change F/DANO to F+/F-.
+</p>
+
+<dl>
+  <dt>
+	  &lt;f&gt;
+  <dd>
+        |F| (observed structure factor amplitude *if no anomalous data is present*). 
+  <dt>
+      &lt;sf&gt;
+  <dd>
+        Corresponding sigma for &lt;f&gt;. 
+  <dt>
+      &lt;f+&gt;
+  <dd>
+        |F+| (observed structure factor amplitude of positive Bijvoet pair).
+  <dt>
+      &lt;sf+&gt;
+  <dd>
+        Corresponding sigma of &lt;f+&gt;.
+  <dt>
+      &lt;f-&gt;
+  <dd>
+        |F-| (observed structure factor amplitude of negative Bijvoet pair).
+  <dt>
+      &lt;sf-&gt;
+  <dd>
+        Corresponding sigma of &lt;f-&gt;.
+</dl>	  
+
+<h2>OPTIONAL KEYWORDS:</h2>
+
+<h4>PIPEline &lt;type&gt; FIRSt &lt;firststep&gt; LAST &lt;laststep&gt; </h4>
+
+<p>
+   In gcx, there are five pipelines predefined.  (At the moment, all predefined pipelines
+   use PREP to prepare the data and ARP/wARP + REFMAC for automated model building and refinement).
+
+<dl>
+
+  <dd>
+     Setting &lt;type&gt; to 1 gives the following pipeline (which is the default):
+
+  <dt>
+     PREP -&gt; AFRO -&gt; CRUNCH2 -&gt; BP3 -&gt; SOLOMON -&gt; ARP/wARP + REFMAC. 
+
+  <dd>
+     Setting &lt;type&gt; to 2 gives the following pipeline:
+
+  <dt>
+     PREP -&gt; SHELXC -&gt; SHELXD -&gt; SHELXE -&gt; BP3 -&gt; SOLOMON -&gt; ARP/wARP + REFMAC.
+   
+  <dd>
+     Setting &lt;type&gt; to 3 gives a pipeline that George Sheldrick has suggested:
+
+  <dt>
+     PREP -&gt; SHELXC -&gt; SHELXD -&gt;  SHELXE -&gt; ARP/wARP + REFMAC.
+ 
+  <dd>
+     The first two SHELXE jobs, followed by SHELXEHAND try to determine the correct enantiomorph.
+     The third and last SHELXE job attempts to get the best phases as possible by running 100
+     SHELXE cycles.
+
+  <dd>
+     Setting &lt;type&gt; to 4 gives the following:
+
+  <dt>
+     PREP -&gt; AFRO -&gt; CRUNCH2 -&gt; BP3 -&gt; DM -&gt; ARP/wARP + REFMAC. 
+
+  <dd>
+     Setting &lt;type&gt; to 5 gives the following:
+
+  <dt>
+     PREP -&gt; AFRO -&gt; CRUNCH2 -&gt; BP3 -&gt; SOLOMON -&gt; RESOLVEDM -&gt; RESOLVEMB. 
+
+  <dd>
+     Setting &lt;type&gt; to 6 gives the following:
+
+  <dt>
+     PREP -&gt; AFRO -&gt; CRUNCH2 -&gt; BP3 -&gt; SOLOMON -&gt; PIRATE -&gt; BUCCANEER. 
+
+ </dl>
+
+<p>
+  The FIRSt subkeyword of PIPE allows you to optionally start the pipeline at a step.  The following 
+  are the possible values of <firststep>.
+
+<dl>
+    <dt>
+     DETEct
+
+    <dd>
+     Start at substructure detection (default).
+
+    <dt>
+     PHASe
+
+    <dd>
+     Start at substructure phasing (you must input ATOM coordinates).
+</dl>
+
+<p>
+  The LAST subkeyword of PIPE allows you to optionally stop the pipeline after a step.  The following 
+  are the possible values of <laststep>.
+
+<dl>
+
+    <dt>
+     DETEct
+
+    <dd>
+     Stop after substructure detection.
+
+    <dt>
+     PHASe
+
+    <dd>
+     Stop after substructure phasing.
+
+    <dt>
+     DM
+
+    <dd>
+     Stop after density modification.
+
+    <dt>
+     BUILD
+    <dd> 
+    Stop after model building.
+
+</dl>
+
+<p>
+   If you would like to change any of the program options in a predefined pipeline, after
+   the PIPEline has been set, you can reset a program value using the program keyword (shown
+   below).  So, for example, if you want to use PIPEline 1, but would like to set
+   a SIGF and SANO cutoff for Fa estimation, you would do the following:
+
+<dl>
+  <dt>
+   PIPEline 1
+   <dl>
+      <dt>
+      AFRO 2 SIGF 2 SANO 1
+   </dl>
+</dl>
+   
+   Since the PIPEline keyword defines AFRO as the second step, you can access AFRO subkeywords
+   as shown.  See the "PROGRAM KEYWORDS" section below for more options that can be modified.
+
+
+<h2>PROGRAM KEYWORDS:</h2>
+
+<p>
+   You can set up a pipeline in crank and change options for a program that is part of the
+   pipeline using the program keywords.  The general syntax for the changing options for a 
+   given program is the following:
+
+   &lt;programname&gt; &lt;step&gt; &lt;option1&gt; &lt;option2&gt; ... 
+
+   where &lt;programname&gt; is the name of the crank plugin.  Currently, there are plugins for
+   the following program: PREP, AFRO, CRUNch2, BP3, DM, SOLO, PIRA, WARP, SHLC, SHLD, SHLE.
+
+   &lt;step&gt; is the step number for the program in the crank pipeline.  Thus, using gcx, a user
+   can construct their own pipeline.  However, at the moment, there is no checking, so this
+   should be reserved for experts only!
+
+   &lt;option1&gt; are the particular options that can be changed for the program at the particular
+   &lt;step&gt;.
+
+   <h3>PREP &lt;step&gt;</h3>
+   
+   <p>
+   PREP is the crank plugin for using truncate <A HREF="#[3]">[3]</A> to calculate structure factor amplitudes 
+   from intensities (if necessary) and using scaleit <A HREF="#[4]">[4]</A> to relatively scale the data sets 
+   together (if necessary).  At the moment, no options are available to be changed with gcx. 
+
+   <h3>AFRO &lt;step&gt; SIGF &lt;nsigf&gt; SANO &lt;nsano&gt; SISO &lt;nsiso&gt; HIREs &lt;hires&gt;</h3>
+
+<p>
+   AFRO is the crank plugin for the AFRO <A HREF="#[5]">[5]</A> program to calculate FA values needed for substructure
+   detection programs.  The subkeyword options for the AFRO keyword are the following:
+
+<dl>
+
+    <dt>
+        SIGF &lt;nsigf&gt;
+
+    <dd>
+        Exclude reflections if FP &lt; &lt;nsigf&gt; * SIGF.  The default setting is 2.
+
+    <dt>
+        SANO &lt;nsano&gt;
+
+    <dd>
+        Exclude reflections if DANO &lt; &lt;nsano&gt; * SDANO.  The recommended setting is 0.5.
+        (DANO = abs(|F+| - |F-|) and SDANO is the standard deviation of DANO in measurement.
+
+    <dt>
+        SISO &lt;niso&gt;
+
+    <dd>
+        Exclude reflections if abs(|Fder| - |Fnat|) &lt; &lt;nsiso&gt; * SDISO.  The recommended setting is 0.5.
+        SDISO is sqrt(SIGFder^2 + SIGFnat^2).
+
+    <dt>
+        HIREs &lt;hires&gt;
+    <dd> 
+        Specify the high resolution limit.  gcx defaults to set the limit to 0.5 Angstroms above the high
+        resolution limit - unless the high resolution limit is lower than 2.5, when it sets it to 3.0 Angstroms.
+</dl>
+
+   <h3>CRUNch2 &lt;step&gt; TRIAls &lt;ntrials&gt; PTRIals &lt;pntrials&gt; THREshold &lt;nthreshold&gt; DEVIation &lt;ndeviation&gt; BP3Test &lt;ntest&gt; SPEC</h3>
+ 
+   <p>
+   Crunch2 is the crank plugin for the CRUNCH2 <A HREF="#[6]">[6]</A> substructure detection program using 
+   Karle-Hauptmann matrices.  The following options can be changed within gcx.
+
+<dl>
+      <dt>
+	TRIAls &lt;ntrials&gt;
+
+      <dd>
+        Sets the number of trials.  The default is 15.  For difficult problems with weak signals, increasing
+        the number of trails can lead to a solution, if one was not found after 15 trials.
+
+      <dt> 
+	PTRIals &lt;pntrials&gt;
+
+      <dd>
+        Sets the number of Patterson trials.  Before a crunch2 run, a Patterson minimal function is calculated to
+	generate trial solutions for crunch2.  The default is to generate 150 starting Patterson trials.  
+	Crunch2 ranks all starting patterson solutions and runs trials on the top &lt;ntrials&gt;.
+
+      <dt>
+	THREshold &lt;nthreshold&gt;
+
+      <dd>
+	&lt;nthreshold&gt; is the minimum crunch2 figure of merit to stop the crunch2 run.  The default is 1.00.
+ 	
+      <dt>
+	DEVIation &lt;ndeviation&gt;
+
+      <dd>
+	&lt;ndeviation&gt; specifies another stopping criteria:  Crunch2 is stopped if the highest score if a
+        trial is &lt;ndeviation&gt; times greater than the lowest score.  The default value for 
+	&lt;ndeviation&gt; is 1.75.
+
+      <dt>
+	BP3Test &lt;ntest&gt;
+
+      <dd>
+	&lt;ntest&gt; specifies the number of crunch2 trials to perform before running BP3 to verify if the substructure
+        is correct.  If &lt;ntest&gt; is 0, BP3 will not be run between crunch2 trials.  The default value for &lt;ntest&gt; is 3,
+
+      <dt>
+        SPEC
+
+      <dd>
+        Add the SPEC subkeyword if you think that any of your substructure atoms lie on special positions.
+</dl>
+
+  
+   <h3>BP3 &lt;step&gt; STOP &lt;stop&gt; NOHAnd NODIff PHASe</h3>
+
+   <p>
+   BP3 is the crank plugin for using the substructure phasing program BP3 <A HREF="#[7]">[7]</A>, 
+   <A HREF="#[8]">[8]</A>.
+
+<dl>
+      <dt>
+	STOP &lt;stop&gt;
+
+      <dd>
+       The minimum fom allowable to proceed to a further step is specified in &lt;stop&gt;.  
+
+
+      <dt>
+	NOHAnd
+
+      <dd>
+	Do not generate phases for the other hand.
+
+      <dt>
+	NODIff
+
+      <dd>
+	Do not attempt to find and refine additional sites from gradient maps.
+
+      <dt>
+	PHASe
+
+      <dd>
+        Perform fast phasing in BP3.  This is the default for MAD.
+
+</dl>
+
+   <h3>SOLOmon &lt;step&gt; NOHAnd OPTI NODM NOBIas BETA &lt;beta&gt; MARGin &lt;margin&gt; NCYCles &lt;ncyc&gt; HCYCles &lt;hcyc&gt; MLHL DIREct SIGMaa </h3>
+
+   <p>
+   SOLOmon is the crank plugin for using the density modification program SOLOMON <A HREF="#[9]">[9]</A>.
+
+   <dl>
+
+      <dt>
+	NOHAnd
+
+      <dd>
+	Do not attempt to determine the correct enantiomorph.  The default is to determine the correct hand
+        by running a few cycles of density modification and seeing which hand has a greater contrast in protein
+        to solvent region.
+
+      <dt>
+	OPTI
+
+      <dd>
+	Optimize the solvent content (by running a few cycles of density modification corresponding to
+        different monomers).  The default is not to optimize the solvent content.
+
+      <dt>
+	NODM
+
+      <dd>
+	Do not run density modification (ie. if you only wish to use the density modification program to determine
+        the hand or optimize the solvent content.)
+
+      <dt>
+	NOBIas
+
+      <dd>
+      Do not calculate or apply a bias correction parameter.
+
+      <dt>
+      BETA &lt;beta&gt;
+	
+      <dd>
+      Use the value &lt;beta&gt; for the bias correction parameter (and do not refine it).
+
+      <dt>
+	MARGin &lt;margin&gt;
+	
+      <dd>
+       &lt;margin&gt; is the parameter which the selected hand's contrast*(correlation coefficient) must exceed the
+        other hand.
+
+      <dt>
+ 	NCYCles &lt;ncyc&gt;
+	
+      <dd>
+       Run &lt;ncyc&gt; cycles of density modification.
+
+      <dt>
+	HCYCles &lt;hcyc&gt;
+	
+      <dd>
+       Determine the hand by looking at the (correlation coefficient)*contrast at the &lt;hcyc&gt; cycle of density 
+       modification of each hand.
+
+      <dt>
+	MLHL
+	
+      <dd>
+	Use the MLHL function of multicomb for phase combination.  Use only one of MLHL or DIREct keyword.
+
+      <dt>
+	DIREct
+	
+      <dd>
+	Use the DIREct (for SAD or SIRAS data) from multicomb for phase combination.
+
+      <dt>
+	SIGMaa
+	
+      <dd>
+	Use the SIGMAA from CCP4 for phase combination.
+
+   </dl>
+
+
+   <h3>DM &lt;step&gt; NOHAnd NODM NOHIst</h3>
+
+   <p>
+   DM is the crank plugin for using the density modification program DM <A HREF="#[10]">[10]</A>. 
+
+   <dl>
+
+      <dt>
+	NOHAnd
+
+      <dd>
+	Do not attempt to determine the correct enantiomorph.  The default is to determine the correct hand
+        by running a few cycles of density modification and seeing which hand has a greater contrast in protein
+        to solvent region.
+
+      <dt>
+	NODM
+
+      <dd>
+	Do not run density modification (ie. if you only wish to use the density modification program to determine
+        the hand or optimize the solvent content.)
+
+      <dt>
+	NOHIST
+
+      <dd>
+	Do not use histogram matching in density modification (use this if you have a metal cluster).
+
+   </dl>
+
+
+   <h3>SHLC &lt;step&gt; HIREs &lt;hires&gt;</h3>
+
+   <p>
+   SHLC is the crank plugin for the SHELXC <A HREF="#[11]">[11]</A> program to generate files 
+   (including FA values) needed for SHELXD and SHELXE.  The subkeyword options for the SHLC keyword 
+   are the following:
+ 
+<dl>
+      <dt>
+        HIREs &lt;hires&gt;
+
+      <dd>
+        Specify the high resolution limit.  gcx defaults to set the limit to 0.5 Angstroms above the high
+        resolution limit - unless the high resolution limit is lower than 2.5, in which case the limit is
+        set to the lower of 3.0 Angstroms or the high resolution limit of the data.
+
+</dl>
+
+
+   <h3>SHLD &lt;step&gt; TRIAls &lt;ntrials&gt; MIND &lt;mind&gt; MDEQ &lt;mdeq&gt; THREshold &lt;nthreshold&gt; DSUL &lt;ndsul&gt;</h3>
+
+   <p>
+   SHLD is the crank plugin for the SHELXD <A HREF="#[12]">[12]</A> program to determine substructures.
+
+   <dl>
+
+      <dt>
+	TRIAls &lt;ntrials&gt;
+
+      <dd>
+        Sets the number of trials.  The default is 500, but for more difficult problems with a weak signal, 
+        setting &lt;ntrials&gt; to a greater value (like 1000) can lead to a solution, when a solution was 
+        not found with 500.
+
+      <dt>
+	MIND &lt;mind&gt;
+
+      <dd>
+	Set the minimum distance between substructure atoms.  The crank default value is 3.5.
+
+      <dt>
+	MDEQ &lt;mdeq&gt;
+
+      <dd>
+	Set the minimum distance allowed between symmetry equivalents.  The crank default value is -0.1 (ie. allowing
+        for special positions).
+
+      <dt>
+	THREshold &lt;nthreshold&gt;
+
+      <dd>
+	&lt;nthreshold&gt; is the minimum "weak" correlation coefficient needed to stop the shelxd run.  
+        The default is 30.
+
+      <dt>
+	DSUL &lt;ndsul&gt;
+
+      <dd>
+	&lt;ndsul&gt; is the number of disulfide bridges expected in the structure.  The default is 0.
+
+   </dl>
+
+   <h3>SHLE &lt;step&gt; NOHAnd OPTI NODM FREE &lt;reso&gt; NCYCles &lt;ncyc&gt; HCYCles &lt;hcyc&gt;</h3>
+
+   <p>
+   SHLE is the crank plugin for using the density modification program SHELXE <A HREF="#[13]">[13]</A>.  
+
+   <dl>
+
+      <dt>
+	NOHAnd
+
+      <dd>
+	Do not attempt to determine the correct enantiomorph.  The default is to determine the correct hand
+        by running a few cycles of density modification and seeing which hand has a greater contrast in protein
+        to solvent region.
+
+      <dt>
+	OPTI
+
+      <dd>
+	Optimize the solvent content (by running a few cycles of density modification corresponding to
+        different monomers).  The default is not to optimize the solvent content.
+
+      <dt>
+	NODM
+
+      <dd>
+	Do not run density modification (ie. if you only wish to use the density modification program to determine
+        the hand or optimize the solvent content.)
+
+      <dt>
+	FREE &lt;reso&gt;
+
+      <dd>
+	Use the "free lunch" algorithm and extend the resolution of your data to the value &lt;reso&gt;.  If no 
+        value is given for &lt;reso&gt;, the highest resolution limit minus 0.5 is used.  The default is not to
+        use the free lunch algorithm.
+
+      <dt>
+ 	NCYCles &lt;ncyc&gt;
+	
+      <dd>
+       Run &lt;ncyc&gt; cycles of density modification.
+
+      <dt>
+	HCYCles &lt;hcyc&gt;
+	
+      <dd>
+       Determine the hand by looking at the contrast at the &lt;hcyc&gt; cycle of density 
+       modification of each hand.
+ 
+   </dl>   
+  
+   <h3>WARP &lt;step&gt; BIG &lt;nbig&gt; SMAL &lt;nsmal&gt; DOCK &lt;ndock&gt; CYCL &lt;ncyc&gt; TARG &lt;targ&gt; NOREstrain NOLOop TWIN</h3>
+
+   <p>
+   WARP is the crank plugin for automated model building and iterative refinement with 
+   ARP/wARP <A HREF="#[14]">[14]</A> and REFMAC5 <A HREF="#[15]">[15]</A>.  The following 
+   subkeywords can be modified for this step.
+
+<dl>
+
+   <dt>
+   BIG &lt;nbig&gt;
+
+   <dd>
+   &lt;nbig&gt; is the number of ARP/wARP "big" cycles or "cycles of autobuilding" given in the ARP/wARP ccp4i
+    interface.  The default is 10.
+
+   <dt>
+   SMAL &lt;nsmall&gt;
+
+   <dd>
+   &lt;nsmall&gt; is the number of ARP/wARP "small" cycles.  The "total cycles" as defined in the ARP/wARP ccp4i
+   interface is &lt;nbig&gt; * &lt;nsmall&gt;.  The default is 5.
+
+   <dt>
+   DOCK &lt;ndock&gt;
+
+   <dd>
+   &lt;ndock&gt; is the number of ARP/wARP cycles of autobuilding to perform before sequence docking (if a
+   sequence file is given).  The default is 7.
+ 
+   <dt>
+   CYCL &lt;ncyc&gt;
+
+   <dd>
+   &lt;ncyc&gt; is the number of cycles of refinement in each REFMAC run.  The default is 3.
+
+   <dt>
+   TARG &lt;targ&gt;
+
+   <dd>
+   &lt;targ&gt; is the name of the target function to use in REFMAC refinement.  The choices are RICE or using no
+   prior phase information, MLHL <A HREF="#[16]">[16]</A> which uses phase information encoded by 
+   Hendrickson-Lattman coefficients, or SAD <A HREF="#[17]">[17]</A> which uses phase information directly 
+   from Bijvoet differences. 
+
+   <dt>
+   NOREstrain
+
+   <dd>
+   Do not use conditional dynamics.  The default is to use it.
+
+   <dt>
+   NOLOop
+
+   <dd>
+    Do not use loop building.  The default is to use it.
+
+   <dt>
+   TWIN
+
+    <dd>
+    Use twin refinement in refmac: only available with TARGets MLHL and RICE at the moment.  The default is to use it.
+
+<dl>
+
+   <h3>PIRAte &lt;step&gt; NCYCles &lt;ncyc&gt; INWEight</h3>
+
+   <p>
+   PIRAte is the crank plugin for using the density modification program PIRATE <A HREF="#[18]">[18]</A>. 
+
+   <dl>
+
+      <dt>
+	NCYCles
+
+      <dd>
+	&lt;ncyc&gt; is the number of cycles of density modification to perform.  The default is 3.
+
+      <dt>
+	INWEight
+
+      <dd>
+	The weight to apply to the input phases/Hendrickson-Lattman coefficients.  The default is 0.75.
+
+   </dl>
+
+   <h3>BUCC &lt;step&gt; NCYCles &lt;ncyc&gt; FAST NORFree RELIability &lt;nreli&gt; </h3>
+
+   <p>
+   BUCCaneer is the crank plugin for using the model building program BUCCANEER <A HREF="#[19]">[19]</A>. 
+
+   <dl>
+
+      <dt>
+	NCYCles
+
+      <dd>
+	&lt;ncyc&gt; is the number of cycles of building.  The default is 3.
+
+      <dt>
+	FAST
+
+      <dd>
+       Use FAST building (ie. no recycling with REFMAC).  The default is to recycle with REFMAC.
+
+      <dt>
+       NORFree
+
+      <dd> 
+       Do not use the free R factor. The default is to use it.
+
+      <dt>
+      RELIability
+
+      <dd>
+       &lt;nreli&gt; is the reliability of sequence docking as a fraction.  The default is 0.95.
+
+   </dl>
+
+<h3>NMON &lt;nmon&gt;</h3>
+<p>
+   &lt;nmon&gt is the number of monomers expected.  If it is not set, the program
+   will calculate the most probable number by performing a Kantardjieff - Rupp 
+   probability analysis of the Matthew's coefficient.
+</p>
+
+<h3>SOLV &lt;solv&gt;</h3>
+<p>
+   &lt;solv&gt is the solvent content.  If it is not set, the program
+   will calculate the most probable number of monomers by performing a 
+   Kantardjieff - Rupp probability analysis of the Matthew's coefficient
+   and set the solvent content based on this.  If it is set, and the number
+   differs by 0.25 from that corresponding to NMON (if set) or the most probable
+   NMON, an error will result.
+</p>
+
+<h3>OBFA &lt;bfac&gt;</h3>
+<p>
+   &lt;bfac&gt is an estimate of the overall B-factor.  If it is not set, the program
+   will calculate it based on a maximum likelihood analysis.
+</p>
+
+<h3>OUTPut &lt;outputname&gt;</h3>
+<p>
+  &lt;outputname&gt; is the string associated with the XML file
+  that gcx writes out.  The default &lt;outputname&gt; is "crank".
+  </p>
+
+<h3>VERBose &lt;n&gt;</h3>
+<p>
+  Specify amount of information to be outputted (where n is a positive integer).
+  n = 0 is the normal output,  n = 1 is more output and n = 2 is for debugging
+  purposes.  Default: n = 0.
+</p>
+
+<h2><A NAME="EXAMPLES">EXAMPLES</A></h2>
+
+<p> Please look in the examples directory!</p>
+
+<h2>REFERENCES</h2>
+
+<p>
+<LI> <A NAME="[1]">[1]</A> Kantardjieff, K.A. and Rupp, B. (2003) Protein Science, 12, 1865-1871.</LI>
+<LI> <A NAME="[2]">[2]</A> Matthews, B.W. (1968) J.Mol.Biol, 33, 491-497.</LI>
+<LI> <A NAME="[3]">[3]</A> French, G.S. and Wilson, K.S. (1978) Acta. Cryst., A34, 517-534.</LI>
+<LI> <A NAME="[4]">[4]</A> Evans, P.R., Dodson, E.J. and Dodson R. (unpublished).</LI>
+<LI> <A NAME="[5]">[5]</A> Pannu, N.S. (unpublished).</LI>
+<LI> <A NAME="[6]">[6]</A> de Graaff, R.A.G., Hilge, M., van der Plas, J.L. and Abrahams, J.P. (2001)
+     Acta Cryst., D57, 1857-1862.</LI>
+<LI> <A NAME="[7]">[7]</A> Pannu, N.S. and Read, R.J. (2004) Acta Cryst., D60, 22-27.</LI>
+<LI> <A NAME="[8]">[8]</A> Pannu, N.S., McCoy, A.J. and Read, R.J. (2003) Acta Cryst., D59, 1801-1808.</LI>
+<LI> <A NAME="[9]">[9]</A> Abrahams, J.P. and Leslie, A.J.W. (1996) Acta Cryst., D52, 30-42.</LI>
+<LI> <A NAME="[10]">[10]</A> Cowtan, K.D. (1994) Joint CCP4 and ESF-EACBM Newsletter on Protein Crystallography, 
+     31, 34-38. </LI>
+<LI> <A NAME="[11]">[11]</A> Sheldrick, G.M. http://shelx.uni-ac.gwdg.de/SHELX/ </LI>
+<LI> <A NAME="[12]">[12]</A> Schneider T.R., Sheldrick G.M. (2002) Acta Cryst., D58, 1772-1779.</LI>
+<LI> <A NAME="[13]">[13]</A> Sheldrick, G.M. (2002) Z. Kristallogr., 217, 644-650.</LI>
+<LI> <A NAME="[14]">[14]</A> Perrakis, A., Morris, R.M. and Lamzin, V.S. (1999) Nat Struct Biol., 6, 458-463.</LI>
+<LI> <A NAME="[15]">[15]</A> Murshudov, G.N., Vagin, A.A. and Dodson, E.J. (1997) Acta Cryst., D53, 240-255.</LI>
+<LI> <A NAME="[16]">[16]</A> Pannu, N.S., Murshudov, G.N., Dodson, E.J. and Read, R.J. (1998)  Acta Cryst. D54,
+     1285-1294.</LI>
+<LI> <A NAME="[17]">[17]</A> Skubak, P, Murshudov, G.N. and Pannu, N.S. (2004) Acta Cryst., D60, 2196-2201.</LI>
+<LI> <A NAME="[18]">[18]</A> Cowtan, K (2000) Acta Cryst., D56, 1612-1621.</LI>
+<LI> <A NAME="[19]">[19]</A> Cowtan, K (2006) Acta Cryst., D56, 1002-1011.</LI>
+<LI> <A NAME="[20]">[20]</A> Terwilliger, T.C. (2000) Acta Cryst., D56, 965-972.</LI>
+<LI> <A NAME="[21]">[21]</A> Terwilliger, T.C. (2003) Acta Cryst., D59, 38-44.</LI>
+
+
+<hr>
+<p class=end>
+<!-- hhmts start -->
+Last modified: Thu May  4 11:32:32 CEST 2006
+<!-- hhmts end -->
+</p>
+  </body>
+</html>

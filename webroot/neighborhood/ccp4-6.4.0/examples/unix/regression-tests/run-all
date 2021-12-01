@@ -1,0 +1,49 @@
+#! /bin/sh
+
+# run all possible examples to test for regressions
+
+# Make sure all the data is available to run tests with
+test -f $CEXAM/toxd/toxd.mtz || (cd $CEXAM/toxd; ./na4tomtz.exam; ./completedata.exam)
+test -f $CEXAM/toxd/toxd_old.mtz || (cd $CEXAM/toxd; ./na4tomtz.exam; ./completedata.exam)
+
+test -f $CEXAM/rnase/rnase18.mtz || (cd $CEXAM/rnase; ./rnase_na4tomtz.exam; ./rnase_completedata.exam)
+test -f $CEXAM/rnase/rnase25.mtz || (cd $CEXAM/rnase; ./rnase_na4tomtz.exam; ./rnase_completedata.exam)
+
+mkdir $CCP4_SCR/test-results 2>/dev/null
+
+CCP4_SCR=$CCP4_SCR/test-results
+export CCP4_SCR
+
+test -f $CCP4_SCR/sample_results && rm -f $CCP4_SCR/sample_results
+
+#regression tests
+for prog in regression_test_1.test regression_test_2.test ; do
+
+  echo -n $prog
+  # Check dependency
+  case $prog in
+    regression_test_1.test)  binprog=cbuccaneer ;;
+    regression_test_2.test)  binprog=phaser ;;
+  esac
+  if test -f $CBIN/$binprog ; then
+    # Run the example
+    if $CEXAM/unix/regression-tests/$prog >$CCP4_SCR/log 2>&1; then
+      echo -n ","
+    else
+      echo; echo
+      echo "*** $prog failed"
+      tail $CCP4_SCR/log
+      echo
+    fi
+  else
+    echo; echo
+    echo "*** $prog: $binprog not found in CBIN"
+    echo
+  fi
+
+done
+echo ""
+
+test -f $CCP4_SCR/sample_results && cp -f $CCP4_SCR/sample_results $CCP4_SCR/..
+rm -rf $CCP4_SCR   # clean up
+

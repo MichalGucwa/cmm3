@@ -1,0 +1,85 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#===========================================================================
+#
+# rantan.script
+#
+#===========================================================================
+
+
+#---------------------------------------------------------------Run RANTAN
+
+# Rantan script expects the root name of the output labels and will build
+# labout statement from them
+  set LABOUT ""
+  for { set N 1 } { $N <= $NOUT } { incr N } {
+    append LABOUT "PHI$N WT$N "
+    set PHI$N "[subst $LABOUT_PHI]$N"
+    set WT$N "[subst $LABOUT_W]$N"
+  }
+
+  CreateComScript rantan rantan_script
+
+  set status [Execute "[BinPath rantan] HKLIN \"$HKLIN\" HKLOUT \"$HKLOUT\""  \
+                   $rantan_script program_status report ]
+
+#--------------------------------------------------------Run FFT & Peakmax
+
+  if { $RANTAN_PEAKSEARCH } {
+
+  set LABIN "F1 SIG1 PHI W"
+  set F1 $EVAL
+  set SIG1 $SIGEVAL
+  set IFFRACOUT 1
+
+  set MAPTMP [GetTmpFileName -ext _map]
+  set IFASU 1
+
+  for { set N 1 } { $N <= $NOUT } { incr N } { 
+
+    set MAPOUT "[SetOutputFileRoot -tmp]_$N.map"
+    set XYZOUT "[SetOutputFileRoot]_$N.pdb"
+    set XYZFRC "[SetOutputFileRoot]_$N.ha"
+
+    set PHI [subst $LABOUT_PHI]$N
+    set W [subst $LABOUT_W]$N
+
+
+    CreateComScript fft runfft_script
+
+    set status [Execute "[BinPath fft] HKLIN \"$HKLOUT\" MAPOUT \"$MAPTMP\""  \
+            $runfft_script program_status report ]
+
+
+# Run mapmask to be sure we just search the asymmetric unit
+
+  CreateComScript mapmask mapmask_script
+
+  set status [Execute "[BinPath mapmask] MAPIN \"$MAPTMP\" MAPOUT \"$MAPOUT\""  \
+                $mapmask_script program_status report ]
+
+  DeleteFile $MAPTMP
+
+# Do the peak search
+
+    CreateComScript peakmax peakmax_script
+
+    set status [Execute "[BinPath peakmax] MAPIN \"$MAPOUT\" XYZOUT \"$XYZOUT\" XYZFRC \"$XYZFRC\""  \
+            $peakmax_script program_status report ]
+
+    set runfft_script ""
+    set mapmask_script ""
+    set peakmax_script ""
+
+    AddOutputFile $MAPOUT TEMPORARY $XYZOUT PROJECT $XYZFRC PROJECT
+
+  }
+
+  }

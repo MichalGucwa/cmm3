@@ -1,0 +1,50 @@
+#!/bin/sh
+
+set -e
+
+#
+# Kraut scaling of derivative data. Needed for vector refinement (VECREF)
+#
+fhscal \
+hklin $CEXAM/toxd/toxd.mtz \
+hklout $CCP4_SCR/toxd_fhsc.mtz <<END-fhscal 
+TITLE scale Au derivative by Kraut method
+BIAS 1 ! iff we trust the standard deviations
+LABIN FP=FTOXD3 SIGFP=SIGFTOXD3 FPH=FAU20 SIGFPH=SIGFAU20 -
+  DPH=ANAU20 SIGDPH=SIGANAU20
+END
+END-fhscal
+#
+# to analyse the derivative run scaleit with the analyse option
+#
+scaleit \
+HKLIN $CCP4_SCR/toxd_fhsc.mtz    \
+<< END-scaleit
+TITLE analyse scaling done by fhscal 
+reso 20 2.3     
+analyse 
+labin FP=FTOXD3 SIGFP=SIGFTOXD3 FPH1=FAU20 SIGFPH1=SIGFAU20 -
+  DPH1=ANAU20 SIGDPH1=SIGANAU20 
+end
+END-scaleit
+#
+# Repeat with AUTO keyword as a test
+#
+fhscal \
+hklin $CEXAM/toxd/toxd.mtz \
+hklout $CCP4_SCR/toxd_fhsc_auto.mtz <<END-fhscal 
+TITLE scale Au derivative by Kraut method
+BIAS 1 ! iff we trust the standard deviations
+LABIN FP=FTOXD3 SIGFP=SIGFTOXD3 FPH=FAU20 
+AUTO
+END
+END-fhscal
+
+echo "\n Diffing output files.... \n"
+
+mtzdmp $CCP4_SCR/toxd_fhsc.mtz > $CCP4_SCR/toxd_fhsc.dmp
+mtzdmp $CCP4_SCR/toxd_fhsc_auto.mtz > $CCP4_SCR/toxd_fhsc_auto.dmp
+
+if diff $CCP4_SCR/toxd_fhsc.dmp $CCP4_SCR/toxd_fhsc_auto.dmp; then
+  echo 
+fi

@@ -1,0 +1,2063 @@
+<!DOCTYPE html
+                     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                     "DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+   <meta name="Author" content="Martyn Winn" />
+   <meta name="Changedby" content="Eleanor and Maria" />
+   <meta name="GENERATOR" content="Mozilla/4.03 [en] (X11; I; SunOS 5.7 sun4m) [Netscape]" />
+   <title>CCP4 Program Suite</title>
+</head>
+<body>
+
+<!-- ::INDEX_INFO::AMORE::Supported::Molecular Replacement::Jorge Navaza's state-of-the-art molecular replacement package:::::::: -->
+
+<h1>AMORE (CCP4: Supported Program)</h1>
+
+<h2>NAME</h2>
+
+<p><strong>AMoRe</strong>
+- Jorge Navaza's state-of-the-art molecular replacement package, updated February 1999.<br />
+<em>The SORTFUN and TABFUN output are NOT compatible with the old version.</em><br />
+New keyword <a href="#tabfun_crystal">CRYSTAL</a> for TABFUN.<br />
+[<a href="#keywords">Keyworded input</a>]</p>
+
+<h2>CONTENTS</h2>
+
+<ul>
+  <li><a href="#description">DESCRIPTION</a></li>
+  <li><a href="#function">Further details of the PROGRAM FUNCTIONS</a></li>
+  <li><a href="#likely_problems">LIKELY PROBLEMS</a></li>
+  <li><a href="#keywords">KEYWORDED INPUT</a>
+  <ul>
+    <li><a href="#keywords_sortfun">SORTFUN keywords</a></li>
+    <li><a href="#keywords_tabfun">TABFUN keywords</a></li>
+    <li><a href="#keywords_rotfun">ROTFUN Keywords</a></li>
+    <li><a href="#keywords_trafun">TRAFUN keywords</a></li>
+    <li><a href="#keywords_fitfun">FITFUN keywords</a></li>
+    <li><a href="#keywords_reorientate">REORIENTATE keywords</a></li>
+  </ul></li>
+  <li><a href="#notes">NOTES</a>
+  <ul>
+    <li><a href="#memory_allocation">Memory allocation</a></li>
+    <li><a href="#rotation_matrix_definitions">Rotation matrix definitions</a></li>
+    <li><a href="#orthogonalisation_codes">Orthogonalisation codes</a></li>
+  </ul></li>
+  <li><a href="#examples">EXAMPLES</a>
+  <ol>
+    <li><a href="#example1">The command scripts for the complete procedure to find 3 molecules for spmi (usually run from CCP4i).</a>
+    <ol type="a">
+      <li><a href="#example1a">TABFUN for MODEL FRAGMENT in large &quot;unit cell&quot;</a></li>
+      <li><a href="#example1b">SORTFUN where MTZ file contains cell and symmetry</a></li>
+      <li><a href="#example1c">ROTFUN - straightforward case</a></li>
+      <li><a href="#example1d">TRAFUN one (first) molecule in P61</a></li>
+      <li><a href="#example1e">TRAFUN one (first) molecule in P65 - same rotation solutions as 1d</a></li>
+      <li><a href="#example1f">TRAFUN search for second molecule in P61</a></li>
+      <li><a href="#example1g">TRAFUN search for second molecule in P65</a></li>
+      <li><a href="#example1h">TRAFUN search for third molecule in P65 - higher correlation and lower Rfactor than P61</a></li>
+      <li><a href="#example1i">FITFUN - three molecules in P65</a></li>
+      <li><a href="#example1j">Build the solution file with PDBSET, checking symmetry clashes with DISTANG</a></li>
+    </ol>
+    </li>
+    <li><a href="#example2">Tabulating structure factors generated from a blob of electron density into a large &quot;P1 unit cell&quot;
+to give a finely sampled reciprocal lattice</a>
+      <ul><li>This uses NCSMASK, MAPMASK, MAPROT, SFALL</li></ul>
+    </li>
+    <li><a href="#example3">Using the locked rotation function</a></li>
+    <li><a href="#example4">Using a non-crystallographic translation vector to find pairs of solutions in the same orientation</a></li>
+  </ol>
+  </li>
+  <li><a href="#authors">AUTHORS</a></li>
+  <li><a href="#references">REFERENCES</a></li>
+  <li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+
+<h2><a name="description"></a>DESCRIPTION</h2>
+
+<p>AMoRe includes routines to run a complete molecular replacement.</p>
+
+<p>As well as carrying out ROTATION and TRANSLATION searches against various targets, and doing RIGID BODY REFINEMENT,
+there are routines to reformat the observed data from the new crystal form, and
+to generate and tabulate structure factors from the model in a large P1 cell. See <a href="#reference1">reference [1]</a>.</p>
+
+<p>The steps are usually carried out in the following order:</p>
+
+<ol>
+<li>The observed data is extended to cover a hemisphere of reciprocal space
+and reformatted.</li>
+
+<li>Structure factors for the model are tabulated on a fine grid (corresponding
+to a large &quot;unit cell&quot;). This is the key to the program's speed. All subsequent
+structure factors required for the searches are obtained by interpolating into
+this table. The structure factors can be calculated within AMoRe from a set of
+coordinates, using the option TABFUN, or generated outside the program and read
+in using the option SORTFUN.</li>
+
+<li>The rotation function is run searching for Patterson correlation within
+a sphere centred on the origin. This allows the Patterson to be expressed in terms
+of spherical harmonics, and the calculation to exploit FFT techniques. Two different
+types of indicators of a good solution are given (see also <a href="#solution_criteria">below</a>):
+<ol type="a">
+<li>The correlation between the observed and model pattersons;</li>
+<li>Correlation coefficients and Rfactors between the observed Fs or Is and
+generated Fs or Is from a model with the given orientation. <!--mgwt: references from
+ejd: Read review, GMT structure, OppA structure, PenV structure (Appendix, Ref???)--></li>
+</ol>
+</li>
+</ol>
+
+<p>AMoRe requires a LOT of memory and this may cause problems on some machines.
+However this new release is considerably less demanding than the older one
+(see <a href="#memory_allocation">Memory allocation</a>).</p>
+
+<h2><a name="function"></a>Further details of the PROGRAM FUNCTIONS</h2>
+
+<h3><a name="function_sortfun"></a>Step_1 SORTFUN -
+reading, extending, sorting and reformatting a list of reflections</h3>
+
+<dl>
+<dt>Input:</dt>
+<dd><strong>HKLIN</strong></dd>
+<dd>Standard MTZ file (maybe observed data, structure factors generated
+by some technique, E values from ECALC, <em>etc.</em>)</dd>
+
+<dt>Optional Input:</dt>
+<dd><strong>Memory allocation parameters</strong></dd>
+<dd>SORTING_NR (default estimated from the resolution and cell dimensions).
+This can be reset if necessary.</dd>
+
+<dt>Output:</dt>
+<dd><strong>Either HKLPCK0</strong> (see <a href="#sortfun_option1">option 1</a>)</dd>
+<dd>Packed file of H K L [F SIGF] or [FOM*F PHI] NMULT in hemisphere: h,+-k,+-l.
+This is a binary file which also holds the unit cell, symmetry operators,
+and maximum h, k,l and resolution (see <a href="#example1b">example [1b]</a>).</dd>
+
+<dd><a name="table"></a><strong>or table&lt;i&gt;</strong> (see <a href="#sortfun_option2">option 2</a>)</dd>
+<dd>Table of the finely sampled inverse Fourier coefficients (<em>i.e.</em>, structure
+factors which have been read in from a previously prepared MTZ file). These
+must extend a little past the required resolution of the calculations
+to allow for interpolation.
+This is a binary file which also holds the large &quot;unit cell&quot;, 
+maximum h, k, l, and resolution (see <a href="#example2">example [2]</a>).</dd>
+</dl>
+
+<p><a name="sortfun_option1"></a>Option 1:</p>
+<ul>
+<li>Packs and sorts H K L [Fobs SigFobs] or [W*Fobs PhiObs] to an internal form for use 
+in later steps.</li>
+</ul>
+
+<p><a name="sortfun_option2"></a>Option 2:</p>
+<ul>
+<li>Packs an input list of H K L FC PHIC for use as a table. This format is described
+<a href="#function_tabfun">below</a>. This gives the user great flexibility to try different
+types of search models. For example, structure factors can be generated from
+modified electron density maps, or calculated structure factors can be
+converted to E values (see <a href="#example2">example [2]</a>).</li>
+</ul>
+
+<h3><a name="function_tabfun"></a>Step_2 TABFUN -
+reading model coordinates, repositioning them and generating structure factors from them</h3>
+
+<dl>
+<dt>Input:</dt>
+<dd><strong>XYZIN&lt;i&gt;</strong></dd>
+<dd>Standard PDB file for the model</dd>
+
+<dt>Optional Input:</dt>
+<dd><strong>Memory allocation parameters</strong></dd>
+<dd>TABLING_MI, TABLING_MR, TABLING_MC</dd>
+<dd>(defaults estimated from the model dimensions and the sampling required). They may need to reset to
+the values specified in the log file.</dd>
+
+<dt>Output:</dt>
+<dd><strong>XYZOUT&lt;i&gt;</strong></dd>
+<dd>Coordinates after repositioning</dd>
+
+<dt>Output:</dt>
+<dd><strong>table&lt;i&gt;</strong></dd>
+<dd>Table of the finely sampled structure factors generated from the shifted model,
+and calculated for a large &quot;unit cell&quot;.</dd>
+
+<dt>Output:</dt>
+<dd><strong>Log File</strong></dd>
+<dd>Contains vital information about the coordinates which will be used at later
+stages of the procedure (<em>e.g.</em> Minimal Box, Centre of Mass, Rotation, Maximal
+distance from Centre of Mass)</dd>
+
+<dt>Optional Output:</dt>
+<dd><strong>HKLOUT&lt;i&gt;</strong></dd>
+<dd>This is rarely used, but can be useful for checking purposes.
+ASCII file of finely sampled inverse Fourier coefficients as H K L
+FC PHIC (<em>i.e.</em> structure factors)</dd>
+</dl>
+
+<p>The procedure is:</p>
+
+<ol>
+<li>The model coordinates are translated so that their centre of gravity is at the
+origin. They can then be rotated so that the principal axes of inertia
+of the model are parallel to the  a, b and c axes of the &quot;minimal box&quot; which
+just contains the model. The dimensions of the &quot;minimal box&quot; are determined,
+and the &quot;maximum distance&quot; of any coordinate from the centre of mass.<br />
+You may choose not to ROTATE the model; in some cases results may then be simpler 
+to interpret. For instance if you want to compare results from several models it is
+convenient to allow
+the first model to ROTATE, then to fit all  others to these repositioned coordinates
+which will have been output to the assigned XYZOUT. It may also be useful if you expect some predictable
+result; <em>e.g.</em> that the new crystallographic symmetry axes should map onto those of the model structure.<br />
+Hint: It can help to understand results if some &quot;pseudo&quot; atoms are added 
+to the model PDB file. For example if you have a two fold axis in the
+original structure put 2 coordinates on this axis. If the model forms a
+tetramer centred at (Xt,Yt,Zt) include this coordinate plus 3 which lie
+on the tetramer axes.</li>
+
+<li>Structure factors are generated from the modified coordinates for a 
+&quot;CELL&quot; with  dimensions SCALE*minimal_a, SCALE*minimal_b,
+SCALE*minimal_c and all angles = 90 . SCALE has the default value of 4, but
+can be reset by the <a href="#tabfun_sample">SAMPLE</a> keyword. All later
+structure factors and gradients for the model in its various orientations
+are interpolated from this data.
+
+<pre>
+   Expected Error in R factor with SCALE = 4  -  3 %
+   Expected Error in R factor with SCALE = 3  -  9 %
+   Expected Error in R factor with SCALE = 2  - 17 %
+</pre>
+
+You may need to generate tables for several models, <em>e.g.</em> for different domains. 
+Up to four different table&lt;i&gt; files can be assigned during the translation search, and for rigid body
+refinement.</li>
+</ol>
+
+<h3><a name="function_rotfun"></a>Step_3 ROTFUN</h3>
+
+<p>Runs the rotation function. Does the following four stages (they can be run separately but I can't think why..).</p>
+
+<h3><a name="function_rotfun_generate"></a>Step_3a GENERATE_Stage</h3>
+
+<p>Keyword: <a href="#rotfun_generate">GENERATE</a> - calculates structure factors for model in a suitable cell,
+and packs them in the same format as the output of SORTFUN.</p>
+
+<dl>
+<dt>Input:</dt>
+<dd><strong>table&lt;i&gt;</strong></dd>
+<dd>See <a href="#table">above</a></dd>
+
+<dt>Optional Input:</dt>
+<dd><strong>Memory allocation parameters</strong></dd>
+<dd>ROTING_MI, ROTING_MR, ROTING_MC, ROTING_MD</dd>
+<dd>(defaults estimated from crystal cell, and the dimensions of the model table). These can be reset if necessary.</dd>
+
+<dt>Output:</dt>
+<dd><strong>HKLPCK1</strong></dd>
+</dl>
+
+<h3><a name="function_rotfun_calculate_harmonics"></a>Step_3b CALCULATE_Spherical_HARMONICS_Stage</h3>
+
+<p>Keyword: <a href="#rotfun_clmn">CLMN</a> - calculates spherical harmonics for crystal and models.</p>
+
+<dl>
+<dt>Input:</dt>
+<dd><strong>HKLPCK&lt;i&gt;</strong> (HKLPCK0 for crystal, HKLPCK1 for model)</dd>
+
+<dt>Output:</dt>
+<dd><strong>CLMN&lt;i&gt;</strong></dd>
+</dl>
+
+<h3><a name="function_rotfun_rotation"></a>Step_3c ROTATION_Stage</h3>
+
+<p>Keyword: <a href="#rotfun_rotate">ROTATE</a> - calculates rotation function and finds many possible solutions 
+by Patterson overlap.</p>
+
+<dl>
+<dt>Input:</dt>
+<dd><strong>CLMN&lt;i&gt;</strong> (CLMN0 for crystal, CLMN1 for model)</dd>
+
+<dt>Output:</dt>
+<dd><strong>SOLUTIONRC</strong></dd>
+<dd>For the <strong><em>CROSS</em></strong> rotation function the output rotational solutions 
+are given in terms of the Eulerian angles,
+alpha, beta and gamma with each line  flagged: SOLUTIONRC.</dd>
+<dd>The Eulerian angles use the convention described by Tony Crowther which
+is used in all CCP4 programs, <em>e.g.</em> ALMN, LSQKAB, 
+PDBSET and DM. They define a rotation matrix which moves 
+the model molecule into the proper orientation for the new crystal form.
+The model is first rotated through gamma about Zo, then through beta about the new Yo, 
+then through alpha about the new Zo.
+Positive rotation is clockwise when looking along the axis from the origin.  
+See elsewhere for details of the <a href="#rotation_matrix_definitions">definitions of the rotation matrix</a> and the 
+<a href="#orthogonalisation_codes">orthogonalisation conventions</a> which define Zo Yo and Xo.</dd>
+<dd><a name="solution_criteria"></a>Four solution criteria are tabulated:
+<ul>
+<li><a name="cc_f"></a>CC_F is the correlation coefficient between the observed amplitudes
+for the crystal and the calculated amplitudes for the model. It is surprising
+that this is a satisfactory target, since the model amplitudes are generated
+in a P1 cell, but it does seem to be the most effective discriminator. It is sensible 
+to sort the solutions on this target.</li>
+<li><a name="rf_f"></a>RF_F is the classic R factor between the observed amplitudes
+for the crystal and the calculated amplitudes for the model. Again, it is 
+surprising that this is a satisfactory target, since the model amplitudes 
+are generated in a P1 cell, but it does seem to be reasonable, although 
+the CC_F is probably better.</li>
+<li><a name="cc_i"></a>CC_I is the correlation coefficient between the observed intensities
+for the crystal and the sum of calculated intensities for all symmetry
+equivalents of the model, <em>i.e.</em> the intensities are summed, but without 
+any correction for the relative positioning of the symmetry related 
+molecules.</li>
+<li><a name="cc_p"></a>CC_P is the Patterson correlation coefficient between the crystal and 
+the model pattersons evaluated within the defined sphere centred on the 
+Patterson origin.</li>
+</ul>
+</dd>
+
+<dd><strong>or SOLUTIONRS</strong></dd>
+<dd>For the <strong><em>SELF</em></strong> rotation function the solution is given in terms of Eulerian and 
+polar angles  with each line flagged: SOLUTIONRS.</dd>
+<dd>If Kappa is 180 or 120 then you may have a 2-fold or a 3 fold rotation between
+NCS related molecules.</dd>
+<dd>If you expect higher symmetry, <em>e.g.</em> 222 complex, check that the angles between 
+related axes are perpendicular (Test DC_X1*DCX2 + DC_Y1*DCY2 +DC_Z1*DCZ2 = 0).</dd>
+
+<dt>Output:</dt>
+<dd><strong>MAPOUT</strong></dd>
+<dd>A map of the rotation function can be output in the standard CCP4 format.
+This is assigned to MAPOUT and can be contoured in the usual way (<a href="npo.html">NPO</a>). 
+It is sectioned along beta.</dd>
+</dl>
+
+<h3><a name="function_rotfun_reorientate"></a>Step_3d REORIENTATE_Stage</h3>
+
+<p>Keyword: <a href="#rotfun_shift">SHIFT</a> - converts the Eulerian angle solutions determined for the model stored
+in XYZOUT&lt;i&gt; to give solutions to be applied to original MODEL.</p>
+
+<dl>
+<dt>Input:</dt>
+<dd>Centre of Mass and Eulerian angles which were applied
+to the original MODEL in TABFUN.</dd>
+<dt>Output:</dt>
+<dd>Some rotational solutions appropriate for the original coordinates.</dd>
+</dl>
+
+<p>This can be replaced by <a href="pdbset.html">PDBSET</a>; see <a href="#example1j">example [1j]</a>.</p>
+
+<h3><a name="function_trafun"></a>Step_4 TRAFUN</h3>
+
+<p>Calculates the translation function using various target options.</p>
+
+<dl>
+<dt>Input:</dt>
+<dd><strong>HKLPCK0</strong></dd>
+<dd>Crystal h k l output by SORTING step.</dd>
+
+<dt>Input:</dt>
+<dd><strong>table&lt;i&gt;</strong></dd>
+<dd>For any model(s) you wish to use.</dd>
+
+<dt>Optional Input:</dt>
+<dd><strong>Memory allocation parameters</strong></dd>
+<dd>TRAING_NR, TRAING_MEQ, TRAING_MRT, TRAING_MT, TRAING_MR</dd>
+<dd>(defaults estimated from crystal cell, and the dimensions of the model table). These can be reset if necessary.)</dd>
+
+<dt>Input:</dt>
+<dd>A list of solutions to the Rotation function output obtained in Step_3.</dd>
+<dd>The search for several molecules can be done by finding first one molecule,
+then FIXing it whilst searching for a second molecule, <em>etc.</em></dd>
+
+<dt>Output:</dt>
+<dd>A list of solutions flagged as: <strong>SOLUTIONTF</strong>.</dd>
+<dd>Each has:
+<em>Alpha_i Beta_i Gamma_i Xf_i Yf_i Zf_i CC_F RF_F CC_I Dmin.</em></dd>
+<dd>The Xf, Yf and Zf are fractions of the observed unit cell edges.
+CC_F RF_F CC_I are described <a href="#solution_criteria">above</a>. 
+Dmin is the shortest distance between the centres of mass
+of the symmetry equivalent molecules. This can be used to identify solutions 
+which overlap their symmetry mates.</dd>
+
+<dt>Output:</dt>
+<dd><strong>MAPOUT</strong></dd>
+<dd>A map of the translation function can be output in the standard CCP4 format.</dd>
+<dd>This is assigned to MAPOUT and can be contoured in the usual way (<a href="npo.html">NPO</a>).
+The same file assignment is used for each TRANSLATION search
+you make, so if you want to contour your favourite solution you will need
+to rerun the calculation with only that SOLUTION. Remember it may be very
+large; assign it to a scratch area, or /dev/null if this causes problems.</dd>
+</dl>
+
+<h3><a name="function_fitfun"></a>Step_5 FITFUN</h3>
+
+<p>Performs rigid-body refinement for any specified solution of the rotation
+or translation search, see <a href="#reference5">reference [5]</a>.</p>
+
+<dl>
+<dt>Input:</dt>
+<dd><strong>HKLPCK0</strong></dd>
+<dd>Crystal h k l output by SORTING step.</dd>
+
+<dt>Input:</dt>
+<dd><strong>table&lt;i&gt;</strong></dd>
+<dd>For any model(s) you wish to use.</dd>
+
+<dt>Optional Input:</dt>
+<dd><strong>Memory allocation parameters</strong></dd>
+<dd>FITING_MEQ, FITING_MT, FITING_NR, FITING_NP</dd>
+<dd>(defaults estimated from crystal cell, and the dimensions of the model table). These can be reset if necessary.)</dd>
+
+<dt>Input:</dt>
+<dd>A list of solutions.</dd>
+
+<dt>Output:</dt>
+<dd>A list of solutions flagged as: <strong>SOLUTIONF</strong>.</dd>
+<dd>They are given as: Alpha_i Beta_i Gamma_i Xf_i Yf_i
+Zf_i CC_F RF_F CC_I with the conventions described above.</dd>
+</dl>
+
+<p>Check that the CCs and RF_F have improved.</p>
+
+<h3><a name="function_reorientate"></a>Step_6 REORIENTATE</h3>
+
+<p>This works out the appropriate rotation and translation parameters to
+apply to the initial model (can also be done while running ROTFUN or FITFUN).</p>
+
+<dl>
+<dt>Input:</dt>
+<dd>Centre of Mass and Eulerian angles which were applied to the original MODEL in TABFUN.</dd>
+
+<dt>Input:</dt>
+<dd>The refined rotation and translation parameters output by FITFUN.</dd>
+
+<dt>Input:</dt>
+<dd><strong>HKLPCK0</strong></dd>
+<dd>To extract the unit cell of new crystal form.</dd>
+
+<dt>Output:</dt>
+<dd>A list of solutions given as:</dd>
+<dd> Alpha_i Beta_i Gamma_i XA_i YA_i
+ZA_i Correlation_coefficient_i Rfactor_i. The XA, YA and ZA are given in
+Angstroms. Each line is flagged: <strong>Shifted_sol</strong>.</dd>
+</dl>
+
+<h2><a name="likely_problems"></a>LIKELY PROBLEMS</h2>
+
+<p>Some common errors:</p>
+
+<ul>
+<li>You must run both CLMN calculations with the same resolution limits
+and sphere radius.</li>
+
+<li>The HKLPCK files all pack the hkl and symmetry flag into one integer. The
+program checks the maximum values of H K L and NM ( = 2*Nsym_primitive + 1) allowed
+for packing into a 32 bit integer. This is most restrictive at the Translation
+function stage which needs to store coefficients for all reflection pairs;
+H-Hj, K-Kj L-Lj where the Hj, Kj, and Lj are symmetry equivalents of H,K,&amp; L,
+thus needs maximum values for the coefficients which are double the actual ones
+for the data.</li>
+
+<li>See also <a href="#memory_allocation">Memory allocation</a> below concerning possible problems
+with memory.</li>
+</ul>
+
+<h2><a name="keywords"></a>KEYWORDED INPUT</h2>
+
+<p>The various data control lines are identified by keywords. Only the
+first 4 characters of a keyword are significant. Records may be continued
+across line breaks using &amp; or - as the last character on the line to
+be continued. The available keywords are listed below grouped according 
+to their function:</p>
+
+<h3><a name="keywords_general"></a>General Keywords used at any stage:</h3>
+
+<dl>
+<dt><a name="verbose"></a>VERBOSE</dt>
+
+<dd>produces lots of output.</dd>
+
+<dt><a name="title"></a>TITLE</dt>
+
+<dd>to help you know what you did.</dd>
+</dl>
+
+<h3><a name="keywords_function"></a>Function keywords:</h3>
+
+<p>These call the appropriate procedures.</p>
+
+<dl>
+<dt>SORTFUN</dt>
+
+<dd>calls SORTING procedure to sort and pack reflections.</dd>
+
+<dt>TABFUN</dt>
+
+<dd>calls TABLING procedure to prepare structure factors from the model.</dd>
+
+<dt>ROTFUN</dt>
+
+<dd>calls ROTING procedure for the rotation function (must be followed
+by <a href="#rotfun_generate">GENE</a> and/or <a href="#rotfun_clmn">CLMN</a> and/or <a href="#rotfun_rotate">ROTA</a>).</dd>
+
+<dt>TRAFUN</dt>
+
+<dd>calls TRAING procedure for the translation function.</dd>
+
+<dt>FITFUN</dt>
+
+<dd>calls FITING procedure for rigid body fitting.</dd>
+
+<dt>SHIFT</dt>
+
+<dd>calls REORIENTATE procedure to apply shifts to the model final solution.</dd>
+</dl>
+
+<h3><a name="keywords_other_primary"></a>Other primary keywords:</h3>
+
+<p>May be used for the given functions.</p>
+
+<table>
+<tr>
+<th align="left">Keyword</th>
+<th align="left">Used in</th>
+</tr>
+<tr>
+<td>LABIN</td>
+<td><a href="#sortfun_labin">SORTFUN</a></td>
+</tr>
+<tr>
+<td>CRYSTAL</td>
+<td><a href="#tabfun_crystal">TABFUN</a>, <a href="#trafun_crystal">TRAFUN</a>, <a href="#fitfun_crystal">FITFUN</a></td>
+</tr>
+<tr>
+<td>MODEL</td>
+<td><a href="#tabfun_model">TABFUN</a></td>
+</tr>
+<tr>
+<td>SAMPLE</td>
+<td><a href="#tabfun_sample">TABFUN</a></td>
+</tr>
+<tr>
+<td>GENERATE</td>
+<td><a href="#rotfun_generate">ROTFUN</a></td>
+</tr>
+<tr>
+<td>CLMN</td>
+<td><a href="#rotfun_clmn">ROTFUN</a></td>
+</tr>
+<tr>
+<td>ROTATE</td>
+<td><a href="#rotfun_rotate">ROTFUN</a></td>
+</tr>
+<tr>
+<td>SHIFT</td>
+<td><a href="#rotfun_shift">ROTFUN</a>, <a href="#fitfun_shift">FITFUN</a>, <a href="#reorientate_shift">REORIENTATE</a></td>
+</tr>
+<tr>
+<td>SOLUTION</td>
+<td><a href="#trafun_solution">TRAFUN</a>, <a href="#fitfun_solution">FITFUN</a></td>
+</tr>
+<tr>
+<td>SYMMETRY</td>
+<td><a href="#trafun_symmetry">TRAFUN</a>, <a href="#fitfun_symmetry">FITFUN</a></td>
+</tr>
+<tr>
+<td>REFSOLUTION</td>
+<td><a href="#fitfun_refsolution">FITFUN</a></td>
+</tr>
+<tr>
+<td><a href="#end">END</a></td>
+</tr>
+</table>
+
+<h3><a name="keywords_subsidiary"></a>Subsidiary keywords:</h3>
+
+<p>These modify the following primary keywords. Most use sensible defaults.</p>
+
+<table>
+<tr>
+<th align="left">Keyword</th>
+<th align="left">Subsidiary Keywords</th>
+</tr>
+<tr>
+<td>SORTFUN</td>
+<td><a href="#sortfun_resolution">RESOLUTION</a>, <a href="#sortfun_model">MODEL</a></td>
+</tr>
+<tr>
+<td><a href="#sortfun_labin">LABIN</a></td>
+<td>FP=??  SIGFP=?? PHI=?? FOM=?? FC=?? PHIC=??</td>
+</tr>
+<tr>
+<td>TABFUN</td>
+<td><a href="#tabfun_norotate">NOROTATE</a>, <a href="#tabfun_notranslate">NOTRANSLATE</a>,
+<a href="#tabfun_notab">NOTAB</a>, <a href="#tabfun_hklout">HKLOUT</a>, <a href="#tabfun_sfout">SFOUT</a></td>
+</tr>
+
+<tr>
+<td><a href="#tabfun_model">MODEL</a></td>
+<td><a href="#tabfun_model_btarget">BTARGET</a>, <a href="#tabfun_model_breplace">BREPLACE</a>,
+<a href="#tabfun_model_badd">BADD</a>, <a href="#tabfun_model_norm">NORMALISE</a></td>
+</tr>
+
+<tr>
+<td><a href="#tabfun_crystal">CRYSTAL</a></td>
+<td><a href="#tabfun_crystal_orth">ORTH</a></td>
+</tr>
+
+<tr>
+<td><a href="#tabfun_sample">SAMPLE</a></td>
+<td><a href="#tabfun_sample_resolution">RESOLUTION</a>, <a href="#tabfun_sample_scale">SCALE</a>,
+<a href="#tabfun_sample_shannon">SHANNON</a></td>
+</tr>
+
+<tr>
+<td>ROTFUN</td>
+</tr>
+
+<tr>
+<td><a href="#rotfun_generate">GENERATE</a></td>
+<td><a href="#rotfun_generate_resolution">RESOLUTION</a>, <a href="#rotfun_generate_cell_model">CELL_MODEL</a></td>
+</tr>
+
+<tr>
+<td><a href="#rotfun_clmn">CLMN</a></td>
+<td><a href="#rotfun_clmn_crystal">CRYSTAL</a>, <a href="#rotfun_clmn_model">MODEL</a>, <a href="#rotfun_clmn_orth">ORTH</a>,
+<a href="#rotfun_clmn_flim">FLIM</a>, <a href="#rotfun_clmn_sharpen">SHARP | BADD</a>,
+<a href="#rotfun_clmn_resolution">RESOLUTION</a>, <a href="#rotfun_clmn_sphere">SPHERE</a></td>
+</tr>
+
+<tr>
+<td><a href="#rotfun_rotate">ROTATE</a></td>
+<td><a href="#rotfun_rotate_cross">CROSS | SELF</a>, <a href="#rotfun_rotate_model">MODEL</a>,
+<a href="#rotfun_rotate_beslim">BESLIM</a>, <a href="#rotfun_rotate_step">STEP</a>, <a href="#rotfun_rotate_pklim">PKLIM</a>,
+<a href="#rotfun_rotate_npic">NPIC</a>, <a href="#rotfun_rotate_bmax">BMAX</a>, <a href="#rotfun_rotate_lock">LOCK</a></td>
+</tr>
+
+<tr>
+<td><a href="#rotfun_shift">SHIFT</a></td>
+<td><a href="#rotfun_shift_com">COM</a>, <a href="#rotfun_shift_euler">EULER</a></td>
+</tr>
+
+<tr>
+<td>TRAFUN</td>
+<td><a href="#trafun_target">CB, CO, PT or PTF, HL, CC</a>, <a href="#trafun_nmol">NMOL</a>,
+<a href="#trafun_ncstrans">NCSTRANS</a>, <a href="#trafun_resolution">RESOLUTION</a>, <a href="#trafun_pklim">PKLIM</a>,
+<a href="#trafun_npic">NPIC</a></td>
+</tr>
+
+<tr>
+<td><a href="#trafun_symmetry">SYMMETRY</a></td>
+</tr>
+
+<tr>
+<td><a href="#trafun_crystal">CRYSTAL</a></td>
+<td>FLIM, ORTH, SHARP | BADD, RESOLUTION</td>
+</tr>
+
+<tr>
+<td><a href="#trafun_solution">SOLUTION</a></td>
+<td><a href="#trafun_solution_fix">FIX</a></td>
+</tr>
+
+<tr>
+<td>FITFUN</td>
+<td><a href="#fitfun_nmol">NMOL</a>, <a href="#fitfun_resolution">RESOLUTION</a>, <a href="#fitfun_iter">ITER</a>,
+<a href="#fitfun_conv">CONV</a></td>
+</tr>
+
+<tr>
+<td><a href="#fitfun_crystal">CRYSTAL</a></td>
+<td>FLIM, ORTH, SHARP | BADD, RESOLUTION</td>
+</tr>
+
+<tr>
+<td><a href="#fitfun_symmetry">SYMMETRY</a></td>
+</tr>
+
+<tr>
+<td><a href="#fitfun_refsolution">REFSOLUTION</a></td>
+<td>BF AL BE GA X Y Z</td>
+</tr>
+
+<tr>
+<td><a href="#fitfun_solution">SOLUTION</a></td>
+</tr>
+
+<tr>
+<td><a href="#fitfun_shift">SHIFT</a></td>
+<td><a href="#fitfun_shift_com">COM</a>, <a href="#fitfun_shift_euler">EULER</a></td>
+</tr>
+
+<tr>
+<td>REORIENTATE</td>
+</tr>
+
+<tr>
+<td><a href="#reorientate_shift">SHIFT</a></td>
+<td><a href="#reorientate_shift_com">COM</a>, <a href="#reorientate_shift_euler">EULER</a></td>
+</tr>
+
+<tr>
+<td><a href="#reorientate_solution">SOLUTION</a></td>
+</tr>
+</table>
+
+<h2><a name="keywords_sortfun"></a>SORTFUN keywords</h2>
+
+<h3><a name="sortfun"></a>SORTFUN [ RESOLUTION &lt;rmin&gt; &lt;rmax&gt; ] [ MODEL ]</h3>
+
+<p>This signals the beginning of Step_1 SORTFUN.</p>
+
+<dl>
+<dt><a name="sortfun_resolution"></a>RESOLUTION</dt>
+
+<dd>&lt;rmin&gt; and &lt;rmax&gt; define the resolution range for all
+statistics. Can be put in as 4sin(theta)**2/lambda**2 limits, or as Angstrom
+limits in any order (defaults to MTZ resolution). Data output to HKLPCK0
+are restricted to the outer resolution cutoff.</dd>
+
+<dt><a name="sortfun_model"></a>MODEL</dt>
+
+<dd>This signals that the structure factors input from HKLIN are to be
+used to make a table. This requires that they have been calculated from
+a model placed in a large unit cell and therefore the structure factors are sampled on a very fine grid.<br />
+(See part of <a href="#example2">example [2]</a>).</dd>
+</dl>
+
+<h3><a name="sortfun_labin"></a>LABIN &lt;column_assignment&gt; ...</h3>
+
+<p>[Compulsory]</p>
+<p>A line giving the names of the input data items to be
+selected followed by &lt;program_label&gt;=&lt;file_label&gt; assignments.
+Acceptable labels are:</p>
+<pre>FP SIGFP PHI [W]    FC PHIC</pre>
+<p>FC PHIC must be assigned for structure factors input.<br />
+FP must be assigned for creating the list of observations.<br />
+If PHI and optionally W is assigned, W*FP and PHI are stored and can be used for phased translation searches.</p>
+
+<p>Example:</p>
+<pre>    LABIN FP=F [ SIGFP=SIGF or PHI=PHIexptl W=FOM]
+    LABIN FC=FC_domainA PHIC=PHIC_domainA</pre>
+
+<p><!--  EJD: Is it good enough to have FP=E or should I add the option E=E? --><!-- To input a previously generated set of structure factors to make a table: --><!--  .nf --><!--      LABIN FC=FC_model1 PHIC=PHIC_model1 --><!--  .fi --></p>
+
+<h2><a name="keywords_tabfun"></a>TABFUN keywords</h2>
+
+<h3><a name="tabfun"></a>TABFUN [ NOROTATE ] [ NOTRANSLATE ] [ NOTAB ] [ HKLOUT ] [ SFOUT ]</h3>
+
+<p>This signals the beginning of Step_2 TABFUN.</p>
+
+<dl>
+<dt><a name="tabfun_norotate"></a>NOROTATE</dt>
+
+<dd>Do not rotate the model before initialising calculation.</dd>
+
+<dt><a name="tabfun_notranslate"></a>NOTRANSLATE</dt>
+
+<dd>Do not translate the model before initialising calculation.</dd>
+
+<dd>Use this extremely rarely. AMoRe assumes your molecule lies roughly at the
+origin of the test cell. If you have already run TABFUN, and you wanted
+to carve pieces out of XYZOUT to do rigid body fitting on segments, it
+is useful to make a table for each fragment with the TABFUN NOROTATE NOSHIFT option.
+Similarly if you want to fit another possible model over the first XYZOUT.
+<strong><em>NEVER</em></strong> use this in an initial pass.</dd>
+
+<dt><a name="tabfun_notab"></a>NOTAB</dt>
+
+<dd>Does not produce a table - just orientate the molecule if appropriate
+and move the molecule's centre of mass to the origin. This coordinate file
+can then be used to calculate structure factors and generate Es which can
+be read in to produce a table file.
+<!--See <a href="#example???">example RF-with-calculated-Es</a>. --></dd>
+
+<dt><a name="tabfun_hklout"></a>HKLOUT</dt>
+
+<dd>The contents of the table can also be output as an ASCII list of H K L FC PHIC. This may
+be useful for checking.</dd>
+
+<dt><a name="tabfun_sfout"></a>SFOUT</dt>
+
+<dd>An alias for <a href="#tabfun_hklout">HKLOUT</a>.</dd>
+</dl>
+
+<h3><a name="tabfun_model"></a>MODEL &lt;i&gt; BTARGET &lt;btar&gt; BREPLACE &lt;brep&gt; BADD
+&lt;badd&gt; NORMALISE</h3>
+
+<p>&lt;i&gt; is the model number and is followed by all information
+needed to work with the model. At least one model must be specified to
+get any output.</p>
+
+<dl>
+<dt><a name="tabfun_model_btarget"></a>BTARGET &lt;btar&gt;</dt>
+
+<dd>The value &lt;btar&gt; should be set to the estimated B value of the crystal.
+Then the model B values will be modified to match this target.</dd>
+<dd>Default: Do not use this correction.</dd>
+
+<dt><a name="tabfun_model_breplace"></a>BREPLACE &lt;brep&gt;</dt>
+
+<dd>Replace all B factors in the model with &lt;brep&gt;.</dd>
+<dd>Default: Use input B factors.</dd>
+
+<dt><a name="tabfun_model_badd"></a>BADD &lt;badd&gt;</dt>
+
+<dd>Add &lt;badd&gt; to all input model B factors. If &lt;badd&gt; is negative
+the model `structure factors' are sharpened.</dd>
+<dd>Default: BADD = 0.00</dd>
+
+<dt><a name="tabfun_model_norm"></a>NORMALISE</dt>
+
+<dd>This indicates that the crystal amplitudes are given as E values, and the model
+B factors must be modified to generate normalised model `structure factors'.</dd>
+</dl>
+
+<p>PLEASE NOTE that if all the B-factors are zero in your model, then &lt;badd&gt;
+MUST be set to a sensible positive value.</p>
+
+<p>The coordinates written to XYZOUT will have the same B-factors as the
+input coordinates, but the table will be generated using the modified B-factors.</p>
+
+<p>Examples:</p>
+<pre>MODEL 1 BTARGET 23.5
+MODEL 1 BREPLACE 0 BADD -10</pre>
+
+<h3>Other primary keywords (optional):</h3>
+
+<h3><a name="tabfun_crystal"></a>CRYSTAL &lt;a&gt; &lt;b&gt; &lt;c&gt; &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt; ORTH &lt;i&gt;</h3>
+
+<p>Optional.</p>
+<p>Cell dimensions for observed data used to generate PDB style header for XYZOUT.
+The default is to use the TABFUN cell to generate the CRYST1 and SCALEi records.</p>
+
+<dl>
+<dt><a name="tabfun_crystal_orth"></a>ORTH &lt;i&gt;</dt>
+<dd>orthogonalisation code. See <a href="#orthogonalisation_codes">below</a> for conventions (default &lt;i&gt;=1).</dd>
+</dl>
+
+<p>Example:</p>
+<pre>CRYSTAL  112.32 112.32 85.14 90 90 120 ORTH 1</pre>
+
+<h3><a name="tabfun_sample"></a>SAMPLE &lt;i&gt; [ RESOLUTION &lt;dmin&gt; SCALE &lt;scale&gt; SHANNON &lt;sharat&gt; ]</h3>
+
+<p>&lt;i&gt; is the model number and is followed by the sampling control parameters.</p>
+
+<dl>
+
+<dt><a name="tabfun_sample_resolution"></a>RESOLUTION &lt;dmin&gt;</dt>
+
+<dd>&lt;dmin&gt; (in Angstroms) is the resolution limit of generated structure
+factors. There is no point in setting this higher than the maximum resolution
+given in SORTFUN.</dd>
+
+<dt><a name="tabfun_sample_scale"></a>SCALE &lt;scale&gt;</dt>
+<dd>Optional: default = 4.</dd>
+<dd>A model `cell' created equal to (minimal box)*&lt;scale&gt;. This
+controls how finely the model structure factors are sampled in reciprocal space.</dd>
+
+<dt><a name="tabfun_sample_shannon"></a>SHANNON &lt;sharat&gt;</dt>
+
+<dd>&lt;sharat&gt; is the Shannon rate for sampling the coordinate map.
+The default is 2.5. If the B factors have been sharpened it is wise to use
+a finer grid, <em>i.e.</em> increase &lt;sharat&gt; to 3.5 or 4.</dd>
+</dl>
+
+<p>Example:</p>
+<pre>SAMPLE 1 RESO 3 SHANN 2.5 SCALE 4.0</pre>
+
+<h2><a name="keywords_rotfun"></a>ROTFUN Keywords {Step_3}</h2>
+
+<h3><a name="rotfun"></a>ROTFUN</h3>
+
+<p>This signals the beginning of Step_3 ROTFUN with subsequent keywords as follows.</p>
+
+<h3>Generate {Step_3a}</h3>
+
+<h3><a name="rotfun_generate"></a>GENERATE &lt;i&gt; [ RESOLUTION &lt;rmin&gt; &lt;rmax&gt; CELL_MODEL &lt;a&gt; &lt;b&gt; &lt;c&gt; ]</h3>
+
+<p>&lt;i&gt; is the model number.<br />
+This routine calculates the model `structure factors' in a suitable P1
+cell, and writes them in the same format as the SORTFUN output for the
+crystal amplitudes. The file is assigned to HKLPCK1.</p>
+
+<dl>
+<dt><a name="rotfun_generate_resolution"></a>RESOLUTION &lt;rmin&gt; &lt;rmax&gt;</dt>
+
+<dd> Resolution range for data output. Can be put in as 4sin(theta)**2/lambda**2
+or as Angstrom limits in either order. Choose the maximum resolution you
+may wish to use; this step need only be run once for each model and a subset
+extracted with the resolution limits given in CLMN.</dd>
+
+<dt><a name="rotfun_generate_cell_model"></a>CELL_MODEL &lt;a&gt; &lt;b&gt; &lt;c&gt;</dt>
+
+<dd>for model structure factor generation (the angles are always 90 degrees).</dd>
+
+<dd><!--  DL 13/1/95 : -->Opinions differ as to the values to use.</dd>
+<dd>Eleanor Dodson says:
+<blockquote>&quot;This model cell needs to be chosen carefully. Ideally you
+need to use dimensions of Twice maximal distance from Centre of Mass +
+SPHERE_&lt;Irmax&gt; + a small safety term.&quot;</blockquote>
+She says always use a cubic cell because elongated cells can cause trouble.</dd>
+
+<dd>Navaza suggests using
+<blockquote>{smallest box containing model} + {integration radius (&lt;Irmax&gt;)}
++ resolution</blockquote>
+(not necessarily cubic)</dd>
+<dd>and others consider the cell dimensions less critical
+providing they are chosen large enough to avoid self-vectors.</dd>
+
+<dd>The maximal distance and minimal box are output by the TABFUN step.</dd>
+</dl>
+
+<p>Example:</p>
+<pre>GENERATE RESO 20 3.2 CELL_MODEL 89 89 89</pre>
+
+<h3>Calculate spherical harmonics {Step_3b}</h3>
+
+<h3><a name="rotfun_clmn"></a>CLMN [ CRYSTAL | MODEL &lt;i&gt; ] ORTH &lt;i&gt;
+FLIM &lt;fmin&gt; &lt;fmax&gt; [ SHARP | BADD &lt;badd&gt; ] RESO &lt;rmin&gt; &lt;rmax&gt;
+SPHERE &lt;rmax&gt;</h3>
+
+<p>Calculates spherical harmonics for crystal and models.</p>
+
+<dl>
+<dt><a name="rotfun_clmn_crystal"></a>CRYSTAL</dt>
+
+<dd>The input is HKLPCK0 for CRYSTAL</dd>
+
+<dt><a name="rotfun_clmn_model"></a>MODEL &lt;i&gt;</dt>
+
+<dd>HKLPCK1 for MODEL 1.</dd>
+
+<dt><a name="rotfun_clmn_orth"></a>ORTH &lt;i&gt;</dt>
+
+<dd>Orthogonalisation code (see <a href="#orthogonalisation_codes">below</a> for code). Only needed for CRYSTAL.
+Except for monoclinic spacegroups with B unique, when ORTH = 3 may be useful, 
+all orthogonalisation codes 
+should be set to 1. Even for the monoclinic case it is usually easier to
+leave the code as 1.</dd>
+<dd>(default ORTH=1)</dd>
+
+<dt><a name="rotfun_clmn_flim"></a>FLIM &lt;fmin&gt; &lt;fmax&gt;</dt>
+
+<dd>Minimum and maximum values of F used (rarely used option).</dd>
+
+<dt><a name="rotfun_clmn_sharpen"></a>SHARP or BADD&lt;badd&gt;</dt>
+
+<dd>Sharpening B value for structure factors. This can be used to modify
+the input F by exp**{-&lt;badd&gt;*sin**2(theta)/lambda**2} before squaring,
+<em>i.e.</em> a negative &lt;badd&gt; will sharpen the data.</dd>
+
+<dt><a name="rotfun_clmn_resolution"></a>RESOLUTION &lt;rmin&gt; &lt;rmax&gt;</dt>
+
+<dd>Can be put in as 4sin(theta)**2/lambda**2 or as Angstrom limits in
+either order. These limits will truncate the H K L listed in HKLPCK. It
+is important that the SAME resolution limits are used for both the MODEL
+and the CRYSTAL.</dd>
+
+<dt><a name="rotfun_clmn_sphere"></a>SPHERE &lt;Irmax&gt;</dt>
+
+<dd>&lt;Irmax&gt; is the radius of the integration sphere in Angstroms.
+Tips:
+
+<ol>
+<li>This should not be greater than your model's Maximal distance from
+Centre of Mass output by TABFUN. David Blow points out that for a spherical
+molecule 75-80% of the molecular diameter includes about 80% of the integrated
+Patterson density. Ian Tickle suggests using 75% of the minimum diameter
+in general.</li>
+
+<li>The volume of the sphere should probably not exceed the volume of the
+asymmetric unit.</li>
+
+<li>If the radius is greater than half the minimum cell edge you will be
+including some Patterson vectors twice. Opinions differ on how important
+this is, but the program warns about this case.</li>
+</ol>
+</dd>
+
+<dd>Other factors like the shape of the model may influence you; remember
+this is the RADIUS within which the interesting self vectors should lie.</dd>
+</dl>
+
+<p>Examples:</p>
+
+<pre>CLMN CRYSTAL RESO  20.0  4.0  SPHERE   30  -
+                  ORTH  1   SHARP -10.0 FLIM 0.E0 1.E8  
+CLMN MODEL 1      RESO  20.0  4.0  SPHERE  30</pre>
+
+<h3>Rotation {Step_3c}</h3>
+
+<h3><a name="rotfun_rotate"></a>ROTATE [ CROSS | SELF ] MODEL &lt;i&gt; BESLIM
+&lt;lmin&gt; &lt;lsup&gt; STEP &lt;stepsize&gt; PKLIM &lt;rp&gt; NPIC &lt;np&gt;
+BMAX &lt;bmax&gt; LOCK &lt;nrot&gt; [EULER/POLAR] &lt;rot_angle1&gt; &lt;rot_angle2&gt; &lt;rot_angle3&gt; (nrot sets)</h3>
+
+<p>This routine calculates the rotation function.</p>
+
+<dl>
+<dt><a name="rotfun_rotate_cross"></a>CROSS or SELF</dt>
+
+<dd>Flags whether calculation is to be a SELF rotation, which will only
+need CLMN0 as input, or a CROSS rotation function which will need CLMN0
+and some CLMN&lt;i&gt;. The correlation between self- and cross-rotation
+functions can be analysed with the program <a href="rfcorr.html">RFCORR</a>.</dd>
+
+<dt><a name="rotfun_rotate_model"></a>MODEL &lt;i&gt;</dt>
+
+<dd>HKLPCK&lt;i&gt; for MODEL &lt;i&gt;.</dd>
+
+<dt><a name="rotfun_rotate_beslim"></a>BESLIM &lt;lmin&gt; &lt;lsup&gt;</dt>
+
+<dd>Expansion using spherical harmonic functions between &lt;lmin&gt;
+and &lt;lsup&gt; is done. Low order terms (<em>i.e.</em> for l = 2 or 4) tend to
+be governed by the crystal symmetry; excluding them may reduce the final
+peak heights, but make the rotation parameters more precise and make multiple
+solutions have more equal heights. The upper cut off is governed by the
+ratio of the integration radius to the resolution. The upper default is 500.
+The lower cut off has a similar effect to the inner cutoff radius for the
+Patterson vectors. However in some cases it helps to include all terms. Now
+the default is to test all lower limits of 2, 4, 6, 8 and 10 and see which gives the
+best contrast.</dd>
+
+<dt><a name="rotfun_rotate_step"></a>STEP &lt;stepsize&gt;</dt>
+
+<dd>Angular step size for Alpha, Beta and Gamma in degrees (default 2.5).
+Defaults to sensible value for resolution requested. 
+Should be checked from: STEP &#126; 360 / ( 2*&lt;lsup&gt; +1 )</dd>
+
+<dt><a name="rotfun_rotate_pklim"></a>PKLIM &lt;rp&gt;</dt>
+
+<dd>Output all peaks above &lt;rp&gt; * {maximum peak height}. 
+Default: 0.5 for Cross rotations, 0.2 for self rotations. 
+Maximum self rotation peak will always be the origin peak.
+The peak search algorithm is not very satisfactory for
+Beta limits, beta = 0 and beta = &lt;bmax&gt;. Default = 0.5.</dd>
+
+<dt><a name="rotfun_rotate_npic"></a>NPIC &lt;np&gt;</dt>
+
+<dd>Number of peaks to output (limited to 99).</dd>
+
+<dt><a name="rotfun_rotate_bmax"></a>BMAX &lt;bmax&gt;</dt>
+
+<dd>Optional.</dd>
+<dd>Maximum BETA angle to consider (default 180, or 90 if you have a 2 fold 
+axis perpendicular to the first rotation axis (<em>e.g.</em> in pointgroups Pmmm, P622, P422 <em>etc.</em>).</dd>
+
+<dt><a name="rotfun_rotate_lock"></a>LOCK &lt;NROT&gt; followed by optional EULER or POLAR flag and NROT sets 
+of <strong>rotation</strong> angles to describe the self rotations.</dt>
+<dd>These control the locked rotation function (see <a href="#reference6">reference [6]</a>).</dd>
+<dd>The angles MUST refer to the SAME orthogonalisation convention as you are using for the CROSS
+rotation. See <a href="#example3">example [3]</a>.</dd>
+<dd>If there are several molecules in the crystal asymmetric unit, AND you know the rotations
+which relate them to each other, <em>i.e</em> you have a solutions to the SELF ROTATION,
+then the solutions to the cross rotation can be searched to find sets which are related by the expected
+NCS operators. If you do not have a closed group things are messy. The self rotation always finds
+pairs of solutions, <em>i.e.</em> that which rotates Mol1 to Mol2, and that which rotates Mol2 to Mol1.
+These are the inverse of each other; in Polar coordinates, they have the form (Omega,Phi,Kappa)
+and (Omega,Phi,-Kappa), and the Eulerian equivalent is (Alpha, Beta, Gamma) and (-Gamma,-Beta, -Alpha).</dd>
+<dd>It is not altogether easy to decide what to do, and you need to have some idea of how many
+molecules you expect to find in the asymmetric unit, and how they may be arranged. 
+This can be complicated to sort out; if there is a hexamer in the crystal,
+you would expect to find 3 two-fold axes, all perpendicular to a three fold axis -
+if two axes are perpendicular, look at the product of their direct cosines:
+<pre>DC1(axis1)*DC1(axis2) + DC2(axis1)*DC2(axis2) + DC3(axis1)*DC3(axis2) = 0.0</pre></dd>
+<dd>For TRAP, where the 11-fold rotation axis is perpendicular to a crystallographic
+2 fold axis, the self rotation showed both a single peak at (Omega, Phi, 360/11) and
+11 2-fold axes. This did NOT mean that TRAP contained 11 dimers, although the self
+rotation results were consistent with such a conclusion.
+AMoRe does not at present generate all symmetry equivalents of SELF rotation solutions
+so it is sensible to use ROTMAT to give a complete list.</dd>
+<dd>If you believe you have a proper rotation with a clear solution with Kappa equal 360/n,
+Kappa =180 ( 2-fold), or 120 (3-fold) or 72 (5-fold) and the NCS operators form closed group,
+then you would specify NROT = n-1, followed by n-1 sets of polar angles to define the rotations:
+(Omega,Phi,360/n) and (Omega,Phi,2*360/n) etc. In this case, every self rotation solution 
+and its inverse belong to the set.</dd>
+<dd>If say, you expect 222 NCS symmetry with 3 intersecting 2-fold axes, you would set 
+NROT=&quot;3&quot; and specify the three sets of 
+two fold axes: (Omega1,Phi1,180), (Omega2,Phi2,180) and (Omega3,Phi3,180).</dd>
+</dl>
+
+<p>Example</p>
+<pre>ROTA CROSS MODEL 1 [ BESLIMI 6 120 STEP 2.5 PKLIM 0.5 NPIC 100     LOCK 1 POLAR 54 45 180]</pre>
+
+<h3>Reorientation {Step_3d}</h3>
+
+<h3><a name="rotfun_shift"></a>SHIFT &lt;Model_number&gt; COM &lt;Xcom&gt;
+&lt;Ycom&gt; &lt;Zcom&gt; EULER &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt;</h3>
+
+<p>Reorientate stage. Moves Eulerian angle solutions determined for shifted
+model stored in XYZOUT&lt;Model_number&gt; to give solutions to be applied
+to original model. Needed if you want your solutions converted back to
+ones to apply to original coordinates.</p>
+
+<dl>
+<dt><a name="rotfun_shift_com"></a>COM &lt;Xcom&gt; &lt;Ycom&gt; &lt;Zcom&gt;</dt>
+
+<dd>Coordinates of the molecule's centre of mass output by TABFUN.</dd>
+
+<dt><a name="rotfun_shift_euler"></a>EULER &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt;</dt>
+
+<dd>Rotation angles applied to the original model output by TABFUN.</dd>
+</dl>
+
+<p>Example</p>
+<pre>SHIFT 1 COM 17.3 -10.5 28.7 EULER 301.2 35.7 185.2</pre>
+
+<h2><a name="keywords_trafun"></a>TRAFUN keywords {Step_4}</h2>
+
+<h3><a name="trafun_target"></a>TRAFUN [ CB | CO | PT | PTF | HL | CC ] NMOL &lt;nmol&gt; 
+[NCSTRANS &lt;U_vec&gt; &lt;V_vec&gt; &lt;W_vec&gt;] [RESOLUTION &lt;rmin&gt; &lt;rmax&gt; ] [ PKLIM &lt;rp&gt; ] [ NPIC &lt;np&gt; ]</h3>
+
+<p>There are various translation function targets. Each takes each orientation 
+solution in turn and searches for the NPIC &quot;best&quot; translational Xi Yi Zi for this orientation. 
+Good solutions should give high correlation coefficients 
+between FP and FC, and low Rfactors. Only one target can be specified for each run.</p>
+
+<dl>
+<dt>CB | CO - the method of Crowther and Blow (default).</dt>
+<dd>CB(T) = &lt;DeltaI(obs) * I(calc)(T)&gt;</dd>
+<dd>The convolution (designated by &quot;*&quot;) of the observed
+Patterson (after subtraction of the contribution of the self vectors) 
+with the calculated one for each value of the translation vector T.</dd>
+<dt>PT | PTF - Phased translation function.</dt>
+<dd>This can either use externally generated phases for the model (option PTF; input at SORTFUN)
+or for many body problems phases derived from the FIXed molecules (option PT).</dd>
+<dd>It looks for the best overlap of the 2 maps: (Fp:PHI model) and (Fc:PHI model).
+See <a href="#reference4">reference [4]</a>.</dd>
+<dt>HL - Harada-Lifchitz.</dt>
+<dd>HL(T) = &lt;DeltaI(obs) * I(calc)(T)&gt; / &lt; I(calc)(T)&gt;</dd>
+<dd>Here the convolution has been &quot;normalised&quot;.</dd>
+<dt>CC - correlation coefficient.</dt>
+<dd>CC(T) = &lt;DeltaI(obs) * I(calc)(T)&gt; / sqrt( &lt; DeltaI(obs)**2 * I(calc)(T)**2&gt;</dd>
+<dd>This function is powerful but much slower.</dd>
+</dl>
+
+<p>Each function tests each orientation solution in turn and searches for the best
+translational Xi Yi Zi for this orientation. Good solutions should give
+high correlation coefficients between FP and FC, and low Rfactors.
+For the first molecule all &lt;Xi&gt; &lt;Yi&gt; &lt;Zi&gt; belonging
+to the Cheshire cell are searched (see <a href="#reference7">reference [7]</a>). The Cheshire cell is
+the minimum volume which will allow a unique solution. For the first molecule
+it will be the cell which covers a volume from one possible origin to the
+next - you can usually see it by inspection of International Tables, <em>e.g.</em>:
+For P212121, the Cheshire cell is 0-0.5,0-0.5,0-0.5. For P21 the Cheshire
+cell is 0-0.5,any y,0-0.5. If you are searching for the NMOLth molecule
+of a set, the Cheshire cell will now be the whole primitive volume. You
+have assigned the origin by choosing the position of the first molecule,
+and the other molecules will have to be positioned relative to that choice.</p>
+
+<p>A map of the Cheshire cell for each search is written to the file assigned
+to MAPOUT. <em>N.B.</em> the same file is used for all solutions - only the final
+one will be saved. If you wish to plot your best solution you will have
+to recalculate it.</p>
+
+<p>Translation functions use a great deal of memory.
+The whole FFT transform is held in memory at once, and the calculation
+is done over a set of reciprocal lattice coefficients which can be twice
+the size of Hmax, Kmax, Lmax.</p>
+
+<dl>
+<dt><a name="trafun_nmol"></a>NMOL &lt;nmol&gt;</dt>
+
+<dd>Number of molecules to search for (maximum 65). The program assumes
+you have solutions for &lt;nmol&gt;-1 molecules and searches for the best
+fit for the &lt;nmol&gt;-th one. The &lt;nmol&gt;-1 solutions must be FIXed;
+see <a href="#example1f">examples [1f], [1g], [1h]</a>. Default = 1.
+It is more complicated if you are using a <a href="#trafun_ncstrans">NCS translation vector</a>.</dd>
+
+<dt><a name="trafun_ncstrans"></a>NCSTRANS &lt;U_vec&gt; &lt;V_vec&gt; &lt;W_vec&gt;</dt>
+
+<dd>If there is a non-crystallographic translation between two molecules
+in the unit cell, this will be indicated by a large ( &gt; 20% of origin) peak in the native
+4&#197; Patterson; see CCP4i Task: Analyse Data for MR) it is best to search for the two
+related molecules at the same time. You need to give the TRAFUN the coordinates of the Patterson vector,
+&lt;U_vec&gt; &lt;V_vec&gt; &lt;W_vec&gt;. This always requires that &lt;nmol&gt;
+is advanced by 2 for the next cycle of TRANSLATION searching.
+For the first pass, set nmol as 1, and the program will position a pair of molecules
+with the same orientation, and translations related by &lt;U_vec&gt; &lt;V_vec&gt; &lt;W_vec&gt;.
+For the next pass set &lt;nmol&gt; as 3, FIX both these molecules, and search for the next pair.
+See <a href="#example1f">examples [1f], [1g], [1h]</a> and <a href="#example4">example 4</a>. Default = 1.</dd>
+
+<dt><a name="trafun_resolution"></a>RESOLUTION &lt;rmin&gt; &lt;rmax&gt;</dt>
+
+<dd>Can be put in as 4sin(theta)**2/lambda**2 or as Angstrom limits in
+any order.</dd>
+
+<dt><a name="trafun_pklim"></a>PKLIM &lt;rp&gt;</dt>
+
+<dd>Output all peaks above &lt;rp*&gt;{maximum peak height}. Default 0.5.</dd>
+
+<dt><a name="trafun_npic"></a>NPIC &lt;np&gt;</dt>
+
+<dd>Number of peaks to output from the translation function map for each
+orientation. Default 10. Be aware that the highest peaks in the translation
+function map do not necessarily correspond to the highest correlation coefficients.
+All targets are prone to generate &quot;noise&quot; peaks, and good solutions usually
+satisfy all 3 criteria: High T1 peak, high correlation coefficient, low Rfactor.</dd>
+</dl>
+
+<p>Example</p>
+<pre>TRAFUN CO NMOL 1 RESO 8 4 PKLIM 0.5 NPIC 10  NCStran  0.03 0.0 0.5</pre>
+
+<h3>Other optional keywords</h3>
+
+<h3><a name="trafun_symmetry"></a>SYMMETRY &lt;spg&gt;</h3>
+
+<p>(Optional)</p>
+<p>Spacegroup name or spacegroup number. It will default to
+that of the CRYSTAL data, picked up at the SORTFUN step. You may need to
+change it to test other possibilities; <em>e.g.</em> enantiomorphic spacegroups -
+P65 instead of P61. If you are not sure of your spacegroup, the translation function
+is a good way to distinguish the true spacegroup; <em>e.g.</em> you may need to test all
+possible orthorhombic possibilities;
+ P222; P2 2 21; P2 21 2; P2 21 21; P21 2 2; P 21 2 21; P21 21 2; P 21 21 21;
+See <a href="#example1d">example [1d], [1e]</a>.</p>
+
+<h3><a name="trafun_crystal"></a>CRYSTAL FLIM &lt;fmin&gt; &lt;fmax&gt;
+ORTH &lt;i&gt; [ SHARP | BADD &lt;badd&gt; ] RESOLUTION &lt;rmin&gt; &lt;rmax&gt;</h3>
+
+<p>(Optional)</p>
+<p>Information used to modify the CRYSTAL amplitudes. See descriptions
+<a href="#rotfun_clmn">above for CLMN</a>.</p>
+<p>Example:</p>
+<pre>CRYSTAL ORTH 1 FLIMI 0.E0 1.E8 SHARP 0.0</pre>
+
+<h3>Other compulsory keywords</h3>
+
+<h3><a name="trafun_solution"></a>SOLUTION [FIX] &lt;i&gt; &lt;alphai&gt;
+&lt;betai&gt; &lt;gammai&gt; [ &lt;Xi&gt; &lt;Yi&gt; &lt;Zi&gt; ]</h3>
+
+<dl>
+<dt><a name="trafun_solution_fix"></a>FIX &lt;i&gt; &lt;alphai&gt; &lt;betai&gt; &lt;gammai&gt; &lt;Xi&gt; &lt;Yi&gt; &lt;Zi&gt;</dt>
+
+<dd>If the molecule generated by this solution is FIXed, the last 6 parameters
+define its position in the cell. Structure factors calculated from this
+molecule will be added to those generated for molecules which are being
+searched for.</dd>
+<dd>When searching for a single molecule, a list of possible orientations from the rotation
+function (labelled SOLUTIONRC in ROTFUN output) is required.</dd>
+<dd>Molecules are found sequentially. When searching for the nth molecule of a
+set, there must be sets of (n-1) previously determined solutions to the translation function.
+These are labelled with the key word FIX. For example to find the 2nd molecule fix one solution:
+<pre>SOLUTIONTF1 FIX 1 &lt;alpha1&gt; &lt;beta1&gt; &lt;gamma1&gt;  &lt;X1&gt; &lt;Y1&gt; &lt;Z1&gt;</pre>
+followed by the set of possible rotation function solutions.
+Each rotation orientation is tested in turn with the previous input FIXed solution.
+If you want to test several translation solutions, you can repeat the
+FIX information, and again follow it with the set of possible rotation function
+solutions.</dd>
+<dd>To find the 3rd molecule fix a pair of solutions:
+<pre>SOLUTIONTF1 FIX 1 &lt;alpha1&gt; &lt;beta1&gt; &lt;gamma1&gt;  &lt;X1&gt; &lt;Y1&gt; &lt;Z1&gt;
+SOLUTIONTF2 FIX 1 &lt;alpha2&gt; &lt;beta2&gt; &lt;gamma2&gt;  &lt;X2&gt; &lt;Y2&gt; &lt;Z2&gt;</pre>
+There is a limit of 99 (calculated as NMOL* Number_of_solutionrc)
+on the number of orientation solutions which can be included in one run.
+However there is no extra overhead
+in submitting several runs. This list should come last and is terminated
+by end-of-file or the keyword <a href="#end">END</a>.</dd>
+<dd>The list of solutions can be extracted from ROTFUN (and TRAFUN) output using grep
+and edited in here.</dd>
+
+<dt><a name="trafun_solution_i"></a>&lt;i&gt;</dt>
+
+<dd>&lt;i&gt; is the number for the appropriate table&lt;i&gt;.</dd>
+
+<dt><a name="trafun_solution_alphai"></a>&lt;alphai&gt; &lt;betai&gt; &lt;gammai&gt;</dt>
+
+<dd>Euler angles output by ROTFUN. If there are no clear maxima you should
+test many solutions. Correct solutions have been found from rotation solutions
+which were far down the list.</dd>
+
+</dl>
+
+<p>Examples</p>
+<pre>SOLUTIONTF FIX 1 27.8 100.7 350.1 0.146 0.566 0.00 17.4 52.5
+SOLUTIONRC 1 25.211 105.573 339.440</pre>
+
+<h3><a name="trafun_hints"></a>HINTS</h3>
+
+<p>To extract the rotation information, `grep' (Unix) 
+for `SOLUTIONRC' in the ROTFUN output. Edit the resulting list to include
+only those solutions you want to run the translation search on, and include
+them in the input data <em>e.g.</em> with `@&lt;file&gt;'.</p>
+
+<p>If you are searching for the &lt;nmol&gt;th molecule of a set, you must
+FIX &lt;nmol&gt;-1 solutions and search for the &lt;nmol&gt;th one. You
+will probably have several sets of the fixed solutions to test, plus many
+possible orientation solutions.</p>
+
+<p>FIXed solutions will be extracted from your previous TRAFUN log. They
+will be followed by the list of solutions to the Rotation function output
+by Step_3. Structure factors calculated from the FIXed solutions are added
+to those generated for search molecules.</p>
+
+<p>To extract the information for FIXed, grep for `SOLUTIONTF'.
+You will need to sort these to find those with the highest correlation
+coefficients, and lowest Rfactors.</p>
+<a name="solution_grep"></a>
+<pre> sort -r +8 -9 tra.list &gt; tra_cc.list  # sort on correlation coefficient.
+ sort +9 -10 tra.list &gt; tra_rf.list  # sort on Rfactor</pre>
+
+<p>(Be careful to keep sets of solutions together!)</p>
+
+<p>See the Unix plumbing in the example scripts, <em>e.g.</em>, `auto-amore'.</p>
+
+<h2><a name="keywords_fitfun"></a>FITFUN keywords {Step_5}</h2>
+
+<h3><a name="fitfun"></a>FITFUN [ NMOL &lt;nmol&gt; RESOLUTION &lt;rmin&gt; &lt;rmax&gt; ITER &lt;niter&gt; CONV &lt;con&gt;]</h3>
+
+<p>This signals the beginning of Step_5 FITFUN which performs Rigid-body
+refinement. It minimises the sum over all hkl of ({Fo*exp(-Bs**2)}**2 -
+{k*Fc**2})**2 with respect to scale, B-factor and rotation and translation
+parameters.</p>
+
+<p>Subsidiary words after FITFUN (many same as TRAFUN):</p>
+
+<dl>
+<dt><a name="fitfun_nmol"></a>NMOL &lt;nmol&gt;</dt>
+
+<dd>Number of molecules to fit. All are fitted together by an iterative
+procedure.</dd>
+
+<dt><a name="fitfun_resolution"></a>RESOLUTION &lt;rmin&gt; &lt;rmax&gt;</dt>
+
+<dd>Can be put in as 4sin(theta)**2/lambda**2 or as Angstrom limits in
+any order. Often sensible to &quot;fit&quot; the molecules against high resolution data if the
+sequence homology is close.</dd>
+
+<dt><a name="fitfun_iter"></a>ITER &lt;niter&gt;</dt>
+
+<dd>Number of iterations (default 10).</dd>
+
+<dt><a name="fitfun_conv"></a>CONV &lt;con&gt;</dt>
+
+<dd>Convergence acceptance (default 0.001).</dd>
+</dl>
+
+<p>Example</p>
+<pre>FITFUN NMOL 3 RESO 20 4.5 ITER 10 CONV 1.E-3 </pre>
+
+<h3>Extra keywords</h3>
+
+<h3><a name="fitfun_crystal"></a>CRYSTAL FLIM &lt;fmin&gt; &lt;fmax&gt;
+ORTH &lt;i&gt; [ SHARP | BADD &lt;badd&gt; ] RESOLUTION &lt;rmin&gt; &lt;rmax&gt;</h3>
+
+<p>(Optional)</p>
+<p>Information used to modify the CRYSTAL amplitudes. See descriptions
+<a href="#rotfun_clmn">above for CLMN</a>.</p>
+
+<h3><a name="fitfun_symmetry"></a>SYMM &lt;spg&gt;</h3>
+
+<p>(Optional)</p>
+<p>Spacegroup name or spacegroup number. It will default to
+that of the CRYSTAL data, picked up at the SORTFUN step. You may need to
+change it to test other possibilities; <em>e.g.</em> enantiomorphic spacegroups -
+P65 instead of P61.</p>
+
+<h3><a name="fitfun_refsolution"></a>REFSOLUTION [ BF ] [ AL ] [ BE ] [ GA ] [ X ] [ Y ] [ Z ]</h3>
+
+<p>Refinement to be done for any of temperature factor, alpha, beta, gamma,
+x, y, z. Remember - in polar spacegroups you cannot refine either y or
+z parameter for one solution.
+This defaults to sensible values for different space groups.</p>
+<p>Optional: program chooses sensible defaults.</p>
+
+<p>Example</p>
+<pre>REFSOL AL BE GA X Y Z BF</pre>
+
+<h3><a name="fitfun_solution"></a>SOLUTION &lt;i&gt; &lt;alphai&gt; &lt;betai&gt;
+&lt;gammai&gt; [ &lt;Xi&gt; &lt;Yi&gt; &lt;Zi&gt; ] </h3>
+
+<dl>
+<dt>&lt;i&gt;</dt>
+
+<dd>Model number for input. Different solutions may require different
+model numbers. Assign all table&lt;i&gt;.</dd>
+
+<dt>&lt;alphai&gt; &lt;betai&gt; &lt;gammai&gt;</dt>
+
+<dd>Euler angles output by ROTFUN. If there is no clear maximum you should
+test many solutions. Correct solutions have been found from rotation solutions
+which were far down the list.</dd>
+
+<dt>&lt;Xi&gt; &lt;Yi&gt; &lt;Zi&gt; [ &lt;CCi&gt; &lt;RFi&gt; ]</dt>
+
+<dd>These three parameters define the molecules position in the cell.
+It is often convenient to keep the correlation coefficient and R factor
+on the solution line. It helps to monitor solutions - subsequent steps
+should improve these parameters! The solutions are refined in sets of
+NMOL. There may be up to 99 solutions given (99/NMOL sets).</dd>
+</dl>
+
+<p>Examples</p>
+<pre>SOLUTIONTF 1  25.1  105.6  339.5 0.1139  0.5691  0.0000
+SOLUTIONTF 1  27.6  100.6 350.3 0.1461 0.5716 0.6476 48 51
+SOLUTIONTF 1  27.7  115.9 353.5 0.1439 0.6027 0.3584 49 54</pre>
+
+<p>This list is terminated by end-of-file or the keyword <a href="#end">END</a>.</p>
+
+<p>This list of Eulerian angles and translations can be extracted from
+the log file and edited in here. To extract the information from the previous
+log file, grep for `SOLUTIONTF'. You will need to sort these to find those
+with the highest correlation coefficients, and lowest Rfactors as <a href="#solution_grep">described
+in step_4a</a>, and edit to include only those solutions you want to run the
+rigid body refinement on to include them in the input data.</p>
+
+<h3><a name="fitfun_shift"></a>SHIFT &lt;Model_number&gt; COM &lt;Xcom&gt;
+&lt;Ycom&gt; &lt;Zcom&gt; EULER &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt;</h3>
+
+<p>Reorientate stage. Moves Eulerian angle solutions determined for shifted
+model stored in XYZOUT&lt;i&gt; to give solutions to be applied to original
+MODEL. Needed if you want your solutions converted back to ones to apply
+to original coordinates.</p>
+
+<dl>
+<dt><a name="fitfun_shift_com"></a>COM &lt;Xcom&gt; &lt;Ycom&gt; &lt;Zcom&gt;</dt>
+
+<dd>coordinates of the molecules centre of mass output by TABFUN</dd>
+
+<dt><a name="fitfun_shift_euler"></a>EULER &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt;</dt>
+
+<dd>rotation angles applied to the original model output by TABFUN.</dd>
+</dl>
+
+<p>Example</p>
+<pre>SHIFT 1 COM 17.3 -10.5 28.7 EULER 301.2 35.7 185.2</pre>
+
+<h2><a name="keywords_reorientate"></a>REORIENTATE keywords {Step_6}</h2>
+
+<h3><a name="reorientate_shift"></a>SHIFT &lt;Model_number&gt; COM &lt;Xcom&gt;
+&lt;Ycom&gt; &lt;Zcom&gt; EULER &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt;</h3>
+
+<p>This signals the beginning of Step_6 - reorientate stage. This step
+can be run as a standalone step or as part of <a href="#rotfun_shift">ROTFUN</a> or <a href="#fitfun_shift">FITFUN</a>.
+It moves Eulerian angle solutions determined for shifted model stored in
+XYZOUT&lt;i&gt; to give solutions to be applied to original MODEL. Needed
+if you want your solutions converted back to ones to apply to original
+coordinates.</p>
+
+<dl>
+<dt><a name="reorientate_shift_com"></a>COM &lt;Xcom&gt; &lt;Ycom&gt; &lt;Zcom&gt;</dt>
+
+<dd>Coordinates of the molecule's centre of mass output by TABFUN</dd>
+
+<dt><a name="reorientate_shift_euler"></a>EULER &lt;alpha&gt; &lt;beta&gt;
+&lt;gamma&gt;</dt>
+
+<dd>Rotation angles applied to the original model output by TABFUN.</dd>
+</dl>
+
+<p>Example</p>
+<pre>SHIFT 1 COM 17.3 -10.5 28.7 EULER 301.2 35.7 185.2</pre>
+
+<h3>Compulsory following keyword</h3>
+
+<h3><a name="reorientate_solution"></a>SOLUTION &lt;i&gt; &lt;alphai&gt;
+&lt;betai&gt; &lt;gammai&gt; &lt;Xi&gt; &lt;Yi&gt; &lt;Zi&gt;</h3>
+
+<p>There may be up to 99 solutions given. This list is terminated by end-of-file
+or the keyword <a href="#end">END</a>.</p>
+
+<p>Examples</p>
+<pre>SOLUTIONTF 1  25.1  105.6 339.5 0.1139 0.5691 0.0000
+SOLUTIONTF 1  27.6  100.6 350.3 0.1461 0.5716 0.6476 43.5 46.5
+SOLUTIONTF 1  27.7  115.9 353.5 0.1439 0.6027 0.3584 41.3 47.3</pre>
+
+<h2><a name="end"></a>END</h2>
+
+<p>Must be last keyword. Used as termination for list of solutions.</p>
+
+<h2><a name="notes"></a>NOTES</h2>
+
+<h3><a name="memory_allocation"></a>Memory allocation</h3>
+
+<p>The program has been made more memory-efficient, but still uses a lot, at several points 
+a whole Fourier transform is held in memory. The defaults are estimated to allow the 
+observed and tabulated structure factors to be stored. However if the estimate is too
+low it is able to use dynamic memory allocation; the amount to be allocated at runtime 
+is parameterised by assigning values to logical names. There
+may be some trial and error involved in setting appropriate values.</p>
+
+<p>If the allocation for an array isn't large enough, the program stops
+with a message which should indicate at least which parameter needs to
+be increased and, in most cases, to what value. If the message doesn't
+make it clear what needs to be increased, please report the fact. Using
+the keyword VERBOSE may give more indication. The current values are printed
+in the output (look for `Memory allocation'). They may be changed by giving
+the appropriate logical names an integer value (which represents the size
+of an array) in any of possible ways:</p>
+
+<ul>
+<li>On the command line <em>e.g.</em>, `TABLING_MR 5400000';</li>
+
+<li>From the environment:<br />
+setenv TABLING_MR 5400000 # csh<br />
+TABLING_MR=5400000 # sh</li>
+
+<li>By editing $CINCL/default.def <em>e.g.</em> with a line:<br />
+TABLING_MR=5400000</li>
+</ul>
+
+<p>The last option may be most appropriate on a system with lots of memory
+to provide large defaults and the distributed default.def contains commented-out
+values for a `big' version used at York and Cambridge.</p>
+
+<h3><a name="rotation_matrix_definitions"></a>Rotation matrix definitions</h3>
+
+<p>The convention is that the orthogonalised coordinates of &quot;crystal 2&quot; (usually the model)
+are rotated to overlap the orthogonalised coordinates of crystal 1.</p>
+<pre>
+<em>i.e.</em> [XO1]    = [ROT] [XO2]
+     [YO1]            [YO2]
+     [ZO1]            [ZO2]</pre>
+
+<p>This means that axis permutations introduced by using NCODE = 2, 3 or 4
+will result in apparently different solutions, although the effect on the
+fractional coordinates is the same.</p>
+
+<p>In Polar angles:</p>
+
+<blockquote>
+<p>If <tt>l m n</tt> are the direction cosines of the axis about which the
+rotation <tt>k</tt> = kappa takes place, and:</p>
+<pre>( l )    ( sin omega cos phi )
+( m )  = ( sin omega sin phi )
+( n )    ( cos omega )</pre>
+<p>where omega is the angle the rotation axis makes to the ZO direction, and 
+phi is the angle the projection of the rotation axis onto the XO-YO plane makes to the XO axis.<!--mgwt: see Figure ???--></p>
+<pre>[ROT] =
+( l**2+(m**2+n**2)cos k     lm(1-cos k)-nsin k        nl(1-cos k)+msin k   )
+( lm(1-cos k)+nsin k        m**2+(l**2+n**2)cos k     mn(1-cos k)-lsin k   )
+( nl(1-cos k)-msin k        mn(1-cos k)+lsin k        n*2+(l**2+m**2)cos k )</pre>
+
+<p>Note that if omega = 0 or 180, then phi is indeterminate and is flagged as
+999 in the SOLUTIONs output by AMoRe.</p></blockquote>
+
+<p>In Eulerian angles:</p>
+
+<blockquote>
+<p>If a (alpha) represents a rotation about the initial ZO axis,<br />
+b (beta) represents a rotation about the new position of the YO axis, and<br />
+g (gamma) represents a rotation about the final ZO axis:</p>
+<pre>[ROT] =
+( cosa cosb cosg - sina sing     -cosa cosb sing - sina cosg     cosa sinb )
+( sina cosb cosg + cosa sing     -sina cosb sing + cosa cosg     sina sinb )
+( -sinb cosg                     sinb sing                       cosb      )</pre>
+</blockquote>
+
+<h3><a name="orthogonalisation_codes"></a>Orthogonalisation codes</h3>
+
+<pre>orthogonalisation code NCODE
+   = 1, orthogonal x y z along a,c*xa,c* (Brookhaven, default)
+   = 2                         b,a*xb,a*
+   = 3                         c,b*xc,b*
+   = 4                         a+b,c*x(a+b),c*
+   = 5                         a*,cxa*,c   (Rollett)</pre>
+
+<h2><a name="examples"></a>EXAMPLES</h2>
+
+<ol>
+<li><a name="example1"></a>    
+<pre>The automated procedure to find 3 molecules for spmi.
+Usually this would be run from the interface but the command scripts are these.
+The space group is either P61 or P65.</pre>
+<ol type="i">
+<li><pre>Tabling run to generate structure factors from model;</pre></li>
+<li><pre>Sorting run to reformat observed reflections;</pre></li>
+<li><pre>Rotation Patterson search;</pre></li>
+<li><pre>Translation search for one molecule in space group P61;</pre></li>
+<li><pre>Translation search for one molecule in space group P65
+    (The rotation solutions are the same for either P61 or P65)</pre></li>
+<li><pre>The correlation coefficient are higher for the P65 spacegroup.
+    To make absolutely sure search for the 2nd molecule in both P61 
+    and P65, but as expected P65 is much the better result.</pre></li>
+</ol>
+
+<ol type="a">
+<li><a name="example1a"></a>
+<pre>#   #############
+#    tabling run:
+#   #############
+#
+#  The B factor for the crystal obtained from the Wilson plot is 23.5
+#
+#  TABFUN first rotates and shifts the model coordinates  to the origin
+#  then produces a table of structure factors in a large unit cell:
+#
+#    xyzout contains the rotated and shifted coordinates.
+#
+amore  xyzin1  search.pdb 
+       xyzout1 searchrot.pdb \
+       table1 search-sfs.tab &lt;&lt; eof
+TITLE :  Produce table for MODEL FRAGMENT
+VERBOSE
+TABFUN
+CRYSTAL  112.32 112.32 85.14 90 90 120 ORTH 1
+MODEL 1 BTARGET 23.5
+SAMPLE 1 RESO 2.5 SHANN 2.5 SCALE       4.0
+eof</pre>
+</li>
+
+<li><a name="example1b"></a>
+<pre>#   ############
+#    sorting run:
+#   #############
+# MTZ file contains cell and symmetry.
+#
+amore hklin spmi_trun.mtz 
+      hklpck0 spmipch.hkl &lt;&lt;  eof
+TITLE   ** spmi  packing h k l F for crystal**
+SORTFUN RESOL 100.  2.5
+LABI FP=F  SIGFP=SIGF
+eof</pre>
+</li>
+
+<li><a name="example1c"></a>
+<pre>#   ############
+#    roting run:
+#   ############
+#
+#  straightforward rotation function.
+#
+amore  table1 search-sfs.tab \
+       HKLPCK1 $CCP4_SCR/search.hkl \
+       hklpck0 spmipch.hkl \
+       clmn1 $CCP4_SCR/search.clmn \
+       clmn0 $CCP4_SCR/spmipch.clmn  \
+       MAPOUT $CCP4_SCR/amore_cross.map &lt;&lt;  eof
+ROTFUN
+VERB
+TITLE : Generate HKLPCK1 from MODEL FRAGMENT   1
+GENE 1   RESO 100.0 3.0  CELL_MODEL 80 75 65
+CLMN CRYSTAL ORTH  1 RESO  20.0  4.0  SPHERE   30
+CLMN MODEL 1     RESO  20.0  4.0 SPHERE   30
+ROTA  CROSS  MODEL 1  PKLIM 0.5  NPIC 100
+eof</pre>
+</li>
+
+<li><a name="example1d"></a>
+<pre>#   #############################
+#    traing run:   NMOL = 1 - P61
+#   #############################
+#
+amore  table1 search-sfs.tab \
+       HKLPCK0 spmipch.hkl \
+       MAPOUT $CCP4_SCR/amore_transjunk1.map &lt;&lt;  eof
+TRAFUN CB   NMOL 1 RESO 8 4  PKLIM 0.5  NPIC 10
+SYMM P61
+VERB
+TITLE : Translation function P61 - one molecule
+SOLUTIONRC 1    25.211   105.573   339.440
+SOLUTIONRC 1    27.757   100.743   350.082
+SOLUTIONRC 1    27.939   115.792   353.601
+SOLUTIONRC 1    27.596    60.308    43.149
+SOLUTIONRC 1    38.604    77.537   160.999
+SOLUTIONRC 1    16.079   130.379   261.311
+SOLUTIONRC 1     7.264    66.987    88.523
+SOLUTIONRC 1     4.345    82.989    95.253
+SOLUTIONRC 1    26.903    76.829    37.613
+SOLUTIONRC 1     1.477    33.145    73.636
+SOLUTIONRC 1    42.057   104.775   163.088
+SOLUTIONRC 1     0.492    90.289   275.552
+SOLUTIONRC 1    53.344   135.528   269.211
+SOLUTIONRC 1    34.118    74.264   244.711
+SOLUTIONRC 1    42.237   147.472   263.153
+SOLUTIONRC 1    33.968     5.665   291.432
+eof</pre>
+</li>
+
+<li><a name="example1e"></a>
+<pre>#   #############################
+#    traing run:   SYMMETRY P65 - same rotation solns
+#   #############################
+#
+amore  table1 search-sfs.tab \
+       HKLPCK0 spmipch.hkl \
+       MAPOUT $CCP4_SCR/amore_transjunk5.map &lt;&lt;  eof
+TRAFUN CB   NMOL 1 RESO 8 4  PKLIM 0.5  NPIC 10
+SYMM P65
+VERB
+TITLE : Translation function P65 - one molecule
+SOLUTIONRC 1    25.211   105.573   339.440
+SOLUTIONRC 1    27.757   100.743   350.082
+SOLUTIONRC 1    27.939   115.792   353.601
+SOLUTIONRC 1    27.596    60.308    43.149
+SOLUTIONRC 1    38.604    77.537   160.999
+SOLUTIONRC 1    16.079   130.379   261.311
+SOLUTIONRC 1     7.264    66.987    88.523
+SOLUTIONRC 1     4.345    82.989    95.253
+SOLUTIONRC 1    26.903    76.829    37.613
+SOLUTIONRC 1     1.477    33.145    73.636
+SOLUTIONRC 1    42.057   104.775   163.088
+SOLUTIONRC 1     0.492    90.289   275.552
+SOLUTIONRC 1    53.344   135.528   269.211
+SOLUTIONRC 1    34.118    74.264   244.711
+SOLUTIONRC 1    42.237   147.472   263.153
+SOLUTIONRC 1    33.968     5.665   291.432
+eof</pre>
+</li>
+
+<li><a name="example1f"></a>
+<pre>#   #############################
+#    traing run:   SEarch for 2nd molecule P61
+#   #############################
+#
+amore  table1 search-sfs.tab  \
+       HKLPCK0 spmipch.hkl &lt;&lt;  eof
+TRAFUN PTF   NMOL 2 RESO 8 4  PKLIM 0.5  NPIC 10
+SYMM P61
+VERB
+TITLE : Translation function P61  - 2 mols together.
+SOLUTIONTF FIX 1    27.76   100.74   350.08  0.145  0.566  0.000 17.4 52.5
+SOLUTIONRC 1    27.94   115.80   353.60
+SOLUTIONRC 1    25.21   105.57   339.45
+SOLUTIONRC 1    27.94   115.80   353.60
+SOLUTIONRC 1    27.76   100.74   350.08
+eof</pre>
+</li>
+
+<li><a name="example1g"></a>
+<pre>#   #############################
+#    traing run:   2nd Molecule - P65
+#   #############################
+#
+amore  table1 search-sfs.tab  \
+       HKLPCK0 spmipch.hkl &lt;&lt;  eof
+TRAFUN PTF   NMOL 2 RESO 8 4  PKLIM 0.5  NPIC 10
+SYMM P65
+VERB
+TITLE : Translation function P65  - 2 mols together.
+SOLUTIONTF FIX 1    27.76   100.74   350.08  0.116  0.437  0.000 19.4 51.7
+SOLUTIONRC 1    27.94   115.80   353.60
+SOLUTIONRC 1    25.21   105.57   339.45
+SOLUTIONRC 1    27.94   115.80   353.60
+SOLUTIONRC 1    27.76   100.74   350.08
+eof</pre>
+</li>
+
+<li><a name="example1h"></a>
+<pre>#   ###########################
+#  traing run:   Search for 3rd molecule - P65
+#   ###########################
+#
+#  (no point in testing P61 now - P65 gives higher correlations and lower Rfactor)
+#
+amore  table1 search-sfs.tab  \
+       HKLPCK0 spmipch.hkl  \
+       TRAFUN trafun.9 &lt;&lt;  eof
+TRAFUN PTF   NMOL 3 RESO 8 4   PKLIM 0.5  NPIC 10
+SYMM P65
+VERB
+TITLE : Translation function P65  - 2 mols together.
+SOLUTIONTF FIX 1    25.21   105.57   339.45  0.113  0.567  0.000 38.0 46.7
+SOLUTIONTF FIX 1    27.76   100.74   350.08  0.146  0.571  0.652 38.0 46.7
+SOLUTIONRC 1    27.94   115.80   353.60
+
+SOLUTIONTF FIX 1    25.21   105.57   339.45  0.111  0.567  0.000 35.8 47.0
+SOLUTIONTF FIX 1    27.94   115.80   353.60  0.144  0.603  0.358 35.8 47.0
+SOLUTIONRC 1    27.76   100.74   350.08
+
+SOLUTIONTF FIX 1    27.76   100.74   350.08  0.145  0.566  0.000 31.3 48.8 
+SOLUTIONTF FIX 1    27.94   115.80   353.60  0.144  0.603  0.705 31.3 48.8
+SOLUTIONRC 1    25.21   105.57   339.45
+eof</pre>
+</li>
+
+<li><a name="example1i"></a>
+<pre>#   ############
+#    fiting run: 3 molecules Symm P65
+#   ############
+#
+amore  table1 search-sfs.tab  \
+       HKLPCK0 spmipch.hkl &lt;&lt;eof
+FITFUN  NMOL 3  RESO 20 4.5  
+TITLE *** spmi   structure ***
+SYMM P65
+VERBOSE
+REFSOL   AL     BE   GA     X   Y    Z   BF
+SOLUTIONTF 1  25.02  105.58  339.46 0.113 0.569 0.000 27.5 51.7
+SOLUTIONTF 1  27.60  100.60  350.29 0.146 0.571 0.649 43.5 46.5
+SOLUTIONTF 1  27.72  115.95  353.54 0.143 0.602 0.351 41.3 47.3
+eof</pre>
+</li>
+
+<li><a name="example1j"></a>
+<pre>#
+#  Build the solution file with with PDBSET.
+#
+Assume the following three solutions from AMoRe:
+# SOLUTIONF     1   56.35   74.98  145.14  0.3883 -0.0061  0.2757 55.7 45.2 57.1  28
+# SOLUTIONF     1  295.44   70.84  148.61  0.8273  0.9301  0.2737 55.7 45.2 57.1  29
+# SOLUTIONF     1  164.23   69.22  147.81  0.0896  0.8444  0.2876 55.7 45.2 57.1  30
+Then:
+pdbset \
+xyzin /y/ccp4/work/model-rot.pdb \
+xyzout /y/ccp4/work/model-rot-sol1.pdb \
+&lt;&lt;eof
+CELL 78.700   40.400   56.000  90.00 117.10  90.00 
+SYMM C2
+rotat euler   56.35   74.98  145.14  
+shift frac 0.3883 -0.0061  0.2757 55.7 45.2 57.1  28
+chain A
+end
+eof
+#
+pdbset \
+xyzin /y/ccp4/work/model-rot.pdb \
+xyzout /y/ccp4/work/model-rot-sol2.pdb \
+&lt;&lt;eof
+# Use -0.5,-0.5,0 = other C2 solution
+CELL 78.700   40.400   56.000  90.00 117.10  90.00 
+SYMM C2
+rotat euler  295.44   70.84  148.61
+shift frac 0.3273  0.4301  0.2737 55.7 45.2 57.1  29
+chain B
+end
+eof
+#
+pdbset \
+xyzin /y/ccp4/work/model-rot.pdb \
+xyzout /y/ccp4/work/model-rot-sol3.pdb \
+&lt;&lt;eof
+#  Subtract 1 from y
+CELL 78.700   40.400   56.000  90.00 117.10  90.00 
+SYMM C2
+rotat euler  164.23   69.22  147.81
+shift frac 0.0896 -0.1556  0.2876 55.7 45.2 57.1  30
+chain C
+end
+eof
+#
+cat the three solution coordinates into one pdb file - model-rot-sol123.pdb.
+Check if there are bad symmetry clashes.
+
+distang \
+xyzin /y/ccp4/work/model-rot-sol123.pdb \
+&lt;&lt;eof
+SYMM C2
+RADI CA 2
+eof</pre>
+</li>
+</ol>
+</li>
+
+<li><a name="example2"></a>
+<pre>#
+# Tabulating structure factors generated from a blob of electron density
+# The blob has been placed in a large &quot;P1 unit cell&quot; to give a finely sampled reciprocal lattice.
+#
+
+#!/bin/csh -f
+###########################################################
+#
+# There are lots of alternative ways of getting a masked block of density.
+#  You first need a mask. This does not need to cover the whole molecule.
+# The simplest technique I have used is to place a large sphere
+# at the centre of mass of a likely region.
+# This can be done by placing an "atom" at the centre of mass of a likely region
+# and specified  a large atomic radius for it. 
+#
+# Another way is to edit bones generated from a map to include only those 
+# which are likely to belong to one molecule, then use bones_to_pdb to write out a 
+# cordinate file, and use ncsmask with that set, and the default atom radius.
+#  ( 3A I think..)
+#
+####################################################################
+#  Make a spherical mask centred at the centroid of the chosen block of 
+#  density.
+###########################################################
+#  P65_block_com.pdb 
+# REMARK Centre of Mass: X ~35/102, Y~ 42/102, Z~75/96 = (0.343 0.412 0.781)
+# REMARK COM in As:  0.343 * 208.4 = 71.510 ; 0.412 *208.4 =85.812 0.781=75.156 
+#  P65_block_com.pdb
+CRYSTL  208.400  208.400   96.200  90.00  90.00 120.00    P65
+ATOM      1  N   COM C   3      71.510  85.812  75.156  1.00 41.63           N
+#
+# Set atomic radius; <i>i.e.</i> radius of sphere to 18&#197;
+ncsmask xyzin ./P65_block_com.pdb \
+mskout $SCRATCH/P65_block_com.msk &lt;&lt;eof
+#  I have taken a 1A grid.
+GRID  204  204   96
+AXIS   Y    X    Z
+RADIUS 18
+END
+eof
+#
+###########################################################
+# extend the  DM map to the same limits as the msk;
+#   you will have to look at the log of Step 1.
+#  ( You can get the mask extent by typing 
+#     prmap mapin $CCP4_SCR/P65_block_com.msk )
+###########################################################
+mapmask mapin /y/work2/suresh//nat3_au5_hg2_dm.map \
+mapout $CCP4_SCR//nat3_au5_hg2_dm.ext &lt;&lt; eof
+GRID 204  204   96
+XYZLIM  57  93    62 101    56 91
+END
+eof
+#
+#
+###########################################################
+#   Now the clever bit - put the "masked" density in the big P1 cell:
+#
+maprot \
+wrkin $CCP4_SCR//nat3_au5_hg2_dm.ext \
+mskin $CCP4_SCR/P65_block_com.msk \
+mapout $CCP4_SCR/nat3_au5_hg2_dm_cent_bigdummycell.map \
+&lt;&lt;eof
+# "MODE TO" moves the WRKIN map ( after masking with MSKIN) to the given cell and grid.
+MODE TO
+#  No averaging; this is the identity..
+GRID XTAL 300 300 300                         ! Fine grid for structure factors
+CELL XTAL 240.000  240.000  240.000  90.00  90.00  90.00
+SYMM P1
+AVERAGE 1
+ROTATE EULER 0 0 0
+TRANS 0 0 0
+END
+eof
+#
+###########################################################
+#
+#  Generate structure factors from this density ready for Amore
+# Then delete the *bigdummy*maps - they are HUGE..
+sfall \
+mapin  $CCP4_SCR/nat3_au5_hg2_dm_cent_bigdummycell.map \
+hklout $CCP4_SCR/nat3_au5_hg2_dm_cent_bigdummycell.mtz \
+&lt;&lt;eof
+MODE SFCALC MAPIN
+SYMM P1
+RESO 37 2.5
+LABO FC=FC1 PHIC=PHIC1
+END
+eof
+#
+#  Now read these SFS from the mtz file into Amore  and generate the table
+#  Then the molecular replacement can continue as above.
+#
+amore \
+hklin $CCP4_SCR/nat3_au5_hg2_dm_cent_bigdummycell.mtz \
+table1 $CCP4_SCR/nat3_au5_hg2_dm_cent_bigdummycell.tab  \
+&lt;&lt;eof
+VERBOSE
+TITLE   ** packing h k l For the "model" structure factors.
+SORTFUN MODEL 100 2.5
+LABI FC=FC1  PHIC=PHIC1
+eof
+#
+eof</pre></li>
+
+<li><a name="example3"></a>
+<pre>#
+# Using the locked rotation function
+#
+amore 
+HKLPCK0 bgltp2peak+resolve.hkl 
+CLMN0 $CCP4_SCR/bgltp2peak+resolve_0.clmn 
+MAPOUT $CCP4_SCR/insmon_304_rot.map 
+table1 newbuiltA_MR_trial.tab 
+CLMN1 $CCP4_SCR/newbuiltA_MR_trial.clmn 
+HKLPCK1 $CCP4_SCR/insmon_304_3_hkl.tmp
+&lt;&lt;eof
+title Run bglt _ locked rotn_ polar 42.87 0 180
+rotfun
+generate 1  resolution 15.0 3.0  cell_model 81.366 81.096 84.366
+clmn crystal  orth 1  resolution 15.0 3.0
+clmn  model 1  resolution 15.0 3.0  sphere 24.936
+rotate CROSS  model 1  npic 20  pklim 0.5    lock 1 polar 43 0 180
+# or 
+#rotate CROSS  model 1  npic 20  pklim 0.5    lock 1 euler 0 86 180
+end
+eof</pre>
+</li>
+
+<li><a name="example4"></a>
+<pre>#
+# Using a non-crystallographic translation 
+#vector to find pairs of solutions in the same orientation.
+#
+amore 
+HKLPCK0 /y/work/ccp4/dm-av-noav-sharp+dm-jtfree.hkl 
+MAPOUT /tmp/ccp4/hpce_225_tran.map 
+table1 xv11Aa_MR_trial.tab
+&lt;&lt;eof
+ title Hpce P212121 _ test NCS vector
+trafun PTF NMOL 1 -
+    resolution 91.287 3.0 -
+    npic 20 -
+    pklim 0.5 NCST 0.028 0 0.5
+crystal orth 1
+symmetry P212121
+SOLUTION   1 359.78 360.00 0.00 0.0000 0.0000 0.0000 20.7 55.9 28.5 25.3 1
+SOLUTION   1 179.92 0.00 0.00 0.0000 0.0000 0.0000 20.7 55.9 28.5 25.3 3
+SOLUTION   1 2.12 0.00 0.00 0.0000 0.0000 0.0000 18.3 56.6 25.5 22.0 6
+SOLUTION   1 29.44 64.50 28.89 0.0000 0.0000 0.0000 16.1 57.3 22.3 15.7 11
+SOLUTION   1 94.46 79.60 349.04 0.0000 0.0000 0.0000 14.3 57.7 18.7 16.8 16
+SOLUTION   1 359.92 85.64 181.65 0.0000 0.0000 0.0000 14.2 57.9 18.3 9.9 17
+SOLUTION   1 25.17 67.80 29.14 0.0000 0.0000 0.0000 14.2 57.7 18.7 16.5 18
+SOLUTION   1 41.98 49.77 203.98 0.0000 0.0000 0.0000 14.1 57.8 19.3 14.0 19
+eof
+amore 
+HKLPCK0 /y/work/ccp4/dm-av-noav-sharp+dm-jtfree.hkl 
+MAPOUT /tmp/ccp4/hpce_227_tran.map 
+table1 xv11Aa_MR_trial.tab
+&lt;&lt;eof
+ title Hpce P212121 _ test NCS vector
+trafun PTF NMOL 3 -
+    resolution 91.287 3.0 -
+    npic 20 -
+    pklim 0.5 NCST 0.028 0 0.5
+crystal orth 1
+symmetry P212121
+SOLUTION fix 1 359.78 0.00 0.00 -0.0025 0.4977 0.4797 40.6 56.5 40.2 1 81.2
+SOLUTION fix 1 359.78 0.00 0.00 0.0255 0.4977 -0.0203 40.6 56.5 40.2 1 76.9
+SOLUTION   1 359.78 360.00 0.00 0.0000 0.0000 0.0000 20.7 55.9 28.5 25.3 1
+SOLUTION fix 1 359.78 0.00 0.00 -0.0025 0.4977 0.4797 40.6 56.5 40.2 1 81.2
+SOLUTION fix 1 359.78 0.00 0.00 0.0255 0.4977 -0.0203 40.6 56.5 40.2 1 76.9
+SOLUTION   1 29.44 64.50 28.89 0.0000 0.0000 0.0000 16.1 57.3 22.3 15.7 11
+SOLUTION fix 1 29.44 64.50 28.89 0.2282 0.2346 0.3130 31.4 59.8 29.1 1 74.2
+SOLUTION fix 1 29.44 64.50 28.89 0.2562 0.2346 -0.1870 31.4 59.8 29.1 1 74.2
+SOLUTION   1 359.78 360.00 0.00 0.0000 0.0000 0.0000 20.7 55.9 28.5 25.3 1
+SOLUTION fix 1 29.44 64.50 28.89 0.2282 0.2346 0.3130 31.4 59.8 29.1 1 74.2
+SOLUTION fix 1 29.44 64.50 28.89 0.2562 0.2346 -0.1870 31.4 59.8 29.1 1 74.2
+SOLUTION   1 29.44 64.50 28.89 0.0000 0.0000 0.0000 16.1 57.3 22.3 15.7 11
+eof</pre>
+</li>
+</ol>
+
+<h2><a name="authors"></a>AUTHORS</h2>
+
+<p>Jorge Navaza. Adapted for CCP4 by Eleanor Dodson. </p>
+
+<h2><a name="references"></a>REFERENCES</h2>
+
+<ol>
+<!-- KEEP startreferencelist -->
+<li><a name="reference1"></a>J.Navaza, <i>Acta Cryst.</i> <b>A50</b>, 157-163 (1994) <br />
+(General reference.) </li>
+
+<li><a name="reference2"></a>J.Navaza. <i>Acta Cryst.</i> <b>A43</b>, 645-653 (1987) <br />
+(Radial quadrature instead of bessel expansion) </li>
+
+<li><a name="reference3"></a>J.Navaza. <i>Acta Cryst.</i> <b>A46</b>, 619-620 (1990) <br />
+(Stable recurrence relationship for rotation matrices.) </li>
+
+<li><a name="reference4"></a>G.A.Bentley, Some applications of the phased translation function using
+calculated phases in <i>Molecular Replacement</i>, Proceedings of the Daresbury
+Study Weekend, (1992) DL/SCI/R33 </li>
+
+<li><a name="reference5"></a>E.E.Castellano et al., Fast Rigid-body Refinement for Molecular-replacement
+Techniques, <i>J. Appl. Cryst.</i> <b>25</b>, 281-4 (1992). </li>
+
+<li><a name="reference6"></a>J.Navaza. <i>Acta Cryst.</i> <b>D49</b>, 588-591 (1993) </li>
+
+<li><a name="reference7"></a>F.L.Hirshfeld <i>Acta Cryst.</i> <b>A24</b>, 301-311 (1968)</li>
+<!-- KEEP endreferencelist -->
+</ol>
+
+<h2><a name="see_also"></a>SEE ALSO</h2>
+
+<p><a href="almn.html">almn</a>, <a href="ecalc.html">ecalc</a>, <a href="lsqkab.html">lsqkab</a>,
+<a href="npo.html">npo</a>, <a href="pdbset.html">pdbset</a>, <a href="rfcorr.html">rfcorr</a>
+</p>
+
+ 
+
+
+</body>
+</html>

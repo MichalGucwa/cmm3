@@ -1,0 +1,302 @@
+#!/bin/csh -f
+#
+#
+#--- check----->     cyc141 d13w
+#--- check----->     cyc20  rs1
+#
+#  shouldnt have any disorder atoms in files-
+#   should select only one pair of conformations - label normal
+#   but keep occupancy = 0.5
+#
+# 1. Get temp files
+#
+#  (i) get headers
+#
+grep CRYSTL ../brk/d13w_cyc141.brk >  d13w.head   
+grep SCALE  ../brk/d13w_cyc141.brk >>  d13w.head   
+grep CRYSTL ../brk/rs1_cyc20.brk >  rs1.head   
+grep SCALE  ../brk/rs1_cyc20.brk >>  rs1.head   
+#
+#  (ii) Remove disorder atoms
+#        the awk script - removes B atoms in disorder
+#                         changes A to space in disorder
+#                         conformation
+#
+/bin/awk -f ${CETC}/disorder.awk < ../brk/d13w_cyc141.brk \
+                                > d13w_H.disorder_out
+#
+#  (iii) get H chain
+#
+grep " H "   d13w_H.disorder_out >  d13w.H
+#
+#
+/bin/awk -f ${CETC}/disorder.awk < ../brk/rs1_cyc20.brk  \
+                                > rs1_H.disorder_out
+#
+#
+grep " H " rs1_H.disorder_out    >  rs1.H
+#
+#
+/bin/rm -rf d13w_H.disorder_out
+/bin/rm -rf rs1_H.disorder_out
+#
+#
+cat d13w.head d13w.H > d13wH.brk
+cat rs1.head  rs1.H  > rs1H.brk
+#
+#
+# o/p matrix will move XYZIN2 to XYZIN1
+#
+#
+superpose XYZIN2 d13wH.brk\
+          XYZIN1 rs1H.brk\
+          MATRIX d13wH-to-rs1H.mat\
+          << 'EOF-superpose'
+1
+204 204 100
+1
+204 204 100
+'EOF-superpose'
+#
+skewbrk XYZIN  d13wH.brk\
+        XYZOUT d13wH-to-rs1H.brk\
+        MATRIX d13wH-to-rs1H.mat << eof
+eof
+#
+#
+brksort xyzin  rs1H.brk           xyzout rs1H_sort.brk
+brksort xyzin  d13wH-to-rs1H.brk  xyzout d13wH-to-rs1H_sort.brk
+#
+#
+# Clean up some more
+#
+/bin/rm -rf   rs1H.brk         
+/bin/rm -rf   d13wH.brk
+/bin/rm -rf   d13wH-to-rs1H.brk
+#
+#---- Run differences
+#
+#---- (i) for xyz
+#
+difres XYZIN1 rs1H_sort.brk         \
+       XYZIN2 d13wH-to-rs1H_sort.brk\
+       PLOT   rs1H-and-d13wH_xyz.plt\
+       << eof
+TITLE d13w/ rs1 H-chain
+XYZ 
+!PLTY     ! With this line commented out the picture is 
+!           suitable for x84 - althouth the x84 picture is too
+!           big for the xterminals in the irc
+!           so use a scale function
+XSCALE 0.85
+YSCALE 0.85
+RESI H201 H316
+eof
+#
+difres XYZIN1 rs1H_sort.brk         \
+       XYZIN2 d13wH-to-rs1H_sort.brk\
+       PLOT   rs1H-and-d13wH_temp.plt\
+       << eof 
+TITLE d13w/ rs1 H-chain
+TEMP 
+!PLTY     ! With this line commented out the picture is 
+!           suitable for x84 - althouth the x84 picture is too
+!           big for the xterminals in the irc
+!           so use a scale function
+XSCALE 0.85
+YSCALE 0.85
+RESI H201 H316
+eof
+#
+#
+#---- Final Cleanup
+#
+/bin/rm -rf rs1H_sort.brk
+#
+#
+#---- Plot the files
+#
+pltdev -in rs1H-and-d13wH_temp.plt  -out rs1H-and-d13wH_temp.ps   -lan  \
+       -xpos -3.0 -ypos3.0 -npict 1  -start 1  -lnwt 0.3      << eof
+y
+
+eof
+#
+cat $CCP/include/pl.header  rs1H-and-d13wH_temp.ps\
+           > rs1H-and-d13wH_temp.ps.header
+mv rs1H-and-d13wH_temp.ps.header rs1H-and-d13wH_temp.ps
+#
+pltdev -in rs1H-and-d13wH_xyz.plt  -out rs1H-and-d13wH_xyz.ps   -lan  \
+       -xpos -3.0 -ypos 3.0 -npict 1  -start 1  -lnwt 0.3      << eof
+y
+
+eof
+#
+#
+cat $CCP/include/pl.header  rs1H-and-d13wH_xyz.ps\
+           > rs1H-and-d13wH_xyz.ps.header
+mv rs1H-and-d13wH_xyz.ps.header rs1H-and-d13wH_xyz.ps
+#
+pl rs1H-and-d13wH_xyz.ps
+pl rs1H-and-d13wH_temp.ps
+#
+# -- clean up
+/bin/rm -rf  rs1H-and-d13wH_xyz.ps
+/bin/rm -rf  rs1H-and-d13wH_xyz.plt
+/bin/rm -rf  rs1H-and-d13wH_temp.ps
+/bin/rm -rf  rs1H-and-d13wH_temp.plt
+#
+#
+#  (ii) Remove disorder atoms
+#        the awk script - removes B atoms in disorder
+#                         changes A to space in disorder
+#                         conformation
+#
+/bin/awk -f ${CETC}/disorder.awk < ../brk/d13w_cyc141.brk \
+                                > d13w_L.disorder_out
+#
+#  (iii) get L chain
+#
+grep " L "   d13w_L.disorder_out >  d13w.L
+#
+#
+/bin/awk -f ${CETC}/disorder.awk < ../brk/rs1_cyc20.brk  \
+                                > rs1_L.disorder_out
+#
+#
+grep " L " rs1_L.disorder_out    >  rs1.L
+#
+#
+/bin/rm -rf d13w_L.disorder_out
+/bin/rm -rf rs1_L.disorder_out
+#
+#
+cat d13w.head d13w.L > d13wL.brk
+cat rs1.head  rs1.L  > rs1L.brk
+#
+#
+# o/p matrix will move XYZIN2 to XYZIN1
+#
+#
+superpose XYZIN2 d13wL.brk\
+          XYZIN1 rs1L.brk\
+          MATRIX d13wL-to-rs1L.mat\
+          << 'EOF-superpose'
+1
+3 3 100
+1
+3 3 100
+'EOF-superpose'
+#
+skewbrk XYZIN  d13wL.brk\
+        XYZOUT d13wL-to-rs1L.brk\
+        MATRIX d13wL-to-rs1L.mat << eof
+eof
+#
+#
+brksort xyzin  rs1L.brk           xyzout rs1L_sort.brk
+brksort xyzin  d13wL-to-rs1L.brk  xyzout d13wL-to-rs1L_sort.brk
+#
+#
+# Clean up some more
+#
+/bin/rm -rf   rs1L.brk         
+/bin/rm -rf   d13wL.brk
+/bin/rm -rf   d13wL-to-rs1L.brk
+#
+#---- Run differences
+#
+#---- (i) for xyz
+#
+difres XYZIN1 rs1L_sort.brk         \
+       XYZIN2 d13wL-to-rs1L_sort.brk\
+       PLOT   rs1L-and-d13wL_xyz.plt\
+       << eof
+TITLE d13w/ rs1 L-chain
+!PLTY     ! With this line commented out the picture is 
+!           suitable for x84 - althouth the x84 picture is too
+!           big for the xterminals in the irc
+!           so use a scale function
+XSCALE 0.85
+YSCALE 0.85
+XYZ 
+RESI L1 L107
+eof
+#
+difres XYZIN1 rs1L_sort.brk         \
+       XYZIN2 d13wL-to-rs1L_sort.brk\
+       PLOT   rs1L-and-d13wL_temp.plt\
+       << eof 
+TITLE d13w/ rs1 L-chain
+!PLTY     ! With this line commented out the picture is 
+!           suitable for x84 - althouth the x84 picture is too
+!           big for the xterminals in the irc
+!           so use a scale function
+XSCALE 0.85
+YSCALE 0.85
+TEMP 
+RESI L1 L107
+eof
+#
+#---- Final Cleanup
+#
+/bin/rm -rf rs1L_sort.brk
+#
+#
+#---- Plot the files
+#
+pltdev -in rs1L-and-d13wL_temp.plt  -out rs1L-and-d13wL_temp.ps   -lan  \
+       -xpos -3.0 -ypos 3.0 -npict 1  -start 1  -lnwt 0.3      << eof
+y
+
+eof
+#
+cat $CCP/include/pl.header  rs1L-and-d13wL_temp.ps\
+           > rs1L-and-d13wL_temp.ps.header
+mv rs1L-and-d13wL_temp.ps.header rs1L-and-d13wL_temp.ps
+#
+pltdev -in rs1L-and-d13wL_xyz.plt  -out rs1L-and-d13wL_xyz.ps   -lan  \
+       -xpos -3.0 -ypos 3.0 -npict 1  -start 1  -lnwt 0.3      << eof
+y
+
+eof
+#
+#
+cat $CCP/include/pl.header  rs1L-and-d13wL_xyz.ps\
+           > rs1L-and-d13wL_xyz.ps.header
+mv rs1L-and-d13wL_xyz.ps.header rs1L-and-d13wL_xyz.ps
+#
+pl rs1L-and-d13wL_xyz.ps
+pl rs1L-and-d13wL_temp.ps
+#
+# -- clean up
+/bin/rm -rf  rs1L-and-d13wL_xyz.ps
+/bin/rm -rf  rs1L-and-d13wL_xyz.plt
+/bin/rm -rf  rs1L-and-d13wL_temp.ps
+/bin/rm -rf  rs1L-and-d13wL_temp.plt
+#
+#
+grep -v CRYSTL  d13wH-to-rs1H_sort.brk >  x.1
+grep -v SCALE   x.1 > d13wH-to-rs1H_sort.brk
+cat d13wL-to-rs1L_sort.brk d13wH-to-rs1H_sort.brk > d13w_mol.brk
+#
+#
+/bin/rm -rf d13w.head   
+/bin/rm -rf d13wL-to-rs1L_sort.brk
+/bin/rm -rf d13wH-to-rs1H_sort.brk
+/bin/rm -rf x.1
+/bin/rm -rf rs1.head
+#
+#
+/bin/rm -rf  d13w.H
+/bin/rm -rf  d13w.L
+/bin/rm -rf  d13wH-to-rs1H.mat
+/bin/rm -rf  d13wL-to-rs1L.mat
+/bin/rm -rf  rs1.H
+/bin/rm -rf  rs1.L
+/bin/rm -rf  rs1H_sort.brk
+/bin/rm -rf  rs1L_sort.brk
+#
+#---- Move   d13w_mol.brk   to frodo - add in rs1.rec
+#
+

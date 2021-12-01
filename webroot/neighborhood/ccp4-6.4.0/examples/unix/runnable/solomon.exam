@@ -1,0 +1,180 @@
+#!/bin/sh
+#
+##########################################################
+##########################################################
+#
+# AVERAGING PROCEDURE USING SOLOMON
+#
+# Script to run several cycles of density modification, in
+# this case with a flip value (solvmul) of -1.0. This 
+# corresponds to adding the inverted solvent density to 
+# the initial map. This is similar to adding negative noise
+# to an image in order to strengthen the signal/noise ratio.
+#
+# The resolution of the map is extended from 3.0 to 2.7
+# The variable $res defines the resolution at which the
+# current refinement cycle is working. This outlines the 
+# general program order that is required but obviously the 
+# procedure will be different for other structures. Automatic 
+# refinement over a large number of cycles is not advisable, 
+# the increase in map quality is the most important factor.
+#
+# Note that the 'final' map from each cycle is kept i.e. 
+# the ones calculated from the combined structure factors.
+# Along with the MTZ file that generated it and the solomon
+# log files are appended.
+#
+##########################################################
+#
+
+
+if test ! -r $CCP4_SCR/toxd_phase_mir.mtz ; then
+  echo '! run the mlphare procedure first'
+  exit 1
+fi
+
+if test -r $CCP4_SCR/toxd_stats.log ; then
+  /bin/rm -f $CCP4_SCR/toxd_stats.log
+fi
+
+if test -r $CCP4_SCR/toxd_Solomon.log ; then
+  /bin/rm -f $CCP4_SCR/toxd_Solomon.log
+fi
+
+solvdens=0
+EndCycle=8          # Number of refinement cycles
+
+#res=(3.0 3.0 3.0 2.9 2.8 2.7 2.7 2.7)
+# for dash use a local shell function:
+get_res () {
+    res_list="3.0 3.0 3.0 2.9 2.8 2.7 2.7 2.7"    
+    res=`echo $res_list | awk -v n=$1 '{print $(n+1)}'`
+    echo $res
+}
+
+#
+#
+LastCycle=0
+CurrentCycle=$LastCycle
+#
+#
+#
+##########################################################
+#  Calculate initial map with best phases and FOM weighted 
+#  amplitudes.
+##########################################################
+#
+#
+fft HKLIN $CCP4_SCR/toxd_phase_mir.mtz \
+    MAPOUT $CCP4_SCR/toxd_cycle0.map \
+    << end-fft   > /dev/null
+LABIN F1=FTOXD3 SIG1=SIGFTOXD3 PHI=PHI_mir W=W_mir
+RESO 9999 $(get_res 0)
+GRID 88 144 80
+#XYZLIM 0 1.0 0 1.0 0 1.0
+end
+end-fft
+#
+#
+while [ ${CurrentCycle} -lt ${EndCycle} ] ; do 
+#
+CurrentCycle=`expr $LastCycle + 1`
+#
+##########################################################
+#  Extend the map resolution for several cycles
+##########################################################
+#
+#
+##########################################################
+#  1) Modify the density with Solomon
+##########################################################
+#
+#
+#
+solomon \
+mapin $CCP4_SCR/toxd_cycle${LastCycle}.map mapout $CCP4_SCR/toxd_av.map \
+<< end-solomon  1> $CCP4_SCR/toxd_Solomon.log
+slvfrc 0.51
+mulsolv auto -1.0
+slvdens $solvdens
+radius 3
+trunc 0.4 1
+extrude
+mapout
+
+!Put any symmetry constraints here...
+
+end-solomon
+#
+solvdens=`grep "solvdens:" $CCP4_SCR/toxd_Solomon.log|tail -1|awk '{print $3}'`
+#
+#
+##########################################################
+#  2) generate sfs and phases from this modified map
+##########################################################
+#
+#
+sfall HKLIN $CCP4_SCR/toxd_phase_mir \
+      MAPIN $CCP4_SCR/toxd_av.map\
+      HKLOUT $CCP4_SCR/junk.mtz \
+      << end-sfrkall > $CCP4_SCR/toxd_sfall.log
+TITLE   Sfs from density modification
+MODE SFCALC MAPIN HKLIN
+GRID 88 144 80
+LABIN FP=FTOXD3  SIGFP=SIGFTOXD3 F0=PHI_mir F1=W_mir F2=HLA F3=HLB -
+      F4=HLC F5=HLD
+RESO 9999 $(get_res $LastCycle)
+RSCB 6 $(get_res $LastCycle)
+BINS 40
+SFSG 19
+LABO   FC=FCmod PHIC=PHICmod
+end
+end-sfrkall
+#
+echo Cycle $CurrentCycle >> $CCP4_SCR/toxd_stats.log
+grep "Overall Reliability index is" $CCP4_SCR/toxd_sfall.log \
+						 1> $CCP4_SCR/toxd_stats.log
+#
+#
+##########################################################
+#  3) combine phases
+##########################################################
+#
+sigmaa HKLIN $CCP4_SCR/junk.mtz \
+       HKLOUT $CCP4_SCR/toxd_cycle${CurrentCycle}.mtz \
+       << end-sigmaa > /dev/null
+TITLE   Phase combination toxd
+LABI FP=FTOXD3  SIGFP=SIGFTOXD3                  -
+     HLA=HLA HLB=HLB HLC=HLC HLD=HLD PHIBP=PHI_mir  WP=W_mir     -
+     FC=FCmod PHIC=PHICmod
+LABO PHCMB=PHCMB1 WCMB=FOMCMB1 FWT=FWT PHFWT=PHFWT
+RANGES 10 1000
+RESO  9999 $(get_res $LastCycle)
+ERROR
+COMBINE PART 1 
+END
+end-sigmaa
+#
+#
+##########################################################
+#  4) recalculate map.
+##########################################################
+#
+fft HKLIN $CCP4_SCR/toxd_cycle${CurrentCycle}.mtz \
+    MAPOUT $CCP4_SCR/toxd_cycle${CurrentCycle}.map \
+    << end-fft > /dev/null
+TITLE F1 15-$(get_res $LastCycle) A, after ${CurrentCycle} averaging cycles
+LABI F1=FWT  SIG1=FWT PHI=PHFWT
+RESO 9999 $(get_res $LastCycle)
+GRID 88 144 80
+#XYZLIM 0 1.0 0 1.0 0 1.0
+end
+end-fft
+#
+#
+LastCycle=`expr $LastCycle + 1`
+#
+#
+done
+#
+exit 0

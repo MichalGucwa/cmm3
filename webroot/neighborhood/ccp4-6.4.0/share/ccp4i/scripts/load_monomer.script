@@ -1,0 +1,57 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#===========================================================================
+#
+# load_monomer.script
+#
+#===========================================================================
+
+# Run libcheck to extract one monomer from the library as the CIF coord file
+# and the GEOM file
+
+  set current_dir [GetCurrentDir]
+  ChangeDirectory [GetDefaultDirPath TEMPORARY]
+
+  set FILE_OUT [file join [GetDefaultDirPath TEMPORARY] \
+        [subst $job_params(PROJECT)]_$job_params(JOB_ID)]
+
+
+  set IFREFMAC 1
+
+  if { $DICT != "" } {
+    set text "_Y\n_FILE_L $DICT\n_FILE_O $FILE_OUT\n_NODIST Y\n_MON $CHEM_COMP_ID\n_END"
+  } else {
+    set text "_Y\n_FILE_O $FILE_OUT\n_MON $CHEM_COMP_ID\n_END"
+  }
+
+  WriteFile [set comfile [GetTmpFileName -ext com]] $text -overwrite
+
+  if { ![Execute [BinPath libcheck] $comfile program_status report] ||
+       ![file exists [subst $FILE_OUT]_$CHEM_COMP_ID.cif] } {
+    TerminateScript 0
+  }
+
+#  DeleteFile libcheck_$sketch_dict(CHEM_COMP_ID).ps
+
+# Move the coordinate file and the dictionary file to the project directory
+# Regularise structure
+
+  MoveFile $FILE_OUT.lib $GEOM_FILE
+
+  if { $IFREFMAC } {
+
+    WriteComFile refmac_script "MODE NEWENTRY\nEND\n"
+    set status [Execute \
+     "[BinPath  refmac5 ] LIB_IN \"$GEOM_FILE\" XYZIN \"[subst $FILE_OUT]_$CHEM_COMP_ID.pdb\" XYZOUT \"$COORDS_FILE\"" \
+		$refmac_script status report ]
+
+  } else {
+    MoveFile [subst $FILE_OUT]_$CHEM_COMP_ID.pdb $COORDS_FILE
+  }

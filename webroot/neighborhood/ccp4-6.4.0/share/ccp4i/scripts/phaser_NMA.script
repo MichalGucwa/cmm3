@@ -1,0 +1,33 @@
+#===========================================================================
+#
+# phaser_NMA.script
+#
+#===========================================================================
+ 
+  set OUTPUT_FILE_ROOT "[SetOutputFileRoot]"
+
+  CreateComScript phaser_NMA phaser_NMA_script -ampersand
+
+  set cmd "[BinPath phaser]"
+
+  set status [Execute $cmd $phaser_NMA_script program_status report]
+
+  set MTZOUT_FILE "[SetOutputFileRoot].mtz"
+  if { [file exists $MTZOUT_FILE] } { AddOutputFile $MTZOUT_FILE PROJECT }
+  set SUM_FILE "[SetOutputFileRoot].sum"
+  if { [file exists $SUM_FILE] } { AddOutputFile $SUM_FILE PROJECT }
+  set EIGEN_FILE "[SetOutputFileRoot].mat"
+  if { [file exists $EIGEN_FILE] } { AddOutputFile $EIGEN_FILE PROJECT }
+  set SOL_FILE "[SetOutputFileRoot].sol"
+  if { [file exists $SOL_FILE] } { AddOutputFile $SOL_FILE PROJECT }
+
+  set MAXFILES 1000 
+
+  for { set n 1 } { $n <= $MAXFILES } { incr n } {
+     set PDB_FILE($n) "[SetOutputFileRoot].$n.pdb"
+     if { [file exists $PDB_FILE($n)] } { AddOutputFile $PDB_FILE($n) PROJECT }
+  }
+  for { set n 1 } { $n <= $MAXFILES } { incr n } {
+     set PDB_FILE($n) "[SetOutputFileRoot].domain.$n.pdb"
+     if { [file exists $PDB_FILE($n)] } { AddOutputFile $PDB_FILE($n) PROJECT }
+  }

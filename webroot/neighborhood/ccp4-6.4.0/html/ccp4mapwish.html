@@ -1,0 +1,301 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::CCP4MAPWISH::Supported::Plotting / Graphics::custom wish interpreter required for MapSlicer:::::::: -->
+
+<H1> CCP4MAPWISH (CCP4: Supported Program)</H1>
+
+<H2> NAME</H2>
+<b>ccp4mapwish </b>
+- customised version of <tt>wish</tt> with additional commands
+to read CCP4 mapfiles and display contoured sections on a Tk canvas widget
+
+<H2> SYNOPSIS</H2>
+<b>ccp4mapwish</b> ?fileName?
+
+<H2><a name="description">DESCRIPTION</a></H2>
+
+<p>ccp4mapwish is a customised version of the <b>wish</b> program, consisting
+of the Tcl command language, the Tk toolkit, the CCP4 MapSlicer Command Library,
+and a main program that reads commands from standard input or from a file.
+It creates a main window and then processes Tcl commands.</p>
+
+<p>The MapSlicer Command Library can also exist as a loadable library
+<b>libccp4map.so</b>, which can be imported into wish at run-time using the Tcl
+load command.</p>
+
+<p>The program and library are currently supported on a number of platforms
+(Irix, OSF1, SunOS, Linux, Windows). Please contact CCP4 if you are interested in
+using either on other platforms.</p>
+
+<H2><a name="usage">USAGE</a></H2>
+
+<p>The MapSlicer command library used in ccpmapwish offers a number of
+commands in addition to those found in standard Tcl/Tk:</p>
+
+<p>
+<a href="#readmap">readmap</a>,
+<a href="#deletemap">deletemap</a>,
+<a href="#mapinfo">mapinfo</a>,
+<a href="#section">section</a>
+</p>
+
+<a name="readmap"></a>
+<h3>readmap ?mapid? ?mapfile?</h3>
+
+<p>Tcl command to load a map into memory from the specified file</p>
+
+<p><i>Arguments:</i>
+<pre>
+   mapid    "handle" string identifying the map in memory
+   mapfile  file to read from
+</pre>
+
+<p><i>Returns:</i>
+<pre>
+   0  = completed ok
+   -1 = map already loaded
+   -2 = error reading from map file
+   -3 = couldn't allocate memory
+</pre>
+
+<a name="mapinfo"></a>
+<h3>mapinfo ?mapid ?keyword??</h3>
+
+<p>Tcl command to interrogate the map held in memory.</p>
+
+<p>mapid is the handle identifying the map stored in memory;
+if no mapid is given then all the currently stored mapids are
+returned as a list.</p>
+
+<p>A maximum of one keyword is allowed:
+<pre>
+   [none]     = returns 1 if the map is currently held in memory
+   spacegroup = returns spacegroup number
+   maximum    = returns maximum density in map
+   minimum    = returns minimum density
+   mean       = returns mean density
+   rms        = returns rms density
+   cell       = returns cell info as a list of 6 numbers
+   limits     = return start...stop on x..y..z as a list of 6 numbers
+   map        = writes out map...careful!
+   title      = returns the title from the map header
+   grid       = returns the number of grid points along x,y,z cell
+                edges as list of 3 numbers
+   type       = returns "map", "mask" or "other" depending on the
+                mode of the original map file
+   mode       = mode of the map file
+</pre>
+   
+<p><i>Returns:</i>
+<pre>
+   -1 = no map loaded
+   Otherwise returns requested info, see keywords.
+</pre>
+
+<a name="deletemap"></a>
+<h3>deletemap mapid</h3>
+
+<p>Tcl command to release the memory holding the map and remove
+it from the array of stored maps.</p>
+
+<p>mapid is the handle identifying the map which is to be deleted.</p>
+
+<p><i>Returns:</i>
+<pre>
+   -1 = no map currently stored
+   0  = successful
+</pre>
+
+<a name="section"></a>
+<h3>section &lt;name&gt; option ?arg arg ...?</h3>
+
+<p>This implements the Tcl command <tt>section</tt> for manipulating
+CCP4 section structures in memory.
+
+<p><i>&lt;name&gt;</i> is the handle id for a section structure in memory.
+<i>option</i> and the <i>arg</i>s determine the exact behaviour of the command.
+The following options are available:</p>
+
+<p>
+<a href="#section_init">init</a>,
+<a href="#section_configure">configure</a>,
+<a href="#section_contours">contours</a>,
+<a href="#section_coords">coords</a>,
+<a href="#section_render">render</a>,
+<a href="#section_delete">delete</a>,
+<a href="#section_exists">exists</a>,
+<a href="#section_info">info</a>
+</p>
+
+<p>In addition the <i>init</i> and <i>configure</i> options can accept
+a number of <a href="#section_arguments">extra arguments</a>.
+
+<p><a name="section_init"></a>
+<b>section &lt;name&gt; init &lt;mapid&gt; &lt;axis&gt; &lt;section&gt; ?&lt;section2&gt;
+?&lt;slab_step&gt;?? ?option value ...?</b>
+
+<p>Initialise a new section structure called &lt;name&gt;, with
+section number &lt;section&gt; on axis &lt;axis&gt; from map &lt;mapid&gt;
+
+<p>If &lt;section2&gt; is also specified then the section is actually
+a slab of sections from &lt;section&gt; to &lt;section2&gt;.
+An optional third number specifies the slab_step size between
+the two limits.
+
+<p>See <a href="#section_arguments">below</a> for details of additional
+optional arguments.
+
+<p><a name="section_configure"></a>
+<b>section &lt;name&gt; configure ?option? ?value? ?option value ...?</b>
+
+<p>Change the settings in the existing section structure &lt;name&gt;
+If <i>option</i> is specified with no value then the current setting
+is returned.
+
+<p>See <a href="#section_arguments">below</a> for details of additional
+optional arguments.
+
+<p><a name="section_contours"></a>
+<b>section &lt;name&gt; contours &lt;type&gt; range &lt;min&gt; &lt;max&gt; &lt;interval&gt; ?option ...?</b><br>
+<b>section &lt;name&gt; contours &lt;type&gt; list value ?value ...? ?option ...?</b><br>
+<b>section &lt;name&gt; contours</b>
+
+<p>Set or update the contour levels for section &lt;name&gt;
+
+<pre>
+	 &lt;type&gt; is one of abs, sigma or frac
+
+	 range: contour levels will be set starting from &lt;min&gt; in steps
+	        of &lt;interval&gt; up to &lt;max&gt;
+	 list:  contour levels as an explicit list of values
+
+	 Option can be one or more of:
+	 -negcontours: generate equivalent negative contour levels
+	 -meanoffset : generate contour levels starting from the mean
+	               density in the map (default is from zero)
+
+	 Without any arguments, return the contours as a list of 
+	 absolute values.
+</pre>
+
+<p><a name="section_coords"></a>
+<b>section &lt;name&gt; coords &lt;canvas&gt; x y ?-precision value?</b>
+
+<p>Return the fractional coordinates in section &lt;name&gt; corresponding
+to the canvas coordinates x,y as rendered on &lt;canvas&gt;
+
+<p>The optional -precision argument specifies the number of
+decimal places to return.
+
+<p><a name="section_render"></a>
+<b>section &lt;name&gt; render &lt;canvas&gt; ?arg arg ...?</b>
+
+<p>Draw contours on &lt;canvas&gt; with the settings in &lt;name&gt;
+
+<pre>
+	 -scale &lt;scale&gt; : sets the scaling to &lt;scal&gt;&lt;units&gt;/Angstrom
+	 if no units are specified then defaults to pixels
+	 -greyscale : draw a greyscale backdrop (default is not to draw
+	 greyscale)
+	 -nocontours : don't display contour lines (default is to draw contours)
+</pre>
+
+<p><a name="section_delete"></a>
+<b>section &lt;name&gt; delete</b>
+
+<p>Delete the section structure &lt;name&gt; from memory
+
+<p><a name="section_exists"></a>
+<b>section &lt;name&gt; exists</b>
+
+<p>Check whether the section &lt;name&gt; currently exists
+
+<p>Returns 1 if section is registered, 0 otherwise
+
+<p><a name="section_info"></a>
+<b>section &lt;name&gt; info option</b>
+
+<p>Inquiry about general properties of the section &lt;name&gt;
+
+<p><i>option</i> can be one of:
+<pre> 
+         exists    : return 1 if &lt;name&gt; exists, 0 otherwise
+         extent    : return limits of the section within the map
+	             nb these may be different from those used in
+		     the display (see config -limits)
+	 mapid     : return the id of the parent map
+</pre>
+
+<p><a name="section_arguments"></a>
+<p><b>Arguments</b>
+
+<p>The <i>init</i> and <i>configure</i> options can take a number of additional
+optional arguments:
+<pre>
+   -axis &lt;axis&gt;            : set axis from which to take section
+   -bbox &lt;boolean&gt;         : set whether bounding box is drawn
+   -grid &lt;boolean&gt;         : set whether grid lines are drawn
+   -gridlabels &lt;boolean&gt;   : set whether grid labels are drawn
+   -gridspacing &lt;u&gt; &lt;v&gt;    : set the spacing of gridlines on each axis
+   -limits &lt;x1&gt; &lt;x2&gt; &lt;y1&gt; &lt;y2&gt; : set limits of the section in the display
+	                     If &lt;x1&gt;...&lt;y2&gt; are all &gt; 1 then the limits
+			     are taken to be in grid units; otherwise they
+			     are taken as fractional units.
+   -precision &lt;ndp&gt;        : set the number of d.p. for gridlabels
+   -section &lt;sec&gt; ?&lt;sec2&gt; ?&lt;step&gt;?? : change section number or slab
+                             definition
+   -labels &lt;boolean&gt;       : set whether axis labels are drawn
+   -axislabels &lt;xlabel&gt; &lt;ylabel&gt; &lt;zlabel&gt; : set the labels displayed for the x y and z axis
+   -view &lt;orientation&gt;     : set the viewing orientation to "lhs" or "rhs" (default is "rhs")
+</pre>
+
+
+<H2>TECHNICAL DETAILS</H2>
+
+<p>As of CCP4 5.0, ccp4mapwish has been updated to use the C library functions
+for handling map files which simplifies the requirements of the program
+substantially.</p>
+
+<p>Building ccp4mapwish requires the following files and libraries:</p>
+
+<ol>
+<li>tcl.h file for tcl version 8.0 or better</li>
+<li>Tcl and Tk libraries (libtcl and libtk respectively) version 8.0 or better</li>
+<li>X11 libraries</li>
+<li>Maths library (libm)</li>
+<li>CCP4 map library header file cmaplib.h</li>
+<li>CCP4 library (libccp4) (though it only uses the libcmap module)</li>
+</ol>
+
+<p>These should automatically be detected by configure upon installation of
+the suite.</p>
+
+<H2> SEE ALSO</H2>
+
+<p><a href="mapslicer.html">mapslicer</a></p>
+
+<H2> EXAMPLES</H2>
+
+<p>Example script to display a section:</p>
+
+<pre>
+# First set up a canvas to display sections
+set canv1 [canvas .c]
+pack $canv1
+# Read in a map with name m1
+readmap m1 toxd.map
+# Initialise a section called s1 from the map
+section s1 init z 5
+# Initialise contour levels to display
+section s1 contours sigma range 1.0 5.0 0.5 -negcontours
+# Display the section in the canvas
+section s1 render $canv1 -scale 2mm
+</pre>
+
+<H2> AUTHOR</H2>
+<p>
+Peter Briggs, CCP4.
+</p>
+</body></html>

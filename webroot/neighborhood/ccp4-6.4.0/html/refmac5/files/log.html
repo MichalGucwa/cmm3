@@ -1,0 +1,1082 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4 Program Suite : refmac - Input and output files</title>
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX64 6.2 IP19) [Netscape]"></head>
+</head>
+<body>
+
+<!-- ::INDEX_INFO::REFMAC::Supported::Model Refinement::macromolecular refinement program:::::::: -->
+
+<h1>REFMAC (CCP4: Supported Program)</h1>
+<h2>User's manual for the program REFMAC, version 5.*</h2>
+
+<h1><a name="logfile" id="logfile"></a>Input and output files - The .log file</h1>
+
+<p>All statistics and lots of useful information about the behaviour of the program
+are printed out to the standard output file called .log file.</p>
+
+<p>The .log file contains information about:</p>
+<ul>
+<li><a href="input-script.html">input script</a></li>
+<li><a href="#input_def">input and default parameters</a></li>
+<li><a href="#geom">geometric statistics</a>
+  <ul>
+  <li><a href="#goutl">geometric outliers</a></li>
+  <li><a href="#govers">overall geometric statistics</a></li>
+  </ul>
+</li>
+<li><a href="#ncs_operators">NCS operators</a></li>
+<li><a href="#xray">X-ray statistics</a>
+  <ul>
+  <li><a href="#xresos">X-ray statistics by resolution bin</a></li>
+  <li><a href="#xovers">overall X-ray statistics</a></li>
+  </ul>
+</li>
+<li><a href="#scaling">scale and sigmaA parameters</a></li>
+<li><a href="#tls">TLS parameters</a></li>
+<li><a href="#rbody">rigid body parameters</a></li>
+</ul>
+
+<h2><a name="input_def" id="input_def"></a>Input and default parameters</h2>
+
+<p>Information on input and default parameters is always written to the .log file in a set order.</p>
+
+<h3>Input keywords (see also the <a href="input-script.html">input script</a>).</h3>
+
+<p>If there is a comment line, the program prints out:</p>
+<blockquote><pre>Comment line--- #
+Comment line--- #####   Makecif parameters
+Comment line--- #</pre></blockquote>
+<p>This means there are 3 comment lines.</p>
+
+<p>Keywords are written as <tt><b>Data line</b></tt>. For example:</p>
+<blockquote><pre>Data line--- NONX NCHAIns 6 CHNID A B C D E F NSPANS 1 12 72 5</pre></blockquote>
+<p>This means there is a command line describing NONX which is for non-crystallographic restraints parameters.
+If there is an error in the command line, the program prints out a warning message describing the nature
+of the error.</p>
+
+<h3>Reflection file information</h3>
+
+<p>If there is a reflection file (MTZ), the program prints out information about MTZ
+(this is done by CCP4 library routines).</p>
+
+<h3>Refinement and idealisation parameters</h3>
+
+<p>Input and default parameters describing those used for refinement or idealisation or other refinement modes 
+used. For example:</p>
+<blockquote><pre>****    Make restraint parameters *****
+
+Dictionary files for restraints : /usr/o4/people/garib/refmac/ftncheck/linux/newdic/add_dict/dic/mon*cif
+Parameters for new entry and VDW: /usr/o4/people/garib/refmac/ftncheck/linux/newdic/add_dict/dic/ener_lib.cif
+    Cis peptides will be found and used automatically</pre></blockquote>
+
+<h3>Form factors</h3>
+
+<p>Form factors of the atoms in a psuedo CIF form:</p>
+<blockquote><pre>loop_
+     _atom_type_symbol
+     _atom_type_scat_Cromer_Mann_a1
+     _atom_type_scat_Cromer_Mann_b1
+     _atom_type_scat_Cromer_Mann_a2
+     _atom_type_scat_Cromer_Mann_b2
+     _atom_type_scat_Cromer_Mann_a3
+     _atom_type_scat_Cromer_Mann_b3
+     _atom_type_scat_Cromer_Mann_a4
+     _atom_type_scat_Cromer_Mann_b4
+     _atom_type_scat_Cromer_Mann_c
+
+
+  N     12.2126   0.0057   3.1322   9.8933   2.0125  28.9975   1.1663   0.5826 -11.5290
+  C      2.3100  20.8439   1.0200  10.2075   1.5886   0.5687   0.8650  51.6512   0.2156
+  O      3.0485  13.2771   2.2868   5.7011   1.5463   0.3239   0.8670  32.9089   0.2508
+  S      6.2915   2.4386   3.0353  32.3337   1.9891   0.6785   1.5410  81.6937   1.1407
+</pre></blockquote>
+
+<p>This information could be checked to see if the program has correctly 
+interpreted all the scattering atom types present in the input coordinate file.</p>
+
+<h2><a name="geom" id="geom"></a>Statistics about geometry</h2>
+
+<p>The program prints out <a href="#goutl">outliers of the geometric restraints</a>,
+<a href="#govers">overall statistics about the geometry</a> and 
+<a href="#ncs_operators">NCS operators</a> if there are any. For more 
+information about geometry see geometric part of the Description of the program.</p>
+<!--mgwt;garib-->
+
+<h3><a name="goutl" id="goutl"></a>Outliers of the geometric restraints</h3>
+
+<p>Outliers will be printed out at every cycle if
+<blockquote><pre>MONItor MANY</pre></blockquote>
+has been specifed. If
+<blockquote><pre>MONItor MEDium</pre></blockquote>
+has been specified, they will be printed out only at the first and last cycles.
+If
+<blockquote><pre>MONItor FEW</pre></blockquote>
+has been specified, no outliers will be printed out.</p>
+
+<p>By default if the value of restrained parameters deviates from the ideal by more than 10 sigma
+(for non-bonding interactions this is 3 sigma), these restraints are printed out. These parameters
+can be changed using the <a href="../keywords/xray-general.html#moni">MONItor</a> keyword. Sigmas of
+most restraints (apart from sigmas for non-bonded interactions and non-crystallographic 
+symmetry) are taken from the dictionary file.</p>
+
+<h4>Bond length outliers:</h4>
+
+<p>If at least one bond length deviates from the ideal value by more than 
+alpha*sigma (alpha is defined by <a href="../keywords/xray-general.html#moni_medi_dist">MONItor DISTance</a>
+alpha, default 10), then the following message is printed:</p>
+<blockquote><pre>
+    ****               Bond distance outliers               ****
+
+Bond distance deviations from the ideal &gt; 3.000Sigma will be monitored
+
+A  15 ARG C   . - A  15 ARG O   . mod.= 1.295 id.= 1.231 dev= -0.064 sig.= 0.020
+</pre></blockquote>
+
+<p>This means that the distance between C of Arg15 of chain A and O of Arg15 of chain A is 1.295,
+the expected value is 1.231, the deviation from &quot;ideal&quot; value is 0.064, 
+and the sigma for this bond distance restraint is 0.020.</p>
+
+<h4>Bond angle outliers:</h4>
+
+<p>If at least one bond angle deviates from the ideal by more than alpha*sigma
+(alpha is defined by <a href="../keywords/xray-general.html#moni_medi_angl">MONItor ANGLE</a>
+alpha, default 10), then the following message is printed out:</p>
+<blockquote><pre>
+    ****                Bond angle outliers                 ****
+
+Bond angle deviations from the ideal &gt;10.000Sigma will be monitored
+
+A  50 GLU O   B - A  51 LEU N     mod.= 100.81 id.= 123.00 dev= 22.193 sig.=  1.600
+</pre></blockquote>
+
+<p>This means that the angle corresponding to the B conformation of main chain atom O of 
+Glu50 of chain A and N of Leu51 of chain A is 100.81, the expected &quot;ideal&quot; value is 123,
+the deviation is 22.193 and the sigma is 1.6. Only the first and last atoms of the angle 
+are printed. Middle atom is not printed.</p> 
+
+<h4>Torsion angle outliers:</h4>
+
+<p>If at least one torsion angle deviates from the &quot;ideal&quot; value by
+more than alpha*sigma (alpha is defined by <a href="../keywords/xray-general.html#moni_medi_tors">MONItor TORSion</a>
+alpha, default 10), then the following message is printed out:</p>
+<blockquote><pre>
+    ****               Torsion angle outliers               ****
+
+Torsion angle deviations from the ideal &gt; 3.000Sigma will be monitored
+
+A  11 ASN CA    - A  12 LEU CA    mod.=-167.65 id.= 180.00 per.= 1 dev=-12.352 sig.=  3.000
+</pre></blockquote>
+
+<p>This means that the torsion angle with end atoms CA of Asn11 of chain A and CA 
+of Leu12 of chain A is -167.65, the &quot;ideal&quot; value is expected to be 
+180.0, this torsion angle has periodicity 360/1 = 360, it deviates from the 
+ideal by -12.352, and the sigma for this torsion angle is 3.0. Middle atoms of the 
+torsion angle are not printed.</p>
+
+<h4>Chiral volume outliers:</h4>
+
+<p>If at least one chiral volume deviates from the &quot;ideal&quot; by more 
+than alpha*sigma (alpha is defined using <a href="../keywords/xray-general.html#moni_medi_chir">MONItor CHIRal</a>
+alpha, default 10), then the following message is printed out:</p>
+<blockquote><pre>
+    ****               Chiral volume outliers               ****
+
+Chiral volume deviations from the ideal &gt;10.000Sigma will be monitored
+
+A  51 LEU CG    mod.=   2.79 id.=  -2.59 dev= -5.375 sig.=  0.200
+</pre></blockquote>
+
+<p>This means that the chiral volume with centre at CG of Leu51 of chain A is 2.79, 
+the expected value is -2.59, the deviation is -5.375, and the sigma for this chiral volume is 
+0.2. In this case CD1 and CD2 of LEU should be changed.</p>
+
+<h4>Planar group outliers:</h4>
+
+<p>If at least one atom in one planar group deviates from planarity
+more than alpha*sigma (alpha is defined by <a href="../keywords/xray-general.html#moni_medi_plan">MONItor PLANe</a>
+alpha, default 10), then the following message is printed out:</p>
+<blockquote><pre>
+    ****      Large deviation of atoms from planarity       ****
+
+Deviations from the planarity &gt;10.000Sigma will be monitored
+Atom: A  59 ASP C   B deviation=   0.31 sigma.=   0.02
+</pre></blockquote>
+
+<p>The program first calculates the plane for the given set of atoms which are 
+supposed to be in one plane and then calculates the deviation of each atom from 
+this plane. Here C of Asp59 chain A deviates from the plane by 0.31&Aring;, 
+the sigma for this plane is 0.02</p>
+
+<h4>Non-bonding interaction outliers:</h4>
+
+<p>If at least one of the distances for non-bonding repulsions (vdw, hydrogen 
+bond, metal-ion) deviates from the ideal by more than alpha*sigma (alpha is defined by
+<a href="../keywords/xray-general.html#moni_medi_vdwr">MONItor VDWR</a>
+alpha, default 3), the program prints out the following message:</p>
+<blockquote><pre>
+    ****                    VDW outliers                    ****
+
+VDW deviations from the ideal &gt; 2.000Sigma will be monitored
+
+A  26 CYS SG  A - A  75 ILE CD1 . mod.= 2.812 id.= 3.820 dev= -1.008 sig.= 0.300
+</pre></blockquote>
+
+<p>This means the distance between SG of Cys26 of chain A, A conformer and CD1 of Ile75 of 
+chain A is 2.812, the expected &quot;ideal&quot; value is 3.82, the deviation from 
+the &quot;ideal&quot; value is -1.008, and the sigma for this interaction is 0.3.</p> 
+
+<h4>B-value outliers:</h4>
+
+<p>If the difference between the B-values of bonded atoms or angle-related atoms 
+is more than alpha*sigma (alpha is defined by <a href="../keywords/xray-general.html#moni_medi_bfac">MONItor BFACtors</a>
+alpha, default is 10), the following message is printed out:</p>
+<blockquote><pre>
+    ****                  B-value outliers                  ****
+
+B-value differences &gt; 10.00Sigma will be monitored
+B   5 PHE N     - B   4 GLN C        ABS(DELTA)= 15.990   Sigma=  1.500
+</pre></blockquote>
+
+<p>This means that the difference between B-values of the atoms N Phe5 of chain B and C of Gln4 
+chain B is 15.9, and the sigma for this B-value restraint is 1.5.</p>
+
+<h4>NCS outliers:</h4>
+
+<p>If, after transformation of positional or thermal parameters, the difference 
+between NCS-related atoms deviates from 0.0 by more than alpha*sigma (alpha is defined 
+by <a href="../keywords/xray-general.html#moni_medi_ncsr">MONItor NCSR</a> alpha, default is 10),
+the following message is printed out:</p>
+<blockquote><pre>
+    ****               NCS restraint outliers               ****
+
+Deviations from the average position &gt; 3.000Sigma will be monitored
+
+Positional: A  12 LEU N   . deviation = 0.544 sigma= 0.050
+B-value   : B  50 ASN CA  . deviation =20.000 sigma= 1.500
+</pre></blockquote>
+
+<p>This means that the position of atom N of Leu12 of chain A deviates from 
+the average position by 0.544&Aring;; the sigma for this NCS-related atoms is 0.05.
+The B-value of CA Asn50 of chain B deviates from the average B-value by 20.00; the sigma for this
+B-value is 1.5.</p> 
+
+<h4>Sphericity outliers:</h4>
+
+<p>If at least one anisotropic U-value of one atom deviates from the sphere 
+by more than alpha*sigma (alpha is defined by <a href="../keywords/xray-general.html#moni_medi_bsph">MONItor BSPHere</a>
+alpha, default 10), the following message is printed out:</p>
+<blockquote><pre>
+    ****                Sphericity outliers                 ****
+
+U-values different from sphere >   2.00Sigma will be monitored
+A  26 CYS SG  B U-value= 0.2014 0.2329 0.2399 0.0179 0.0227-0.0064 Delta= 0.051 Sigma=  0.025
+</pre></blockquote>
+
+<p>This means the B conformer of atom SG of Cys26 of chain B deviates from sphericty by more
+than 2sigma, the U-value for this atom is  U11 = 0.2014, U22= 0.2329, U33=0.2399, 
+U12=0.0179, U13=0.0227 U14=-0.0064, the Delta of U-values is 0.051 and the sigma is 
+0.025. The isotropic equivalent  of the U-value is calculated as  U<sub>iso</sub> = (U11+U22+U33)/3.
+In this case U<sub>iso</sub> = 0.2247. The B-value equivalent of U<sub>iso</sub> is 17.74.</p>
+
+<h4>Rigid bond outliers:</h4>
+
+<p>If at least for one pair of bonded atoms the rigid bond restraint deviates from 0
+by more than alpha*sigma (alpha is defined by <a href="../keywords/xray-general.html#moni_medi_rbon">MONItor RBONd</a>
+alpha, default 10), the following message is printed out</p>
+<blockquote><pre>
+    ****                Rigid bond outliers                 ****
+
+Rigid bond differences >   2.00Sigma will be monitored
+A  12 LEU N     - A  11 ASN C      Delta  =  4.625 Sigma=  2.000
+</pre></blockquote>
+
+<p>This means the rigid bond restraint between atoms N of Leu12 chain A and C of Leu12 of 
+chain A deviate from 0 by 4.625, the sigma for the rigid bond restraint in terms of B 
+values is 2.0.</p>
+
+<h3><a name="govers" id="govers"></a>Overall statistics about the geometry</h3>
+
+<p>An example:</p>
+<blockquote><pre>
+-------------------------------------------------------------------------------
+             Restraint type            N restraints   Rms Delta   Av(Sigma)
+Bond distances: refined atoms               3167       0.017       0.022
+Bond distances: others                      2000       0.006       0.020
+Bond angles  : refined atoms                4217       1.560       2.007
+Torsion angles, period  1. refined           377       4.740       3.000
+Torsion angles, period  3. refined           703      20.175      15.000
+Chiral centers: refined atoms                503       0.110       0.200
+Planar groups: refined atoms                2186       0.006       0.020
+VDW restraints: refined atoms               4658       0.397       0.431
+VDW restraints: refined atoms                190       0.197       0.363
+VDW restraints: refined atoms                106       0.285       0.300
+VDW restraints: refined atoms                  9       0.227       0.300
+M. chain bond B-values: refined atoms       1900       0.335       1.500
+M. chain angle B-values: refined atoms      3076       0.617       2.000
+S. chain Bond B-values: refined atoms       1267       1.307       3.000
+S. chain angle B-values: refined atoms      1141       1.956       4.500
+NCS: tight positional, group  1 chain A       26       0.081       0.050
+NCS: medium positional, group  1 chain A     170       0.420       0.500
+NCS: loose positional, group  1 chain A      171       1.031       5.000
+NCS: tight thermal, group  1 chain A          26       0.068       0.500
+NCS: medium thermal, group  1 chain A        170       0.626       2.000
+NCS: loose thermal, group  1 chain A         171       2.339      10.000
+-------------------------------------------------------------------------------
+</pre></blockquote>
+
+<p>Where</p>
+<dl>
+<dt><tt>N restraints</tt></dt>
+<dd>Number of restraints for this particular geometric value.</dd>
+<dt><tt>Rms Delta</tt></dt>
+<dd>Root mean square deviation of model values of geometric paramters from 
+ideal ones. It is calculated as:
+<pre>
+Rms Delta = sqrt(sum(Geom<sub>ideal</sub>-Geom<sub>model</sub>)<sup>2</sup>/N<sub>restraints</sub>)
+</pre>
+  <dl>
+  <dt><tt>Geom<sub>ideal</sub></tt></dt><dd>ideal value for the geometric parameter (bond distance, bond angle
+  <em>etc.</em>), taken from the dictionary.</dd>
+  <dt><tt>Geom<sub>model</sub></tt></dt><dd>value of the geometric parameter calculated from 
+  the current model.</dd>
+  <dt><tt>N<sub>restraints</sub></tt></dt><dd>number of restraints for this particular geometric parameter,
+  over which the summation runs.</dd>
+  </dl>
+</dd>
+<dt><tt>Av(Sigma)</tt></dt>
+<dd>Average sigma for this restraint type. Each restraint has its own
+sigma value. Most of them are stored in the dictionary file.</dd>
+<dt><tt>refined atoms</tt></dt>
+<dd>Restraints corresponding to the atoms included in the geometric and X-ray 
+gradient and second derivative calculations.</dd>
+<dt><tt>others</tt></dt>
+<dd>Restraints corresponding to the atoms included in the geometric calculation,
+gradients, and structure factor calculations but not included in the X-ray
+gradient and second derivative calculations. By default hydrogens are dealt with
+in this way.</dd>
+</dl>
+
+<p>Statistics about the following restraints are printed out:
+<a href="#bleng">bond lengths</a>, <a href="#bangle">bond angles</a>,
+<a href="#torsion">torsion angles</a>, <a href="#chiral">chiral volumes</a>,
+<a href="#planar">planar groups</a>, <a href="#non_bonding">non-bonding interactions</a>,
+<a href="#bvalue">B-value</a>, <a href="#ncsrestr">NCS</a>,
+<a href="#spher">sphericity</a>, <a href="#rbond">rigid bond</a>.</p>
+
+<!--mgwt;garib:-->
+<p>Details should be in the description of the program and theory 
+behind the program. But they are not ready yet.</p>
+
+<h4><a name="bleng" id="bleng"></a>Bond lengths:</h4>
+
+<p>Root mean square deviation of covalent bond lengths
+from the &quot;ideal&quot; ones.
+For example:</p>
+<blockquote><pre>Bond distances: refined atoms                  3167     0.017     0.022</pre></blockquote>
+
+<p>The first number is the number of covalent bond lengths, the second is the root mean 
+square deviation of the bond lengths from the dictionary values and the third is 
+the average sigma for this restraint type. Bond lengths are calculated in &Aring;s.</p>
+
+<h4><a name="bangle" id="bangle"></a>Bond angles:</h4>
+
+<p>Statistics about agreement of the bond angles calculated from
+the current refined model and corresponding ideal angles from the dictionary.
+For example:</p>
+<blockquote><pre>Bond angles  : refined atoms                   4217     1.560     2.007</pre></blockquote>
+
+<p>The first value is the number of restraints, the second is the root mean square deviation
+of the bond angles from dictionary values and the third is the average sigma.
+Bond angles are given in degrees (&#176;).</p>
+
+<h4><a name="torsion" id="torsion"></a>Torsion angles:</h4>
+
+<p>Root mean square deviation of the model torsion angles from the
+&quot;ideal&quot; values. For example:</p>
+<blockquote><pre>Torsion angles, period  1. refined              677     4.874     3.000
+Torsion angles, period  3. refined              950    18.910    15.000</pre></blockquote>
+
+<p>This means that there are 677 torsion angles with period 1, the root mean square
+deviation from the ideal value for them is 4.874 and the average sigma for these 
+torsion angles is 3.0. There are 950 torsion angles with period 3 and 
+the root mean square deviation from the ideal value for them is 18.91 and the average sigma
+for these torsion angles is 15.0.</p>
+
+<p>The first line gives statistics for the torsion angles with period 1 and the
+second line for the torsion angles with period 3. The period of a torsion angle
+means: if the ideal value of a torsion angle is alpha then alpha&nbsp;+&nbsp;n*360/period
+values are also ideal values (here n is integer). For example if the ideal value of a
+torsion angle is 60&#176; and the period is 3, then 60 + 1*360/3 = 60 + 120 = 180 and
+60 - 1*360/3 = 60 - 120 = -60 are also ideal values. All other possibilities
+(for example 60 + 2*360/3 = 60 + 240 = 300 is equivalent to -60) are
+equivalent to one of these values.</p> 
+
+<h4><a name="chiral" id="chiral"></a>Chiral volumes:</h4>
+
+<p>This gives statistics about chiral volumes. For example:</p>
+<blockquote><pre>Chiral centres: refined atoms                   816     0.355     0.200</pre></blockquote>
+
+<p>This means that there are 816 chiral volumes, the root mean square deviation of
+these chiral volumes from the dictionary values is 0.355 and the average sigma for 
+them is 0.2.</p>
+
+<p>Chiral volumes are defined with four atoms. The volume of a pyramid formed by 
+these four atoms is calculated and compared with the &quot;ideal&quot; value
+from dictionary. Chiral volumes could be positive or negative. If two atoms
+have changed their positions, the chiral volume changes its sign. For
+example consider Val CB. Three other atoms involved are CA, CG1 and CG2.
+If CG1 and CG2 have swapped their positions, the chiral volume
+changes its sign.</p>
+
+<h4><a name="planar" id="planar"></a>Planar groups:</h4>
+
+<p>Statistics about the deviation of the atoms from the planes in planar
+groups like the rings of histidine residues. For example:</p>
+<blockquote><pre>Planar groups: refined atoms                   4016     0.019     0.020</pre></blockquote>
+
+<p>This means in total there are 4016 atoms in planar groups. The root mean square 
+deviation of these atoms from the planes is 0.019 and the average sigma for the 
+planar groups is 0.020.</p>
+
+<h4><a name="non_bonding" id="non_bonding"></a>Non-bonding interactions:</h4>
+
+<p>Four types of non-bonding interactions are considered:</p>
+<ol type="a">
+<li>The atoms can form a hydrogen bond. Acceptor-donor repulsion.</li>
+<li>One of the atoms is acceptor and the other atom is hydrogen from donor.</li>
+<li>One of the atoms is a metal and the other is an ion.</li>
+<li>None of above. VDW repulsion.</li>
+</ol>
+<p>If the interacting atoms are related through symmetry, they are considered separately.
+If the VDW repulsion is between atoms related by one torsion angle, they are 
+considered separately. Sigma and &quot;ideal&quot; distance for them is 
+different from other VDW pairs.</p>
+
+<p>Statistics for above interactions; an example:</p>
+<blockquote><pre> 
+VDW repulsions: refined atoms                  2697     0.265     0.300
+VDW; torsion: refined atoms                     488     0.154     0.500
+HBOND: refined atoms                            451     0.160     0.500
+VDW repulsions; symmetry: refined atoms         215     0.263     0.300
+HBOND; symmetry: refined atoms                   50     0.266     0.500</pre></blockquote>
+
+<p>Here the first number is the number of restraints for this repulsion type, the second is
+the root mean square deviation from the &quot;ideal&quot; value. The last number is the 
+average sigma for this restraint type. Note that only repulsions are considered, <em>i.e.</em>
+if atoms are separated by more than the &quot;ideal&quot; distance they are not considered as
+interacting atoms.</p>
+
+<h4><a name="bvalue" id="bvalue"></a>B-values:</h4>
+
+<p>This statistic is about differences in B-values between atoms related by one 
+covalent bond or bond angle. Side chains and main chains of the amino 
+acids are considered separately. In other entries all bonds and angles 
+are considered to be equivalent. The sigma and root mean square deviation of
+B-value differences from 0 are given in terms of B-values not U-values. 
+Example of B-value restraint statistics:</p>
+
+<blockquote><pre>M. chain bond B-values: refined atoms          3365     3.464     1.500
+M. chain angle B-values: refined atoms         5393     4.960     2.000
+S. chain Bond B-values: refined atoms          1900     3.839     3.000
+S. chain angle B-values: refined atoms         1755     5.312     4.500</pre></blockquote>
+
+<p>The first line states that there are 3365 pairs of atoms in main chain related by
+covalent bonds. The root mean square deviation from 0 of the B-value differences of these 
+atoms is 3.465 and the average sigma for these pairs of atoms is 1.5.
+The second line is for main chain angle related atoms, the third line is for side
+chain bond related atoms and the fourth line is for side chain angle related atoms.</p>
+
+<h4><a name="ncsrestr" id="ncsrestr"></a>NCS:</h4>
+
+<p>The program prints out the agreement between NCS-related atoms. First
+transformation matrices for all chains are calculated and average positions
+for each atom after applying corresponding transformation matrices are
+calculated. Then the difference between transformed and average positions is
+calculated and used for statistics calculations.</p>
+
+<blockquote><pre>NCS: tight positional, group  1 chain A          26     0.081     0.050
+NCS: medium positional, group  1 chain A        170     0.420     0.500
+NCS: loose positional, group  1 chain A         171     1.031     5.000
+NCS: tight thermal, group  1 chain A             26     0.068     0.500
+NCS: medium thermal, group  1 chain A           170     0.626     2.000
+NCS: loose thermal, group  1 chain A            171     2.339    10.000</pre></blockquote>
+
+<p>The first number is the number of atoms from this group (chain or part of 
+chain), the second number is the root mean square deviation of transformed atoms from
+the average positions of NCS-related atoms and the third number is the sigma used for
+this restraint type.</p>
+
+<p>REFMAC prints out statistics about tight, medium and loose NCS restraints.
+The difference between these restraint types is the weight used for restraints. Statistics about 
+positional as well as thermal parameters are printed out. If NCS-related 
+atoms have anisotropic thermal parameters then the transformation matrix 
+corresponding to anisotropic U-values is calculated and used to compare NCS-related
+atomic U-values. All statistics about thermal parameters are given in B-value units.</p>
+
+<p>Positional parameters are in &Aring; and thermal parameters are in &Aring;&#178;.</p>
+
+<h4><a name="spher" id="spher"></a>Sphericity:</h4>
+
+<p>The program prints out the root mean square deviation from a sphere, for
+anisotropic B-values. For each anisotropic atom their isotropic equivalent 
+(B<sub>iso</sub>=(B11+B22+B33)/3) and the deviation of the anisotropic B-value 
+from the isotropic equivalent is calculated. Then the root mean square is 
+calculated and printed out. For example:</p>
+
+<blockquote><pre>Sphericity. Free atoms                          388     4.689     2.000
+Sphericity. Bonded atoms                       5184     0.825     2.000</pre></blockquote>
+
+<p>The program prints out statistics for free atoms (like water) and bonded atoms
+separately. For example the first line states that there are 388 free atoms,
+the root mean square deviation of these atoms' B-values from a sphere is 4.689 and the average
+sigma used for this restraint type is 2.0. Deviation of the anisotropic B-value
+from sphericity for bonded atoms is smaller than that for free
+atoms as expected. In general there are more restraints for bonded atoms
+(B-value restraints, rigid bond restraints and sphericity restraints) than for
+free atoms (only sphericity restraints).</p>
+
+<h4><a name="rbond" id="rbond"></a>Rigid bond:</h4>
+
+<p>For bonded atoms REFMAC calculates projections of the anisotropic B-values
+onto the bond for both atoms and then calculates the difference between these projections.
+The root mean square of these differences then printed out. For example:</p>
+
+<blockquote><pre>Rigid bond restraints                          5265     3.054     2.000</pre></blockquote>
+
+<p>This states that there are 5265 covalent bonds, the root mean square value of
+differences of the projections of anisotropic B-values onto the bond between
+them is 3.054, and the sigma used for these restraints is 2.0.</p>
+
+<h2><a name="ncs_operators" id="ncs_operators"></a>NCS operators</h2>
+
+<p>REFMAC calculates transformation matrices for all chains specified to be
+related by NCS. The first chain (or group) is taken as reference so it
+has identity matrix of rotation and 0 translation vector. For all other
+chains the transformation matrix to this chain is calculated. The program prints
+out (if <a href="../keywords/xray-general.html#moni_many">MONItor MANY</a> has been specified)
+the transformation matrices, translations as well as rotation angles in polar coordinate system.
+For example (only one chain is considered):</p>
+
+<blockquote><pre>
+ Transformation from chain B to chain A
+
+         -0.9988         0.2784E-01    -0.4056E-01
+ R =      0.2855E-01     0.9994        -0.1693E-01
+          0.4006E-01    -0.1807E-01    -0.9990
+ T =       2.848         -25.48          76.07
+
+       DET(R) =       1.000
+
+ Phi =   89.50 Psi(or Omega) =  -90.81 Chi(or Kapppa) =   177.69</pre></blockquote>
+
+<p>Where R is the transformation matrix, T is the translation vector, Phi and Psi
+show the position of a vector around which the rotation takes place and Chi(or Kappa)
+is the amount of rotation around this vector. This NCS rotation is nearly
+180&#176;, <em>i.e.</em> nearly a 2-fold axis. For a 3-fold axis Chi would be 120, for
+a four-fold it would be 90 <em>etc.</em></p>
+
+<p>To get the transformed position, first the rotation matrix and after that the
+translation is applied (x<sub>new</sub> = R x<sub>old</sub> + T, x<sub>new</sub>
+is transformed position and x<sub>old</sub> is original position.).</p>
+
+<p>If NCS-related atoms have anisotropic B-values, the corresponding matrix
+for anisotropic B-values is calculated. See reference <a href="../references.html#reference3">[3]</a>.</p>
+
+<p>The determinant of the rotation matrices should be 1. If the transformation
+includes inversion, then the determinant is equal to -1.</p>
+
+<h2><a name="xray" id="xray"></a>Statistics about X-ray</h2>
+
+<p>For more information about X-ray contribution to refinement and 
+statistics see X-ray part of the Description of the program.</p>
+<!--mgwt;garib-->
+
+<p>If <a href="../keywords/xray-general.html#moni_many">MONItor MANY</a> is specified, the program
+will print <a href="#xovers">overall X-ray statistics</a> as well as a
+<a href="#xresos">distribution of X-ray statistics over resolution</a>. It is a good idea to check if
+the behaviour of statistics is as expected.
+If <a href="../keywords/xray-general.html#moni_medi">MONItor MEDIum</a> is specified,
+the program will print the behaviour of statistics over resolution only in the first
+and last cycles. In all other cycles only the minimum of overall statistics, namely
+&quot;overall R-factor&quot;, &quot;overall free R-factor&quot; and 
+&quot;overall figure of merit&quot; will be printed out.
+If <a href="../keywords/xray-general.html#moni_few">MONItor FEW</a> is 
+specified, the program will print out only a minimum of statistics about X-ray.</p> 
+
+<h3><a name="xresos" id="xresos"></a>Distribution of X-ray statistics over resolution</h3>
+
+<p>The behaviour of the X-ray statistics over resolution is printed out so that they can be
+utilised using loggraph. For example:</p>
+
+<blockquote><pre>****      Things for loggraph, R factor and others      ****
+
+$TABLE: Rfactor analysis, F distribution v resln  :
+$GRAPHS:&lt;rfactor&gt; v. resln :N:1,6,7,11,12:
+:&lt;fobs&gt; and &lt;fc&gt; v. resln :N:1,4,5,9,10:
+:% observed v. resln :N:1,3:
+$$
+M(4SSQ/LL) NR_used %_obs M(Fo_used) M(Fc_used) Rf_used WR_used
+NR_free M(Fo_free) M(Fc_free) Rf_free   WR_free $$
+$$
+ 0.008     369  89.38   901.7   828.2  0.21  0.25      18  1013.0   905.9  0.25  0.28
+ 0.020     635 100.00   537.3   532.3  0.27  0.29      29   576.0   617.2  0.30  0.36
+ 0.032     769  99.88   423.7   457.2  0.27  0.28      52   407.6   403.0  0.32  0.32
+ 0.044     906  99.90   562.7   563.9  0.19  0.21      49   514.0   523.8  0.24  0.26
+ 0.055    1053  99.64   604.7   572.5  0.19  0.21      45   539.9   499.8  0.23  0.25
+ 0.067    1096  99.74   544.1   501.4  0.18  0.19      65   496.5   443.8  0.22  0.23
+ 0.079    1223 100.00   476.1   440.5  0.18  0.19      68   438.4   390.2  0.23  0.24
+ 0.091    1312  99.78   366.6   347.5  0.19  0.18      66   359.7   357.0  0.26  0.25
+ 0.103    1376  99.93   308.8   300.1  0.19  0.17      72   316.9   293.6  0.25  0.24
+ 0.114    1432  99.21   249.4   257.0  0.21  0.19      81   253.0   261.6  0.27  0.24
+ 0.126    1534  99.69   217.4   225.6  0.21  0.18      77   227.1   234.7  0.31  0.28
+ 0.138    1570  99.76   195.0   197.0  0.21  0.19      98   181.5   180.8  0.35  0.30
+ 0.150    1696  99.83   179.9   187.0  0.22  0.18      90   176.1   182.4  0.22  0.19
+ 0.161    1691  99.61   162.2   166.9  0.22  0.18      91   171.9   171.3  0.25  0.22
+ 0.173    1775  99.26   152.1   152.4  0.21  0.18      91   148.8   144.5  0.31  0.25
+ 0.185    1819  98.35   144.5   138.3  0.22  0.18      84   133.0   131.9  0.30  0.25
+ 0.197    1858  97.70   131.8   126.8  0.23  0.19      98   129.2   125.1  0.33  0.30
+ 0.209    1895  97.19   135.5   121.1  0.22  0.19     109   137.1   116.6  0.30  0.27
+ 0.220    1942  99.71   118.1   102.0  0.25  0.23     101   127.1   110.7  0.28  0.27
+ 0.232    1939 100.00   139.4    92.3  0.36  0.35      96   129.5    85.2  0.38  0.38
+$$</pre></blockquote>
+
+<p>Where (all statistics are for resolution bins):</p>
+
+<dl>
+<dt>M(4SSQ/LL)</dt>
+<dd>Middle of resolution bins in 4 sin&#178;(theta)/lambda&#178;</dd>
+<dt>NR_used</dt>
+<dd>Number of reflections included in the refinement.</dd>
+<dt>%_obs</dt>
+<dd>Percentage observed reflections.</dd>
+<dt>M(Fo_used)</dt>
+<dd>Average value of the observed reflections used in the refinement.</dd>
+<dt>M(Fc_used)</dt>
+<dd>Average value of the amplitudes of the calculated structure factors.</dd>
+<dt>Rf_used</dt>
+<dd>R-factors corresponding to the reflections used in the refinement.</dd>
+<dt>WR_used</dt>
+<dd>Weighted (with weights 1/sigma<sub>Fo</sub>) R-factor corresponding to
+the reflections included in the refinement.</dd>
+<dt>NR_free</dt>
+<dd>Number of reflections used for free R-factor calculation and likelihood
+parameters estimation.</dd>
+<dt>M(Fo_free)</dt>
+<dd>Average value of the amplitudes of the observed <i>&quot;free&quot;</i> reflections.</dd>
+<dt>M(Fc_free)</dt>
+<dd>Average value of the amplitudes of the calculated <i>&quot;free&quot;</i> reflections.</dd>
+<dt>Rf_free</dt>
+<dd>R-factor corresponding to the <i>&quot;free&quot;</i> reflections.</dd>
+<dt>WR_free</dt>
+<dd>Weighted R-factors corresponding to the <i>&quot;free&quot;</i> reflections.</dd>
+</dl>
+
+<p>Another example:</p>
+
+<blockquote><pre>****            Fom and SigmaA vs resolution            ****
+
+ $TABLE: Fom(&ltcos(DelPhi)&gt;-acentric, centric, overall v resln:
+ $GRAPHS:&ltFom&gt; v. resln :N:1,3,5,7,8:
+ $$
+ &lt;4SSQ/LL&gt; NREFa  FOMa  NREFc FOMc NREFall FOMall  SigmaA_Fc1 $$
+ $$
+  0.0084   313   0.808    56   0.727   369   0.796  0.884
+  0.0202   568   0.810    67   0.758   635   0.805  0.884
+  0.0319   704   0.809    65   0.744   769   0.803  0.885
+  0.0437   838   0.812    68   0.788   906   0.811  0.885
+  0.0555   985   0.809    68   0.792  1053   0.808  0.885
+  0.0673  1029   0.808    67   0.771  1096   0.806  0.885
+  0.0790  1158   0.811    65   0.769  1223   0.809  0.885
+  0.0908  1243   0.800    69   0.659  1312   0.792  0.885
+  0.1026  1310   0.809    66   0.722  1376   0.805  0.885
+  0.1143  1368   0.801    64   0.735  1432   0.798  0.885
+  0.1261  1468   0.799    66   0.596  1534   0.790  0.885
+  0.1379  1501   0.793    69   0.678  1570   0.788  0.885
+  0.1497  1628   0.796    68   0.685  1696   0.791  0.885
+  0.1614  1625   0.793    66   0.624  1691   0.787  0.885
+  0.1732  1719   0.787    56   0.640  1775   0.782  0.885
+  0.1850  1756   0.792    63   0.694  1819   0.789  0.885
+  0.1967  1802   0.783    56   0.607  1858   0.777  0.885
+  0.2085  1840   0.795    55   0.679  1895   0.792  0.885
+  0.2203  1883   0.776    59   0.629  1942   0.772  0.885
+  0.2321  1884   0.830    55   0.800  1939   0.829  0.885
+ $$</pre></blockquote>
+
+<p>Where:</p>
+
+<dl>
+<dt>&lt;4SSQ/LL&gt;</dt>
+<dd>Middle of resolution bins in 4 sin&#178;(theta)/lambda&#178;</dd>
+<dt>NREFa</dt>
+<dd>Number of acentric reflections</dd>
+<dt>FOMa</dt>
+<dd>Figure of merit of the phases for the acentric reflections</dd>
+<dt>NREFc</dt>
+<dd>Number of centric reflections</dd>
+<dt>FOMc</dt>
+<dd>Figure of merit of the phases for the centric reflections</dd>
+<dt>NREFall</dt>
+<dd>Number of all reflections</dd>
+<dt>FOMall</dt>
+<dd>Figure of merit of the phases for all reflections</dd>
+</dl>
+
+<h3><a name="xovers" id="xovers"></a>Full overall X-ray statistics</h3>
+
+<p>An example:</p>
+
+<blockquote><pre>
+<a href="#reso">Resolution limits</a>                    =     19.920     2.050
+<a href="#nref">Number of used reflections</a>           =      27890
+<a href="#pobs">Percentage observed</a>                  =    99.1694
+<a href="#pfree">Percentage of free reflections</a>       =     5.0392
+<a href="#rover">Overall R factor </a>                    =     0.2142
+<a href="#rfree">Free R factor</a>                        =     0.2722
+<a href="#rweig">Overall weighted R factor</a>            =     0.2076
+<a href="#rfwei">Free weighted R factor</a>               =     0.2630
+<a href="#cover">Overall correlation coefficient</a>      =     0.9403
+<a href="#cfree">Free correlation coefficient</a>         =     0.9030
+<a href="#dpi">Cruickshank's DPI for coordinate error</a>=     0.2245
+<a href="#fdpi">DPI based on free R facotr</a>           =     0.2019
+<a href="#fom">Overall figure of merit</a>              =     0.7948
+<a href="#mlsu">ML based su of positional parameters</a> =     0.1576
+<a href="#mlsub">ML based su of thermal parameters</a>    =     5.7279
+</pre></blockquote>
+
+<p>Where:</p>
+
+<dl>
+<a name="reso" id="reso"></a><dt>Resolution limits</dt>
+<dd>Resolution limits used for refinement (in &Aring;)</dd>
+
+<a name="nref" id="nref"></a><dt>Number of used reflections</dt>
+<dd>Number of all reflections used for the refinement</dd>
+
+<a name="pobs" id="pobs"></a><dt>Percentage observed</dt>
+<dd>Fraction of the observed reflections in &#37. If uniqueify has been run
+before using REFMAC, this value will be calculated correctly. Otherwise it
+will be 100.0&#37.</dd>
+
+<a name="pfree" id="pfree"></a><dt>Percentage of free reflections</dt>
+<dd>Percentage of reflections observed but not included in refinement
+and used for purpose of free R-factor calculation and estimation of the
+overall maximum likelihood parameters</dd>
+
+<a name="rover" id="rover"></a><dt>Overall R-factor</dt>
+<dd>Overall R-factor. It is calculated as:
+<blockquote><pre>R-factor = sum||F<sub>o</sub>-|F<sub>c</sub>||/sum|F<sub>o</sub>|</pre></blockquote>
+where <tt>sum</tt> is over all reflections included in the refinement,
+<tt>|F<sub>o</sub>|</tt> is observed amplitude of the structure factor,
+<tt>|F<sub>c</sub>|</tt> is amplitude of the calculated structure factor.</dd>
+
+<dd>Before calculating an &quot;R-factor&quot;, the observed and calculated structure
+factors are scaled to each other. Scale values (isotropic and anisotropic) are
+applied to the calculated structure factors. If bulk solvent is used then this
+is also taken into account. See scaling part of Description of program for
+details of scaling.</dd><!--mgwt;garib-->
+
+<a name="rfree" id="rfree"></a><dt>Free R factor</dt>
+<dd>As &quot;Overall R-factor&quot; described above, except the summation is
+over the reflections <em>not</em> included in the refinement.</dd>
+
+<a name="rweig" id="rweig"></a><dt>Overall weighted R-factor</dt>
+<dd>Overall weighted R-factor. It is calculated as:
+<blockquote><pre>weighted R factor = sum w ||F<sub>o</sub>-|F<sub>c</sub>||/sum w |F<sub>o</sub>|</pre></blockquote>
+where <tt>w</tt> is 1/sigma<sub>Fo</sub>, <tt>sigma<sub>Fo</sub></tt> is the uncertainty
+of the observed amplitudes of the structure factor.</dd>
+
+<a name="rfwei" id="rfwei"></a><dt>Free weighted R factor</dt>
+<dd>As &quot;Overall weighted R-factor&quot; except the summation is over
+the reflections not included in the refinement.</dd>
+
+<dt><a name="cover" id="cover"></a>Overall correlation coefficient</dt>
+<dd>Correlation between observed and calculated structure factor amplitudes.
+It is calculated as:
+<blockquote><pre>Correl =
+(sum(|F<sub>o</sub>||F<sub>c</sub>|)-&lt;|F<sub>o</sub>|&gt;&lt;|F<sub>c</sub>|&gt;)/((sum(|F<sub>o</sub>|&#178;)-&lt;|F<sub>o</sub>|&gt;&#178;)(sum(|F<sub>c</sub>|&#178;)-&lt;|F<sub>c</sub>|&gt;&#178;))<sup>1/2</sup></pre></blockquote>
+where <tt>&lt;|F<sub>o</sub>|&gt;=sum(|F<sub>o</sub>|)/N<sub>used</sub></tt>,
+<tt>&lt;|F<sub>c</sub>|&gt;=sum(|F<sub>c</sub>|)/N<sub>used</sub></tt>,
+summation is over the reflections included in the refinement, <tt>N<sub>used</sub></tt> is number of reflections
+included in the summation.</dd>
+
+<dt><a name="cfree" id="cfree"></a>Free correlation coefficient</dt>
+<dd>Same as &quot;Overall correlation coefficient&quot; except summation is
+over the reflections not included in the refinement.</dd>
+
+<dt><a name="dpi" id="dpi"></a>Cruickshank's DPI for coordinate error</dt>
+<dd>It is calculated using R-factor, number of the reflections,
+number of parameters and number of observables. Completeness of the data
+is also taken into account:
+<blockquote><pre>DPI = sqrt(N<sub>atom</sub>/(N<sub>refl</sub>-N<sub>param</sub>)) R<sub>factor</sub> D<sub>max</sub> compl<sup>-1/3</sup></pre></blockquote>
+where <tt>N<sub>atom</sub></tt> is the number of the atoms included in the refinement,
+<tt>N<sub>refl</sub></tt> is the number of reflections included in the refinement,
+<tt>R<sub>factor</sub></tt> is the overall R-factor,
+<tt>D<sub>max</sub></tt> is the maximum resolution of reflections included in the refinement,
+<tt>compl</tt> is the completeness of the observed data.</dd>
+
+<dt><a name="fdpi" id="fdpi"></a>DPI based on free R-factor</dt>
+<dd>It gives some idea about precision of the positional parameters. It is
+calculated using the free R-factor:
+<blockquote><pre>DPI = sqrt(N<sub>atom</sub>/N<sub>free</sub>) R<sub>free</sub> D<sub>max</sub> compl<sup>-1/3</sup></pre></blockquote>
+where <tt>N<sub>atom</sub></tt> is the number of atoms included in the refinement,
+<tt>N<sub>free</sub></tt> is the number of reflections included in the free R-factor calculation,
+<tt>R<sub>free</sub></tt> is the free R-factor,
+<tt>D<sub>max</sub></tt> is the maximum resolution in &Aring;,
+<tt>compl</tt> is the completeness of the reflection data.</dd>
+
+<dt><a name="fom" id="fom"></a>Overall figure of merit</dt>
+<dd>Overall figure of merit of the phases. It is calculated as:
+<!--mgwt;garib-->
+</dd>
+
+<dt><a name="mlsu" id="mlsu"></a>ML based su of positional parameters</dt>
+<dd>Overall standard uncertainties of the positional parameters based on
+the likelihood function</dd>
+
+<dt><a name="mlsub" id="mlsub"></a>ML based su of the thermal parameters</dt>
+<dd>Overall standard uncertainties of the thermal parameters (B-values) based
+on the likelihood function.</dd>
+</dl>
+
+<h2><a name="scaling" id="scaling">Scale and sigmaA parameters</a></h2>
+
+<p>REFMAC prints out the scale and sigmaA parameters at every cycle. However, if
+anisotropic scale is used it is estimated at the first cycle only. For example:</p>
+<blockquote><pre>
+-----------------------------------------------------------------------------
+Overall               : scale =   0.604, B  =  -0.050
+Babinet's bulk solvent: scale =   0.299, B  = 200.000
+Partial structure    1: scale =   0.727, B  =  13.532
+Overall anisotropic scale factors
+   B11 =  0.98 B22 = -0.91 B33 =  0.21 B12 =  0.00 B13 =  0.31 B23 =  0.00
+Overall sigmaA parameters  : sigmaA0 =   0.930, B_sigmaA  =   2.136
+Babinet's scale for sigmaA : scale =    -0.191, B  =        150.000
+SigmaA fo partial structure   1: scale =   0.304, B  =  56.473
+-----------------------------------------------------------------------------
+</pre></blockquote>
+
+<p>Scale factors are estimated using the following equation:</p>
+<blockquote><pre>
+sum(|F<sub>o</sub>|-Sc<sub>ov</sub>exp(-s<sup>T</sup>B<sub>an</sub>s)(1-Sc<sub>b</sub>exp(-B<sub>b</sub>|S|<sup>2</sup>))|F<sub>c</sub>exp(-B<sub>ov</sub>|S|<sup>2</sup>)+F<sub>s</sub>Sc<sub>s</sub>exp(-B<sub>s</sub>|S|<sup>2</sup>)|)<sup>2</sup>
+</pre></blockquote>
+
+<p>where</p>
+<table border="0">
+<tr>
+<td valign="top"><tt>Sc<sub>ov</sub></tt></td>
+<td>overall scale factor.</td>
+</tr>
+<tr>
+<td valign="top"><tt>B<sub>an</sub></tt></td>
+<td>overall anisotropic B tensor. It is calculated so that it obeys
+crystal symmetry and in orthogonal system its trace is 0 (B11+B22+B33=0).</td>
+</tr>
+<tr>
+<td valign="top"><tt>Sc<sub>b</sub></tt> and <tt>B<sub>b</sub></tt></td>
+<td>scale and B-values for bulk solvent,
+based on Babinet's principle.</td>
+</tr>
+<tr>
+<td valign="top"><tt>B<sub>ov</sub></tt></td>
+<td>overall B-value applied to the structure factors
+calculated from the coordinates.</td>
+</tr>
+<tr>
+<td valign="top"><tt>Sc<sub>s</sub></tt> and <tt>B<sub>s</sub></tt>&nbsp;&nbsp;</td>
+<td>scale and B-values applied to the
+structure factors calculated from Fourier transformation of the solvent region.</td>
+</tr>
+<tr>
+<td valign="top"><tt>|F<sub>o</sub>|</tt></td>
+<td>observed amplitude of the structure factor.</td>
+</tr>
+<tr>
+<td valign="top"><tt>F<sub>c</sub></tt></td>
+<td>structure factor (complex) calculated from the coordinates.</td>
+</tr>
+<tr>
+<td valign="top"><tt>F<sub>s</sub></tt></td>
+<td>structure factor (complex) calculated from the solvent region</td>
+</tr>
+<tr>
+<td valign="top"><tt>s</tt></td>
+<td>vector <tt>(h a*, k b*, l c*)</tt>;
+<tt>a*,  b*, c*</tt> are reciprocal space cell dimensions,
+<tt>(h,k,l)</tt> are the Miller indices of a reflection.</td>
+</tr>
+<tr>
+<td valing="top"><tt>|S|</tt></td>
+<td>length of reciprocal space vector or sin(theta)/lambda).</td>
+</tr>
+</table>
+<p>The summation in the above equation is over all reflections included in the refinement.</p>
+
+<p>SigmaA parameters are estimated using the likelihood function. Reflections
+not included in the refinement are used for SigmaA estimations.
+<em><b>This part should be completed or refer to description, theory whatever</b></em></p>
+<!--mgwt;garib-->
+
+<a name="tls" id="tls"></a><h2>Information about TLS parameters</h2>
+
+<p>If one of the following keywords has been specified:</p>
+<blockquote><pre>#
+# Refine TLS parameters before individual atomic refinement
+#
+REFI TLSCcycle ncycle</pre></blockquote>
+or
+<blockquote><pre>#
+#   Refine TLS parameters
+#
+TLSCcycle ncycle</pre></blockquote>
+
+<p>then REFMAC prints out the TLS parameters at each TLS refinement cycle. If
+<a href="tls.html#tlsin">TLSIN</a> does not contain information about origin, T,
+L or S parameters then they are initialised to 0. For details of TLS
+parameters see, description whatever.</p><!--mgwt;garib-->
+
+<p>The program prints out information about TLS parameters into the .log file
+in the following form:</p>
+<blockquote><pre>TLS group    1: From REFMAC
+ T tensor ( 1) =    0.072   0.171   0.105  -0.064   0.034  -0.030
+ L tensor ( 1) =    4.809   8.514   2.917   4.601  -1.762  -1.277
+ S tensor ( 1) =   -0.751   0.397  -0.344   0.006   0.263   0.683  -0.012  -0.038
+...
+TLS group    6: chain F
+ T tensor ( 6) =    0.160   0.295   0.304   0.034  -0.119   0.071
+ L tensor ( 6) =    9.227   8.425  11.079   3.739   3.652   3.743
+ S tensor ( 6) =   -0.167   0.090  -0.829  -0.203  -0.566   0.744   0.676   0.432</pre></blockquote>
+
+<p>where numbers for the T-tensor correspond to T<sub>11</sub>, T<sub>22</sub>,
+T<sub>33</sub>, T<sub>12</sub>, T<sub>13</sub>, T<sub>23</sub>. Note that the T-tensor
+is symmetric. The same is true for the L-tensor. The S-tensor is printed out as
+S<sub>22</sub>-S<sub>11</sub>, S<sub>11</sub>-S<sub>33</sub>, S<sub>12</sub>,
+S<sub>13</sub>, S<sub>23</sub>, S<sub>21</sub>, S<sub>31</sub>, S<sub>32</sub>.
+The number inside the brackets show the domain (TLS group) number.</p>
+
+<p>The unit for T is &Aring;&#178;, for L it is degree&#178;, and for S it is
+&Aring;*degree.</p>
+
+<p>Note that by inspecting the L-tensor, one can make inference about the degree of
+order of specific domains. In the above example, the L parameter for domain 6 (rigid
+group 6) has a larger value than for domain 1. Electron density before and after
+TLS refinement shows that domain 6 is less ordered.</p>
+
+<a name="rbody" id="rbody"></a><h2>Information about the rigid body refinement</h2>
+
+<p>If either</p>
+<blockquote><pre>#
+#  Do rigid body refinement
+#
+MODE RIGId_body</pre></blockquote>
+<p>or</p>
+<blockquote><pre>#
+#  Do rigid body refinement
+#
+REFInement TYPE RIGId_body</pre></blockquote>
+
+<p>has been specified, then REFMAC prints out information about the progress of
+the rigid body refinement. In the case of rigid body refinement refmac prints out
+information about <a href="#xray">X-ray statistics</a>, <a href="#scaling">scale parameters</a> and
+the parameters of the rigid body (or bodies).</p>
+
+<p>If</p>
+<blockquote><pre>#
+#  Print out full refinement statistics. In case of the rigid body refinement
+#  print out full x-ray statistics and parameters of the rigid bodies
+#  at every cycle.
+#
+MONItor MANY</pre></blockquote>
+
+<p>then the program prints out rigid body statistics at every cycle. If either:</p>
+<blockquote><pre>#
+#  Print out minimum information. In case of rigid body refinement
+#  print out only minimum x-ray statistics (scale parameters, R factor,
+#  free R factor, figure of merit) at every cycle and parameters of the
+#  rigid body only in the last cycle.
+#
+MONItor FEW</pre></blockquote>
+<p>or</p>
+<blockquote><pre>#
+#  Print out medium number statistics. In case of the rigid body
+#  it means that print out rigid body parameters only at the last cycle,
+#  full x-ray statistics at the first and last cycles. In all other cycles
+#  only minimum information about x-ray (scale parameters, R factor, free R
+#  factor and fom)
+#
+MONItor MEDIum</pre></blockquote>
+
+<p>has been specified, then REFMAC prints out rigid body statistics only at
+the last cycle of refinement, <em>i.e.</em> only total rotation and translation.</p>
+
+<p>After giving information about the input script in the
+&quot;Input and default parameters&quot; section, the program prints out information
+about rigid body groups. For example:</p>
+<blockquote><pre>Refinement type                        : Rigid Body
+
+
+    ****                 Domain Definition                  ****
+
+  Group:   1:    No. of pieces:   1
+ Chain:  A Span:    1  600 ** All atoms **
+
+  Group:   2:    No. of pieces:   1
+ Chain:  B Span:    1  600 ** All atoms **</pre></blockquote>
+
+<p>This means that the program will perform rigid body refinement. The number of
+rigid body groups is 2. The first group contains residues from 1 to 600 of chain A,
+the second group contains residues from 1 to 600 of chain B. All atoms in all
+residues will be used for refinement and structure factor calculations.</p>
+
+<!--hereiwas-->
+<p>At the end the program prints out a message about rigid body movement. For
+example:</p>
+<blockquote><pre>
+----------------------------------------------------------
+  Rigid body parameters will be applied to coordinates
+  as following
+
+ Xnew = Rot*Xold - Rot*Tg + Tg +deltaTg
+Where
+ Xnew and Xold are new and old coordinates of atoms in
+              this domain
+ Rot           is rotation matrix derived from Euler angles
+ Tg            is centre of mass of this domain
+ deltaTg       is shift of centre of mass
+----------------------------------------------------------
+Domain     1
+Centre of mass:     62.077    15.442    64.907
+ Euler angles and deltaTg:        -0.22     0.57    -0.08    -0.05    -0.09    -0.09
+
+ Matrix and deltaTg
+        1.000     0.005     0.010
+       -0.005     1.000     0.000
+       -0.010     0.000     1.000
+       -0.045    -0.093    -0.087
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    117.27    89.93     0.64
+   -0.05    -0.09    -0.09
+
+Domain     2
+Centre of mass:     89.665    19.770     4.975
+ Euler angles and deltaTg:        -0.21    -0.50    -0.06     0.15     0.11    -0.14
+
+ Matrix and deltaTg
+        1.000     0.005    -0.009
+       -0.005     1.000     0.000
+        0.009     0.000     1.000
+        0.152     0.113    -0.144
+
+   Polar angles: PHI, PSI(or Omega), CHI(or Kappa), deltaTg:    118.88   -90.07     0.57
+    0.15     0.11    -0.14</pre></blockquote>
+
+<p>Important numbers to look at are deltaTg, <em>i.e.</em> the domain's centre of mass's shift,
+and CHI (or Kappa), which gives the amount of rotation. For example:</p>
+<blockquote><pre>Shift of the first domain in &Aring; is ( -0.045,-0.093,-0.087)
+and rotation is 0.64&#176;.</pre></blockquote>
+
+<p>Output coordinates correspond to the new rotated and shifted atoms.</p>
+
+</body>
+</html>

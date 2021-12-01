@@ -1,0 +1,51 @@
+#!/bin/sh
+#
+
+set -e
+
+# bug # 3192 - run-all examples produce harvest files - well to counteract
+# this here set HARVESTHOME to somewhere in $CCP4_SCR
+
+HARVESTHOME=$CCP4_SCR
+export HARVESTHOME
+
+na4tomtz hklin $CEXAM/data/aucn.na4 hklout $CCP4_SCR/aucn
+
+#
+# aimless - calculating batch scale factors & merging
+# Simple case - single scale and B factor for each batch
+# see $CEXAM/unix/non-runnable/scala.exam for other examples
+#
+aimless hklin $CCP4_SCR/aucn.mtz \
+      hklout   $CCP4_SCR/aucn_mrg.mtz \
+      scales   $CCP4_SCR/aucn.scales \
+      rogues   $CCP4_SCR/aucn.rogues \
+      normplot $CCP4_SCR/aucn.norm \
+      anomplot $CCP4_SCR/aucn.anom \
+      rogueplot $CCP4_SCR/aucn.rogueplot \
+      correlplot $CCP4_SCR/aucn.correlplot \
+       << eof-scala
+run 1 all
+sdcorr  1.8 0.02
+scales batch  bfactor on
+refine parallel
+## Alternative simple scaling models:
+#  1) batch scales, smooth Bfactor (recommended for synchrotron data)
+# scales batch brotaion spacing 5
+#  2) smooth scaling (recommend for laboratory data or "dose-mode" collection)
+# scales rotation spacing 5
+##
+anomalous on
+eof-scala
+#
+#
+ctruncate -stdin << eof
+hklin $CCP4_SCR/aucn_mrg.mtz
+hklout $CCP4_SCR/aucn_ctr.mtz
+colin /*/*/[IMEAN,SIGIMEAN]
+nres 745
+eof
+
+
+
+

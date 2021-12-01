@@ -1,0 +1,1399 @@
+#
+#     Copyright (C) 2004-5  CCLRC, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#=========================================================================
+#
+# shelx_cde script  -  run the SHELXC/D/E pipeline to find heavy atoms
+#
+#=========================================================================
+
+# Internal procedures
+
+#-------------------------------------------------------------------------
+proc convert_reso { value } {
+#-------------------------------------------------------------------------
+#d_sum Convert resolution value to 1/reso**2.0
+#d_desc Converts a resolution value supplied in Angstroms to 1/reso**2.0 \
+which is a format suitable for loggraph tables using the column heading \
+M(4SSQ/LL).
+#d_arg value The resolution value in Angstroms
+
+  if { [string is double $value] } {
+    if { $value > 0.0 } {
+      return [format "% 7.5f" [expr 1.0 / pow($value,2.0) ]]
+    }
+  }
+  puts "ERROR cannot convert invalid resolution \"$value\""
+  return $value
+}
+
+#-------------------------------------------------------------------------
+proc mtztosca { hklin hklout args } {
+#-------------------------------------------------------------------------
+#d_sum Generate a Scalepack file from an MTZ file
+#d_desc Runs mtz2various to generate a Scalepack file (.sca) from an \
+MTZ file. The input file must contain either intensities (I(+)/(-)) or \
+structure factor amplitudes (F(+)/(-)). If Fs are input then they will \
+converted to Is using the FSQUAR option of mtz2various.
+#d_desc The MTZ labels are specified using the prog_label=file_label \
+format. The available labels are: Ip, SIGIp, Im, SIGIm (for intensities) \
+and Fp, SIGFp, Fm, SIGFm (for structure factors).
+#d_arg hklin  Full pathname of input MTZ file
+#d_arg hklout Full pathname of output Scalepack file
+#d_opt0 prog_label=file_label
+#d_opt1 Specifies MTZ label assignments 
+
+  # Process input
+  if { ![file exists $hklin] } {
+    puts "ERROR hklin \"$hklin\" doesn't exist (mtztosca)"
+    return 0
+  }
+  if { [file exists $hklout] } {
+    puts "ERROR hlkout \"$hklout\" already exists (mtztosca)"
+    return 0
+  }
+
+  # Initialise
+  set labinline {}
+  set intensities 1
+
+  # Optional arguments are the label assignments
+  foreach arg $args {
+    set nlabels 0
+    set opts [split $arg "="]
+    if { [llength $opts] == 2 } {
+      set proglabel [lindex $opts 0]
+      set filelabel [lindex $opts 1]
+      if { ![StringSame $filelabel "Unassigned"] } {
+        switch -regexp $proglabel {
+	^IMEAN {
+	     append labinline " -\n I=$filelabel"
+             incr nlabels
+         }
+	^SIGIMEAN {
+	     append labinline " -\n SIGI=$filelabel"
+             incr nlabels
+         }
+        ^Ip {
+             append labinline " -\n I(+)=$filelabel"
+             incr nlabels
+         }
+        ^SIGIp {
+             append labinline " -\n SIGI(+)=$filelabel"
+             incr nlabels
+         }
+        ^Im {
+             append labinline " -\n I(-)=$filelabel"
+             incr nlabels
+         }
+        ^SIGIm {
+             append labinline " -\n SIGI(-)=$filelabel"
+             incr nlabels
+         }
+	^FMEAN {
+	     append labinline " -\n FP=$filelabel"
+             incr nlabels
+         }
+	^SIGFMEAN {
+	     append labinline " -\n SIGFP=$filelabel"
+             incr nlabels
+         }
+	^Fp {
+             append labinline " -\n F(+)=$filelabel"
+	     incr nlabels
+	 }  
+	^SIGFp {
+	     append labinline " -\n SIGF(+)=$filelabel"
+	     incr nlabels
+	 } 
+	^Fm {
+	     append labinline " -\n F(-)=$filelabel"
+	     incr nlabels
+	 } 
+	^SIGFm {
+             append labinline " -\n SIGF(-)=$filelabel"
+	     incr nlabels
+	 }
+        default   {
+             puts "ERROR unrecognised label \"$proglabel\" (mtztosca)"
+             return 0
+         }
+        }
+        # Is this a structure factor amplitude?
+        if { [regexp F $proglabel] } {
+          set intensities 0
+        } 
+      }
+    } else {
+      puts "ERROR unrecognised option \"$arg\" (mtztosca)"
+      return 0
+    }
+  }
+
+  # Check that there is something to do
+  if { $nlabels < 1 } { return 0 }
+
+  # Command to run mtz2various
+  set mtz2various_cmd "[BinPath mtz2various] HKLIN \"$hklin\" HKLOUT \"$hklout\""
+
+  # Create a command file
+  set mtz2various_script [GetTmpFileName -ext _com]
+  if { $intensities } {
+    # Inputs are intensities
+    WriteFile $mtz2various_script \
+"OUTPUT SCALEPACK
+LABIN $labinline
+END"
+  } else {
+    # Inputs are structure factors
+    WriteFile $mtz2various_script \
+"OUTPUT SCALEPACK
+LABIN $labinline
+FSQUAR
+SCALE 0.01
+END"
+  }
+
+  # Execute the mtz2various command
+  set status [Execute $mtz2various_cmd $mtz2various_script \
+              program_status report ]
+
+  return $status
+}
+#-------------------------------------------------------------------------
+proc pdbset_mc { xyzin xyzout } {
+#-------------------------------------------------------------------------
+# Procedure for removing non main chain atems which are not recognised by refmac
+  
+  if { [file exists $xyzin] } {
+     
+    set cmd "[BinPath pdbset] XYZIN \"$xyzin\" XYZOUT \"$xyzout\""
+    set script ""
+    append script "EXCLUDE SIDE\n"
+    append script "END\n"
+    WriteFile [set pdb_script [GetTmpFileName -ext com]] $script
+    set status [Execute $cmd $pdb_script program_status report]
+     
+    if { ![file exists $xyzout] } {
+      WriteToLog "ERROR in pdbset excluding hetatoms from shelxe output pdb"
+    }
+  }
+
+#@@@@@
+  return $status
+}
+
+# Procedure for making an MTZ file from an XtalView
+# phs file using f2mtz
+#-------------------------------------------------------------------------
+proc phstomtz { enantiomorph phsin hklout symm cell } {
+#-------------------------------------------------------------------------
+#d_sum Generate an MTZ file from an SHELX phases file
+#d_desc Use f2mtz to generate a new MTZ file from an XtalView-style \
+phases file (.phs) output from SHELX.
+#d_desc The output file will contain labels F, SIGF, FOM, and PHI. If \
+enantiomorph is specified as original then the labels will have "_ori" \
+appended, if inverted is specified then "_inv" will be appended.
+#d_arg enantiomorph Either "original" or "inverted"
+#d_arg phsin        Full path of the input phases file
+#d_arg hklout       Full path of the output MTZ file
+#d_arg symm         Spacegroup of the data
+#d_arg cell         Cell parameters supplied as a list
+
+  # Set output labels for f2mtz and cad appropriately
+  if { $enantiomorph == "original" } {
+    set laboutline "H K L F_ori FOM_ori PHI_ori SIGF_ori"
+    set cadlabin "E1=F_ori E2=SIGF_ori E3=PHI_ori E4=FOM_ori"
+  } elseif { $enantiomorph == "inverted" } {
+    set laboutline "H K L F_inv FOM_inv PHI_inv SIGF_inv"
+    set cadlabin "E1=F_inv E2=SIGF_inv E3=PHI_inv E4=FOM_inv"
+  } else {
+    set laboutline "H K L F FOM PHI SIGF"
+    set cadlabin "E1=F E2=SIGF E3=PHI E4=FOM"
+  }
+
+  # Temporary MTZ file
+  set hkltmp [GetTmpFileName -ext _mtz]
+
+  # Command to run f2mtz
+  set f2mtz_cmd "[BinPath f2mtz] HKLIN \"$phsin\" HKLOUT \"$hkltmp\""
+
+  # Create a command file
+  WriteFile [set f2mtz_script [GetTmpFileName -ext _com]] \
+"TITLE Phase information from SHELXE
+SYMMETRY $symm
+CELL $cell
+FORMAT '(3f4.0,f9.2,f8.4,f8.1,f8.2)'
+LABOUT $laboutline
+CTYPOUT H H H F W P Q
+NAME PROJECT SHELXE CRYSTAL Unknown DATASET $enantiomorph
+END"
+
+  # Execute the f2mtz command
+  set status [Execute $f2mtz_cmd $f2mtz_script \
+              program_status report ]
+
+  # f2mtz seems to scramble the columns so that subsequent
+  # tasks can't connect e.g. SIGF to F
+  # Use cad to put the columns into a better order
+  set cad_cmd "[BinPath cad] HKLIN1 \"$hkltmp\" HKLOUT \"$hklout\""
+  
+  # Create a command file
+  WriteFile [set cad_script [GetTmpFileName -ext _com]] \
+"LABIN FILE 1 $cadlabin
+END"
+  set status [Execute $cad_cmd $cad_script \
+              program_status report ]
+
+  return $status
+}
+
+#-------------------------------------------------------------------------
+proc shelx_cde_rename_file { filen { filen1 "" } } {
+#-------------------------------------------------------------------------
+#d_sum Move a file in the current directory to the project directory
+#d_arg filen Name of the file (no path)
+#d_arg filen1 (optional) New name of file, if different from filen
+    # Move a file in pwd to the project dir
+    set source [file join [pwd] $filen]
+    if {  $filen1 == "" } {
+      set target [file join [GetDefaultDirPath] $filen]
+    } else {
+      set target [file join [GetDefaultDirPath] $filen1]
+    }
+    if { $source == $target } {
+      # Source and target are identical files; nothing to do
+      return 1
+    }
+    if { [file exists $target] } {
+      WriteToLog "Removing old file:\n $target\nand replacing with version from this run"
+      DeleteFile $target
+    }
+    if { [file exists $source] } {
+      MoveFile $source $target
+      return 1
+    } else {
+      WriteToLog "Cannot rename file\n $source"
+      return 0
+    }
+}
+
+#=========================================================================
+#
+# shelx_cde script  -  run SHELXC/D/E
+#
+#=========================================================================
+
+  
+# Source file with utility procedures
+  source [SearchPath TOP src CCP4_utils.tcl]
+  source [SearchPath TOP utils map_utils.tcl]
+# Read the crystal parameters files
+  ReadSymops [FileJoin [GetEnvPath CLIBD] symop.lib]
+  ReadCrystalData [SearchPath TOP etc crystal.lib]
+
+
+# Move to the TEMPORARY directory before running anything
+  ChangeDirectory [GetDefaultDirPath TEMPORARY]
+
+# Set up a Shelx root name
+  append shelx_name $job_params(PROJECT) _ $job_params(JOB_ID)
+
+#=================================================================
+# Write references for programs
+#=================================================================
+
+WriteToLog \
+"**************************  Running SHELX C/D/E  **************************"
+
+set references {}
+if { $RUN_SHELXD } {
+  append references \
+"\nSHELXD References: 
+
+  * Uson & Sheldrick (1999) Curr. Opin. Struct. Biol. 9 643-648 
+  * Sheldrick, Hauptman, Weeks, Miller & Uson (2001) International
+    Tables for Crystallography Vol. F, eds. Arnold & Rossmann,
+    pp. 333-351 
+  * Schneider & Sheldrick (2002) Acta Cryst. D58 1772-1779\n"
+}
+if { $RUN_SHELXE } {
+  append references \
+"\nSHELXE References:
+
+  * Sheldrick (2002) Z. Kristallogr. 217 644-650\n"
+}
+
+if { $references != "" } {
+  WriteToLog "$references" -noheader -nofooter 
+}
+
+#=================================================================
+# Prepare scalepack files for input into SHELXC (if required)
+#=================================================================
+
+if { $RUN_SHELXC && [StringSame $SHELXC_INPUT_FORMAT MTZ] } {
+
+  # Generate the required .sca files from the MTZ input
+
+  # Native data
+
+  if { [StringSame $SHELXC_EXPT MAD SAD] && ! $USE_NATIVE } {
+    set native 0
+  } else {
+    set native 1
+  }
+
+  if { $native } {
+    set SCALIN_NAT "[GetTmpFileName -ext _sca].sca"
+    if { [file exists $SCALIN_NAT] } {
+      DeleteFile $SCALIN_NAT
+    }
+
+    if { [StringSame $NATIVE_TYPE AVERAGE] } {
+      # Native data are averaged
+      if { [StringSame $SHELXC_MTZ_INPUT INTENSITIES] } {
+        mtztosca $HKLIN $SCALIN_NAT IMEAN=$IMEAN SIGIMEAN=$SIGIMEAN
+      } else {
+        mtztosca $HKLIN $SCALIN_NAT FMEAN=$FMEAN SIGFMEAN=$SIGFMEAN
+      }
+    } else {
+      # Native data are Friedel pairs
+      if { [StringSame $SHELXC_MTZ_INPUT INTENSITIES] } {
+        mtztosca $HKLIN $SCALIN_NAT Ip=$Ip SIGIp=$SIGIp Im=$Im SIGIm=$SIGIm
+      } else {
+        mtztosca $HKLIN $SCALIN_NAT Fp=$Fp SIGFp=$SIGFp Fm=$Fm SIGFm=$SIGFm
+      }
+    }
+    if { ![file exists $SCALIN_NAT] } {
+      # Failed to convert the native data
+      TerminateScript 0 -report "Failed to convert the native data"
+    }
+  } else {
+    # No native
+    set SCALIN_NAT ""
+  }
+
+  # Experiment-specific input
+
+  if { [StringSame $SHELXC_EXPT MAD] } {
+
+     # Peak data
+     set SCALIN_PEAK "[GetTmpFileName -ext _sca].sca"
+     if { [file exists $SCALIN_PEAK] } {
+       DeleteFile $SCALIN_PEAK
+     }
+     if { [StringSame $SHELXC_MTZ_INPUT INTENSITIES] } {
+       mtztosca $HKLIN $SCALIN_PEAK \
+         Ip=$IPEAKp SIGIp=$SIGIPEAKp Im=$IPEAKm SIGIm=$SIGIPEAKm
+     } else {
+       mtztosca $HKLIN $SCALIN_PEAK \
+         Fp=$FPEAKp SIGFp=$SIGFPEAKp Fm=$FPEAKm SIGFm=$SIGFPEAKm
+     }
+     if { ![file exists $SCALIN_PEAK] } { set SCALIN_PEAK "" }
+
+     # Inflection point
+     set SCALIN_INFL "[GetTmpFileName -ext _sca].sca"
+     if { [file exists $SCALIN_INFL] } {
+       DeleteFile $SCALIN_INFL
+     }
+     if { [StringSame $SHELXC_MTZ_INPUT INTENSITIES] } {
+       mtztosca $HKLIN $SCALIN_INFL \
+         Ip=$IINFLp SIGIp=$SIGIINFLp Im=$IINFLm SIGIm=$SIGIINFLm
+     } else {
+       mtztosca $HKLIN $SCALIN_INFL \
+         Fp=$FINFLp SIGFp=$SIGFINFLp Fm=$FINFLm SIGFm=$SIGFINFLm
+     }
+     if { ![file exists $SCALIN_INFL] } { set SCALIN_INFL "" }
+
+     # Low energy remote
+     set SCALIN_LREM "[GetTmpFileName -ext _sca].sca"
+     if { [file exists $SCALIN_LREM] } {
+       DeleteFile $SCALIN_LREM
+     }
+     if { [StringSame $SHELXC_MTZ_INPUT INTENSITIES] } {
+       mtztosca $HKLIN $SCALIN_LREM \
+         Ip=$ILREMp SIGIp=$SIGILREMp Im=$ILREMm SIGIm=$SIGILREMm
+     } else {
+       mtztosca $HKLIN $SCALIN_LREM \
+         Fp=$FLREMp SIGFp=$SIGFLREMp Fm=$FLREMm SIGFm=$SIGFLREMm
+     }
+     if { ![file exists $SCALIN_LREM] } { set SCALIN_LREM "" }
+
+     # High energy remote
+     set SCALIN_HREM "[GetTmpFileName -ext _sca].sca"
+     if { [file exists $SCALIN_HREM] } {
+       DeleteFile $SCALIN_HREM
+     }
+     if { [StringSame $SHELXC_MTZ_INPUT INTENSITIES] } {
+       mtztosca $HKLIN $SCALIN_HREM \
+         Ip=$IHREMp SIGIp=$SIGIHREMp Im=$IHREMm SIGIm=$SIGIHREMm
+     } else {
+       mtztosca $HKLIN $SCALIN_HREM \
+         Fp=$FHREMp SIGFp=$SIGFHREMp Fm=$FHREMm SIGFm=$SIGFHREMm
+     }
+     if { ![file exists $SCALIN_HREM] } { set SCALIN_HREM "" }
+
+  } else {
+
+     # Non-MAD experiments
+
+     set SCALIN_HA "[GetTmpFileName -ext _sca].sca"
+     if { [file exists $SCALIN_HA] } {
+       DeleteFile $SCALIN_HA
+     }
+     if { [StringSame $SHELXC_MTZ_INPUT INTENSITIES] } {
+       mtztosca $HKLIN $SCALIN_HA \
+         Ip=$IHAp SIGIp=$SIGIHAp Im=$IHAm SIGIm=$SIGIHAm
+     } else {
+       mtztosca $HKLIN $SCALIN_HA \
+         Fp=$FHAp SIGFp=$SIGFHAp Fm=$FHAm SIGFm=$SIGFHAm
+     }
+     if { ![file exists $SCALIN_HA] } {
+       set SCALIN_HA ""
+     }
+
+  }
+
+}
+
+#=================================================================
+# Run SHELXC
+#=================================================================
+
+if { $RUN_SHELXC } {
+
+  WriteToLog "Running SHELXC to prepare data for heavy atom search"
+
+# Project name for SHELXC run
+  append shelxc_name $shelx_name _shelxc
+
+# Make the ins file
+  CreateComScript shelxc shelxc_script
+
+# Set up a temporary filename to copy the logfiles to
+  set tmp_log_file [GetTmpFileName -ext log]
+
+# Execute Shelxc
+  set status [Execute "[BinPath shelxc] $shelxc_name " \
+                $shelxc_script program_status report \
+                -copy_log_file $tmp_log_file -success 999]
+
+# Collect the output files
+# Missing files are an indication that something went wrong
+  append native_hkl $shelxc_name .hkl
+  append fa_hkl $shelxc_name _fa.hkl
+  if { [file exists $native_hkl] } {
+    MoveFile $native_hkl $HKL_NATIVE
+  } else {
+    TerminateScript 0 -report "Shelxc failed to generate native HKL file"
+  }
+  if { [file exists $fa_hkl] } {
+    MoveFile $fa_hkl $HKL_FA
+  } else {
+    TerminateScript 0 -report "Shelxc failed to generate HKL file with Fa values"
+  }
+
+# The .ins file created by SHELXC
+  append ins_file $shelxc_name _fa.ins
+  if { [file exists $ins_file] } {
+    shelx_cde_rename_file $ins_file
+    AddOutputFile $ins_file PROJECT
+  } else {
+    # .ins file not found
+    TerminateScript 0 -report "Shelxc failed to generate .ins file"
+  }
+
+#=================================================================
+# Make a graphs from the logfile
+#=================================================================
+
+  if { ![ReadFile $tmp_log_file text] } {
+    # Failed to read the logfile - terminate the script
+    TerminateScript 0 -report "Failed to read the Shelxc logfile"
+  }
+  set ttext ""
+
+  # Check for errors in Shelx output
+  if { [regexp -- "Bad or missing SPAG instruction" $text] } {
+    # Bad spacegroup symbol
+    TerminateScript 0 -report "Invalid spacegroup symbol supplied to SHELXC"
+  }
+
+  # Generic SHELXC error messages:
+  #  ** Repeated '//KR(1:4)//' instruction **
+  #  ** Bad or missing '//KR(1:4)//' instruction **
+  #  ** Forbidden input data combination **
+  #  ** Not enough memory to store reflections - ... **
+  #  ** Cannot open file '//KR(1:NL)//' **
+  #  ** Input file '//KR(1:NL)//' corrupted at line',NI,' **
+  #  ** Not enough available memory for local scaling **
+  # We don't check for these now but may do in future, hence these
+  # comments
+
+  #==========================================================
+  # <I/sig> VERSUS RESOLUTION
+  # COMPLETENESS VERSUS RESOLUTION
+  # <d"/sig> VERSUS RESOLUTION
+  #==========================================================
+
+  # Initialise list of the graphs from the Shelxc logfile
+  set graph_list [list isig compl]
+  if { [StringSame $SHELXC_EXPT SIRA SIR] } {
+    lappend graph_list dsig
+  }
+  if { [StringSame $SHELXC_EXPT MAD SAD SIRA] } {
+    lappend graph_list ddsig
+  }
+
+  set graphdata(names) {}
+  set name [lindex [ExtractFromText $text "Reflections read from" 0 4] 0]
+  while { $name != "" } {
+    lappend graphdata(names) $name
+    # Now return the next line which should be of the form
+    # Resl.   Inf - 8.0 - 6.0 - 5.0 - 4.0 - 3.5 - 3.0 - 2.6 - 2.4 ...
+    set line [ExtractFromText - "Resl." 0 all]
+    set graphdata(reso_$name) {}
+    set line [lrange $line 3 end]
+    foreach word $line {
+      if { [string is double $word] } {
+        lappend graphdata(reso_$name) $word
+      }
+    }
+    # Look for lines of the form:
+    # <I/sig>    25.4  34.3  36.8  41.8  37.6  27.5  16.7  12.5  ...
+    set line [ExtractFromText - "<I/sig>" 0 all]
+    set graphdata(isig_$name) {}
+    foreach word $line {
+      if { [string is double $word] } {
+        lappend graphdata(isig_$name) $word
+      }
+    }
+    # Look for lines of the form:
+    # %Complete  88.9  99.3  99.5  99.7  99.7  99.9  99.9  99.9  ...
+    set line [ExtractFromText - "%Complete" 0 all]
+    set graphdata(compl_$name) {}
+    foreach word $line {
+      if { [string is double $word] } {
+        lappend graphdata(compl_$name) $word
+      }
+    }
+    # For MAD and SAD and SIRAS
+    # ONLY FOR DATASETS WHICH ARE NOT "NAT"
+    if { $name != "NAT" && [StringSame $SHELXC_EXPT MAD SAD SIRA] } {
+      # Look for lines of the form:
+      # <d"/sig>   1.32  1.33  1.20  1.07  1.05  1.04  1.07  1.02  ...
+      set line [ExtractFromText - "<d\"/sig>" 0 all]
+      set graphdata(ddsig_$name) {}
+      foreach word $line {
+        if { [string is double $word] } {
+          lappend graphdata(ddsig_$name) $word
+        }
+      }
+      # In some cases it appears that there are fewer d"/sig values
+      # than there are resolution values
+      set nblank [expr \
+          [llength $graphdata(reso_$name)] - [llength $graphdata(ddsig_$name)]]
+      for { set i 0 } { $i < $nblank } { incr i } {
+          lappend graphdata(ddsig_$name) "*"
+      }
+    }
+    # For SIR and SIRAS
+    # ONLY FOR DATASETS WHICH ARE NOT "NAT"
+    if { $name != "NAT" && [StringSame $SHELXC_EXPT SIRA SIR] } {
+      # Look for lines of the form:
+      # <d'/sig>   2.88  3.20  3.23  3.15  3.47  3.21  2.92   ...
+      set line [ExtractFromText - "<d\'/sig>" 0 all]
+      set graphdata(dsig_$name) {}
+      foreach word $line {
+        if { [string is double $word] } {
+          lappend graphdata(dsig_$name) $word
+        }
+      }
+    }
+    # Next graph
+    # Look for lines of the form:
+    # 74884 Reflections read from NAT file /home/pjx/SHELX/JIA_DATA/jia.hkl
+    set name [lindex [ExtractFromText - "Reflections read from" 0 4] 0]
+  }
+
+  #==========================================================
+  # Make graphs of each of the quantities
+  #==========================================================
+
+  # Make a master list of all the resolution values
+  set reso {}
+  foreach name $graphdata(names) {
+    set reso [concat $reso $graphdata(reso_$name)]
+  }
+  set reso [lsort -real -decreasing -unique $reso]
+
+  # Only produce the table if there is some data to display
+  if { [llength $reso] > 0 } {
+    # List of the columns for each of the graphs
+    set i 2
+    foreach graph $graph_list {
+      set cols($graph) "1"
+      foreach name $graphdata(names) {
+        if { $graph == "dsig" && $name == "NAT" } {
+        } elseif { $graph == "ddsig" && $name == "NAT" } {
+        } else {
+          incr i
+          append cols($graph) "," "$i"
+        }
+      }
+    }
+
+    # Make the header first
+    set ttext ""
+    append ttext "\$TABLE :SHELXC Analysis of <I/sig>, completeness, <d\"/sig>:\n"
+    append ttext "\$GRAPHS\n"
+
+    # Write titles for each of the graphs
+    append ttext ": <I/sig> vs Resolution :A:$cols(isig) :\n"
+    append ttext ": %Completeness vs Resolution :A:$cols(compl) :\n"
+    if { [lsearch -exact $graph_list dsig] > -1 } {
+      append ttext ": <d\'/sig> vs Resolution :A:$cols(dsig) :\n"
+    }
+    if { [lsearch -exact $graph_list ddsig] > -1 } {
+      append ttext ": <d\"/sig> vs Resolution :A:$cols(ddsig) :\n"
+    }
+    append ttext "\$\$ M(4SSQ/LL) Resolution"
+    # Write the column names for each graph
+    foreach graph $graph_list {
+      foreach name $graphdata(names) {
+        if { $graph == "dsig" && $name == "NAT" } {
+        } elseif { $graph == "ddsig" && $name == "NAT" } {
+        } else {
+         append ttext " $name"
+        }
+      }
+      append ttext "\n    "
+    }
+    append ttext "\$\$ \$\$\n"
+    # Body of the table
+    foreach value $reso {
+      # Convert to 1/d^2 value
+      set line "[convert_reso $value] $value"
+      foreach graph $graph_list {
+        foreach name $graphdata(names) {
+          if { [info exists graphdata([subst $graph]_$name)]} {
+            if { [set k [lsearch $graphdata(reso_$name) $value]] < 0 } {
+              # Write a dummy character for loggraph
+	      append line " *"
+	    } else {
+              # Write the actual value
+              append line " [lindex $graphdata([subst $graph]_$name) $k]"
+            }
+          }
+        }
+      }
+      # Write the line
+      append ttext "$line" "\n"
+    }
+    # Close the table
+    append ttext "\$\$\n"
+    # Write the text to the logfile
+    WriteToLog $ttext
+  } else {
+    # Couldn't find any output from SHELXC to turn into graphs
+    WriteToLog "WARNING\nNo data from SHELXC for graphs of <I/sig>, completeness, <d\"/sig>"
+  }
+    
+  #==========================================================
+  # ANOMALOUS CC VERSUS RESOLUTION
+  # NB this is only valid for MAD data
+  #==========================================================
+  if { [StringSame $SHELXC_EXPT MAD] } {
+    # Look for the line starting "Correlation coefficients" and
+    # return the next line
+    set line [ExtractFromText $text "Correlation coefficients" 1 all ]
+    # This line should be of the form:
+    # Resl.   Inf - 8.0 - 6.0 - 5.0 - 4.0 - 3.7 - 3.5 - 3.3 - 3.1 ...
+    set line [lrange $line 3 end]
+    set titles [list M(4SSQ/LL) Resolution]
+    set graphdata(Resolution) {}
+    set graphdata(M(4SSQ/LL)) {}
+    set graphdata(COLUMNLIST) "1"
+    foreach word $line {
+      if { [string is double $word] } {
+        lappend graphdata(Resolution) $word
+        lappend graphdata(M(4SSQ/LL)) [convert_reso $word]
+      }
+    }
+    set nrow [llength $graphdata(Resolution)]
+
+    # Get the rest of the lines one by one until we get a blank line
+    set line [ExtractFromText - "" 1 all ]
+    while { [string trim $line] != "" } {
+      set nwords [llength $line]
+      set title [lindex $line 0]
+      lappend titles $title
+      set graphdata($title) [lrange $line 1 $nwords]
+      append graphdata(COLUMNLIST) ",[llength $titles]"
+      set nrow [llength $graphdata($title)]
+      set line [ExtractFromText - "" 1 all ]
+    }
+
+    # Make a table - header first
+    set ttext ""
+    append ttext "\$TABLE :SHELXC Anomalous CC analysis:\n"
+    append ttext "\$GRAPHS :Anomalous CC versus Resolution:A:$graphdata(COLUMNLIST) :\n"
+    append ttext "\$\$ $titles \$\$ \$\$\n"
+    # Body of the table
+    for { set i 0 } { $i < $nrow } { incr i } {
+      set line ""
+      foreach title $titles {
+        append line " [lindex $graphdata($title) $i]"
+      }
+      append ttext "$line" "\n"
+    }
+    # Close the table
+    append ttext "\$\$\n"
+
+    # Write the text to the logfile
+    WriteToLog $ttext
+  }
+
+# Remove the temporary log file
+  if { [file exists $tmp_log_file] } { DeleteFile $tmp_log_file }
+
+# Clean up local variables
+  if { [info exists graphdata] } { unset graphdata }
+  if { [info exists ttext ] } { unset ttext }
+  if { [info exists cols] } { unset cols }
+
+}
+
+#=================================================================
+# Run SHELXD
+#=================================================================
+
+if { $RUN_SHELXD } {
+
+  WriteToLog "Running SHELXD to determine heavy atom substructure"
+
+  # Project name for SHELXD run
+  append shelxd_name $shelx_name _shelxd_fa
+
+  # Use the .ins file from the previous SHELXC run
+  if { $RUN_SHELXC } {
+    set ins_file [file join [GetDefaultDirPath] $ins_file]
+  } else {
+    # Use .ins file supplied by user
+    set ins_file $SHELXD_INS
+  }
+
+  # Process the .ins file
+  # Substitute values in the supplied file with the values
+  # specified by the user in the interface
+  if { ![file exists $ins_file] } {
+      TerminateScript 0 -report "Failed to find the input .ins file"
+  }
+  if { ![ReadFile $ins_file ins_file_text -split] } {
+      TerminateScript 0 -report "Failed to read the input .ins file"
+  }
+  # Deal with each line at a time
+  set new_text ""
+  foreach line $ins_file_text {
+    if { [llength $line] > 0 } {
+      set keyword [lindex $line 0]
+      switch -regexp $keyword {
+        ^FIND {
+          set line "FIND $FIND"
+        }
+        ^NTRY {
+          set line "NTRY $NTRY"
+        }
+        ^SFAC {
+          set line "SFAC $SFAC"
+        }
+        ^SHEL {
+          if { $RUN_SHELXC && ! $USE_SHELXC_RESO } {
+            set line "SHEL $MIN_RESO $MAX_RESO"
+          } elseif { ! $RUN_SHELXC } {
+            set line "SHEL $MIN_RESO $MAX_RESO"
+          } 
+          
+        }
+        ^MIND {
+          if { [string trim "$MIND"] != "" } {
+             set line "MIND -$MIND"
+          }
+          if { $ALLOW_SPECIAL_POS } { append line " -0.1" }
+        }
+	^PATS {
+          if { $USE_WEED } {
+	    set line "WEED 0.3"
+          }
+	}
+      }
+    }
+    # Write the line into the new file
+    append new_text $line \n
+  }
+
+  # Write contents to the log file
+  WriteToLog "Parameters being sent to SHELXD:\n$new_text"
+
+  # Write the new ins file
+  append shelxd_ins_file $shelxd_name .ins
+  if { [file exists $shelxd_ins_file] } {
+    DeleteFile $shelxd_ins_file
+  }
+  WriteFile $shelxd_ins_file $new_text -overwrite
+
+  # Make copies of the input hkl file with the right name
+  set shelxd_hklin [subst $shelxd_name].hkl
+  if { [file exists $shelxd_hklin] } { DeleteFile $shelxd_hklin }
+  if { $RUN_SHELXC } {
+    # Output from previous run of SHELXC
+    CopyFile $HKL_FA $shelxd_hklin
+  } else {
+    # File specified by user
+    CopyFile $SHELXD_FA $shelxd_hklin
+  }
+
+  # Run SHELXD
+  # NB Shelxd doesn't read from stdin but by specifying the ins file
+  # here we can allow the user to edit the file before running the
+  # program
+
+  # Set up a temporary filename to copy the logfiles to
+  set tmp_log_file [GetTmpFileName -ext log]
+
+  # Execute Shelxd
+  set status [Execute "[BinPath shelxd] $shelxd_name "  \
+                {} program_status report \
+                -copy_log_file $tmp_log_file -success 999]
+
+  # Do clean up - remove the temporary files used for input
+  if { [file exists $shelxd_hklin] } { DeleteFile $shelxd_hklin }
+  if { [file exists $shelxd_ins_file] } { DeleteFile $shelxd_ins_file }
+
+  # Possible error messages from SHELXD include:
+  #  ** CANNOT OPEN FILE 
+
+  # Output files from SHELXD are:
+  # project_fa.lst, project_fa.res, project_fa.pdb
+  # Missing files are an indication that something has gone
+  # wrong with the SHELXD run
+  set pdb_file [subst $shelxd_name].pdb
+  
+  if { [file exists $pdb_file] } {
+     
+     set cmd "[BinPath pdbset] XYZIN \"$pdb_file\" XYZOUT \"$XYZOUT\""  
+     set script ""
+     append script "SPAC $SPACE_GROUP\n"
+     append script "END\n"
+     WriteFile [set pdb_script [GetTmpFileName -ext com]] $script
+     set status [Execute $cmd $pdb_script $LOG_FILE  program_status report  ]
+     
+     if { ![file exists $XYZOUT] } {
+       WriteToLog "ERROR adding space group in pdbset"
+     }
+     
+     set status [GetChangeHandData $SPACE_GROUP new_space_group cx]
+     if { $status == 0 } {
+       WriteToLog "ERROR getting data from CCP4I_TOP/etc/crystal.lib"
+     } 
+     if { $status == -1 } {
+       set cx [list 0.0 0.0 0.0]
+       set new_space_group $SPACE_GROUP
+     }
+          
+     set filestem [split $XYZOUT "."]
+     set XYZOUT_INV [lindex $filestem 0]-inv.pdb
+     set cmd "[BinPath pdbset] XYZIN \"$pdb_file\" XYZOUT \"$XYZOUT_INV\""  
+     set script ""
+     append script "SYMGEN [lindex $cx 0] -x, [lindex $cx 0] -y, [lindex $cx 0] -z\n"
+     append script "SPAC $new_space_group\n"
+     append script "END\n"
+     WriteFile [set pdb_script [GetTmpFileName -ext com]] $script
+     set status [Execute $cmd $pdb_script $LOG_FILE  program_status report  ]
+     
+     if { ![file exists $XYZOUT_INV] } {
+       WriteToLog "ERROR generating other hand in pdbset"
+     }
+     
+     AddOutputFile $XYZOUT_INV PROJECT
+     
+  } else {
+     TerminateScript 0 -report "Shelxd failed to generate a PDB file"
+  }
+  foreach ext { lst res } {
+    set out_file "[subst $shelxd_name].$ext"
+    if { [file exists $out_file] } {
+      shelx_cde_rename_file $out_file
+      AddOutputFile $out_file PROJECT
+    } else {
+      TerminateScript 0 -report "Shelxd failed to generate .$ext file"
+    }
+  }
+
+  #==========================================================
+  # Make graphs
+  #==========================================================
+
+  #==========================================================
+  # SITE OCCUPANCIES
+  #==========================================================
+  # Make a graph from the SHELXD .res file to show the occupancy
+  # of each site
+  if { ![ReadFile [file join [GetDefaultDirPath] \
+        [subst $shelxd_name].res] text] } {
+    # Failed to read the logfile - terminate the script
+    TerminateScript 0 -report "Unable to read the ShelxD .res file"
+  }
+  # Extract the information for each site
+  # Look for a line starting UNIT
+  set graphdata(occ) {}
+  set line [ExtractFromText $text "UNIT" 1 all]
+  while { $line != "" } {
+    set nsite 0
+    # Process the line (of the form):
+    #SE01   1  0.745140  0.580070  0.098361   1.0000  0.2
+    if { [llength $line] >= 6 } {
+      incr nsite
+      lappend graphdata(occ) [lindex $line 5]
+    }
+    # Fetch the next line
+    set line [ExtractFromText - "" 1 all]
+  }
+  # Print out the data
+  set ttext ""
+  append ttext "\$TABLE :SHELXD Occupancy for each site :\n"
+  append ttext "\$GRAPHS\n"
+  append ttext ": Occupancy for each site :A:1,2 :\n"
+  append ttext "\$\$ Site Occupancy"
+  append ttext "\$\$ \$\$\n"
+  set nsite 0
+  foreach occ $graphdata(occ) {
+    incr nsite
+    append ttext $nsite " " $occ "\n"
+  }
+  # Close the table
+  append ttext "\$\$\n"
+  # Write the text to the logfile
+  WriteToLog $ttext
+
+  #==========================================================
+  # CC ALL/WEAK FOR EACH TRY 
+  #==========================================================
+  if { ![ReadFile $tmp_log_file text] } {
+    # Failed to read the logfile - terminate the script
+    TerminateScript 0 -report "Unable to read the ShelxD logfile"
+  }
+
+  # Look for lines of the forms (old and new shelxe):
+  # Try    73, CC All/Weak 51.90 / 41.53, best 52.17 / 41.77, best PATFOM 20.34
+  # Try      6, CPU 1, CC All/Weak 12.5 /  4.4, CFOM 16.8, best 39.9, PATFOM   1.15
+  set graphdata(tries) {}
+  set line [ExtractFromText $text "Try" 0 all]
+  while { $line != "" } {
+    set ntry [string trim [lindex $line 1] ","]
+    if { [set k [lsearch -exact $line CC]] > -1 } {
+      lappend graphdata(tries) $ntry
+      set graphdata(cc_all_$ntry) [lindex $line [expr $k + 2]]
+      set graphdata(cc_weak_$ntry) [string trim [lindex $line [expr $k + 4]] ","]
+    }
+    # Fetch the next line
+    set line [ExtractFromText - "Try" 0 all]
+  }
+
+  # Draw the graph
+  set ttext ""
+  append ttext "\$TABLE :SHELXD CC All/Weak for each try :\n"
+  append ttext "\$SCATTER\n"
+  append ttext ": CC All/Weak per Try :A:1,2,3 :\n"
+  append ttext "\$\$ NTry CC_all CC_weak"
+  append ttext "\$\$ \$\$\n"
+  set nsite 0
+  foreach ntry $graphdata(tries) {
+    append ttext $ntry " " $graphdata(cc_all_$ntry) \
+                       " " $graphdata(cc_weak_$ntry) "\n"
+  }
+  # Close the table
+  append ttext "\$\$\n"
+  # Write the text to the logfile
+  WriteToLog $ttext
+
+}
+
+#=================================================================
+# Run SHELXE
+#=================================================================
+
+if { $RUN_SHELXE } {
+
+  WriteToLog "Running SHELXE to phase from heavy atom substructure"
+
+  # Project names for SHELXE run
+  append shelxe_name $shelx_name _shelxe
+  append shelxe_fa_name $shelx_name _shelxe_fa
+
+  # Use the output from the previous SHELXC/D runs
+  if { $RUN_SHELXC } {
+    # Native .hkl file from SHELXC run
+    set shelxc_nat_file $HKL_NATIVE
+    # Fa .hkl file from SHELXC run
+    set shelxc_fa_file $HKL_FA
+  } else {
+    # User has specified the input to use
+    # Native .hkl file
+    set shelxc_nat_file $SHELXE_NAT
+    # Fa .hkl file
+    set shelxc_fa_file $SHELXE_FA
+  }
+  if { $RUN_SHELXD } {
+    # .res file from SHELXD run
+    set shelxd_res_file [file join [GetDefaultDirPath] [subst $shelxd_name].res]
+  } else {
+    # User specified the input to use
+    # Res file
+    set shelxd_res_file $SHELXE_RES
+  }
+
+  # Check for existence of input to SHELXE
+  if { ![file exists $shelxc_nat_file] } {
+    TerminateScript 0 -report "Native HKL file $shelxc_nat_file not found"
+  }
+  if { ![file exists $shelxc_fa_file] } {
+    TerminateScript 0 -report "FA file $shelxc_fa_file file not found"
+  }
+  if { ![file exists $shelxd_res_file] } {
+    TerminateScript 0 -report "Res file $shelxd_res_file not found"
+  }
+
+  # Make temporary copies of the files with the correct name
+  set shelxe_native [subst $shelxe_name].hkl
+  if { [file exists $shelxe_native] } { DeleteFile $shelxe_native }
+  CopyFile $shelxc_nat_file $shelxe_native
+
+  set shelxe_fa [subst $shelxe_fa_name].hkl
+  if { [file exists $shelxe_fa] } { DeleteFile $shelxe_fa }
+  CopyFile $shelxc_fa_file $shelxe_fa
+
+  set shelxe_res [subst $shelxe_fa_name].res
+  if { [file exists $shelxe_res] } { DeleteFile $shelxe_res }
+  CopyFile $shelxd_res_file $shelxe_res
+
+  # Sort out the protocol
+  set shelxe_protocol {}
+  if { [StringSame $ENANTIOMORPH ORIGINAL BOTH] } {
+    lappend shelxe_protocol "original"
+  }
+  if { [StringSame $ENANTIOMORPH INVERTED BOTH] } {
+    lappend shelxe_protocol "inverted"
+  }
+
+  # Other initialisations
+  set mtz_files {}
+  set inverted_space_group 0
+
+  #==========================================================
+  # Build and run SHELXE command(s)
+  #==========================================================
+
+  foreach enantiomorph $shelxe_protocol {
+
+    WriteToLog "Phasing using $enantiomorph heavy atom enantiomorph"
+
+    set shelxe_cmd "[BinPath shelxe] $shelxe_name $shelxe_fa_name -s$SOLVENT_CONTENT -m$NCYCLES"
+    if { $HA_IN_NATIVE } {
+      append shelxe_cmd " -h"
+    }
+    if { $AUTOTRACE_AVAILABLE && $AUTOTRACE } {
+      append shelxe_cmd " -a$TRACE_NCYCLES"
+    }
+    if { [StringSame $enantiomorph inverted] } {
+      append shelxe_cmd " -i"
+    }
+    WriteToLog "Running SHELXE command:\n\n$shelxe_cmd"
+    set status [Execute "$shelxe_cmd" {} program_status report -success 999]
+
+    # Deal with output files
+    set basename $shelxe_name
+    if { [StringSame $enantiomorph inverted] } {
+      append basename "_i"
+    }
+
+    # Deal with lst file "project.lst"
+    set lst_file "[subst $basename].lst"
+    if { [file exists $lst_file] } {
+      if { [StringSame $enantiomorph original] } {
+        set new_lst_file "[subst $shelx_name]_shelxe.lst"
+      } else {
+        set new_lst_file "[subst $shelx_name]_shelxe_i.lst"
+      }
+      shelx_cde_rename_file $lst_file $new_lst_file
+      AddOutputFile $lst_file PROJECT
+    } else {
+      TerminateScript 0 -report "Failed to find the SHELXE output .lst file"
+    }
+
+    # Read in lst file for analysis and processing
+    set log_file [file join [GetDefaultDirPath] $new_lst_file]
+    if { ![ReadFile $log_file text] } {
+      # Failed to read the logfile - terminate the script
+      TerminateScript 0 -report "Failed to read the SHELXE output .lst file"
+    }
+
+    # Check whether SHELXE switched to the enantiomorph spacegroup
+    # Look for a line of the form:
+    # ** Space group converted to enantiomorph **
+    if { [StringSame $enantiomorph inverted] } {
+      if { [ExtractFromText $text \
+          "Space group converted to enantiomorph" 0 all] != "" } {
+        WriteToLog "WARNING SHELXE converted space group to enantiomorph ($INVERTED_SPACE_GROUP)"
+        set inverted_space_group 1
+      }
+    }
+
+    # Phases file "project(_i).phs"
+    set phs_file "[subst $basename].phs"
+    if { [StringSame $SHELXE_OUTPUT_FORMAT MTZ] } {
+      # Need to convert to MTZ format
+      if { ! $inverted_space_group } {
+        set space_group $SPACE_GROUP
+      } else {
+        set space_group $INVERTED_SPACE_GROUP
+      }
+      if { [StringSame $enantiomorph original] } {
+        set hklout $HKLOUT
+      } else {
+        set hklout $HKLOUT_INV
+      }
+      phstomtz $enantiomorph $phs_file $hklout \
+          $space_group \
+          [list $CELL_1 $CELL_2 $CELL_3 $CELL_4 $CELL_5 $CELL_6]
+      # Delete the .phs output
+      DeleteFile $phs_file
+    } else {
+      # Keep in XtalView .phs format
+      if { [StringSame $enantiomorph original] } {
+        set phsout $PHSOUT
+      } else {
+        set phsout $PHSIOUT
+      }
+      if { [file exists $phs_file] } {
+        MoveFile $phs_file $phsout
+      } else {
+        WriteToLog "WARNING $phs_file from SHELXE not found"
+      }
+    }
+    if { $AUTOTRACE_AVAILABLE && $AUTOTRACE } {
+      # Main-chain trace file "project(_i).pdb"
+      set mc_file "[subst $basename].pdb"
+      # Rename PDB with traced main chain
+      if { [StringSame $enantiomorph original] } {
+        set mcout $MCOUT
+      } else {
+        set mcout $MCIOUT
+      }
+      if { [file exists $mc_file] } {
+        # MoveFile $mc_file $mcout
+        # To exclude non-protein atoms which are not recognised by refmac
+        pdbset_mc $mc_file $mcout
+      } else {
+        WriteToLog "WARNING $mc_file from SHELXE not found"
+      }
+    }
+
+    ##############################################################
+    # Process the output file to extract the statistics
+    ##############################################################
+
+    # Set up array names to store the extracted data
+    set contrast_name [subst $enantiomorph]_contrast
+    set connect_name  [subst $enantiomorph]_connect
+    set reso_name     [subst $enantiomorph]_reso
+    set mapcc_name    [subst $enantiomorph]_mapcc
+
+    # Extract the contrast and connectivity
+    # Look for lines of the form:
+    # <wt> = 0.169, Contrast = 0.038, Connect. = 0.748 for dens.mod. cycle 1
+    set line [ExtractFromText $text "<wt> = " 0 all]
+    while { $line != "" } {
+      # Process the line
+      if { [set k [lsearch -exact $line cycle]] > -1 } {
+        set ncycle [lindex $line [expr $k + 1]]
+        # Extract the contrast and connectivity
+        if { [set k [lsearch -exact $line Contrast]] > -1 } {
+          set contrast [string trim [lindex $line [expr $k + 2]] ","]
+        }
+        if { [set k [lsearch -exact $line Connect.]] > -1 } {
+          set connect [lindex $line [expr $k + 2]]
+        }
+        lappend graphdata([subst $contrast_name]) $contrast
+        lappend graphdata([subst $connect_name]) $connect
+      }
+      # Fetch the next line
+      set line [ExtractFromText - "<wt> = " 0 all]
+    }
+
+    # Extract the estimated CC(map) data
+    # Look for lines of the form:
+    # d    inf - 4.06 - 3.21 - 2.80 - 2.54 - 2.36 - 2.22 - 2.11 ...
+    set line [lrange [ExtractFromText $text "d    inf" 0 all] 3 end]
+    set graphdata($reso_name) {}
+    foreach word $line {
+      if { [string is double $word] } {
+        lappend graphdata($reso_name) $word
+      }
+    }
+    # Look for a line of the form:
+    # <mapCC> 0.305  0.297  0.259  0.199  0.110  0.052  0.055 ...
+    set line [ExtractFromText $text "<mapCC>" 0 all]
+    set graphdata($mapcc_name) {}
+    foreach word $line {
+      if { [string is double $word] } {
+        lappend graphdata($mapcc_name) $word
+      }
+    }
+  }
+
+  #==========================================================
+  # Make graphs from SHELXE output
+  #==========================================================
+
+  #==========================================================
+  # CONTRAST VERSUS CYCLE
+  # CONNECTIVITY VERSUS CYCLE
+  # ESTIMATED CC(map) VERSUS RESOLUTION
+  #==========================================================
+
+  # If we have both original and inverted enantiomorphs
+  # then we can use all the columns
+  if { [StringSame $ENANTIOMORPH BOTH] } {
+    set col1 "1,2,4"
+    set col2 "1,3,5"
+  } else {
+    set col1 "1,2"
+    set col2 "1,3"
+  }
+
+  # Collect the number of cycles
+  if { [StringSame $ENANTIOMORPH BOTH] } {
+    set ncycles [llength $graphdata(original_contrast)]
+    if { $ncycles != [llength $graphdata(inverted_contrast)] } { set ncycles 0 }
+  } elseif { [StringSame $ENANTIOMORPH ORIGINAL] } {
+    set ncycles [llength $graphdata(original_contrast)]
+  } elseif { [StringSame $ENANTIOMORPH INVERTED] } {
+    set ncycles [llength $graphdata(inverted_contrast)]
+  }
+
+  # Connectivity and Contrast
+  # Do we have data to write?
+  if { $ncycles > 0 } {
+
+    # Make the header first
+    set ttext ""
+    append ttext "\$TABLE :SHELXE Contrast and Connectivity :\n"
+    append ttext "\$GRAPHS\n"
+    append ttext ": Contrast versus Cycle :A:$col1 :\n"
+    append ttext ": Connectivity versus Cycle :A:$col2 :\n"
+    append ttext "\$\$ Cycle"
+
+    # Write the column headers
+    if { [StringSame $ENANTIOMORPH ORIGINAL BOTH] } {
+      append ttext " Original Original"
+    }
+    if { [StringSame $ENANTIOMORPH INVERTED BOTH] } {
+      append ttext " Inverted Inverted"
+    }
+    append ttext "\$\$ \$\$\n"
+
+    # Write the columns of data
+    set ii 0
+    while { $ii < $ncycles } {
+      set line ""
+      if { [StringSame $ENANTIOMORPH ORIGINAL BOTH] } {
+        append line " [lindex $graphdata(original_contrast) $ii]"
+        append line " [lindex $graphdata(original_connect) $ii]"
+      }
+      if { [StringSame $ENANTIOMORPH INVERTED BOTH] } {
+        append line " [lindex $graphdata(inverted_contrast) $ii]"
+        append line " [lindex $graphdata(inverted_connect) $ii]"
+      }
+      incr ii
+      append ttext "$ii" $line "\n"
+    }
+
+    # Close the table
+    append ttext "\$\$\n"
+
+    # Write the text to the logfile
+    WriteToLog $ttext
+
+  } else {
+
+    # No data available - probably SHELXE has failed
+    WriteToLog "No table data from SHELXE - check output above for problems"
+    TerminateScript 0 -report "No data in SHELXE logfile"
+  }
+
+  # Estimated CC(map) vs Resolution
+  if { [StringSame $ENANTIOMORPH BOTH] } {
+    set cols "1,3,4"
+  } else {
+    set cols "1,3"
+  }
+
+  # Make the table header
+  set ttext ""
+  append ttext "\$TABLE :SHELXE Estimated CC(map) :\n"
+  append ttext "\$GRAPHS\n"
+  append ttext ": Estimated CC(map) vs Resolution :A:$cols :\n"
+  append ttext "\$\$ M(4SSQ/LL) Resolution"
+
+  # Write the remaining column headers
+  if { [StringSame $ENANTIOMORPH ORIGINAL BOTH] } {
+    append ttext " Original"
+  }
+  if { [StringSame $ENANTIOMORPH INVERTED BOTH] } {
+    append ttext " Inverted"
+  }
+  append ttext "\$\$ \$\$\n"
+
+  # Get a set of resolution values
+  if { [StringSame $ENANTIOMORPH BOTH ORIGINAL] } {
+    set reso $graphdata(original_reso)
+  } else {
+    set reso $graphdata(inverted_reso)
+  }
+
+  # Write the columns of data
+  for { set i 0 } { $i < [llength $reso] } { incr i } {
+    set value [lindex $reso $i]
+    set line "[convert_reso $value] $value"
+    if { [StringSame $ENANTIOMORPH ORIGINAL BOTH] } {
+      append line " [lindex $graphdata(original_mapcc) $i]"
+    }
+    if { [StringSame $ENANTIOMORPH INVERTED BOTH] } {
+      append line " [lindex $graphdata(inverted_mapcc) $i]"
+    }
+    append ttext $line "\n"
+  }
+
+  # Close the table
+  append ttext "\$\$\n"
+
+  # Write the text to the logfile
+  WriteToLog $ttext
+
+  #==========================================================
+  # Final clean up of files
+  #==========================================================
+
+  if { [file exists $shelxe_res] } { DeleteFile $shelxe_res }
+  if { [file exists $shelxe_native] } { DeleteFile $shelxe_native }
+  if { [file exists $shelxe_fa] } { DeleteFile $shelxe_fa }
+
+}

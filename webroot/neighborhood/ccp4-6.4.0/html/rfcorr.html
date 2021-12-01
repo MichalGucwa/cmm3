@@ -1,0 +1,297 @@
+<html>
+<head><title>CCP4 Program Suite: rfcorr</title></head>
+<body>
+
+<!-- ::INDEX_INFO::RFCORR::Supported::Molecular Replacement::Analysis of correlations between cross- and self-Rotation functions:::::::: -->
+
+<H1> RFCORR (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>rfcorr </b>
+- Analysis of correlations between cross- and self-Rotation functions.
+<H2> SYNOPSIS</H2>
+<b>rfcorr MAPIN </b>
+<i>foo.map</i>
+<b>PEAKS </b>
+<i>foo.dat</i>
+<br>
+ [<A HREF="#keywords">Keyworded input</A>]
+
+<H2> AUTHOR</H2>
+
+Ian Tickle, Birkbeck College, London.  (tickle@cryst.bbk.ac.uk).
+
+<H2><a name="description">DESCRIPTION</a></H2>
+
+To analyse self- and cross-rotation function results for correlations between
+peak positions.  This should help to identify firstly the rotational
+component(s) of the non-crystallographic symmetry, and secondly the correct
+peaks in the cross-rotation function.  This requires a self-rotation function
+map calculated either by <a href="almn.html">ALMN</a> or by 
+<a href="amore.html">AMORE</a>, <EM>i.e.</EM> the angular variables must be
+Eulerian, not polar (a map produced by 
+<a href="polarrfn.html">POLARRFN</a> will not work), and also a
+list of peaks from a cross-rotation function map produced by a peak search.
+
+
+<H2><a name="files">INPUT FILES</a></H2>
+
+<dl>
+<dt> MAPIN<dd>
+Eulerian angle self-rotation function map (at least 1 asymmetric
+unit) computed by ALMN or AMORE/ROTFUN 
+(<A HREF="amore.html#rotfun_rotate_cross">SELF</A> option).
+<p>
+<dt>PEAKS <dd>  Peak list of cross-rotation function map produced by 
+<a href="phaser.html">PHASER</a>, <a href="almn">ALMN</a> or
+AMORE/ROTFUN (<A HREF="amore.html#rotfun_rotate_cross">CROSS</A> option).  
+Note that if more than 50 peaks are
+given, only the first 50 are used.  See <A HREF="#almn">ALMN</A> keyword.
+<p>
+Example of ALMN format:
+<pre>
+PEAK  61.50      20.45     113.50  0.00000  0.00000  0.00000  9.9  0.0
+</pre>
+<p>
+Example of AMORE format:
+<pre>
+SOLUTIONRC   1      61.50      20.45     113.50  0.00000  0.00000  0.00000  9.9
+</pre>
+<p>
+Both of these are read in free format, <EM>i.e.</EM> at least 1 space separating all
+character and numeric items. Note that solutions from Phaser can be used,
+since they use the same Eulerian angle convention, but the exact syntax
+will need to be edited to conform to one of the above expected forms.
+</dl>
+
+
+<H2><a name="keywords">KEYWORDED INPUT</a></H2>
+
+All keywords except SPACEGROUP are optional; default values are assumed for
+the others.  Keywords may appear in any order, except for END which if present
+must be last.  Only the first 4 characters of keywords are significant and all
+input is case-insensitive.
+<p>
+Possible keywords are -
+<blockquote>
+<A HREF="#almn"><B>ALMN</B></A>, <A HREF="#angles"><B>ANGLES</B></A>,
+<A HREF="#chi"><B>CHI</B></A>, <A HREF="#end"><B>END</B></A>,
+<A HREF="#numpeak"><B>NUMPEAK</B></A>, <A HREF="#orthog"><B>ORTHOG</B></A>,
+<A HREF="#peak"><B>PEAK</B></A>, <A HREF="#spacegroup"><B>SPACEGROUP</B></A>,
+<A HREF="#title"><B>TITLE</B></A>
+</blockquote>
+
+<H3> <A NAME="title"></A>TITLE            &lt;Title&gt;</H3>
+
+Title for job (max 80 characters).
+
+
+<H3> <A NAME="almn"></A>ALMN</H3>
+
+Peak list assumed in ALMN format; default is AMORE format.
+
+
+<H3> <A NAME="spacegroup"></A>SPACEGROUP       &lt;NSG&gt;</H3>
+
+Space group name or number; no default.  Only the rotational
+symmetry part of the space group operator is used, so
+lattice centring and translational components of screw axes
+are ignored.  So, for example, P222, I222, P21212, C2221 <EM>etc.</EM>
+will all produce identical results.
+
+
+<H3> <A NAME="orthog"></A>ORTHOG           &lt;NC&gt;</H3>
+
+Orthogonalisation code used for the crystal data in ALMN
+or AMORE; default is 1.
+
+
+<H3> <A NAME="peak"></A>PEAK             &lt;PL&gt;</H3>
+
+Peak limit; map values less then PL times the maximum
+value in the self-RF are not printed; default is 0.1 .
+
+
+<H3> <A NAME="numpeak"></A>NUMPEAK         &lt;NP&gt;</H3>
+
+Maximum number of self-RF map values to print; default is 50.
+
+
+<H3> <A NAME="chi"></A>CHI             &lt;CHI&gt; &lt;TOL&gt;</H3>
+
+Chi value to print and tolerance in degrees.  This is useful
+for example to select only map values for 2-fold axes (chi =
+180).  Note that chi may be called kappa in other programs.
+If CHI = 0 all chi values &gt; TOL are printed.  The defaults are
+CHI = 0, TOL = 10.  
+
+
+<H3> <A NAME="angles"></A>ANGLES           &lt;NA&gt;</H3>
+
+Maximum number of self-RF map points for which inter-rotation
+axis angles are to be printed; default and maximum is 50.
+
+
+<H3> <A NAME="end"></A>END</H3> 
+
+Terminate input.
+
+<H2><a name="output">PRINTER OUTPUT</a></H2>
+
+The output echoes the input.  Then a table of pairs of cross-RF peak index
+and symmetry index, followed by calculated polar angles theta, phi, chi and
+self-RF map value are printed sorted in descending order of the latter in one
+asymmetric unit.  Note that theta may be called omega or psi in other
+programs.  Finally the angles between pairs of rotation axis vectors,
+including symmetry-generated, are printed in 4 columns.
+
+<H2> <A NAME="examples"></A>EXAMPLES</H2>
+
+<pre>
+
+set verbose
+ecalc  HKLIN mrenin  HKLOUT mrenin_ecalc  &lt;&lt;EOD
+TITLE  ** Ecalc for mouse renin crystal. **
+LABI   FP=FPmrenin  SIGFP=SPmrenin
+EOD
+
+amore  HKLIN mrenin_ecalc  HKLPCK0 mrenin_ecalc.hkl  &lt;&lt;EOD
+TITLE  ** Packing h k l E for mouse renin crystal. **
+SORT
+LABIN  FP=E
+EOD
+rm mrenin_ecalc.mtz
+
+pdbset  XYZIN hexpep  XYZOUT hexpep_rfcell  &lt;&lt;EOD
+SPACEG P1
+CELL   80 84 97
+EOD
+
+sfall  XYZIN hexpep_rfcell  HKLOUT hexpep_rfcell &lt;&lt;EOD
+TITLE  ** Structure factors for hexagonal pepsin in RF cell. **
+MODE   SFCALC XYZIN
+SFSG   1
+SYMM   1
+RESO   20 3
+EOD
+
+ecalc  HKLIN hexpep_rfcell  HKLOUT hexpep_ecalc  &lt;&lt;EOD
+TITLE  ** Ecalc for hexagonal pepsin model. **
+LABI   FP=FC
+EOD
+
+amore  HKLIN hexpep_ecalc  HKLPCK0 hexpep_ecalc.hkl  &lt;&lt;EOD
+TITLE  ** Packing h k l E for hexagonal pepsin model. **
+SORT
+LABIN  FP=E
+EOD
+rm hexpep_rfcell.mtz hexpep_ecalc.mtz
+
+amore  HKLPCK0 mrenin_ecalc.hkl  HKLPCK1 hexpep_ecalc.hkl  \
+       CLMN0 mrenin.clmn  CLMN1 hexpep.clmn  MAPOUT mrenin_cross  \
+       &gt;! mrenin_cross.log  &lt;&lt;EOD
+ROTFUN
+TITLE  ** Cross rotation function with E's. **
+CLMN   CRYST  ORTH 3  RESO 20 3  SPHERE 35
+CLMN   MODEL 1  RESO 20 3  SPHERE 35
+ROTATE CROSS  MODEL 1  NPIC 20
+EOD
+rm mrenin_cross.map
+
+amore  HKLPCK0 mrenin_ecalc.hkl  CLMN0 mrenin.clmn  \
+       MAPOUT mrenin_self  &lt;&lt;EOD
+ROTFUN
+TITLE  ** Self rotation function with E's. **
+ROTATE SELF  NPIC 20
+EOD
+
+grep SOLUTIONRC mrenin_cross.log &gt;! mrenin_cross.dat
+
+rfcorr MAPIN mrenin_self  PEAKS mrenin_cross.dat  &lt;&lt;EOD
+TITLE  ** Mouse renin self/cross rotation function correlation. **
+SPACEG p2
+ORTH   3
+CHI    180
+EOD
+
+</pre>
+
+
+The output below shows the 222 non-crystallographic symmetry.  The first table
+echos the 8 input peaks from the cross-rotation function.  The second table
+shows the positions of the 10 points in the self-rotation function above the
+default threshold corresponding to the non-crystallographic 2-fold axes (chi ~=
+180) that relate pairs of the highest 4 peaks, including symmetry related,
+in the cross-RF. The columns labelled #Peak reference the peak numbers in the
+first table. The last table shows the ~90 deg angles between these points
+in the self-RF.
+
+<pre>
+
+  Peak     Alpha      Beta     Gamma
+
+     1     61.50     20.02    113.50
+     2     68.33     26.06    107.24
+     3    112.50    154.69    289.00
+     4    116.00    157.55    293.50
+     5    103.14     88.09    166.45
+     6     70.12    116.85     97.56
+     7     67.00    105.43     97.30
+     8    114.90      8.17    100.72
+
+
+
+ Serial   #Peak   #Peak(#Symm)      Theta    Phi    Chi   self-RF
+
+      1       3       4 ( 2)            2     81    179     78.75
+      2       1       2 ( 2)            3     87    179     51.59
+      3       2       3 ( 2)           90    180    179     39.46
+      4       2       3 ( 1)           90     90    180     39.46
+      5       1       3 ( 2)           90    179    174     37.41
+      6       1       3 ( 1)           87     89    179     37.41
+      7       1       4 ( 1)           89     89    179     32.41
+      8       1       4 ( 2)           89    179    178     32.41
+      9       2       4 ( 2)           90    179    176     25.68
+     10       2       4 ( 1)           88     89    179     25.68
+
+
+
+ Inter-vector angles: Serial[i]  Serial[j] (Symm[j])  Angle, in 4 columns.
+
+    1   2( 1)    2      1   2( 2)    5      1   3( 1)   90      1   3( 2)   90
+    1   4( 1)   88      1   4( 2)   89      1   5( 1)   90      1   5( 2)   89
+    1   6( 1)   89      1   6( 2)   86      1   7( 1)   89      1   7( 2)   87
+    1   8( 1)   90      1   8( 2)   89      1   9( 1)   90      1   9( 2)   89
+    1  10( 1)   86      1  10( 2)   90      2   3( 1)   90      2   3( 2)   90
+    2   4( 1)   86      2   4( 2)   87      2   5( 1)   90      2   5( 2)   90
+    2   6( 1)   90      2   6( 2)   84      2   7( 1)   88      2   7( 2)   86
+    2   8( 1)   90      2   8( 2)   89      2   9( 1)   90      2   9( 2)   89
+    2  10( 1)   85      2  10( 2)   89      3   4( 1)   90      3   4( 2)   90
+    3   5( 1)    1      3   5( 2)    1      3   6( 1)   89      3   6( 2)   89
+    3   7( 1)   89      3   7( 2)   89      3   8( 1)    1      3   8( 2)    1
+    3   9( 1)    0      3   9( 2)    1      3  10( 1)   90      3  10( 2)   90
+    4   5( 1)   89      4   5( 2)   89      4   6( 1)    3      4   6( 2)    2
+    4   7( 1)    2      4   7( 2)    1      4   8( 1)   89      4   8( 2)   89
+    4   9( 1)   90      4   9( 2)   90      4  10( 1)    2      4  10( 2)    3
+    5   6( 1)   90      5   6( 2)   90      5   7( 1)   90      5   7( 2)   90
+    5   8( 1)    0      5   8( 2)    1      5   9( 1)    0      5   9( 2)    1
+    5  10( 1)   90      5  10( 2)   90      6   7( 1)    2      6   7( 2)    4
+    6   8( 1)   90      6   8( 2)   90      6   9( 1)   90      6   9( 2)   90
+    6  10( 1)    5      6  10( 2)    1      7   8( 1)   90      7   8( 2)   90
+    7   9( 1)   89      7   9( 2)   89      7  10( 1)    3      7  10( 2)    1
+    8   9( 1)    1      8   9( 2)    1      8  10( 1)   89      8  10( 2)   89
+    9  10( 1)   90      9  10( 2)   90
+
+</pre>
+
+
+<H2> SEE ALSO</H2>
+
+Calculation of rotation function:
+<ul>
+<li> <A HREF="phaser.html">phaser</A>
+<li> <A HREF="almn.html">almn</A>
+<li> <A HREF="amore.html">amore</A>
+</ul>
+
+</BODY>
+</HTML>

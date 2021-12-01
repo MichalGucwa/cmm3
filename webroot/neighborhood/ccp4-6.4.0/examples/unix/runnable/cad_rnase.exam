@@ -1,0 +1,48 @@
+#!/bin/sh
+
+# Examples of using CAD to change dataset info
+# in rnase example data
+
+# 1. Simple re-naming of crystals and datasets
+
+cad hklin1 $CEXAM/rnase/rnase25.mtz \
+    hklout $CCP4_SCR/rnase_25_drename.mtz <<eof-cad
+TITLE Changing crystal and dataset names
+LABIN FILE_NUMBER 1 ALL
+DRENAME FILE_NUMBER 1 RNASE3 DERIV_HG RNASE-HG HG-DERIV
+DRENAME FILE_NUMBER 1 RNASE4 DERIV_PT RNASE-PT PT-DERIV
+DRENAME FILE_NUMBER 1 RNASE5 DERIV_I RNASE-I I-DERIV
+END
+eof-cad
+
+# 2. Adding wavelengths to dataset headers
+
+cad hklin1 $CEXAM/rnase/rnase18.mtz \
+    hklout $CCP4_SCR/rnase_18_wavel.mtz <<eof-cad
+TITLE Adding wavelengths
+LABIN FILE_NUMBER 1 ALL
+DWAVE FILE_NUMBER 1 RNASE NATIVE 1.488
+DWAVE FILE_NUMBER 1 RNASE3GMP COMPLEX 1.542
+DWAVE FILE_NUMBER 1 RNASE2GMP COMPLEX 1.542
+END
+eof-cad
+
+# 3. Moving a column from one dataset to another.
+#    This example adds FreeR_flag to the base dataset HKL_base - this
+#    may or may not be appropriate
+
+cad hklin1 $CEXAM/rnase/rnase25.mtz \
+    hklout $CCP4_SCR/rnase_25_movecol.mtz <<eof-cad
+TITLE Move FreeR_flag to HKL_base
+LABIN FILE_NUMBER 1 -
+    E1=FNAT E2=SIGFNAT E3=FHG2 E4=SDFHG2 -
+    E5=FHG2DEL E6=SDFHG2DEL E7=FPTNCD25 -
+    E8=SIGFPTNCD25 E9=DELFPTNCD25 -
+    E10=SIGDELFPTNCD25 E11=FIOD25 E12=SIGFIOD25 -
+    E13=DELFIOD25 E14=SIGDELFIOD25 E15=FreeR_flag
+XNAME FILE_NUMBER 1 E15=HKL_base
+DNAME FILE_NUMBER 1 E15=HKL_base
+END
+eof-cad
+#
+

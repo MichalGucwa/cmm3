@@ -1,0 +1,1 @@
+INSERT INTO usages (sessionid,usagetype,test_data,crystal_contact,pdbfileid,filename,ip,browser_id) VALUES ('3dso',2,FALSE,FALSE,394,'/var/www/html/csgid/app/webroot/neighborhood_temp/3dso/pdb3dso.ent','172.25.56.226',0);

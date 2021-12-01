@@ -1,0 +1,235 @@
+<html>
+<head><title>CCP4 Program Suite: vectors</title></head>
+<body>
+
+<!-- ::INDEX_INFO::VECTORS::Supported::Multiple Isomorphous Replacement::generates Patterson vectors from atomic coordinates:::::::: -->
+
+<h1>VECTORS (CCP4: Supported Program)</h1>
+<h2>NAME</h2>
+<b>vectors</b>
+- generates Patterson vectors from atomic coordinates
+<h2>SYNOPSIS</h2>
+<b>vectors</b> 
+[ <b>XYZIN</b> <i>foo_in.pdb</i> ] 
+[ <b>MAPIN</b> <i>foo_in.map</i> ]   
+<b>XYZOUT</b>
+<i>foo_out.pdb</i>
+<br />
+[<a href="#keywords">Keyworded input</a>]
+
+<h2><a name="description">DESCRIPTION</a></h2>
+
+<p>Generate all Patterson vectors from a list of input atoms, and
+produce <b>either</b>  a list of all vectors within the Patterson asymmetric unit,
+(<a href="#xyzlim">XYZLIM ASU </a> or a <b>complete</b> list of all which fall 
+within some specified volume of the Patterson map.  This can be taken from the Patterson map header, 
+or defined on <a href="#xyzlim">XYZLIM</a>. 
+The unique set for the Patterson asymmetric unit can be plotted into 
+the Patterson map without duplication.</p>
+
+<h2><a name="files">INPUT AND OUTPUT FILES</a></h2>
+<h3> Input</h3>
+<dl compact>
+<dt>XYZIN</dt>
+<dd>This optional input file contains orthogonal coordinates for heavy atom sites in PDB format. 
+The file MUST have a CRYST1 and optionally SCALEi cards, which will be used to convert 
+the orthogonal coordinates to fractional ones.
+If XYZIN is given there is no need to input the <a href="#cell">CELL</a>.
+If the CRYST1 record includes the space group name, there is no need to
+give <a href="#symmetry">SYMMETRY</a>.
+The atoms are each given a one-character alphabetical name
+with first upper-case then lower case identifiers; A B ..Z a b ..z.
+If there are more  than 52 input atoms the identifiers are repeated.</dl>
+
+<dt>MAPIN</dt>
+<dd>Optional - Patterson map: the header from this file is used to define
+the <a href="#xyzlim">XYZLIM</a>. The program
+assumes that the symmetry stored in the map header is the Patterson
+symmetry for the true Patterson space-group. 
+<p>If the command <a href="#xyzlim">XYZLIM</a> is present, these limits override
+those in the Patterson map.  </p></dd> 
+</dl>
+
+<h3>Output</h3>
+<dl compact>
+<dt>XYZOUT</dt>
+<dd>The vectors are written to a standard PDB file as orthogonal
+coordinates with for example, atom name &quot;VAB&quot; if A &amp; B are the atomnames 
+of the 2 atoms involved. For plotting using <a href="npo.html">NPO</a>
+it is best to only output a unique set of vectors. 
+Duplicate vectors are always removed, but there is an option to list all  
+equivalent vectors in the map volume.</dd>
+<p>
+All vectors at origin omitted
+
+The file contains a unique set of  vectors
+              AB_Sym1_Sym1  AC_Sym1_Sym1  AD_Sym1_Sym1   ...
+AA_Sym1_Sym2  AB_Sym1_Sym2  AC_Sym1_Sym2  AD_Sym1_Sym2   ...
+AA_Sym1_Sym3  AB_Sym1_Sym3  AC_Sym1_Sym3  AD_Sym1_Sym3   ...
+AA_Sym1_Sym4  AB_Sym1_Sym4  AC_Sym1_Sym4  AD_Sym1_Sym4   ...
+......
+                            BC_Sym1_Sym1  BD_Sym1_Sym1 
+              BB_Sym1_Sym2  BC_Sym1_Sym2  BD_Sym1_Sym2   ...
+..... ...
+ All AA_Sym1_Sym1 = BB_Sym1_Sym1 = ...  = (0,0,0) omitted
+
+</dl>
+XXX It would be better to call this file UVWOUT XXX
+
+<h2><a name="keywords">KEYWORDED INPUT</a></h2>
+
+<p>The available keywords are:
+<blockquote>
+<a href="#atom"><b>ATOM</b></a>,
+<a href="#cell"><b>CELL</b></a>,
+<a href="#end"><b>END</b></a>,
+<a href="#grid"><b>GRID</b></a>,
+<a href="#symmetry"><b>SYMMETRY</b></a>,
+<a href="#title"><b>TITLE</b></a>,
+<a href="#xyzlim"><b>XYZLIM</b></a>,
+</blockquote>
+
+<h3><a name="atom">ATOM</a>  &lt;atomname&gt;  &lt;x&gt; &lt;y&gt;  &lt;z&gt;</h3>
+<p>An atom site can be input on the command line in fractional coordinates . &lt;atomname&gt; is a
+1-character unique identifier for this site, Here x,y,z are the
+FRACTIONAL coordinates. If XYZIN has been input these ATOM sites are appended to those
+input from XYZIN. <B>BEWARE</B> - if you have also read in atoms from a PDB file 
+they will already have been identified as A B C etc - you will need to select other identifiers.</p>
+
+<h3><a name="cell">CELL</a> &lt;a&gt; &lt;b&gt; &lt;c&gt; &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt;</h3>
+<p>Unit cell, by default taken from the XYZIN or the map header. This command
+is compulsory if neither XYZIN nor MAPIN is assigned.</p>
+
+<h3><a name="grid">GRID</a>    &lt;nx&gt;  &lt;ny&gt;  &lt;nz&gt;</h3>
+<p>Map grid used to convert vectors to grid coordinates. By default, the values are
+taken from map header. Optional; if no map is given  set to 100 100 100.</p>
+
+<h3><a name="symmetry">SYMMETRY</a> &lt;sg name&gt; | &lt;sg number&gt; | &lt;symmetry operation&gt;</h3>
+<p> Space-group symmetry for the atoms (NOT the Patterson).
+The program must know the crystal symmetry and this command is 
+compulsory if the space group is not given in the XYZIN CRYST1 record. 
+ The Patterson symmetry is derived from the crystal symmetry.</P>
+<p>This may be given in 3 ways:-
+<ol>
+<li>space-group name</li>
+<li>space-group number</li>
+<li>symmetry operations as in International Tables, separated
+ by '*', on a series of SYMMETRY lines if necessary.</li>
+</ol></p>
+<p>For options 1 and 2, symmetry operations are read from the
+library file SYMOP.</p>
+
+
+<h3><a name="title">TITLE</a> &lt;title&gt;   </h3>     
+<p>Title for the run, written to the output vector file.</p>
+
+
+<h3><a name="xyzlim">XYZLIM</a>  [ASU] 
+[&lt;xmin&gt; &lt;xmax&gt; &lt;ymin&gt; &lt;ymax&gt; &lt;zmin&gt; &lt;zmax&gt;]</h3>
+<p>Limits of Patterson volume in fractions of the unit cell.
+It is possible to automatically
+extend to the CCP4 default Patterson asymmetric unit by specifying `XYZLIM ASU' 
+If this command is present, a Patterson map file will not
+be read, and <a href="#cell">CELL</a>,  and <a href="#symmetry">SYMMETRY</a> information must be present; a
+<a href="#grid">GRID</a> command is optional.</p>
+
+
+<h3><a name="end">END</a></h3>
+<p>End of input, also end-of-file will do.</p>
+
+<h2><a name="examples">EXAMPLES</a></h2>
+
+<h3>Unix example script found in $CEXAM/unix/runnable/</h3>
+<ul>
+<li><a href="../examples/unix/runnable/vectors.exam">vectors.exam</a></li>
+</ul>
+
+<h2>AUTHOR</h2>
+<p>Phil Evans, MRC Laboratory of Molecular Biology, Cambridge
+(pre@mrc-lmb.cam.ac.uk) <br />
+July 1990</p>
+
+<h2> SEE ALSO</h2>
+<p><a href="fft.html">fft</a>,
+<a href="npo.html">npo</a></p>
+
+
+
+<pre>
+Example 1
+5 sites in PDB format read from ha.pdb
+CELL and Space group name both read from the CRYST1 record.
+ Program deduces the Patterson symmetry.
+
+.../vectors1 xyzin ha.pdb XYZOUT $CCP4_SCR/ha-vectors.pdb
+xyzlim asu
+end
+
+==================================================================
+ha.pdb
+CRYST1  134.690  134.690  148.674  90.00  90.00 120.00 P 63 2 2    
+SCALE1      0.007424  0.004286  0.000000        0.00000
+SCALE2      0.000000  0.008573  0.000000        0.00000
+SCALE3      0.000000  0.000000  0.006726        0.00000
+ATOM      1  A   UNK     1       5.118  20.530  16.651  1.00  1.00              
+ATOM      2  B   UNK     2      16.500  29.745  14.867  1.00  1.00              
+ATOM      3  C   UNK     3       8.688  23.679   1.784  1.00  1.00              
+ATOM      4  D   UNK     4      36.501  52.024  35.682  1.00  1.00              
+ATOM      5  E   UNK     5      26.399   6.532   6.393  1.00  1.00              
+==================================================================
+
+
+==================================================================
+$CCP4_SCR/ha-vectors.pdb
+==================================================================
+
+REMARK  Patterson vectors                                                       
+CRYST1  134.690  134.690  148.674  90.00  90.00 120.00            
+SCALE1      0.007424  0.004286  0.000000        0.00000
+SCALE2      0.000000  0.008573  0.000000        0.00000
+SCALE3      0.000000  0.000000  0.006726        0.00000
+ATOM      1 VAB  VEC     1      55.963 107.430   1.784  1.00  1.00              
+ATOM      2 VAC  VEC     1      63.775 113.496  14.867  1.00  1.00              
+ATOM      3 VAD  VEC     1      35.962  85.151 129.643  1.00  1.00              
+.....
+ATOM     12 VAA  VEC     1     134.689   0.001 148.673  1.00  1.00              
+ATOM     13 VAB  VEC     2     -53.674 111.396   1.784  1.00  1.00              
+ATOM     14 VAC  VEC     2     -62.833 115.128  14.867  1.00  1.00              
+
+ATOM     15 VAA  VEC     2      25.456  26.363   0.000  1.00  1.00              
+ATOM     16 VAB  VEC     3      39.128  21.113   1.784  1.00  1.00              
+ATOM     17 VAC  VEC     3      29.969  24.845  14.867  1.00  1.00              
+.....
+==================================================================
+
+.../vectors1 xyzin ha.pdb XYZOUT $CCP4_SCR/ha-vectors.pdb mapin $CCP4_SCR/patterson.map
+end
+
+Vector limits taken from patterson.
+Fractional coordinates input in body of command file
+ No XYZIN or MAPIN assigned so  CELL and SYMM must be supplied.
+
+
+.../vectors1  XYZOUT $CCP4_SCR/ha-vectors.pdb mapin $CCP4_SCR/patterson.map
+SYMMETRY P6322
+CELL 134.690  134.690  148.674  90.00  90.00 120.00   
+ATOM A 0.126 0.176 0.112
+ATOM B 0.250 0.255 0.100
+ATOM C 0.166 0.203 0.012
+ATOM D 0.494 0.446 0.240
+ATOM E 0.224 0.056 0.043
+ATOM F 0.553 0.429 0.152
+ATOM G 0.457 0.444 0.140
+ATOM H 0.660 0.023 0.000
+ATOM I 0.037 0.217 0.151
+ATOM J 0.072 0.350 0.076
+ATOM K 0.596 0.237 0.246
+ATOM L -0.005 0.359 0.196
+end
+
+
+</pre>
+
+</body>
+</html>
+

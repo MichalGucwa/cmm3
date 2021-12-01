@@ -1,0 +1,344 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>CCP4 Program Suite : fhscal</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]">
+</HEAD>
+<BODY>
+
+<!-- ::INDEX_INFO::FHSCAL::Supported::Scaling data::Scaling of isomorphous derivative data using Kraut's method::see also SCALEIT:::::: -->
+
+<H1>fhscal (CCP4: Supported Program)</H1>
+<H2>NAME</H2>
+<B>fhscal </B>
+- Scaling of isomorphous derivative data using Kraut's method.
+
+<H2>SYNOPSIS</H2>
+
+<P><B>fhscal hklin</B> <I>foo_in.mtz </I><B>hklout</B> <I>foo_out.mtz</I>
+<BR>
+[<A HREF="#keywords">Keyworded input</A>] </P>
+
+<H2><A NAME="description"></A>DESCRIPTION</H2>
+
+<P>Derivative to native scale factors are calculated in equi-volume shells
+in reciprocal space using Kraut's formula (ref 1), generalised to use both
+centric and acentric data, and applied to the derivative data. This formula
+takes account of the degree of heavy-atom substitution, but does not require
+the presence of anomalous differences. </P>
+
+<P>The program also computes a scale factor to put the isomorphous
+difference Patterson on the correct scale for the vector-space
+refinement program <a href="vecref.html">VECREF</a>. </P>
+
+<P>It also possible to apply the scales to all "scaleable"
+columns in a dataset (i.e. to F+/- and to the structure intensities; see the
+<a href="#labin">LABIN</a> keyword), and this is advisable to avoid mixtures
+of scaled and unscaled data for a single derivative. For input MTZ files with
+dataset information, FHSCAL will attempt to check and warn you accordingly
+if it detects datasets which will be output with such a mixture. In these
+cases, specifying the <a href="#auto">AUTO</a> keyword will cause the
+appropriate scale factor to be applied automatically to all such columns.</P>
+
+<H2><A NAME="keywords"></A>INPUT CONTROL DATA</H2>
+
+<P>Free format using keywords. The following keywords may be used; only
+the leading 4 characters are significant and the order is immaterial: </P>
+<BLOCKQUOTE>
+<A HREF="#auto"><B>AUTO</B></A>
+<A HREF="#bias"><B>BIAS</B></A>,
+<A HREF="#cent"><B>CENT</B></A>,
+<A HREF="#end"><B>END</B></A>,
+<A HREF="#labin"><B>LABIN</B></A>,
+<A HREF="#list"><B>LIST</B></A>,
+<A HREF="#resolution"><B>RESO</B></A>,
+<A HREF="#shells"><B>SHELLS</B></A>,
+<A HREF="#title"><B>TITLE</B></A>
+</BLOCKQUOTE>
+<P>The LABIN keyword is always required, the others are optional and assume
+default values if omitted. Use of BIAS 1 is recommended, provided the standard
+deviations produced by the data processing program (<EM>e.g.</EM> SCALA) are
+reliable. If in doubt, omit BIAS. </P>
+
+<DL>
+<DT><A NAME="title"></A>TITLE &lt;title&gt;</DT>
+
+<DD> Title (max 100 characters). </DD>
+
+<DT><A NAME="list"></A>LIST &lt;list&gt;</DT>
+
+<DD> Number of reflections to list (for debugging purposes). Default =
+0. </DD>
+
+<DT><A NAME="shells"></A>SHELLS &lt;nshell&gt;</DT>
+
+<DD> Number of shells to divide data (aim to have at least 200 reflections
+per shell; the program may override your choice in order to maintain this 
+limit). If there is more than one derivative to be scaled, this applies
+to the one with the highest resolution. Default = 20. </DD>
+
+<DT><A NAME="bias"></A>BIAS &lt;bias&gt;</DT>
+
+<DD> Bias factor to multiply standard deviations. This is used to correct
+for the bias effect when averaging squares of differences. Normally this
+should be 1, however care should be taken that the standard deviations
+are valid; for example, some programs set the s.d. of a zero F to 9999;
+the correct value is sqrt(I+sigma(I))-sqrt(I). This will cause the program
+to give incorrect results; either ignore the s.d.'s by setting BIAS = 0,
+or better delete or correct the reflection(s). Default = 0. </DD>
+
+<DT><A NAME="resolution"></A>RESOLUTION &lt;maxres&gt; [ &lt;minres&gt;
+]</DT>
+
+<DD> Maxres and minres can be given in any order and in Angstrom units
+or as 4*sin(theta)**2/lamda**2. If specified then reflections outside this
+resolution range will be excluded from scaling and the output MTZ file.
+If the card is absent then all possible reflections are used for scaling
+and the resolution range of the native determines the output. If only one
+number is given it will be taken as the high resolution cutoff. </DD>
+
+<DT><A NAME="labin"></A>LABIN &lt;program label&gt;=&lt;file label&gt;</DT>
+
+<DD> MTZ assignments, see <A HREF="#files">below</A>. </DD>
+
+<DT><A NAME="auto"></A>AUTO</DT>
+
+<DD>Switches on AUTOmatic column selection. This option can only be used if
+the input file contains dataset information. 
+
+<P>It is only necessary to specify <tt>FPHn</tt> for
+each dataset on the <a href="#labin">LABIN</a> line (except in special cases,
+see below). Other labels can also be specified if desired. The program will
+then try to identify all "scaleable" columns in the dataset, automatically
+read them in and then apply the appropriate scale factor determined from
+<tt>FPHn</tt>. </P>
+
+<P>This option is intended to prevent a mixture of scaled and unscaled columns
+within a dataset, e.g. <tt>FPHn</tt> is scaled but not <tt>FPHn(+)</tt> and
+<tt>FPHn(-)</tt>. There are a couple of caveats:</P>
+
+<OL>
+<LI>It is assumed that each dataset contains the information for one derivative.
+<LI>There may be problems with the automatic scaling if datasets contain both
+    <tt>SIGIMEAN</tt> and <tt>SIGDPHn</tt>. This is because the program cannot
+    distinguish between sigmas for intensities (which need to be scaled by the
+    square of the scale factor) and those for other quantities (which are
+    multiplied by the scale factor).
+    <BR> In these cases the automatic selection will make a best guess at
+    which sigma is which; the ambiguity can also be resolved provided that
+    <tt>IMEAN</tt> and <tt>SIGIMEAN</tt> are explicitly set by the user on
+    the <a href="#labin">LABIN</a> line (which is safer).
+</OL>
+</DD>
+
+<DT><A NAME="cent"></A>CENT</DT>
+
+<DD> Use only centric reflections to compute the scale factors. All reflections
+will be scaled and output. </DD>
+
+<DT><A NAME="end"></A>END</DT>
+
+<DD> Terminate input. Equivalent to end-of-file. </DD>
+</DL>
+
+<H2><A NAME="files"></A>INPUT and OUTPUT FILES</H2>
+
+<P>Standard MTZ reflection files are used for input (HKLIN) and output
+(HKLOUT). The following column labels are used : </P>
+
+<PRE>
+        H, K, L         Standard meaning.
+
+        FP, SIGFP       Native amplitude and sigma.
+
+</PRE>
+
+<P>If only 1 derivative is being scaled: </P>
+
+<PRE>
+        FPH, SIGFPH     Derivative amplitude and sigma.
+
+        DPH, SIGDPH     Derivative anomalous difference and sigma
+                        (optional).
+
+        FPH(+), SIGFPH(+), FPH(-), SIGFPH(-)
+                        Derivative amplitudes and sigmas for Friedel pair
+                        (optional).
+
+</PRE>
+
+<P>If more than 1 derivative is being scaled (up to 20 per run), the column
+labels are FPH1, SIGFPH1, [ DPH1, SIGDPH1, FPH1(+), SIGFPH1(+), FPH1(-), SIGFPH1(-), ]
+FPH2, SIGFPH2, [ DPH2 ... ] <EM>etc.</EM></P>
+
+<P>Scales are applied to FPH, SIGFPH and DPH, SIGDPH, FPH(+),
+SIGFPH(+), FPH(-), SIGFPH(-) if present. All other columns, including
+those for which no label assignments are given, are output
+unchanged. </P>
+
+<H2><A NAME="caveat"></A>CAVEAT</H2>
+
+<P>WARNING : Reflections for which there is a derivative measurement but
+no native and which have a greater value of S than any reflection for which
+both are measured, will be rejected (because no valid scale can be applied).
+The rejections must be re-incorporated later when higher resolution native
+data becomes available. </P>
+
+<P>In order to avoid losing reflections in the scaling procedure, it is worth
+considering using the dataset with the highest resolution limit as the reference
+(<EM>i.e.</EM> 'native') dataset in FHSCAL.</P>
+
+<H2><A NAME="output"></A>PRINTER OUTPUT</H2>
+
+<P>After echoing the input data, a table with the following columns is
+produced for each derivative: </P>
+
+<ol>
+<li> Shell number
+<li> Maximum resolution for shell
+<li> Number of reflections in shell
+<li> RMS FP
+<li> RMS FPH
+<li> RMS (K.FPH - FP) for centrics
+<li> RMS (K.FPH - FP) for acentrics
+<li> Smoothed scale factor for shell
+</ol>
+
+<P>Overall scale and temperature factors are determined from a Wilson plot
+and printed with their estimated standard deviations; however the scale
+factors actually applied to the derivative data are obtained by interpolating
+the shell scale factors. </P>
+
+<P>At the end, the V factor (pseudo-cell volume) for the FFT program for
+use in computing a correctly scaled isomorphous difference Patterson is
+given:
+
+<dl>
+<dd>    V'  =  V * C / Kv
+</dl>
+
+where V is the true cell volume, C is the completeness of the data and
+the scale factor Kv is defined <A HREF="#scale_factor_kv">below</A>. 
+This value should be used for the 
+<a href="fft.html#vf000">VF000 keyword of FFT</a> when preparing
+a Patterson map for the program <a href="vecref.html">VECREF</a>.</P>
+
+<H2>ERRORS</H2>
+
+<P>In addition to the usual MTZ file opening errors: </P>
+
+<P>ERROR(S) IN DATA: syntax errors were found in the general equivalent
+positions. Check for spurious characters, missing commas, extra commas
+etc. </P>
+
+<P>ERROR - NO REFLECTIONS: no common reflections were found. Check column
+assignments, check reflection listing. </P>
+
+<P>NO REFLECTIONS IN SHELL n. Try using smaller number of shells. Reflections
+may be missing in a resolution range. </P>
+
+<H2><A NAME="function"></A>PROGRAM FUNCTION</H2>
+
+<P>Kraut's formula can be derived by equating the Patterson origins </P>
+
+<PRE>
+        K^2 . sum FPH^2  =  sum FP^2  +  sum FH^2               (1)
+
+</PRE>
+
+<P>where FPH, FP and FH are derivative, native and heavy-atom amplitudes
+respectively, and K is the derivative scale to be determined. </P>
+
+<P>For acentric reflections : </P>
+
+<PRE>
+        &lt;FH^2&gt;a  ~=  2.&lt;(K.FPH - FP)^2&gt;                         (2)
+
+</PRE>
+
+<P>Elimination of the unknown FH from (1) and (2) gives a quadratic equation
+for K, the solution of which is : </P>
+
+<PRE>
+        K  =  (2.sum FP.FPH  -  sqrt(4.(sum FP.FPH)^2 -
+              3.sum FP^2 . sum FPH^2)) / sum FPH^2              (3)
+
+</PRE>
+
+<P>Note that in the original reference the leading factor given as 1/2
+should be 2. This formula is valid only for acentric reflections. However
+it can easily be generalised to include centrics by noting that </P>
+
+<PRE>
+        &lt;FH^2&gt;  ~=  &lt;M.(K.FPH - FP)^2&gt;                          (4)
+
+</PRE>
+
+<P>where M = 1 for centric and 2 for acentric, so using (4) instead of
+(2) : </P>
+
+<PRE>
+        K  =  (sum M.FP.FPH  -  sqrt((sum M.FP.FPH)^2 -
+              sum (M+1).FP^2 . sum (M-1).FPH^2)) / sum (M-1).FPH^2
+                                                                (5)
+
+</PRE>
+
+<P>The numerator and denominator of (5) could be zero if all reflections
+in a shell were centric; this is unlikely, but just in case the equivalent
+formula can be used instead : </P>
+
+<PRE>
+        K  =  sum (M+1).FP^2 / (sum M.FP.FPH  +
+              sqrt((sum M.FP.FPH)^2 - sum (M+1).FP^2 . sum (M-1).FPH^2))
+                                                                (6)
+
+</PRE>
+
+<P>This formula is modified slightly to take into account the bias effect
+when averaging the squares of differences, <EM>i.e.</EM> the term &lt;M.(K.FPH - FP)^2&gt;
+is replaced by : &lt;M.(K.FPH - FP)^2 - M.((K.sigma(FPH))^2+sigma(FP)^2)&gt;
+where the sigma's have been multiplied by the BIAS factor. </P>
+
+<P>The program reads the input control data, then makes a first pass through
+the reflections to get the resolution limits (can be controlled by RESO
+card), then a second pass to flag reflections as centric or acentric and
+accumulate the sums in shells for the scale factors. The scale factors
+are calculated and smoothed, and applied in a third pass. The program also
+computes a scale factor to apply to the isomorphous difference Patterson
+for use in the program VECREF: </P>
+<A NAME="scale_factor_kv"></A>
+<PRE>
+        Kv  =  (sum (FPH-FP)^2)c + 2.(sum (FPH-FP)^2)a)  /
+               (sum (FPH-FP)^2)c + (sum (FPH-FP)^2)a)
+
+</PRE>
+
+<H2>AUTHOR </H2>
+
+<P>Ian Tickle, Birkbeck College, London </P>
+
+<H2><A NAME="references"></A>REFERENCES</H2>
+
+<OL>
+<P><!-- KEEP startreferencelist --></P>
+
+<LI>Kraut J, Sieker LC, High DF and Freer ST, <I>Proc. Nat. Acad. Sci.
+USA</I>, <B>48</B>, 1417-1424 (1962). </LI>
+<!-- KEEP endreferencelist -->
+</OL>
+
+<H2>EXAMPLE</H2>
+
+<H3>Simple unix example script found in $CEXAM/unix/runnable/</H3>
+
+<LI><A HREF="../examples/unix/runnable/fhscal.exam">fhscal.exam</A> (Kraut
+scaling of derivative data.). </LI>
+
+<H3>Also found combined with other programs in the example script ($CEXAM/unix/runnable/)</H3>
+
+<LI><A HREF="../examples/unix/runnable/vecref.exam">vecref.exam</A> (Use
+in vector space heavy atom refinement). </LI>
+
+</BODY>
+</HTML>

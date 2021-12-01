@@ -1,0 +1,20 @@
+#=====================================================================
+#
+# Run buccaneer_pipeline - cowtan 26/09/07
+#
+#=====================================================================
+
+global env
+global job_params
+
+  set ccp4dir $env(CCP4)
+  set workdir [GetDefaultDirPath]
+  set prefix [string trimright [file join $workdir $job_params(JOB_ID)_buccaneer_pipeline _] _]
+  AddOutputDir $prefix
+
+  CreateComScript buccaneer_pipeline buccaneer_pipeline_script
+
+  set cmd_py [file join $ccp4dir bin buccaneer_pipeline]
+  set cmd "[BinPath ccp4-python] -u $cmd_py -stdin"
+
+  set status [Execute $cmd $buccaneer_pipeline_script program_status report -edit-script]

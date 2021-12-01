@@ -1,0 +1,43 @@
+#! /bin/sh
+
+set -e
+
+if test ! -f $CCP4_SCR/toxd_phase_mir.mtz; then
+  echo '! Run mlphare.exam first' 1>&2
+  exit 1
+fi
+
+# calculate Fc
+sfall xyzin $CEXAM/toxd/toxd.pdb hklin $CCP4_SCR/toxd_phase_mir \
+      hklout $CCP4_SCR/3fo2fc_tox << eof-sfall
+title Fc and PHIc calculation from native.brk
+mode sfcalc hklin xyzin
+labin FP=FTOXD3 SIGFP=SIGFTOXD3
+labout FC=TOXFC PHIC=TOXPHIC
+eof-sfall
+
+# scale Fo, Fc
+rstats hklin $CCP4_SCR/3fo2fc_tox hklout $CCP4_SCR/tox_fofc-rs << eof-rstats
+labin FP=FTOXD3 SIGFP=SIGFTOXD3 FC=TOXFC PHIC=TOXPHIC
+title FcNAT to FoNAT scaled
+resolution 10.0 2.7
+eof-rstats
+
+rm $CCP4_SCR/3fo2fc_tox.mtz
+
+# make the map
+fft hklin $CCP4_SCR/tox_fofc-rs mapout $CCP4_SCR/3fo2fc << eof-fft
+labin F1=FTOXD3 SIG1=SIGFTOXD3 F2=TOXFC PHI=TOXPHIC
+resolution 2.5
+title 3Fo-2Fc map
+scale F1 3
+scale F2 2
+eof-fft
+
+rm $CCP4_SCR/tox_fofc-rs.mtz
+
+# find the peaks
+peakmax mapin $CCP4_SCR/3fo2fc PEAKS $CCP4_SCR/3fo2fc.peaks << eof-peakmax
+output peaks
+eof-peakmax
+#

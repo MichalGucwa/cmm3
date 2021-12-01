@@ -1,0 +1,697 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4I Documentation for Programmers: Core Documentation</title>
+<link rel="stylesheet" type="text/css" href="../../ccp4idocs.css" title="CCP4i" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+</head>
+<body>
+<H2>CCP4i Documentation for Programmers: Core Documentation</H2>
+<H3>Contents</H3>
+<h3>Initialisation and Utilities (system.tcl and utils.tcl)</h3>
+<a name="Initialisation_and_Utilities"><h3> Initialisation and Utilities  </h3> 
+<p>The system.tcl and utils.tcl files contains many basic commands which are used throughout ccp4i. These two files are  sourced immediately by bin/ccp4i.tcl and all other 'main' scripts to provide the basic functionality for boot strapping up the ccp4i system.#d_intro Some of the procedures interact with the operating system and are therefore platform dependent. NOTE Some of these are no more than wrappers to Tcl commands - as a matter of policy any function which might conceivably be problematic on porting has been wrapped. In practice Tcl seems to handle porting very well.<p>
+<h3>Def Files</h3>
+<a name="Def_Files"><h3> Def Files </h3> 
+<p>The def file has identifier data at the top of the file written by WriteIdentifier. Def files may have two items per line, the parameter name and the parameter value or they may have three items: parameter name, parameter type and parameter value. The def files in $CCP4I_TOP/tasks include the parameter type which is needed to define the widget type when drawing a task window. Other def files do not need to contain \this information.  When initialising an array CCP4i normally reads the distributed def file which contains the parameter types and the parameters consistent with the distributed graphical interface; this ensures that the the graphical window can be drawn safely. These parameters may be overlaid and customised by reading another def file.  <p>
+<p>The preferences files are special cases of def files which might be considered to go with the tasks: preferences, configure and directories. All of these preferences have global arrays which may be accessed from any procedure within CCP4i which needs information from them.  The task windows to edit the preferences and configure data are tasks/pref.tcl and tasks/config.tcl - note that these windows set up another temporary array for the data and do not directly access the preferences and configure arrays. The directories task window is defined in src/directories.tcl and does directly edit the directories array - this is probably not a good thing.<p>
+<p>The command InitialiseArray will read data from an def file to an array and SaveArray will save data from an array to a def file. The InitialisePreferences and SavePreferences commands are used for the preferences files to access files in the appropriate directory.<p>
+<a name="InitialiseArray" ><h4><font color="#CC3333">InitialiseArray</font> <em>Initialise an array with data from a def file</em></h4> 
+<p><em>Argument list:  &lt;filn&gt; &lt;arrayname&gt; &lt;taskname&gt; &lt;args&gt;</em></p>
+<p><strong>filn</strong>  Def file name<p>
+<p><strong>arrayname</strong>  Name of array to be loaded with data<p>
+<p><strong>taskname</strong>  The name of a task which should correspond to the identifier in the def file<p>
+<p><strong>-nocheck</strong><p>
+<p>Do not check that def file has correct task identifier<p>
+<p><strong>-reportlabel</strong><p>
+<p>If def file does not have correct identifier then ask user if they still want to read it.<p>
+<a name="reserved_prefix" ><h4><font color="#CC3333">reserved_prefix</font> <em>Check whether a parameter name has a reserved prefix</em></h4> 
+<p><em>Argument list:  &lt;name&gt; &lt;&gt;</em></p>
+<p>Given a parameter name this command returns 1 if the name has a prefix matching the list of prefixes used to denote internal administrative variables in CCP4i.<p>
+<p>If no name is given then the procedure returns the list of reserved prefixes.<p>
+<p><strong>name</strong>  (optional) Parameter name to check<p>
+<a name="WriteIdentifier" ><h4><font color="#CC3333">WriteIdentifier</font> <em>Write header to CCP4i file (mainly used for def files)</em></h4> 
+<p><em>Argument list:  &lt;f&gt; &lt;script&gt; &lt;args&gt;</em></p>
+<p>The standard header parameters are written automatically : VERSION, SCRIPT, DATE & USER.  All other parameters should be entered as name-value pairs and will be output in the usual format of<p>
+<p>#CCP4I NAME value<p>
+<p><strong>f</strong>  If this is input as an empty string then the header text is returned in this argument. Otherwise f is interpreted as an io channel id and the header text is written to that channel.<p>
+<p><strong>script</strong>  The script type (e.g. DEF for a def file)<p>
+<p><strong> name value </strong>  There can be any number of additional arguments each of which is a list of two items: the name of a parameter and its value.<p>
+<a name="SaveArray" ><h4><font color="#CC3333">SaveArray</font> <em>Save the data in an array to a def file</em></h4> 
+<p><em>Argument list:  &lt;taskname&gt; &lt;filn&gt; &lt;arrayname&gt; &lt;args&gt;</em></p>
+<p>The array should contain an element PARAM_LIST which contains a list of the elements of the array to be written out.  The parameter name in the def file will be the same as the element name  in the array. The PARAM_LIST is usually created by InitialiseArray when it reads in the def file to define the contents of the array.  Additional elements may be added to the array to be used as control parameters when the array is represented in a task window.  The def file has identifier data at the top of the file written by WriteIdentifier. Def files may have two items per line, the parameter name and the parameter value or they may have three items: parameter name, parameter type and parameter value.<p>
+<p><strong>-save_types</strong><p>
+<p>Save the parameter types in addition to their values<p>
+<p><strong>-no_ident</strong><p>
+<p>Do not write identifier text in the file header<p>
+<p><strong>-notype</strong><p>
+<p>Indicates there is no parameter typing information in the array<p>
+<p><strong>-query_overwrite</strong><p>
+<p>Prompt user before overwriting an existing file<p>
+<p><strong>-append</strong><p>
+<p>Append output to existing file (default is to overwrite)<p>
+<p><strong>-job</strong><em>  job_id</em><p>
+<p>Write specified job_id number to the identifier text<p>
+<a name="WriteDefLine" ><h4><font color="#CC3333">WriteDefLine</font> <em>Create a text line for the def file to define one parameter</em></h4> 
+<p><em>Argument list:  &lt;fVar&gt; &lt;var&gt; &lt;value&gt; &lt;&gt;</em></p>
+<p><strong>fVar</strong>  Returned. Text string to which the new line is appended<p>
+<p><strong>var</strong>  The name of the parameter<p>
+<p><strong>value</strong>  The value of the parameter. Optional. Default empty.<p>
+<a name="WriteDefLine1" ><h4><font color="#CC3333">WriteDefLine1</font> <em>Create a text line for the def file to define one parameter including it's data type</em></h4> 
+<p><em>Argument list:  &lt;fVar&gt; &lt;var&gt; &lt;type&gt; &lt;value&gt; &lt;&gt;</em></p>
+<p><strong>fVar</strong>  Returned. Text string to which the new line is appended<p>
+<p><strong>var</strong>  The name of the parameter<p>
+<p><strong>type</strong>  Data type of the parameter<p>
+<p><strong>value</strong>  The value of the parameter. Optional. Default empty.<p>
+<h3>Preferences Files</h3>
+<a name="Preferences_Files"><h3> Preferences Files </h3> 
+<p>There are utilities in system.tcl to handle the 'preferences' files, which are:<p>
+<p>configure.def with configuration options for the local installation (e.g. printers, remote machines)<p>
+<p>directories.def which defines the user's project and directory aliases<p>
+<p>preferences.def which defines some user preferences for graphical CCP4i<p>
+<p>loggraph.def Preferences for the loggraph program<p>
+<p>Each of these sets of preferences are treated as a task with a task interface for the user to edit parameters and parameters are saved as a def file.  The utilities in system.tcl are concerned with loading the preferences at CCP4i startup to be saved in global arrays: configure, preferences and directories.  These arrays can be accessed from anywhere in the ccp4i code but the parameters should NOT be changed - the arrays should be regarded as 'read only'.<p>
+<p>There are distribution versions of the def files called $CCP4I_TOP/etc/foo.def.dist  When a user runs CCP4i for the first time the distribution file is read, possible amended by an autoconfigure procedure and then written to either $CCP4I_TOP/etc/$PLATFORM/foo.def or $HOME/.CCP4/$PLATFORM/foo.def.  Subsequently when a user runs CCP4i the first configure file found in the order: $HOME/.CCP4/$PLATFORM/foo.def, $CCP4I_TOP/etc/$PLATFORM/foo.def, $CCP4I_TOP/etc/$PLATFORM/foo.def.dist will be used.<p>
+<a name="InitialisePreferences" ><h4><font color="#CC3333">InitialisePreferences</font> <em>Initialise the parameters from preferences configure and directories def files</em></h4> 
+<p><em>Argument list:  &lt;taskname&gt; &lt;arrayname&gt; &lt;args&gt;</em></p>
+<p>This task first reads default parameters from the ccp4i installation area and then reads any user preferences in .CCP4/domain directory.  This procedure uses InitialiseArray to load the def file into the array.<p>
+<p><strong>taskname</strong>  Name of task (preferences, configure or directories)<p>
+<p><strong>arrayname</strong>  Name of array to be loaded with data<p>
+<p><strong>-nouser</strong><p>
+<p>Do not read the user's def files.<p>
+<a name="MakeLock" ><h4><font color="#CC3333">MakeLock</font> <em>Test if a LOCK file exists and query user how to proceed</em></h4> 
+<p><em>Argument list:  &lt;filename&gt;</em></p>
+<p>Currently required to handle potential conflict between ccp4i and MG accessing directories.def<p>
+<p><strong>filename</strong>  Name of file to lock (lockfile will be filename.LOCK)<p>
+<a name="LockStatus" ><h4><font color="#CC3333">LockStatus</font> <em>Return status of lock file</em></h4> 
+<p><em>Argument list:  &lt;lockfile&gt; &lt;userVar&gt; &lt;timeVar&gt; &lt;pidVar&gt; &lt;&gt;</em></p>
+<p>Return 0 is lock file exists and 1 (i.e. OK to open database file) if it does not.<p>
+<p><strong>project</strong>  Alias of project<p>
+<p><strong>db</strong>  Corresponding database directory<p>
+<p><strong>userVar</strong>  Return name of user who created lock file<p>
+<p><strong>timeVar</strong>  Return time of creation of lock file<p>
+<p><strong>pidVar</strong>  (Optional) Return id of process which owns the lock file<p>
+<a name="DeleteLock" ><h4><font color="#CC3333">DeleteLock</font> <em>Delete lock file if it belongs to the current process</em></h4> 
+<p><em>Argument list:  &lt;lockfile&gt; &lt;args&gt;</em></p>
+<p><strong>-force</strong><p>
+<p>Force deletion of the lock even if not owned by the current process<p>
+<a name="CreateLock" ><h4><font color="#CC3333">CreateLock</font> <em>Create a lock file</em></h4> 
+<p><em>Argument list:  &lt;lockfile&gt;</em></p>
+<p>Returns 1 if lock was created, 0 otherwise<p>
+<p><strong>project</strong>  Alias of project<p>
+<p><strong>db</strong>  Corresponding database directory<p>
+<a name="SavePreferences" ><h4><font color="#CC3333">SavePreferences</font> <em>Save a directories/preferences/configure/status.def file to user's directory</em></h4> 
+<p><em>Argument list:  &lt;taskname&gt; &lt;arrayname&gt; &lt;args&gt;</em></p>
+<p>Presently these are saved to directory $HOME/.CCP4/$domain where domain is unix or windows<p>
+<p><strong>taskname</strong>  Name of the task (i.e. directories preferences configure or status).<p>
+<p><strong>arrayname</strong>  name of array containing data<p>
+<a name="SaveInstallPreferences" ><h4><font color="#CC3333">SaveInstallPreferences</font> <em>Save the preferences to the CCP4i installation area</em></h4> 
+<p><em>Argument list:  &lt;taskname&gt; &lt;arrayname&gt;</em></p>
+<p><strong>taskname</strong>  Name of the task (i.e. directories preferences configure or status).<p>
+<p><strong>arrayname</strong>  name of array containing data<p>
+<a name="update_defdir_menu" ><h4><font color="#CC3333">update_defdir_menu</font> <em>Update the project/alias menus that appears in file selection</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt;</em></p>
+<p>When the user changes the projects or aliases in the 'Directories and ProjectDir' window this command will update the menus in all currently drawn task windows and file selection windows.<p>
+<p>This command called from InitialisePreferences so needs to be in system.tcl to ensure it is defined when called - but it more naturally belongs in windows.tcl. <p>
+<p> system(DEFDIR_WIDGET_LIST) contains a list of all widgets for parameters of type _default_dir.  This list is updated by CreateLine whenever it draws such a widget. The list is not updated when widgets are destroyed.<p>
+<p><strong>arrayname</strong>  Name of directories array<p>
+<h3>CCP4i Startup Utilities</h3>
+<a name="ElementExists" ><h4><font color="#CC3333">ElementExists</font> <em>Test if a given element name exists in an array</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;element&gt;</em></p>
+<p>Return 1 if array element exists, otherwise return 0 #d_arg arrayname Name of array<p>
+<p><strong>element</strong>  Name of element<p>
+<a name="autoconf_UNIX_configure" ><h4><font color="#CC3333">autoconf_UNIX_configure</font> <em>Attempt to configure the configure parameters for a UNIX system</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;args&gt;</em></p>
+<p>Invoked if there is no configure.def file defined for the UNIX system.  Initial parameters are taken from CCP4I_TOP/etc/configure.def.init<p>
+<p><strong>arrayname</strong>  Name of configure array<p>
+<a name="autoconf_WINDOWS_configure" ><h4><font color="#CC3333">autoconf_WINDOWS_configure</font> <em>Attempt to configure the configure parameters for a WINDOWS system</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;args&gt;</em></p>
+<p><strong>arrayname</strong>  Name of the configure array<p>
+<a name="autoconf_WINDOWS_system" ><h4><font color="#CC3333">autoconf_WINDOWS_system</font> <em>Attempt to configure the system parameters for a WINDOWS system</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;args&gt;</em></p>
+<p><strong>arrayname</strong>  Name of the system array<p>
+<a name="set_configured_menus" ><h4><font color="#CC3333">set_configured_menus</font> <em>Create menus which are based on data in the configure def file.</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;paramlistVar&gt;</em></p>
+<p>This is used to set up menus for options such as remote machines.<p>
+<p>This procedure defines some data types whose actual allowed values are dependent on user input to the configure interface.  Each data type is a menu with the menu items (i.e. the allowed values for data of that type) been taken from the configure.def file via the configure array.<p>
+<p>The relationship between the configure file data and the derived menus is defined in configure(TYPEDEF_LIST).   This is a list and each element in that list defines one menu. Each menu definition is itself a list with the items: name of the menu type, the name of the element acting as counter, the root element name for the items, and the root element name for alias for each item (this is optional).<p>
+<p><strong>arrayname</strong>  name of array containing parameters<p>
+<p><strong>paramlistVar</strong>  name of array element containing the menu definitions (usually TYPEDEF_LIST)<p>
+<a name="set_typedef_menu" ><h4><font color="#CC3333">set_typedef_menu</font> <em>Use a list of values from indexed array element(s) to define a menu data type</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;defVar&gt; &lt;nitemsVar&gt; &lt;menuVar&gt; &lt;aliasVar&gt; &lt;&gt;</em></p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>defVar</strong>  Name of the menu type<p>
+<p><strong>nitemsVar</strong>  Number of menu items (i.e. maximum index for the input array elements)<p>
+<p><strong>menuVar</strong>  Array element containing the text for the menu items<p>
+<p><strong>aliasVar</strong>  optional. Array element containing the aliases for the menu items<p>
+<a name="set_default_mapviewer" ><h4><font color="#CC3333">set_default_mapviewer</font> <em>(Re)set the default mapviewer</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt;</em></p>
+<p>Sets the default map viewer command in typedef to that specified in preferences.<p>
+<p><strong>arrayname</strong>  name of array containing parameters<p>
+<a name="set_default_pdbviewer" ><h4><font color="#CC3333">set_default_pdbviewer</font> <em>(Re)set the default PDB viewer</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt;</em></p>
+<p>Sets the default map viewer command in typedef to that specified in preferences.<p>
+<p><strong>arrayname</strong>  name of array containing parameters<p>
+<a name="set_default_mtzviewer" ><h4><font color="#CC3333">set_default_mtzviewer</font> <em>(Re)set the default MTZ viewer</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt;</em></p>
+<p>Sets the default mtz viewer command in typedef to that specified in preferences.<p>
+<p><strong>arrayname</strong>  name of array containing parameters<p>
+<a name="set_default_viewer" ><h4><font color="#CC3333">set_default_viewer</font> <em>Set the default viewer for a particular file type</em></h4> 
+<p><em>Argument list:  &lt;filetype&gt; &lt;viewercmd&gt;</em></p>
+<p>Reorders the lists of viewer commands in typedef so that the user specified default (set in preferences) is first in the list, and hence is used by default to view the specified file type in the gui.<p>
+<p><strong>filetype</strong>  Name of the type for the file in types.def<p>
+<p><strong>viewercmd</strong>  The new default viewer command (must be one of those already defined in types.def for this file type)<p>
+<a name="SetDefaultMapFormat" ><h4><font color="#CC3333">SetDefaultMapFormat</font> <em>Return the default map format set by the user  in preferences</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;map_format&gt; &lt;args&gt;</em></p>
+<p>This procedure called by tasks which present user with the option to output maps. Beware FFT/Patterson will not output Xtalview maps because Xtalview just takes the hkl data & generates own map<p>
+<a name="SetMapConversionMenu" ><h4><font color="#CC3333">SetMapConversionMenu</font> <em>Update a menu to only include possible map format conversions</em></h4> 
+<p><em>Argument list:  &lt;menuname&gt; &lt;_map_format&gt;</em></p>
+<p>For each format already defined in the type, check whether the conversion can be performed in the current setup and regenerate the menu to only include those formats that are actually available.<p>
+<p><strong>menuname</strong>  (optional) The parameter type as defined for example in types.def. This defaults to _map_format.<p>
+<a name="TestEnvVariables" ><h4><font color="#CC3333">TestEnvVariables</font> <em>Test CCP4 environment variables set - used at ccp4i startup.</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>Part of CCP4i startup. Report unset variables to user with option to continue or exit.<p>
+<a name="InitialiseDotCCP4" ><h4><font color="#CC3333">InitialiseDotCCP4</font> <em>Create/update the $HOME/.CCP4 directory</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>On startup check that .CCP4 directory exists, and that the necessary subdirectories (including the shadow area) are also present. Create any missing directories.<p>
+<a name="SetDomain" ><h4><font color="#CC3333">SetDomain</font> <em>Unused. Part of project to support multiple machine domains</em></h4> 
+<p><em>Argument list: None</em></p>
+<a name="CreateSessionLog" ><h4><font color="#CC3333">CreateSessionLog</font> <em>Open a session log file which is written to by the Report</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>This file can seen by user with 'Review Session Log' utility. It logs running jobs, file handling, sockets and should be used for any other important actions for which some diagnostic reporting might be useful.<p>
+<p>The file name is $HOME/.CCP4/CCP4_session.log<p>
+<a name="Report" ><h4><font color="#CC3333">Report</font> <em>Write diagnostics to the session log file</em></h4> 
+<p><em>Argument list:  &lt;level&gt; &lt;text&gt; &lt;args&gt;</em></p>
+<p>The report level cutoff is not currently implemented - there is no cutoff value in the preferences.<p>
+<p><strong>Report</strong>  level - 0,1,2 in order of decreasing importance. Currently unused.<p>
+<p><strong>text</strong>  Text to appear in session log<p>
+<p><strong>-notime</strong><p>
+<p>Do not output the time to the session log<p>
+<a name="WarningMessage" ><h4><font color="#CC3333">WarningMessage</font> <em>Minimal WarningMessage proc to output diagnostic from WindowsNT</em></h4> 
+<p><em>Argument list:  &lt;message&gt; &lt;args&gt;</em></p>
+<p>Draw a dialog box with a warning message.<p>
+<p> There is another version of this proc in util_windows.tcl which will override this version after util_windows.tcl has been sourced. NB util_windows.tcl is NOT sourced by ccp4ish so run scripts will always default to this version if the programmer wants to output graphical messages from run scripts which might be necessary debugging under windows.<p>
+<a href=../../../help/programmers/graphic_utils.html#WarningMessage>See CCP4i Programmers Documentation</a><h3>Saving Global Parameters</h3>
+<a name="Saving_Global_Parameters"><h3> Saving Global Parameters </h3> 
+<p>Save global parameters in an array called system_save this just helps keep things tidy.<p>
+<a name="GetSystemVar" ><h4><font color="#CC3333">GetSystemVar</font> <em>Get a global parameter from array system_save</em></h4> 
+<p><em>Argument list:  &lt;symbol&gt;</em></p>
+<p><strong>symbol</strong>  Name of parameter<p>
+<a name="SetSystemVar" ><h4><font color="#CC3333">SetSystemVar</font> <em>Save a global parameter in array system_save</em></h4> 
+<p><em>Argument list:  &lt;symbol&gt; &lt;name&gt;</em></p>
+<p><strong>symbol</strong>  Name of parameter<p>
+<p><strong>value</strong>  Value of parameter<p>
+<h3>Querying the Operating System</h3>
+<a name="Querying_the_Operating_System"><h3> Querying the Operating System </h3> 
+<a name="GetHostname" ><h4><font color="#CC3333">GetHostname</font> <em>Return the name of the machine running the process</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>Wrapper for 'info hostname'<p>
+<a name="GetUserId" ><h4><font color="#CC3333">GetUserId</font> <em>Return the user's id.</em></h4> 
+<p><em>Argument list: None</em></p>
+<a name="GetVersion" ><h4><font color="#CC3333">GetVersion</font> <em>Return the CCP4i version.</em></h4> 
+<p><em>Argument list: None</em></p>
+<a name="GetPid" ><h4><font color="#CC3333">GetPid</font> <em>Return the process id of the current process</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>Wrapper for Tcl pid command<p>
+<a name="GetCurrentDir" ><h4><font color="#CC3333">GetCurrentDir</font> <em>Return the name of directory from which current process was started</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>Is wrapper for Tcl pwd command<p>
+<a name="GetDate" ><h4><font color="#CC3333">GetDate</font> <em>Return the date/time appropriately formatted</em></h4> 
+<p><em>Argument list:  &lt;args&gt;</em></p>
+<p>Uses Tcl clock command.  Return the current time if the -clock argument is not used.  See Tcl clock command for explanation of formats.<p>
+<p><strong>-clock</strong><em>  time</em><p>
+<p>Input a time as a machine clock time in seconds<p>
+<p><strong>-format</strong><em>  format</em><p>
+<p>Output format can be: full (%d %b %Y  %H:%M:%S), time (%H:%M:%S) date (%d %b %Y), or brief (%H:%M:%S for today or %d %b %y)<p>
+<a name="BinPath" ><h4><font color="#CC3333">BinPath</font> <em>Return path name for an executable</em></h4> 
+<p><em>Argument list:  &lt;program&gt;</em></p>
+<p>CCP4i usually calls programs without giving the full path name and relies on the PATH environment variable being correctly set to find the required programs. The user can define full path names for some programs in the configure interface and their specifications are interpreted in the BinPath procedure. All program calls in CCP4i scripts should pass the program name through this procedure which will expand the name to the full path name for those defined in the configure interface. By default BinPath will just return the program name as input.<p>
+<p><strong>program</strong>  Name of a program.<p>
+<a name="FindExecutable" ><h4><font color="#CC3333">FindExecutable</font> <em>Return the full path for the program named</em></h4> 
+<p><em>Argument list:  &lt;program&gt;</em></p>
+<p>This command searches the directories on the user's PATH and looks for the specified program name in each directory. It returns the full path for the first match it finds, or else an empty string if no match is found.<p>
+<p>This should work on both Unix and Windows platforms.<p>
+<p><strong>program</strong>  Name of the program executable to search for<p>
+<a name="Execute" ><h4><font color="#CC3333">Execute</font> <em>Execute a program with a command script and some error trapping</em></h4> 
+<p><em>Argument list:  &lt;command&gt; &lt;script&gt; &lt;statusout&gt; &lt;reportout&gt; &lt;args&gt;</em></p>
+<p>This is a cut-down version of the Execute in execute.tcl which is used to run program in the ccp4i run script.  This version runs programs from within the ccp4i graphical interface.<p>
+<p>Execute returns a true (1) if the program completes successfully, or a false (0) otherwise.<p>
+<p><strong>command</strong>  The command line to run the program<p>
+<p><strong>script</strong>  The script input to the program - should be null string if there is no script input.<p>
+<p><strong>statusout</strong>  Output the termination status from the program<p>
+<p><strong>reportout</strong>  Output the termination standardout output from the program #d_opt0 -success success_flag<p>
+<p>The 'successful' termination status from the program. Default is 0 as appropriate from most CCP4 programs.<p>
+<p><strong>-log</strong><em>  logfile Set the name of the file for the log output. If this is not set then Execute will not handle log file output.</em><p>
+<h3>Handling File Names</h3>
+<a name="GetEnvPath" ><h4><font color="#CC3333">GetEnvPath</font> <em>Get operating system environment variable</em></h4> 
+<p><em>Argument list:  &lt;var&gt; &lt;report&gt; &lt;1&gt;</em></p>
+<p>Return a path name associated with an environment variable - in a Windows system the separators are converted to forward slash. Return an empty string if no environment variable found.<p>
+<p><strong>var</strong>  Environment variable<p>
+<p><strong>report</strong>  Optional - default 1. If true (1) then output warning message if environment variable not found.<p>
+<a name="GetFullDirName" ><h4><font color="#CC3333">GetFullDirName</font> <em>Return full path name for given directory alias</em></h4> 
+<p><em>Argument list:  &lt;dir&gt;</em></p>
+<p>Given a directory (either alias or full path) returns the full path appropriately formatted for the platform.<p>
+<p><strong>dir</strong>  Directory alias or path<p>
+<a name="GetFullFileName" ><h4><font color="#CC3333">GetFullFileName</font> <em>Return full path name for given file name and directory alias.</em></h4> 
+<p><em>Argument list:  &lt;file&gt; &lt;dir&gt; &lt;args&gt;</em></p>
+<p>Path name will be appropriately formatted for the platform.<p>
+<p>Will return the file name as input if directory alias is undefined or if directory alias is FULL_PATH or CURRENT.<p>
+<p><strong>file</strong>  File name (not usually including path)<p>
+<p><strong>dir</strong>  Directory or project alias. Optional - default is blank string which is interpreted as undefined project alias.<p>
+<a name="GetFullFileName1" ><h4><font color="#CC3333">GetFullFileName1</font> <em>GetFullFileName version used in ExecuteScript </em></h4> 
+<p><em>Argument list:  &lt;file&gt; &lt;dir&gt; &lt;args&gt;</em></p>
+<p>Handles the case when the input file name has a directory separator<p>
+<p>This procedure could be merged with with GetFullFileName but it is a bug fix late in development cycle so separate procedure.<p>
+<a name="GetFullFileName0" ><h4><font color="#CC3333">GetFullFileName0</font> <em>Return the full path name of a file which is defined in an array.</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;fileVar&gt; &lt;args&gt;</em></p>
+<p>This command is similar to GetFullFileName but the input is in the form of the name of an array and the element containing the file name. Note that the default directory alias for the directory containing the file will be in the element DIR_$fileVar.   This command should be used in the context of callback functions.<p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>fileVar</strong>  name of array element containing file name<p>
+<p><strong>-dir</strong><em>  dirVar</em><p>
+<p>Name of array element containing the directory alias. <p>
+<p><strong>-machine</strong><em>  machine</em><p>
+<p>Not implemented.  Would derive path name as seen from an alternative machine<p>
+<a name="SetCurrentProject" ><h4><font color="#CC3333">SetCurrentProject</font> <em>Set the project alias for the currently open user project.</em></h4> 
+<p><em>Argument list:  &lt;project_alias&gt;</em></p>
+<p>Dependent on the RUN_MODE this sets either the CURRENT_PROJECT or the MG_CURRENT_PROJECT entry in ccp4i_status to the specified value.<p>
+<p><strong>project_alias</strong>  Name of the new current project.<p>
+<a name="GetCurrentProject" ><h4><font color="#CC3333">GetCurrentProject</font> <em>Return the project alias for the currently open user project.</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>Dependent on the RUN_MODE this returns the values of either the CURRENT_PROJECT or the MG_CURRENT_PROJECT entry in ccp4i_status.<p>
+<a name="GetCurrentProjectDir" ><h4><font color="#CC3333">GetCurrentProjectDir</font> <em>Return the directory path for the currently open user project.</em></h4> 
+<p><em>Argument list:  &lt;project_alias&gt;</em></p>
+<p>Returns the directory for the project returned by GetCurrentProject, or the directory for a particular project alias (if one is specified).<p>
+<p><strong>project_alias</strong>  (optional) Return directory for this project.<p>
+<a name="GetDefaultDirPath" ><h4><font color="#CC3333">GetDefaultDirPath</font> <em>Return the full path name for an input project/directory alias.</em></h4> 
+<p><em>Argument list:  &lt;dirIn&gt;</em></p>
+<p><strong>dir</strong>  Input project/directory alias. If this argument is missing then the current project directory is assumed.<p>
+<a name="GetDbDirPath" ><h4><font color="#CC3333">GetDbDirPath</font> <em>Return the project database directory</em></h4> 
+<p><em>Argument list:  &lt;project&gt;</em></p>
+<p>Return the full path name for the database directory of an input project alias - typically this is a subdirectory called CCP4_DATABASE in the project directory.<p>
+<p>Given a project alias this command looks up the path of the corresponding database directory using a call to GetProjectDBPath. If the project alias isn't found then an empty string is returned.<p>
+<p>If no project alias is supplied then the database directory of the current project is returned.<p>
+<p><strong>project</strong>  (optional) Project alias<p>
+<a name="SearchPath" ><h4><font color="#CC3333">SearchPath</font> <em>Return full path name for a CCP4i code or data file.</em></h4> 
+<p><em>Argument list:  &lt;topname&gt; &lt;args&gt;</em></p>
+<p>The procedure will search in order of priority: 1) the user's 'dot' directory ($HOME/.CCP4/CCP4I_TOP on unix)  2) the ccp4i installation area.<p>
+<p><strong>topname</strong>  Should be TOP (to find ccp4i source files) or HELP (to find html files). The default place for help files is $CCP4I_TOP/help<p>
+<a name="datapath" ><h4><font color="#CC3333">datapath</font> <em>Return the full path name for a configure file in the user's home directory.</em></h4> 
+<p><em>Argument list:  &lt;filename&gt; &lt;args&gt;</em></p>
+<p>The user's configure files are usually in $HOME/.CCP4/platform where platform is UNIX or WINDOWS (eg used when several students in a class have same login) #d_arg filename The name of the configure file<p>
+<p><strong>-user</strong><p>
+<p>Use a file in the directory $HOME/.CCP4/username/platform where username is taken from $system(USERNAME).  This parameter is set if the user start ccp4i with the argument 'ccp4i -u[ser] username'.  This is intended \to be used when there is more than one person using one login id - e.g. in a teaching situation.<p>
+<p><strong>-domain</strong><p>
+<p>This is part of the machine domain functionality - not fully implemented.<p>
+<p><strong>-create</strong><p>
+<p>If the directory structure in .CCP4 does not exist then create the directories.<p>
+<a name="GetTmpFileName" ><h4><font color="#CC3333">GetTmpFileName</font> <em>Return a unique name for a temporary file</em></h4> 
+<p><em>Argument list:  &lt;args&gt;</em></p>
+<p>  If called in graphical ccp4i the root of the file name is pid_n where pid is the ccp4i process id and n is a counter of the number of temporary files.  If called in a run script then the root of the file name is project_jobid_n where project is the user's project name, jobid is the job number and n is a counter of the number of temporary files.  The file name has the extension .tmp but it is usual to specify the file type using the -ext argument to GetTmpFileName and giving the usual file extension of the file type.<p>
+<p> The temporary file is given a path to put it in the CCP4i TEMPORARY directory (NB this is not necessarily the same a $CCP4_SCR).<p>
+<p>The use of this procedure to provide a consistent naming mechanism for temporary files is essential for the CCP4i file cleanup mechanism to be able to identify temporary files created by a particular job. It is possible that in future this procedure could keep some more definite record of temporary files created if ccp4i needs to track files more closely.<p>
+<p><strong>-ext</strong><em>  extension</em><p>
+<p>Add the extra text extension to the root file name.  This option is usually used to enter the file type for the file.<p>
+<p><strong>-defdir</strong><em>  directory_alias</em><p>
+<p>Give file name with directory for directory alias directory_alias<p>
+<p><strong>-dir</strong><em>  directory</em><p>
+<p>Give file name with directory directory<p>
+<p><strong>-map</strong><p>
+<p>Give file name with directory as the default output directory for maps. This is usually the TEMPORARY directory or the project directory.<p>
+<a name="GetFileFormat" ><h4><font color="#CC3333">GetFileFormat</font> <em>Return the file type as inferred from the file extension</em></h4> 
+<p><em>Argument list:  &lt;file&gt; &lt;default&gt;</em></p>
+<p>The file formats are defined in etc/types.def<p>
+<a href=../../../help/programmers/def_files.html#types_def>Description of types.def</a><p><strong>file</strong>  File name<p>
+<p><strong>default</strong>  (Optional) A default file type which is returned if a type can not be inferred from the file name.<p>
+<a name="FileJoin" ><h4><font color="#CC3333">FileJoin</font> <em>Concatenates file names using the correct path separator for platform.</em></h4> 
+<p><em>Argument list:  &lt;args&gt;</em></p>
+<p>If the first argument begins with a dollar sign it will be interpreted as a environment variable. Otherwise this procedure is just wrapper to Tcl 'file join' command.<p>
+<p>Beware file join not available for tcl <7.6<p>
+<p><strong>name(s)</strong>  List of file/directory names of any length<p>
+<a name="FileRootName" ><h4><font color="#CC3333">FileRootName</font> <em>Return file base name - i.e. remove the file extension and path name.</em></h4> 
+<p><em>Argument list:  &lt;filename&gt;</em></p>
+<p>This is wrapper for 'file rootname' and 'file tail' commands.<p>
+<p><strong>filename</strong>  Input file name<p>
+<h3>Manipulating Files</h3>
+<a name="OpenFile" ><h4><font color="#CC3333">OpenFile</font> <em>Open a file</em></h4> 
+<p><em>Argument list:  &lt;filename&gt; &lt;channel&gt; &lt;mode&gt; &lt;a+&gt;</em></p>
+<p>Wrapper with error trapping for Tcl 'open'<p>
+<p><strong>filename</strong>  File name<p>
+<p><strong>channel</strong>  Returned channel id<p>
+<p><strong>mode</strong>  Optional (default a+) file open mode - see Tcl documentation for 'open'<p>
+<a name="CloseFile" ><h4><font color="#CC3333">CloseFile</font> <em>Close a file</em></h4> 
+<p><em>Argument list:  &lt;f&gt; &lt;filename&gt; &lt;&gt;</em></p>
+<p><strong>f</strong>  Channel that file is open on<p>
+<p><strong>filename</strong>  Optional argument used in error message to user if fails.<p>
+<a name="ReadFile" ><h4><font color="#CC3333">ReadFile</font> <em>Read contents of file into a text variable</em></h4> 
+<p><em>Argument list:  &lt;filename&gt; &lt;textVar&gt; &lt;args&gt;</em></p>
+<p><strong>filename</strong>  Name of file to read<p>
+<p><strong>textVar</strong>  Returned text read from file<p>
+<p><strong>-split</strong><p>
+<p>Return the file as a list with each line from the file as a list element<p>
+<p><strong>-noblank</strong><p>
+<p>Do not return blank lines<p>
+<p><strong>-nocomment</strong><em>  comment_char</em><p>
+<p>Do not return 'comment' lines which begin with the character comment_char<p>
+<a name="ReadEndOfFile" ><h4><font color="#CC3333">ReadEndOfFile</font> <em>Return specified number of lines from the end of a file.</em></h4> 
+<p><em>Argument list:  &lt;filename&gt; &lt;nlines&gt; &lt;textVar&gt; &lt;args&gt;</em></p>
+<p><strong>filename</strong>  Name of file to read<p>
+<p><strong>nlines</strong>  Number of lines to read<p>
+<p><strong>textVar</strong>  Returned text read from file<p>
+<p><strong>-split</strong><p>
+<p>Return the text as a list with each line from the file as a list element<p>
+<a name="WriteFile" ><h4><font color="#CC3333">WriteFile</font> <em>Write text to a file</em></h4> 
+<p><em>Argument list:  &lt;filename&gt; &lt;text&gt; &lt;args&gt;</em></p>
+<p><strong>filename</strong>  Name of file to write<p>
+<p><strong>text</strong>  The text to write to the file<p>
+<p><strong>-overwrite</strong><p>
+<p>If file of name filename already exists then overwrite it - otherwise if file exists the procedure will fail<p>
+<a name="DeleteFile" ><h4><font color="#CC3333">DeleteFile</font> <em>Delete a file or directory</em></h4> 
+<p><em>Argument list:  &lt;file&gt;</em></p>
+<p>Wrapper for 'file delete' with some error trapping.<p>
+<p>DeleteFile can also be used to delete directories, if the 'file' is actually a directory name. Since the deletion command for directories is extremely powerful, the following mechanism has been implemented in an attempt to avoid accidental deletion of valuable directories:<p>
+<p>1. The directory must be a subdirectory of a registered project, or a subdirectory in TEMPORARY. If neither of these criteria are met then a warning is displayed and the directory will not be deleted.<p>
+<p>2. The user is prompted to confirm deletion of the directory before the operation is performed.<p>
+<p><strong>file</strong>  Name of file or directory to delete<p>
+<a name="DeleteFiles" ><h4><font color="#CC3333">DeleteFiles</font> <em>Delete multiple files.</em></h4> 
+<p><em>Argument list:  &lt;args&gt;</em></p>
+<a name="FileWritable" ><h4><font color="#CC3333">FileWritable</font> <em>Return flag to say if file is writable</em></h4> 
+<p><em>Argument list:  &lt;file&gt;</em></p>
+<p>Wrapper for 'file writable'<p>
+<p><strong>file</strong>  Name of file to test<p>
+<a name="MoveFile" ><h4><font color="#CC3333">MoveFile</font> <em>Move (i.e. rename) a file.</em></h4> 
+<p><em>Argument list:  &lt;filein&gt; &lt;fileout&gt; &lt;args&gt;</em></p>
+<p>Wrapper for 'file rename' command<p>
+<p><strong>filein</strong>  Name of source file<p>
+<p><strong>fileout</strong>  Name of target file<p>
+<a name="CopyFile" ><h4><font color="#CC3333">CopyFile</font> <em>Copy file - i.e. make a new version and keep existing file</em></h4> 
+<p><em>Argument list:  &lt;filein&gt; &lt;fileout&gt; &lt;args&gt;</em></p>
+<p>Wrapper for 'file copy' command<p>
+<p><strong>filein</strong>  Name of source file<p>
+<p><strong>fileout</strong>  Name of target file<p>
+<p><strong>-overwrite</strong><p>
+<p>Force overwrite of existing file<p>
+<a name="TranscribeFile" ><h4><font color="#CC3333">TranscribeFile</font> <em>Append contents from one file to the end of another file</em></h4> 
+<p><em>Argument list:  &lt;filein&gt; &lt;fileout&gt;</em></p>
+<p><strong>filein</strong>  Source file name<p>
+<p><strong>fileout</strong>  Target file name<p>
+<a name="CompressFile" ><h4><font color="#CC3333">CompressFile</font> <em>Compress file using gzip</em></h4> 
+<p><em>Argument list:  &lt;filein&gt; &lt;args&gt;</em></p>
+<p><strong>filein</strong>  Name of uncompressed file<p>
+<p><strong>-uncompress</strong><p>
+<p>Uncompress the '.gz' file to recreate uncompressed file<p>
+<p><strong>-overwrite</strong><p>
+<p>Overwrite any existing file<p>
+<a name="UnCompressFile" ><h4><font color="#CC3333">UnCompressFile</font> <em>Uncompress file using gzip</em></h4> 
+<p><em>Argument list:  &lt;filein&gt;</em></p>
+<p><strong>filein</strong>  Name of file (with or without the .gz extension)<p>
+<a name="UnTarFile" ><h4><font color="#CC3333">UnTarFile</font> <em>Apply 'tar -xf' to a file</em></h4> 
+<p><em>Argument list:  &lt;file&gt;</em></p>
+<p><strong>file</strong>  Name of tar file<p>
+<a name="CompressExtension" ><h4><font color="#CC3333">CompressExtension</font> <em>Return the expected extension for compressed file</em></h4> 
+<p><em>Argument list: None</em></p>
+<h3>Handling Directories</h3>
+<a name="CreateDir" ><h4><font color="#CC3333">CreateDir</font> <em>Create a directory</em></h4> 
+<p><em>Argument list:  &lt;dir&gt;</em></p>
+<p>the parent directory of the new directory must already exist<p>
+<p><strong>dir</strong>  Full path name of directory<p>
+<a name="CopyDir" ><h4><font color="#CC3333">CopyDir</font> <em>Copy a directory</em></h4> 
+<p><em>Argument list:  &lt;filein&gt; &lt;fileout&gt;</em></p>
+<p>Wrapper for 'file copy' command<p>
+<p><strong>filein</strong>  Name of source directory<p>
+<p><strong>fileout</strong>  Name of target directory<p>
+<a name="ChangeDirectory" ><h4><font color="#CC3333">ChangeDirectory</font> <em>Change working directory</em></h4> 
+<p><em>Argument list:  &lt;dir&gt;</em></p>
+<p>This is a wrapper for the Tcl cd command<p>
+<p><strong>dir</strong>  Full path or appropriate relative path name<p>
+<h3>Parsing Files</h3>
+<a name="Parsing_Files"><h3> Parsing Files </h3> 
+<p>The following commands do some of the things that you might do with grep or awk<p>
+<a name="ExtractFromFile" ><h4><font color="#CC3333">ExtractFromFile</font> <em>'grep' text from a file</em></h4> 
+<p><em>Argument list:  &lt;fileid&gt; &lt;search_string&gt; &lt;lineinc&gt; &lt;word_index&gt;</em></p>
+<p>Searches for a line matching search_string - the string match function is used and the wild cards * and ? may be used. Words from the matching text line or from a following line  are returned.<p>
+<p><strong>filename</strong>  input file name<p>
+<p><strong>search_string</strong>  search string<p>
+<p><strong>lineinc</strong>  extract from the lineinc'th line after the hit line<p>
+<p><strong>word_index</strong>  List of indices of the required words. If word_index=0 return whole line.<p>
+<a name="GetWords" ><h4><font color="#CC3333">GetWords</font> <em>Return selected words in a line as a Tcl list</em></h4> 
+<p><em>Argument list:  &lt;line&gt; &lt;word_index&gt;</em></p>
+<p><strong>line</strong>  A text string<p>
+<p><strong>word_index</strong>  A list of indices i - return the i'th word in the line - beware first word is index 0.<p>
+<a name="ExtractTextLine" ><h4><font color="#CC3333">ExtractTextLine</font> <em>Extract words from a line of text</em></h4> 
+<p><em>Argument list:  &lt;tt&gt; &lt;search_string&gt; &lt;lineinc&gt; &lt;word_index&gt; &lt;dataVar&gt; &lt;args&gt;</em></p>
+<p>Similar to ExtractTextFromFile.  Find the line in text which a search string and then return some selected words from that line or from a specified number of lines ahead in the text.<p>
+<p><strong>tt</strong>  Input text string - if this is '-' then search from the last hit line in text input to a previous call to ExtractTextLine<p>
+<p><strong>search_string</strong>  String to search for in text - if input is blank text string the apply lineinc from the current position in the text and return the words as specified<p>
+<p><strong>line_inc</strong>  Advance line_inc lines from finding search string before returning words<p>
+<p><strong>word_index</strong>  Either a list of indices for words to return (first word in line has index 0) or 'all' to return entire line or 'last' to return last word.<p>
+<a name="ExtractFromText" ><h4><font color="#CC3333">ExtractFromText</font> <em>'Grep' for a line in text and return specified fields from line.</em></h4> 
+<p><em>Argument list:  &lt;tt&gt; &lt;search_string&gt; &lt;lineinc&gt; &lt;word_index&gt; &lt;args&gt;</em></p>
+<p><strong>tt</strong>  The input text to be searched. If is '-' then search from current place in previously input text<p>
+<p><strong>search_string</strong>  Search for this text string. If input is empty string then return from the current line.<p>
+<p><strong>lineinc</strong>  From 'hit' line step on {$lineinc} lines<p>
+<p><strong>word_index</strong>  Tcl list of fields in the line to be returned. If ='all' return the whole line, if ='last' then return the last word.<p>
+<a name="StringSame" ><h4><font color="#CC3333">StringSame</font> <em>String comparison - is the first argument the same as any of the other arguments.</em></h4> 
+<p><em>Argument list:  &lt;args&gt;</em></p>
+<p>Return true (1) if the first argument is the same as any subsequent argument.<p>
+<p><strong>test</strong>  Test string<p>
+<p><strong>compare</strong>  Any number of text strings for comparison.<p>
+<h3>Socket Handling</h3>
+<a name="Socket_Handling"><h3> Socket Handling </h3> 
+<p>The following procedures are used by ccp4i processes which are acting clients to the main graphical ccp4i.  For example loggraph acting as client to the sfanal task.  This setup assumes that the process is a client of only one server.  Most of the procedures are simple wrappers to Tcl fconfigure and puts/gets commands - see the Tcl documentation.  Each CCP4i process stores information on sockets in the system array and OpenClientSocket saves this information which other procedures might use.<p>
+<p>The server side sockets in the main ccp4i process is handled by procedures in src/local.tcl<p>
+<a href=./local.html#Server_Side_Socket_Handling>Server Side Socket handling</a><a name="OpenClientSocket" ><h4><font color="#CC3333">OpenClientSocket</font> <em>Open a client side socket</em></h4> 
+<p><em>Argument list:  &lt;server_host&gt; &lt;server_port&gt; &lt;args&gt;</em></p>
+<p><strong>server_host</strong>  Connect to a server side socket on the machine server_host This should be 'local' if the server is one the local machine.<p>
+<p><strong>server_port</strong>  The server port number<p>
+<p><strong>-listen</strong><em>  listen_handler</em><p>
+<p> Listen for input from the server socket and when received call a procedure listen_handler and input to it the input from server.<p>
+<a name="ListenClientSocket" ><h4><font color="#CC3333">ListenClientSocket</font> <em>Listen for input from a server socket.</em></h4> 
+<p><em>Argument list:  &lt;sockid&gt; &lt;delay&gt; &lt;command&gt;</em></p>
+<p>This procedure is called by OpenClientSocket if the -listen option is used.  ListenClientSocket does a gets to get any input from the socket and calls the specified command if there is input.  ListenClientSocket then calls itself after a short time delay.<p>
+<a name="TestSocket" ><h4><font color="#CC3333">TestSocket</font> <em>Test if a socket is open - return true (1) is socket responds</em></h4> 
+<p><em>Argument list:  &lt;args&gt;</em></p>
+<p><strong>-server</strong><p>
+<p>Test the server side socket<p>
+<p><strong>-client</strong><p>
+<p>Test the client side socket<p>
+<p><strong>-socket</strong><em>  socket_id</em><p>
+<p>Test the socket with id socket_id<p>
+<a name="PutsSocket" ><h4><font color="#CC3333">PutsSocket</font> <em>Write to a socket</em></h4> 
+<p><em>Argument list:  &lt;message&gt; &lt;args&gt;</em></p>
+<p><strong>message</strong>  The text string to be written to the socket.<p>
+<p><strong>-server</strong><p>
+<p>Write to the server side socket<p>
+<p><strong>-client</strong><p>
+<p>Write to the client side socket<p>
+<p><strong>-socket</strong><em>  socket_id</em><p>
+<p>Write to the socket with id socket_id<p>
+<h3>Handling Data Types</h3>
+<a name="Handling_Data_Types"><h3> Handling Data Types </h3> 
+<p>toggle button: logical<p>
+<p>menu: menu varmenu<p>
+<p>Create*putLine widget: default_dir & file<p>
+<p>CreateLabin widget: mtz_label <p>
+<p>Not represented graphically: list datalist <p>
+<p>Each data type has properties which are dependent on its class and the properties of each class are defined at the top of the types.def file.<p>
+<a name="GetType" ><h4><font color="#CC3333">GetType</font> <em>Returns the data type for an input array element</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;element&gt;</em></p>
+<p>Returns a zero length string if does not find a datatype definition.<p>
+<p>The data type is stored in the array element with the name _$element. For the 'indexed' elements (eg root,4 or root,4_2) which correspond to extending frames the data type is only stored once as _root,0 where root is the root of the element name.  <p>
+<p><strong>Name</strong>  of data array<p>
+<p><strong>element</strong>  Name of element of array.<p>
+<a name="Indxv" ><h4><font color="#CC3333">Indxv</font> <em>Generate the element name for multi-dimensional data</em></h4> 
+<p><em>Argument list:  &lt;name&gt; &lt;c1&gt; &lt;c2&gt;</em></p>
+<p>Return string of form name,c1 or name,c1_c2<p>
+<p><strong>name</strong>  The element name<p>
+<p><strong>c1</strong>  The first index number for the element<p>
+<p><strong>c2</strong>  Optional. The second index number for the element<p>
+<a name="GetIndx" ><h4><font color="#CC3333">GetIndx</font> <em>Parse the name of a dimensioned element</em></h4> 
+<p><em>Argument list:  &lt;element&gt; &lt;rootVar&gt; &lt;c1Var&gt; &lt;c2Var&gt;</em></p>
+<p><strong>element</strong>  Input element name<p>
+<p><strong>rootVar</strong>  Return the root of the element name<p>
+<p><strong>c1Var</strong>  Return the first index number<p>
+<p><strong>c2Var</strong>  Return the second index number<p>
+<a name="Indxv0" ><h4><font color="#CC3333">Indxv0</font> <em>For indexed element names (eg root,4) return the zero index (eg root,0)</em></h4> 
+<p><em>Argument list:  &lt;name&gt;</em></p>
+<p>For 'indexed' elements (which are used in extending frames) the data type is stored only once as array(_root,0).  <p>
+<a name="Indxv0" ><h4><font color="#CC3333">Indxv0</font> <em>name Name of an array element </em></h4> 
+<p><em>Argument list:  &lt;name&gt;</em></p>
+<a name="GetTypeInfo" ><h4><font color="#CC3333">GetTypeInfo</font> <em>Return some information which is a property of the data type of an element</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;element&gt; &lt;type&gt; &lt;warning&gt; &lt;warning&gt;</em></p>
+<p>The valid properties of any given data type are defined as a list in the typedef($class) parameter where class is the class of the data type<p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>element</strong>  The name of an array element for which a property value is required<p>
+<p><strong>type</strong>  The property whose value is required. Or 'type' to return the data type class (yes it should be called class)<p>
+<p><strong>warning</strong>  Optionally the argument is the word 'warning' to indicate that a warning message should be output is the property is not found<p>
+<a name="get_type_list" ><h4><font color="#CC3333">get_type_list</font> <em>Get the full list of properties of the data type of an array element</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;element&gt; &lt;typelistin&gt;</em></p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>element</strong>  The name of an array element for which the property values are required<p>
+<p><strong>typelistin</strong>  Returned. The full list of properties of the data type<p>
+<a name="get_type_info_error" ><h4><font color="#CC3333">get_type_info_error</font> <em>Output warning message when fail to find type information</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;element&gt;</em></p>
+<p>The problems are almost always due to not having the element defined in the def file or the data type defined in types.def (or elssewhere).  And this is almost always due to a typo.<p>
+<a name="get_type_info_error" ><h4><font color="#CC3333">get_type_info_error</font> <em>Get the full list of properties of the data type of an array element</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;element&gt;</em></p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>element</strong>  The name of an array element for which information not available.<p>
+<a name="GetWidget" ><h4><font color="#CC3333">GetWidget</font> <em>Return the Tk id of the widget representing an array element</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;arrayindex&gt;</em></p>
+<p>This information is stored as array(WIDGET_$element)<p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>arrayindex</strong>  The name of an array element<p>
+<a name="DefineVariable" ><h4><font color="#CC3333">DefineVariable</font> <em>Define the data type and initial value of a variable </em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;var&gt; &lt;type&gt; &lt;init&gt;</em></p>
+<p>This does what reading the def files usually does - is usually done in task_setup procedure<p>
+<p><strong>arrayname</strong>  Name of array<p>
+<p><strong>var</strong>  Name of element in array<p>
+<p><strong>type</strong>  Data type for array element<p>
+<p><strong>init</strong>  Initial value for array element<p>
+<a name="DefineMenu" ><h4><font color="#CC3333">DefineMenu</font> <em>Define a data type which is of class menu</em></h4> 
+<p><em>Argument list:  &lt;name&gt; &lt;menulist&gt; &lt;aliaslist&gt; &lt;&gt;</em></p>
+<p>Menu item aliases are the text which is written to a def file and passed to the run script.  They are usually the keyword required by the program rather than the text presented to the user<p>
+<p><strong>name</strong>  Name of the data type<p>
+<p><strong>menulist</strong>  A list of the menu items. A Tcl list.<p>
+<p><strong>aliaslist</strong>  Optional. A list of the aliases for the menu items. A Tcl list.<p>
+<p><strong>Return</strong>  the value of an array element<p>
+<p>This is most useful when the array element may be of a menu type, when it returns the menu alias rather than the actual value of the element.<p>
+<p><strong>arrayname</strong>  Name of array<p>
+<p><strong>element</strong>  Name of array element<p>
+<a name="GetMenuValue" ><h4><font color="#CC3333">GetMenuValue</font> <em>Return the alias for the value of an array element which is a menu</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;element&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array<p>
+<p><strong>element</strong>  Name of array element<p>
+<a name="GetMenuText" ><h4><font color="#CC3333">GetMenuText</font> <em>Return the text which appears on the menu  for given value of parameter</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;element&gt; &lt;value&gt;</em></p>
+<p>The array element must be associated with a menu widget  this procedure returns the menu text associated with a given value of the element.<p>
+<p><strong>arrayname</strong>  Array name<p>
+<p><strong>element</strong>  The element of the array - must have a menu type<p>
+<p><strong>value</strong>  The one-word value of the array element<p>
+<p><strong>Set</strong>  a menu array element to the value for a specified alias value<p>
+<p><strong>arrayname</strong>  Array name<p>
+<p><strong>element</strong>  The element of the array - must have a menu type<p>
+<p><strong>value</strong>  The one-word value of the array element<p>
+<h3>Handling Arrays</h3>
+<a name="GetIndexedElements" ><h4><font color="#CC3333">GetIndexedElements</font> <em>Return all the indexed elements in an array with a given root</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;element&gt; &lt;c1&gt; &lt;&gt;</em></p>
+<p>Or optionally all the elements with a given root and first index. The returned list does NOT include the 'zero' element which is root,0 or root,n for elements with two indices.<p>
+<p><strong>arrayname</strong>  Name of array<p>
+<p><strong>element</strong>  The root of an element name<p>
+<p><strong>c1</strong>  Optional. The first index of the element<p>
+<a name="GetIndexedElements0" ><h4><font color="#CC3333">GetIndexedElements0</font> <em>Return all the indexed elements in an array with a given root</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;element&gt; &lt;c1&gt; &lt;&gt;</em></p>
+<p>Or optionally all the elements with a given root and first index. The returned list DOES include the 'zero' element which is root,0 or root,n for elements with two indices.<p>
+<p><strong>arrayname</strong>  Name of array<p>
+<p><strong>element</strong>  The root of an element name<p>
+<p><strong>c1</strong>  Optional. The first index of the element<p>
+<a name="ArrayToList" ><h4><font color="#CC3333">ArrayToList</font> <em>Copy data values from all the instaces of an indexed element to a list</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;nelements&gt; &lt;indexname&gt; &lt;listout&gt;</em></p>
+<p>Only used in tasks/import.tcl.  <p>
+<p><strong>arrayname</strong>  Name of array<p>
+<p><strong>The</strong>  name of the element which is the counter for the indexed element indexname<p>
+<p><strong>The</strong>  name of an indexed array element<p>
+<p><strong>The</strong>  name of an array element to contain the list of values<p>
+<a name="CopyArray" ><h4><font color="#CC3333">CopyArray</font> <em>Copy all elements of arrayname in array(PARAM_LIST) to arrayname1</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;arrayname1&gt;</em></p>
+<p>Only used in pre5.0 Refmac to copy from protin array<p>
+<p><strong>arrayname</strong>  Name of source array<p>
+<p><strong>arrayname1</strong>  Name of target array<p>
+<a name="SimpleCopyArray" ><h4><font color="#CC3333">SimpleCopyArray</font> <em>Copy all elements of arrayname to arrayname1</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;arrayname1&gt;</em></p>
+<p>Differs from CopyArray in that it copies the values directly and for all elements in the source array<p>
+<p><strong>arrayname</strong>  Name of source array<p>
+<p><strong>arrayname1</strong>  Name of target array<p>
+<a name="CheckUnique" ><h4><font color="#CC3333">CheckUnique</font> <em>Check that all instances of an indexed variable are unique</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;var&gt; &lt;nmax&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array<p>
+<p><strong>var</strong>  Root of indexed array element name<p>
+<p><strong>nmax</strong>  The number of instances of the indexed element<p>
+<a name="CreateNewArray" ><h4><font color="#CC3333">CreateNewArray</font> <em> Create new unique global array with name $root_$n </em></h4> 
+<p><em>Argument list:  &lt;root&gt;</em></p>
+<p>Returns a unique name which is root_n which n in positive integer.<p>
+<p><strong>root</strong>  A root name for the array<p>
+<a name="ArraySearch" ><h4><font color="#CC3333">ArraySearch</font> <em>Return the name of an indexed element with a value of 'text'</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;var&gt; &lt;text&gt;</em></p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>var</strong>  Element name for indexed elements<p>
+<p><strong>text</strong>  The search text<p>
+<a name="DeleteArray" ><h4><font color="#CC3333">DeleteArray</font> <em>Delete an array</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array<p>
+<h3>Simple Mathematical Functions</h3>
+<a name="max" ><h4><font color="#CC3333">max</font> <em>Return the maximum value of the values in the argument list</em></h4> 
+<p><em>Argument list:  &lt;args&gt;</em></p>
+<a name="min" ><h4><font color="#CC3333">min</font> <em>Return the minimum value of the values in the argument list</em></h4> 
+<p><em>Argument list:  &lt;args&gt;</em></p>
+<a name="iremainder" ><h4><font color="#CC3333">iremainder</font> <em>Return the mod of n and m</em></h4> 
+<p><em>Argument list:  &lt;n&gt; &lt;m&gt;</em></p>
+<p>Could be replaced by expr fmod (? implemented in 8.0)<p>
+<a name="push" ><h4><font color="#CC3333">push</font> <em>Push a parameter onto a stack (i.e. append to list)</em></h4> 
+<p><em>Argument list:  &lt;stackVar&gt; &lt;levelVar&gt; &lt;value&gt;</em></p>
+<p><strong>stackVar</strong>  Input/output the stack variable - a Tcl list<p>
+<p><strong>levelVar</strong>  Input/output the number of levels on the stack<p>
+<p><strong>value</strong>  Input value to push onto stack<p>
+<a name="pop" ><h4><font color="#CC3333">pop</font> <em>Pop a parameter off a stack (i.e. append to list)</em></h4> 
+<p><em>Argument list:  &lt;stackVar&gt; &lt;levelVar&gt;</em></p>
+<p><strong>stackVar</strong>  Input/output the stack variable - a Tcl list<p>
+<p><strong>levelVar</strong>  Input/output the number of levels on the stack<p>
+<p><strong>value</strong>  Output value from top of stack<p>
+<a name="maxdecimal" ><h4><font color="#CC3333">maxdecimal</font> <em>Round an input number to given number of decimal places</em></h4> 
+<p><em>Argument list:  &lt;input&gt; &lt;prec&gt;</em></p>
+<p><strong>input</strong>  Input real number<p>
+<p><strong>Maximum</strong>  number of decimal places output<p>
+<a name="sortorder" ><h4><font color="#CC3333">sortorder</font> <em>Sort a list using Tcl lsort and return a list of offsets to position in input list</em></h4> 
+<p><em>Argument list:  &lt;listin&gt; &lt;orderVar&gt; &lt;mode&gt;</em></p>
+<p>This function is used when you want to reorder one 'target' list based on sorting of another 'sortable' list which has a one-to-one matching with the target list.  The target list is input to sortorder and the sorting mode can be anything supported by Tcl lsort command.  The returned 'order' list is the positions in the input list of the items in sorted order. This order list can be used to pick out items from the target list to reorder that list.<p>
+<p><strong>listin</strong>  Input 'sortable' list<p>
+<p><strong>orderVar</strong>  Output list of item position in listin for sorted list<p>
+<p><strong>mode</strong>  (Optional) mode argument to Tcl lsort<p>
+<h3>String Handling</h3>
+<a name="IfSet" ><h4><font color="#CC3333">IfSet</font> <em>Test if input argument(s) are not blank strings</em></h4> 
+<p><em>Argument list:  &lt;args&gt;</em></p>
+<p>This procedure is most used in interpreting com file by CreateComScript In that context the IfSet command is usually wrapped by a catch command which will safely handle the case where the variable input to IfSet is completely undefined.<p>
+<p><strong>var</strong>  Any number of input arguments<p>
+<a name="StringSame" ><h4><font color="#CC3333">StringSame</font> <em>String comparison - is the first argument the same as any of the other arguments</em></h4> 
+<p><em>Argument list:  &lt;args&gt;</em></p>
+<p>Return true (1) if the first argument is the same as any subsequent argument<p>
+<p><strong>test</strong>  Test string<p>
+<p><strong>compare</strong>  Any number of text strings for comparison<p>
+<a name="RemoveMetaChars" ><h4><font color="#CC3333">RemoveMetaChars</font> <em>Return text string with non-alphanumeric characters & leading/trailing spaces removed</em></h4> 
+<p><em>Argument list:  &lt;namein&gt; &lt;args&gt;</em></p>
+<p>The removed characters (excluding leading/trailing spaces) are replaced with an underscore<p>
+<p><strong>namein</strong>  Input text string<p>
+<p><strong>-space</strong><p>
+<p>Allow spaces in the text (default is to remove)<p>
+<p><strong>-title</strong><p>
+<p>For title text also allow - _ , . ( ) /<p>
+<p><strong>-report</strong><p>
+<p>Give warning message to user<p>
+<a name="ResolveUnixFileSymbols" ><h4><font color="#CC3333">ResolveUnixFileSymbols</font> <em>Interpret tilde or environment variable, or a relative path</em></h4> 
+<p><em>Argument list:  &lt;path&gt; &lt;retpathVar&gt;</em></p>
+<p>The input to this procedure is the first component of a file name. The procedure will return the full path name for this component.  The return status is 1 = substitution successful, 0 = no substitution necessary or -1 = error in input<p>
+<p><strong>path</strong>  Input first component of a file path name<p>
+<p><strong>retpathVar</strong>  Output the full expansion of the input path.<p>
+<a name="FeedListbox" ><h4><font color="#CC3333">FeedListbox</font> <em>Colourise the entries of a listbox</em></h4> 
+<p><em>Argument list:  &lt;boxlist&gt; &lt;job_list&gt; &lt;display&gt; &lt;display_format&gt;</em></p>
+<p>Each entry is processed to see if its content correspond to a colour-coding present in the configuration.<p>
+<p><strong>boxlist</strong>  the listbox whose entries are to be colourised<p>
+<p><strong>job_list</strong>  the list of jobs that will be filled in the listbox<p>
+<a name="get_job_display_colours" ><h4><font color="#CC3333">get_job_display_colours</font> <em>Return the colours to display the job with</em></h4> 
+<p><em>Argument list:  &lt;task&gt; &lt;status&gt; &lt;title&gt; &lt;counter&gt; &lt;0&gt;</em></p>
+<p>Returns a list of two values - the first is the foreground colour i.e. that used for the text, the second is the background colour, according to the settings specified in the configure array.<p>
+<p>The optional argument counter can be used to indicate which of the striped backgrounds should be used, but is over-ridden if an explicit<p>
+<p><strong>task</strong>  The name of the task<p>
+<p><strong>status</strong>  The job status<p>
+<p><strong>title</strong>  The job title<p>
+<p><strong>counter</strong>  (optional) Used for job striping<p>
+<h3>Handling Data Harvesting "Central Deposit" Location</h3>
+<a name="SetCentralDeposit" ><h4><font color="#CC3333">SetCentralDeposit</font> <em>Set the CENTRAL_DEPOSIT location for data harvesting</em></h4> 
+<p><em>Argument list:  &lt;central_deposit&gt;</em></p>
+<p>Set the value of the CENTRAL_DEPOSIT parameter, which specifies a "central" directory for the user's harvesting files.<p>
+<p><strong>central_deposit</strong>  The directory path for the CENTRAL_DEPOSIT location<p>
+<a name="GetCentralDeposit" ><h4><font color="#CC3333">GetCentralDeposit</font> <em>Fetch the current CENTRAL_DEPOSIT location for data harvesting</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>Return the previously stored value of CENTRAL_DEPOSIT, or {} if no value is currently stored.<p>
+</body>
+</html>
+

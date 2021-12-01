@@ -1,0 +1,46 @@
+#!/bin/sh -f
+#
+echo '                                                                      '
+echo '----------------------------------------------------------------------'
+echo '                                                                      '
+echo '                 TOP  -- Internet version                             '
+echo '            for automatic structure comparisons                       '
+echo '                                                                      '
+echo '----------------------------------------------------------------------'
+echo '                                                                      '
+# first check if you have TOP3D.PARM in your direcotry
+if test ! -e TOP.PARM ; then  
+   cp $CLIBD'/TOP.PARM' . 
+   echo copy $CLIBD'/TOP.PARM' here
+   echo ' '
+fi
+#  if no arguments given, ask where is mol1?
+if test $# -lt 1 ; then
+  echo ' '
+  echo "File name or PDB code for Mol 1: "
+  echo -n "(examples: xxx.pdb or 2cnd@pdb) "
+#  mol1=$<
+  read mol1
+else
+  mol1=$1
+fi
+echo Mol1 PDB file name: $mol1
+if  test $# -lt 2 ; then
+  echo ' '
+  echo "File name or PDB code for Mol 2: "
+  echo -n "(examples: xxx.pdb or 2cnd@pdb) "
+#  mol2=$<
+  read mol2
+else
+  mol2=$2
+fi
+echo Mol2 PDB file name: $mol2
+echo ' '
+#
+# Now you can run TOP
+grep SITE TOP.PARM > top.inp
+echo mol1 $mol1 >> top.inp
+echo mol2 $mol2 >> top.inp
+tail -n 2 TOP.PARM >> top.inp
+topp < top.inp
+

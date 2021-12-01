@@ -1,0 +1,42 @@
+#!/usr/local/bin/tclsh8.4
+
+if {$::argc == 2} {
+    set out_filename [lindex $::argv 1]
+    set ::argv [lindex $::argv 0]
+    incr ::argc -1
+} else {
+    set out_filename comms.txt
+}
+
+if {$::argc == 1} {
+    
+    if {[catch {glob $::argv}]} {
+	puts "Could not find file: $::argv"
+	exit
+    }
+    
+    if {![catch {glob $out_filename}]} {
+	puts "Overwrite file comms.txt? "
+	gets stdin answer
+	if {$answer != "y"} {
+	    exit
+	}
+    }
+
+    set in_file [open $::argv r]
+    set out_file [open $out_filename w]
+
+    while {[gets $in_file line] >= 0} {
+	if {([string range $line 0 0] != "<") && ([string range $line 0 0] != "/")} {
+	    puts $out_file "m $line"
+	}
+    }
+
+    close $in_file
+    close $out_file
+
+} else {
+    puts "Usage: xcom <log file> ?output file?"
+    puts "If no output file is supplied, the default is \"comms.txt\""
+}
+

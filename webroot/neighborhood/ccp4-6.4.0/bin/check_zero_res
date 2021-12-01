@@ -1,0 +1,19 @@
+#!/usr/bin/perl
+# if the number residues is very small then phases from previous step are propagated to next cycle instead of PHWT
+$num_built=0;
+open(INP,"./buccaneer-logfile") or die "Buccaneer logfile cannot be opened for reading.";
+while (!eof INP) {
+  if ( <INP> =~ /^\s*(\d+)\s*residues were built in/ ) { $num_built=$1; }
+}
+close(INP);
+if ($num_built<10) { 
+  system("sftools << end-sft > sftools.log
+read $ARGV[0] col $ARGV[1] $ARGV[2] $ARGV[3] $ARGV[4] 1_PREP_FREER
+set labels col $ARGV[3] $ARGV[4]
+PHCOMB
+FOM
+write temporary_refmac.mtz
+Y
+end-sft");
+}
+

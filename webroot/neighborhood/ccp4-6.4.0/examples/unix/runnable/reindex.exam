@@ -1,0 +1,32 @@
+#!/bin/sh 
+
+set -e
+
+# Remember the order of reflections in the output file will be funny.
+# Use cad or sortmtz to fix it.
+
+# E.g. 1 
+# Re-index a merged file.
+
+reindex     \
+HKLIN  $CEXAM/toxd/toxd_old \
+HKLOUT $CCP4_SCR/toxd_reind1  \
+<< END-mtz 
+reindex HKL h/2 -l/2, k, h/2 +l/2 
+end
+END-mtz
+
+echo H K L | sortmtz HKLIN $CCP4_SCR/toxd_reind1 HKLOUT $CCP4_SCR/toxd_reind2
+
+# E.g. 2
+# Reduce an unmerged file to a different point group
+
+na4tomtz hklin $CEXAM/data/aucn.na4 hklout $CCP4_SCR/aucn.mtz
+
+reindex hklin $CCP4_SCR/aucn.mtz hklout $CCP4_SCR/aucn_reindex.mtz <<EOF
+symm P41
+end
+EOF
+#
+
+

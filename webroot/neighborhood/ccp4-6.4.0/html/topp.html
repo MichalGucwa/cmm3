@@ -1,0 +1,1377 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>CCP4 Program Suite : topp</TITLE>
+</HEAD>
+<BODY>
+
+<!-- ::INDEX_INFO::TOPP::Supported::MODEL ANALYSIS::a topological comparison program:::::::: -->
+
+<H1>topp (CCP4: Supported Program)</H1>
+<H2>NAME</H2>
+<B>topp </B>
+- an automatic topological and atomic comparison program for protein structures
+
+<H2>SYNOPSIS</H2>
+
+<P><B>topp</B> <BR>
+[<A HREF="#keywords">Keyworded input</A>] </P>
+
+<P><B>top3d</B> <I>foo_1.pdb</I> <I>foo_2.pdb</I> </P>
+
+<P><B>topsearch</B> <I>foo_1.pdb</I> </P>
+
+<H2>AUTHOR</H2>
+
+<dl>
+<dt> Author: 
+<dd>       <A HREF="http://gamma.mbb.ki.se/~guoguang/index.html"><b>Guoguang Lu</b></A>
+<dt><dd>		Div. of Molecular Structural Biology 
+<dt><dd>           	Dept. of Medical Biochemistry and Biophysics, 
+<dt><dd>		Karolinska Institute, Stockholm, 17 177, Sweden 
+<dt> E-mail:	
+<dd> <A href="mailto:Guoguang.Lu@mbfys.lu.se">Guoguang.Lu@mbfys.lu.se</A> 
+</dl>
+
+<H2>NOTES ON CCP4 VERSION</H2>
+
+<b>Note:</b> TOPP has been renamed from the original TOP to avoid
+a clash with the UNIX command of that name.
+<p>
+TOPP can be run directly using the command <tt>topp</tt> with
+<A HREF="#keywords">Keyworded input</A>, or via the script <tt>top3d</tt>
+which takes two file names as arguments and program parameters
+from the file <tt>$CLIBD/TOP.PARM</tt> (see 
+<A href="#examples">examples</a> section). A search with one file against
+a database of structures can be done using the script <tt>topsearch</tt>
+which takes one file name as argument and program parameters
+from the file <tt>$CLIBD/SEARCH.PARM</tt> (see 
+<A href="#examples">examples</a> section). 
+<p>
+Use of the browser facility to search a Protein Data Bank site requires
+two commands to be on the user's path, namely <tt>wget</tt> and <tt>pdbhtf</tt>.
+The latter is part of the CCP4 suite and should have been compiled and
+installed. On the other hand, <tt>wget</tt> is not part of CCP4, but is a
+GNU program available via internet from the usual GNU sites.
+
+<H2>Index</H2><ul>
+<li><A HREF="#description">Description</a>
+<li><A HREF="#SSEupd">Use of a SSE database </a>
+<li><A HREF="#keywords">Keyword Input </a><ul>
+<li>    <A HREF="#keypdb">Keywords for locations of protein coordinates</a>
+<li>    <A HREF="#keycom">Keyword Input for structure comparisons</a>
+<li>    <A HREF="#key3db">Keyword for 3DB interface</a></ul>
+<li><A HREF="#coor">Conventions of the Coordinate files</a>
+<li><A HREF="#stat">Conventions of some output parameters</a>
+<ul>
+        <li><A HREF="#stat">Matching residues</a>
+        <li><A HREF="#iden">Identical residues and Identity</a>
+        <li><A HREF="#rms">r.m.s. deviation</a>
+        <li><A HREF="#meandist">Mean distance</a>
+        <li><A HREF="#strdiv">Structural Diversity</a>
+        <li><A HREF="#topdiv">Topological Diversity</a>
+</ul>
+<li><A HREF="#examples">Examples</a><ul>
+<li>    <A HREF="#example1">Compare two structures</a>
+<li>    <A HREF="#example2">Searching similar structures in Protein Data Bank</a>
+<li>    <A HREF="#example3">Searching similar structures from a compact SSE library</a>
+<li>    <A HREF="#example4">Superimpose all the sequence-homologous proteins in PDB</a>
+</ul>
+<li><A HREF="#hints">Some hints about the program</a>
+<li><A HREF="#references">Reference</a>
+<li><A HREF="#ack">Acknowledgment</a>
+</ul>
+
+<H2><A NAME="description"></A>DESCRIPTION</H2>
+
+TOP is a protein TOPological comparison program which detects whether
+there are structural similarities between two proteins. It
+superimposes two protein structures automatically without any previous
+knowledge of sequence alignment. The program can be used to find out
+if a newly determined protein structure is similar to any structures
+in the <a href="http://www.rcsb.org/pdb/">Protein Data Bank</a> and
+rank the homologous proteins according to topological and structural
+diversities (similarities). The program (version 6 or higher) can
+directly browse data from Protein Data Bank or its mirror sites via
+internet, so that users can search most recent data without regularly
+downlowding the whole database to their local disks. The program has
+a <a href="#key3db">3DB browser interface</a> so that it can
+perform rapid structure similarity search if users limit a searching
+range by sequence, keywords, resolution, date or other
+restraints. This provides possibilities that TOP is conveniently used for
+modelling homologous proteins and automatic tracing new coming similar
+structures related for special interests without literature reading.
+<p>
+TOP is designed to be user friendly. For example, once the program is
+properly set up on unix computers, users can use simple commands such
+as <b>top3d file1 file2</b> so that the coordinate file2 will be
+automatically superimposed to file1. The Protein Data Bank (PDB) entry
+code can be recognized by the program. For example if the second
+molecule is 2cnd in PDB, user can just type <b>top3d file1
+2cnd@pdb</b> so the program will browse the coordinates of 2cnd into
+the local disk and perform the comparison.  If a user wants to know
+whether a structure in file is similar to any structures in PDB, one
+can type <b>topsearch file.pdb</b> so that the program will output a
+list of pdb code which are ranked according to 3d-structure
+similarities. The user can type top3d file.pdb code@pdb to get the
+interested coordinates superimposed to the probe model. The program
+can detect sequence permutation and be used for special purpose, such
+as motif searching.
+<p>
+The program runs two steps in each structure comparison. In the first
+step topology of secondary structures in the two are compared.  The
+program uses two points to represent each secondary structure element
+(alpha helixes or beta strands) then systematically searches all the
+possible superposition of these elements between the two protein
+structures. Once a couple of elements in the two structures can fit
+each other in 3-d space (defined as, the rms, the angle between the
+two lines formed by the two points and the line-line distance are
+smaller than the given values), the program will search whether more
+secondary structure elements can fit by the same superposition
+operation. If secondary structures which can fit each other exceed a
+given number, the program will claim the two structures are similar,
+outputs names of secondary structures which correspond to each other
+in the two proteins and output the superimposed coordinates.  It also
+outputs a matrix, with which one molecule can be rotated and
+translated to the other molecule. The program output a comparison
+score called <a href="#topdiv"> &quot;Topological Diversity&quot;</a>, which
+considers both the rate of matching SSEs and structure difference of
+the representing points. In the data base searching, this parameter
+can be used for rank the topological similarities of SSEs.
+<p>
+While Ca atoms are available, the program can run the second step to
+find the alignment based on Ca atoms of all the residues from the
+initial comparison matrix, and improve the comparison matrix based on
+the superposition of newly aligned Ca atoms. The procedure is iterated
+until the member of matching residues converges. The program is able
+to overcome sequence permutation in the superpositions. According to
+both r.m.s deviations and numbers of matching residues, the program
+calculated a score of <a href="#strdiv"> &quot;Structure Diversity&quot;</a>,
+which can be used to rank the structure difference of homologous
+proteins. 
+
+<A NAME="SSEupd"><h2>Use of a SSE database</h2></A>
+The optimized way of database searching in TOP is to use
+a library of Secondary Structure Elements (SSEs). This can
+be created from a set of PDB files with the command MAKEVEC (see
+below). 
+<p>
+The compact SSE library is automatically updated in Karolinska Institute 
+every week, which include not only the current released structures in Protein
+Data Bank, but also compact SSE databases of independent family, super-family, 
+structures classified in the 
+<A HREF="http://scop.mrc-lmb.cam.ac.uk/scop/">SCOP</a> database for efficient 
+similarity search.  It can be obtained from  
+<A HREF="ftp://gamma.mbb.ki.se/pub/guoguang/sndlib.tar.Z">ftp://gamma.mbb.ki.se/pub/guoguang/sndlib.tar.Z</A> . 
+After you get this TAR file from FTP and save to your local disk as, 
+for example /dir/sndlib.tar.Z, use following commands:
+<pre>
+
+cd $TOPHOME
+zcat /dir/sndlib.tar.Z | tar -xvf -
+
+</pre>
+you can have the most recently updated SSE databases.
+
+<H2>
+<A name="keywords">Keyworded Input</a></H2>
+The parameters of the TOP program can be controlled by different lines of
+text, each of which is a &quot;keyword command&quot;. Any command 
+line which starts with &quot;!&quot; will be ignored. Available keywords are:
+<UL>
+<LI>Location of protein coordinates
+<BLOCKQUOTE>
+<A HREF="#libdir"><B>LIBDIR</B></A>,
+<A HREF="#makevec"><B>MAKEVEC</B></A>,
+<A HREF="#mol1"><B>MOL1</B></A>,
+<A HREF="#mol2"><B>MOL2</B></A>,
+<A HREF="#molvec"><B>MOLVEC</B></A>,
+<A HREF="#pdbsite"><B>PDBSITE</B></A>,
+<A HREF="#server"><B>SERVER</B></A>,
+<A HREF="#site"><B>SITE</B></A>,
+<A HREF="#website"><B>WEBSITE</B></A>
+</BLOCKQUOTE>
+</LI>
+<LI>Input for structure comparisons
+<BLOCKQUOTE>
+<A HREF="#amplify"><B>AMPLIFY</B></A>,
+<A HREF="#append"><B>APPEND</B></A>,
+<A HREF="#btarms"><B>BTARMS</B></A>,
+<A HREF="#dirweight"><B>DIRWEIGHT</B></A>,
+<A HREF="#distance"><B>DISTANCE</B></A>,
+<A HREF="#errang"><B>ERRANG</B></A>,
+<A HREF="#errdll"><B>ERRDLL</B></A>,
+<A HREF="#errrmsa"><B>ERRRMSA</B></A>,
+<A HREF="#fast"><B>FAST</B></A>,
+<A HREF="#hlxrms"><B>HLXRMS</B></A>,
+<A HREF="#match"><B>MATCH</B></A>,
+<A HREF="#maxang"><B>MAXANG</B></A>,
+<A HREF="#maxdll"><B>MAXDLL</B></A>,
+<A HREF="#multiple"><B>MULTIPLE</B></A>,
+<A HREF="#refweight"><B>REFWEIGHT</B></A>,
+<A HREF="#residue"><B>RESIDUE</B></A>,
+<A HREF="#single"><B>SINGLE/NOSINGLE</B></A>,
+<A HREF="#snd1"><B>SND1</B></A>,
+<A HREF="#snd2"><B>SND2</B></A>,
+<A HREF="#write"><B>WRITE</B></A>
+</BLOCKQUOTE>
+</LI>
+<LI>3DB interface
+<BLOCKQUOTE>
+<A HREF="#3dbafter"><B>3DBAFTER</B></A>,
+<A HREF="#3dbbefore"><B>3DBBEFORE</B></A>,
+<A HREF="#3dbfasta"><B>3DBFASTA</B></A>,
+<A HREF="#3dbhet"><B>3DBHET</B></A>,
+<A HREF="#3dbkeyword"><B>3DBKEYWORD</B></A>,
+<A HREF="#3dblower"><B>3DBLOWER</B></A>,
+<A HREF="#3dbresolution"><B>3DBRESOLUTION</B></A>,
+<A HREF="#3dbseq"><B>3DBSEQ</B></A>,
+<A HREF="#3dbsite"><B>3DBSITE</B></A>,
+<A HREF="#3dbtext"><B>3DBTEXT</B></A>,
+<A HREF="#3dbupper"><B>3DBUPPER</B></A>
+</BLOCKQUOTE>
+</LI>
+</UL>
+
+<h3><A NAME="keypdb"></A>Keywords for location of protein coordinates</h3>
+
+The TOP program can compare two structures or search similarities in
+database by comparing one structure with a group of other structures.
+The <A HREF="#mol1">MOL1</A> command specifies the data location of one molecule (called Molecule 1)
+while the commands <A HREF="#mol2">MOL2</A>, <A HREF="#libdir">LIBDIR</A>, <A HREF="#molvec">MOLVEC</A>, <A HREF="#pdbsite">PDBSITE</A> or <A HREF="#website">WEBSITE</A> specify the data 
+location of another molecule (called Molecule 2) or the other molecules 
+(called database).
+<p>
+TOP can read 3d coordinates of protein structures  in &quot;Brookhaven&quot; (PDB) 
+format either from user's local computer disk, CD ROM or via internet.
+In the case of structure similarity searching, there can be many ways
+to read data. The recommended setup for the program is to 
+use automatic updating of a secondary structure element (SSE) library 
+searching (see <a href="#SSEupd">automatic updating of SSE library</a> and <A HREf="#molvec">MOLVEC</A>). 
+In this way
+the program can search most recent database from compact SSE library and 
+browse the detailed coordinates of only those structures which are found 
+similar with the molecule 1. It is considerably faster and does not
+require regular maintaining works for database after setup.
+
+<ul>
+
+<A NAME="mol1"></A><b>MOL1</b> coordinate_file_name [zone] <br>
+Example: MOL1 /nfs/disk1/guoguang/examples/test2.pdb
+The coordinates file name of molecule 1 for searching the similarity. 
+Coordinate file must be in PDB (Brookhaven) format. 
+<p>
+If you don't have the coordinates in your local disk and wish to read the 
+coordinates directly from a Web site by giving a PDB entry code, you could
+give the filename something like code@pdb in this command, for example: 
+MOL1 2cnd@pdb, 
+the program will use the code and browse the coordinates 
+from a PDB mirror site or another web site, the URL address of which is 
+specified in the <A HREF="#pdbsite">PDBSITE</A> or <A HREF="#website">WEBSITE</A> commands.
+<p>
+<A NAME="mol2"></A><b>MOL2</b> Coordinate_file_name or @List_file_name or @URL_address [zone] <br>
+This command controls whether users wish to compare two structures or do
+a similarity search in Protein Data Bank. If the filename is
+something like 2cnd.pdb or 2cnd@pdb, the program will just superimpose
+two structures and give sequence comparisons.
+<p>
+If the second text string in the command start with @ and the rest
+text does not start with http: or ftp:, the rest text in
+this string text will be assumed a name of List_file which lists names of 
+a number of coordinate files such as:
+<pre>
+
+/nfs/protein/pdb/current_release/uncompressed_files/00/pdb200d.ent
+/nfs/protein/pdb/current_release/uncompressed_files/00/pdb200l.ent
+/nfs/protein/pdb/current_release/uncompressed_files/00/pdb300d.ent
+/nfs/protein/pdb/current_release/uncompressed_files/00/pdb100d.ent
+....
+
+</pre>
+This can be used for searching structure similarities in PROTEIN DATA BANK. 
+<p>
+If the command <A HREF="#pdbsite">PDBSITE</A> or <A HREF="#website">WEBSITE</A> is given before this command, or the
+<A HREF="#libdir">LIBDIR</A> command specify a directory name which contains &quot;current_release&quot;,
+the List_file can be list of PDB entry code, such as
+<pre>
+
+200d			!		|	pdb200d.ent
+200l			|	or 	|	pdb200l.ent
+300d			|		|	pdb300d.ent
+.... 			|		|	....
+
+</pre>
+the program will browse the coordinates of these PDB
+entries from a web site or local disk or CDs.
+<p>
+This list of PDB codes can be obtained from &quot;<a href="http://www.rcsb.org/pdb/cgi/queryForm.cgi">3DB browser</a>&quot; in Protein Data
+Bank or other bioinformatics tools outside the program. It provide a 
+possibility that TOP search for a certain group of structures for 
+a special purpose.
+<p>
+<A NAME="libdir"></A><b>LIBDIR</b> directory_name
+If the program is searching a number of coordinates files (see <A HREF="#mol2">MOL2</A>) and 
+those files are under an identical directory, the user can indicate in which 
+directory the coordinates files are located. for example, if users have  
+pdb200d.ent pdb3001.ent ... in the 
+/nfs/pdb/all_entries/ directory, the user can use UNIX command:
+<b>ls -1 /nfs/pdb/all_entries/uncompressed_files/ &gt; allpdb.lis</b>, this file
+will be something like
+<pre>
+
+pdb100d.ent
+pdb101d.ent
+pdb101m.ent
+pdb102d.ent
+pdb102l.ent
+...
+
+</pre>
+then use
+<pre>
+
+libdir /nfs/pdb/all_entries/uncompressed_files/
+mol2 @allpdb.lis
+
+</pre>
+so the program will compare all the files under directory 
+/nfs/pdb/all_entries/uncompressed_files/ and with file names in
+allpdb.lis and list out which one is similar with the structure
+specified in the <A HREF="#mol1">MOL1</A> command.
+<p>
+Alternatively, one can use UNIX command 
+<pre>
+
+find /directory_name/ -name &quot;*.ent&quot; -print &gt; pdball.lis</b> 
+
+</pre>
+instead of the <b>ls</b> command. The <A HREF="#libdir">LIBDIR</A> command is not neccesary 
+in this case. This is usually used when the 
+users have whole protein data bank on their local disk or CD ROM.
+<p>
+In the case the directory name in the <A HREF="#libdir">LIBDIR</A> command contains a substring 
+&quot;.../current_release/uncompressed_files&quot;, the program will think this
+directory is organised as &quot;current_release&quot; directory in Protein Data Bank
+<EM>i.e.</EM> PDB entries are distributed under subdirectories whose name correspond 
+to the 2 middle characters of the PDB id code, <EM>e.g.</EM>
+<pre>
+
+...pub/pdb_data/current_release/uncompressed_files/00
+...pub/pdb_data/current_release/uncompressed_files/zy
+
+</pre>
+and program will assume each line in List_file is a PDB entry code
+such as 
+<pre>
+
+100d				pdb1001.ent
+100e		or 		pdb100e.ent
+.....                           .... 
+
+</pre>
+Please notice the local PDB should contain the coordinates of the
+structures with these ID codes in the file.
+<p>
+If the rest text after first character&quot;@&quot; start with &quot;http:&quot;, the program
+will assume there is a 3db browser in this URL address and try to get a list
+of current released entries. (This command is not necessary if <A HREF="#pdbsite">PDBSITE</A> 
+command is present.)
+<p>
+If the rest text after first character&quot;@&quot; start with &quot;ftp:&quot;, the program
+will list all the files under the directories. This can be used for an
+anonymous ftp site in which a directory contains all the entries of the
+coordinates (such as old PDB directory .../all_release/compressed_files/*.pdb )
+However, in this form, all the PDB files should be in one directory, but
+not distributed in sub-directories. 
+<p>
+<b><A NAME="pdbsite"></A>PDBsite</b> URL_address <br>
+[default: http://www.pdb.bnl.gov] <br>
+This command specifies an URL address of one of the
+<a href="http://www.pdb.bnl.gov/pdb/mirrors.html">
+official mirror sites of the Protein Data Bank</a>. Given the
+&quot;recognized mirror site&quot;, the program can browsed most recent
+data in PDB. A collection of the URL addresses which have been tested 
+by the program is 
+listed in <a href="http://gamma.mbb.ki.se/~guoguang/webtop/pdb_url_collect.html">
+http://gamma.mbb.ki.se/~guoguang/webtop/pdb_url_collect.html</a>. To get
+efficient and fast data browsing, users
+should choose a site which is inside or close to their local countries.
+<p>
+If this command is given, the commands <A HREF="#website">WEBSITE</A>, <A HREF="#pdbsite">PDBSITE</A> and <A HREF="#libdir">LIBDIR</A> are not
+necessary to be present.
+<p>
+<A NAME="website"><A NAME="site"><A NAME="server"></A><b>WEBsite</b> URL_address (or <b>SITE</b> or <b>SERVER</b>) <br>
+Sometimes, users prefer to read data from a Web site other than a standard
+PDB site (for example a laboratory which is in the same campus or city),
+user can use WEBsite instead of <A HREF="#pdbsite">PDBSITE</A> for example: 
+<pre>
+
+WEBSITE http://pdb.pdb.bnl.gov/	or http://www.rcsb.org/pdb/ 
+WEBSITE  ftp://ftp.ebi.ac.uk/pub/databases/msd/pdb_uncompressed/ 
+<!--mgwt: doesn't work, but can't find working alternative at rcsb-->
+WEBSITE  ftp://gamma.mbb.ki.se/pub/pdb/current_release/uncompressed_files
+
+</pre>
+This command indicates the URL address of Web server. If the address 
+is given correctly, the program is able to browse coordinates from
+site which provide data of Protein Data Bank by either http or FTP
+service in compressed or uncompressed form. In each issue of the <A HREF="http://www.rcsb.org/pdb/general_information/news_publications/newsletters/2006q3/index.html">Protein Data 
+Bank Quarterly Newsletter</A>, there is a list of which labs might provide this
+service. (most likely in form of FTP server). A current URL address 
+collection of these sites are listed in 
+<a href="http://gamma.mbb.ki.se/~guoguang/webtop/url_collect.html">http://gamma.mbb.ki.se/~guoguang/webtop/url_collect.html</a>
+<p>
+In the case it is FTP site, if the directory name contains a sub-string
+&quot;current_release&quot;, the program can automatically find out the PDB
+entries in sub-directories. Otherwise, it will assume all the files are
+in the same directory in the argument of this command.
+<p>
+<A NAME="molvec"></A><b>MOLVEC</b> vector_file_name <br>
+Instead of reading all the PDB files in PROTEIN DATA BANK, the TOP program 
+can use a compact database which is a library of 
+secondary structures of each protein. This command indicate the filename
+of the database so that the program can perform the topological comparisons
+based on secondary structures. If the <A HREF="#website">WEBSITE</A> or <A HREF="#libdir">LIBDIR</A> commands are
+also present, the program will first perform the rapid topological search 
+in the compact database. Once a structure in the data base with a pdb entry 
+code is found, TOP will browse the PDB file from Internet or local disk 
+and perform the comparisons based on Ca atoms. If users repeatedly use
+the database searching function, this command is the fast and efficient
+way, because it can save a lot of time for repeating browsing files and assign the 
+secondary structures.
+<p>
+The <A HREF="#makevec">MAKEVEC</A> command can help to update the compact database in order to follow
+the most recent changes in Protein Data Bank. The updated database can
+also obtained via the Web (See <A HREF="#example3">example 3</A>).
+<p>
+<A NAME="makevec"></A><b>MAKEVEC</b> output_database_filename pdb_list_file_name [format] <br>
+If this command is present, the SSE library mentioned above is made.
+The program can read coordinates either from local disk/CD, which is
+specified by <A HREF="#libdir">LIBDIR</A>,  or via internet which is specified by <A HREF="#pdbsite">PDBSITE</A>
+or <A HREF="#website">WEBSITE</A>.
+The first argument of this command is the name of the output SSE library
+file. The second argument is a name of List_file (as in the <A HREF="#mol2">MOL2</A> command)
+which can contains either a list of file name or PDB entry codes. If
+the third (format) argument is <A HREF="#zone">ZONE</A> or <A HREF="#scop">SCOP</A>, the program will assume the second 
+column in the pdb_list_file specifies the residue range (see <A HREF="#zone1">ZONE1</A> and <A HREF="#zone2">ZONE2</A> 
+keywords) while the first column specifies the PDB code or file name of 
+the structure.
+<pre>
+
+example:
+MAKEVEC sndnew.vec pdb.list
+
+</pre>
+If you have PROTEIN DATA BANK on the disk, TOP program
+can make a compact database file to let those who don't have
+protein data bank on disk be able to perform the similarity searching.
+The pdb_list_file_name contains something like 
+<pre>
+
+101l.pdb
+102l.pdb
+103l.pdb
+104l.pdb
+....
+
+</pre>
+use this list together with <A HREF="#libdir">LIBDIR</A> command, one can make a compact SSE
+library, sndnew.vec
+<pre>
+
+example: 
+PDBSITE http://www2.ebi.ac.uk
+MAKEVEC sndnew.vec
+
+example:
+MAKEVEC snd.vec ftp://pdb.pdb.bnl.gov/pub/pdb/all_entries/compressed_files/
+<!--mgwt: this ftp doesn't work; can't find working alternative at rcsb-->
+
+</pre>
+If the file name starts with &quot;ftp://&quot; and ends with &quot;/&quot; the program will check 
+the what PDB files contains under that FTP directory and browse
+all the coordinates in that directory. The files must be in the same directory
+but not sub-directory in this case.
+If the second argument starts with &quot;ftp://&quot; the program will request a 
+3DB server from the URL address to provide a list all the entries in PDB.
+<pre>
+
+example:
+MAKEVEC snd.vec ftp://gamma.mbb.ki.se/pub/guoguang/scop_family.lis scop
+
+</pre>
+If the second argument starts with &quot;ftp://&quot; or &quot;http://&quot; and ends with
+a file name, the program will assume URL address is a file which contains
+the PDB list. This example shows how to get an updated list for SCOP data 
+base, which contains PDB code and range of a representing structure 
+in each family or super family. (The format of TOP/SCOP list is the following)
+<pre>
+
+3sdh             a:  1.001.001.001.001.001   d3sdha_
+1phn             a:  1.001.001.001.002.001   d1phna_
+1grj           2-79  1.001.002.001.001.001   d1grj_1
+....
+
+example: makevec.com
+# for PDB on local disk
+$LUEXE/top << 'end-top'
+LIBDIR /nfs/protein/pdb/current_release/
+MAKEVEC sndlib.vec pdblist.txt
+'end-top'
+#
+
+</pre>
+The pdblist.txt could be made by this way.
+<pre>
+
+cd /nfs/pdb/full/
+ls -1 *.pdb &gt; /nfs/ylgs/guoguang/pdblist.txt
+
+</pre>
+If <A HREF="#libdir">LIBDIR</A> is replaced by <A HREF="#pdbsite">PDBSITE</A>, the program will read updated data from
+PDB via web.
+<p>
+In fact the keywords <A HREF="#3dbbefore">3DBBEFore</A> and <A HREF="#3dbafter">3DBAFTfer</A> together with <A HREF="#makevec">MAKEVEC</A>
+provide a possibility of automatically making SSE library of the new coming 
+structures which can be appended to the old ones. This should be very
+quick.
+
+</ul>
+
+<h3><a name="keycom">Keyword Input for structure comparisons</a></h3> 
+
+<ul>
+<A NAME="match"></A><b>MATCH</b> RATE rat1 rat2 
+<pre>
+
+example: MATCH RATE 0.35 0.8
+	 MATCH auto 		[DEFAULT]
+	 MATCH 5
+
+</pre>
+<A NAME="match_rate"></A>If RATE appears as a subcommand, the program will read two more parameters 
+RAT1and RAT2. 
+<p>
+<A NAME="match_rat1"></A>RAT1 is the minimum matching rate of secondary structures. The 
+program chooses a minimum secondary structures (comparing mode) or number of 
+secondary of mol1 (searching mode) and times with rat1. If matching secondary
+structures of the two compared protein exceeds this rate, the program will
+think the two structures are similar. For example, if mol1 has 12 secondary
+structures, and mol2 has 10, and rat1 is 0.5, the program will think the two
+structures are similar when there are 5 secondary structures that can match each 
+other in comparing mode (or 6 in searching mode).
+<p>
+<A NAME="match_auto"></A>AUTO is equivalent to RATE 0.35 0.8
+<p>
+Alternatively, users also can give this number by 
+estimating at least how many secondary structures can 
+match each other before running the program. It has to be lower than real 
+number. If the number is overestimated, the program will fail to superimpose 
+the two similar structures. Under-estimating is usually OK. However if user 
+gives too low a value, (for example 3), the program might superimpose motif 
+instead of overall structures. This might give many ways of superpositions,
+many of which do not really interest the users. In database searching, an 
+over underestimate value can also slow down the speed unnecessarily. 
+<p>
+If user have no idea how to put this parameter, he/she can start either
+with 5 or 30%-50%  of number of secondary structures in molecule 1 (use rate). 
+This will be successful in 95% cases. If the comparison
+fails, look at <a href="#hint_match">the Hint section</a> to see how to fix the problem. 
+<p>
+<A NAME="residue"></A><b>RESIDUE</b> lstres<br>
+<A NAME="residue_lstres"></A>LSTRES is the minimum number of residues in a consecutive fragment 
+of protein. Default is 3. If lstres is smaller than or equal to 0
+the program only compares the structures based on SSEs.
+In this case, no superimposed coordinates will be output.
+If lstres is larger than 0, the program will improve the comparison
+based on Ca atoms. When all Ca atoms in a fragment with more than LSTRES 
+(usually  3) consecutive residues in one protein are closest 
+to a fragment in the other protein and all the distances are smaller 
+than <A HREF="#distance">DSTMIN</A>, all the Ca atoms in these two corresponding fragments 
+will be included in the superposition calculations. The rms and sequence 
+comparison will be presented.
+<p>
+<A NAME="distance"></A><b>DISTance</b> dstmin		<br>	[Default 3.8]<br>
+This value the represents the maximum distance between Ca atoms of the matched residues.
+(see <A HREF="#residue">RESIDUE</A>). If dstmin is more than 3.0, the value is not so important
+because of the rule that Ca atoms of matched residues must be closest to each
+other. A value between 3-7 usually does not change the result of which residues
+can match each other in the comparisons.
+<p>
+<A NAME="write"></A><b>WRITE</b><br>
+If this statement is present and Ca comparison is carried out, the program
+will write out superimposed coordinates from Mol2 to Mol1. The file
+name will be something like mol2_mol1.xxx. For example if name of mol1
+is sfv.pdb, name of mol2 is sin.pdb, the output name will be sin_sfv.pdb
+<p>
+<A NAME="append"></A><b>APPEnd</b> yes/no<br>
+If the input is yes and there are no secondary structure assignments
+in the input coordinates file, the program will append the assignment
+at the end of the coordinate file. [Default: NO]
+<p>
+<A NAME="hlxrms"></A><b>HLXRMS</b> hlxrms<br>
+If rms between an alpha helix and standard helix is higher than this value,
+this helix will not be used for the comparisons.
+<p>
+<A NAME="btarms"></A><b>BTARMS</b> btahlx<br>
+If rms between a beta strand and a straight line formed by the two
+representing points is higher than this value, this strand will not
+be used for comparisons.
+<p>
+<A NAME="errrmsa"></A><b>ERRRMSA</b> errrmsa<br>
+If rms value of certain helix or sheet is higher than this value, this
+helix or sheet is not considered to be similar.
+<p>
+<A NAME="errang"></A><b>ERRANG</b> errang_alpha, errang_beta<br>
+<A NAME="errang_alpha"></A>If the direction difference of a certain helix in the two structures
+is higher than errang_alpha, this helix is not considered to be similar.<BR>
+<A NAME="errang_beta"></A>If the direction difference of a certain sheet in the two structures
+is higher than errang_beta, this sheet is not considered to be similar.
+<p>
+<A NAME="errdll"></A><b>ERRDLL</b> errdll_alpha, errdll_beta<br>
+<A NAME="errdll_alpha"></A>If the line-line distance of a certain helix in the two structures
+is higher than errdll_alpha, this helix is not considered to be similar.<BR>
+<A NAME="errdll_beta"></A>If the line-line distance of a certain strand in the two structures
+is higher than errdll_beta, this strand is not considered to be similar.
+<p>
+<A NAME="maxang"></A><b>MAXANG</b> angmax<br>
+When expanding the search for similar secondary structures, if the maximum
+direction difference exceeds this angle, the last expand is rejected.
+<p>
+<A NAME="maxdll"></A><b>MAXDLL</b> dllmax<br>
+When expanding the search for similar secondary structures, if the maximum
+line-line distance exceeds this number, the last expand is rejected.
+<p>
+<A NAME="single"><A NAME="multiple"></A><b>SINGLE/NOSIngle (or MULTiple)</b><br>
+If the SINGLE statement appears, comparison is only carried out on one 
+polypeptide chain. If NOSINGLE or MULTIPLE appears, the program can compare
+protein structures with multiple chains.
+<p>
+<A NAME="fast"></A><b>FAST</b><br>
+When this option is chosen, if a helix disturbs the match of a beta strand, 
+the program will delete the first helix and re-search for the match.
+<p>
+<A NAME="dirweight"></A><b>DIRWEIGHT</b> dirweight<br>
+Weight of the direction in the refinement.
+<p>
+<A NAME="refweight"></A><b>REFWEIGHT</b> refwalpha, refwbeta<br>
+In the least squares refinement, the weight of alpha helix and beta strand.
+<p>
+<A NAME="snd1"></A><b>SND1</b> Yes/No [CA]<br>
+If input is yes, the program will not read the secondary structure 
+assignment in the coordinate file of Mol1 but will assign it self
+using a algorithm defined by Smith/Laskowski (SECSTR program from PROCHECK).
+If the input is no, the program will first try to use the assigned
+secondary structure in the coordinates file. If it does not exist or
+it does not work, the program will assign itself.
+If CA is present in the second input column after the keyword, the program will
+assign the secondary structures based only on Ca atoms.
+<p>
+<A NAME="snd2"></A><b>SND2</b> Yes/No [CA]<br>
+same as SND1 but for Mol2
+<p>
+<A NAME="amplify"></A><b>AMPLify</b> ampl ampltop	[default: 1.5 2.0]<br>
+ampl is the amplification order for structure diversity<br>
+ampltop is the amplification order for topological diversity<br>
+The value of <a href="#strdiv">Structural Diversity</a>
+and <a href="#strdiv">Toplogical Diversity</a> used are used
+in TOP for describing the structure difference between the two compared structures based
+on both r.m.s deviation and number of matched residues or SSEs. The
+&quot;amplification order&quot; is used to control the influence from
+number of matched residues or SSEs (see the <a href="#strdiv">conventions 
+</a> for more details).
+
+</ul>
+
+<H3><A name="key3db">Keywords for 3DB interface</a></H3>
+<!--mgwt: the 3db browser now (at rcsb) seems to be called 'SearchFields' and 'SearchLite'-->
+<ul>
+
+TOP has an interface with <a href="http://www.rcsb.org/pdb/cgi/queryForm.cgi">3DB browser</a> (developed by Dr. <a href="http://bioinformatics.weizmann.ac.il/jaime_prilusky.html">Jaime Prilusky</a> and
+colleagues). This connection enables TOP to perform rapid similarity 
+searching by defining a searching range with sequence homology, keywords, date 
+and/or other constraints, so that user can save a lot of time for
+interactive operations to the database. The following provides a simple
+description related to the 3DB connections from TOP. Some detailed 
+description about 3DB parameters can be found in the <a href="http://www.pdb.bnl.gov/pdb-docs/3DB_Browser_help.html">3DB Browser's Help file</a>. Now that the Protein Data Bank resides at RCSB, the browser is called SearchLite and/or
+SearchFields. Description of the latter can be found in the <A HREF="http://www.rcsb.org/pdb/help-searchfields.html">PDB SearchFields Help</A>.
+<p>
+<A NAME="3dbsite"></A><b>3DBSITE</b> Site_name	<br>Example: 3dbsite http://www.pdb.bnl.gov<br>
+If users wish to read data from their local disk/CD or a close Web site but 
+use 3DB browser to choose searching range, one can use <A HREF="#libdir">LIBDIR</A> or <A HREF="#website">WEBsite</A>
+for specifying the location of coordinates and use this command to specify
+the URL address of 3DB server. The URL address of 3DB must be one of the 
+<a href="http://www.pdb.bnl.gov/pdb/mirrors.html">mirror sites of Protein Data Bank</a>.
+This 3DB sever site name does not have to be same as in the <A HREF="#website">WEBSITE</A> command. The 
+program can obtain the PDB entry list from the 3DB server and browse the 
+coordinates from other URL address. If <A HREF="#website">WEBSITE</A>, <A HREF="#libdir">LIBDIR</A> and <A HREF="#pdbsite">PDBSITE</A> commands
+are not given, the program will use this 3DB address for 
+browsing coordinates. If this address is not given, the 
+default server is from BNL. However, I strongly
+recommend choosing a PDB mirror site close to user's local lab.
+<p>
+<b><A NAME="3dbkeyword"></A>3DBKEYword</b> word1 word2 
+<pre>
+
+	example: 3DBKEYWORD FAD + FMN + FLAVIN
+		 3DBKEYWORD NITRATE REDUCTASE
+		 3DBKEYWORD FAD .or. FMN .or. FLAVIN
+
+</pre>
+Equivalent to the &quot;Keyword&quot; column in 
+<a href="http://www.pdb.bnl.gov/pdb-bin/pdbmain">3DB</a>.
+If this command appears, the TOP program only 
+searches those structures with the words appearing in HEADER, TITLE, KEYWDS 
+and COMPND fields. If two keywords are separated by space, relation between
+them are &quot;AND&quot;. If separated by &quot;.or.&quot; or &quot;+&quot; the relations between words are 
+&quot;OR&quot;.
+<p>
+<b><A NAME="3dbtext"></A>3DBTEXT</b> Word  		
+<pre>
+
+		example:  3DBTEXT FAD + FMN + FLAVIN
+			  3DBTEXT REDUCTASE
+
+</pre>
+Equivalent to the &quot;Text query&quot; column in 
+<a href="http://www.pdb.bnl.gov/pdb-bin/pdbmain">3DB</a>.
+If this command appears, the TOP program only 
+searches those structures with the Word in the complete PDB text.
+If two keywords are separated by space, relations between words are &quot;AND&quot;. 
+If two keywords are separated by + or &quot;.or.&quot; relations between words are &quot;OR&quot;.
+<p>
+<b><A NAME="3dbseq"><A NAME="3dbfasta"></A>3DBSEQ (or 3DBFASTA)</b> cutoff sequence (or cutoff @seq_file_name)
+<pre>
+
+Example: 3DBSEQ 0.02 GXGXTGGTX
+     or	 3DBSEQ 0.02 @zm.seq
+
+</pre>
+Equivalent to the &quot;FASTA&quot; column in 
+<a href="http://www.pdb.bnl.gov/pdb-bin/pdbmain">3DB</a>.
+If this command appears, the TOP program will request the 3DB server 
+running the <a href="http://swarmer.stanford.edu/fastaman.html">FASTA</a> 
+program to provide a list of structures with homologies to
+the given sequence. Then it only searches structure similarity to 
+those structures and output superimposed coordinates if <A HREF="#write">WRITE</A> command
+is presented. The sequence must be 1 letter code. It must be either in 1
+line or in a file such as following example:
+<pre>
+
+SYTVGTYLAERLVQIGLKHHFAVAGDYNLVLLDNLLLNKNMEQVYCCNEL
+NCGFSAEGYARAKGAAAAVVTYSVGALSAFDAIGGAYAENLPVILISGAP
+NNNDHAAGHVLHHALGKTDYHYQLEMAKNITAAAEAIY
+
+</pre>
+The format is free but the sequence can not exceed 5000 residues.
+The detailed description of cutoff value, 
+<a href="http://www.pdb.bnl.gov/pdb-docs/3DB_Browser_help.html#FASTA_search">see 3DB Browser Help File</a>
+(For TOP, this value should be between 0.02 and 0.01).
+This command is good for searching structures with a short sequence 
+figure print or structures in a sequence family and superimpose them
+together. This makes TOP can be used as simple a modelling program.
+<p>
+<b><A NAME="3dbresolution"></A>3DBRESOlution</b> res1-res2 or RESO res1 res2
+<pre>
+
+example: 3DBRESOLUTION 0.1-3.0	 or 3DBRESOLUTION 0.1 3.0
+
+</pre>
+Equivalent to the &quot;Resolution&quot; column in 
+<a href="http://www.pdb.bnl.gov/pdb-bin/pdbmain">3DB</a>.
+If this command appears, the TOP program only search
+those structures with resolution higher than 3.0 A (and lower than 0.1 A)
+cutoff.
+<p>
+<b><A NAME="3dbbefore"><A NAME="3dbupper"></A>3DBBEFore (or 3DBUPPer)</b> date 	<br>
+Example: 3dbbefore 12/3/1998<br>
+Equivalent to the &quot;Date (upper)&quot; column in 
+<a href="http://www.pdb.bnl.gov/pdb-bin/pdbmain">3DB</a>.
+If this command appears, the TOP program only search
+those structures which is deposited this date.
+<p>
+<b><A NAME="3dbafter"><A NAME="3dblower"></A>3DBAFTer (or 3DBLOWer)</b> date 	<br>
+Example: 3dbafter 12/1/1998<br>
+Equivalent to the &quot;Date (lower)&quot; column in 
+<a href="http://www.pdb.bnl.gov/pdb-bin/pdbmain">3DB</a>.
+If this command appears, the TOP program only search
+those structures which is deposited after the date. This makes users to
+trace the new structures which are similar to a certain family. It is
+possible to let this procedure fully automatic by making a simple unix
+script file.
+<p>
+<b><A NAME="3dbhet"></A>3DBHET </b> compound_name 	<br>
+Example: 3dbhet FMN<br>
+Equivalent to the &quot;Associated group&quot; column in 
+<a href="http://www.pdb.bnl.gov/pdb-bin/pdbmain">3DB</a>.
+If this command appears, the TOP program only search
+those structures with this Hetero compound.
+
+</ul>
+<H2>
+<A name="coor">Conventions of the Coordinate files</a></H2>
+When comparing two protein structures, the program needs two coordinates files 
+in Brookhaven format. It can read the secondary structure elements (SSEs <EM>i.e.</EM>
+alpha helices and beta strands) which are pre-assigned in the files in the 
+PDB format file as in the following example:
+<pre>
+
+HELIX    1  F1 LEU     96  SER    103  
+HELIX    2  N1 ILE    148  ARG    160 
+HELIX    3  N2 ARG    184  GLU    193 
+HELIX    4  N3 GLU    223  HIS    229 
+HELIX    5 N4A PRO    245  GLN    249 
+HELIX    6 N4B SER    253  GLU    257 
+HELIX    7  N5 MET    263  SER    266 
+SHEET    1  FB 6 LYS    58  TYR    64  0 
+SHEET    2  FB 6 HIS    48  ILE    55 -1
+SHEET    3  FB 6 TYR   109  LEU   116 -1
+SHEET    4  FB 6 ILE    13  SER    24 -1
+SHEET    5  FB 6 VAL    27  SER    33 -1
+SHEET    6  FB 6 HIS    75  LYS    81 -1
+
+</pre>
+If there are no SSE assignments in the coordinates file, the program will take
+some CPU time to calculate it. If the file contains coordinates of all mainchain 
+atoms, the program will use the &quot;Smith-Laskowski method&quot; as 
+in the <A HREF="procheck.html">PROCHECK</A> package. If the file only contains Ca coordinates or 
+many mainchain atoms are missing, the program can also automatically assign the 
+secondary structures using another method, but some elements, especially 
+beta strands, might be not as accurate as in the case that all the mainchain 
+atoms are provided. However, this does not influence the structure comparisons
+in most cases.
+
+<H2><A name="stat">Conventions of some output parameters</a></H2><ul>
+
+<li><b><A NAME="matching_residues"></A>Matching Residues</a></b> number of matched residues<br>
+The program counts a pair of residues as matched residues when:<blockquote>
+<li>1) There are at least a certain number of residues in a consecutive fragment 
+which Ca number of the two superimposed structures 
+are less than certain distance. The distance
+is defined in the <A HREF="#distance">DISTANCE</A> command (default 3.8 angstrom) while the number 
+of consecutive residues is defined in the <A HREF="#residue">RESIDUE</A> command (default 3)
+<li>2) The Ca atoms of the matched residues in the two superimposed structures
+must be the closest each other.
+</blockquote>
+<li><b><A name="iden">Identical residues and Identity</a><blockquote></b>
+<li>Identical residues represents the number of those 
+ matched residues which amino acid type are identical
+<li>Identity represents (Identical residues)/(matched residues)</blockquote>
+
+<li><b><A name="rms">r.m.s. deviation </a><blockquote></b>
+<PRE>
+            N
+r.m.s. = (Sigma(d<SUB>i</SUB>)<SUP>2</SUP> <FONT SIZE=+3>/</FONT>N))<SUP>1/2</SUP>
+            i
+</PRE>
+<BR>where
+<BR>N is the number of the matchable Ca atoms
+<BR>d<SUB>i</SUB> is the distance between the 1st molecule and 2nd molecule
+of the i'th atoms
+</BLOCKQUOTE>
+<li><b><A name="meandist">Mean distance: </a></b><BLOCKQUOTE>
+<PRE>
+         N
+d<SUB>mean</SUB> = Sigma(d<SUB>i</SUB>)<FONT SIZE=+3>/</FONT>N
+         i
+</PRE>
+<BR>where
+<BR>N is the number of the matchable Ca atoms
+<BR>d<SUB>i</SUB> is the distance between the 1st molecule and 2nd molecule
+of the i'th atoms
+<br><br>Usually, if the difference is distributed homogenously all overall the
+two structures, values of d<SUB>mean</SUB> and r.m.s are close. If some
+parts of two structures are much more different than the other parts,
+r.m.s is usually significantly higher than d<SUB>mean</SUB>. In my
+opinion, d<SUB>mean</SUB> is more able to reflect the distance between
+the two structures in the comparisons than r.m.s.
+</BLOCKQUOTE>
+<li><b><A name="strdiv">Structural Diversity </a></b><br>
+This value is used to describe
+the difference between the two structures, based on distance of matched
+Ca atoms and number of matched residues. The definition is:<BLOCKQUOTE>
+<PRE>
+Structure Diversity = (r.m.s)*(N<SUB>mol1</SUB>/N<SUB>fit</SUB>)<SUP>A</SUP>
+</PRE>
+<BR>where 
+<BR>N<SUB>fit</SUB> is the number of matched residues (Ca atoms)
+<BR>N<SUB>mol1</SUB> is the total number of residues in the 1st molecule.
+<BR>A is the amplification order for number of matched residues. (defined
+in the <A HREF="#amplify">AMPLIFY</A> command, default 2.0). Higher this value is, more the 
+structure diversity is influenced by number of matched residues, rather
+than by the r.m.s deviation.
+<BR>
+</BLOCKQUOTE>
+<li><b><A name="topdiv">Topological Diversity </a></b><br>
+This value is used to
+described to topological difference of Secondary Structure Elements between the 
+two molecules. The definition is<ul>
+<PRE>
+Topological Diversity = (Angle + RMS)*(M<SUB>mol1</SUB>/M<SUB>fit</SUB>)<SUP>A</SUP>
+</PRE>
+<BR>where 
+<BR>Angle is the average angle of directions between the matched SSE pairs.
+<BR>RMS is calculated based on the two point representation of SSEs. 
+<BR>M<SUB>fit</SUB> is the number of matched SSEs
+<BR>M<SUB>mol1</SUB> is the total number of SSEs in the 1st molecule
+<BR>A is the amplification order for number of matched SSEs. (defined
+in the <A HREF="#amplify">AMPLFIY</A> command, default 1.5). Higher this value is, more the 
+structure diversity is influenced by number of matched SSEs
+</ul>
+</ul>
+
+<H2>
+<A name="examples">Examples</H2></a>
+
+In many cases, users can quickly learn how to use the program just by
+studying appropriate examples. One can use one of two ways to run
+TOP: simple commands or Unix script files. The simple commands are
+designed for the convenience of those users who don't have the Protein Data
+Bank in their local lab and use TOP for ordinary purposes. The Unix
+command files are more flexible for special purposes.
+
+<h3>Simple commands:</h3><ul>
+
+<li><h4><A NAME="example_top3d"></A>Comparing two structures: top3d</h4>
+
+For comparing two structures which are similar, the program can do two
+things:<OL><LI>superimpose the two structures so that the user can
+display them in graphics. <LI>Output sequence alignment and
+statistics about the differences such as r.m.s deviation, fitting
+residues and so on.</OL>
+<p>
+For these purposes, one can just type <b>top3d file1 file2</b> or
+<b>top3d</b> and answer the questions. For example if you type:
+<b>top3d mol1.pdb mol2.pdb</b> (in the case the two structures are
+similar) the program will output a sequence alignment of the two
+proteins and output a coordinates file mol2_mol1.pdb in which mol2.pdb
+is superimposed to mol1.pdb
+<p>
+In the case the two molecules or one of them have been deposited to
+Protein Data Bank and the entry code is known, you tell the program by a
+special format: code@pdb. For example, if you want to compare PDB entry
+1KXD and 1VCP, you can just type <b>top3d 1kxd@pdb 1vcp@pdb</b>
+the program will output a file 1vcp_1kxd.pdb in which 1VCP is
+superimposed to 1KXD.
+<p>
+In the case user wish to change the parameter for the TOP program, one
+can edit a file TOP.PARM in the directory.
+
+<p>
+<li><h4><A NAME="example_topsearch"></A>Searching Proteins which are similar in 3D in database: topsearch</h4> 
+
+If user have a protein structure (for example mol1.pdb)
+and wish to detect which proteins in Protein Data Bank are similar to
+it, he can type <b>topsearch mol1.pdb</b>, the database searching
+will start. After the procedure is finished, there will be a long
+output file topsearch_name.log. and a two shortened list
+<b>strdiv_name.lis</b> and <b>topdiv_name.lis</b>.
+<p>
+The file <b>strdiv_name.lis</b> is a list of similar structures ranked
+by &quot;Structure Diversity&quot; (based on Ca atoms). The file
+<b>todiv_name.lis</b> is a list of similar structures ranked by
+&quot;Topological Diversity&quot; (based on Secondary Structure Elements). If
+users wish to have detailed comparisons, one can pick up the code from
+one of these two lists and use the command <b>top3d</b> for further
+information.
+</ul>
+
+<h3>Unix script file</h3>
+
+There are several examples files available at 
+<a href="http://gamma.mbb.ki.se/~guoguang/webtop/examples/">http://gamma.mbb.ki.se/~guoguang/webtop/examples</a>
+showing how to use the TOP program. Here is a summary of them
+
+<center><TABLE BORDER=1 CELLPADDING=1 CELLSPACING=1>
+<tr>
+<TD><b>Name</b>
+<TD><b>PDB data from</b>
+<TD><b>Function</b>
+<TR>
+<TD><a href="http://gamma.mbb.ki.se/~guoguang/webtop/examples/top.com">
+top.com</a>
+<TD>local disk or internet
+<TD>Superimposing two protein structures and compare them
+<TR>
+<TD><a href="http://gamma.mbb.ki.se/~guoguang/webtop/examples/pdbscan.com">
+pdbscan.com</a>
+<TD>local disk
+<TD ROWSPAN="2">Searching similar structures in Protein Data Bank
+<TR>
+<TD><a href="http://gamma.mbb.ki.se/~guoguang/webtop/examples/topscan.com">
+topscan.com</a>
+<TD>internet
+<TR>
+<TD><a href="http://gamma.mbb.ki.se/~guoguang/webtop/examples/pdbsearch.com">
+pdbsearch.com</a>
+<TD>local disk
+<TD ROWSPAN="2">Searching similar structures in a compact database.
+<TR>
+<TD><a href="http://gamma.mbb.ki.se/~guoguang/webtop/examples/topsearch.com">
+topsearch.com</a>
+<TD>internet
+<TR>
+<TD><a href="http://gamma.mbb.ki.se/~guoguang/webtop/examples/top3db.com">
+top3db.com</a>
+<TD>internet
+<TD>Searching similar structures with <a href="http://www.pdb.bnl.gov/pdb-bin/pdbmain">3DB restraints</a>
+<TR>
+<TD><a href="http://gamma.mbb.ki.se/~guoguang/webtop/examples/makevec.com">
+makevec.com</a>
+<TD>local disk
+<TD ROWSPAN="2">Making SSE library
+<TR>
+<TD><a href="http://gamma.mbb.ki.se/~guoguang/webtop/examples/makevec_web.com">
+makevec_web.com</a>
+<TD>internet
+</TABLE></center>
+
+<hr>
+<b><A name="example1">Example 1</a>: Compare two structures</b>
+Two files 1kxd.pdb and 1vcp.pdb will be compared by the following
+script file. ($TOPHOME/examples/top.com in the distribution package)
+<pre>
+
+#
+rm fort.10 fort.11 fort.12
+ln -s omatrix.ofm fort.10
+ln -s mol1.ofm fort.11
+ln -s mol2.ofm fort.12
+$LUEXE/top << 'end-top'
+MOL1 1kxd.pdb
+MOL2 1vcp.pdb
+RESIDUE 3
+WRITE
+'end-top'
+#
+
+</pre>
+type &quot;top.com &gt; top.log&quot;, the program will output which secondary structure
+elements are corresponding to each other in the two structures. Optionally,
+the program also superimposes the two structures based on the Ca atoms and
+output the sequence comparison. (See instruction of keyword <A HREF="#residue">RESIDUE</A>). The rms 
+deviation is output. When the <A HREF="#write">WRITE</A> statement appears, the program will
+write a file which superimposes molecule 2 onto molecule 1. In this case
+the output file name is 1vcp_1kxd.pdb. Sometimes, there are more than one way
+to superimpose the two structures (<EM>e.g.</EM> when the two structures are dimers
+AB, the program can superimpose AB to A'B' and AB to B'A'). In this case
+the program will output several superimposed coordinate files, called
+1vcp_1kxd.pdb, 1vcp_1kxd.pdb_2, 1vcp_1kxd.pdb_3,....). One can use any graphics 
+program (such as O, Insight or Frodo) to display the superimposed coordinates 
+together with 1kxd.pdb. Look at top.log for more information.
+<p>
+There are other commands concerning the parameters for different purpose
+of the comparisons. For details, please see <A HREF="#keywords">&quot;Keyworded Input&quot;</a>
+<p>
+The TOP software can directory browse coordinates from Protein Data Bank (PDB), 
+if an URL address of a mirror site of PDB is provided. In this example, if you 
+know one of structures PDB entry code is 1vcp, you can do the 
+following:
+1) add a command to indicate from which site you want to browse
+<i>PDBSITE http://www.pdb.bnl.gov/</i>
+2) use xxxx@pdb in the <A HREF="#mol2">MOL2</A. command (XXXX is the PDB entry code)
+<i>MOL2 1vcp@pdb</i>
+Then the program will directly read 1vcp from Brookhaven National Laboratory
+via the internet.
+<p>
+<hr>
+<b><A name="example2">Example 2</a>: Searching similar structures in Protein Data Bank</b>
+TOP can be used to see whether a protein is similar with certain structures in 
+Protein Data Bank. Regarding how to obtaining the data from database, TOP may 
+have two ways to run database searching.<OL><LI>Search Protein Data Bank installed 
+in the local disk. The example command files are shown in pdbsearch.com and 
+pdbscan.com in the directory $TOPHOME/examples/ <LI>Search Protein Data Bank 
+via internet (see in topsearch.com and topscan.com).</OL>
+<p>
+The recommended way run TOP is first searching a compact library of Secondary
+Structure Elements (SSEs) . If SSEs constructions of some proteins are found to 
+be similar to the studied structure, the program can do the further comparisons 
+based on Ca atoms (as shown in pdbsearch.com and topsearch.com). This ways
+requires a regularly updated SSEs library which can be obtained from
+<A HREF="ftp://gamma.mbb.ki.se/pub/guoguang/sndlib.tar.Z">ftp://gamma.mbb.ki.se/pub/guoguang/sndlib.tar.Z</A>
+It can also be made and updated automatically (see instructions for &quot;
+<A HREF="#SSEupd">Automatic updating of SSE library</a>&quot;
+<p>
+If users choose not to use compact SSE library, one can use pdbscan.com
+or topscan.com instead of pdbsearch.com or topsearch.com for searching PDB 
+in local disk or via internet.
+<p>
+In pdbscan.com, it is assumed that user have all the Protein Data Bank files 
+under directory /nfs/protein/pdb/current_release/uncompressed_files and all 
+the files are called *.ent. In this example file, the command 
+<i>find $pdbdir -name &quot;*.ent&quot; -print &gt; current.lis</i>
+find all the PDB entries and write into the file current.lis which has 
+contents like:
+<pre>
+
+/nfs/protein/pdb/current_release/uncompressed_files/00/pdb100d.ent
+/nfs/protein/pdb/current_release/uncompressed_files/00/pdb200d.ent
+/nfs/protein/pdb/current_release/uncompressed_files/00/pdb200l.ent
+/nfs/protein/pdb/current_release/uncompressed_files/00/pdb300d.ent
+/nfs/protein/pdb/current_release/uncompressed_files/01/pdb101d.ent
+/nfs/protein/pdb/current_release/uncompressed_files/01/pdb201d.ent
+....
+
+</pre>
+In this way all the file names are stored in current.lis which will
+be read by the <A HREF="#mol2">MOL2</A> command in the TOP program.
+<i>MOL2 @current.lis</i>
+In fact, one can search not only the whole protein data bank, but also a
+group of selected structures, for example, structures represent
+independent folding in the <a href="http://scop.mrc-lmb.cam.ac.uk/scop">SCOP</a> 
+classification.
+<p>
+Still take pdbscan.com as an example. To run database searching, type
+&quot;pdbscan.com &&quot;, after some hours, there will be all the information in 
+pdbscan.log which users usually don't 
+have to look at. User can look at the summary files: <b>&quot;strdiv.lis&quot;</b>
+or <b>&quot;topdiv.log&quot;</b> (If the program crash, you could also look at the middle
+results by typing &quot;grep Str pdbscan.log | sort +3 -4&quot; or 
+&quot;grep Top pdbscan.log | sort +3 -4&quot;)
+<p>
+The content of strdiv.lis is the following:
+<pre>
+
+ 1692 structures are found to be similar under the given criteria
+ Best Structure Diversity   7.67  with   52 matched residues to 2cnd
+ Best Structure Diversity   7.68  with   56 matched residues to 1azz
+ Best Structure Diversity   8.13  with   57 matched residues to 1epa
+ Best Structure Diversity   8.33  with   48 matched residues to 1cnf
+ Best Structure Diversity   8.48  with   54 matched residues to 1ave
+ Best Structure Diversity   8.70  with   54 matched residues to 1hav
+ Best Structure Diversity   8.70  with   54 matched residues to 2pia
+ Best Structure Diversity   9.28  with   51 matched residues to 1avd
+ ............
+
+
+</pre>
+The structure here 2cnd, 1azz, 1epa ... and so on are found similar to the
+searched model. (2cnd is ranked as most similar structure by the program). 
+Users can use command file of <A HREF="#example1">example 1</A> and pick up the coordinates to
+run the individual comparison which gives superimposed structure and 
+details of the comparison such as r.m.s and sequence
+alignment and so on (these information are also inside pdbscan.log, run 
+nicelist.com or toplist.com to get a better output.)
+<p>
+<hr>
+<b><A name="example3">Example 3</a>: Searching similar structures from a compact SSE library</b>
+As described in the <a href="#description">description</a> section, in the first step
+TOP detects the similarities based on SSE topology of two proteins. Except 
+coordinates files in PDB format, the program can also read a compact 
+database which contains SSE topology derived from Protein Data Bank.
+Using the SSE library is a fast and recommended way for similarity
+searching in database. To make the library from PDB in local disk, 
+user can use $TOPHOME/examples/makevec.com. To make the library from PDB
+on Web, please use $TOPHOME/examples/makevec_web.com. This SSE library
+can be automatically updated according most recent PDB data. Please see
+<a href="#SSEupd">installation</a> section.
+<p>
+The following is an example how to use SSE library for similarity
+searching. It is similar with <A HREF="#example2">example 2</A>, but with one more command
+<A HREF="#molvec">MOLVEC</A>.
+<pre>
+
+rm -f fort.10 fort.11 fort.12
+ln -s omatrix.ofm fort.10
+ln -s mol1.ofm fort.11
+ln -s mol2.ofm fort.12
+cat &gt; topsearch.inp << EOF
+MATCH auto
+PDBSITE http://www2.ebi.ac.uk
+!LIBDIR /nfs/pdb/current_release/uncompressed_files/
+MOL1 kinA.pdb
+MOLVEC $TOPHOME/lib/sndlib.vec
+EOF
+$TOPBIN/top &lt; topsearch.inp  &gt; topsearch.log
+grep Top topsearch.log | sort +3 -4 >> topdiv.lis
+grep similar topsearch.log &gt; strdiv.lis
+grep Str topsearch.log | sort +3 -4 >> strdiv.lis</i>
+
+</pre>
+The running and analysis procedure is similar to example 2
+<p>
+In this example, if you use <A HREF="#libdir">LIBDIR</A> /nfs/pdb/current_release/uncompressed_files/
+instead of <A HREF="#pdbsite">PDBSITE</A> http://www2.ebi.ac.uk, the program will browse the coordinates
+from local disk instead of internet.
+<p>
+If you use another SSE database, for example
+<b><i>MOLVEC $TOPHOME/lib/scop_structure.vec</b></i>
+You search only about 2000 independent domain structures selected in the <a href="http://scop.mrc-lmb.cam.ac.uk/scop/">SCOP</a> 
+dastabase instead of 8000 in Protein Data Bank. The speed would be much faster
+(only 1/10 to 1/5 as before). For same reason, you could use 
+<b>$TOPHOME/lib/scop_family.vec</b>  (about 900 domain structures) or 
+<b>$TOPHOME/lib/scop_superfamily.vec</b> (about 600 domain structures) 
+to even search for a short time. The SCOP database is not updated as frequently
+as PDB, so far once every year. The SSE database for most recent SCOP 
+is always kept in our <a href="ftp://gamma.mbb.ki.se/pub/guoguang/sndlib.tar.Z">FTP distribution site</a>
+<p>
+In the <a href="http://alfa.mbb.ki.se:8000/TOP">Web server</a> of TOP, there is another way to search all the structures:
+The program search classification unit of independent domain structures, 
+families or super-families in SCOP. Once it found the similarity, it can 
+optionally further search other structures in the same classification unit. 
+Such a search is very efficient in terms of speed although it does not 
+search the most recent data in Protein Data Bank. Please have a look at:
+<a href="http://alfa.mbb.ki.se:8000/TOP/search_SCOP_new.html">http://alfa.mbb.ki.se:8000/TOP/search_SCOP_new.html</a>
+<p>
+<hr>
+<b><A name="example4">Example 4</a>: Superimpose all the sequence-homologous proteins in PDB</b>
+If users wish to compare all the structures in PDB which have
+sequence homology to a particular structure, one can use following simple
+procedure to make all the superimposed structures.
+<pre>
+
+#!/bin/csh
+rm fort.10 fort.11 fort.12
+ln -s omatrix.ofm fort.10
+ln -s mol1.ofm fort.11
+ln -s mol2.ofm fort.12
+$TOPBIN/top << 'end-top' 
+MOL1 zmA.pdb
+MOLVEC snd1.vec
+pdbsite http://www2.ebi.ac.uk
+3dbseq 0.02 @zm.seq
+MATCH auto
+WRITE yes
+'end-top'
+
+</pre>
+In this example zm.pdb is the PDB coordinates of the probe structure. zm.seq 
+is the file which contains the sequence in format of 1-letter code:
+<pre>
+
+SYTVGTYLAERLVQIGLKHHFAVAGDYNLVLLDNLLLNKNMEQVYCCNEL
+TLKFIANRDKVAVLVGSKLRAAGAEEAAVKFTDALGGAVATMAAAKSFFP
+EENALYIGTSWGEVSYPGVEKTMKEADAVIALAPVFN
+....
+
+</pre>
+The filename for all the superimposed coordinates will be 
+<i>1pyd_zmA.pdb, 1pvd_zmA.pdb, 1pox_zmA.pdb....</i>
+
+<H2><A NAME="hints">Some hints about the program</a></H2>
+<OL>
+<LI><b><A NAME="hint_database_searching"></A>Database searching</b> If you find that structures in Protein Data Bank are 
+similar to your new structure, the program can not directly tell you which 
+family it belong to. However there are some Web sites where you can get this 
+information and classify your new protein according to the results 
+from TOP program. Some of these sites are listed below.
+<p>
+<center><TABLE BORDER=1 CELLPADDING=1 CELLSPACING=1 width=98%>
+<TR>
+<TD>Name</TD>
+<TD>URL address</TD>
+<TD>Function</TD>
+<TD>Group</TD>
+<TR>
+<TD>SCOP</TD>
+<TD><a href="http://scop.mrc-lmb.cam.ac.uk/scop/">http://scop.mrc-lmb.cam.ac.uk/scop</A></TD>
+<TD>Structure Classification of Proteins</TD>
+<TD>Chothia, Murzin...</TD>
+<TR>
+<TD>CATH
+<TD><a href="http://www.biochem.ucl.ac.uk/bsm/cath">http://www.biochem.ucl.ac.uk/bsm/cath</A></TD>
+<TD>Class Architecture Topology Homology </TD>
+<TD>Thornton...</TD>
+</TABLE></center>
+<p>
+While searching similar structures in the whole protein data bank usually, 
+a lot of time is wasted on tens of Lysozyme mutants or other closely 
+related homologous proteins. It is possible to make a file list where
+only structures with independent folds or super-families are present (see
+<A HREF="#example2">example 2</A>), if such information can be obtained from other sources. So far,
+no such effort has been made by the author.
+<p>
+<LI><b><A NAME="hint_speed"></A>Speed</b>. When you have a huge structure with many
+domains, it is much faster if you divide your protein into several
+independent domains and search each domain individually. The results
+will be much easier to understand too. 
+<p>
+<LI><b><A NAME="hint_match"></A>Parameter of MATCH</b>
+<b><A NAME="hint_match_overestimation"></A>Over-estimation:</b>
+If the program fail to compare two similar structures, it can be because
+the parameter value in the <A HREF="#match">MATCH</A> command is too high. Users can find out
+in the following way. For example  the MATCH number should be 4 or less,
+but you use 7, at the end of the output the program would write something
+like:
+<i> ... No way to align in 12ca.pdb Maximum match :  4 Minimum Align:  7</i> 
+Then you can change MATCH from 7 to 4 and the program will run
+successfully.
+<p>
+In the case database searching, too high value in this command will cause
+that no or too few similar structures are found.  Users can find out what 
+is the proper parameter for by typing:
+grep &quot;Maximum match&quot; pdbscan.log | sort +10 -11
+(it is assumed that the log file is called pdbscan.log).
+For example, you give MATCH number 5 and you have no hitted structure, 
+you will get something like 
+<pre>
+ ......
+ ... No way to align in 1abj.pdb Maximum match :  3 Minimum Align:  5
+ ... No way to align in 1abn.pdb Maximum match :  3 Minimum Align:  5
+ ... No way to align in 1abo.pdb Maximum match :  3 Minimum Align:  5
+ ... No way to align in 12ca.pdb Maximum match :  4 Minimum Align:  5
+ ... No way to align in 1aag.pdb Maximum match :  4 Minimum Align:  5
+ ... No way to align in 1aao.pdb Maximum match :  4 Minimum Align:  5
+
+</pre>
+In this example, you can get 3 more matched similar structures if you 
+use 4 in the MATCH command.
+<p>
+<b><A NAME="hint_match_underestimation"></A>Under-estimation:</b>
+Usually under-estimation of this number is OK. The program will find too many
+structures which you are not interested, but you can always rank the similarity
+by &quot;Structure Diversity&quot; or &quot;Topological Diversity&quot; and look only the
+structures at top in the rankings. If you find you think the speed of searching
+is too slow because of the too low value of this parameter, you also have some
+way to know the your wanted number far before the searching is finished. 
+For example, you give 5 in the MATCH command. After a while of running
+the program, you can type
+grep &quot;Max Align&quot; pdbscan.log | sort +3 -4
+you get
+<pre>
+.......
+...(too many hints)...
+......
+ 1cax.pdb<->mol1.pdb  Max Align:  5  Max Match:  5
+ 1cwa.pdb<->mol1.pdb  Max Align:  5  Max Match:  5
+ 1cwb.pdb<->mol1.pdb  Max Align:  5  Max Match:  5
+ 1cwc.pdb<->mol1.pdb  Max Align:  5  Max Match:  5
+ 1cxf.pdb<->mol1.pdb  Max Align:  5  Max Match:  5
+ 1cyn.pdb<->mol1.pdb  Max Align:  5  Max Match:  5
+ 1dlc.pdb<->mol1.pdb  Max Align:  5  Max Match:  5
+ 1cnd.pdb<->mol1.pdb  Max Align:  7  Max Match:  7
+ 1cne.pdb<->mol1.pdb  Max Align:  7  Max Match:  7
+ 1cnf.pdb<->mol1.pdb  Max Align:  7  Max Match:  7
+
+</pre>
+If you find only  the last 3 structures fall into your &quot;similarity&quot; criterion,
+you can give &quot;MATCH 6&quot; (or 7) when you re-scan the database.
+</OL>
+<H2>
+<A name="references">Reference</a></H2>
+
+<OL>
+<!-- KEEP startreferencelist -->
+
+<LI><A NAME="reference1"></A>Lu G., <i>A WWW service system for automatic comparison of protein structures</i>
+<a href="ftp://ftp.rcsb.org/pub/pdb/doc/newsletters/bnl/news78_oct96/newslttr.txt">
+Protein Data Bank Quarterly Newsletter, #78, 10-11. 1996</a>
+
+<LI><A NAME="reference2"></A>Guoguang Lu, <i>An automatic topological and atomic comparison program for 
+protein structures</i> (in manuscript or 
+<a href="http://gamma.mbb.ki.se/~guoguang/top.html">
+http://gamma.mbb.ki.se/~guoguang/top.html</a>).
+
+<!-- KEEP endreferencelist -->
+</OL>
+
+<H2>
+<A name="ack">Acknowledgment</a></H2>
+The author is grateful to Dr. <b>Ylva Lindqvist</b> and Prof. <b>Gunter Schneider</b> 
+for encouraging me to make this program and contributing important ideas. 
+I also thank Dr. <b>Roman Laskowski</b> for permission to use his secondary 
+structure assignment program and Dr. <b>Jaime Prilusky</b> for suggestions of 3DB 
+interface. Thank a number of <a href="http://gamma.mbb.ki.se/~guoguang/webtop/thank.html">colleagues</a> for suggestions and bug 
+reporting.
+
+</body></html>

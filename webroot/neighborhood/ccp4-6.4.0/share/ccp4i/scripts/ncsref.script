@@ -1,0 +1,316 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#--------------------------------------------------------------------------------
+#  Given know ncs releted elements in asymmetric unit generate phases which can
+#  be used as input to refmac refinement 
+
+
+#==============================================================================
+#  Set names for the initialising scripts so these have correct number order
+#==============================================================================
+
+  if { !$INIT_PHASE } { 
+    set PHIO PHIIN
+    set FOMO FOMIN
+    set refmac0_script [GetTmpFileName -ext com] 
+  }
+
+    WriteFile [set cad0_com [GetTmpFileName -ext com]] \
+     "LABIN FILE 1 E1=$FP E2=$SIGFP E3=$PHIO E4=$FOMO E5 = $FREE
+      LABOUT FILE 1 E1=$FP E2=$SIGFP E3=PHIIN E4=FOMIN E5 = $FREE
+      CTYPIN FILE 1 E1 = F E2 = Q E3 = P E4 = W E5 = I\nend" -overwrite
+
+
+#==============================================================================
+# define the command scripts which will not change with each cycle
+#==============================================================================
+
+#-------------------------------------------------------------------------------
+# create pdbset lsqkab, ncsmask scripts
+#-------------------------------------------------------------------------------
+
+  WriteFile [set pdbset_com [GetTmpFileName -ext com]] \
+                "select chain $CHAIN(1)\nend" -overwrite
+
+  for { set n 2 } { $n <= $NCHAINS } { incr n } {
+    set lsq_com($n) [GetTmpFileName -ext com]
+    WriteFile $lsq_com($n) \
+"fit res CA $CHAIN_RES_1(1) to $CHAIN_RES_2(1) wch $CHAIN(1)
+match res CA $CHAIN_RES_1($n) to $CHAIN_RES_2($n) rch $CHAIN($n)
+output rms
+end" -overwrite
+
+  }
+
+  WriteFile [set ncsmask_com [GetTmpFileName -ext com]] \
+                "radius $RADIUS\nend" -overwrite
+
+#------------------------------------------------------------------------------
+# Dm input without the rotations which must be updated every cycle
+#------------------------------------------------------------------------------
+
+  set dm_text0  "LABIN FP=$FP SIGFP=$SIGFP PHIO=PHIIN FOMO=FOMIN 
+LABOUT FDM=FDMAVER  PHIDM=PHIDMAVER FOMDM=FOMDMAVER
+MODE SOLVENT HISTOGRAM AVERAGE
+COMBINE PERTURBATION
+NCYCLES 10
+SOLC $SOLVENT_FRAC
+AVERAGE REFINE
+ROTATE MATRIX 1.0 0.0 0.0   0.0 1.0 0.0   0.0 0.0 1.0
+TRANSLATE  0.0  0.0  0.0\n"
+
+#----------------------------------------------------------------------------------
+# The cad script - run after Dm to strip out any previous refmac data
+#----------------------------------------------------------------------------------
+   WriteFile [set cad_com [GetTmpFileName -ext com]] \
+      "LABIN FILE 1 E1=$FP E2=$SIGFP E3 = $FREE E4=PHIDMAVER E5=FOMDMAVER
+      LABOUT FILE 1 E1=$FP E2=$SIGFP E3 = $FREE E4=PHIDMAVER E5=FOMDMAVER
+      CTYPIN FILE 1 E1 = F E2 = Q E3 = I E4 = P E5 = W\nend" -overwrite
+
+#--------------------------------------------------------------------------------
+# Create refmac script
+#--------------------------------------------------------------------------------
+
+# Convert the simpler convention used in NCS refinement task window into
+# the NONX command data
+
+  set N_NONX 1
+  set N_NONX_CHN(1) $NCHAINS
+  for { set n 1 } { $n <= $NCHAINS } { incr n } {
+     set NONX_CHN(1,$n) $CHAIN($n)
+  }
+  set N_NONX_SPANS(1) 1
+  set NONX_SPANS_RES1(1,1) $CHAIN_RES_1(1)
+  set NONX_SPANS_RES2(1,1) $CHAIN_RES_2(1)
+  set NONX_SPANS_CODE(1,1) $NONX_RESTRAINT
+
+  CreateComScript refmac5 refmac1_script
+# add the labout line which has a FOM which clashes with labin FOM
+  ReadFile $refmac1_script refscript
+  regsub end $refscript "LABOUT PHIC=REFMAC_PHIC FOM=REFMAC_FOM\nend" refscript1
+  WriteFile $refmac1_script $refscript1 -overwrite
+
+set NCYCLES 1
+set INPUT_PHASE NO
+set LABIN "FP SIGFP"
+set LABOUT "PHIC FOM FWT PHWT DELFWT PHDELWT"
+set PHIC PHIIN
+set FOM FOMIN
+set FWT FWT
+set PHWT PHWT
+set DELFWT DELFWT
+set PHDELWT PHDELWT
+
+ CreateComScript refmac5 refmac2_script
+
+
+
+#-----------------------------------------------------------------------------
+#  Generate initial hkl file - generate phases if necessary
+#-----------------------------------------------------------------------------
+  set CURRENT_MTZ [GetTmpFileName -ext mtz]
+
+  if { !$INIT_PHASE } {
+
+    set LABOUT "PHIC FOM"
+    CreateComScript refmac5 refmac0_script
+    set TMPPDB [GetTmpFileName -ext pdb]
+    set HKLTMP [GetTmpFileName -ext mtz]
+
+    set cmd "[BinPath refmac5] XYZIN \"$XYZIN\" XYZOUT \"$TMPPDB\" HKLIN \"$HKLIN\" HKLOUT \"$HKLTMP\""
+
+    set status [Execute $cmd $refmac0_script program_status report ]
+
+    set status [Execute "[BinPath cad] HKLIN1 \"$HKLTMP\" HKLOUT \"$CURRENT_MTZ\""  \
+        $cad0_com program_status report ]
+
+#    DeleteFile $TMPPDB
+    DeleteFile $HKLTMP
+
+  }  else {
+    set TMPPDB $XYZIN
+    set status [Execute "[BinPath cad] HKLIN1 \"$HKLIN\" HKLOUT \"$CURRENT_MTZ\""  \
+        $cad0_com program_status report ]
+
+  }
+
+# Initiallise working pdb file name
+# Use the output of the initiallisation cyccle - no need to waste it!
+
+#   set CURRENT_PDB $XYZIN
+   set CURRENT_PDB $TMPPDB
+
+
+
+#==================================================================================
+#  Start of external cycles
+#==================================================================================
+
+  for { set NC 1 } { $NC <= [expr $EXTERNAL_NCYCLES + 1] } { incr NC } {
+#
+#-------------------------------------------------------------------------------
+# Run pdbset to cut out one molecule only for mask etc
+#--------------------------------------------------------------------------------
+  set PDB_CHAIN1 [GetTmpFileName -ext chain[subst $CHAIN(1)]_pdb]
+  set status [Execute "[BinPath pdbset] XYZIN \"$CURRENT_PDB\" XYZOUT \"$PDB_CHAIN1\""  \
+	$pdbset_com program_status report ]
+
+#--------------------------------------------------------------------------------
+# Run lsqkab to find transformation between each ncs unit
+#--------------------------------------------------------------------------------
+
+  for { set n 2 } { $n <= $NCHAINS } { incr n } {
+
+  set TMPLOG [GetTmpFileName -ext log]
+  set TMPPDB [GetTmpFileName -ext pdb]
+
+  set status [Execute "[BinPath lsqkab] XYZIN2 \"$PDB_CHAIN1\" XYZIN1 \"$CURRENT_PDB\" XYZOUT \"$TMPPDB\"" \
+	$lsq_com($n) program_status report -copy_log $TMPLOG]
+
+# Extract the transformations from the log file
+
+  ReadFile $TMPLOG logtext 
+  DeleteFile $TMPLOG
+  DeleteFile $TMPPDB
+
+  set ROTMAT($n) ""
+  set TRANVEC($n) ""
+    if { [ExtractTextLine $logtext "ROTATION MATRIX:" 0 all line] } {
+      for { set i 1 } { $i <= 3 } { incr i } {
+        ExtractTextLine - {} 1 all line 
+        foreach item $line { append ROTMAT($n) $item " "}
+      }
+    } else {
+      WriteToLog "Can not extract rotation matrix from log file for $CHAIN($n)"
+    }
+    if { [ExtractTextLine - "TRANSLATION VECTOR IN AS" 0 all line] } {
+	foreach item [lrange $line 4 6] { append TRANVEC($n) $item " " }
+    } else {
+      WriteToLog "Can not extract translation vector from log file for $CHAIN($n)"
+    }
+
+#    puts "NCS element $CHAIN($n)\n$ROTMAT($n)\n$TRANVEC($n)"
+
+  }
+
+#------------------------------------------------------------------------------------
+# Run ncsmask to generate mask for the first ncs unit
+#------------------------------------------------------------------------------------
+
+  set MASKTMP [GetTmpFileName -ext msk]
+
+  set status [Execute "[BinPath ncsmask] XYZIN \"$PDB_CHAIN1\" MSKOUT \"$MASKTMP\""  \
+        $ncsmask_com program_status report ]
+
+
+#-----------------------------------------------------------------------------------
+# Run Dm using averaging with the mask 
+#-----------------------------------------------------------------------------------
+
+  set HKLDM [GetTmpFileName -ext mtz]
+
+  set dm_text "$dm_text0"
+
+  for { set n 2 } { $n <= $NCHAINS } { incr n } {
+    append dm_text "AVER REFI
+ROTATE MATRIX $ROTMAT($n)
+TRANSLATE  $TRANVEC($n)\n"
+  }
+  append dm_text "END\n"
+
+    WriteFile [set dm_com [GetTmpFileName -ext com]] $dm_text -overwrite
+
+  set status [Execute "[BinPath dm] HKLIN \"$CURRENT_MTZ\" HKLOUT \"$HKLDM\" NCSIN1 \"$MASKTMP\""  \
+        $dm_com program_status report ]
+
+
+  if { $NC <= $EXTERNAL_NCYCLES } {
+
+
+#-----------------------------------------------------------------------------------
+# Run cad to add the new Dm phases to the original mtz file
+#-----------------------------------------------------------------------------------
+
+  if { $NC == 1 } {
+
+    set HKLDM2 $HKLDM
+
+  } else {
+
+# On second and subsequent cycles strip out any refmac output from previous cycle
+ 
+    set HKLDM2 [GetTmpFileName -ext mtz]
+
+    set status [Execute "[BinPath cad] HKLIN1 \"$HKLDM\" HKLOUT \"$HKLDM2\""  \
+        $cad_com program_status report ]
+
+  }
+
+#-----------------------------------------------------------------------------------
+# Run refmac
+#-----------------------------------------------------------------------------------
+
+  set XYZTMP [GetTmpFileName -ext pdb]
+  set HKLREFMAC1 [GetTmpFileName -ext mtz]
+  set NEW_PDB [GetTmpFileName -ext pdb]
+  set NEW_MTZ [GetTmpFileName -ext mtz]
+
+  set cmd "[BinPath refmac5] XYZIN \"$CURRENT_PDB\" XYZOUT \"$XYZTMP\" HKLIN \"$HKLDM2\" HKLOUT \"$HKLREFMAC1\""
+
+  set status [Execute $cmd $refmac1_script program_status report ]
+
+  set cmd "[BinPath refmac5] XYZIN \"$XYZTMP\" XYZOUT \"$NEW_PDB\" HKLIN \"$HKLREFMAC1\" HKLOUT \"$NEW_MTZ\""
+
+  set status [Execute $cmd $refmac2_script program_status report ]
+
+ 
+# Delete some intermediate MTZ/pdb files
+  DeleteFile $XYZTMP
+  DeleteFile $CURRENT_MTZ
+  DeleteFile $HKLDM
+  DeleteFile $HKLDM2
+  DeleteFile $HKLREFMAC1
+  DeleteFile $MASKTMP
+
+  set CURRENT_PDB $NEW_PDB
+  set CURRENT_MTZ $NEW_MTZ
+
+# End of section which is skipped on EXTERNAL_NCYCLES+1 cycle
+  }
+
+# Delete the intermediate files created on all cycles
+  DeleteFile $PDB_CHAIN1
+
+# End of the grand loop
+  }
+
+# Change final file names to output names and create maps
+
+  MoveFile $HKLDM $HKLOUT
+  MoveFile $MASKTMP $MASKOUT
+  MoveFile $CURRENT_PDB $XYZOUT
+
+
+  if { $IF_MAPOUT } {
+
+# Source the utils/maps_utils.tcl script for map drawing
+  source [SearchPath TOP utils map_utils.tcl] 
+
+  source [SearchPath TOP scripts ncsref_maps.script] 
+
+  }
+
+
+  set ANALYSE 1
+  if { $ANALYSE } {
+    source [SearchPath TOP utils pdb_utils.tcl]
+    PdbGetChains $CURRENT_PDB chains chain_range
+    FindNCSTransforms $CURRENT_PDB $chains $chain_range
+  }

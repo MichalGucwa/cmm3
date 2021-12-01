@@ -1,0 +1,814 @@
+<html>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 draft//EN">
+<HEAD><TITLE>CCP4 Program Suite: pdb format</title></head>
+<body>
+
+<!-- ::INDEX_INFO::PDBFORMAT::File Formats::::PDB file format for CCP4:::::::: -->
+
+<h1>PDB FORMAT: (CCP4: Formats)</h1>
+<h2> NAME</h2>
+<b> PDB format for CCP4</b>
+- the PDB coordinate format as used in CCP4
+
+<h2><a name="description"> DESCRIPTION</A></h2>
+
+<p>CCP4 uses a subset of the PDB format for holding information on
+atomic coordinates and other model information. The full format description
+can be found at the <a href="http://www.wwpdb.org/docs.html">
+wwPDB site</a>.
+<p>
+CCP4 programs also use the PDB format for holding other information,
+such as lists of peaks in maps, Patterson vectors, etc.
+<p> 
+Authors of this document: John W. Campbell, Adam C. Ralph and Martyn Winn.
+
+<h2><a name="contents">CONTENTS</a></h2>
+<ol>
+<li><a href="#part1int">INTRODUCTION</a></li>
+<li><a href="#part1ato">FORMAT OF THE 'ATOM/HETATM' CARDS</a></li>
+<li><a href="#part1ter">FORMAT OF THE 'TER' CARDS</a></li>
+<li><a href="#part1cry">FORMAT OF THE 'CRYST1' CARD</a></li>
+<li><a href="#part1sca">FORMAT OF THE 'SCALE' CARDS</a></li>
+<li><a href="#part1ani">FORMAT OF THE 'ANISOU' CARD</a></li>
+<li><a href="#part1res">STANDARD RESIDUE NAMES</a></li>
+<li><a href="#part1ami">ATOM IDENTIFIERS FOR AMINO ACIDS</a></li>
+<li><a href="#part1ref">REFERENCES</a></li>
+</ol>
+
+<ol>
+<h2><li><a name="part1int"> INTRODUCTION</a></h2> 
+     The standard coordinate data file format adopted for the  CCP4  protein
+crystallography program suite is that of the Protein  Data  Bank
+(<a name="#part1ref">ref.  1</a>). The programs will handle either 
+complete  files  or  files containing only a subset of the types of record 
+which may be present  in  a complete file. In particular, the records 
+containing  the  coordinate  data (ATOM, HETATM and ANISOU records) are of 
+interest. Their structures and those of the TER, CRYST1 and SCALE records, 
+which are also used  by  the  file  handling subroutines described in 
+<a href="rwbrook.html">rwbrook.html</a>, are outlined below. The PDB format 
+defines  a  standard  setting  of  orthogonal  axes  with  respect  to  the 
+crystallographic axes and this has been adopted as  the  standard  for  
+the CCP. The standard set of orthogonal axes  XO,  YO  and  ZO  is  
+defined  as follows:
+<pre>
+   XO // <b>a</b>
+   YO // <b>c</b>* &times <b>a</b>
+   ZO // <b>c</b>*
+</pre>
+Within a PDB format file, however,  coordinates  may  be  held  with
+respect to other sets of axes. If files are in a non-standard axis setting
+then the CRYST1 or SCALE cards must be present. A  complete  description  
+of  the  file format is available from the 
+<a href="http://www.wwpdb.org/docs.html">wwPDB</a> 
+but some selected features, relevant to the handling of the  coordinate  
+data  are  described below. In general terms it may be noted that the 
+format is basically a card image format with fixed length 80 byte records.
+
+</li>
+<h2><li><a name="part1ato">FORMAT OF THE 'ATOM/HETATM' CARDS</a></h2>
+The format of an 'ATOM' card or 'HETATM' card is as follows:
+<pre>
+Cols.  1-6    Record name "ATOM  " or "HETATM"
+       7-11   Atom serial number                   (see note i)
+      13-14   Chemical symbol (right justified)  )
+      15      Remoteness indicator               ) (see note ii)
+      16      Branch designator                  )
+      17      Alternate location indicator         (see note iii)
+      18-20   Residue name                         (see note iv)
+      21      Reserved                   )
+      22      Chain identifier           )
+                                         )         (see note v)
+      23-26   Residue sequence number    )
+      27      Code for inserting residue )
+      31-38   X   )
+      39-46   Y   ) Orthogonal Angstrom coordinates
+      47-54   Z   )
+      55-60   Occupancy
+      61-66   Isotropic B-factor
+      73-76   Segment identifier, left justified (used by XPLOR)
+      77-78   Element symbol, right justified )
+                                              )    (see note vi)
+      79-80   Charge on atom                  )
+
+Typical format:  
+          (6A1,I5,1X,A4,A1,A3,1X,A1,I4,A1,3X,3F8.3,2F6.2,6X,2A4)
+</pre>
+Notes:
+<ol type="i">
+<li>Residues occur in order  of  their  sequence  numbers  which
+always increase starting from the N-terminal residue. Within
+each  residue,  the order of the atoms does not matter in general.
+However, there is a standard order defined by the PDB standard.
+If the residue sequence is known, certain
+serial numbers may be omitted to allow for the future insertion
+ of any missing atoms. If the sequence is  not  reliably
+known these serial numbers are simply ordinals.</li>
+<li>The atom names are described in <a href="#part1ami">below</a>.</li>
+<li>Alternate locations for atoms may be denoted by A, B, C etc. here.</li>
+<li>The standard residue names are given in paragraph 6 below.</li>
+<li>The sequence identifier is a  composite  field  made  up  as follows:
+<pre>
+Cols. 21      Reserved for future expansion
+      22      Chain identifier, e.g. A for Haemoglobin 
+              alpha chain
+      23-26   Residue sequence number
+      27      Code for insertions of residues, 
+              e.g. 66A, 66B etc.
+</pre>
+</li>
+</ol>
+
+</li>
+<h2><li><a name="part1ter">FORMAT OF THE 'TER' CARDS</a></h2>
+     'TER' cards are used to indicate chain terminations. They  are  placed
+at the appropriate positions within the atom cards. The format of  a  'TER'
+card is as follows:
+<pre>
+Cols.  1-3    Record name "TER"
+      7-11    Serial number
+      18-20   Residue name
+      21-27   Sequence identifier (see description of 'ATOM' 
+                                   cards above)
+
+Typical format:  (6A1,I5,6X,A3,1X,A1,I4,A1)
+</pre>
+
+</li>
+<h2><li><a name="part1cry">FORMAT OF THE 'CRYST1' CARD</a></h2>
+This card holds the cell parameters and has the following format
+<pre>
+Cols.  1-6    Record name "CRYST1"
+      7-15    a (&Aring;)
+     16-24    b (&Aring;)
+     25-33    c (&Aring;)
+     34-40    alpha (&deg)
+     41-47    beta  (&deg)
+     48-54    gamma (&deg)
+     56-66    Space group symbol, left justified (not used)
+     67-70    Z    (not used)
+
+Typical Format:  (6A1,3F9.3,3F7.2,1X,11A1,I4)
+</pre>
+
+</li>
+<h2><li><a name="part1sca">FORMAT OF THE 'SCALE' CARDS</a></h2>
+These cards hold the matrix for  transforming  the  stored  orthogonal
+Angstrom coordinates  to  fractional  crystallographic  coordinates.  Three
+cards are required. 'S' is the rotation matrix and 'U' is  the  translation
+matrix. The format of the cards is as follows.
+<pre>
+Cols.  1-6      SCALE1     SCALE2     SCALE3
+     11-20      S11        S21        S31
+     21-30      S12        S22        S32
+     31-40      S13        S23        S33
+     46-55      U1         U2         U3
+
+Typical Format:  (6A1,4X,3F10.6,5X,F10.5)
+</pre>
+
+<p>To remind you:</p>
+
+<p>If you have a PDB file</p>
+
+<p align="center"><img src="images/pdbformatscale1tr.gif" align="center" /> ,</p>
+<!--<table border="0" align="center">
+<tr>
+<td>
+  <table align="left">
+  <tr>
+  <td align="left"><font face="symbol">&#233;<br />&#234;<br />&#234;<br />&#234;<br />&#235;</font></td>
+  <td nowrap="nowrap">
+    <table border="0" align="left">
+    <tr>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><i>x</i><sub>frac</sub></td>
+      </tr>
+      </table>
+    </td>
+    </tr>
+    <tr>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="norap" align="center"><i>y</i><sub>frac</sub></td>
+      </tr>
+      </table>
+    </td>
+    </tr>
+    <tr>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><i>z</i><sub>frac</sub></td>
+      </tr>
+      </table>
+    </td>
+    </tr>
+    </table>
+  </td>
+  <td align="left"><font face="symbol">&#249;<br />&#250;<br />&#250;<br />&#250;<br />&#251;</font></td>
+  <td> = <font face="helvetica">Scalei</font> &times; </td>
+  <td align="left"><font face="symbol">&#233;<br />&#234;<br />&#234;<br />&#234;<br />&#234;<br />&#234;<br />&#235;</font></td>
+  <td nowrap="nowrap">
+    <table border="0" align="left">
+    <tr>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><i>X</i><sub>orth</sub></td>
+      </tr>
+      </table>
+    </td>
+    </tr>
+    <tr>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><i>Y</i><sub>orth</sub></td>
+      </tr>
+      </table>
+    </td>
+    </tr>
+    <tr>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><i>Z</i><sub>orth</sub></td>
+      </tr>
+      </table>
+    </td>
+    </tr>
+    <tr>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center">1</td>
+      </table>
+    </td>
+    </tr>
+    </table>
+  </td>
+  <td align="left"><font face="symbol">&#249;<br />&#250;<br />&#250;<br />&#250;<br />&#250;<br />&#250;<br />&#251;</font></td>
+  <td>,</td>
+  </tr>
+  </table>
+</td>
+</tr>
+</table>-->
+
+<p>where</p>
+
+<p align="center"><img src="images/pdbformatscale2tr.gif" align="center" /> ,</p>
+<!--<table border="0" align="center">
+<tr>
+<td>
+  <table align="left">
+  <tr>
+  <td nowrap="nowrap" align="center"><font face="helvetica">Scalei</font> = </td>
+  <td align="left"><font face="symbol">&#233;<br />&#234;<br />&#234;<br />&#234;<br />&#235;</font></td>
+  <td nowrap="nowrap">
+    <table border="0" align="left">
+    <tr>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">Scale</font><sub>11</sub></td>
+      </tr>
+      </table>
+    </td>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">Scale</font><sub>12</sub></td>
+      </tr>
+      </table>
+    </td>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">Scale</font><sub>13</sub></td>
+      </tr>
+      </table>
+    </td>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">Scale</font><sub>14</sub></td>
+      </tr>
+      </table>
+    </td>
+    </tr>
+    <tr>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">Scale</font><sub>21</sub></td>
+      </tr>
+      </table>
+    </td>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">Scale</font><sub>22</sub></td>
+      </tr>
+      </table>
+    </td>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">Scale</font><sub>23</sub></td>
+      </tr>
+      </table>
+    </td>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">Scale</font><sub>24</sub></td>
+      </tr>
+      </table>
+    </td>
+    </tr>
+    <tr>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">Scale</font><sub>31</sub></td>
+      </tr>
+      </table>
+    </td>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">Scale</font><sub>32</sub></td>
+      </tr>
+      </table>
+    </td>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">Scale</font><sub>33</sub></td>
+      </tr>
+      </table>
+    </td>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">Scale</font><sub>34</sub></td>
+      </tr>
+      </table>
+    </td>
+    </tr>
+    </table>
+  </td>
+  <td align="left"><font face="symbol">&#249;<br />&#250;<br />&#250;<br />&#250;<br />&#251;</font></td>
+  <td>,</td>
+  </tr>
+  </table>
+</td>
+</tr>
+</table>-->
+
+<p>the matrix at the head of a PDB file, <em>i.e.</em></p>
+
+<p align="center"><img src="images/pdbformatscale3tr.gif" align="center" /> .</p>
+<!--<table border="0" align="center">
+<tr>
+<td>
+  <table align="left">
+  <tr>
+  <td align="left"><font face="symbol">&#233;<br />&#234;<br />&#234;<br />&#234;<br />&#235;</font></td>
+  <td nowrap="nowrap">
+    <table border="0" align="left">
+    <tr>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><i>x</i><sub>frac</sub></td>
+      </tr>
+      </table>
+    </td>
+    </tr>
+    <tr>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><i>y</i><sub>frac</sub></td>
+      </tr>
+      </table>
+    </td>
+    </tr>
+    <tr>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><i>z</i><sub>frac</sub></td>
+      </tr>
+      </table>
+    </td>
+    </tr>
+    </table>
+  </td>
+  <td align="left"><font face="symbol">&#249;<br />&#250;<br />&#250;<br />&#250;<br />&#251;</font></td>
+  <td> = </td>
+  <td align="left"><font face="symbol">&#233;<br />&#234;<br />&#234;<br />&#234;<br />&#235;</font></td>
+  <td nowrap="nowrap">
+    <table border="0" align="left">
+    <tr>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">Scale</font><sub>11</sub><i>X</i><sub>orth</sub> +
+      <font face="helvetica">Scale</font><sub>12</sub><i>Y</i><sub>orth</sub> +
+      <font face="helvetica">Scale</font><sub>13</sub><i>Z</i><sub>orth</sub> +
+      <font face="helvetica">Scale</font><sub>14</sub></td>
+      </tr>
+      </table>
+    </td>
+    </tr>
+    <tr>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">Scale</font><sub>21</sub><i>X</i><sub>orth</sub> +
+      <font face="helvetica">Scale</font><sub>22</sub><i>Y</i><sub>orth</sub> +
+      <font face="helvetica">Scale</font><sub>23</sub><i>Z</i><sub>orth</sub> +
+      <font face="helvetica">Scale</font><sub>24</sub></td>
+      </tr>
+      </table>
+    </td>
+    </tr>
+    <tr>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">Scale</font><sub>31</sub><i>X</i><sub>orth</sub> +
+      <font face="helvetica">Scale</font><sub>32</sub><i>Y</i><sub>orth</sub> +
+      <font face="helvetica">Scale</font><sub>33</sub><i>Z</i><sub>orth</sub> +
+      <font face="helvetica">Scale</font><sub>34</sub></td>
+      </tr>
+      </table>
+    </td>
+    </tr>
+    </table>
+  </td>
+  <td align="left"><font face="symbol">&#249;<br />&#250;<br />&#250;<br />&#250;<br />&#251;</font></td>
+  <td>.</td>
+  </tr>
+  </table>
+</td>
+</tr>
+</table>-->
+
+<p>Therefore, extending <font face="helvetica">Scalei</font> to <font face="helvetica">ScaleiExt</font> so that the
+4&times;4 inverse matrix can be generated<a href="#footnote-extension"><sup>footnote &#182</sup></a></p>
+
+<p align="center"><img src="images/pdbformatscale4tr.gif" align="center" /> ,</p>
+<!--<table border="0" align="center">
+<tr>
+<td>
+  <table align="left">
+  <tr>
+  <td nowrap="nowrap" align="center"><font face="helvetica">ScaleiExt</font> = </td>
+  <td align="left"><font face="symbol">&#233;<br />&#234;<br />&#234;<br />&#234;<br />&#234;<br />&#234;<br />&#235;</font></td>
+  <td nowrap="nowrap">
+    <table border="0" align="left">
+    <tr>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">Scale</font><sub>11</sub></td>
+      </tr>
+      </table>
+    </td>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">Scale</font><sub>12</sub></td>
+      </tr>
+      </table>
+    </td>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">Scale</font><sub>13</sub></td>
+      </tr>
+      </table>
+    </td>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">Scale</font><sub>14</sub></td>
+      </tr>
+      </table>
+    </td>
+    </tr>
+    <tr>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">Scale</font><sub>21</sub></td>
+      </tr>
+      </table>
+    </td>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">Scale</font><sub>22</sub></td>
+      </tr>
+      </table>
+    </td>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">Scale</font><sub>23</sub></td>
+      </tr>
+      </table>
+    </td>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">Scale</font><sub>24</sub></td>
+      </tr>
+      </table>
+    </td>
+    </tr>
+    <tr>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">Scale</font><sub>31</sub></td>
+      </tr>
+      </table>
+    </td>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">Scale</font><sub>32</sub></td>
+      </tr>
+      </table>
+    </td>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">Scale</font><sub>33</sub></td>
+      </tr>
+      </table>
+    </td>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">Scale</font><sub>34</sub></td>
+      </tr>
+      </table>
+    </td>
+    </tr>
+    <tr>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">0.00</font></td>
+      </tr>
+      </table>
+    </td>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">0.00</font></td>
+      </tr>
+      </table>
+    </td>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">0.00</font></td>
+      </tr>
+      </table>
+    </td>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><font face="helvetica">1.00</font></td>
+      </tr>
+      </table>
+    </td>
+    </tr>
+    </table>
+  </td>
+  <td align="left"><font face="symbol">&#249;<br />&#250;<br />&#250;<br />&#250;<br />&#250;<br />&#250;<br />&#251;</font></td>
+  <td>,</td>
+  </tr>
+  </table>
+</td>
+</tr>
+</table>-->
+
+<p align="center"><img src="images/pdbformatscale5tr.gif" align="center" /> .</p>
+<!--<table border="0" align="center">
+<tr>
+<td>
+  <table align="left">
+  <tr>
+  <td align="left"><font face="symbol">&#233;<br />&#234;<br />&#234;<br />&#234;<br />&#235;</font></td>
+  <td nowrap="nowrap">
+    <table border="0" align="left">
+    <tr>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><i>x</i><sub>orth</sub></td>
+      </tr>
+      </table>
+    </td>
+    </tr>
+    <tr>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="norap" align="center"><i>y</i><sub>orth</sub></td>
+      </tr>
+      </table>
+    </td>
+    </tr>
+    <tr>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><i>z</i><sub>orth</sub></td>
+      </tr>
+      </table>
+    </td>
+    </tr>
+    </table>
+  </td>
+  <td align="left"><font face="symbol">&#249;<br />&#250;<br />&#250;<br />&#250;<br />&#251;</font></td>
+  <td> = <font face="helvetica">ScaleiExt<sup>-1</sup></font> &times; </td>
+  <td align="left"><font face="symbol">&#233;<br />&#234;<br />&#234;<br />&#234;<br />&#234;<br />&#234;<br />&#235;</font></td>
+  <td nowrap="nowrap">
+    <table border="0" align="left">
+    <tr>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><i>x</i><sub>frac</sub></td>
+      </tr>
+      </table>
+    </td>
+    </tr>
+    <tr>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><i>y</i><sub>frac</sub></td>
+      </tr>
+      </table>
+    </td>
+    </tr>
+    <tr>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center"><i>z</i><sub>frac</sub></td>
+      </tr>
+      </table>
+    </td>
+    </tr>
+    <tr>
+    <td nowrap="nowrap" align="center">
+      <table border="0">
+      <tr>
+      <td nowrap="nowrap" align="center">1</td>
+      </table>
+    </td>
+    </tr>
+    </table>
+  </td>
+  <td align="left"><font face="symbol">&#249;<br />&#250;<br />&#250;<br />&#250;<br />&#250;<br />&#250;<br />&#251;</font></td>
+  <td>.</td>
+  </tr>
+  </table>
+</td>
+</tr>
+</table>-->
+
+<p>The programs COORDCONV, VECTORS and HAVECS will all
+convert (various formats of) fractional coordinates to orthogonal ones.
+HAVECS's <tt>PHARE</tt> input type corresponds to MLPHARE's
+output coordinate format.</p>
+
+<p>Footnote
+<a name="footnote-extension"></a>&#182;: The extension line
+([ 0.00&nbsp; 0.00&nbsp; 0.00&nbsp; 1.00]) is necessary to cope with 
+[<font face="helvetica">Scale</font><sub>14</sub>,<font face="helvetica">Scale</font><sub>24</sub>,<font face="helvetica">Scale</font><sub>34</sub>],
+the translation component of the transformation.</p>
+
+</li>
+<h2><li><a name="part1ani">FORMAT OF THE 'ANISOU' CARD</a></h2>
+This card holds information about the anisotropic temperature factors for
+a particular atom, if they are refined. Note that columns 7-27 and 73-80 are 
+the same as the corresponding atom card. The temperature factors are 
+multiplied by a factor of 10**4, held as integers and represent orthogonal 
+Us. The axis system they are based on is the same as that on which the 
+orthogonal co-ordinates are based. The format follows:
+<pre>
+
+Cols:   1-6    Record name "ANISOU"                                  
+       7-11    Atom serial number.         
+      13-16    Atom name
+         17    Alternate location indicator. 
+      18-20    Residue name
+         22    Chain identifier.
+      23-26    Residue sequence number.    
+         27    Insertion code. 
+      29-35    U(1,1)
+      36-42    U(2,2)
+      43-49    U(3,3)
+      50-56    U(1,2)
+      57-63    U(1,3)
+      64-70    U(2,3)
+      73-76    Segment identifier, left-justified.
+      77-78    Element symbol, right-justified.
+      79-80    Charge on the atom.       
+</pre>
+The isotropic temperature factor defined in the ATOM card is defined as:
+<pre>
+    Biso = 8pi&sup2 &times (U(1,1) + U(2,2) + U(3,3))/3
+</pre>
+
+</li>
+<h2><li><a name="part1res">STANDARD RESIDUE NAMES</a></h2>
+The residue abbreviations for the amino acids conform to the IUPAC-IUB
+rules  (<a href="#part1ref">ref.  2</a>).  Non-standard  residues  are  
+given  a  three   character abbreviation chosen by the user. The amino 
+acids  and  their  abbreviations are given in the table below.
+<table>
+<tr><td>Residue               <td>Abb.    <td>Residue                   <td>Abb.
+<tr><td>                      <td>        <td>
+<tr><td>Acidic unknown        <td>ACD     <td>Homoserine                <td>HSE
+<tr><td>Acetyl                <td>ACE     <td>Hydroxyproline            <td>HYP
+<tr><td>Alanine               <td>ALA     <td>Hydroxylysine             <td>HYL
+<tr><td>beta-Alanine          <td>ALB     <td>Isoleucine                <td>ILE
+<tr><td>Aliphatic unknown     <td>ALI     <td>Leucine                   <td>LEU
+<tr><td>gamma-Aminobutyric acid <td>ABU   <td>Lysine                    <td>LYS
+<tr><td>Arginine              <td>ARG     <td>Methionine                <td>MET
+<tr><td>Aromatic unknown      <td>ARO     <td>Ornithine                 <td>ORN
+<tr><td>Asparagine            <td>ASN     <td>Phenylalanine             <td>PHE
+<tr><td>Aspartic acid         <td>ASP     <td>Proline                   <td>PRO
+<tr><td>ASP/ASN ambiguous     <td>ASX     <td>Pyrollidone carboxylic acid  <td>PCA
+<tr><td>Basic unknown         <td>BAS     <td>Sarcosine                 <td>SAR
+<tr><td>Betaine               <td>BET     <td>Serine                    <td>SER
+<tr><td>Cysteine              <td>CYS     <td>Taurine                   <td>TAU
+<tr><td>Cystine               <td>CYS     <td>Terminator                <td>TER
+<tr><td>Formyl                <td>FOR     <td>Threonine                 <td>THR
+<tr><td>Glutamic acid         <td>GLU     <td>Thyroxine                 <td>THY
+<tr><td>Glutamine             <td>GLN     <td>Tryptophan                <td>TRP
+<tr><td>GLU/GLN ambiguous     <td>GLX     <td>Tyrosine                  <td>TYR
+<tr><td>Glycine               <td>GLY     <td>Unknown                   <td>UNK
+<tr><td>Heterogen             <td>HET     <td>Valine                    <td>VAL
+<tr><td>Histidine             <td>HIS     <td>Water                     <td>HOH
+</table>
+
+
+</li>
+<h2><li><a name="part1ami">ATOM IDENTIFIERS FOR AMINO ACIDS</a></h2>
+The atom names used follow the IUPAC-IUB rules 
+(<a href="#part1ref">ref.  3</a>) except that
+the Greek letter remoteness codes are transliterated as follows:
+<pre>
+alpha - A       beta - B       gamma - G       delta - D
+epsilon - E     zeta - Z       eta - H
+</pre>
+<p>
+Atoms for which some ambiguity exists in the crystallographic
+results are designated A.  This will usually apply only to the
+terminal atoms of asparagine and glutamine and to the ring atoms
+of histidine.
+<p>
+The extra oxygen of the carboxyl terminal amino acid is designated OXT.
+<p>
+Four characters are reserved for the atom names as follows:
+<pre>
+1-2   Chemical symbol - right justified
+3     Remoteness indicator (alphabetic)
+4     Branch designator (numeric)
+</pre>
+This does not have to be adhered to strictly because the chemical symbol 
+(element name) is defined in columns 77-78. This definition will be
+taken in preference.
+
+</li>
+<h2><li><a name="part1ref">REFERENCES</a></h2>
+<ol>
+<li>F.C. Bernstein, T.F. Koetzle, G.J.B. Williams, E.F. Meyer,  Jr.,  M.D.
+Brice, J.R. Rodgers, O. Kennard, T. Shimanouchi and M. Tasumi, <I>J. Mol.
+Biol.</I>, <B>112</B> , 535-42 (1977).</li>
+<li><i>J. Biol. Chem.</i>, <b>241</b> , 527, 2491 (1966).</li>
+<li>IUPAC-IUB Commission on Biological  Nomenclature.  "Abbreviations  and
+Symbols for the Description of the Conformation of Polypeptide Chains.
+Tentative Rules (1969)", <i>J. Biol. Chem.</i>, <b>245</b> , 6489 (1970).</li>
+</ol>
+</li>
+</ol>
+
+</body></html>

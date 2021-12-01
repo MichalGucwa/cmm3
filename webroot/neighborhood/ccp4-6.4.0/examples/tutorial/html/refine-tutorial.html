@@ -1,0 +1,960 @@
+<!DOCTYPE html
+                     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                     "DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+   <meta name="Author" content="Liz" />
+   <meta name="Changedby" content="Eleanor and Maria" />
+   <meta name="GENERATOR" content="Mozilla/4.05C-SGI [en] (X11; I; IRIX 6.5 IP22) [Netscape]" />
+   <title>CCP4 Tutorial - Session 6</title>
+<link rel="stylesheet" type="text/css" href="../tut.css" title="CCP4i tutorial" />
+</head>
+<body>
+
+<h1 align="center">CCP4 Tutorial: Session 6 - Refinement</h1>
+
+<p><em>See also the <a href="refine-doc.html">accompanying document</a> giving background information.</em></p>
+
+<p>This is an introduction to  the procedures for using <em>Refmac5</em> to refine a crystal structure.</p>
+
+<p>See also the documentation for <a href="../../../html/refmac5.html">Refmac5</a> and
+<a href="../../../ccp4i/help/modules/sketcher.html">Sketcher</a>.</p>
+
+<p>In the following instructions, when you need to type something, or
+click on something, it will be shown <font color="#ff0000">in red</font>.
+Output from the programs or text from the interface is given
+<font color="#009900">in green</font>.</p>
+
+<h3>Outline of the Method</h3>
+<ol type="a">
+<li><a href="#step_6a">Use Refmac to find any special restraints for the unliganded structure</a> - for
+example the disulphide bonds and cis-peptides. Check the results and make sure the
+special restraints listed in the log file are correct.</li>
+<li><a href="#step_6b">Run the Refmac program to refine the unliganded structure</a> and
+look at the result</li>
+<li><a href="#step_6c">Create the geometry description of the ligand</a></li>
+<li><a href="#step_6d">Use Refmac to find any more special restraints for the liganded form</a></li>
+<li><a href="#step_6e">Run the Refmac program again to refine the liganded structure</a> and
+look at the result</li>
+</ol>
+
+<h2>The Problem</h2>
+<p>This example is to refine the protein RNAse Sa in its unliganded and liganded form, for which we know:</p>
+<ul>
+<li>It is a small protein; each molecule has one chain of 96 residues</li>
+<li>The space group is P212121</li>
+<li>There are three files of data, to resolution 2.5&#197;, 1.8&#197;
+and 1.15&#197;, each of which contains data from one or more crystals
+with or without ligands (native, native+2GP, native+3GP)</li>
+<li>For this tutorial, we are interested in refining the structure of the RNAse with two sulphate ions and
+one ligand, guanosine-3*-monophosphate (GMP, or 3GP as it is called in the monomer library we will use)</li>
+<li>There are two molecules in the asymmetric unit (determined by checking the matthews_coef)</li>
+<li>The REFMAC review restraints procedure will suggest that there is:
+<ul>
+<li>One disulphide bond in the protein: cys7-cys96</li>
+<li>One cis-peptide bond for gly26-pro27</li>
+</ul>
+</li>
+</ul>
+
+<p>The final structure (solved by Joseph Sevcik:
+J.  Sevcik, Z. Dauter, V.S. Lamzin, K. Wilson, Acta Cryst. D52 (1996) p327-344)
+looks like this:</p>
+
+<p align="center"><img src="images/rnasa_xtl.jpg" width="666" height="380" alt="RNAse SA crystal structure" /></p>
+
+<h2>What are Restraints?</h2>
+
+<p>There are 1749 atoms in the asymmetric unit. If we describe each atom
+using three positional parameters x,y,z and an isotropic temperature factor B
+there are 6996 parameters. In the experimental data (see $DATA/rnase18.mtz)
+there are 17991 reflections giving an observation-to-parameter-ratio of
+17991/6996 = 2.57. This is not enough to refine all parameters as independent
+variables. However we have a great deal of information about the
+geometry of molecules - the bond lengths and bond angles <em>etc</em>. The
+refinement program will set up <em>restraints</em> between related atoms
+which say, for example, that the distance between
+two bonded atoms must be close to the ideal bond length.</p>
+
+<p>Refinement programs read libraries describing the expected geometry.
+These contain information about the ideal bond lengths, bond angles,
+planar groups <em>etc.</em> for the common chemical monomers which are
+found in macromolecules (<em>e.g.</em> amino acids and nucleic acids).
+<b>If this information is incorrect you will not get a correct structure.</b></p>
+<p>If your structure contains an unusual substrate molecule or a modified
+amino acid, then there may be no suitable description in the library, and you
+will have to provide one in the required style. This can be difficult; it is
+essential you know the chemical definition of your ligand, (<em>e.g.</em> which
+atoms lie in a plane, which bond type exists, etc). This knowledge must then be
+written in the correct format for the refinement program to read. This can also be challenging,
+so we will make the geometry description for the ligand to show how it is done.</p>
+
+<h3>The Data Files</h3>
+
+<p>Files in directory <font color="#009900">DATA</font>:</p>
+<table>
+<tr>
+<td><font color="#ff0000">rnase.pdb</font></td><td>The refined unliganded protein coordinates</td>
+</tr>
+<tr>
+<td><font color="#ff0000">GMP.pdb</font></td><td>Idealised coordinates of the ligand molecule, guanosine-3*-monophosphate</td>
+</tr>
+<tr>
+<td><font color="#ff0000">rnase-3gp.pdb</font></td><td>The refined protein-ligand coordinates</td>
+</tr>
+<tr>
+<td><font color="#ff0000">rnase_bad.pdb</font></td><td>A test set of coordinates with errors introduced.</td>
+</tr>
+<tr>
+<td><font color="#ff0000">rnase18.mtz</font></td><td>An MTZ file containing three sets of experimental data extending
+to 1.8&#197;, labelled FNAT SIGFNAT F3GP SIGF3GP F2GP SIGF2GP for unliganded protein, the protein
+liganded with guanosine-3*-monophosphate (3GP) and with guanosine-2*-monophosphate (2GP), respectively</td>
+</tr>
+<td><font color="#ff0000">rnase115.mtz</font></td><td>The experimental data and calculated structure factors
+and phases for the unliganded protein to 1.15&#197;</td>
+</tr>
+<tr>
+<td><font color="#ff0000">rnase25.mtz</font></td><td>An MTZ file containing experimental data (including anomalous),
+extending to 2.5&#197;, for the native protein and three derivatives (mercury, platinum and iodine), as used for
+<a href="heavy-tutorial-mir.html">experimental phasing by MIR</a> and
+<a href="heavy-tutorial-mad.html">experimental phasing by MAD</a></td>
+</tr>
+</table>
+
+<p>The output files in directory <font color="#009900">RESULTS</font>:</p>
+<table>
+<tr>
+<td><font color="#ff0000">3GP_mon_lib.cif</font></td><td>The monomer library description of 3GP</td>
+</tr>
+<tr>
+<td><font color="#ff0000">review.log</font></td><td>The log file from running Refmac5 to review restraints</td>
+</tr>
+<tr>
+<td><font color="#ff0000">rnase18_bad_refmac1.pdb</font></td><td>The output file from running Refmac5
+to review restraints</td>
+</tr>
+<tr>
+<td><font color="#ff0000">refmac-unliganded.log</font></td><td>.log from Refmac5 refinement of unliganded RNAse</td>
+</tr>
+</table>
+
+<h2><a name="step_6a"></a>6a) Check model geometry, create and review special restraints</h2>
+
+<p>For the tutorial a file called <em>$DATA/rnase_bad.pdb</em>
+bas been generated, which has had some errors introduced. The residue ARG B:63
+is now too close to ARG A:63. Also, all residues have been
+shifted by up to 0.2&#197;.</p>
+
+<p align="center"><img src="images/B63_bad.jpg" width="409" height="302" alt="bad position for arg b63" /></p>
+
+<p>We will use REFMAC5 in <font color="#009900">review restraints</font> mode.
+The program will look at the atom coordinates and decide where there are
+disulphide bonds, cis-peptides and D-peptides. It will also calculate
+the distance between atoms and if they are very close it will assume
+the atoms are bonded and will make a make a restraint to say 'these two
+atoms <i>must</i> stay close'. Of course this is not always right.
+It will also add any absent atoms - if a residue
+does not have the right atoms it will make them. REFMAC5
+will help you by finding the disulphide bonds <em>etc.</em> automatically but you
+MUST check that they are correct.</p>
+
+<h4>Exercise</h4>
+
+<ol>
+
+<li><p>From the <font color="#ff0000">Refinement</font>
+module select <font color="#ff0000">Run Refmac5</font>.</p></li>
+
+<li><p>In the Protocol folder, enter a Job title such as:</p>
+<dl>
+<dd><font color="#009900">Job title</font>
+<font color="#ff0000">Review restraints on rnase with bad geometry (refine tutorial step 1)</font></dd>
+</dl>
+<p>Then</p>
+<dl>
+<dd><font color="#009900">Do</font>
+<font color="#ff0000">review restraints</font></dd>
+</dl><br /></li>
+
+<li><p>Now select the input coordinate file:</p>
+<dl>
+<dd><font color="#009900">PDB in</font>
+<font color="#ff0000">DATA rnase_bad.pdb</font></dd>
+</dl><br /></li>
+
+<li><p>Look in the folder called <font color="#009900">Setup Geometric Restraints</font>.
+In here you can decide what to look for in the PDB file. We will use the defaults
+- you do not need to change anything.</p></li>
+
+<li><p>Now run the REFMAC5 program. From
+the <font color="#ff0000">Run</font> menu at the bottom of the window choose
+<font color="#ff0000">Run Now</font>.</p></li>
+
+<li><p>The job will take a little time. When it has
+finished, the job status will be &quot;FAILED&quot; - this is caused by WARNINGs (see
+below) which should be considered serious, but which are part of the learning process
+here. Look at the log file (click
+on the name of the job, <font color="#ff0000">refmac5</font>, in
+the main window and use <font color="#ff0000">View Files from Job</font>
+and <font color="#ff0000">View Log Files</font>).</p>
+
+<p>Some interesting things in the log file:</p>
+
+<pre class="green"> WARNING : CIS peptide bond is found, angle =      16.01
+    ch:AA res:  26  GLY    --&gt;  27  PRO
+                                  ....
+
+ WARNING : link:SS       is found dist =     2.211 ideal_dist=     2.031
+            ch:BB res:   7  CYS      at:SG  .-&gt;BB res:  96  CYS      at:SG</pre>
+
+<p>These things are correct, REFMAC5 has checked the
+input protein molecule and found some cis peptide bonds and some disulphide
+bonds, but there is also:</p>
+
+<pre class="green"> WARNING : description of link:ARG-ARG  not found in the dictionary.
+     link will be created with bond_lenth =   1.400</pre>
+
+<p>This is not true, REFMAC5 will suggest making bonds between
+the residues which are too close.</p></li>
+
+<li><p>Now look at the output PDB file: use <font color="#ff0000">View Files from Job</font>
+and select <font color="#ff0000">rnase_bad_refmac1.pdb</font> (this file can also be found in
+the RESULTS directory).</p>
+
+<p>At the top of this file is new information:</p>
+
+<pre class="green">LINK        NH1_ ARG A  40                NE__ ARG B  63                ARG-ARG
+LINK        NH1_ ARG A  40                CZ__ ARG B  63                ARG-ARG1
+LINK        NH1_ ARG A  40                NH2_ ARG B  63                ARG-ARG2
+LINK             GLY A  26                     PRO A  27                PNCIS
+SSBOND   1 CYS A   96    CYS A    7
+LINK             GLY B  26                     PRO B  27                PNCIS
+SSBOND   2 CYS B   96    CYS B    7</pre>
+
+<p>Now <font color="#ff0000">Quit</font> from the window.</p></li>
+
+<li><p>It is necessary to edit the PDB file to remove the
+bad link information. There is an easy way to do this. From
+the <font color="#ff0000">Refinement</font> menu in CCP4i main window select
+<font color="#ff0000">Edit Restraints in PDB</font>.</p></li>
+
+<li><p>Select the input file:</p>
+<dl>
+<dd><font color="#009900">PDB in</font>
+<font color="#ff0000">TEST rnase_bad_refmac1.pdb</font></dd>
+</dl>
+
+<p>Wait while the program reads the file.</p></li>
+
+<li><p>In the window you will now see:</p>
+
+<p>The <i>space group</i> and the symmetry operators for
+the space group (you may need this information to define disulphide
+bonds or links between molecules that are not in the same asymmetric unit).</p>
+
+<p>The MODRES IDs and LINK modes provide additional information to describe
+the molecule geometry. Definitions of MODRES allow you to modify a standard
+residue description, <em>e.g.</em> to rename a monomer, or to modify MET to
+include Se - the details are discussed in the
+<a href="../../../html/refmac5.html">Refmac5 documentation</a>. LINK definitions
+describe ways to link two monomers, <em>e.g.</em> peptides co-valently
+linked to substrates.</p>
+
+<dl>
+<dt><font color="#009900">MODRES - Modified Residues</font></dt>
+<dd><p>This is a way to redefine non-standard residues. There is a monomer labelled
+GMP in the RNAse coordinate file, which matches the dictionary definition of 3GP.</p></dd>
+
+<dt><font color="#009900">SSBOND - Disulphide Bonds</font></dt>
+<dd><p>The two disulphide bonds in RNAse are shown.</p></dd>
+
+<dt><font color="#009900">LINK - Inter-Residue Bonds</font></dt>
+<dd><p>The three bad bonds are listed.</p></dd>
+
+<dt><font color="#009900">CISPEP - Cis peptides</font></dt>
+<dd><p>The two cis-peptides in RNAse are listed.</p></dd>
+</dl><br /></li>
+
+<li><p>You can delete the bad links by clicking on the
+menu <font color="#ff0000">Edit Table</font> and selecting
+<font color="#ff0000">Delete Last Row</font>. Do this three times.</p>
+
+<p>It is also possible to add new things - try clicking on
+<font color="#ff0000">Add Row</font>.</p></li>
+
+<li><p>We will stop using the <i>rnase_bad</i> coordinates, so you do
+not need to save changes - <font color="#ff0000">Close</font> the window.</p></li>
+</ol>
+ 
+<h2><a name="step_6b"></a>6b) Refining the Unliganded Molecule</h2>
+
+<h4>Exercise</h4>
+
+<ol start="100">
+<li><p>From the <font color="#ff0000">Refinement</font>
+module select <font color="#ff0000">Run Refmac5</font>.</p></li>
+
+<li><p>Enter a suitable job title such as</p>
+<dl>
+<dd><font color="#009900">Job title</font>
+<font color="#ff0000">restrained refinement for unliganded RNAse (refine tutorial step 100)</font></dd>
+</dl>
+<p>Then</p>
+<dl>
+<dd><font color="#009900">Do</font>
+<font color="#ff0000">restrained refinement</font>
+<font color="#009900">using</font>
+<font color="#ff0000">no prior phase information</font>
+<font color="#009900">input</font></dd>
+</dl>
+
+<p>Also you will see:</p>
+<dl>
+<dd><img src="images/squarebox.gif" width="13" height="13" alt="square box" />
+<font color="#009900">Generate weighted difference maps in</font>
+<font color="#ff0000">CCP4</font>
+<font color="#009900">format</font>.</dd>
+</dl>
+
+<p>If you have a graphics program to look at the maps then
+click this on and select a map format.</p></li>
+
+<li><p>Now select the input files - the experimental data:</p>
+<dl>
+<dd><font color="#009900">MTZ in</font>
+<font color="#ff0000">DATA rnase18.mtz</font></dd>
+</dl>
+
+<p>and make sure you have correct data columns:</p>
+<dl>
+<dd><font color="#009900">FP</font>
+<font color="#ff0000">FNAT</font>
+<font color="#009900">SIGFP</font>
+<font color="#ff0000">SIGFNAT</font></dd>
+</dl>
+
+<p>and the coordinate file:</p>
+<dl>
+<dd><font color="#009900">PDB in</font>
+<font color="#ff0000">DATA rnase.pdb</font></dd>
+</dl><br /></li>
+
+<li><p>Click on <font color="#ff0000">Run -&gt; Run Now</font>.</p></li>
+
+<li><p>The job will take a little time.
+When it is finished look at the log file (click on the name of the job,
+<font color="#ff0000">refmac5</font>, in the main window and use
+<font color="#ff0000">View Files from Job</font> and
+<font color="#ff0000">View Log Graphs</font>).</p>
+
+<p>If you do not have a log file then click on
+<font color="#ff0000">View Any File</font> and set:</p>
+<dl>
+<dd><font color="#009900">Go to directory</font>
+<font color="#ff0000">RESULTS</font><br />
+<font color="#009900">File type</font>
+<font color="#ff0000">log CCP4 log</font>
+<font color="#009900">filename filter</font>
+<font color="#ff0000">*.log</font><br />
+<font color="#009900">Viewer</font>
+<font color="#ff0000">View Log Graphs</font></dd>
+</dl>
+
+<p>and then select file:</p>
+<dl>
+<dd><font color="#009900">File</font>
+<font color="#ff0000">refmac-unliganded.log</font></dd>
+</dl>
+
+<p>Go to the last table in the <font color="#009900">Tables in File</font>
+and click on:</p>
+<dl>
+<dd><font color="#ff0000">Rfactor analysis, stats vs cycle</font></dd>
+</dl>
+
+<p>You will see a graph of the R factor and the Free R factor
+for the 6 cycles of refinement. The R factor is very good already
+but both go down a little.</p>
+
+<p align="center"><img src="images/log_rfact.png" width="382" height="306" alt="Rfactor Analysis" /></p>
+
+<p>Also look at the <font color="#009900">Graphs in Selected Table</font> for:</p>
+<dl>
+<dd><font color="#ff0000">FOM vs cycle</font><br />
+<font color="#ff0000">-LLG vs cycle</font><br />
+<font color="#ff0000">Geometry vs cycle</font></dd>
+</dl>
+
+<p>The FOM tells you how well the molecule matches
+the experimental data and the Geometry tells you how well the molecule
+obeys the geometry restraints.</p>
+
+<p>Also, slightly up the <font color="#009900">Tables in File</font>
+list, select the last:</p>
+<dl>
+<dd><font color="#ff0000">Cycle 6. Rfactor analysis, F distribution v resln</font></dd>
+</dl>
+
+<p>This is information about the last cycle of refinement.
+Have a look at:</p>
+<dl>
+<dd><font color="#ff0000">&lt;Rfactor&gt; v. resln</font><br />
+<img src="images/rfac_v_res.png" width="382" height="305" alt="Rfactor Analysis" /></dd>
+</dl>
+
+<p>The red line is the average R factor versus resolution
+for the data which is used and the green line is the Free R factor (for
+the 'free' data which is not used). This is similar across the resolution ranges
+- it does not go up for high resolution data. This is an example of
+what is good about maximum likelihood refinement compared with the old-fashioned
+least squares.</p>
+
+<p>Also look at the graph:</p>
+<dl>
+<dd><font color="#ff0000">&lt;Fobs&gt; and &lt;Fc&gt; v. resln</font><br />
+<img src="images/fs_v_res.png" width="389" height="311" alt="Structure Factor Analysis" /></dd>
+</dl>
+
+<p>This is a graph of the average observed structure factors
+and calculated structure factors. You notice that at low resolution
+the observed (red) and the calculated (blue) are not the same. At
+low resolution the water atoms, which we can not see in the crystal structure,
+are an important part of the structure factors. The refinement program
+tries to model the water atoms by solvent scaling but it is difficult for
+this data because some of the very low resolution data is missing.</p>
+
+<p>To close the loggraph window click on the <font color="#ff0000">File</font>
+menu and select <font color="#ff0000">Exit</font>.</p></li>
+
+<li><p>Look at the header of the output MTZ file - click
+on <font color="#ff0000">View Files from Job</font> and select the file
+<font color="#ff0000">rnase18_refmac1.mtz</font>. In the file you will see:</p>
+
+<pre class="green">* Column Labels :
+
+ H K L FNAT SIGFNAT FreeR_flag FC PHIC FWT PHWT DELFWT PHDELWT FOM</pre>
+
+<p>The new data in the file is:</p>
+<table>
+<tr>
+<td><font color="#009900">FC</font> &amp; <font color="#009900">PHIC</font></td>
+<td>the structure factors and phases calculated from the final coordinates</td>
+</tr>
+<tr>
+<td><font color="#009900">FWT</font> &amp; <font color="#009900">PHWT</font></td>
+<td>the 'best' structure factors and phases weighted by the maximum likelihood function</td>
+</tr>
+<tr>
+<td><font color="#009900">DELFWT</font> &amp; <font color="#009900">PHDELWT</font></td>
+<td>the 'best' structure factors and phases for a difference map</td>
+</tr>
+<tr>
+<td><font color="#009900">FOM </font></td>
+<td>figure of merit for PHIC</td>
+</tr>
+</table>
+
+<p>If you selected the option to create output maps then
+you can look at the maps created from the REFMAC output.</p>
+
+<table>
+<tr>
+<td>...FWT.map</td><td>the 'best' weighted map</td>
+</tr>
+<tr>
+<td>...DELFWT.map</td><td>the 'best' weighted difference map</td>
+</tr>
+</table>
+
+<p>An example of these maps is shown below for a tyrosine
+residue which is in the wrong place. The DELFWT map is the weighted difference map of
+F(observed) - F(calculated) and looks like this:</p>
+
+<p align="center"><img src="images/diff.jpg" width="327" height="261" alt="Difference map" /></p>
+
+<p>Here you can see a large pink area of negative density
+where the tyrosine side chain is now. This is saying that the side
+chain should not be here. The large brown-red area of positive density
+is showing where the side chain should be.</p>
+
+<p>The FWT map is the weighted map and looks like this:</p>
+
+<p align="center"><img src="images/map.jpg" width="327" height="261" alt="weighted map" /></p>
+
+<p>You can see region of density to the left of the tyrosine
+which is where it should go.</p></li>
+</ol>
+
+<h2><a name="step_6c"></a>6c) Create a Monomer Library Entry for the ligand 3GP</h2>
+
+<p>There are three ways to get a geometry description:</p>
+
+<ol type="i">
+<li>There are over 2000 molecules in the REFMAC
+library so your ligand may already be in the library. In fact there is a full monomer
+description of the ligand in our example in the library, but that is too easy. We
+will just have a look at it.<br />
+A BIG WARNING: the data in the library is from crystal
+structures in the PDB database - these may not be correct or exactly the
+same as your ligand so always check the bond definition, chiral centres, planar groups etc.</li>
+<li>If you have coordinates for the ligand in a PDB file,
+it is possible to make a monomer library entry very quickly - we will
+try doing this.</li>
+<li>If you have no coordinates for the ligand you
+need to draw the molecule after which the programs will make a geometry description
+and will also make a PDB file with coordinates. This can be
+made easier if there is a similar molecule in the library - you can get
+this molecule from the library and edit - we will also try doing this.</li>
+</ol>
+
+<h4>ad i) Exercise - Looking at the Monomer Library Entry for the ligand</h4>
+
+<ol start="200">
+<li><p>From the <font color="#ff0000">Refinement</font>
+module select the <font color="#ff0000">Monomer Library Sketcher</font>
+task.</p>
+
+<li><p>From the <font color="#ff0000">File</font>
+menu at the top of the window select <font color="#ff0000">Read File</font>
+and from the next menu select <font color="#ff0000">Load Monomer from Library</font>.</p></li>
+<li><p>In the Load Monomer from Library window, in the Choose Monomer folder, search:</p>
+<dl>
+<dd><font color="#009900">List</font>
+<font color="#ff0000">non-polymer</font>
+<font color="#009900">monomers - apply search filter:</font>
+<font color="#ff0000">guanosine</font></dd>
+</dl>
+<p>and select <font color="#ff0000">3GP GUANOSINE-3*-MONOPHOSPHATE</font>.</p></li>
+<li><p>Select <font color="#ff0000">Run -&gt; Run Now</font>, and <font color="#ff0000">Close</font>.</p></li>
+
+<li><p>You will see the molecule displayed. You can
+rotate it by holding down the <font color="#ff0000">left mouse button</font>.
+On the right of the window is a list of atoms - this list has the
+element, the atom name and the oxidation state (the charge of the atom).
+Below the list of atoms is a list of the chiral centres found in the molecule,
+of which there are four.</p></li>
+
+<li><p>Now look at the monomer library file. In the Main Window select the last job
+which is called <font color="#009900">load_monomer</font>.
+Now select the <font color="#ff0000">View Files from Job</font>
+menu (on the right side of the main window) and select the file
+<font color="#ff0000">3GP_mon_lib.cif</font>.</p>
+
+<p>In this file you will see a list of the atoms.</p>
+
+<pre class="green">_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.type_energy
+_chem_comp_atom.partial_charge
+_chem_comp_atom.x
+_chem_comp_atom.y
+_chem_comp_atom.z
+ 3GP           O6     O    O         0.000      0.000    0.000    0.000
+ 3GP           C6     C    CR6       0.000      0.831    0.906    0.061
+ 3GP           C5     C    CR56      0.000      2.177    0.611    0.120
+......</pre>
+
+<p>Further down the file is the list of bonds:</p>
+
+<pre class="green">_chem_comp_bond.comp_id
+_chem_comp_bond.atom_id_1
+_chem_comp_bond.atom_id_2
+_chem_comp_bond.type
+_chem_comp_bond.value_dist
+_chem_comp_bond.value_dist_esd
+ 3GP      C6     O6        aromatic    1.230    0.020
+ 3GP      C6     N1        aromatic    1.380    0.020
+ 3GP      C5     C6        aromatic    1.390    0.020
+ 3GP      C4     C5        aromatic    1.390    0.020
+......</pre>
+
+<p>The words at the top of the list tell you what is in each column:</p>
+<dl>
+<dt><font color="#009900">comp_id</font></dt><dd>this is the compound id - this is always 3GP.</dd>
+<dt><font color="#009900">atom_id_1 </font></dt><dd>this is the first atom in the bond</dd>
+<dt><font color="#009900">atom_id_2</font></dt><dd>this is the second atom in the bond</dd>
+<dt><font color="#009900">type</font></dt><dd>this is bond type (single, double, aromatic, deloc)</dd>
+<dt><font color="#009900">value_dist</font></dt><dd>this is the ideal bond distance</dd>
+<dt><font color="#009900">value_dist-esd</font></dt><dd>this is the standard deviation for
+the ideal bond distance</dd>
+</dl>
+
+<p>There is similar information on bond angle, torsion angle, chirality and planar groups.</p>
+
+<p>The refinement program will try to make the ligand as defined in this file -
+you can edit the file if you need to.</p></li>
+</ol>
+
+<h4>ad ii) Exercise - Creating a Monomer Library Entry from Coordinate File</h4>
+
+<ol start="210">
+<li><p>From the <font color="#ff0000">Refinement</font>
+module select the <font color="#ff0000">Monomer Library Sketcher</font>
+task.</p>
+
+<p>If you already have sketcher open from the previous exercise, delete any molecule that you
+have displayed: from the <font color="#ff0000">Edit</font>
+pull down menu select <font color="#ff0000">Delete All Atoms</font>.</p>
+
+<p>For the next steps see <a href="images/view_sketcher_1.png" target="_TUTPIC">the view_sketcher_1 picture</a>.</p></li>
+
+<li><p>From the <font color="#ff0000">File</font>
+menu at the top of the window select <font color="#ff0000">Read File</font>
+and from the next menu select <font color="#ff0000">Read PDB file</font>.
+Select the file:</p>
+<dl>
+<dd><font color="#009900">Go to directory</font>
+<font color="#ff0000">DATA</font><br />
+<font color="#009900">File</font>
+<font color="#ff0000">GMP.pdb</font></dd>
+</dl>
+<p>If there is a message querying the use of an existing library file (using LIBCHECK), click <font color="#ff0000">No</font>.</p></li>
+
+<li><p>You will see the molecule displayed. You can
+rotate it by holding down the <font color="#ff0000">left mouse button</font>.
+On the right of the window is a list of atoms - this list has the
+element, the atom name and the oxidation state (the charge of the atom).
+Below the list of atoms is a list of the chiral centres found in the molecule, of
+which there are four.</p></li>
+
+<li><p>The picture of GMP below shows the correct delocalised and
+aromatic bonds - edit your molecule accordingly. To change a bond to a delocalised bond,
+you must hold down the <font color="#ff0000">Shift</font>
+key on the keyboard and click on the bond with the <font color="#ff0000">right mouse button</font>.
+It will step through single--double--triple--deloc--aromatic--metal.</p>
+<p align="center"><img src="images/gmp.png" width="472" height="285" alt="correct bond structure for GMP" /></p></li>
+
+<li><p>Now create the monomer library. From the <font color="#ff0000">File</font>
+pull-down menu at the top of the window select
+<font color="#ff0000">Create Library Description</font>.</p>
+<p>In the Create Dictionary Entry window, enter a job title such as</p>
+<dl>
+<dd><font color="#009900">Job title</font>
+<font color="#ff0000">library description from DATA GMP.pdb (refine tutorial step 210)</font></dd>
+</dl>
+<p>Select</p>
+<dl>
+<dd><font color="#009900">Create description from</font>
+<font color="#ff0000">displayed structure</font></dd>
+</dl>
+<p>Then enter the name of the ligand (this must be <font color="#ff0000">GMP</font>
+which is the name of the ligand in the PDB file which we will refine).
+So:</p>
+<dl>
+<dd><font color="#009900">Unique identifier</font>
+<font color="#ff0000">GMP</font>
+<font color="#009900">Full name:</font>
+<font color="#ff0000">guanosine-3*-monophosphate</font></dd>
+</dl>
+
+<p>The names of files will be created automatically so you can then select
+<font color="#ff0000">Run -&gt; Run Now</font>. Then
+<font color="#ff0000">Close</font> this window.</p>
+
+<p>You must wait a little time - a program called LIBCHECK is running. When it has finished
+the molecule is displayed again.</p></li>
+
+<li><p>Now look at the new monomer library file. From the Main Window select the last job
+which is called <font color="#009900">dictionary</font>.
+Select the <font color="#ff0000">View Files from Job</font>
+menu (on the right side of the main window) and select the file
+<font color="#ff0000">GMP_mon_lib.cif</font>.</p>
+
+<p>In this file you will see a list of the atoms.</p>
+
+<pre class="green">_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.type_energy
+_chem_comp_atom.partial_charge
+_chem_comp_atom.x
+_chem_comp_atom.y
+_chem_comp_atom.z
+ GMP           O31    O    OP       -0.660      0.000    0.000    0.000
+ GMP           P3     P    P         0.000      1.175    0.940    0.095
+ GMP           O33    O    OP       -0.660      1.871    0.745    1.419
+......</pre>
+
+<p>Further down the file is the list of bonds:</p>
+
+<pre class="green">_chem_comp_bond.comp_id
+_chem_comp_bond.atom_id_1
+_chem_comp_bond.atom_id_2
+_chem_comp_bond.type
+_chem_comp_bond.value_dist
+_chem_comp_bond.value_dist_esd
+ GMP      P3     O31       deloc       1.510    0.020
+ GMP      O32    P3        deloc       1.510    0.020
+ GMP      O33    P3        deloc       1.510    0.020
+ GMP      O3*    P3        single      1.610    0.020
+......</pre>
+
+<p>This list is not quite the same as for the monomer 3GP as it is in the Monomer
+Library. Have a look at the differences and update as you see fit.</p></li>
+</ol>
+
+<h4>ad iii) Exercise - Creating a Monomer Library Entry by Drawing the Molecule</h4>
+
+<p>This section is optional. Alternatively you can go directly to
+<a href="#step_6d">the next step - Review Special Restraints for ligand</a>.</p>
+
+<p>If you have no coordinates or other definition of the ligand then you must draw the
+molecule in the Sketcher. Sometimes there may be a similar molecule in the library - you can
+start from this and edit it. There is a guanosine molecule in the
+library which we can use to make GMP (or, more accurately, 3GP).</p>
+
+<ol start="220">
+<li><p>Delete any molecule that you
+have displayed: from the <font color="#ff0000">Edit</font>
+pull down menu select <font color="#ff0000">Delete All Atoms</font>.</p></li>
+
+<li><p>From the File pull-down menu
+select <font color="#ff0000">Read File</font>
+and then <font color="#ff0000">Load Monomer from Library</font>.
+In the new window, from the folder Choose Monomer, select:</p>
+<dl>
+<dd><font color="#009900">List</font>
+<font color="#ff0000">RNA</font>
+<font color="#009900">monomers</font></dd>
+</dl>
+
+<p>Now you will see a list of RNA monomers.  Click on the line:</p>
+<dl>
+<dd><font color="#ff0000">Gr&nbsp;&nbsp;&nbsp;Guanosine</font></dd>
+</dl>
+
+<p>Then click on <font color="#ff0000">Run -&gt; Run Now</font> and <font color="#ff0000">Close</font>
+the Load Monomer from Library window.</p>
+
+<p>You must wait a little while before the molecule of guanosine is displayed.
+To make 3GP you must delete the phosphate group on the O5* and draw a phosphate
+group on O3*.</p>
+
+<p>For the next steps see <a href="images/view_sketcher_2.png" target="_TUTPIC">the view_sketcher_2 picture</a>.</p></li>
+
+<li><p>Make sure that the Mouse Mode (on the left of the Sketcher window)
+is set to <font color="#ff0000">Edit Monomer</font>.</p></li>
+
+<li><p>From the edit tools on the left of the Sketcher window select the
+'Delete atom' icon <img src="images/delctr.gif" width="57" height="17"  alt="Delete atom icon" />
+from the edit tools on the left of the window.</p></li>
+
+<li><p>Hold down the <font color="#ff0000">Shift</font> key and click with the
+<font color="#ff0000">left mouse mutton</font> on the atoms O3T, O2P, O1P and P to
+delete them.</p></li>
+
+<li><p>To add the new phosphate group select the the 'Add a C atom' icon
+<img src="images/alictr.gif" width="57" height="15" alt="Add a C atom icon" /> from the edit tools. The atoms that you add will be
+carbon atoms - you will change them later to phosphorus and oxygen.</p>
+<dl>
+<dd>Make O3* the active atom by holding down the
+<font color="#ff0000">Control</font> key and clicking on it with the
+<font color="#ff0000">right mouse button</font>. It is now the flashing, active atom.
+Add a new atom by holding down the <font color="#ff0000">Shift</font>
+key and clicking with the <font color="#ff0000">left mouse button</font>
+close to the O3* at the place where the new atom should go.
+You now have an atom called C21 and it is the active atom. Click
+close to this atom with <font color="#ff0000">Shift - left mouse button</font>
+to make one more atom. Add two more atoms.
+<i>You will need to make the C21 atom the active atom
+(<font color="#ff0000">Control - right mouse button</font>)
+and then add the atom for each of those</i>.
+When you have finished adding atoms, click on the <font color="#ff0000">Do
+nothing</font> edit tool at the top left of the window; now you will not
+make more atoms by mistake.</dd>
+</dl><br /></li>
+
+<li><p>Now look at the end of the table on the right side of the Sketcher window.
+The new atoms are C21, C22, C23 and C24, and each atom has the elment type C.
+Change C21 to a <font color="#ff0000">P</font> and the other three to
+<font color="#ff0000">O</font>.
+The atom names are also wrong - change the names to
+<font color="#ff0000">P, O1P, O2P</font> and <font color="#ff0000">O3P</font>.</p></li>
+
+<li><p>The bonds within the phosphate are delocalised bonds, so click
+<font color="#ff0000">Shift - right mouse button</font> on the bonds between
+P and all three O atoms, stepping through the bonds until they are 'deloc'
+bonds.</p></li>
+
+<li><p>Now we create the monomer library. From the <font color="#ff0000">File</font>
+pull-down menu at the top of the window select
+<font color="#ff0000">Create Library Description</font>. In the window enter the name
+of the ligand (call this <font color="#ff0000">TEST3GP</font> so you do not overwrite
+the files you made before). So:</p>
+<dl>
+<dd><font color="#009900">Unique identifier</font>
+<font color="#ff0000">TEST3GP</font>
+<font color="#009900">Full name:</font>
+<font color="#ff0000">guanosine-3*-monophosphate</font></dd>
+</dl>
+
+<p>The names of files will be created automatically so you can then click
+<font color="#ff0000">Run -&gt; Run Now</font>.
+<font color="#ff0000">Close</font> this window.</p></li>
+
+<li><p>Wait while the program runs to build the dictionary
+file. The molecule is drawn again. If necessary you can make
+corrections and run again. To close the Sketcher window, select the
+<font color="#ff0000">File</font> pull-down menu and
+<font color="#ff0000">Close Sketcher</font>.</p></li>
+</ol>
+
+<h2><a name="step_6d"></a>6d) Review Special Restraints for ligand</h2>
+
+<p>We will add the ligand to our refined unliganded structure.
+In order to see what might happen, a file called <em>$DATA/rnase-3gp.pdb</em>
+is provided, with the refined unliganded model plus 3GP.</p>
+
+<p>We will use REFMAC5 in <i>review restraints</i> mode.
+The program will look at the atom coordinates again. The
+disulphide bonds, cis-peptides and D-peptides are already defined. It will also calculate
+the distance between atoms and if they are very close it will assume
+the atoms are bonded and will make a make a restraint to say 'these two
+atoms <i>must</i> stay close'. Of course this is not always right.</p>
+
+<h4>Exercise</h4>
+
+<ol start="300">
+<li><p>From the <font color="#ff0000">Refinement</font>
+module select <font color="#ff0000">Run Refmac5</font>.</p>
+
+<li><p>Enter a suitable job title such as</p>
+<dl>
+<dd><font color="#009900">Job title</font>
+<font color="#ff0000">review restraints for liganded RNAse (refine tutorial step 300)</font></dd>
+</dl>
+<p>Then</p>
+<dl>
+<dd><font color="#009900">Do</font>
+<font color="#ff0000">review restraints</font></dd>
+</dl><br /></li>
+
+<li><p>Select the input coordinate file:</p>
+<dl>
+<dd><font color="#009900">PDB in</font>
+<font color="#ff0000">DATA rnase-3gp.pdb</font></dd>
+</dl><br /></li>
+
+<li><p>Select the new library file that you made for 3GP (this can also be found on the RESULTS directory):</p>
+<dl>
+<dd><font color="#009900">Library</font>
+<font color="#ff0000">TEST 3GP_mon_lib.cif</font></dd>
+</dl><br /></li>
+
+<li><p>Now run the REFMAC5 program. From
+the <font color="#ff0000">Run</font> menu at the bottom of the window choose
+<font color="#ff0000">Run Now</font>.</p>
+<p>If all is well, the program should run without any warnings, apart
+from those about hydrogens. Now we are ready for some real refinement.</p></li>
+</ol>
+
+<h2><a name="step_6e"></a>6e) Refining the Liganded Molecule</h2>
+
+<p>Now we will use the monomer library description that we
+created to refine the rnase molecule with the 3GP ligand.</p>
+
+<h4>Exercise</h4>
+
+<ol start="400">
+<li><p>From the <font color="#ff0000">Refinement</font>
+module select <font color="#ff0000">Run Refmac5</font>.</p>
+
+<li><p>Enter a suitable job title such as</p>
+<dl>
+<dd><font color="#009900">Job title</font>
+<font color="#ff0000">restrained refinement for liganded RNAse (refine tutorial step 400)</font></dd>
+</dl>
+
+<li><p>Then</p>
+<dl>
+<dd><font color="#009900">Do</font>
+<font color="#ff0000">restrained refinement</font>
+<font color="#009900">using</font>
+<font color="#ff0000">no prior phase information</font>
+<font color="#009900">input</font></dd>
+</dl>
+
+<p>Also you will see:</p>
+<dl>
+<dd><img src="images/squarebox.gif" width="13" height="13" alt="square box" />
+<font color="#009900">Generate weighted difference maps in</font>
+<font color="#ff0000">CCP4</font>
+<font color="#009900">format</font>.</dd>
+</dl>
+
+<p>If you have a graphics program to look at the maps then
+click this on and select a map format.</p></li>
+
+<li><p>Now select the input files - the experimental data:</p>
+<dl>
+<dd><font color="#009900">MTZ in</font>
+<font color="#ff0000">DATA rnase18.mtz</font></dd>
+</dl>
+
+<p>and make sure you have correct data columns:</p>
+<dl>
+<dd><font color="#009900">FP</font>
+<font color="#ff0000">F3GP</font>
+<font color="#009900">SIGFP</font>
+<font color="#ff0000">SIGF3GP</font></dd>
+</dl>
+
+<p>and the coordinate file:</p>
+<dl>
+<dd><font color="#009900">PDB in</font>
+<font color="#ff0000">DATA rnase-3gp.pdb</font></dd>
+</dl>
+
+<p>To use the geometry description file which you have made:</p>
+<dl>
+<dd><font color="#009900">Library</font>
+<font color="#ff0000">TEST 3GP_mon_lib.cif</font></dd>
+</dl><br /></li>
+
+<li><p>Click on <font color="#ff0000">Run -&gt; Run Now</font>.</p></li>
+
+<li><p>The job will take a while.
+When it is finished look at the graphs from the log file (click on the name of the job,
+<font color="#ff0000">refmac5</font>, in the main window and use
+<font color="#ff0000">View Files from Job</font> and
+<font color="#ff0000">View Log Graphs</font>).</p>
+
+<p>Go to the last table in the <font color="#009900">Tables in File</font>
+and click on:</p>
+<dl>
+<dd><font color="#ff0000">Rfactor analysis, stats vs cycle</font></dd>
+</dl>
+
+<p>You will see a graph of the R factor and the Free R factor
+for the 6 cycles of refinement. The R factor is very good already
+but both go down a little.</p>
+
+<p align="center"><img src="images/log_rfact-ligrnase.png" width="381" height="306" alt="Rfactor Analysis" /></p>
+
+<p>To close the loggraph window click on the <font color="#ff0000">File</font>
+menu and select <font color="#ff0000">Exit</font>.</p></li>
+
+</ol>
+
+<hr />
+<p>Back to the previous tutorial - <a href="mr-tutorial.html">Molecular Replacement</a>.</p>
+<p>Back to the <a href="index.html">index</a>.</p>
+
+<hr />
+<p>To find out more:<br />
+Refmac: <a href="http://www.ysbl.york.ac.uk/~garib/refmac">http://www.ysbl.york.ac.uk/~garib/refmac</a><br />
+Libcheck: <a href="http://www.ysbl.york.ac.uk/~alexei/libcheck.html">http://www.ysbl.york.ac.uk/~alexei/libcheck.html</a><br />
+CCP4: <a href="http://www.dl.ac.uk/CCP/CCP4">http://www.dl.ac.uk/CCP/CCP4</a></p>
+
+<p>Prepared by Liz Potterton (lizp@ysbl.york.ac.uk) and Eleanor Dodson, July 2000<br />
+Adapted by Maria Turkenburg, 2002-2003</p>
+<p>
+<a href="http://jigsaw.w3.org/css-validator/"><img width="88" height="31"
+src="images/vcss" alt="Valid CSS!" /></a>
+<a href="http://validator.w3.org/"><img src="images/valid-xhtml10"
+alt="Valid XHTML 1.0!" height="31" width="88" /></a>
+</p>
+</body>
+</html>

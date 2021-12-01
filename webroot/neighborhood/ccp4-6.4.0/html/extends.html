@@ -1,0 +1,157 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::EXTENDS::Unsupported::Map calculation and manipulation::Extend Fourier maps and compute standard uncertainty of electron density:::::::: -->
+
+<H1> EXTENDS (CCP4: Unsupported Program)</H1>
+<H2> NAME</H2>
+<b>extends </b>
+- Extend Fourier maps and compute standard uncertainty of electron
+density.
+<H2> SYNOPSIS</H2>
+<b>extends mapin</b>
+<i>foo_in.map</i>
+<b>mapout</b>
+<i>foo_out.map</i>
+[
+<b>xyzin</b>
+<i>foo_in.brk</i>
+]
+<br>
+ [Key-worded input] 
+<H2> DESCRIPTION</H2>
+The program 
+<b>EXTENDS </b>
+generates any part of a map from a map calculated
+by the <b>FFT</b> program which typically contains only one asymmetric unit.  
+<P>
+This is a modified version of the <b>EXTEND</b> program that attempts to
+compute the standard uncertainty of the electron density.&nbsp; To do this
+the input map must be a true difference map (i.e. of the type Fo-Fc, not
+nFo-(n-1)Fc) and must consist of <b>exactly one</b> asymmetric unit (an
+integral number of a.u.'s such as <b>exactly</b> half or an <b>exact</b> complete unit
+cell is also valid input).&nbsp; Note that the program does <b>NOT</b>
+check that the input map covers an exact integral number of a.u.'s: it
+is the user's responsibility to ensure this.&nbsp; However this will
+normally be the case if the <b>FFT</b> program has been used to prepare
+the input map.
+<P>
+The rationale for this is statistical rigour: the asymmetric unit of
+the map represents the true population of electron density values in
+the statistical sense and therefore the values of the mean and RMS
+deviation for the asymmetric unit can be considered to be those of
+the true population mean and population standard deviation
+respectively.&nbsp; Any other subset or superset of the map that is not
+an integral number of asymmetric units is a sample in the statistical
+sense, with corresponding sample mean and sample standard deviation.
+<P>
+It may even be a biased sample either because the density covers only
+a specific region of the structure and is therefore
+non-representative of the map as a whole, or because when a map is extended,
+density values related by the map symmetry are very likely to be
+generated more than once.&nbsp; Sample statistics, whether biased or not,
+are always only approximations to population statistics.
+<P>
+Note that the standard deviation of the density, unlike the RMS
+deviation of the density from its mean value, is a property of the
+density that does <b>NOT</b> change simply because a different map
+extent is chosen.&nbsp; Most other programs that output electron density
+maps that do not cover an exact integral number of a.u.'s always
+automatically recompute both the mean and RMSD - if this is done it is
+then not valid to treat the RMSD in subsequent calculations as though it
+were the SU of the density.
+
+<H2> KEY WORDED INPUT</H2>
+The data control lines are identified by keywords.
+Only the first 4 letters of each keyword are necessary.
+Some data cards are optional.
+The available keywords are: XYZLIM, SYMMETRY, BORDER, FILL, KEEP and END.&nbsp; They
+are all optional, but some must be specified if XYZIN isn't assigned.
+<H2> DESCRIPTION OF KEYWORDS</H2>
+<H3> XYZLIM &lt;xmin&gt; &lt;xmax&gt; &lt;ymin&gt; &lt;ymax&gt; &lt;zmin&gt; &lt;zmax&gt;</H3>
+Output map limits in grid points or fractions of cell edge.
+If this card is not given XYZIN must be assigned. The program then reads the
+coordinates to determine the map limits.
+<H3> SYMMETRY &lt;Name&gt; | &lt;Number&gt;</H3>
+Followed by space group Name (e.g. P212121) or Number (e.g. 19).
+Symmetry is usually read from the header of the input map so this
+keyword is not normally needed. Use it only to change symmetry, or if
+no symmetry is present in the map. This is needed after certain
+non-CCP4 programs e.g. from Uppsala.
+<H3> MAPSYM  &lt;Name&gt; | &lt;Number&gt;</H3>
+Inserts the specified space group symmetry operators into the output
+map, but does not use them for extending the map. This may be needed
+after `skewing' a map, since that map will have only X,Y,Z symmetry,
+but be careful.
+<H3> BORDER &lt;width&gt;</H3>
+&lt;width&gt; of border in Angstroms to add to coordinate limits.
+<P> 
+Default = 10 Angstroms. This card is only needed if XYZLIM is
+not given; otherwise limits are determined from the XYZIN coordinate file.
+
+<H3>FILL &lt;fill&gt;</H3>
+<P>
+Set map values outside borders of input map to &lt;fill&gt;.
+
+<H3>KEEP</H3>
+<P>
+Keep the input RMSD of the density.&nbsp; This option should be used only
+for 2mFo-DFc and other types of non-difference Fouriers, <i>i.e.</i>
+with coefficients of the form nFo-(n-1)Fc.&nbsp; In some cases the
+program can detect that a non-difference Fourier has been input and will
+not recompute the standard uncertainty; however it would not be wise to
+rely on this!
+<P>
+The RMSD of a 2mFo-DFc or equivalent map is completely devoid of any
+statistical meaning anyway: it will greatly depend on the solvent
+content, so comparing Fourier maps contoured at 1 sigma is nonsense
+(pointed out by Dale Tronrud!).
+<P>
+For mFo-DFc and other types of true difference Fouriers this option must
+be <b>omitted</b> so that the program is allowed to recompute the standard
+uncertainty.&nbsp; In this case the input map must consist of <b>exactly one</b>
+asymmetric unit (an integral number of a.u.'s such as <b>exactly</b> half or
+a complete unit cell is also valid input).&nbsp; This will normally be the
+case if the <b>FFT</b> program has been used to prepare the input map.
+<P>
+This option should also be used in the case that the input map does not
+cover an exact integral number of a.u.'s, but the SU of the density has
+been previously correctly computed, so that the correct SU is kept and
+copied to the output map.
+<H3> END</H3>
+Ends input.
+<H2> INPUT AND OUTPUT FILES</H2>
+<dl>
+<dt> MAPIN<dd>
+input map (from FFT)
+<dt> MAPOUT<dd>
+extended output map
+<dt> XYZIN<dd>
+input coordinates, optional unless limits not given.
+</dl>
+<H2> PROGRAM FUNCTION</H2>
+The program EXTENDS is used to extend the range of Fourier map or to
+calculate a different part of the unit cell from that input.&nbsp; Its
+main use is in preparing data for programs that process electron density
+and require an accurate value of the standard uncertainty.
+<H2> AUTHORS</H2>
+Phil Evans, MRC-LMB, Cambridge (original EXTEND code)<BR>
+Ian Tickle, Astex Technology, Cambridge (mods for SU calculation)
+<H2> SEE ALSO</H2>
+<A HREF=fft.html>fft, <A HREF=mapmask.html>mapmask</A>
+<H2> EXAMPLES</H2>
+The following is an example of control data for extending a map
+<P> 
+<pre>
+
+extends MAPIN 2fofc.map MAPOUT 2fofc-ext.map &lt;&lt; END-extends
+BORD 4
+KEEP  ! Only for nFo-(n-1)Fc type maps.
+END-extends
+
+extends MAPIN fofc.map MAPOUT fofc-ext.map &lt;&lt; END-extends
+BORD 4
+END-extends
+</pre>
+</body></html>

@@ -1,0 +1,44 @@
+#!/usr/bin/perl
+
+#Script to run SAD/SIRAS (or other) function with ARP/wARP without any modification of ARP/wARP package. 
+
+$ENV{PATH} = "$ENV{CRANK}/bin/dummy:$ENV{PATH}";
+$ENV{CCP4I_TOP} = "$ENV{CRANK}/bin/dummy";
+### the coming line is required for arpwarp 7.x
+$ENV{CBIN} = "$ENV{CRANK}/bin/dummy";
+$all_lines="";
+while ( $act_line=<STDIN> )
+{ #    print $act_line,'\n'; 
+  if ( $act_line =~ /^(\s*|\s*set\s*)WORKDIR\s*=\s*(\'(.*)\'|(\S*))/ ) { $WORKDIR="$3$4"; }
+  if ( $act_line =~ /^(\s*|\s*set\s*)PROJECT\s*=\s*(\'(.*)\'|(\S*))/ ) { $PROJECT="$3$4"; }
+  if ( $act_line =~ /^(\s*|\s*set\s*)JOB_ID\s*=\s*(\'(.*)\'|(\S*))/ ) { $JOB_ID="$3$4"; }
+  if ( $act_line =~ /^(\s*|\s*set\s*)CCP4I_DEFFILE\s*=\s*(\'(.*)\'|(\S*))/ ) { $CCP4I_DEFFILE="$3$4"; }
+  if ( $act_line =~ /^(\s*|\s*set\s*)HEAVYIN\s*=\s*(\'(.*)\'|(\S*))/ ) { $HEAVYFILE="$3$4"; }
+  if ( $act_line =~ /^\s*set\s*\S+\s*=/ ) { }
+  else { if ( $act_line =~ /^\s*\S+\s*=/ ) { $act_line = "set $act_line"; } 
+	else { if ( $act_line =~ /^(\s*$)|(\#)/ ) { $act_line = ""; }
+	  else { die "Wrong format of input line to run_arpwarp_refmac5D: $act_line\n"; } } }
+  $all_lines = "$all_lines$act_line"; 
+}
+
+open(PARFILE,">$WORKDIR/input.par") 
+  or die "Parameter file $WORKDIR/input.par could not be created. Check the path and permissions.\n"; 
+syswrite(PARFILE,$all_lines,99999);
+close(PARFILE);
+
+if ( -e $HEAVYFILE ) { system("cp -f $HEAVYFILE $HEAVYFILE.ref"); }
+system("mkdir -p $WORKDIR/CCP4_DATABASE");
+system("/bin/echo \"#CCP4I VERSION DUMMY_REFMAC5D_DEVEL\n#CCP4I PROJECT $PROJECT\" > $CCP4I_DEFFILE");
+system("cp -f $WORKDIR/input.par $WORKDIR/${JOB_ID}_arp_warp.par");
+### find arp/warp version and run arp/warp tracking
+if ( `arp_warp << end` =~ /ARP Ver. (\d)/ )  { $arpv=$1; }
+else { die "ARP/wARP version could not be determined. Check your ARP/wARP installation."; }
+if ($arpv le 6) { 
+  system("$ENV{warpbin}/arp_warp.sh ccp4i $WORKDIR/input.par > $WORKDIR/${JOB_ID}_arp_warp_log.html");
+}
+elsif ($arpv gt 6) {
+  system("$ENV{warpbin}/warp_tracing.sh $WORKDIR/input.par 1 > $WORKDIR/${JOB_ID}_arp_warp.log");
+}
+system("rm -f $WORKDIR/input.par");
+#system("rm -f $CCP4I_DEFFILE $WORKDIR/CCP4_DATABASE/*");
+#system("rmdir $WORKDIR/CCP4_DATABASE");

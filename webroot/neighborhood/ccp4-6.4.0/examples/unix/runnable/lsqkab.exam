@@ -1,0 +1,52 @@
+#!/bin/sh 
+
+set -e
+
+# Use pdbcur to rotate/translate rnase model by arbitrary amounts.
+# Then use lsqkab to recover original coordinates by a fitting.
+# $CCP4_SCR/rnase_fitted.pdb should correspond to the original $CEXAM/rnase/rnase.pdb
+
+pdbcur xyzin $CEXAM/rnase/rnase.pdb xyzout $CCP4_SCR/rnase_transf.pdb <<eof
+rotate * 43 27 67 center
+symop  X+0.2,Y+0.3,Z+0.6
+symcommit
+eof
+
+lsqkab                        \
+XYZINM $CCP4_SCR/rnase_transf.pdb \
+XYZINF $CEXAM/rnase/rnase.pdb \
+XYZOUT $CCP4_SCR/rnase_fitted.pdb       \
+<< 'END-lsqkab' 
+title overall transformation from refinement
+FIT WATOM 1 TO 10000 
+MATCH 1 to  10000
+output  XYZ    
+end
+END-lsqkab
+
+#  lsqkab being used to apply a rotation & translation
+#  Alternative: use PDBSET
+lsqkab			\
+XYZIN2 $CEXAM/toxd/toxd.pdb \
+XYZOUT $CCP4_SCR/toxd_rot_trans.pdb	\
+<< 'END-lsqkab' 
+title Rotating model by almn angles
+ROTAT EULER  37.7 40.5 30.3
+TRAN FRAC 0.36905 0.44048 0.27083
+output  XYZ    # ! output file LSQOP with new coords
+end
+END-lsqkab
+
+# Obtain NCS rotation/translation relating chain A to chain B
+# First make a temporary copy of the original file
+cp $CEXAM/rnase/rnase.pdb $CCP4_SCR/$$.pdb
+lsqkab xyzin2 $CEXAM/rnase/rnase.pdb xyzin1 $CCP4_SCR/$$.pdb \
+RMSTAB $CCP4_SCR/rnase_rms.tab  <<EOF
+FIT RESIDUE MAIN 1 TO 96 CHAIN A
+MATCH RESIDUE MAIN 1 TO 96 CHAIN B
+OUTPUT  RMS    # ! output file RMSTAB with differences
+END
+EOF
+
+# Remove the temporary copy
+rm $CCP4_SCR/$$.pdb

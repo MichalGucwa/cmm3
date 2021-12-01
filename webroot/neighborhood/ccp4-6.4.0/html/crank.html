@@ -1,0 +1,531 @@
+<html>
+  <head>
+    <title>CRANK Version 1.5.x - Documentation</title>
+<style>
+
+h1  { font-family: 'Lucida Grande', Geneva, Verdana, Arial, Helvetica, sans-serif; font-size: 22px; color: #115522 }
+
+h2  { font-family: 'Lucida Grande', Geneva, Verdana, Arial, Helvetica, sans-serif; font-size: 20px; color: #113322 }
+
+h3  { font-family: 'Lucida Grande', Geneva, Verdana, Arial, Helvetica, sans-serif; font-size: 18px; color: #113322 }
+
+h4  { font-family: 'Lucida Grande', Geneva, Verdana, Arial, Helvetica, sans-serif; font-size: 16px; color: #113322 }
+
+h5  { font-family: 'Lucida Grande', Geneva, Verdana, Arial, Helvetica, sans-serif; font-size: 14px; color: #113322 }
+
+p  { font-family: 'Lucida Grande', Geneva, Verdana, Arial, Helvetica, sans-serif; font-size: 15px; margin-left: 20px }
+
+p.end { font-size: 7px; }
+
+address { font-size: 7px; }
+
+dt { font-family: 'Lucida Grande', Geneva, Verdana, Arial, Helvetica, sans-serif; font-size: 15px; margin-left: 20px; font-weight: bold }
+
+dd  { font-family: 'Lucida Grande', Geneva, Verdana, Arial, Helvetica, sans-serif; font-size: 15px; margin-left: 20px; }
+
+body { font-family: 'Lucida Grande', Geneva, Verdana, Arial, Helvetica, sans-serif; font-size: 20px; background: white ; margin: 20px }
+
+A:link { color: #3333DD } 
+A:visited { color: #AAAAFF } 
+A:active { color: #33DD33 } 
+
+</style>
+
+</head>
+
+<body>
+<center>
+  <h1>Crank version 1.5.x Documentation</h1>
+</center>
+
+<h2>NAME</h2>
+
+<p> crank - automated structure solution pipeline for SAD/MAD or SIRAS data.
+
+<h2>DESCRIPTION</h2>
+
+<p>
+Crank <A HREF="#[1]">[1]</A> is a program to automate macromolecular structure 
+determination for single or multiple-wavelength anomalous diffraction (SAD/MAD) or 
+single isomorphous replacement (SIRAS) experiments.  Crank interfaces with various 
+crystallographic programs and is designed to allow both the automation of the structure 
+determination process, but also allow the user to re-run and optmize results, if
+necessary.  Users can start either at the substructure detection or substructure 
+phasing step and can end at any stage after the initial step.
+
+<p>
+This version of Crank has interfaces to the programs CRUNCH2 <A HREF="#[2]">[2]</A> and
+SHELXD <A HREF="#[3]">[3]</A> for substructure detection, BP3 <A HREF="#[4]">[4]</A>, 
+<A HREF="#[5]">[5]</A> for substructure phasing, SOLOMON <A HREF="#[6]">[6]</A>, DM <A HREF="#[7]">[7]</A>, 
+SHELXE <A HREF="#[8]">[8]</A>, PARROT, PIRATE <A HREF="#[9]">[9]</A> and RESOLVE <A HREF="#[23]">[23]</A> 
+for density modification and RESOLVE <A HREF="#[24]">[24]</A>, BUCCANEER <A HREF="#[25]">[25]</A> and 
+ARP/wARP <A HREF="#[10]">[10]</A> for automated model building.  ARP/wARP uses REFMAC <A HREF="#[11]">[11]</A> 
+for iterative refinement.  Within REFMAC, either the likelihood function restraining phases via 
+Hendrickson-Lattman coefficients <A HREF="#[12]">[12]</A> or a multivariate likelihood SAD function 
+<A HREF="#[13]">[13]</A> is used.  To calculate FA values needed for substructure detection, 
+crank interfaces with the programs SHELXC <A HREF="#[14]">[14]</A> or AFRO <A HREF="#[15]">[15]</A>.  
+For setting up and preparing files, crank using programs from the CCP4 <A HREF="#[16]">[16]</A> suite, 
+including SFTOOLS <A HREF="#[17]">[17]</A> and TRUNCATE <A HREF="#[18]">[18]</A>.
+Also, crank uses the Kantardjieff-Rupp algorithm <A HREF="#[19]">[19]</A> which performs a 
+probabilistic Matthew's coefficient <A HREF="#[20]">[20]</A> calculation for estimating the the number 
+of monomers in the asymmetric unit.  To visualize the results produced by crank, an interface to 
+COOT <A HREF="#[26]">[26]</A> is also available.
+
+<p>
+Crank can be run using its CCP4i <A HREF="#[21]">[21]</A> interface or via script using the program GCX 
+<A HREF="#[22]">[22]</A>.  Crank's only dependency to produce a density modified map is 
+a licenced CCP4 version 5.99.x or later.  If you would like to use the SHELX 
+<A HREF="#[13]">[13]</A> programs, ARP/wARP <A HREF="#[10]">[10]</A>, RESOLVE <A HREF="#[23]">[23]</A>, 
+<A HREF="#[24]">[24]</A> and/or BUCCANEER  <A HREF="#[25]">[25]</A> within crank, 
+you must have it installed on your system with the appropriate licence.  If these programs do not
+appear in your path, they will not appear as options in the ccp4i interface.
+
+
+<h2>RUNNING CRANK</h2>
+
+<p>
+Crank can be run either through its CCP4i interface or via script using the program GCX.
+Currently, the CCP4i interface has more options available.  To see how to run crank via 
+GCX, please consult the program's documentation available in the crank's distribution 
+subdirectory programs/gcx/doc.  To start the Crank CCP4i interface type the 
+command:
+
+<dl>
+<dt>
+ccp4i
+</dl>
+
+<p>
+Then, using the main CCP4i menu on the far left hand side of the interface, select 
+"Experimental Phasing", then select "Automated Search & Phasing" and see "Crank - automated EP pipeline" 
+(or within the "Program List", scroll down to "Crank" and click it).  
+
+<p>
+Below, descriptions of the crank CCP4i fields are given.
+
+<h3>CRANK CCP4i FIELDS</h3>
+
+<h4>Title</h4>
+	
+<p>			
+  A short descriptive title for the experiment to appear in the CCP4i task window
+
+<h4>Type of experiment</h4>
+
+<p>
+Select your experiment between Single wavelength anomalous diffraction (SAD), Single isomorphous
+replacement with anomalous scattering (SIRAS), (Two, Three or Four wavelength MAD) 2W-MAD, 3W-MAD, 
+or (Two, Three or Four wavelength MAD with native) 2W-MADN  or 2W-MADN, 3W-MADN, 4W-MADN.
+
+<h4>Input protein sequence</h4>
+
+<p>
+If you wish to input the protein sequence in pir format to use in automated model building 
+and refinement and estimating the solvent content.  Crank will then display the total number
+of amino acid residues.  If you do not wish to input the protein sequence, unclick the button 
+and input the number of protein residues per monomer.
+
+<h4>DNA/RNA present</h4>
+
+<p>
+If you have DNA and/or RNA, click on the DNA/RNA button and input the number of nucleotides
+per monomer.
+
+<h4>MTZ in</h4>
+
+<p>
+The name of your input MTZ file.  At the moment, this must contain merged intensities 
+or structure factor amplitudes from your experiment.
+
+<h4>Input (Intensities/Amplitudes)</h4>
+
+<p>
+ Choose whether you wish to input Intensities or Structure factor amplitudes.
+
+<h4>Input R-free flag</h4>
+
+<p>
+By default, CRANK will create an R-free flag.  Alternatively, you can specify an
+existing R-free column label present in the MTZ IN file.
+
+<h4>MTZ out</h4>
+
+<p>
+The name of the MTZ file that will be outputted.  The intermediate steps run by crank 
+may also output MTZ file.  See the section on INTERPRETING RESULTS for more information.
+
+
+<h4>Crystal/Data set parameters</h4>
+
+<p>
+You will now have to input information on your substructure atom and the mtz columns 
+for your data.
+
+<h5>Substructure atom</h5>
+
+<p>Give your anomalous or heavy substructure atom.  The name must correspond to an atom in CCP4's library file ($CLIBD/atomsf.lib).
+
+<h5>Number of substructure atoms per monomer</h5>
+
+<p>Give the number of anomalous/heavy atoms expected per monomer.  The total number of 
+substructure atoms looked for (in the asymmetric unit) will be this number multiplied 
+by the number given or obtained in the "number of monomers in the asu" field in the 
+Required parameters section.  
+
+<h5>Data collected at CuKalpha wavelength (1.54A)</h5>
+
+<p>If your data was collected at CuKalpha wavelength, click this box and the f' and f" 
+values for your atom will be obtained automatically.  If your data was not collected at 
+CuKalpha wavelength, input the f' and f" values.  To get the best possible results, 
+please give a reasonable value.  If you only have the wavelength and did not measure 
+the values by a florescence scan, you can use the CCP4 program CROSSEC to get an
+estimate.
+
+<h5>IP+, SIGIP+ IP-, SIGIP- or IP, SIGIP</h5>
+
+<p> Input the mtz columns corresponding to your merged mtz file.  If you have a 
+significant anomalous signal, input the anomalous intensities.
+
+
+<h4>(DERIVED PARAMETERS) Guess Overall B, solvent content (and number of monomers if no input is given)</h4>
+
+<p>
+Once the number of protein residues and/or nucleotides is given, crank will attempt to 
+guess the solvent content, overall B-factor and number of monomers in the asymmetric 
+unit.  Crank obtains a first guess for the solvent content and number of monomers in the
+asymmetric unit by using the functional form proposed by Kantardjieff and Rupp 
+<A HREF="#[19]">[19]</A> - these values will be filled in automatically.  If you would 
+like to see the Matthew's <A HREF="#[20]">[20]</A> coefficient, Kantardjieff-Rupp probability, 
+and solvent content corresponding to a different number of monomers, simply input the number 
+of monomers in the box, and re-click on the "Guess Overall B, solvent content..." button and 
+the updated parameters will be shown.
+
+<h4>Experimental pipeline</h4>
+
+<h4>Start the pipeline with ... and end with ...</h4>
+
+<p>
+This option allows you to start or end the pipeline at a certain step.
+
+<p>
+If you choose to start at a step that requires inputting a substructure, and you would like
+to input a substructure in pdb format, the format of that pdb file should be the following:
+
+<pre>
+HETATM    1  SE  HAT     1      25.284  28.195  17.180  1.00 33.96
+
+OR
+
+ATOM      1  SE  HAT     1      25.284  28.195  17.180  1.00 33.96
+</pre>
+
+<p>
+The fixed format for the columns agree with the pdb format, but column 3 has to be the name of 
+your substructure that matches an atom in $CLIBD/atomsf.lib.  See file gere.pdb in the
+test sub-directory of the main crank directory for an example.
+
+<p>
+The section allows you to choose the experimental pipeline you would like to perform.  
+At the moment, five predefined pipelines are available:
+
+
+
+<h4>Display individual program options</h4>
+
+<p>
+    Click on this option if you wish to adjust any of the program options.  If you click
+    this option, you can remove all programs by clicking the "Clear All" button, and the 
+    experimental palette pipeline will be removed.  It is possible to construct your own 
+    pipeline by selecting the program that you wish to use next with the 
+    "Next possible program:" option, followed by the "Add program" button.  However, this 
+    should only be used by experts who know exactly what they are doing!  
+
+    If you do not wish to run the specified program listed at the end of the crank 
+    pipeline, the program can be removed with the "Edit list" and "Delete last item" 
+    option.  You can also see the flow of information (ie. mtz columns, substructures, 
+    etc), by clicking on the "Show all pipeline input columns".
+
+<h4>PROGRAM FIELDS</h4>
+
+<p>
+Below, a description of all the crank plugins as well as some of the more important 
+modifiable options is given.
+ 
+   <h3>PREP</h3>
+   
+   <p>
+   PREP is the crank plugin for using ctruncate <A HREF="#[17]">[17]</A> to calculate 
+   structure factor amplitudes from intensities and using scaleit 
+   <A HREF="#[15]">[15]</A> to relatively scale the data sets together.  Most of the 
+   options given are self-explanatory.
+
+   <h3>AFRO</h3>
+
+<p>
+   AFRO is the crank plugin for the AFRO <A HREF="#[14]">[14]</A> program to calculate 
+   FA values needed for substructure detection programs.  Some of the important fields 
+   that can be modified to improve results in substructure detection are the following:
+
+<dl>
+
+    <dt>
+        High resolution cutoff;
+
+    <dd>
+        The default is to cut the data set to 0.5 plus the data sets highest resolution.
+        Changing this value based on the graph of DANO/SANO for anomalous differences 
+        may improve results.  (This graph is shown by afro/xloggraph.)
+
+    <dt>
+        Exclude Reflections: FP &lt; &lt;nsigf&gt; *SIGF DANO &lt; &lt;nsano&gt; *SANO
+
+    <dd>
+        Exclude reflections if FP &lt; &lt;nsigf&gt; *SIGF.  The default setting for 
+        &lt;nsigf&gt; is 2.0.  Exclude reflections if DANO &lt; &lt;nsano&gt; * SDANO.  
+        The default setting for &lt;nsano&gt; is 0.5.  (DANO = abs(|F+| - |F-|) and 
+        SDANO is the standard deviation of DANO in measurement.  Modifying this value
+        can lead to a solution when a previous value has failed.
+
+</dl>
+
+   <h3>CRUNCH2</h3>
+ 
+   <p>
+   CRUNCH2 <A HREF="#[2]">[2]</A> is a substructure detection program using 
+   Karle-Hauptmann matrices.  
+
+<dl>
+      <dt>
+	Number of CRUNCH2 trials
+
+      <dd>
+	Probably the first option to modify when substructure detection has failed is 
+        to increase the number of CRUNCH2 trials.  The default value shown is 20.
+
+      <dt> 
+	Number of Patterson trials to generate
+
+      <dd>
+        Sets the number of Patterson trials.  Before a crunch2 run, a Patterson minimal 
+        function is calculated to generate trial solutions for crunch2.  The default is 
+        to generate 150 starting Patterson trials.  
+        CRUNCH2 ranks all starting patterson solutions and runs the best values first.
+
+      <dt>
+	Stop CRUNCH2 if a score is greater than
+
+      <dd>
+        This field sets the minimum crunch2 figure of merit to stop the crunch2 run.  
+        The default is 1.0 - if this value is obtained by CRUNCH2, you can be fairly 
+        confident that you have obtained the correct substructure.
+ 	
+      <dt>
+	or if the highest score is &lt;ndeviation&gt; times the lowest score
+
+      <dd>
+	&lt;ndeviation&gt; specifies another stopping criteria:  CRUNCH2 is stopped if 
+        the highest score if a trial is &lt;ndeviation&gt; times greater than the 
+        lowest score.  The default value for &lt;ndeviation&gt; is 1.75.
+
+</dl>
+  
+   <h3>BP3</h3>
+
+   <p>
+   BP3 <A HREF="#[4]">[4]</A>, <A HREF="#[5]">[5]</A> is a substructure phasing 
+   program.  The "Fast phasing" option can be toggled on and off if you would like to 
+   have a quicker run of BP3.  Fast phasing is the default for MAD phasing.
+
+   <h3>SOLOMON</h3>
+
+   <p>
+   SOLOMON's <A HREF="#[6]">[6]</A> interface can attempt to determine the correct hand, 
+   optimize the solvent content, and perform a density modification run.  
+
+   <h3>DM</h3>
+
+   <p>
+   DM <A HREF="#[7]">[7]</A> is a density modification program.  If you have a 
+   metallo-protein, it is probably optimal to unclick the "Histogram matching" option.
+   Again, the interface to DM can be used to determine the correct hand, optimize
+   the solvent content and, of course, perform a complete density modification run.
+
+   <h3>PIRATE</h3>
+
+   <p>
+   PIRATE <A HREF="#[9]">[9]</A> is a density modification program.  The weight to 
+   apply to input phases is an option to change if you believe that the phases that 
+   you input are bias.
+
+   <h3>SHELXC</h3>
+
+   <p>
+   SHELXC <A HREF="#[14]">[14]</A> is the program to generate files (including FA 
+   values) needed for SHELXD and SHELXE.
+ 
+<dl>
+      <dt>
+        High resolution cutoff &lt;hires&gt;
+
+      <dd>
+        Specify the high resolution limit.  The default is to set the limit to 0.5 
+        Angstroms above the high resolution limit - unless the high resolution limit 
+        is lower than 2.5, in which case the limit is set to the lower of 3.0 Angstroms 
+        or the high resolution limit of the data.  
+
+</dl>
+
+   <h3>SHELXD</h3>
+
+   <p>
+   SHELXD <A HREF="#[3]">[3]</A> can be used to determine substructures, if the SHELX 
+   suite is installed.  Important options to consider are the following.
+
+   <dl>
+
+      <dt>
+	CC/weak threshold &lt;nthreshold&gt;
+
+      <dd>
+	&lt;nthreshold&gt; is the minimum "weak" correlation coefficient needed to 
+        stop the shelxd run.  The default is 30.
+
+      <dt>
+	Num. trials &lt;ntrials&gt;
+
+      <dd>
+        Sets the number of trials.  The default is 500, but for more difficult problems 
+        with a weak signal, setting &lt;ntrials&gt; to a greater value (like 1000) can 
+        lead to a solution, when a solution was not found with 500.
+
+      <dt>
+	Minimum distance between atoms &lt;mind&gt;
+
+      <dd>
+	Set the minimum distance between substructure atoms.  The crank default value 
+        is 3.5.
+
+   </dl>
+
+   <h3>SHELXE</h3>
+
+   <p>
+   Crank also has an interface for the the density modification program 
+   SHELXE <A HREF="#[8]">[8]</A> which can be used to determine the correct hand,
+   optimize the solvent content and perform a complete density modification run.   
+
+   <h3>ARPWARP</h3>
+
+   <p>
+   ARPWARP is the crank plugin for the automated model building program ARP/wARP
+   <A HREF="#[10]">[10]</A> with iterative refinement using REFMAC <A HREF="#[11]">[11]</A>
+
+   <dl>
+
+      <dt>
+	Autobuild cycles  &lt;nautobuild&gt;
+
+      <dd>
+        The number of autobuilding cycles in ARP/wARP (default is 10).  Sometimes more than 10
+        cycles are needed to complete the model.
+
+      <dt>
+        Include &lt;target&gt;
+
+      <dd>
+        The target function to use for refinement in REFMAC.  By default, the SAD likelihood function 
+        <A HREF="#[13]">[13]</A> is used for SAD experiments and the  MLHL function <A HREF="#[12]">[12]</A>
+        for non-SAD experiments.  However, in the case where Hendrickson-Lattman coefficients
+        are not available, the MLHL function can not be run (For example, in the SHELXC/D/E
+        pipeline.)  In this case, the SAD function is used for SAD and MAD experiments.  We
+        have found that the SAD function works optimally when the free set is used for scaling
+        and sigmaa calculation.  Conversely, the MLHL and (no phase restraints likelihood function)
+        works best if the sigmaa calculation uses the working set.  The above selections for the
+        set of reflections to use in sigmaa calculations are the default settings in CRANK.
+
+    </dl>
+
+<h3>INTERPRETING RESULTS</h3>
+
+<h4>Crank directory structure</h4>
+				
+<p>
+Crank uses a hierarcherically structured directory system to store all the different 
+runs of the various crystallographic programs.  There are two types of directories 
+under the Crank directory hierarchy, directories where crystallographic programs are 
+run, and directories where information is collected.
+
+<p>
+The directories where programs are run in always start with a number followed by a 
+dash and a program name as in "3-crunch2" or "4-bp3".  The first number signifies 
+what part in the pipeline the named program was run.
+
+
+<p>
+Inside these directories are where the various crystallographic programs are run and
+thus contain all the files produced by the run of the given program.  These directories 
+are constructed by crank, which first builds a shell script to run the program.  This 
+shell script is designed to be as close as possible to the example scripts generated 
+by the program author.  Crank copies all the requisite data files for the program into 
+the run directory.
+
+<p>
+Then, Crank simply executes the shell script that it has built, timing the run and 
+collecting results.  
+
+<p>
+In cases where automated structure solution was not possible or to try to optimize 
+results, obviously, identifying the step (ie. substructure detection or phasing) which 
+either failed, or produced sub-optimal results is the first step.  The best place to
+start to look if a particular step failed is to examine the individual programs 
+documentation.  Also, it may be useful to look at the Crank test system to give an 
+indication of statistics from successful jobs and diagnostics (and suggestions)
+from jobs that failed with default settings. 
+
+<h2>PROBLEMS, SUGGESTIONS</h2>
+
+Crank is still beta software, and we appreciate any suggestions or bug reports that 
+can be emailed to crank@chem.leidenuniv.nl.
+
+<h2>REFERENCES</h2>
+
+<p>
+<LI> <A NAME="[1]">[1]</A> Ness, S.R., de Graaff, R.A.G., Abrahams, J.P. and Pannu, N.S. (2004)
+     Structure, 12, 1753-1761.</LI>
+<LI> <A NAME="[2]">[2]</A> de Graaff, R.A.G., Hilge, M., van der Plas, J.L. and Abrahams, J.P. (2001)
+     Acta Cryst., D57, 1857-1862.</LI>
+<LI> <A NAME="[3]">[3]</A> Schneider T.R., Sheldrick G.M. (2002) Acta Cryst., D58, 1772-1779.</LI>
+<LI> <A NAME="[4]">[4]</A> Pannu, N.S. and Read, R.J. (2004) Acta Cryst., D60, 22-27.</LI>
+<LI> <A NAME="[5]">[5]</A> Pannu, N.S., McCoy, A.J. and Read, R.J. (2003) Acta Cryst., D59, 1801-1808.</LI>
+<LI> <A NAME="[6]">[6]</A> Abrahams, J.P. and Leslie, A.G.W. (1996) Acta Cryst., D52, 30-42.</LI>
+<LI> <A NAME="[7]">[7]</A> Cowtan, K.D. (1994) Joint CCP4 and ESF-EACBM Newsletter on Protein Crystallography, 
+     31, 34-38. </LI>
+<LI> <A NAME="[8]">[8]</A> Sheldrick, G.M. (2002) Z. Kristallogr., 217, 644-650.</LI>
+<LI> <A NAME="[9]">[9]</A> Cowtan, K. (2000) Acta Cryst., D56, 1612-1621.</LI>
+<LI> <A NAME="[10]">[10]</A> Perrakis, A., Morris, R.M. and Lamzin, V.S. (1999) Nat Struct Biol., 6, 458-463.</LI>
+<LI> <A NAME="[11]">[11]</A> Murshudov, G.N., Vagin, A.A. and Dodson, E.J. (1997) Acta Cryst., D53, 240-255.</LI>
+<LI> <A NAME="[12]">[12]</A> Pannu, N.S., Murshudov, G.N., Dodson, E.J. and Read, R.J. (1998)  Acta Cryst., D54, 
+     1285-1294.</LI>
+<LI> <A NAME="[13]">[13]</A> Skubak P, Murshudov G.N. and Pannu NS (2004) Acta Cryst., D60, 2196-2201.</LI>
+<LI> <A NAME="[14]">[14]</A> Sheldrick, G.M. <A HREF="http://shelx.uni-ac.gwdg.de/SHELX/">SHELX suite of programs website</A> </LI>
+<LI> <A NAME="[15]">[15]</A> Pannu, N.S. (unpublished).</LI>
+<LI> <A NAME="[16]">[16]</A> CCP4 (1994) Acta Cryst., D50, 760-763.</LI>
+<LI> <A NAME="[17]">[17]</A> Hazes, B. (unpublished).</LI>
+<LI> <A NAME="[18]">[18]</A> French, G.S. and Wilson, K.S. (1978) Acta. Cryst., A34, 517-534.</LI>
+<LI> <A NAME="[19]">[19]</A> Kantardjieff, K.A. and Rupp, B. (2003) Protein Science, 12, 1865-1871.</LI>
+<LI> <A NAME="[20]">[20]</A> Matthews, B.W. (1968) J.Mol.Biol, 33, 491-497.</LI>
+<LI> <A NAME="[21]">[21]</A> Potterton, E., Briggs, P.J., Turkenburg, M. and Dodson, E.J. (2003) Acta. Cryst., D59, 1131-1137.</LI>
+<LI> <A NAME="[22]">[22]</A> Pannu, N.S. (unpublished).</LI>
+<LI> <A NAME="[23]">[23]</A> Terwilliger, T.C. (2000) Acta Cryst., D56, 965-972.
+<LI> <A NAME="[24]">[24]</A> Terwilliger, T.C. (2003) Acta Cryst., D59, 38-44.
+<LI> <A NAME="[25]">[25]</A> Cowtan, K. (2006) Acta Cryst., D62, 1002-1011.
+<LI> <A NAME="[26]">[26]</A> Emsley, P. and Cowtan, K. (2004) Acta Cryst., D60, 2126-2132.
+
+<hr>
+<p class=end>
+<!-- hhmts start -->
+Last modified: Tue Feb 17 11:39:19 CET 2009
+<!-- hhmts end -->
+</p>
+  </body>
+</html>

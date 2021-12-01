@@ -1,0 +1,615 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>CCP4 Program Suite : cad</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]">
+</HEAD>
+<BODY>
+
+<!-- ::INDEX_INFO::CAD::Supported::MTZ manipulations / conversions::Collect and sort crystallographic reflection data from several files:::::::: -->
+
+<H1>CAD (CCP4: Supported Program)</H1>
+<H2>NAME</H2>
+<B>cad </B>
+- Collect and sort crystallographic reflection data from several files, to generate a single set.
+
+<H2>SYNOPSIS</H2>
+
+<P><B>cad hklin1</B> <I>foo_in_1.mtz </I><B>hklin2</B> <I>foo_in_2.mtz</I>
+...<B> hklini </B><I>foo_in_i.mtz</I> <B>hklout </B><I>foo.mtz</I> <BR>
+[<A HREF="#keywords">Keyworded input</A>] </P>
+
+<H2><A NAME="description"></A>DESCRIPTION</H2>
+
+<P>Uses: </P>
+
+<OL>
+<LI>Combine and sort reflection data from up to 9 input reflection data
+files into a single output data file, with various possible operations
+being performed on the input data items. For example, you can specify a
+new spacegroup, change column names and/or types, etc. Data can
+be converted from one area of reciprocal space to another, converting phases,
+Hendrickson-Lattman coefficients (providing all 4 are present) and anomalous
+differences appropriately. </LI>
+
+<LI>Edit the information describing the datasets held in a file, such
+as dataset name or crystal cell dimensions. Columns can be re-assigned
+to different datasets. </LI>
+
+<LI>Unless otherwise instructed, the program places output data in the
+CCP4 asymmetric unit (which sometimes differs from that in the International
+Tables), and sorts it to a standard order. This is an important step when
+importing data from other packages. It is thus a good idea to run data
+through CAD after converting it to MTZ format with <A HREF="f2mtz.html">f2mtz</A>.
+</LI>
+
+<LI>Extend reflection data to cover more of reciprocal space. For example
+it is convenient to extend Cubic data to include hkl klh and lhk for many
+purposes. Or you may want to run refinement calculations in spacegroup
+P1. </LI>
+
+<LI>Prepare data for translation functions of various types, e.g. <A HREF="tffc.html">tffc</A>
+or <A HREF="rsearch.html">rsearch</A>. </LI>
+</OL>
+
+<H2><A NAME="files"></A>INPUT AND OUTPUT FILES</H2>
+
+<P>The input files are one or more (up to 9) reflection data files in MTZ
+format, assigned to HKLIN1, HKLIN2, ... HKLIN9. </P>
+
+<P>The output file is a reflection data file in MTZ format. </P>
+
+<P>Missing data items, i.e. empty column entries corresponding to reflections
+that occur in some input files but not in the input file contributing that
+particular column, are represented by Missing Number Flags (see <A HREF="#valm">VALM</A>
+keyword). A particularly important example of this is the use of CAD to
+fill in missing data in a dataset with MNFs, thus completing the dataset.
+More details can be found in the <A HREF="unique.html">unique</A> documentation.
+</P>
+
+<H2><A NAME="keywords"></A>KEYWORDED INPUT</H2>
+
+<P>The various data control lines are identified by keywords, those available
+being: </P>
+
+<P><A HREF="#cell"><B>CELL</B></A>, <A HREF="#centric"><B>CENTRIC ONLY</B></A>, 
+<A HREF="#ctypin"><B>CTYPIN</B></A>, 
+<A HREF="#end"><B>END</B></A>, <A HREF="#history"><B>HISTORY</B></A>, 
+<A HREF="#labin"><B>LABIN</B></A>(compulsory), <A HREF="#labout"><B>LABOUT</B></A>,
+<A HREF="#monitor"><B>MONITOR</B></A>, <A HREF="#outlim"><B>OUTLIM</B></A>, 
+<A HREF="#refmonitor"><B>REFMONITOR</B></A>, 
+<A HREF="#resolution"><B>RESOLUTION</B></A>,
+<A HREF="#scale"><B>SCALE</B></A>, <A HREF="#sort"><B>SORT</B></A>,
+<A HREF="#symmetry"><B>SYMMETRY</B></A>, <A HREF="#sysab"><B>SYSAB KEEP</B></A>, 
+<A HREF="#title"><B>TITLE</B></A>, <A HREF="#valm"><B>VALM</B></A></P>
+
+<P>In addition, there are a few keywords for editing dataset information
+in the MTZ file header: </P>
+
+<P><A HREF="#dcell"><B>DCELL</B></A>, <A HREF="#dname"><B>DNAME</B></A>, 
+<A HREF="#drename"><B>DRENAME</B></A>, <A HREF="#dpname"><B>DPNAME</B></A>, 
+<A HREF="#dwave"><B>DWAVELENGTH</B></A>, <A HREF="#xname"><B>XNAME</B></A> </P>
+
+<h2>General Keywords</h2>
+
+<H3><A NAME="labin"></A>LABIN FILE_NUMBER &lt;i&gt; [ ALL | &lt;column
+assignment&gt; ... ]</H3>
+
+<P>(Compulsory.) A line giving the names of the input data items to be
+selected from FILE_NUMBER &lt;i&gt; to be read from HKLIN&lt;i&gt;. Up
+to 29 columns can be specified for input from each HKLIN&lt;i&gt;. If you
+want to pick up all items from a file, AND there are less than 30 items
+excluding H K L, then you can specify </P>
+
+<DL>
+<DD>LABIN FILE_NUMBER &lt;i&gt; ALL </DD>
+</DL>
+
+<P>e.g.: LABI FILE_NUMBER 1 E1=F E2=SIGF E3=FC E4=PHIC ... E29=SIGFau (E&lt;j&gt;
+stands for ENTRY&lt;j&gt;.) </P>
+
+<H3><A NAME="labout"></A>LABOUT &lt;column assignment&gt; ...</H3>
+
+<P>A line giving the new names for the data items which will be written
+to HKLOUT. Output labels can be changed if you wish, but the default is
+to keep the input label, unique-ified with the input file number if necessary
+(see above). E.g.: </P>
+
+<DL>
+<DD>LABO FILE_NUMBER 1 E1=Fnat1 E2=SIGFnat1 </DD>
+</DL>
+
+<P>This changes the first 2 labels and leaves all the rest the same. </P>
+
+<H3><A NAME="ctypin"></A>CTYPIN FILE &lt;i&gt; &lt;program label&gt;=&lt;type&gt;
+...</H3>
+
+<P>A line giving the names of the data types to be assigned to the entries
+selected for FILE &lt;i&gt; . The default is to leave the input datatypes
+unaltered. </P>
+
+<P>The data types for the different types of data which can be present
+in an MTZ file are as follows; <BR>
+H F J D G K Q L M P W A B Y I R [ U V ] </P>
+
+<DL compact>
+<DT>H</DT>
+<DD> index h,k,l </DD>
+
+<DT>F</DT>
+<DD> structure amplitude, F </DD>
+
+<DT>J</DT>
+<DD> intensity </DD>
+
+<DT>D</DT>
+<DD> anomalous difference </DD>
+
+<DT>G</DT>
+<DD> member of Friedel pair, F+ or F-</DD>
+
+<DT>K</DT>
+<DD> member of Friedel pair, I+ or I-</DD>
+
+<DT>Q</DT>
+<DD> standard deviation of J,F,D or other </DD>
+
+<DT>L</DT>
+<DD> standard deviation of F+ or F-</DD>
+
+<DT>M</DT>
+<DD> standard deviation of I+ or I-</DD>
+
+<DT>P</DT>
+<DD> phase angle in degrees </DD>
+
+<DT>W</DT>
+<DD> weight (of some sort) </DD>
+
+<DT>A</DT>
+<DD> phase probability coefficients (Hendrickson/Lattman) </DD>
+
+<DT>B</DT>
+<DD> BATCH number </DD>
+
+<DT>Y</DT>
+<DD> M/ISYM, packed partial/reject flag and symmetry number </DD>
+
+<DT>I</DT>
+<DD> any other integer </DD>
+
+<DT>R</DT>
+<DD> any other real </DD>
+</DL>
+
+<P>It is essential to have correct column types for PHASES and ANOMALOUS
+differences: </P>
+
+<OL>
+<LI>to distinguish phases which will require changing if the reflection
+is moved to a symmetry equivalent; </LI>
+
+<LI>anomalous differences which require changing sign if the reflection
+is changed to a Friedel pair. </LI>
+</OL>
+
+<P>In addition two special data types are used to signal that you are preparing
+data for translation functions of various types. They are: </P>
+
+<DL compact>
+<DT>U</DT>
+
+<DD> partial FC </DD>
+
+<DT>V</DT>
+
+<DD> partial PHIC </DD>
+</DL>
+
+<P>There must be only one FCpart PHICpart per input file, and they must
+be the last items specified for LABIN. CAD generates equivalent reflections
+using only the ROTATIONAL part of the primitive symmetry operator; (i.e.,
+if the spacegroup is P212121 these reflections are analysed as though the
+spacegroup was P222) This is allowed for in the TFFC and RSEARCH programs.
+See their documentation. </P>
+
+<P>For the above example their output labels would be <BR>
+FC1 PHIC1 FC2 PHIC2 ... FCnsymp PHICnsymp <BR>
+where nsymp is the number of primitive symmetry operators. <BR>
+See example. </P>
+
+<H3><A NAME="cell"></A>CELL &lt;a&gt; &lt;b&gt; &lt;c&gt; [ &lt;alpha&gt;
+&lt;beta&gt; &lt;gamma&gt; ]</H3>
+
+<P><I>This keyword is now obsolete, since it is no longer appropriate to
+use one set of cell dimensions to cover all datasets held in the file.
+The keyword will be ignored! Please see <A HREF="#dcell">DCELL</A>
+keyword.</I></P>
+
+<H3><A NAME="centric"></A>CENTRIC_ONLY</H3>
+
+<P>Only output centric terms. </P>
+
+<H3><A NAME="history"></A>HISTORY &lt;string&gt;</H3>
+
+<P>History strings to be added to mtz o/p file HKLOUT </P>
+
+<H3><A NAME="monitor"></A>MONITOR NONE | BRIEF | HIST | FULL</H3>
+
+<P>Printing MTZ file header information as: </P>
+
+<BLOCKQUOTE>
+<DL>
+<DT><A NAME="monitor_none"></A>NONE</DT>
+
+<DD> (default) no header information output </DD>
+
+<DT><A NAME="monitor_brief"></A>BRIEF</DT>
+
+<DD> brief header output </DD>
+
+<DT><A NAME="monitor_hist"></A>HIST</DT>
+
+<DD> brief + mtz history </DD>
+
+<DT><A NAME="monitor_full"></A>FULL</DT>
+
+<DD> full header output </DD>
+</DL>
+</BLOCKQUOTE>
+
+<H3><A NAME="outlim"></A>OUTLIM [ SPACEGROUP &lt;spacegroup&gt; ] [ HKLLIM
+&lt;hmin&gt; &lt;hmax&gt; &lt;kmin&gt; &lt;kmax&gt; &lt;lmin&gt; &lt;lmax&gt;
+]</H3>
+
+<P>Defines limits for the OUTPUT file. Use this for expanding data to cover
+more of reciprocal space. Subsidiary keywords: </P>
+
+<BLOCKQUOTE>
+<DL>
+<DT><A NAME="outlim_spacegroup"></A>SPACEGROUP &lt;name or number of
+spacegroup&gt;</DT>
+
+<DD> this is used to choose a Laue code defined for the appropriate point
+group. The name (or number) corresponds to the spacegroup whose limits are used.
+NB : This does NOT alter the symmetry operators stored in the mtz file. In the
+unlikely event of wanting to change these, use the key word
+<A HREF="#symmetry">SYMM</A>. </DD>
+
+<DT><A NAME="outlim_hkllim"></A>HKLLIM &lt;hmin&gt; &lt;hmax&gt; &lt;kmin&gt;
+&lt;kmax&gt; &lt;lmin&gt; &lt;lmax&gt;</DT>
+
+<DD> used to set your own choice of hkl limits.   It is better to use the spacegroup
+to choose a Laue group. Using HKLLIM often duplicates reflections with a zero index.</DD>
+
+<PRE>  Spacegroup Laue code limits are:
+     PG1         h k l : l &gt;= 0          Spacegroups 1,2
+                 h k 0 : h &gt;= 0
+                 0 k 0 : k &gt;= 0
+     P2/m        h k l : h &gt;= 0, l &gt;= 0
+                 h k 0 : h &gt;= 0          Spacegroups 3,..(bsetting)
+     Pmmm        h k l : h &gt;= 0, k &gt;= 0, l &gt;= 0 Spacegroups 16,..
+     P4/m        h k l : h &gt;= 0, k &gt;= 0, l &gt;= 0 
+                 0 k l : k &gt;  0
+                 0 0 l : l &gt;  0                 Spacegroups 75,..
+     P4/mmm      h k l : h &gt;= 0, k &gt;= 0, l &gt;= 0, h &gt;= k
+                 0 0 l : l &gt;  0                 Spacegroups 89,..
+     P3  (R3)    h k l : h &gt;= 0, k &gt; 0
+                 0 0 l : l &gt; 0                  Spacegroups 143,..
+     P312        h k l : h &gt;= 0, k &gt;= 0, k &lt;= h   (all l)
+                 h 0 l : l &gt;= 0          Spacegroups 149,151,153,..
+     P321        h k l : h &gt;= 0, k &gt;= 0, k &lt;= h   (all l)
+                 h h l : l &gt;= 0          Spacegroups 150,152,154,..
+     P6/m        h k l : h &gt;= 0, k &gt;= 0, l &gt;= 0
+                 0 k l : k &gt;  0
+                 0 0 l : l &gt;  0                 Spacegroups 168,..
+     P6/mmm      h k l : h &gt;= 0, k &gt;= 0, l &gt;= 0, h &gt;= k
+                 0 0 l : l &gt;  0                 Spacegroups 177,..
+     P23         h k l : h &gt;= 0, k &gt;= 0, l &gt;= 0, l&gt;=h, 
+            and  h k h : k &gt;= h
+                 h k l : k &gt;  h if l &gt;  h       Spacegroups 195,..
+     P432        h k l : h &gt;= 0, k &gt;= 0, l &gt;= 0, k &gt;= l and l&gt;= h
+                                                Spacegroups 209,..
+</PRE>
+</DL>
+</BLOCKQUOTE>
+
+<H3><A NAME="refmonitor"></A>REFMONITOR &lt;nmon&gt;</H3>
+
+<P>The program prints lots of information about every &lt;nmon&gt;-th reflection
+(default 0). </P>
+
+<H3><A NAME="resolution"></A>RESOLUTION [ RESOLUTION OVERALL &lt;dmin&gt;
+&lt;dmax&gt; ] | [RESOLUTION FILE_NUMBER &lt;i&gt; &lt;dmin&gt; &lt;dmax&gt;
+]</H3>
+
+<P>Use either: </P>
+
+<DL>
+<DT>RESOLUTION OVERALL &lt;dmin&gt; &lt;dmax&gt;</DT>
+
+<DD> for overall resolution limits, or: </DD>
+
+<DT>RESOLUTION FILE_NUMBER &lt;i&gt; &lt;dmin&gt; &lt;dmax&gt;</DT>
+
+<DD> to set input limit for FILE_NUMBER &lt;i&gt;. </DD>
+</DL>
+
+<P>&lt;dmax&gt;, &lt;dmin&gt; are the resolution limits for the data to
+be included, i.e. data are included for which <BR>
+(1/&lt;dmax&gt;)**2 &gt;= 4 sin**2theta/lambda**2 &gt;=(1/&lt;dmin&gt;)**2
+<BR>
+NOTE: Defaults are 0.1 and 1000.0 Angstrom. </P>
+
+<H3><A NAME="scale"></A>SCALE FILE_NUMBER &lt;i&gt; &lt;scale&gt; [ &lt;temperature_factor&gt; ]</H3>
+
+<P>Specifies &lt;scale&gt; (and optionally &lt;temperature_factor&gt;) to be
+applied to all items in FILE_NUMBER which are flagged as type <tt>F D Q</tt> (or
+<tt>G L</tt> for F+ F- alternatives), i.e. all items except intensities and PHASES. </P>
+
+<P>(If no &lt;temperature_factor&gt; is supplied then the &lt;scale&gt; only is applied.)</P>
+
+<P>If there is one number for &lt;temperature_factor&gt;, that is taken as 
+an ISOTROPIC correction, and the scale is applied as &lt;scale&gt;
+exp( -&lt;temperature_factor&gt;s**2) </P>
+
+<P>If there are six numbers B11 B22 B33 B12 B13 B23 for &lt;temperature_factor&gt;,
+that is taken as an ANISOTROPIC correction and the applied scale is:</P>
+
+<blockquote>
+&lt;scale&gt; exp{- [ B11*h*h*(a*)(a*)  + B22*k*k*(b*)(b*)  + B33*l*l*(c*)(c*) 
+          + 2.0*(B12*h*k*(a*)*(b*) + B13*h*l*(a*)*(c*) + B23*k*l*(b*)*(c*) ] }
+</blockquote>
+
+<p>Example:</p>
+
+<pre>scale file_number 1 1 4.722 4.722 -7.08 2.36 0 0</pre>
+
+<p>would apply the anisotropic correction to file 1 according to the formula above
+with a unit scale factor (<i>i.e.</i> &lt;scale&gt; = 1) and temperature factor parameters:</p>
+<table border="0">
+<tr><td>B11</td><td>=</td><td>4.722</td></tr>
+<tr><td>B22</td><td>=</td><td>4.722</td></tr>
+<tr><td>B33</td><td>=</td><td>-7.08</td></tr>
+<tr><td>B12</td><td>=</td><td>2.36</td></tr>
+<tr><td>B13</td><td>=</td><td>0</td></tr>
+<tr><td>B23</td><td>=</td><td>0</td></tr>
+</table>
+
+<H3><A NAME="sort"></A>SORT &lt;sort order&gt;</H3>
+
+<P>Sort order for indices H K and L, e.g. </P>
+
+<PRE>
+
+   SORT H K L
+   SORT L K H
+
+</PRE>
+
+<P>This means that the first index will be the slowest, the second the
+intermediate, and the last the fastest varying, e.g. <tt>SORT H K L</tt>
+will have H slowest, L intermediate and K fastest. Note that <tt>SORT H K L</tt>
+is the default sort order (i.e. that used in the absence of the SORT
+keyword), so that SORT is only necessary when you require a sort order
+which is different from this default.
+
+<H3><A NAME="symmetry"></A>SYMMETRY &lt;spacegroup&gt;</H3>
+
+<P>This can be used to change the symmetry operators in the output file.
+The default is to keep the symmetry of the first input file,  HKLIN1. </P>
+
+<H3><A NAME="sysab"></A>SYSAB_KEEP</H3>
+
+<P>Keep systematic absences in output file. (The default is to reject them.)
+</P>
+
+<H3><A NAME="title"></A>TITLE &lt;title&gt;</H3>
+
+<P>Title to be used in output log file and in output hkl file. </P>
+
+<H3><A NAME="valm"></A>VALM &lt;valml&gt; [NOOUTPUT]</H3>
+
+<P>The Missing Number Flag (MNF) written to HKLOUT is set to &lt;valml&gt;,
+which can take the value NaN or be a real number. If this keyword is not
+set, then the value of the MNF is taken from the header of HKLIN1 or set
+to NaN if it is not present there. If NOOUTPUT is specified then reflections
+with all data items missing are not output to HKLOUT. </P>
+
+<H3><A NAME="end"></A>END</H3>
+
+<P>Terminate input. </P>
+
+<h2>Dataset keywords</h2>
+
+The following keywords allow you to change the dataset headers in MTZ files.
+These are necessarily complicated to allow for all possibilities! The
+Graphical User Interface has an interface to these options called
+<A HREF="../ccp4i/help/modules/mtz_utils.html#edit_dname">
+Edit MTZ Project &amp; Dataset</a> which is much more user friendly!
+<p>
+For information on the underlying data model, and its representation
+in MTZ files, see the <A HREF="mtzformat.html">MTZ format</a> document.
+For information on the use of datasets in Data Harvesting, see the
+<A HREF="harvesting.html">Harvesting</a> document.
+<p>
+The <A HREF="#xname"><B>XNAME</B></A> and <A HREF="#dname"><B>DNAME</B></A>
+keywords are for assigning columns to existing or new datasets. The
+keywords  <A HREF="#drename"><B>DRENAME</B></A>, 
+<A HREF="#dpname"><B>DPNAME</B></A>, <A HREF="#dcell"><B>DCELL</B></A>
+and  <A HREF="#dwave"><B>DWAVELENGTH</B></A> are for changing details
+of existing datasets. It may be possible to mix several keywords in a
+program run, but the more complicated combinations will probably give
+weird results. A sequence of well-defined program runs is probably safest.
+<p>
+N.B. The old PNAME keyword is now obsolete. The project name is now
+considered an attribute of the crystal. It has an administrative role
+for Data Harvesting, but is not part of the data structure. Columns are
+therefore assigned according to XNAME/DNAME only.
+
+<H3><A NAME="xname"></A>XNAME FILE_NUMBER &lt;i&gt; &lt;program label&gt; =
+&lt;crystal name&gt; ... </H3>
+
+A line assigning crystal names to the columns of the input data
+selected from FILE_NUMBER &lt;i&gt; to be read from HKLIN&lt;i&gt;. 
+The program labels should be a subset of those assigned on 
+<A HREF="#labin">LABIN</A>. Ranges can be specified with the subkeyword TO,
+or all program labels can be selected with the subkeyword ALL.
+Examples:
+<pre>
+
+XNAME FILE_NUMBER 1 E5=toxd
+XNAME FILE_NUMBER 2 E2 TO E4=toxd
+XNAME FILE_NUMBER 3 E1=toxd E2 TO E4=rnase E5 TO E6=toxd
+XNAME FILE_NUMBER 4 ALL=toxd
+
+</pre>
+This keyword can be used to assign a crystal name where there was previously
+none, or to replace an existing assignment.
+<p>
+A dataset, as listed in the MTZ header, is specified by a crystal-name/dataset-name
+pair. The crystal-name specifies a particular physical crystal,
+while the dataset-name specifies a particular dataset contributing to the
+structure solution. If either the XNAME keyword or the 
+<A HREF="#dname">DNAME</A> keyword or both are specified for a particular
+column, then the dataset assigned for that column will be changed (either
+to an existing dataset, or a new one). There should only be one XNAME 
+card per file (use continuation lines if necessary).
+
+<H3><A NAME="dname"></A>DNAME FILE_NUMBER &lt;i&gt; &lt;program label&gt; =
+&lt;dataset name&gt; ... </H3>
+
+A line assigning dataset names to the columns of the input data
+selected from FILE_NUMBER &lt;i&gt; to be read from HKLIN&lt;i&gt;. 
+The syntax is the same as for the <A HREF="#xname">XNAME</A> keyword.
+This keyword can be used to assign a dataset name where there was previously
+none, or to replace an existing assignment.
+<p>
+A dataset, as listed in the MTZ header, is specified by a crystal-name/dataset-name
+pair. The crystal-name specifies a particular physical crystal,
+while the dataset-name specifies a particular dataset contributing to the
+structure solution. If either the <A HREF="#xname">XNAME</A> keyword or the 
+DNAME keyword or both are specified for a particular column, then the dataset 
+assigned for that column will be changed (either to an existing dataset, or a 
+new one). There should only be one DNAME card per file (use continuation 
+lines if necessary).
+
+<H3><A NAME="drename"></A>DRENAME FILE_NUMBER &lt;i&gt; 
+[ &lt;xname&gt; &lt;dname&gt; | &lt;dataset ID&gt; ]
+&lt;xname_new&gt; &lt;dname_new&gt; </H3>
+
+Keyword for changing &lt;xname&gt; and &lt;dname&gt; for a particular
+dataset from FILE_NUMBER &lt;i&gt; read from HKLIN&lt;i&gt;. The dataset is 
+identified either by the old xname/dname pair, or by the dataset number. 
+The latter is the number listed by 
+<a href="mtzdump.html">MTZDUMP</a> when run on HKLIN&lt;i&gt;. Note that this 
+number may be different in HKLOUT. If you want to change the xname/dname labels
+for several datasets, then this keyword can be included more than once.
+
+<H3><A NAME="dpname"></A>DPNAME FILE_NUMBER &lt;i&gt; 
+[ &lt;xname&gt; &lt;dname&gt; | &lt;dataset ID&gt; ]
+&lt;pname_new&gt; </H3>
+
+Keyword for changing &lt;pname&gt; for a particular
+dataset from FILE_NUMBER &lt;i&gt; read from HKLIN&lt;i&gt;. The dataset is 
+identified either by the &lt;xname&gt;/&lt;dname&gt; pair, or by the &lt;dataset ID&gt;. 
+The &lt;xname&gt;/&lt;dname&gt; pair identifies the dataset <b>after</b>
+any renaming done by keyword DRENAME. It will also identify a dataset added
+by the keywords XNAME and DNAME. In contrast, the &lt;dataset ID&gt; is the
+number listed by <a href="mtzdump.html">MTZDUMP</a> when run on HKLIN&lt;i&gt;,
+and thus identifies a dataset <b>before</b> any renaming. The &lt;dataset ID&gt;
+may be different in HKLOUT. If you want to change the &lt;pname&gt; labels
+for several datasets, then this keyword can be included more than once.
+
+<H3><A NAME="dcell"></A>DCELL FILE_NUMBER &lt;i&gt; 
+[ &lt;xname&gt; &lt;dname&gt; | &lt;dataset ID&gt; ]
+&lt;a&gt; &lt;b&gt; &lt;c&gt; [ &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt; ]</H3>
+
+Keyword for changing cell information for specific datasets from
+FILE_NUMBER &lt;i&gt; read from HKLIN&lt;i&gt;. The dataset is 
+identified either by the &lt;xname&gt;/&lt;dname&gt; pair, or by the &lt;dataset ID&gt;. 
+The &lt;xname&gt;/&lt;dname&gt; pair identifies the dataset <b>after</b>
+any renaming done by keyword DRENAME. It will also identify a dataset added
+by the keywords XNAME and DNAME. In contrast, the &lt;dataset ID&gt; is the
+number listed by <a href="mtzdump.html">MTZDUMP</a> when run on HKLIN&lt;i&gt;,
+and thus identifies a dataset <b>before</b> any renaming. The &lt;dataset ID&gt;
+may be different in HKLOUT. If you want to change the cell information
+for several datasets, then this keyword can be included more than once.
+
+<H3><A NAME="dwave"></A>DWAVELENGTH FILE_NUMBER &lt;i&gt; 
+[ &lt;xname&gt; &lt;dname&gt; | &lt;dataset ID&gt; ]
+&lt;wavelength&gt; </H3>
+
+Keyword for adding/changing wavelength information for specific datasets from
+FILE_NUMBER &lt;i&gt; read from HKLIN&lt;i&gt;.  The dataset is 
+identified either by the &lt;xname&gt;/&lt;dname&gt; pair, or by the &lt;dataset ID&gt;. 
+The &lt;xname&gt;/&lt;dname&gt; pair identifies the dataset <b>after</b>
+any renaming done by keyword DRENAME. It will also identify a dataset added
+by the keywords XNAME and DNAME. In contrast, the &lt;dataset ID&gt; is the
+number listed by <a href="mtzdump.html">MTZDUMP</a> when run on HKLIN&lt;i&gt;,
+and thus identifies a dataset <b>before</b> any renaming. The &lt;dataset ID&gt;
+may be different in HKLOUT. If you want to change the wavelength information
+for several datasets, then this keyword can be included more than once.
+
+<H2><A NAME="output"></A>PRINTER OUTPUT</H2>
+
+<P>The printer output first gives details taken from the input control
+data. </P>
+
+<P>Then, for each input reflection data file, the information in the MTZ
+header, according to the requested level of monitoring. The labels are
+checked for consistency with those in the file, and the list of output
+labels is prepared. </P>
+
+<P>The reflection data for each file is read and a summary table of the
+data is output . </P>
+
+<P>The total number of reflection records in the output file is printed,
+followed by a summary of HKLOUT. </P>
+
+<H2><A NAME="examples"></A>EXAMPLES</H2>
+
+<H3>Simple unix example scripts found in $CEXAM/unix/runnable/</H3>
+
+<LI><A HREF="../examples/unix/runnable/cad.exam">cad.exam</A> (Example
+of combining several files and example of data being extended to P1). </LI>
+
+<LI><A HREF="../examples/unix/runnable/cad_rnase.exam">cad_rnase.exam</A>
+(Example of adding project- and dataset-information to an mtz file).
+
+<H3>Also found combined with other programs in the example scripts ($CEXAM/unix/runnable/)</H3>
+
+<LI><A HREF="../examples/unix/runnable/tffc_procedure">tffc_procedure</A>
+(Combining two files prior to running tffc). </LI>
+
+<LI><A HREF="../examples/unix/runnable/RF-with-Es">RF-with-Es</A> (Use
+in Rotation Function using Es procedure). </LI>
+
+<LI><A HREF="../examples/unix/runnable/scalepack2mtz.exam">scalepack2mtz.exam</A>
+(Use in getting scalepack data into CCP4). </LI>
+
+<LI><A HREF="../examples/unix/runnable/phased_translation_calc">phased_translation_calc</A>
+(Example of extending phased MTZ file from P212121 to P1). </LI>
+
+<H3>....and non runnable examples in $CEXAM/unix/non-runnable/</H3>
+
+<LI><A HREF="../examples/unix/non-runnable/cad_then_mtzutils.exam">cad_then_mtzutils.exam</A>
+(Example of how to save time using both cad and mtzutils). </LI>
+
+<LI><A HREF="../examples/unix/non-runnable/cad_raxis.exam">cad_raxis.exam</A>
+(f2mtz+cad on Raxis data). </LI>
+
+<LI><A HREF="../examples/unix/non-runnable/mlphare_heavyatoms.exam">mlphare_heavyatoms.exam</A>
+(Extend isomorphously phased file from P212121 to P1). </LI>
+
+<H2>SEE ALSO</H2>
+
+<P><A HREF="mtzutils.html">mtzutils</A>, <A HREF="rsearch.html">rsearch</A>,
+<A HREF="tffc.html">tffc</A>, <A HREF="unique.html">unique</A>. </P>
+
+<H2>AUTHOR</H2>
+
+<P>Eleanor Dodson, York University </P>
+
+</BODY>
+</HTML>

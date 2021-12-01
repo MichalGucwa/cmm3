@@ -1,0 +1,229 @@
+<!DOCTYPE html
+                     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                     "DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<title>CCP4 Interface: Structure Analysis Module</title>
+<link rel="stylesheet" type="text/css" href="../ccp4idocs.css" title="CCP4i" />
+<link rev="made" href="mailto:mgwt@ysbl.york.ac.uk" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta name="AUTHOR" content="Maria, Liz, Peter" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="2"><img src="../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logotitle">Structure Analysis Module</td></tr>
+</table>
+<br />
+<table border="0">
+<tr><td>
+<a href="valdep.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="refinement.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="../index.html" target="_top">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td></tr>
+</table>
+
+<dl>
+<dt><font color="#cc3333"><strong>Tasks in this module:</strong></font></dt>
+</dl>
+
+<dl>
+<dt><a href="#areaimol" target="_self">Accessible Surface Area Calculations - AreaIMol</a></dt>
+<dd><a href="#areaimol_protocols" target="_self">AreaIMol Protocols</a></dd>
+</dl>
+<dl>
+<dt><a href="#contact" target="_self">Analyse Molecular Contacts - Contact/Ncont</a></dt>
+<dd><a href="#contact_layout" target="_self">Contact - Task Window Layout</a></dd>
+</dl>
+<dl>
+<dt><a href="#pisa" target="_self">Analyse Protein Interfaces - PISA</a></dt>
+</dl>
+<dl>
+<dt><a href="#pisa_web" target="_self">PISA web service - Analyse Protein Interfaces</a></dt>
+</dl>
+<dl>
+<dt><a href="#baverage" target="_self">Temperature Factor Analysis - Baverage</a></dt>
+</dl>
+
+<p>The layout of each task window, <em>i.e.</em> the number of folders present,
+and whether these folders are open or closed by default, depends on the choices
+made in the <strong>Protocol</strong> folder of the task (see
+<a href="../general/intro.html#task_window_format" target="_self">Introduction</a>).
+Although certain folders are closed by default, there are specific reasons why you
+should or may want to look at them. These reasons are described in the Task Window
+Layout sections below.</p>
+
+<h3><a name="areaimol"></a>Accessible Surface Area Calculations - AreaIMol</h3>
+
+<p>The Areaimol task has a number of protocols to calculate the solvent
+accessible surface areas (ASA) and area differences for a variety of
+situations.</p>
+
+<h4><a name="areaimol_protocols"></a>AreaIMol Protocols</h4>
+
+<p><strong>Accessible Surface Area:</strong> calculates the accessible surface
+area for all atoms of the requested type (protein or solvent). The effects of
+intermolecular contacts due to symmetry-related molecules can also be included.</p>
+
+<p><em>Treatment of waters:</em> normally ASA is calculated for protein
+atoms only and waters (solvent) are ignored in the calculation. ASA can also be
+calculated specifically for waters: if waters are treated as 'solvent' then
+the ASA of individual waters will only be affected by the presence of
+neighbouring protein atoms; if they are treated as 'protein' then individual
+ASAs will also be affected by neighbouring waters.</p>
+
+<p><strong>Area Differences For Protein:</strong> differences in ASA correspond
+to buried area due to the interaction in question:</p>
+
+<ul>
+<li><p><strong>Oligomer formation:</strong> the supplied coordinate file should
+contain coordinates which compromise a single protein 'unit' (<em>i.e.</em> monomer).
+Define the symmetry operations to use to generate the oligomers. The first area
+calculation will be for the oligomer, the second will be for the monomer. The
+differences will be the change in ASA on the monomer when it is oligomerised.
+</p></li>
+
+<li><p><strong>Crystallographic contacts:</strong> the supplied coordinate file
+should contain coordinates which compromise a single copy of the protein.
+Define the spacegroup which specifies the crystallographic symmetry. The first
+area calculation will be for the protein in the crystal, the second will be for the
+protein only. The differences will be the change in ASA on the protein when it
+is placed within the crystal.</p></li>
+
+<li><p><strong>Ligand/subunit binding:</strong> the supplied coordinate file
+should contain the bound protein-ligand complex. Define the chains in the file
+which constitute the ligand only. The first area calculation will be for the
+protein-ligand complex, the second will be for the protein only. The
+differences will be the change in ASA on the protein when the ligand is bound.
+</p></li>
+
+<li><p><strong>Molecular binding:</strong> the supplied coordinate file
+should contain the chains making up two or more molecules. Define molecules
+in terms of the chains in the file which constitute each molecule of interest.
+Calculations will then be performed for each pair of molecules to determine
+the area buried in the interaction.
+</p></li>
+</ul>
+
+<p><strong>Area Differences For Waters:</strong> useful for looking for
+buried waters:</p>
+<ol>
+<li>Waters with zero area in the first calculation are completely enclosed by
+    protein.</li>
+<li>Waters which have non-zero area in the first calculation but zero area in
+    the second are enclosed between protein and/or other waters.</li>
+<li>Waters which have non-zero area in both calculations are not completely
+    enclosed by protein and/or waters and so are on the 'outside' of this shell.</li>
+</ol>
+
+<h4><a name="areaimol_parameters"></a>AreaIMol - General Parameters</h4>
+
+<p>See program documentation:
+<a href="../../../../html/areaimol.html" target="_PROGDOC">AREAIMOL</a>.</p>
+
+<h3><a name="contact"></a>Analyse Molecular Contacts - Contact/Ncont</h3>
+
+<p>Task for computing various types of contacts in protein structures. The
+task runs with a choice of NCONT or CONTACT/ACT as the underlying program.
+These programs give very similar analyses, but each one may be more convenient
+in particular circumstances. Both NCONT and CONTACT use a bricking algorithm 
+in which atoms are segregated into 6x6x6 &#197; boxes and contact searching is 
+limited to neighbouring boxes; this is very fast. 
+<p>
+NCONT performs different kinds of searches with respect to what symmetry
+operations and lattice translations are applied, and this should be selected
+in the <strong>Protocol</strong> folder. See the 
+<a href="../../../../html/ncont.html#cells" target="_PROGDOC">NCONT</a> documentation for a
+detailed explanation.
+<p>
+CONTACT reads a standard Protein Data Bank file which must
+contain SCALE cards if looking for metal-ligand or intermolecular contacts.</p>
+<p>
+For CONTACT, the maximum residue number is 9000. Maximum number of atoms is 48000.
+There is no limit for NCONT.</p>
+
+<h4><a name="contact_layout"></a>Contact - Task Window Layout</h4>
+
+<p>Features to look out for in the Contact Task are:</p>
+
+<table border="1">
+<tr><th>Folder title</th><th>NCONT</th><th>CONTACT/ACT</th><th>Importance</th><th>Comment</th></tr>
+<tr><td>Symmetry operations</td><td>Y</td><td>Y</td><td>Use spacegroup or list of operators to define symmetry operations</td>
+<td>Spacegroup required if looking for <em>all</em> contacts. Choice of spacegroup or list of operators
+required if looking for <em>metal-ligand</em> or <em>intermolecular contacts</em>.</td></tr>
+<tr><td>Atom Selection</td><td>Y</td><td>Y</td><td>Define atoms involved in contacts</td>
+<td>In NCONT mode, the program uses the atom selection syntax described in
+the <a href="../../../../html/pdbcur.html#atom_selection" target="_PROGDOC">PDBCUR</a>
+documentation. This can be added directly, or a
+template created with the boxes provided and then edited if necessary.</td></tr>
+<tr><td>Metal contact parameters</td><td>N</td><td>Y</td><td>Define metal coordination geometry</td>
+<td>Define type of metal and expected metal-ligand distance</td></tr>
+</table>
+
+<p>See program documentation:
+<a href="../../../../html/ncont.html" target="_PROGDOC">NCONT</a>.
+<a href="../../../../html/contact.html" target="_PROGDOC">CONTACT</a>.
+<a href="../../../../html/act.html" target="_PROGDOC">ACT</a>.</p>
+
+<h3><a name="pisa"></a>Analyse Protein Interfaces - PISA</h3>
+
+<p>PISA (Protein Interfaces Surfaces and Assemblies) is a program for analysing
+protein structures to look for assemblies of subunits, and the resulting
+subunit interfaces and surfaces. This interface enables the standalone version
+of the Pisa program to be run on a local machine.</p>
+
+<p>The interface is run interactively in an iterative manner:</p>
+
+<ul>
+<li>First select the protocol option <strong>Generate new PISA
+    analysis</strong> to run on a PDB file. This step stores data about
+    the structure that can be interrogated in subsequent runs.</li>
+<li>To perform a particular analysis, next select the protocol option
+    <strong>Use a previous PISA analysis</strong> and select the job
+    number for the previous run. Then, select a particular analysis
+    option and run the task again to see the results.</li>
+    webservice
+</ul>
+
+<h3><a name="pisa_web"></a>Launch PISA webservice - analyse protein interfaces</h3>
+
+<p>PISA (Protein Interfaces Surfaces and Assemblies) is a webservice hosted at the
+EBI which allows various analyses of protein structures. Structures can be taken from
+the PDB archive by specifying an accession code, or can be uploaded from the user's
+computer.</p>
+
+<p>This is an alternative to the <a href="#pisa">Pisa task</a> run on the local
+machine. See also the EBI PISA webservice page:
+<a href="http://www.ebi.ac.uk/msd-srv/prot_int/pistart.html" target="_self">PISA</a></p>
+
+<h3><a name="baverage"></a>Temperature Factor Analysis - Baverage</h3>
+
+<p>Generate graphs of average B-factor versus residue for each chain in the PDB file.
+This task will launch loggraph directly to give a quick view of the graphs.
+The graphs can still be viewed later via the View Files from Job button
+applied to the task results.</p>
+
+<p>See program documentation:
+<a href="../../../../html/baverage.html" target="_PROGDOC">BAVERAGE</a>.</p>
+
+<table border="0" width="100%">
+<tr><td>
+<a href="valdep.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="refinement.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="../index.html" target="_top">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td>
+<td align="right"><a href="http://validator.w3.org/" target="_EXTERNAL">Valid XHTML 1.0!</a>
+<a href="http://jigsaw.w3.org/css-validator/" target="_EXTERNAL">Valid CSS!</a></td></tr>
+</table>
+
+</body>
+</html>

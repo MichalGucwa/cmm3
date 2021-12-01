@@ -1,0 +1,105 @@
+#!/usr/bin/env python
+# Python script
+#
+#
+#
+#     Copyright (C) 2007 --- 2012 Fei Long, A. Vagin, G. Murshudov
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#====================================================================
+## The date of last modification: 29/03/2007
+#  Report any problem to fei@ysbl.york.ac.uk
+
+import os, sys
+import glob, re, shutil
+import math
+import string
+import time
+import select, fcntl
+if not os.environ.has_key("BALBES_ROOT"):
+    print "balbes.setup is not sourced. Re-install BALBES and don't "
+    print "forget do what setup.py reminds you to do"
+    sys.exit() 
+
+# modules (XML DOM) related to handle XML style files
+xml_path1= os.path.join(os.getenv("BALBES_ROOT"),"PyXML-0.8.4/xml/dom/")
+xml_path2= os.path.join(os.getenv("BALBES_ROOT"),"PyXML-0.8.4/xml/dom/ext")
+xml_path3= os.path.join(os.getenv("BALBES_ROOT"),"PyXML-0.8.4/xml/dom/ext/reader")
+sys.path.append(xml_path1)
+sys.path.append(xml_path2)
+sys.path.append(xml_path3)
+
+from StripXml import StripXml
+import PyExpat
+from xml.parsers.expat  import ExpatError
+
+#except ImportError :
+#
+#    print "++++++++++++++++++++++++++++++++++++++++++++++++++"
+#    print "+           BALBES requires PyXml                +"
+#    print "+     You need to install it. See README.SETUP   +"
+#    print "+     in your downloaded BALBES package          +"
+#    print "++++++++++++++++++++++++++++++++++++++++++++++++++"
+#    sys.exit()
+
+# modules defined for structural hierachy
+
+py_path= os.path.join(os.getenv("BALBES_ROOT"),"bin_py")
+sys.path.append(py_path)
+from StructHierachy import Chain
+from StructHierachy import Model
+from StructHierachy import Structure
+from StructHierachy import Sequence
+from StructHierachy import SF_info
+
+# utility modules
+from UtilitiesClasses    import CPathDict
+from UtilitiesClasses    import MoveFile
+from UtilitiesClasses    import CopyFile
+from UtilitiesClasses    import WriteFile
+from UtilitiesClasses    import WriteSummaryFile
+from UtilitiesClasses    import ShowNameConv
+
+# manager modules
+from Managers    import CManagers
+
+# classes for structural factor analysis
+from exeCodeClasses import CSFCHECK
+
+# classes for cell and space group check and structure selection
+from ModuleCSG import CCellSgFinder
+
+# classes for sequence and model data base analysis
+from exeCodeClasses import SEQ_Analysis
+from exeCodeClasses import CSEARCH_DB
+
+from Solvers   import CMRSolver
+from Solvers   import CSolutionManager
+
+#--------------------------------------------------
+#
+#   __main__ part starts from here
+#
+#--------------------------------------------------
+
+#  Start managers
+
+gManager = CManagers(sys.argv)
+
+if gManager.mode == 3:
+    modelFinder = CSEARCH_DB(gManager)
+    modelFinder.controller()
+    sys.exit()
+    
+
+      
+
+
+
+
+
+

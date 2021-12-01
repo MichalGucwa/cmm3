@@ -1,0 +1,217 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::POLYPOSE::Deprecated::Model Analysis::program for superimposing many multi-domain structures:::::::: -->
+
+<H1> POLYPOSE (CCP4: Deprecated Program)</H1>
+<H2> NAME</H2>
+<b>polypose </b>
+- a program for superimposing many multi-domain structures
+<H2> SYNOPSIS</H2>
+<b>polypose xyzin1 xyzin2 ... outdir xyzout1 xyzout2 ...</b>
+<i>foo.dat</i>
+<br>
+ [<A HREF="#keywords">Keyworded input</A>]
+<H2> <A NAME="description"></A>DESCRIPTION</H2>
+This program originating from R. Diamond is a program to superimpose several 
+multi-domained structures. This is done in an optimal way by minimising the 
+residuals between (n*(n-1)/2) pairwise comparisons. One of the molecules can 
+be fixed and the others rotated to that orientation. Alternatively, the 
+structures can be oriented so their longest dimensions are along X. Each 
+domain is fitted to the equivalent domains in the other structures.
+<P> 
+ EACH DOMAIN MUST CONTAIN THE SAME NUMBER OF ATOMS.
+<P> 
+The program expects coordinates in Brookhaven format and will only read the 
+`ATOM' cards. Care must be taken to ensure that each file has the same axis 
+definitions (NCODE number).
+<P> 
+Transformed coordinates can be written out with optionally an average 
+structure. The output files will also be in PDB format with the same axis 
+system as the input files. There are coordinates for each domain fitted, for 
+each structure. The coordinates used for fitting the structure are given as 
+REMARKs followed by the whole structure. 
+<P> 
+All the equations referred to in this documentation come from
+<A HREF="#reference1">reference [1]</A>.
+
+<H2><A NAME="keywords"></A>KEYWORDED INPUT</H2>
+<P> 
+The program has been parameterised and the current defaults are: maximum 
+number of molecules = 10, maximum number of sub-domains/domains = 60, maximum 
+number of atoms in molecule = 1200, maximum number of atoms in a domain = 2000.
+The permitted data control statements in the form of keywords are listed below:
+<blockquote>
+<A HREF="#check"><B>CHECK</B></A>, <A HREF="#combine"><B>COMBINE</B></A>,
+<A HREF="#end"><B>END</B></A>, <A HREF="#fix"><B>FIX</B></A>,
+<A HREF="#include"><B>INCLUDE</B></A>, <A HREF="#independent"><B>INDEPENDENT</B></A>,
+<A HREF="#input"><B>INPUT</B></A>, <A HREF="#maxcycle"><B>MAXCYCLE</B></A>,
+<A HREF="#output"><B>OUTPUT</B></A>, <A HREF="#terminate"><B>TERMINATE</B></A>
+</blockquote>
+<H3> <A NAME="maxcycle"></A>MAXCYCLE &lt;num&gt;</H3>
+This determines the maximum number of cycles to achieve the best fit between 
+the structures. Note that it can be set to 1 if there are just two structures 
+or the structures are of the same shape. (default=10)
+<H3> <A NAME="independent"></A>INDEPENDENT</H3>
+If present this causes the residual (equation R0 #40 and #41) to be calculated 
+from N(N-1)/2 distinct and independent orientations. If the card is not 
+present then R0 is not calculated.
+<H3> <A NAME="input"></A>INPUT [ CA | ALL ]</H3>
+The program will either work with all the atoms or just the C-alpha atoms 
+(default) in a residue. The number of atoms in a domain MUST be equal between 
+molecules.
+<H3> <A NAME="include"></A>INCLUDE &lt;res1&gt; TO &lt;res2&gt; FILE &lt;num&gt;</H3>
+These define sub-domains within the &lt;num&gt;-th molecule. The ordering of
+the cards relates to the sub-domain number. Each molecule must contain
+the same number of sub-domains. If absent all the residues
+in the molecule are included.
+<pre>
+
+<EM>e.g.</EM> INCL 1 to 10 file 4
+     INCL A1 to B10 file 1
+
+</pre>
+<H3> <A NAME="combine"></A>COMBINE &lt;num1&gt; &lt;num2&gt; ... &lt;numN&gt;</H3>
+This combines sub-domains into a domain (applies to all molecules). 
+Sub-domains can be included several 
+times which has the effect of weighting the atoms in that sub-domain. If there 
+is no COMBINE card then each sub-domain is treated as a domain. Sub-domains 
+not mentioned in the COMBINE cards are treated as domains. If the number of 
+atoms exceeds the maximum permitted in a domain then an error will be given. 
+Note that the atoms in a domain are paired off in order between molecules. 
+<P> 
+<EM>e.g.</EM> if there are 6 sub-domains
+<P> 
+<pre>
+   COMB 1 2 3
+   COMB 2 4
+   COMB 2 6
+</pre>
+<P> 
+gives
+<P> 
+<pre>
+   1st domain is 1 2 3
+   2nd domain is 2 4
+   3rd domain is 2 6
+   4th domain is 5
+</pre>
+<P> 
+and
+<P> 
+<pre>
+   COMB 1 2 2 3
+</pre>
+<P> 
+gives
+<P> 
+<pre>
+   1st domain 1 2 3   atoms of the second sub-domain have double weight
+   2nd domain 4
+   3rd domain 5
+   4th domain 6
+</pre>
+<H3> <A NAME="terminate"></A>TERMINATE &lt;crit&gt;</H3>
+This defines when the refinement will stop before reaching <A HREF="#maxcycle">MAXCYCLE</A>. The 
+criterion is either when:
+<pre>
+
+    SUM [ SIN{DP/2}**2 ] &lt; &lt;crit&gt;
+
+    DP = angular shift in orientation.
+
+</pre>
+or
+<pre>
+    the reduction in rms in the cycle   &lt;   &lt;crit&gt; * rms 
+</pre>
+Default &lt;crit&gt;=0.00001.
+<H3> <A NAME="output"></A>OUTPUT [ MATRIX | COORDS | AVERAGE ]</H3>
+Defines what output will be given from the program. MATRIX will just output 
+the orientation matrices. COORDS will give the transformed coordinates (.rot), 
+the atoms used to fit the structure will be given as REMARKS in the PDB file 
+followed by the whole structure. The calculations will be done per domain per 
+molecule. AVERAGE will produce an average structure (.ave) based on the 
+orientation calculated for each domain. Each option is progressive from MATRIX 
+to AVERAGE. Thus OUTPUT AVER will effectively include the other options.
+<H3> <A NAME="check"></A>CHECK</H3>
+If the keyword is present then the program will check residue and atom name. 
+The program will terminate if inconsistencies are found between molecules.
+<H3> <A NAME="fix"></A>FIX &lt;num&gt;</H3>
+The orientation of the &lt;num&gt;-th molecule will be fixed and the other
+structures will be fitted to this molecule. If this card is not
+present then the longest axes of the molecules will be aligned along
+x.
+<H3> <A NAME="end"></A>END</H3>
+Terminate input.
+<H2> <A NAME="files"></A>INPUT AND OUTPUT FILES</H2>
+The input PDB files are assigned to logical names XYZIN1 XYZIN2 etc. The 
+input keywords must use the same numbering, <EM>e.g.</EM> domains specified for 'file 1'
+should refer to XYZIN1, FIX 2 should refer to the molecule in XYZIN2, and so 
+on. However, if the numbering used is not consecutive, the program will
+renumber the files, <EM>e.g.</EM> if XYZIN1, XYZIN2 and XYZIN4 are specified then
+the latter becomes structure 3.
+<P> 
+The output files are:
+<dl>
+<dt> a)<dd>
+optionally transformed coordinates &lt;name&gt;d&lt;nn&gt;.rot, where &lt;nn&gt; is the domain 
+number. The root &lt;name&gt; can be assigned through the logical name XYZOUT1, 
+XYZOUT2 etc. If the logical names are undefined then the root name of the 
+input file is taken. If the logical OUTDIR is defined all coordinate files 
+will be sent to this directory.
+<dt> b)<dd>
+optionally average coordinates &lt;name&gt;d&lt;nn&gt;.ave, where &lt;name&gt; is taken
+from the fixed coordinates or the first file (defined in a similar way to the 
+transformed coordinates) and &lt;nn&gt; is the domain number.
+</dl>
+<P> 
+<H2><A NAME="examples"></A>EXAMPLES</H2>
+<pre>
+polypose XYZIN1 dtk1.pdb XYZIN2 dtk2.pdb OUTDIR /scr1/acr/ XYZOUT1 jnk1 &lt;&lt; +
+maxcycle 3
+input all
+indep
+include 1 to 10 file 1
+include 1 to 10 file 2
+include 11 to 20 file 1
+include 11 to 20 file 2
+combine 1 2
+output average
+check
+fix 1
++
+
+
+</pre>
+<P> 
+The output files would be:
+<pre>
+/scr1/acr/jnk1d01.rot
+/scr1/acr/dtk2d01.rot
+/scr1/acr/jnk1d01.ave
+</pre>
+<H2> <A NAME="printer_output"></A>PRINTER OUTPUT</H2>
+Rms differences are shown between all structures pairwise. Also, the summation 
+of these differences is shown (R1 equation #42). R1 can be compared with R0 
+(equation #40 and #41) which represents the sum of the rms residuals over the 
+best possible fit between two molecules calculated from all possible pairs. R0 
+is the lowest rms achievable but can only be recognised in practice when all 
+the structures are of the same shape or there are only two structures. 
+<H2> AUTHOR</H2>
+<pre>
+R. Diamond
+MRC Laboratory for Molecular Biology
+Hills Road
+Cambridge CB2 2QH
+England
+</pre>
+<H2> <A NAME="references"></A>REFERENCES</H2>
+<ol>
+<!-- KEEP startreferencelist -->
+<li><A NAME="reference1"></A>
+R. Diamond, Protein Science, 1, 1279-1287 (1992)
+<!-- KEEP endreferencelist -->
+</ol>
+</body></html>

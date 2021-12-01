@@ -1,0 +1,1375 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4 Interface: I. Tickle tutorial MR (continuation 4)</title>
+<link rel="stylesheet" type="text/css" href="../../../ccp4idocs.css" title="CCP4i" />
+<link rev="made" href="mailto:mgwt@yorvic.york.ac.uk" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta name="AUTHOR" content="Maria and Liz" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="2"><img src="../../../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logotitle">MR Tutorial Bath - Pepsin case study</td></tr>
+</table>
+
+<table class="bathbuttons" width="100%">
+<tr>
+<td><a href="mrbath3.html"><img src="back.gif" /></a></td>
+<td align="center"><a href="mrbath98.html">BACK TO INDEX</a></td>
+<td align="right"><a href="mrbath5.html"><img src="forward.gif" /></a></td>
+</tr>
+</table>
+
+<h1>4. Case study 1 - hexagonal pepsin</h1>
+
+<dl>
+<dt><strong>Target:</strong></dt>
+<dd>Hexagonal pepsin (point group 622, 1 molecule/asymmetric unit).</dd>
+<dt><strong>Model:</strong></dt>
+<dd>Penicillopepsin (PDB code 3APP).</dd>
+</dl>
+
+<h3>4.1. Rotation function (AMORE / ROTFUN) with <em>F</em>'s</h3>
+
+<h4>4.1.1. AMoRe SORTFUN</h4>
+
+<p>Convert the reflection data file into the internal format used by the AMORE program.</p>
+
+<pre>#
+<a name="ccp4.html" id="ccp4.html"></a><a href="ccp4.html">amore  HKLIN hexpep  HKLPCK0 hexpep.hkl  &lt;&lt;EOD</a>
+TITLE  ** packing h k l F for crystal **
+SORT
+LABIN  FP=FOHEXPEP  SIGFP=SIGHEXPEP
+EOD
+</pre>
+
+<h4>4.1.2. AMoRe TABFUN</h4>
+
+<p>Compute a molecular Fourier transform for use in structure factor calculation by
+interpolation.</p>
+
+<pre>#
+amore  XYZIN1 penpep  XYZOUT1 penpep_model  table1 penpep.tab  &lt;&lt;EOD
+TITLE  Produce table for penicillopepsin model.
+TABFUN NOROTA                 ! No rotate for comparison.
+CRYST  CELL 67.4 67.4 290.1 90 90 120
+MODEL  1  BREP 10
+SAMPLE 1  RESO 2.8            ! Beyond native resolution for interpolation.
+EOD
+</pre>
+
+<p>Note that the steps in the procedure need not be run as separate jobs as illustrated in the two
+previous examples; this has only been done in order to simplify explanation of the individual
+steps. The next example shows several steps being run sequentially in a single job.</p>
+
+<h4>4.1.3. AMoRe ROTFUN GENERATE</h4>
+
+<p>Compute structure factor amplitudes for the search model in space group P1 in a large
+rectangular cell.</p>
+
+<h4>4.1.4. AMoRe ROTFUN CLMN</h4>
+
+<p>Compute spherical harmonic coefficients for the target and model Pattersons.</p>
+
+<h4><a name="section4.1.5" id="section4.1.5"></a>4.1.5. AMoRe ROTFUN CROSS</h4>
+
+<p>Compute the cross-RF.</p>
+
+<pre>#
+amore  HKLPCK0 hexpep.hkl  table1 penpep.tab  HKLPCK1 penpep.hkl  \
+       CLMN0 hexpep.clmn  CLMN1 penpep.clmn  MAPOUT hexpep_rotfun  &lt;&lt;EOD
+ROTFUN
+TITLE  Generate HKLPCK1 from penicillopepsin model.
+GENER  1  RESO 20 3  CELL 83 82 92
+CLMN   CRYST  RESO 20 3  SHARP -10  SPHERE 30
+CLMN   MODEL 1  RESO 20 3  SHARP -10  SPHERE 30
+ROTATE CROSS  MODEL 1  BMAX 90  PKLIM .25  NPIC 20          ! Beta = 0-90
+EOD
+\rm hexpep_rotfun.map</pre>
+
+<h5>Peak lists from ROTFUN (correct solution is highlighted)</h5>
+
+<p>Radius = 25&#197;. B = -10&#197;&#178;.</p>
+
+<table class="bath4">
+<tr>
+<th></th><th></th>
+<th><a href="../chargifs/al.gif"><font face="symbol">a</font></a></th>
+<th><a href="../chargifs/be.gif"><font face="symbol">b</font></a></th>
+<th><a href="../chargifs/ga.gif"><font face="symbol">g</font></a></th>
+<th></th><th></th><th></th>
+<th><em>S</em></th>
+</tr>
+<tr>
+<td>SOLUTIONRC</td>
+<td>1</td>
+<td>33.08</td>
+<td>78.55</td>
+<td>36.38</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>7.1</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>SOLUTIONRC</td>
+<td>1</td>
+<td>35.02</td>
+<td>87.24</td>
+<td>129.83</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>6.7</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>SOLUTIONRC</td>
+<td>1</td>
+<td>24.00</td>
+<td>69.00</td>
+<td>263.50</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>6.7</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>SOLUTIONRC</td>
+<td>1</td>
+<td>28.36</td>
+<td>78.25</td>
+<td>315.14</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>6.5</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td><strong>SOLUTIONRC</strong></th>
+<th><strong>1</strong></th>
+<th><strong>41.19</strong></th>
+<th><strong>29.92</strong></th>
+<th><strong>23.72</strong></th>
+<th><strong>0.00000</strong></th>
+<th><strong>0.00000</strong></th>
+<th><strong>0.00000</strong></th>
+<th><strong>6.4</strong></th>
+<th><strong>0.0</strong></th>
+</tr>
+<tr>
+<td>SOLUTIONRC</td>
+<td>1</td>
+<td>31.65</td>
+<td>39.80</td>
+<td>256.04</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>6.4</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>SOLUTIONRC</td>
+<td>1</td>
+<td>18.50</td>
+<td>23.34</td>
+<td>271.50</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>6.4</td>
+<td>0.0</td>
+</tr>
+</table>
+
+<p>Radius = 30&#197;. B = 0.</p>
+
+<table class="bath4">
+<tr>
+<td>SOLUTIONRC</td>
+<td>1</td>
+<td>30.14</td>
+<td>37.23</td>
+<td>256.28</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>5.6</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>SOLUTIONRC</td>
+<td>1</td>
+<td>35.25</td>
+<td>30.37</td>
+<td>244.50</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>5.5</td>
+<td>0.0</td>
+</tr>
+<tr>
+<th>SOLUTIONRC</th>
+<th>1</th>
+<th>41.00</th>
+<th>28.32</th>
+<th>19.00</th>
+<th>0.00000</th>
+<th>0.00000</th>
+<th>0.00000</th>
+<th>5.4</th>
+<th>0.0</th>
+</tr>
+<tr>
+<td>SOLUTIONRC</td>
+<td>1</td>
+<td>32.75</td>
+<td>85.70</td>
+<td>129.88</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>5.0</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>SOLUTIONRC</td>
+<td>1</td>
+<td>32.99</td>
+<td>78.33</td>
+<td>35.83</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>4.9</td>
+<td>0.0</td>
+</tr>
+</table>
+
+<p>Radius = 30&#197;. B = -10&#197;&#178;.</p>
+
+<table class="bath4">
+<tr>
+<th>SOLUTIONRC</th>
+<th>1</th>
+<th>44.00</th>
+<th>28.35</th>
+<th>16.00</th>
+<th>0.00000</th>
+<th>0.00000</th>
+<th>0.00000</th>
+<th>5.1</th>
+<th>0.0</th>
+</tr>
+<tr>
+<td>SOLUTIONRC</td>
+<td>1</td>
+<td>33.94</td>
+<td>86.23</td>
+<td>129.99</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>5.0</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>SOLUTIONRC</td>
+<td>1</td>
+<td>34.82</td>
+<td>30.43</td>
+<td>244.68</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>4.9</td>
+<td>0.0</td>
+</tr>
+</table>
+
+<h5>Rotation function of hexagonal pepsin (<em>F</em>'s).</h5>
+
+<p>The table below shows values of the signal/noise ratio
+<a href="../chargifs/deu.gif"><font face="symbol">D</font></a><em>S</em>/<a href="../chargifs/si.gif"><font
+face="symbol">s</font></a> for the correct peak relative to the
+highest background peak. A &quot;-&quot; indicates that the correct peak was not present in the top 20
+peak list.</p>
+
+<table class="bath3" border="5">
+<tr>
+<th></th>
+<th colspan="3">B</th>
+</tr>
+<tr>
+<th>Radius/&#197;</th>
+<th>0</th>
+<th>-10&#197;&#178;</th>
+<th>-20&#197;&#178;</th>
+</tr>
+<tr>
+<td>15</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>20</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>25</td>
+<td>-0.44</td>
+<td>-0.36</td>
+<td>-0.33</td>
+</tr>
+<tr>
+<td>30</td>
+<td>-0.13</td>
+<td>0.07</td>
+<td>-0.07</td>
+</tr>
+<tr>
+<td>35</td>
+<td>-</td>
+<td>-1.05</td>
+<td>-0.83</td>
+</tr>
+<tr>
+<td>40</td>
+<td>-</td>
+<td>-</td>
+<td>-0.55</td>
+</tr>
+</table>
+
+<p>Note: Other combinations of <a name="resolution_limits"></a>resolution limits (8-3&#197;, 20-3.5&#197;,
+8-3.5&#197;), radius or B parameter did not give correct peak in list.</p>
+
+<h3>4.2 Rotation function (AMORE / ROTFUN) with <em>E</em>'s</h3>
+
+<h4>4.2.1. PDBSET</h4>
+
+<p>Modify the PDB header in the coordinate file.</p>
+
+<pre>#
+pdbset  XYZIN penpep  XYZOUT penpep_rfcell &lt;&lt;EOD
+SPACEG P1
+CELL   83 82 92
+EOD</pre>
+
+<h4>4.2.2. SFALL</h4>
+
+<p>Compute structure factor amplitudes in space group P1 for the search model in a large
+rectangular cell.</p>
+
+<pre>#
+# Structure factors for penicillopepsin model in RF cell.
+#
+sfall  XYZIN penpep_rfcell  HKLOUT penpep_rfcell &lt;&lt;EOD
+MODE   SFCALC XYZIN
+SFSG   1
+SYMM   1
+RESO   20 3
+BADD   10
+LABOUT PHIC=PC
+EOD</pre>
+
+<h4>4.2.3. ECALC</strong>
+
+<p>Normalise the observed and calculated amplitudes.</p>
+
+<pre>#
+ecalc  HKLIN hexpep  HKLOUT hexpep_ecalc  &lt;&lt;EOD
+TITLE  ** Ecalc for target crystal**
+LABIN  FP=FOHEXPEP  SIGFP=SIGHEXPEP
+EOD
+
+ecalc  HKLIN penpep_rfcell  HKLOUT penpep_ecalc  &lt;&lt;EOD
+TITLE  ** Ecalc for model**
+LABIN  FP=FC
+EOD</pre>
+
+<h4>4.2.4. AMoRe SORTFUN</h4>
+
+<p>Convert the normalised observed and calculated reflection data files into the internal
+format used by the AMORE program.</p>
+
+<pre>#
+amore  HKLIN hexpep_ecalc  HKLPCK0 hexpep_ecalc.hkl  &lt;&lt;EOD
+TITLE  ** packing h k l E for target crystal **
+SORT
+LABIN  FP=E  SIGFP=E
+EOD
+
+amore  HKLIN penpep_ecalc  HKLPCK0 penpep_ecalc.hkl  &lt;&lt;EOD
+TITLE  ** packing h k l E for model **
+SORT
+LABIN  FP=E  SIGFP=E
+EOD</pre>
+
+<h4>4.2.5. AMoRe ROTFUN CLMN</h4>
+
+<p>Compute spherical harmonic coefficients for the target and model Pattersons.</p>
+
+<h4>4.2.6. AMoRe ROTFUN CROSS</h4>
+
+<p>Compute the cross-RF.</p>
+
+<pre>#
+amore  HKLPCK0 hexpep_ecalc.hkl  HKLPCK1 penpep_ecalc.hkl  \
+       CLMN0 hexpep_ecalc.clmn  CLMN1 penpep_ecalc.clmn  \
+       MAPOUT hexpep_ecalc_rotfun  &lt;&lt;EOD
+ROTFUN
+TITLE  Rotation function with E's..
+CLMN   CRYST  RESO 20 3  SPHERE 25
+CLMN   MODEL 1  RESO 20 3  SPHERE 25
+ROTATE CROSS  MODEL 1  BMAX 90  PKLIM .25  NPIC 20
+EOD
+\rm hexpep_ecalc_rotfun.map
+</pre>
+
+<h5>Peak list from ROTFUN.</h5>
+
+<table class="bath4">
+<tr>
+<th></th><th></th>
+<th><a href="../chargifs/al.gif"><font face="symbol">a</font></a></th>
+<th><a href="../chargifs/be.gif"><font face="symbol">b</font></a></th>
+<th><a href="../chargifs/ga.gif"><font face="symbol">g</font></a></th>
+<th></th><th></th><th></th>
+<th><em>S</em></th>
+</tr>
+<tr>
+<th>SOLUTIONRC</th>
+<th>1</th>
+<th>43.50</th>
+<th>21.00</th>
+<th>14.00</th>
+<th>0.00000</th>
+<th>0.00000</th>
+<th>0.00000</th>
+<th>7.3</th>
+<th>0.0</th>
+</tr>
+<tr>
+<th>SOLUTIONRC</th>
+<th>1</th>
+<th>42.17</th>
+<th>29.66</th>
+<th>26.30</th>
+<th>0.00000</th>
+<th>0.00000</th>
+<th>0.00000</th>
+<th>6.5</th>
+<th>0.0</th>
+</tr>
+<tr>
+<td>SOLUTIONRC</td>
+<td>1</td>
+<td>52.38</td>
+<td>54.25</td>
+<td>128.35</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>6.1</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>SOLUTIONRC</td>
+<td>1</td>
+<td>32.72</td>
+<td>58.97</td>
+<td>66.17</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>6.1</td>
+<td>0.0</td>
+</tr>
+</table>
+
+<p>Note that 2 peaks separated by a small rotation angle (about 14<sup>o</sup>) are observed in the Rotation
+function based on <em>E</em>'s, whereas only a single peak was observed when <em>F</em>'s were used; thus
+normalisation produces a Rotation function map with a much higher effective resolution. The
+splitting is due to hinge-bending giving differing orientations of the N- and C-terminal domains
+of the aspartic proteinase. In hindsight it might have been better to separate the model into its
+constituent domains, and treat it as a 2-molecule problem.</p>
+
+<h5>Rotation function of hexagonal pepsin (<em>E</em>'s).</h5>
+
+<p>The table below shows values of
+<a href="../chargifs/deu.gif"><font face="symbol">D</font></a><em>S</em>/<a href="../chargifs/si.gif"><font
+face="symbol">s</font></a>.</p>
+
+<table class="bath3" border="5">
+<tr>
+<th></th>
+<th colspan="2">Resolution limits</th>
+</tr>
+<tr>
+<th>Radius/&#197;</th>
+<th>20-3&#197;</th>
+<th>20-3.5&#197;</th>
+</tr>
+<tr>
+<td>15</td>
+<td>0.09</td>
+<td>-0.73</td>
+</tr>
+<tr>
+<td>20</td>
+<td>0.31</td>
+<td>-0.45</td>
+</tr>
+<tr>
+<td>25</td>
+<td>0.73</td>
+<td>-</td>
+</tr>
+<tr>
+<td>30</td>
+<td>0.32</td>
+<td>-1.03</td>
+</tr>
+<tr>
+<td>35</td>
+<td>0.61</td>
+<td>-0.26</td>
+</tr>
+<tr>
+<td>40</td>
+<td>0.62</td>
+<td>-0.10</td>
+</tr>
+</table>
+
+<p>The table below shows the effect on the signal/noise ratio of the RF of omitting the largest
+intensities (resolution limits: 20-2&#197;).</p>
+
+<table class="bath3" border="5">
+<tr>
+<th>Coeff.</th>
+<th><em>B</em>/&#197;&#178;</th>
+<th ColSpan="3"># omitted (%)</th>
+</tr>
+<tr>
+<th></th>
+<th></th>
+<th>none</th>
+<th>66 (1.1)</th>
+<th>171 (2.9)</th>
+</tr>
+<tr>
+<td><em>F</em></td>
+<td>0</td>
+<td>4.2</td>
+<td>-0.6</td>
+<td>-</td>
+</tr>
+<tr>
+<td><em>F</em></td>
+<td>-20</td>
+<td>6.9</td>
+<td>3.9</td>
+<td>1.6</td>
+</tr>
+<tr>
+<td><em>E</em></td>
+<td>0</td>
+<td>6.6</td>
+<td>4.9</td>
+<td>2.8</td>
+</tr>
+</table>
+
+<p>Note: Negative signal/noise means that the correct peak is lost in the noise!</p>
+
+<h3>4.3. Translation function (AMORE / TRAFUN) in space group P6<sub>5</sub>22 with <em>F</em>'s</h3>
+
+<h4>4.3.1. AMoRe TRAFUN</h4>
+
+<p>For the best RF solutions, compute the TF's.</p>
+
+<pre>#
+amore  HKLPCK0 hexpep.hkl  table1 penpep.tab  MAPOUT hexpep_trafun.map &lt;&lt;EOD
+TRAFUN CB  RESO 20 3.5
+TITLE  Translation function
+SYMM   P6522
+SOLUTIONRC   1    30.14    37.23   256.28  0.00000  0.00000  0.00000  5.6  0.0
+SOLUTIONRC   1    35.25    30.37   244.50  0.00000  0.00000  0.00000  5.5  0.0
+SOLUTIONRC   1    41.00    28.32    19.00  0.00000  0.00000  0.00000  5.4  0.0
+SOLUTIONRC   1    32.75    85.70   129.88  0.00000  0.00000  0.00000  5.0  0.0
+SOLUTIONRC   1    32.99    78.33    35.83  0.00000  0.00000  0.00000  4.9  0.0
+EOD</pre>
+
+<h5>Translation function of hexagonal pepsin (<em>F</em>'s).</h5>
+
+<p>The table below is for the correct RF solution.</p>
+
+<table class="bath3" border="5">
+<tr>
+<th rowspan="2">Resolution<br />limits</th>
+<th></th>
+<th colspan="2">Correlation coefficient</th>
+</tr>
+<tr>
+<th><a href="../chargifs/deu.gif"><font face="symbol">D</font></a><em>S</em>/<a href="../chargifs/si.gif"><font
+face="symbol">s</font></a></th>
+<th>Correct</th>
+<th>Background</th>
+</tr>
+<tr>
+<td>20-4&#197;</td>
+<td>1.69</td>
+<td>0.212</td>
+<td>0.153</td>
+</tr>
+<tr>
+<td>20-3.5&#197;</td>
+<td>2.09</td>
+<td>0.210</td>
+<td>0.169</td>
+</tr>
+<tr>
+<td>8-3.5&#197;</td>
+<td>0.81</td>
+<td>0.172</td>
+<td>0.153</td>
+</tr>
+<tr>
+<td>20-3&#197;</td>
+<td>1.62</td>
+<td>0.264</td>
+<td>0.226</td>
+</tr>
+</table>
+
+<h4>4.3.2. AMoRe TRAFUN 2</h4>
+
+<p>No NCS, so this step not applicable.</p>
+
+<h4><a name="section4.3.3" id="section4.3.3"></a>4.3.3. AMoRe FITFUN</h4>
+
+<p>For the best TF solutions, do rigid-body refinements and choose the solution with the
+highest correlation coefficient.</p>
+
+<pre>#
+amore  HKLPCK0 hexpep.hkl  table1 penpep.tab  &lt;&lt;EOD
+FITFUN RESO 20 3.5
+TITLE  Rigid body refinement
+SYMM   P6522
+REFSOL AL BE GA X Y Z BF
+SOLUT_1     1   43.50   21.00   14.00  0.0772  0.6903  0.2988 19.5 53.0   1
+SOLUT_1     1   43.50   21.00   14.00  0.5903  0.1203  0.3246 13.3 54.4   2
+SOLUT_1     1   43.50   21.00   14.00  0.8148  0.4523  0.3953 12.7 54.9   9
+SOLUT_2     1   42.17   29.66   26.30  0.0719  0.2201  0.3324 13.4 54.7   4
+SOLUT_2     1   42.17   29.66   26.30  0.0789  0.2299  0.4226 13.1 54.9   2
+SOLUT_3     1   52.38   54.25  128.35  0.6740  0.9740  0.4168 13.9 54.9   9
+SOLUT_3     1   52.38   54.25  128.35  0.4894  0.9219  0.2713 12.9 55.4   2
+SOLUT_4     1   32.72   58.97   66.17  0.0550  0.0375  0.0206 12.9 55.1   1
+SOLUT_5     1   38.50   59.00   65.69  0.9230  0.1232  0.2007 13.5 53.8   1
+SOLUT_5     1   38.50   59.00   65.69  0.9197  0.1238  0.0890 12.5 54.8   2
+EOD</pre>
+
+<h5>Sample output from AMORE / FITFUN.</h5>
+
+<pre> INITIAL POSITIONS
+    1    43.500    21.000    14.000  0.077200  0.690300  0.298800     19.500  53.000
+ FINAL POSITIONS
+ SOLUTIONF   1    43.58    22.67    15.07  0.07790  0.69162  0.29897 26.6 51.3
+
+ INITIAL POSITIONS
+    1    43.500    21.000    14.000  0.590300  0.120300  0.324600     13.900  54.900
+ FINAL POSITIONS
+ SOLUTIONF   1    45.54    21.02    12.42  0.59161  0.12234  0.32435 18.3 54.4
+
+ INITIAL POSITIONS
+    1    43.500    21.000    14.000  0.814800  0.452300  0.395300     13.500  53.800
+ FINAL POSITIONS
+ SOLUTIONF   1    42.93    21.40    14.83  0.81292  0.44990  0.39566 18.3 53.3
+
+</pre>
+
+<h5>Rigid-body refinement of hexagonal pepsin.</h5>
+
+<table class="bath3" border="5">
+<tr>
+<th></th>
+<th colspan="2">Correlation coefficient</th>
+<th colspan="2">R - factor</th>
+</tr>
+<tr>
+<th>Solution</th>
+<th>Before</th>
+<th>After</th>
+<th>Before</th>
+<th>After</th>
+</tr>
+<tr>
+<td>1</td>
+<td>0.195</td>
+<td>0.266</td>
+<td>0.530</td>
+<td>0.513</td>
+</tr>
+<tr>
+<td>2</td>
+<td>0.139</td>
+<td>0.183</td>
+<td>0.549</td>
+<td>0.544</td>
+</tr>
+<tr>
+<td>3</td>
+<td>0.135</td>
+<td>0.183</td>
+<td>0.538</td>
+<td>0.533</td>
+</tr>
+<tr>
+<td>4</td>
+<td>0.134</td>
+<td>0.183</td>
+<td>0.547</td>
+<td>0.543</td>
+</tr>
+<tr>
+<td>5</td>
+<td>0.133</td>
+<td>0.181</td>
+<td>0.544</td>
+<td>0.541</td>
+</tr>
+</table>
+
+<h4>4.3.4. PDBSET</h4>
+
+<p>Apply the optimised rotation matrix and translation vector to the model coordinates
+output by AMORE / TABFUN.</p>
+
+<pre>#
+pdbset XYZIN penpep_model  XYZOUT hexpep  &lt;&lt;EOD
+SPACEG P6522
+CELL   67.4 67.4 290.1 90 90 120
+ROTATE EULER 42.68 26.21 19.27
+SHIFT  FRACT  0.07790  0.69162  0.29897
+EOD</pre>
+
+<h3>4.4 Translation function (TFFC / FFT) in space group P6<sub>5</sub>22 with <em>E</em>'s</h3>
+
+<h4>4.4.1. PDBSET</h4>
+
+<p>Apply the appropriate rotation matrix, calculated from the Eulerian angles of the peak(s)
+in the RF, to the model coordinates. Also modify the PDB header in the coordinate file.</p>
+
+<pre>#
+pdbset XYZIN penpep  XYZOUT penpep_tfcell  &lt;&lt;EOD
+SPACEG P1
+CELL   67.4 67.4 290.1 90 90 120
+ROTATE EULER 42.68 26.21 19.27
+EOD</pre>
+
+<h4>4.4.2. SFALL</h4>
+
+<p>Calculate structure factor amplitudes and phases.</p>
+
+<pre>#
+# Structure factors for penicillopepsin model in TF cell.
+sfall  XYZIN penpep_tfcell  HKLOUT penpep_tfcell &lt;&lt;EOD
+MODE   SFCALC XYZIN
+SFSG   1
+SYMM   1
+RESO   20 3
+BADD   10
+LABOUT PHIC=PC
+EOD</pre>
+
+<h4>4.4.3. CAD</h4>
+
+<p>Combine the columns for the observed reflection data with those for the calculated
+molecule into a single file.</p>
+
+<pre>#
+cad    HKLIN1 hexpep  HKLIN2 penpep_tfcell  HKLOUT hexpep_cad  &lt;&lt;EOD
+RESO   OVER 20 3
+TITLE  COMBINING  hexagonal pepsin Fobs &amp; penicillopepsin Fcalc.
+LABIN  FILE 1  E1=FOHEXPEP E2=SIGHEXPEP
+CTYPE  FILE 1  E1=F        E2=Q
+LABIN  FILE 2  E1=FC       E2=PC
+CTYPE  FILE 2  E1=U        E2=V
+LABOUT FILE 2  E1=FC       E2=PC
+END
+EOD</pre>
+
+<h4>4.4.4. TFFC</h4>
+
+<p>Compute the Fourier coefficients for the Translation function.</p>
+
+<pre>#
+tffc   HKLIN hexpep_cad  HKLOUT hexpep_tffc  &lt;&lt;EOD
+TITLE  tffc on hexagonal pepsin
+SPACEG P6522
+RESO   20 3.5
+LABIN  FP=FOHEXPEP SIGFP=SIGHEXPEP
+EOD</pre>
+
+<h4>4.4.5. FFT</h4>
+
+<p>Compute the Fourier transform to get the Translation function map.</p>
+
+<pre>#
+fft    HKLIN hexpep_tffc  MAPOUT hexpep_tffc  &lt;&lt;EOD
+TITLE  FFT of tffc map
+XYZLIM 0 1  0 1  0 .5               ! Limits for point group 622
+GRID   128 128 512
+LABIN  A=A  B=B
+EOD</pre>
+
+<h4>4.4.6. MAPSIG</h4>
+
+<p>Search the Translation function map for peaks; one peak should stand out from the rest
+with relative signal/noise &gt; 1.</p>
+
+<pre>#
+mapsig MAPIN hexpep_tffc  PEAK_LIST hexpep_tffc.pkl  &lt;&lt;EOD
+EOD
+\rm hexpep_tffc.map</pre>
+
+<h5>Peak list from TFFC.</h5>
+
+<table class="bath4">
+<tr>
+<th></th><th></th><th></th><th></th><th></th><th></th><th></th>
+<th><em>t</em><sub>x</sub></th>
+<th><em>t</em><sub>y</sub></th>
+<th><em>t</em><sub>z</sub></th>
+<th><em>S</em>/<a href="../chargifs/si.gif"><font face="symbol">s</font></a></th>
+</tr>
+<tr>
+<th>1</th>
+<th>60</th>
+<th>24</th>
+<th>124.0</th>
+<th>34.2</th>
+<th>135.3</th>
+<th>0.560</th>
+<th>0.968</th>
+<th>0.268</th>
+<th>0.264</th>
+<th>9.22</th>
+</tr>
+<tr>
+<td>2</td>
+<td>15</td>
+<td>15</td>
+<td>81.0</td>
+<td>77.0</td>
+<td>136.0</td>
+<td>0.389</td>
+<td>0.633</td>
+<td>0.602</td>
+<td>0.266</td>
+<td>6.42</td>
+</tr>
+<tr>
+<td>3</td>
+<td>29</td>
+<td>14</td>
+<td>124.0</td>
+<td>34.0</td>
+<td>212.0</td>
+<td>0.375</td>
+<td>0.969</td>
+<td>0.266</td>
+<td>0.414</td>
+<td>6.17</td>
+</tr>
+<tr>
+<td>4</td>
+<td>37</td>
+<td>17</td>
+<td>124.0</td>
+<td>34.0</td>
+<td>68.0</td>
+<td>0.372</td>
+<td>0.969</td>
+<td>0.266</td>
+<td>0.133</td>
+<td>6.12</td>
+</tr>
+</table>
+
+<p>It may be necessary to try an alternative space group (in this case P6<sub>1</sub>22):</p>
+
+<pre>#
+tffc   HKLIN hexpep_cad  HKLOUT hexpep_tffc  &lt;&lt;EOD
+TITLE  tffc on hexagonal pepsin in alternative space group.
+SPACEG P6122
+RESO   20 3.5
+LABIN  FP=FOHEXPEP SIGFP=SIGHEXPEP
+EOD
+
+if ($status) exit
+
+fft    HKLIN hexpep_tffc  MAPOUT hexpep_tffc  &lt;&lt;EOD
+TITLE  FFT of tffc map
+XYZLIM 0 1  0 1  0 .5
+GRID   128 128 512
+LABIN  A=A  B=B
+EOD
+
+if ($status) exit
+
+mapsig MAPIN hexpep_tffc  PEAK_LIST hexpep_tffc.pkl  &lt;&lt;EOD
+EOD
+\rm hexpep_tffc.map</pre>
+
+<h5>Peak list from TFFC.</h5>
+
+<table class="bath4">
+<tr>
+<th></th><th></th><th></th><th></th><th></th><th></th><th></th>
+<th><em>t</em><sub>x</sub></th>
+<th><em>t</em><sub>y</sub></th>
+<th><em>t</em><sub>z</sub></th>
+<th><em>S</em>/<a href="../chargifs/si.gif"><font face="symbol">s</font></a></th>
+</tr>
+<tr>
+<td>1</td>
+<td>8</td>
+<td>8</td>
+<td>121.0</td>
+<td>88.4</td>
+<td>212.6</td>
+<td>0.340</td>
+<td>0.945</td>
+<td>0.691</td>
+<td>0.415</td>
+<td>5.76</td>
+</tr>
+<tr>
+<td>2</td>
+<td>11</td>
+<td>11</td>
+<td>28.1</td>
+<td>24.6</td>
+<td>221.9</td>
+<td>0.310</td>
+<td>0.219</td>
+<td>0.192</td>
+<td>0.433</td>
+<td>5.25</td>
+</tr>
+<tr>
+<td>3</td>
+<td>12</td>
+<td>12</td>
+<td>49.4</td>
+<td>71.2</td>
+<td>81.3</td>
+<td>0.308</td>
+<td>0.386</td>
+<td>0.556</td>
+<td>0.159</td>
+<td>5.21</td>
+</tr>
+<tr>
+<td>4</td>
+<td>20</td>
+<td>10</td>
+<td>53.9</td>
+<td>74.2</td>
+<td>13.5</td>
+<td>0.305</td>
+<td>0.421</td>
+<td>0.579</td>
+<td>0.026</td>
+<td>5.15</td>
+</tr>
+</table>
+
+<h5>Translation function of hexagonal pepsin (<em>E</em>'s).</h5>
+
+<table class="bath3" border="5">
+<tr>
+<th>Resolution</th>
+<th><a href="../chargifs/deu.gif"><font face="symbol">D</font></a><em>S</em>/<a href="../chargifs/si.gif"><font
+face="symbol">s</font></a></th>
+</tr>
+<tr>
+<td>20-4&#197;</td>
+<td>2.61</td>
+</tr>
+<tr>
+<td>20-3.5&#197;</td>
+<td>2.80</td>
+</tr>
+<tr>
+<td>8-3.5&#197;</td>
+<td>1.70</td>
+</tr>
+<tr>
+<td>20-3&#197;</td>
+<td>2.15</td>
+</tr>
+<tr>
+<td>&#170; 20-3.5&#197;</td>
+<td>0.51</td>
+</tr>
+</table>
+
+<p>&#170; Alternative space group P6<sub>1</sub>22.</p>
+
+<h4>4.4.7. TFFC, FFT, MAPSIG</h4>
+
+<p>No NCS, so this step not applicable.</p>
+
+<h4>4.4.8. PDBSET</h4>
+
+<p>Apply the translation vector to the rotated model coordinates.</p>
+
+<pre>#
+pdbset XYZIN penpep_tfcell  XYZOUT hexpep  &lt;&lt;EOD
+SPACEG P6522
+SHIFT  FRACT  .968 .268 .264
+EOD</pre>
+
+<h3>4.5 Rotation function (X-PLOR)</h3>
+
+<p>The <strong>X-PLOR</strong> program can also be used to compute the cross-RF and do rigid or segmented
+body refinement in Patterson space (<strong>Patterson Correlation</strong> or <strong>PC</strong> refinement). In theory this
+should be particularly useful in cases where there is limited flexibility such as hinge-bending. 
+This is common in multi-domain proteins, including the
+<a name="domain.gif"></a><a href="domain.gif" target="_blank">aspartic proteinases</a>.</p>
+
+<h4>4.5.1. If necessary, convert reflection file to X-PLOR format</h4>
+
+<pre>#
+mtz2various  HKLIN hexpep  HKLOUT hexpep.xpl  &lt;&lt;EOD
+OUTPUT XPLOR
+LABIN  FP=FOHEXPEP  SIGFP=SIGHEXPEP
+EOD</pre>
+
+<h4>4.5.2. Create the X-PLOR structure file</h4>
+
+<pre>#
+xplor  &lt;&lt; \EOD
+ remarks  file  generate/generate.inp
+ remarks  Generate structure file and hydrogens for a protein
+ topology
+   @topPAR:tophcsdx.pro                        { Read topology file }
+ end
+ parameter
+   @topPAR:parhcsdx.pro                      { Read empirical potential }
+                                             { parameter file CHARMM19 }
+                                             { with modifications }
+   nbonds                                    { This statement specifies the}
+      atom cdie shift eps=1.0  e14fac=0.4    { nonbonded interaction energy}
+      cutnb=7.5 ctonnb=6.0 ctofnb=6.5        { options.  Note the reduced }
+      nbxmod="5" vswitch                       { nonbonding cutoff to save }
+   end                                       { some CPU time. This statement}
+                                             { overwrites the defaults in the}
+                                             { parameter file. }
+ end
+ segment                                     { Generate protein }
+   name=&quot;    &quot;                               { This name has to match the }
+                                             { four characters in columns 73}
+                                             { through 76 in the coordinate}
+                                             { file, in XPLOR this name is }
+                                             { name is referred to as SEGId.}
+   chain
+     @topPAR:toph19.pep                      { Read peptide bond file }
+     coordinates @penpep.brk end             { interpret coordinate file to}
+   end                                       { obtain the sequence }
+ end
+                                             { Sometimes different atom }
+ vector do (name=&quot;O&quot;) ( name OT1 )           { names are used... }
+ vector do (name=&quot;OT&quot;) ( name OT2 )
+ vector do (name=&quot;CD1&quot;) ( name CD and resname ile )
+ coordinates @penpep.brk end                 { Here we actually read the }
+                                             { coordinates }
+ vector do ( B=10 ) ( all )                  { B's are zero: reset all to 10}
+ flags exclude vdw elec end                  { Do QUICK hydrogen building w/o}
+                                             { vdw and elec terms }
+ hbuild                                      { This statement builds }
+    selection=( hydrogen )                   { missing hydrogens which are }
+    phistep="4"                                { needed for the force field }
+ end
+ write coordinates output=penpep_xplor.brk end      { Write out coordinates}
+ write structure output=penpep.psf end       { Write out structure file }
+ stop
+\EOD</pre>
+
+<h4>4.5.3. Compute the Rotation function and search for peaks</h4>
+
+<pre>#
+xplor  &lt;&lt; \EOD
+ remarks file xtalmr/rotation.inp  -- cross rotation function
+ remarks                              (model P1 vs crystal)
+{===&gt;} structure @penpep.psf end                        { read structure file}
+{===&gt;} coor @penpep_xplor.brk                           { read coordinates }
+{===&gt;}                              { specify location of Patterson map files}
+evaluate ( $p1_map=&quot;p1.map&quot; )
+evaluate ( $p2_map=&quot;p2.map&quot; )
+{===&gt;}
+evaluate ( $max_vector=30 )        { maximum Patterson vector to be searched}
+evaluate ( $m_max_vector=-$max_vector )
+xrefin                             { make Patterson P1 map of model in P1 box}
+{===&gt;}                           { the P1 box has to be larger than twice the}
+                                 { the extend of the model in each direction}
+   a=100.0 b=100.0 c=120.0 alpha=90.0 beta=90.0 gamma=90.0
+   symmetry=(x,y,z)
+   SCATter ( chemical C* )
+   2.31000 20.8439 1.02000 10.2075 1.58860 .568700 .865000 51.6512 .215600
+   SCATter ( chemical N* )
+   12.2126 .005700 3.13220 9.89330 2.01250 28.9975 1.16630 .582600 -11.529
+   SCATter ( chemical O* )
+   3.04850 13.2771 2.28680 5.70110 1.54630 .323900 .867000 32.9089 .250800
+   SCATter ( chemical S* )
+   6.90530 1.46790 5.20340 22.2151 1.43790 .253600 1.58630 56.1720 .866900
+   SCATter ( chemical P* )
+   6.43450 1.90670 4.17910 27.1570 1.78000 0.52600 1.49080 68.1645 1.11490
+   SCATter ( chemical FE* )
+   11.1764 4.61470 7.38630 0.30050 3.39480 11.6729 0.07240 38.5566 0.97070
+{===&gt;}          { allocate sufficient space for the reflections of the P1 box}
+   nreflections=200000
+{===&gt;}
+   resolution 20 3                          { resolution range for P1 box }
+   generate                                 { generate reflections for P1 box}
+   method=fft
+   fft
+      grid=0.25   { sampling grid for FFT and Patterson map (1/4 high resol.)}
+   end
+   update                                { compute Fcalcs for model in P1 box}
+   do amplitude (fcalc=fcalc^2)        { compute |Fcalc|^2 and store in Fcalc}
+   do phase (fcalc=0.0)
+      map                  { compute Patterson map P1 (which will be rotated)}
+                            { we write a hemisphere of Patterson vectors with}
+      extend=box            { lengths less than $max_vector. }
+      xmin=$m_max_vector xmax=$max_vector
+      ymin=$m_max_vector ymax=$max_vector
+      zmin=0.0 zmax=$max_vector
+      automatic=true                           { use automatic scaling of map}
+      formatted=false
+      output=$p1_map                          { write an unformatted map file}
+   end
+end
+xrefin                                     { make Patterson map P2 of crystal}
+{===&gt;}                                                { unit cell for crystal}
+   a=67.4 b=67.4 c=290.1 alpha=90. beta=90. gamma=120.
+{===&gt;}
+   symmetry=(x,y,z)       { operators for Patterson symmetry of crystal P622}
+   symmetry=(-Y,X-Y,Z)
+   symmetry=(Y-X,-X,Z)
+   symmetry=(-X,-Y,Z)
+   symmetry=(Y,Y-X,Z)
+   symmetry=(X-Y,X,Z)
+   symmetry=(Y,X,-Z)
+   symmetry=(X-Y,-Y,-Z)
+   symmetry=(-X,Y-X,-Z)
+   symmetry=(-Y,-X,-Z)
+   symmetry=(Y-X,Y,-Z)
+   symmetry=(X,X-Y,-Z)
+{===&gt;}
+   nreflections=20000
+   reflection @hexpep.xpl end                { read reflections }
+{===&gt;}
+   resolution 20 3                                    { resolution range }
+   reduce
+   do amplitude ( fobs = fobs * heavy(fobs - 2.0*sigma)) { sigma cutoff }
+   fwind=0.1=100000
+   method=fft
+   fft
+      grid=0.25          { sampling grid for Patterson maps (1/4 high resol.)}
+   end
+   do amplitude (fcalc=fobs^2)          { compute |Fobs|^2 and store in Fcalc}
+   do phase (fcalc=0.0)
+   map                                             { compute Patterson map P2}
+      extend=unit
+      automatic=true                           { use automatic scaling of map}
+      formatted=false
+      output=$p2_map
+   end
+end
+xrefin
+   nrefl=10                                             { release some memory}
+   search rotation
+      p1input=$p1_map    formatted=false
+      p2input=$p2_map
+{===&gt;}
+      range=5.0 $max_vector           { Patterson vector selection for map P1}
+      threshold=0.0
+      npeaks=15000                      { use 15000 largest vectors of map P1}
+{===&gt;}
+      tmmin=0.0 tmmax=60.           { Lattman angle grid.  Specify asymmetric}
+      t2min=0.0 t2max=90.           { unit for rotation function here.  See}
+      tpmin=0.0 tpmax=720.          { Rao, S.N. et al. (1980). Acta Cryst.A36}
+                                    { 878--884. }
+      delta=2.5
+{ Roughly, delta should be less than ArcSin[ high resol / (3*$max_vector)].}
+      list=hexpep.rf                { output file for cluster analysis }
+      nlist=6000            { analyse highest 6000 peaks of rotation function}
+      epsilon=0.25                         { matrix norm for cluster analysis}
+   end
+end
+stop
+\EOD</pre>
+
+<h4>4.5.4. Refine all the RF solutions by the PC method</h4>
+
+<pre>#
+xplor  &lt;&lt;\EOD                 # execute, using control data up to \EOD
+remarks file xtalmr/filter.inp   -- pc-refinement of rotation function peaks
+ parameter
+   @topPAR:parhcsdx.pro                      { Read empirical potential }
+                                             { parameter file CHARMM19 }
+ end
+{===&gt;} structure @penpep.psf end             { read structure file }
+{===&gt;} coor @penpep_xplor.brk                { read coordinates }
+evaluate ($wa=10000.)    { this is the weight for the XREF energy term }
+                         { in this case it is arbitrary since we're not }
+                         { combining it with other energy term }
+xrefin
+{===&gt;}                                                { unit cell for crystal}
+   a=67.4 b=67.4 c=290.1 alpha=90 beta=90 gamma=120
+{===&gt;}
+   symmetry=(x,y,z)                  { operators for crystal symmetry P6(5)22}
+   symmetry=(-Y,X-Y,2/3+Z)
+   symmetry=(Y-X,-X,1/3+Z)
+   symmetry=(-X,-Y,1/2+Z)
+   symmetry=(Y,Y-X,1/6+Z)
+   symmetry=(X-Y,X,5/6+Z)
+   symmetry=(Y,X,2/3-Z)
+   symmetry=(X-Y,-Y,-Z)
+   symmetry=(-X,Y-X,1/3-Z)
+   symmetry=(-Y,-X,1/6-Z)
+   symmetry=(Y-X,Y,1/2-Z)
+   symmetry=(X,X-Y,5/6-Z)
+   SCATter ( chemical C* )
+      2.31000 20.8439 1.02000 10.2075 1.58860 .568700 .865000 51.6512 .215600
+   SCATter ( chemical N* )
+      12.2126 .005700 3.13220 9.89330 2.01250 28.9975 1.16630 .582600 -11.529
+   SCATter ( chemical O* )
+      3.04850 13.2771 2.28680 5.70110 1.54630 .323900 .867000 32.9089 .250800
+   SCATter ( chemical S* )
+      6.90530 1.46790 5.20340 22.2151 1.43790 .253600 1.58630 56.1720 .866900
+   SCATter ( chemical P* )
+      6.43450 1.90670 4.17910 27.1570 1.78000 0.52600 1.49080 68.1645 1.11490
+   SCATter ( chemical FE* )
+      11.1764 4.61470 7.38630 0.30050 3.39480 11.6729 0.07240 38.5566 0.97070
+{===&gt;}
+   nreflections=100000
+   reflection @hexpep.xpl end                { read reflections }
+{===&gt;}
+   resolution 20 3                                    { resolution range }
+   reduce
+   do amplitude ( fobs = fobs * heavy(fobs - 2.0*sigma)) { sigma cutoff }
+   fwind=0.1=100000
+{===&gt;}
+   method=fft
+   fft
+       memory=2000000                      { fft method with memory statement}
+   end
+   wa=$wa
+   target=E2E2                                               { specify target}
+   mbins=20                           { number of bins used for E calculation}
+   tolerance=0. lookup=false                 { this makes the minimizer happy}
+                           { expand data to a P1 hemisphere: this sequence of}
+                           { statements first applies the crystal symm. ops}
+                           { to the current reflections.  In the second step}
+                           { Friedel mates or other redundancies are removed.}
+                           { This is necessary since the application of the}
+                           { symmetry operators can produce Friedel mates }
+                           { under special conditions. }
+   hermitian=false  expand  hermitian=true  symmetry reset  reduce
+end
+flags exclude * include xref end                  { only use XREF energy term}
+{===&gt;} set display=hexpep.fil end       { write the results of the refinement}
+                                        { to a file called &quot;filter.list&quot; }
+set precision="5" end
+set message=off end                    { turn off messages and echo to reduce}
+set echo=off end                       { output }
+evaluate ($number=0)
+evaluate ($counter=0)
+                                    { loop over all orientations as specified}
+                                    { in file rotation.rf (conventional rf)}
+for $1 in ( @hexpep.rf ) loop main
+   evaluate ($counter=$counter+1)                 { this series of statements}
+   if     ($counter=1) then  evaluate($index=$1)  {assigns the information of}
+   elseif ($counter=2) then  evaluate($t1=$1)     { a single line in file }
+   elseif ($counter=3) then  evaluate($t2=$1)     { rotation.rf to approp.}
+   elseif ($counter=4) then  evaluate($t3=$1)     { variables.  A single line}
+   elseif ($counter=5) then                       { contains }
+     evaluate ($rf=$1)                            { $index $t1 $2 $t3 $rf. }
+     evaluate ($counter=0)
+     evaluate ($number=$number+1)
+     coor copy end                             { save current coordinates }
+     coor rotate euler=( $t1 $t2 $t3 ) end     { and then rotate them }
+                                               { according to the orientation}
+                                               { specified by $t1, $t2, $t3}
+     energy end                                      { compute initial energy}
+     evaluate ($pc1=1.0-$xref/$wa)                   { and store in $pc1 }
+     minimize rigid                         { rigid body minimization of the}
+        nstep=15                            { orientation of the molecule }
+        drop=10.
+     end
+     evaluate ($pc2=1.0-$xref/$wa)
+                                            { rigid body minimization of two}
+{===&gt;}                                      { monomers. }
+     minimize rigid
+        group=( resid 3:190 or resid 299:321)
+        group=( resid 191:298)
+        drop=40.0
+        nstep=40
+     end
+    evaluate ($pc3=1.0-$xref/$wa)
+    coor swap end                { fit coordinates to starting structure in}
+    vector do (vx=x) ( all )     { order to measure the orientation of the }
+    vector do (vy=y) ( all )     { PC-refined structure }
+    vector do (vz=z) ( all )     { the arrays vx, vy, vz are used as temp. }
+    coor fit end                 { stores in order to keep the starting }
+    vector do (x=vx) ( all )     { coordinates }
+    vector do (y=vy) ( all )     { the COOR FIT statement stores the angles}
+    vector do (z=vz) ( all )     { in the symbol $theta1, $theta2, $theta3 }
+                                 { print information: orientation of rotation}
+                                 { function peak ($t1, $t2, $t3), orientation}
+                                 { after PC-refinement ($theta1, $theta2, }
+                                 { $theta3), index of the rotation function,}
+                                 { rotation function value, PCs for initial,}
+                                 { rigid body and domain refined structures.}
+   display $t1 $t2 $t3    $theta1 $theta2 $theta3    $index $rf $pc1 $pc2 $pc3
+   end if
+end loop main
+stop
+\EOD</pre>
+
+<h4>4.5.5. Plot the results</h4>
+
+<p align="center"><a name="hexpep.gif" id="hexpep.gif"></a><img src="hexpep.gif" /></p>
+
+<p>The plot shows the PC values for each RF solution before and after the segmented-body
+refinement. The correct solution (# 34) has the highest PC value both before and after
+refinement, though the refinement actually reduces the discrimination of the correct solution
+relative to noise solutions.</p>
+
+<table class="bathbuttons" width="100%">
+<tr>
+<td><a href="mrbath3.html"><img src="back.gif" /></a></td>
+<td align="center"><a href="mrbath98.html">BACK TO INDEX</a></td>
+<td align="right"><a href="mrbath5.html"><img src="forward.gif" /></a></td>
+</tr>
+</table>
+
+</body></html>

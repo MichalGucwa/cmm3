@@ -1,0 +1,185 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>CCP4 Program Suite</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]">
+</HEAD>
+<BODY>
+
+<!-- ::INDEX_INFO::CHAINSAW::Supported::Coordinate file manipulations::Mutate a pdb file according to an input sequence alignment:::::::: -->
+
+<H1>CHAINSAW (CCP4: Supported Program)</H1>
+<H2>NAME</H2>
+<B>chainsaw </B>
+- Mutate a pdb file according to an input sequence alignment
+
+<H2>SYNOPSIS</H2>
+
+<P><B>chainsaw xyzin</B> <I>foo.pdb</I> <B>alignin</B> <I>foo_ali.ali</I> <B>xyzout</B> <I>foo_out.pdb</I> <BR>
+[<A HREF="#keywords">Keyworded input</A>] </P>
+
+<H2><A NAME="description"></A>DESCRIPTION</H2>
+
+<P>Chainsaw is a Molecular Replacement utility which takes an
+alignment between target and model sequences and modifies
+the model pdb file by pruning non-conserved residues. The pruning can be
+done in one of three ways: back to the gamma atom, back to the beta atom, or
+in such a way as to retain all atoms common to the target and model residues.
+The names of the retained atoms will be changed if necessary to
+match the target. Conserved residues are left unchanged.</P>
+
+<P>The residues in the output pdb file will be numbered in a way 
+consistent with the target sequence i.e. if a residue in the target
+corresponds to a gap in the model, the residue numbers in the output 
+pdb file will contain a gap, but if a residue in the model corresponds
+to a gap in the target, the residue numbers in the output pdb file 
+will be consecutive.</P>
+
+<P>If there are alternate conformations in the input pdb file, chainsaw
+will choose the most probable conformation, and assign it an occupancy of 1 
+in the output pdb file.</P>
+
+<P>Chainsaw accepts several alignment file formats, which it identifies
+by the file extension: PIR (.pir), Fasta (.fas), Clustal (.aln), 
+MSF/GCG (.msf), interleaved Phylip (.phy), BLAST (.bla) and OCA (.oca). 
+Suggestions for additional formats are welcome.</P>
+
+<P> A .bla file consists of output from the BLAST server: </P>
+
+<PRE>
+ Score =  164 bits (416),  Expect = 6e-42, Method: Composition-based stats.
+ Identities = 85/120 (70%), Positives = 101/120 (84%), Gaps = 0/120 (0%)
+
+Query  4    LVGVIMGSTSDWETMKYACDILDELNIPYEKKVVSAHRTPDYMFEYAETARERGLKVIIA  63
+            +VG+IMGS SDWETM++A  +L EL IP+E  +VSAHRTPD + +YA TA ERGL VIIA
+Sbjct  23   VVGIIMGSQSDWETMRHADALLTELEIPHETLIVSAHRTPDRLADYARTAAERGLNVIIA  82
+
+Query  64   GAGGAAHLPGMVAAKTNLPVIGVPVQSKALNGLDSLLSIVQMPGGVPVATVAIGKAGSTN  123
+            GAGGAAHLPGM AA T LPV+GVPV+S+AL G+DSLLSIVQMPGGVPV T+AIG +G+ N
+Sbjct  83   GAGGAAHLPGMCAAWTRLPVLGVPVESRALKGMDSLLSIVQMPGGVPVGTLAIGASGAKN  142
+
+</PRE>
+<P> while a .oca file contains output from the OCA database: </P>
+
+<PRE>
+>>PDB:1U11 _A mol:protein length:182     Pure (N5-Carboxy  (182 aa)
+ initn: 605 init1: 605 opt: 606  Z-score: 729.8  bits: 141.5 E(): 1.3e-33
+Smith-Waterman score: 606;  65.972% identity (65.972% ungapped) in 144 aa overla
+p (4-147:23-166)
+
+                                  10        20        30        40
+SEARCH                    MKSLVGVIMGSTSDWETMKYACDILDELNIPYEKKVVSAHR
+                             .::.:::: ::::::..:  .: ::.::.:  .:::::
+PDB:1U MSETAPLPSASSALEDKAASAPVVGIIMGSQSDWETMRHADALLTELEIPHETLIVSAHR
+               10        20        30        40        50        60
+
+              50        60        70        80        90       100
+SEARCH TPDYMFEYAETARERGLKVIIAGAGGAAHLPGMVAAKTNLPVIGVPVQSKALNGLDSLLS
+       ::: . .::.:: ::::.::::::::::::::: :: : :::.::::.:.::.:.:::::
+PDB:1U TPDRLADYARTAAERGLNVIIAGAGGAAHLPGMCAAWTRLPVLGVPVESRALKGMDSLLS
+               70        80        90       100       110       120
+
+             110       120       130       140       150       160
+SEARCH IVQMPGGVPVATVAIGKAGSTNAGLLAAQILGSFHDDIHDALELRREAIEKDVREGSELV
+       ::::::::::.:.::: .:. ::.::::.::. ..  .   ::  :
+PDB:1U IVQMPGGVPVGTLAIGASGAKNAALLAASILALYNPALAARLETWRALQTASVPNSPITE
+              130       140       150       160       170       180
+
+PDB:1U DK
+</PRE>
+
+<P>The alignment file should contain the target sequence first and the
+model sequence second.</P>
+
+<P>In practice, the model sequence in the alignment file will often be
+different from the model sequence in the pdb file. This may be because the
+alignment only uses part of the model sequence, or because the structure 
+determination has not resolved all residues. Chainsaw is capable of
+handling such differences automatically.</P>
+
+<P>Chainsaw will work with both monomer and multimer search models. If you
+wish to use a monomer model and the model pdb file contains more than one
+chain, you will have to delete the surplus chains manually. If you use a
+multimer model, chainsaw will apply the same alignment to each successive
+chain in the input pdb file.</P>
+
+<P>Chainsaw will output a list of conserved/mutated/deleted residues and
+an estimate of the sequence identity. If this estimate is less than you 
+expect, it is a sign that something has gone wrong, usually a problem 
+with missing residues.</P> 
+
+<H2><A name="files"></A> INPUT AND OUTPUT FILES</H2>
+
+<dl>
+<dt>XYZIN  <dd>  Input template coordinates.
+
+<dt><A name="files-alignin"></A>ALIGNIN <dd> Input sequence
+alignment file. Chainsaw accepts several alignment file formats, which 
+it identifies by the file extension: PIR (.pir), Fasta(.fas), Clustal (.aln), 
+MSF/GCG (.msf), interleaved Phylip (.phy), BLAST (.bla) and OCA (.oca). 
+See above for further details.
+ 
+<dt>XYZOUT <dd>  Output model coordinates with some atoms removed
+according to the Chainsaw protocol, and remaining atoms renamed
+and/or renumbered.
+
+</dl>
+
+<H2><A NAME="keywords"></A>KEYWORDED INPUT</H2>
+
+<P>Possible keywords are: </P>
+
+<H3><A NAME="mode"></A>MODE &lt;mode&gt;</H3>
+Currently, three modes are supported: MIXS (default), MIXA and MAXI. 
+MIXS implements the Mixed Model of <a href="#ref-rs04">R. Schwarzenbacher et al.</a>
+in which non-conserved residues are truncated to the gamma atom, while 
+conserved residues are preserved unchanged. The MIXA mode is similar,
+but non-conserved residues are truncated to the beta atom. The MAXI mode
+retains the maximal number of atoms common to the target and model residues.
+Exactly which atoms are retained is determined by the table in the chainsaw.h
+header file. 
+
+<H3><A NAME="end"></A>END</H3>
+End keyworded input.
+
+<h2><A NAME="examples"></A>EXAMPLES</h2>
+
+Target 1mzr and model 1a80_1.pdb.
+<pre>
+
+chainsaw xyzin 1a80_1.pdb alignin 1mzr_1a80.pir xyzout 1a80_1_chainsaw.pdb &lt;&lt;eof
+END
+eof
+
+</pre>
+
+
+<H2>AUTHOR</H2>
+
+<P>Norman Stein </P>
+
+<H2>ACKNOWLEDGEMENTS</H2>
+
+<P>
+Randy Read, Eleanor Dodson, Martyn Winn.
+</P>
+
+<H2><A NAME="references"></A>REFERENCES</H2>
+
+<OL>
+<P><!-- KEEP startreferencelist --></P>
+
+<LI>N. Stein, <i>J. Appl. Cryst.</i> 
+<b>41</b>, 641 - 643 (2008).<br>
+CHAINSAW: a program for mutating pdb files used as templates in molecular 
+replacement.</LI>
+
+<LI><a name="ref-rs04"></a>R. Schwarzenbacher et al., <i>Acta Cryst.</i> 
+<b>D60</b>, 1229 - 1236 (2004).<br>
+The importance of alignment accuracy for molecular replacement. </LI>
+
+<!-- KEEP endreferencelist -->
+</OL>
+
+</BODY>
+</HTML>

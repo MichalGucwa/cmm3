@@ -1,0 +1,2695 @@
+<html>
+<head><title>CCP4 Program Suite: sftools</title></head>
+<body>
+
+<!-- ::INDEX_INFO::SFTOOLS::Supported::MTZ manipulations / conversions::reflection data file utility program:::::::: -->
+
+<H1> SFTOOLS (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>sftools </b>
+- Reflection data file utility program including some density map handling
+<H2> SYNOPSIS</H2>
+<b>sftools </b>
+<br>
+ [<A HREF="#keywords">Keyworded input</A>]
+
+<H2><a name="description">DESCRIPTION</a></H2>
+<P>The SFTOOLS program is a toolbox of commands to analyze, manipulate, and
+convert structure factor files. The program has been written with an
+interactive user in mind and will provide on-line help, suggestions and
+warnings as appropriate. A list of the currently implemented commands
+plus descriptions of their use is given in the <A HREF="#reference">command reference section</A>
+at the end of this document. The list of commands can always be obtained
+by just pressing the return key when the program asks for a command. To
+get the command descriptions, the user should type the name of a command
+followed by the keyword HELP.</P>
+
+<P>SFTOOLS is very flexible which gives the user great power to
+accomplish many tasks. At the same time the program contains many
+checks to protect you, as far as possible, from using the flexibility
+inappropriately. This design goal makes it more
+difficult to write a script to run the program as a batch job. If you
+have to make a script then you may find it easier to run the program once
+interactively and paste the commands into the script file as you go.
+At this moment it is not possible to obtain a log file of your
+interactive session, you will have to run the program from a script if
+you really need one. Creating a log file will be implemented in the
+next release of the program.</P>
+
+<P>SFTOOLS has also some density map functionality. It can read/write, CCP4,
+BIOMOL and DSN6 maps, and it can create maps from structure factors and vice
+versa. A very useful combination is to create your map (<A HREF="#fft">FFT</A>), cut out a block
+of density surrounding your protein (<A HREF="#maplimit">MAPLIMIT</A>), and write it out as a DSN6
+file (<A HREF="#mapout">MAPOUT</A>), all in one interactive session.</P>
+
+<P>A lot of the functionality of SFTOOLS is also covered by a large number
+of other CCP4 programs. The main advantage of using SFTOOLS is that you
+can do all your manipulations and analyses in one session without having
+to run multiple programs and create script files and output files with
+intermediate results. In addition, many users like the interactive and
+user friendly nature of the program.</P>
+
+<P>The rest of this manual consists of 3 parts:
+<UL>
+ <LI><A HREF="#general">General program description</A></LI>
+ <LI><A HREF="#examples">Summary and examples of major commands</A></LI>
+ <LI><A HREF="#reference">Command reference section</A></LI>
+</UL>
+
+<P><HR><P>
+<H2><A NAME="general"></A>General program description</H2>
+SFTOOLS consists of a central data base and a set of subroutines that
+interact with it. The data base consists of 3 large arrays plus several
+other variables to store the header information. When reading file
+formats with less information than the MTZ format the user is asked
+to supply the missing information.<BR>
+Here are the four most important data base components:
+
+<DL>
+ <DT>IHKL</DT>
+  <DD>This is a 1-dimensional array that stores the reflection indices.
+   Each index triplet is packed into a 4-byte integer which is used as
+   a unique reflection identifier. Each index ideally occurs only once
+   and obeys the CCP4 asymmetric unit definitions. Only multi-record
+   MTZ files can have multiple reflections with the same indices. Unlike
+   other CCP4 programs, indices are not considered as data base columns
+   and their content can only be changed with the <A HREF="#reindex">REINDEX</A> command.<BR>
+   The size of the IHKL array is determined by parameter MAXREF in the
+   sftools.inc file.</DD>
+
+ <DT>REF</DT>
+  <DD>The REF array contains all the actual data columns. In the program
+   it is a 1-dimensional array, but it appears as a 2-dimensional array
+   to the user, <EM>e.g.</EM> rows=reflections and columns=Fobs, Sigma, Phase etc...
+   The user can identify a specific column by typing &quot;COLUMN column_id&quot;.
+   column_id is either the column label or the column number. The column
+   label is case insensitive but may need to be quoted if it contains
+   unusual characters. Labels will fail if columns with identical
+   labels exist (bad practice). Column numbers should always work. Note
+   that the indices do not count as columns so if your file contains
+   H K L Fobs Sigma, then Fobs is column 1.<BR>
+   SFTOOLS can also read, write, and create density maps. Maps are stored
+   at the end of the REF array whereas reflections are stored at the
+   beginning.<BR>
+   The size of the REF array is determined by parameter MAXDAT in the
+   sftools.inc file. The number of columns times the number of reflections
+   in your file should be less then MAXDAT. At the same time the number
+   of reflections should be less then MAXREF and the number of columns
+   less then MAXCOL.</DD>
+
+ <DT>ACTIVE</DT>
+  <DD>The ACTIVE column is a boolean flag that indicates which reflections
+   should be used and which should be ignored. Initially all reflections
+   are &quot;active&quot; but this can be changed with the <A HREF="#select">SELECT</A> keyword. For
+   instance to restrict all following commands to 10 - 3 Angstrom resolution
+   you would type &quot;SELECT resol &gt; 3 &lt; 10&quot;. You can use SELECT ALL to make
+   all reflections active again.<BR>
+   The size of the ACTIVE array is determined by parameter MAXREF in the
+   sftools.inc file.</DD>
+
+ <DT>TYPE</DT>
+  <DD>The TYPE array stores the column type of each column as a 1 character
+   code. The codes follow the <A HREF="#coltyp">MTZ definition for column types</A>.
+   SFTOOLS actively uses the column types to
+   prevent you from comparing apples and oranges, keeping phase information
+   consistent <EM>etc</EM>.</DD>
+</DL>
+
+<H3><A NAME="filling"></A>Filling the data base</H3>
+
+<P>After starting the program you will want to load data into the data base. In
+most cases this means reading a structure factor file. To do this use the
+<A HREF="#read_examples">READ</A> command. If the data base was empty then
+SFTOOLS will read both the header and the diffraction data. If a non-MTZ file
+is read the program will prompt for missing header information. If you read in
+a second structure factor file (or you prepared the header information with
+the <A HREF="#set">SET ALL</A> command or by reading a density map) then
+SFTOOLS will compare the header information on the second file with what is
+in the data base. It will report inconsistencies, but in all cases the
+information in the data base will be kept. It is useful to have an empty
+MTZ with header information for your project but no data. When reading a
+non-MTZ file then you first read the empty MTZ to get the header information.
+This way you avoid to have to enter the header information and the possible
+typos that that might introduce.</P>
+
+<P>When a second (or more) structure factor file is read, the program will
+add new columns to the data base to store the data from the new file.
+Data for reflections that are already present in the data base will be
+appended to that reflection. Data for reflections that are not yet present
+in the data base will be stored in newly created reflections. In this case
+MNFs are inserted in the old columns (see the 0 0 1 reflection below).
+When a reflection was present in the data base but not in the new structure
+factor file, then the columns for the new structure factor file are set to
+MNF (see the 0 0 3 reflection below). An example is given below.</P>
+
+<PRE>
+Assume that you have the following two structure factor files
+
+file1.mtz              file2.mtz
+
+0 0 2 12.4  3.2        0 0 1 82.7 10.1
+0 0 3 68.7 12.1        0 0 2 13.8  3.8
+0 1 3  3.2 17.0        0 1 3  4.8 17.2
+0 1 5 34.0  5.8        0 1 5 37.1  4.8
+
+in SFTOOLS you type:
+
+read file1.mtz
+read file2.mtz
+
+The data base will then contain
+
+0 0 1  MNF  MNF 82.7 10.1
+0 0 2 12.4  3.2 13.8  3.8
+0 0 3 68.7 12.1  MNF  MNF
+0 1 3  3.2 17.0  4.8 17.2
+0 1 5 34.0  5.8 37.1  4.8
+</PRE>
+
+<P>SFTOOLS will merge, sort and check your data. For further consistency
+checks you can give the <A HREF="#checkhkl">CHECKHKL</A> command after
+reading a file. This also gives you a few seconds to think about your
+next action while CHECKHKL is working.</P>
+
+<H3><A NAME="data_representation"></A>Data representation</H3>
+
+<P>All data, including integers, are stored as real numbers. Phase information
+is stored in radians but they will appear in degrees to the user (as long
+as the column type is set to &quot;P&quot;). RFREE flags follow the CCP4 definition
+in which the data is divided into N RFREE sets with flags running from 0 to
+N-1. When reading/writing non-MTZ files, the RFREE flag definitions will
+be converted to/from the CCP4 definition, respectively. The RFREE set with a
+flag of 0 is considered to be the actual RFREE set.</P>
+
+<P>When reflections have missing data in one or more of their columns, then
+this is indicated by a Missing Number Flag (MNF). SFTOOLS uses a value of
+-1.0E+10 to indicate missing data. When reading/writing MTZ files, the
+SFTOOLS MNF is converted from/to the CCP4 MNF definition respectively. It
+is crucial that proper MNFs are present. If you have missing data without
+MNFs, then you can introduce MNFs easily with the <A HREF="#absent">ABSENT</A>
+command.</P>
+
+<H3><A NAME="asu_definition"></A>Asymmetric unit definition</H3>
+
+<P>Several commands need to know how the asymmetric unit is defined. The
+default is to use the CCP4 definition and it is highly recommended to
+stick with it (in the next release SFTOOLS will enforce adherence to
+the CCP4 definition). If you use a different definition then you can
+either convert to the CCP4 definition with the <A HREF="#reduce">REDUCE</A>
+command or you have to specify the definition each time you use a command
+that is definition dependent (this is very error prone, that is why it will
+be changed in the next release).</P>
+
+<H3><A NAME="input_parsing"></A>Input parsing</H3>
+
+<P>The program input is analyzed by a parser that divides the input into
+words. Words may be delimited by one or more spaces or any of the following
+characters <B>(&nbsp;)&nbsp;,&nbsp;&lt;&nbsp;&gt;&nbsp;=&nbsp;[&nbsp;]</B>. If you need to generate words including any of
+these characters or spaces (<EM>e.g.</EM> in a file name or column label) then the
+word(s) must be enclosed in double quotes.<BR>
+Real numbers can be read in any format acceptable to FORTRAN, examples are:
+1234 1234.5 1.2345E+3. Integers should be made up exclusively by digits 0
+to 9 except for the first character which may be a minus sign. Character
+input is case insensitive except for file names.</P>
+
+<P>The often used keyword COLUMN may be abbreviated to COL. Likewise,
+RESOLUTION may be replaced by RESOL. A more consistent method for
+abbreviating keywords will be implemented later.</P>
+
+<H3><A NAME="command_arguments"></A>Command arguments</H3>
+
+<P>It is advised for most commands to give the command name and its arguments
+on a single line. If you leave out the arguments 3 things
+can happen:<BR>
+<LI>The subroutine uses default values</LI>
+<LI>The program requests the missing information interactively</LI>
+<LI>The program complains and suggests that you read the help information</LI></P>
+
+<H3><A NAME="ccp4_compatibility"></A>CCP4 compatibility</H3>
+
+<P>SFTOOLS is meant to adhere to the MTZ standard in all respects. However,
+the author does not use CCP4 extensively so there may still be some minor
+differences (<A HREF="mailto:ccp4@dl.ac.uk">please report them</A>). Specific treatment of multi-record
+MTZ files is limited at this point. Most options will probably work fine
+with them but this has not been tested.<BR>
+CCP4 supports maps of several types. SFTOOLS can read and write standard
+CCP4 electron density maps. The use of other map types has not been tested.</P>
+
+<P>The user interface of SFTOOLS was developed independently of CCP4
+practices and CCP4 parsing routines. Definitions of LABIN, LABOUT, HKLIN,
+HKLOUT and other common features of the CCP4 user interface are not
+supported. However, the user interface was designed for interactive
+use and should be easy to get used to. SFTOOLS can also prepare
+tabular data. Commands that prepare tables also allow the user some
+control over the table creation. In the next release of SFTOOLS this
+table control will be handled by a separate command. In the future
+tables may also support the use of <A HREF="xloggraph.html">XLOGGRAPH</A>.</P>
+
+
+<P><HR><P>
+
+<H2><A NAME="examples"></A>Summary and examples of major commands</H2>
+
+<H3>Filling the data base</H3>
+<DL>
+ <DT><A HREF="#read_examples">READ</A>
+  <DD>Reading structure factor files
+ <DT><A HREF="#mapread_examples">MAPIN</A>
+  <DD>Reading electron density maps
+ <DT><A HREF="#set_examples">SET</A>
+  <DD>Creating the header
+</DL>
+
+<H3>Saving (part of) the data base</H3>
+<DL>
+ <DT><A HREF="#write_examples">WRITE</A>
+  <DD>Writing structure factor files
+ <DT><A HREF="#mapwrite_examples">MAPOUT</A>
+  <DD>Writing electron density maps
+</DL>
+
+<H3>Analyzing the data base</H3>
+<DL>
+ <DT><A HREF="#list_examples">LIST</A>
+  <DD>Listing the data base content
+ <DT><A HREF="#checkhkl_examples">CHECKHKL</A>
+  <DD>Data checking and statistics
+ <DT><A HREF="#complete_examples">COMPLETE</A>
+  <DD>Checking data completeness
+ <DT><A HREF="#correl_examples">CORREL</A>
+  <DD>Correlation coefficients between columns as function of resolution
+ <DT><A HREF="#phashft_examples">PHASHFT</A>
+  <DD>Phase shifts between phase columns as function of resolution
+ <DT><A HREF="#plot_examples">PLOT</A>
+  <DD>Prepare tables with data for plotting
+ <DT><A HREF="#map_examples">MAP</A>
+  <DD>Get map statistics based on structure factors
+ <DT><A HREF="#mapstat_examples">MAPSTAT</A>
+  <DD>Get map statistics based on a real map
+</DL>
+
+<H3>Modifying the data base</H3>
+<DL>
+ <DT><A HREF="#absent_examples">ABSENT</A>
+  <DD>Creating missing number flags
+ <DT><A HREF="#calc_examples">CALC</A>
+  <DD>Perform column-based arithmetic (very important!)
+ <DT><A HREF="#select_examples">SELECT</A>
+  <DD>Selecting reflections (very important!)
+ <DT><A HREF="#delete_examples">DELETE</A>
+  <DD>Delete columns or maps
+ <DT><A HREF="#purge_examples">PURGE</A>
+  <DD>Delete reflections
+ <DT><A HREF="#expand_examples">EXPAND</A>
+  <DD>Expand to lower symmetry space group
+ <DT><A HREF="#fft_examples">FFT</A>
+  <DD>Create a map from structure factors
+ <DT><A HREF="#map2sf_examples">MAP2SF</A>
+  <DD>Create structure factors from a map
+ <DT><A HREF="#hlconv_examples">HLCONV</A>
+  <DD>Create Hendrickson Lattman coefficients from phase and
+      figure of merit
+ <DT><A HREF="#i2f_examples">I2F</A>
+  <DD>Convert intensities to amplitudes
+ <DT><A HREF="#maplimit_examples">MAPLIMIT</A>
+  <DD>Select a subsection of a map
+ <DT><A HREF="#reindex_examples">REINDEX</A>
+  <DD>Modify indices by matrix multiplication
+ <DT><A HREF="#rfree_examples">RFREE</A>
+  <DD>Select an RFREE set
+ <DT><A HREF="#set_examples">SET</A>
+  <DD>Modify header information
+ <DT><A HREF="#sort_examples">SORT</A>
+  <DD>Sort the reflections
+ <DT><A HREF="#reduce_examples">REDUCE</A>
+  <DD>Reduce reflections to the asymmetric unit
+ <DT><A HREF="#merge_examples">MERGE</A>
+  <DD>Merge reflections with identical indices.
+</DL>
+
+
+<HR>
+<H3><A NAME="read_examples"></A>Reading structure factor files</H3>
+
+<P>To read a structure factor file, SFTOOLS needs to know the name of the file,
+the format of the file, and the columns to be read. The name has to be
+supplied by the user. By default SFTOOLS reads all columns and it stores
+them in file order. However, the user can use the <A HREF="#read_column">COLUMN</A> keyword to
+control the columns to be read and their order in the data base. The file
+format will in most cases be determined from the file name extension,
+see below. If the format and extension do not match then the user can
+explicitly specify the format by a <A HREF="#read_format">FORMAT</A> keyword.
+
+<A NAME="sf_extensions"></A>
+<TABLE>
+<TR>
+<TH ALIGN=LEFT>File format</TH><TH ALIGN=LEFT>Extension</TH><TH ALIGN=LEFT>FORMAT keyword</TH>
+</TR>
+<TR>
+<TD>MTZ (CCP4)</TD><TD>.mtz</TD><TD>MTZ</TD>
+</TR>
+<TR>
+<TD>MDF (OLD BIOMOL)</TD><TD>.mdf</TD><TD>MDF</TD>
+</TR>
+<TR>
+<TD>BIOMOL ASCII FORMAT</TD><TD>.snd</TD><TD>SND</TD>
+</TR>
+<TR>
+<TD>X-PLOR</TD><TD>.xpl</TD><TD>XPL</TD>
+</TR>
+<TR>
+<TD>TNT</TD><TD>.tnt</TD><TD>TNT</TD>
+</TR>
+<TR>
+<TD>Phases short format</TD><TD>.31</TD><TD>31</TD>
+</TR>
+<TR>
+<TD>Phases long format</TD><TD>.31</TD><TD>31</TD>
+</TR>
+<TR>
+<TD>XtalView fin format</TD><TD>.fin</TD><TD>FIN</TD>
+</TR>
+<TR>
+<TD>XtalView phs format</TD><TD>.phs</TD><TD>PHS</TD>
+</TR>
+<TR>
+<TD>XtalView double fin</TD><TD>.df</TD><TD>DF</TD>
+</TR>
+<TR>
+<TD>Generic ASCII file</TD><TD>.fmt</TD><TD>FMT</TD>
+</TR>
+</TABLE>
+
+In addition to reflection information, SFTOOLS also needs some header
+information. The MTZ format has the most complete header information
+and SFTOOLS needs most of it. If you read a non-MTZ file then SFTOOLS
+will prompt you for the missing header information. It is worthwhile
+to make an MTZ file for your project with just the header information
+in it. If you have to read a non-MTZ file then just first read in the
+MTZ with the header info and there will be no more questions asked.</P>
+
+<P>SFTOOLS can read any generic ASCII file if:<BR>
+<LI>There are no header lines</LI>
+<LI>All reflections have the same format and number of columns</LI>
+<LI>The indices H, K, and L are in columns 1, 2, and 3, respectively</LI></P>
+
+<P>Most ASCII files will be readable as is, however, if yours is not
+well-behaved then you can fix it as follows.
+<OL>
+<LI>Use an editor or the Unix tail command to get rid of header lines:<BR>
+<TT>tail +3 file_in &gt; file_out</TT><BR>
+skips the first 2 lines.</LI>
+<LI>Use the Unix awk command to force all reflections to have the same
+format or to place the indices in the first three columns:<BR>
+<TT>awk '{printf(&quot;%4d%4d%4d%8.1f%8.1f&quot;,$3,$4,$5,$1,$2)}' file_in &gt; file_out</TT><BR>
+swaps the order of the columns {1,2,3,4,5 to 3,4,5,1,2} and forces each
+line to have the same format.</LI>
+</OL>
+
+<P>For a detailed description see <A HREF="#read">READ</A> and
+<A HREF="#filling">Filling the data base</A></P>
+
+<H4>Examples</H4>
+<DL>
+ <DT>READ filename.mtz
+  <DD>Read all data from an MTZ file named filename.mtz
+ <DT>READ filename.mtz COL 3 4
+  <DD>Read columns 3 and 4 from an MTZ file named filename.mtz
+ <DT>READ filename.mtz COL 3 4 1 2
+  <DD>Read columns 1 to 4 from an MTZ file named filename.mtz but
+      reverse the order of columns 1&amp;2 and 3&amp;4
+ <DT>READ filename.mtz COL NONE
+  <DD>Read only the header data from an MTZ file named filename.mtz
+ <DT>READ filename.mtz COL
+  <DD>Read data from an MTZ file named filename.mtz. SFTOOLS will list
+      the label of each column and asks if it should be included
+ <DT>READ filename.hkl MTZ
+  <DD>Read all data from an MTZ file named filename.hkl
+ <DT>READ filename.xpl COLUMN Fcalc phase
+  <DD>Read &quot;Fcalc&quot; and &quot;phase&quot; columns from an XPLOR file named filename.xpl.
+      SFTOOLS will ask for extra header information
+ <DT>READ header.mtz<BR>
+     read filename.xpl
+  <DD>Read an XPLOR file named filename.xpl but now the header information
+      will be taken from the header.mtz file
+</DL>
+
+<HR>
+<H3><A NAME="mapread_examples"></A>Reading electron density maps</H3>
+
+<P>To read an electron density file, SFTOOLS only needs to know the name of
+the file and the format of the file. The name has to be supplied by the
+user and in most cases the format can be determined from the file name
+extension, see below. If the format and extension do not match then the
+user can explicitly specify the format by a <A HREF="#mapin_format">FORMAT</A> keyword.</P>
+
+<A NAME="map_extensions"></A>
+<TABLE>
+<TR>
+<TH ALIGN=LEFT>File format</TH><TH ALIGN=LEFT>Extension</TH><TH ALIGN=LEFT>FORMAT keyword</TH>
+</TR>
+<TR>
+<TD>CCP4 map</TD><TD>.map</TD><TD>MAP</TD>
+</TR>
+<TR>
+<TD>BIOMOL map</TD><TD>.mff</TD><TD>MFF</TD>
+</TR>
+<TR>
+<TD>FRODO/O map (DSN6)</TD><TD>.dn6</TD><TD>DN6</TD>
+</TR>
+</TABLE>
+
+<P>SFTOOLS always reads the complete density map. Only one map can be in
+memory at any time. Use <A HREF="#delete_map">DELETE MAP</A> to remove an old map before reading
+a new one. SFTOOLS will use the header information in the input map
+and will prompt the user for missing information.<BR>
+CCP4 and BIOMOL maps can be sectioned in any order, however, SFTOOLS
+will internally always store the map in ABC order (sections along C
+and rows along B). For CCP4 maps not all map types may be supported,
+but the standard electron density maps should work.</P>
+
+<P><B>Note:</B> DSN6 files use only a single byte per grid point. It
+may be better to recreate your map from the map coefficients or to
+re-read the original MFF or CCP4 electron density file.</P>
+
+<P>For a detailed description see <A HREF="#mapin">MAPIN</A>
+
+<H4>Examples</H4>
+<DL>
+ <DT>MAPIN filename.map
+  <DD>Read a CCP4 electron density map
+ <DT>MAPIN filename.rho MAP
+  <DD>Read a CCP4 electron density map
+ <DT>MAPIN filename.dn6
+  <DD>Read a DSN6 electron density map
+</DL>
+
+<HR>
+<H3><A NAME="set_examples"></A>Creating the header</H3>
+
+<P>To enter the header information without reading it from a file you use
+the <A HREF="#set_all">SET ALL</A> command. The program will prompt you for the header
+information.
+
+<P>For a detailed description see <A HREF="#set">SET</A>
+
+<H4>Examples</H4>
+<DL>
+ <DT>SET ALL
+  <DD>Fill in all header entries. SFTOOLS will ask you for the information
+ <DT>SET ALL<BR>
+     write header.mtz
+  <DD>Fill in all header entries and write an MTZ file with just this
+      information
+</DL>
+
+<HR>
+<H3><A NAME="write_examples"></A>Writing structure factor files</H3>
+
+<P>To write a structure factor file, SFTOOLS needs to know the name of the
+file, the format of the file, and the columns to be written. The name
+has to be supplied by the user. By default SFTOOLS writes all columns
+in the same order as they are stored in the data base. However, the user
+can use the <A HREF="#write_column">COLUMN</A> keyword to control the columns to write and their
+order in the output file. The file format will in most cases be
+determined from the file name extension, see the
+<A HREF="#sf_extensions">extensions table</A>. In order to write a generic ASCII formatted file
+you have to specify the FORTRAN format string. It is absolutely required
+that the first 3 values are written as integers since these will be the
+indices. <B>ALL</B> other values <B>MUST</B> be written as reals because
+that is how they are stored in the program.</P>
+
+<P>Some of the supported file formats are restricted in the number of
+columns and/or types of data that they accept. The user should use the
+<A HREF="#write_column">COL</A> keyword if needed to write the appropriate data. The requirements
+are detailed in the <A HREF="#write">WRITE</A> description.
+
+<P>For a detailed description see <A HREF="#write">WRITE</A>
+
+<H4>Examples</H4>
+<DL>
+ <DT>WRITE filename.mtz
+  <DD>Write all data to an MTZ named filename.mtz
+ <DT>WRITE filename.hkl MTZ
+  <DD>Write all data to an MTZ named filename.hkl
+ <DT>WRITE filename.mtz COL Fscaled phase
+  <DD>Write columns with labels &quot;Fscaled&quot; and &quot;phase&quot; to an MTZ named
+      filename.mtz
+ <DT>WRITE filename.mtz COL 3 4 1 2
+  <DD>Write columns 1 to 4 to an MTZ file named filename.mtz but
+      reverse the order of columns 1&amp;2 and 3&amp;4
+ <DT>WRITE filename.mtz COL NONE
+  <DD>Write only the header data to an MTZ file named filename.mtz
+ <DT>WRITE filename.mtz COL
+  <DD>Write an MTZ file named filename.mtz. SFTOOLS will list the
+      label of each data base column and ask if it should be written
+ <DT>WRITE filename.xpl COL 1 3 4
+  <DD>Write columns 1, 3 and 4 to an XPLOR file named filename.xpl
+ <DT>WRITE filename.hkl format(3i5,2f8.3) COL 1 2
+  <DD>Write columns 1 and 2 in the given format to an ASCII file
+      named filename.hkl
+</DL>
+
+<HR>
+<H3><A NAME="mapwrite_examples"></A>Writing electron density maps</H3>
+
+<P>To write an electron density file, SFTOOLS only needs to know the name
+of the file and the format of the file. The name has to be supplied by
+the user and in most cases the format can be determined from the file
+name extension, see below. If the format and extension do not match
+then the user can explicitly specify the format by a <A HREF="#mapout_format">FORMAT</A> keyword, see
+the <A HREF="#map_extensions">extensions table</A>.</P>
+
+<P>The current version of SFTOOLS always writes the complete density map.
+To write a subsection of the map you should use the <A HREF="#maplimit">
+MAPLIMIT</A> command. In the next release the MAPLIMIT functions will be
+moved to the <A HREF="#mapout">MAPOUT</A> command in a more general way. By default, SFTOOLS
+will write a map in ABC order (sections along C and rows along B). For
+CCP4 and BIOMOL maps the user can specify a different order by adding
+the <A HREF="#mapout_order">ORDER</A> keyword.</P>
+
+<P>For a detailed description see <A HREF="#mapout">MAPOUT</A>
+
+<H4>Examples</H4>
+<DL>
+ <DT>MAPOUT filename.map
+  <DD>Write a CCP4 electron density map to a file named filename.map
+ <DT>MAPOUT filename.dn6
+  <DD>Write a DSN6 map for FRODO/O to a file named filename.dn6
+ <DT>MAPOUT filename.rho MAP
+  <DD>Write a CCP4 electron density map to a file named filename.rho
+ <DT>MAPOUT filename.mff ORDER A C B
+  <DD>Write a BIOMOL map to a file named filename.mff. Sections will
+      be along the B axis and rows along the C axis)
+</DL>
+
+
+<HR>
+<H3><A NAME="list_examples"></A>Listing the data base content</H3>
+
+<P>The <A HREF="#list">list</A> command is used to list the actual contents of the data base.
+It accepts the following keywords: <B><A HREF="#list_title">TITLE</A>, <A HREF="#list_labels">LABELS</A>, <A HREF="#list_type">TYPE</A>, <A HREF="#list_cell">CELL</A>, <A HREF="#list_sort">SORT</A>,
+<A HREF="#list_spacegroup">SPACEGROUP</A>, and <A HREF="#list_reflections">REFLECTIONS</A></B>. Each keyword limits the listing to the
+indicated information. If no keyword is given all information, except
+reflections, will be listed. Keywords can be abbreviated to the first
+3 characters.</P>
+
+<P>For a detailed description see <A HREF="#list">LIST</A>
+
+<H4>Examples</H4>
+<DL>
+ <DT>LIST
+  <DD>List all header information
+ <DT>LIST CELL
+  <DD>List the unit cell parameters
+ <DT>LIST REF
+  <DD>List the reflection indices, resolution and first 6 columns
+ <DT>LIST REF COL 8 9
+  <DD>List the reflection indices, resolution and columns 8 and 9
+</DL>
+
+
+<HR>
+<H3><A NAME="checkhkl_examples"></A>Data checking and statistics</H3>
+
+<P><A HREF="#checkhkl">CHECKHKL</A> reports potential problems with your data like: presence of
+systematically absent reflections, centric reflections with illegal
+phase, reflections outside asymmetric unit, multiple reflections with
+the same indices <EM>etc.</EM>.. It also lists for each column the average, minimum
+and maximum value, the minimum and maximum resolution, and the number
+of missing data. It is nice to keep the CHECKHKL output as part of
+the documentation of a new data set.</P>
+
+<P>For a detailed description see <A HREF="#checkhkl">CHECKHKL</A>
+
+<H4>Examples</H4>
+<DL>
+ <DT>CHECKHKL
+  <DD>Report problems and statistics
+</DL>
+
+
+<HR>
+<H3><A NAME="complete_examples"></A>Checking data completeness</H3>
+
+<P>The <A HREF="#complete">COMPLETE</A> command reports the completeness of your data as function
+of resolution. It can make bin-wise or cumulative tables and it can
+list percentage completeness as well as number of observed reflections.
+This option also reports a &quot;100% criterium&quot;. This is the resolution in
+Angstrom of a 100% complete hypothetical data set with the same number
+of reflections as your data set. It is nice to keep the COMPLETE output
+as part of the documentation of a new data set.</P>
+
+<P>The <A HREF="#complete_mode_pdb">PDB</A> keyword allows you to write a PDB file with pseudo-atoms for
+each observed and each absent reflection. Visualization with your favorite
+graphics program can tell you if data is randomly or systematically
+missing.</P>
+
+<P>For a detailed description see <A HREF="#complete">COMPLETE</A>
+
+<H4>Examples</H4>
+<DL>
+ <DT>COMPLETE
+  <DD>Report bin-wise percentage completeness of first 10 columns
+ <DT>COMPLETE CUMULATIVE
+  <DD>Report cumulative percentage completeness of first 10 columns
+ <DT>COMPLETE COL 11
+  <DD>Report bin-wise percentage completeness of column 11
+ <DT>COMPLETE PDB
+  <DD>Create OBSERVED.PDB with reciprocal lattice as pseudo atoms
+</DL>
+
+<HR>
+<H3><A NAME="correl_examples"></A>Correlation coefficients between columns</H3>
+
+<P>The <A HREF="#correl">CORREL</A> command reports the correlation coefficient between two columns
+as function of resolution. It also gives an R-value but this only makes
+sense if the columns are on the same scale.</P>
+
+<P>For a detailed description see <A HREF="#correl">CORREL</A>
+
+<H4>Examples</H4>
+<DL>
+ <DT>CORREL COL 1 3
+  <DD>Report correlation between columns 1 and 3
+</DL>
+
+<HR>
+<H3><A NAME="phashft_examples"></A>Phase shifts between phase columns as function of resolution</H3>
+
+<P>The <A HREF="#phashft">PHASHFT</A> command reports the average phase difference between two columns
+as function of resolution. The keyword <A HREF="#phashft_cosine">COSINE</A> can be used to list the
+cosine of the phase error.</P>
+
+<P>For a detailed description see <A HREF="#phashft">PHASHFT</A>
+
+<H4>Examples</H4>
+<DL>
+ <DT>PHASHFT COL 2 4
+  <DD>Report average phase difference between columns 2 and 4
+ <DT>PHASHFT COSINE COL 2 4 
+  <DD>Report cosine of the phase difference between columns 2 and 4
+</DL>
+
+<HR>
+<H3><A NAME="plot_examples"></A>Prepare tables with data for plotting</H3>
+
+<P>The <A HREF="#plot">PLOT</A> command lists the bin-wise average of a column. Bins can be
+either as function of resolution or as function of another column.
+In the latter case the reflections are sorted by the other column
+before binning.</P>
+
+<P>For a detailed description see <A HREF="#plot">PLOT</A>
+
+<H4>Examples</H4>
+<DL>
+ <DT>PLOT COL 1 VERSUS RESOL
+  <DD>Tabulate average value of col 1 in resolution bins
+ <DT>PLOT COL fobs VERSUS COL sigma
+  <DD>Tabulate average value of the column labeled &quot;fobs&quot; for bins
+      of increasing values in the column labeled &quot;sigma&quot;
+</DL>
+
+<HR>
+<H3><A NAME="map_examples"></A>Get map statistics based on structure factors</H3>
+
+<P>The rms value of a map can be derived from the map amplitudes, <EM>i.e.</EM> it
+is independent of the phases. The correlation between two maps can be
+calculated when the structure factors of both maps are known (amplitudes
+and phases). In both cases it is not necessary to actually calculate
+the map.</P>
+
+<P>For a detailed description see <A HREF="#map">MAP</A>
+
+<H4>Examples</H4>
+<DL>
+ <DT>MAP RMS 1
+  <DD>Report the map rms based on structure factor amplitudes in column 1
+ <DT>MAP CORREL Fobs Pcalc Fcalc Pcalc
+  <DD>Report the correlation between two maps. Map 1 is defined by structure
+      factors in columns with labels Fobs and Pcalc. Map 2 is defined by
+      structure factors in columns with labels Fcalc and Pcalc. The phase
+      column of the two maps does not have to be the same as in this example
+</DL>
+
+<HR>
+<H3><A NAME="mapstat_examples"></A>Get map statistics based on a real map</H3>
+
+<P>After a map has been read or generated with the <A HREF="#fft">FFT</A> command, the <A HREF="#mapstat">MAPSTAT</A>
+command will list the header information and statistics for the map
+and individual sections.</P>
+
+<P>For a detailed description see <A HREF="#mapstat">MAPSTAT</A>
+
+<H4>Examples</H4>
+<DL>
+ <DT>MAPSTAT
+  <DD>List the header info plus statistics for the map as well as for
+      individual sections along the C-axis
+ <DT>MAPSTAT SECTION b
+  <DD>List the header info plus statistics for the map as well as for
+      individual sections along the B-axis.
+</DL>
+
+<HR>
+<H3><A NAME="absent_examples"></A>Creating missing number flags</H3>
+
+<P>If you have missing data then it is crucial for SFTOOLS that they are
+flagged by Missing Number Flags (MNFs). Old-style CCP4 programs relied
+on a SIGMA column being zero to indicated missing data. SFTOOLS will
+warn you when you read such an old-style file. Inserting proper MNFs
+is easy with the <A HREF="#absent">ABSENT</A> command. The basic command structure is
+
+<PRE>
+ABSENT <B>COL col_ids</B> IF <B>SELECTION</B>
+</PRE>
+
+<B>SELECTION</B> can be any valid selection (see <A HREF="#select">SELECT</A>),
+whereas <B>COL col_ids</B> is a list of column labels or
+column numbers. MNFs are inserted in all listed columns for the
+reflections that fit the selection criterium. It is a good idea to
+give a <A HREF="#select_criterium_all">SELECT ALL</A> command prior to using the ABSENT command to make
+sure that all reflections will be used.</P>
+
+<P>For a detailed description see <A HREF="#absent">ABSENT</A>
+
+<H4>Examples</H4>
+<DL>
+ <DT>ABSENT COL 1 2 IF COL 2 = 0
+  <DD>Set MNFs in columns 1 and 2 for reflections which have column 2 = 0
+ <DT>ABSENT COL 1 2 IF COL Iobs &lt; 0
+  <DD>Set MNFs in columns 1 and 2 for reflections which have a negative
+      value in the column with label Iobs
+</DL>
+
+<HR>
+<H3><A NAME="calc_examples"></A>Perform column-based arithmetic</H3>
+
+<P>The <A HREF="#calc">CALC</A> command is one of the most important commands and it gives you a
+lot of flexibility to accomplish non-standard tasks. Basically, the CALC
+command allows you to calculate a column of data based on existing data
+columns, constants, build-in functions and arithmetic operators. It is
+worth reading the rather extensive documentation for the CALC command.</P>
+
+<P>For a detailed description see <A HREF="#calc">CALC</A>
+
+<H4>Examples</H4>
+<DL>
+ <DT>CALC R COL f_over_sigma = COL fobs COL sigma /
+  <DD>Create a column with label f_over_sigma which contains fobs / sigma
+ <DT>CALC R COL resolsq = resol 2 **
+  <DD>Create a column with label resolsq which contains the square of the
+      reflection resolution (resol is a built-in function)
+ <DT>CALC F COL Fsimulated = COL Fcalc ran_g 10 * +
+  <DD>Create a column with label Fsimulated which contains the value of
+      column Fcalc plus 10 times a random number from a Gaussian distribution
+      with average = 0 and variance = 1
+ <DT>CALC (COL Fmap Pmap) = (COL Fcomplex Pnative) (COL Fnative Pnative) -
+  <DD>Create two columns labeled Fmap and Pmap which contain map coefficients
+      for a Fcomplex - Fnative difference Fourier map
+</DL>
+
+<HR>
+<H3><A NAME="select_examples"></A>Selection of reflections</H3>
+
+<P>Just like the CALC command mentioned <A HREF="#calc">above</A>, the <A HREF="#select">SELECT</A> command is very
+important to let you accomplish both common and advanced tasks. Basically
+the SELECT command allows you to select a subset of the reflections based
+on the reflection indices, data column values, and some special properties.
+Multiple SELECT commands can be combined to give even more control.
+For a full description of all options you will have to read the <A HREF="#select">reference
+section</A>.</P>
+
+<P>For a detailed description see <A HREF="#select">SELECT</A>
+
+<H4>Examples (many more options exist)</H4>
+<DL>
+ <DT>SELECT ALL
+  <DD>Select all reflections
+ <DT>SELECT COL 1 = ABSENT
+  <DD>Select all reflections with a MNF in column 1
+ <DT>SELECT INVERT
+  <DD>Invert the current selection
+ <DT>SELECT RESOL &gt; 2.5
+  <DD>Select reflections with a resolution numerically greater then 2.5
+      (Note: this selects the lowest resolution data)
+ <DT>SELECT RESOL &gt; 2.5 &lt; 10.0
+  <DD>Select reflections in the resolution range from 2.5 to 10 Angstrom
+ <DT>SELECT COL fobs &gt; COL sigma
+  <DD>Select reflections with a larger value in column fobs then column
+      sigma
+ <DT>SELECT INDEX h = 0
+  <DD>Select reflections in the 0kl plane
+ <DT>SELECT INDEX l ZONE 2n + 1
+  <DD>Select reflections with an odd l index
+ <DT>SELECT INDEX h + k + l ZONE 2n + 1
+  <DD>Select reflections with h+k+l is odd
+ <DT>SELECT MULTI 3
+  <DD>Select reflections on a 3-fold axis
+ <DT>SELECT NOT MULTI 3
+  <DD>Select reflections that are not on a 3-fold axis
+ <DT>SELECT PHAERR
+  <DD>Select centric reflections with an invalid phase
+ <DT>SELECT SYSABS
+  <DD>Select reflections that should have been systematically absent
+ <DT>SELECT NONE<BR>
+     SELECT PLUS INDEX h = 0<BR>
+     SELECT PLUS INDEX k = 0<BR>
+     SELECT PLUS INDEX l = 0<BR>
+     SELECT RESOL &gt; 5
+  <DD>Select reflections with (H=0 or K=0 or L=0) and (resolution &gt; 5 Angstrom)
+</DL>
+
+<HR>
+<H3><A NAME="delete_examples"></A>Delete columns or maps</H3>
+
+<P>The <A HREF="#delete">DELETE</A> command removes maps and data columns to free up space in
+the data base.</P>
+
+<P>For a detailed description see <A HREF="#delete">DELETE</A>
+
+<H4>Examples</H4>
+<DL>
+ <DT>DELETE MAP
+  <DD>Delete the density map
+ <DT>DELETE COL 3 4
+  <DD>Delete columns 3 and 4
+</DL>
+
+<HR>
+<H3><A NAME="purge_examples"></A>Delete reflections</H3>
+
+<P>The <A HREF="#purge">PURGE</A> command removes reflections to free up space in the data base.
+Reflections to be removed should be deselected by the SELECT command
+prior to using purge. See <A HREF="#select_examples">SELECT</A> for more
+information on the SELECT command.
+
+<P>For a detailed description see <A HREF="#purge">PURGE</A>
+
+<H4>Examples</H4>
+<DL>
+ <DT>PURGE
+  <DD>Delete all reflections that are currently not selected
+ <DT>PURGE NODATA
+  <DD>Delete all reflections that have MNFs in all columns
+</DL>
+
+<HR>
+<H3><A NAME="expand_examples"></A>Expand to lower symmetry space group</H3>
+
+<P>Sometimes you may want to reduce the symmetry of your space group and
+explicitly generate the symmetry related reflections. In most cases
+you will want to expand to P1 and generate data for a full hemisphere
+of reciprocal space. The <A HREF="#expand">EXPAND</A> command allows you to do this while
+updating your phase and/or Hendrickson-Lattman coefficients as needed.
+You can even expand to non-P1 space groups as long as it is a proper
+sub space group.</P>
+
+<P>For a detailed description see <A HREF="#expand">EXPAND</A>
+
+<H4>Examples</H4>
+<DL>
+ <DT>EXPAND
+  <DD>Expand to P1
+ <DT>EXPAND 3
+  <DD>Expand to P2
+</DL>
+
+<HR>
+<H3><A NAME="fft_examples"></A>Create a map from structure factors</H3>
+
+<P>The <A HREF="#fft">FFT</A> command takes two columns with structure factors and uses them
+to create a density map using an in-memory fast Fourier transform. The
+structure factors will be left unchanged. The resulting map will cover
+exactly a full unit cell.</P>
+
+<P>For a detailed description see <A HREF="#fft">FFT</A>
+
+<H4>Examples</H4>
+<DL>
+ <DT>FFT COL 1 2
+  <DD>Create a map based on structure factors in columns 1 and 2
+</DL>
+
+<HR>
+<H3><A NAME="map2sf_examples"></A>Create structure factors from a map</H3>
+
+<P>The <A HREF="#map2sf">MAP2SF</A> command inverts a density map to structure factors using an
+in-memory fast Fourier transform. The map must already be in memory
+before using the MAP2SF command and the map will be destroyed upon
+completion of the command.</P>
+
+<P>For a detailed description see <A HREF="#map2sf">MAP2SF</A>
+
+<H4>Examples</H4>
+<DL>
+ <DT>MAP2SF
+  <DD>Invert the map held in memory and store the resulting structure
+      factors in columns with labels COLUMN_###, where ### is the next
+      available column number. This only generates structure factors for
+      reflections that are already in the data base
+ <DT>MAP2SF COL Fmap Pmap
+  <DD>As above, but use column labels Fmap and Pmap instead
+ <DT>MAP2SF RESOL 2.5 COL Fmap Pmap
+  <DD>As above, but generate all reflections to 2.5 Angstrom resolution.
+      (Even for reflections that were not yet present in the data base)
+</DL>
+
+<HR>
+<H3><A NAME="hlconv_examples"></A>Create Hendrickson Lattman coefficients from phase and fom</H3>
+
+<P>The <A HREF="#hlconv">HLCONV</A> command generates Hendrickson Lattman coefficients from
+the phase and figure of merit of a reflection. Because the latter
+represent a unimodal phase distribution, only the A and B coefficients
+are generated. You should not use this command if your phase and
+FOM were not derived from a unimodal distribution (<EM>e.g.</EM> heavy atom phasing).
+In that case use your original Hendrickson Lattman coefficients.</P>
+
+<P>For a detailed description see <A HREF="#hlconv">HLCONV</A>
+
+<H4>Examples</H4>
+<DL>
+ <DT>HLCONV COL 2 3
+  <DD>Generate the A and B Hendrickson Lattman coefficients based on
+      phases and fom in columns 2 and 3 respectively. The new columns
+      will have labels PA and PB
+</DL>
+
+<HR>
+<H3><A NAME="i2f_examples"></A>Convert intensities to amplitudes</H3>
+
+<P>The <A HREF="#i2f">I2F</A> command takes two columns with an intensity and its sigma and
+produces two new columns with the amplitude and corresponding sigma.
+Negative intensities are set to MNFs. This command treats weak data
+reasonably, but it is recommended that you use the CCP4 <A HREF="truncate.html">TRUNCATE</A>
+program.</P>
+
+<P>For a detailed description see <A HREF="#i2f">I2F</A>
+
+<H4>Examples</H4>
+<DL>
+ <DT>I2F col 1 2
+  <DD>Convert the intensity and its sigma in columns 1 and 2 to the
+      amplitude and its sigma. The converted data is stored in columns
+      with labels Fobs and Sigma-Fobs
+</DL>
+
+<HR>
+<H3><A NAME="maplimit_examples"></A>Select a subsection of a map</H3>
+
+<P>The <A HREF="#maplimit">MAPLIMIT</A> command allows you to select a subsection of a map.
+You can specify the new map limits as grid points, fractional, or
+orthogonal coordinates. Alternatively, you can give the name of a PDB
+file and the new limits will be set to cover the molecule.</P>
+
+<P><B>NOTE: The current implementation does not allow the output map
+to exceed the length of a unit cell axis. This limitation will disappear
+in the next release of SFTOOLS.</B>
+
+<P>For a detailed description see <A HREF="#maplimit">MAPLIMIT</A>
+
+<H4>Examples</H4>
+<DL>
+ <DT>MAPLIMIT GRID -12 34 0 56 3 29
+  <DD>Truncate the map so that it covers grid points -12 to 34 along x,
+      0 to 56 along y and 3 to 29 along the c axis.
+ <DT>MAPLIMIT PDB file.pdb PLUS 5
+  <DD>Truncate the map so that it covers the molecule in the pdb file
+      with name &quot;file.pdb&quot; plus a 5 Angstrom boundary region.
+</DL>
+
+<HR>
+<H3><A NAME="reindex_examples"></A>Modify indices by matrix multiplication</H3>
+
+<P>The <A HREF="#reindex">REINDEX</A> command can be used to change the reflection indices.
+All indices will be multiplied by a user-specified matrix. It is up
+to the user to make sure the matrix is appropriate. The program will
+also transform the global and dataset cell parameters according to the
+supplied matrix. However, the user will have to update the space group if needed.
+Phase columns and Hendrickson-Lattman coefficients will not be updated.
+The indices will be resorted and reduced to the CCP4 asymmetric unit.</P>
+
+<P>For a detailed description see <A HREF="#reindex">REINDEX</A>
+
+<H4>Examples</H4>
+<DL>
+ <DT>REINDEX MATRIX 1 0 0 &nbsp;&nbsp;&nbsp; 0 0 1 &nbsp;&nbsp;&nbsp; 0 1 0
+  <DD>Transforms H K L into H L K
+</DL>
+
+<HR>
+<H3><A NAME="rfree_examples"></A>Select an RFREE set</H3>
+
+<P>The <A HREF="#rfree">RFREE</A> command randomly selects a set of reflections to be used
+for the Rfree set. Alternatively, the user can ask for thin shells of
+reflections to be used for the Rfree set. The latter may be of interest
+in cases with high non-crystallographic symmetry. However, to get a
+reasonable number of shells, the individual shells are much thinner
+than one would like.</P>
+
+<P>For a detailed description see <A HREF="#rfree">RFREE</A>
+
+<H4>Examples</H4>
+<DL>
+ <DT>RFREE 2000
+  <DD>Select approximately 2000 reflections for the rfree set
+ <DT>RFREE 0.05
+  <DD>Select approximately 5% of the reflections for the rfree set
+ <DT>RFREE 0.05 SHELL
+  <DD>As above but select the reflections in thin resolution shells
+</DL>
+
+<HR>
+<H3><A NAME="set_examples"></A>Modify header information</H3>
+
+<P>All header information can be changed with the <A HREF="#set">SET</A> command. The keywords
+<B><A HREF="#set_all">ALL</A>, <A HREF="#set_title">TITLE</A>, <A HREF="#set_labels">LABELS</A>, <A HREF="#set_types">TYPES</A>, <A HREF="#set_sort">SORT</A>, <A HREF="#set_cell">CELL</A>, and <A HREF="#set_spacegroup">SPACEGROUP</A></B> can be given
+to indicate which header item you wish to change. It is sufficient to
+type only the first 3 characters of each keyword.</P>
+
+<P>For a detailed description see <A HREF="#set">SET</A>
+
+<H4>Examples</H4>
+<DL>
+ <DT>SET ALL
+  <DD>SFTOOLS will prompt for all header information
+ <DT>SET CELL
+  <DD>SFTOOLS will prompt for the unit cell parameters
+ <DT>SET TYPES
+  <DD>SFTOOLS will prompt for all column types
+ <DT>SET TYP COL 3
+  <DD>SFTOOLS will prompt for the type of column 3
+</DL>
+
+<HR>
+<H3><A NAME="sort_examples"></A>Sort the reflections</H3>
+
+<P>The <A HREF="#sort">SORT</A> command can be used to sort the reflections by index, by
+resolution or by the value of one of the columns. This can be helpful
+if you want to look at your reflections with the <A HREF="#list_reflections">LIST REF</A> command.</P>
+
+<P>For a detailed description see <A HREF="#sort">SORT</A>
+
+<H4>Examples</H4>
+<DL>
+ <DT>SORT
+  <DD>Sort the reflections with l changing fast, k intermediate and
+ <DT>SORT l k h
+  <DD>Sort the reflections with h changing fast, k intermediate and
+      l changing slow
+ <DT>SORT RESOL
+  <DD>Sort the reflections by resolution. Highest resolution comes first
+ <DT>SORT RESOL DOWN
+  <DD>Sort the reflections by resolution. Highest resolution comes last
+ <DT>SORT COL 1
+  <DD>Sort the reflections by column 1. Lowest values of column 1 come first
+</DL>
+
+<HR>
+<H3><A NAME="reduce_examples"></A>Reduce reflections to the asymmetric unit</H3>
+
+<P>The <A HREF="#reduce">REDUCE</A> command forces all indices to be within the given asymmetric
+unit definition. By default the CCP4 definition is used and it is
+recommended not to deviate from that. Phases and Hendrickson-Lattman
+coefficients will be updated if necessary.</P>
+
+<P>For a detailed description see <A HREF="#reduce">REDUCE</A>
+
+<H4>Examples</H4>
+<DL>
+ <DT>REDUCE
+  <DD>Force all indices to obey the CCP4 asymmetric unit definition
+ <DT>REDUCE TNT
+  <DD>Force all indices to obey the TNT asymmetric unit definition
+</DL>
+
+<HR>
+<H3><A NAME="merge_examples"></A>Merge reflections with identical indices.</H3>
+
+<P>The <A HREF="#merge">MERGE</A> command merges reflections with identical indices. With the
+exception of multi-record MTZ files, this situation should not occur.
+In some benign cases the multiple reflections contain identical information
+in all columns or only one reflection contains valid data for any one
+column (the rest has MNFs). In the latter case the MERGE command can
+be applied safely. If two or more reflections contain non-identical
+data for one or more columns then you can force merging by averaging by
+giving the <A HREF="#merge_mode_average">MERGE AVERAGE</A> command. However, you most likely have a major
+problem with your data and MERGE AVERAGE should only be used if you
+know what caused the problem.</P>
+
+<P>For a detailed description see <A HREF="#merge">MERGE</A>
+
+<H4>Examples</H4>
+<DL>
+ <DT>MERGE
+  <DD>Merge reflections if it is &quot;safe&quot;
+ <DT>MERGE AVERAGE
+  <DD>Merge reflections by averaging
+</DL>
+
+<P><HR><P>
+
+<H2><A NAME="reference"><A NAME="keywords"></A>Command reference section</H2>
+
+<P>Following is the list of on-line help information. You can get this
+during interactive use by typing the name of the command followed by
+the keyword &quot;HELP&quot;. <EM>E.g.</EM> ABSENT HELP will give you the help information
+for the ABSENT command.<P>
+
+The available keywords/commands are:
+<BLOCKQUOTE>
+<A HREF="#absent"><B>ABSENT</B></A>,
+<A HREF="#calc"><B>CALC</B></A>,
+<A HREF="#checkhkl"><B>CHECKHKL</B></A>,
+<A HREF="#complete"><B>COMPLETE</B></A>,
+<A HREF="#correl"><B>CORREL</B></A>,
+<A HREF="#delete"><B>DELETE</B></A>,
+<A HREF="#expand"><B>EXPAND</B></A>,
+<A HREF="#fft"><B>FFT</B></A>,
+<A HREF="#fourpt"><B>FOURPT</B></A>,
+<A HREF="#fullmdf"><B>FULLMDF</B></A>,
+<A HREF="#fullmtz"><B>FULLMTZ</B></A>,
+<A HREF="#hlconv"><B>HLCONV</B></A>,
+<A HREF="#i2f"><B>I2F</B></A>,
+<A HREF="#list"><B>LIST</B></A>,
+<A HREF="#map"><B>MAP</B></A>,
+<A HREF="#map2sf"><B>MAP2SF</B></A>,
+<A HREF="#mapin"><B>MAPIN</B></A>,
+<A HREF="#maplimit"><B>MAPLIMIT</B></A>,
+<A HREF="#mapout"><B>MAPOUT</B></A>,
+<A HREF="#mapstat"><B>MAPSTAT</B></A>,
+<A HREF="#merge"><B>MERGE</B></A>,
+<A HREF="#mode"><B>MODE</B></A>,
+<A HREF="#option1"><B>OPTION1</B></A>,
+<A HREF="#phashft"><B>PHASHFT</B></A>,
+<A HREF="#plot"><B>PLOT</B></A>,
+<A HREF="#purge"><B>PURGE</B></A>,
+<A HREF="#read"><B>READ</B></A>,
+<A HREF="#reduce"><B>REDUCE</B></A>,
+<A HREF="#reindex"><B>REINDEX</B></A>,
+<A HREF="#rfree"><B>RFREE</B></A>,
+<A HREF="#select"><B>SELECT</B></A>,
+<A HREF="#set"><B>SET</B></A>,
+<A HREF="#sort"><B>SORT</B></A>,
+<A HREF="#stop"><B>STOP</B></A>,
+<A HREF="#window"><B>WINDOW</B></A>,
+<A HREF="#write"><B>WRITE</B></A>
+</BLOCKQUOTE>
+
+<HR>
+<H2><A NAME="absent"></A>ABSENT</H2>
+<PRE>
+  OPTION: ABSENT COL col_ids IF COL col_id = 0
+  ============================================
+
+  Option to generate Missing Number Flags (MNFs)
+
+  This command will set the values in the columns
+  specified by col_ids to absent if the value in
+  the column specified by col_id is zero. A column
+  identifier can be either the column number or the
+  column label.
+<A NAME="absent_if"></A>  The part following the IF keyword can actually be
+  any valid <A HREF="#select">selection</A> expression (give SELECT HELP
+  for more information on selection expressions)
+  Reflections that are already deselected due to a
+  previous SELECT command will not get any MNFs
+  Also note that after this command a <A HREF="#select_criterium_all">SELECT ALL</A>
+  command will be issued automatically.
+
+  EXAMPLES:(assuming column 2 has label sigma)
+
+  ABSENT COL 1 2 IF COL 2 = 0
+  ABSENT COL 1 2 3 4 IF COL sigma = 0
+  ABSENT COL 3 4 IF RESOL &gt; 3.0
+</PRE>
+
+<HR>
+<H2><A NAME="calc"></A>CALC</H2>
+<PRE>
+  OPTION: CALCulate  RESULT = expression
+  ======================================
+
+  Command to perform arithmetic on data columns.
+  The expression is evaluated and stored in the
+  column(s) indicated by result.
+
+  The expression may contain operands and
+  operators and should follow the Polish notation.
+  This means that first the operands are given and
+  then the operator. (<EM>e.g.</EM> 5+3 becomes 5 3 +). It
+  is the users responsibility to assure that the
+  correct number of operands are given for each
+  operator (see list below). Operands may either be
+  a value, a column_id or some kind of function
+<A NAME="calc_value"></A> - VALUE : integer, real or complex value. Complex
+           values consisting of an amplitude and
+           phase must be enclosed in parentheses
+           <EM>e.g.</EM> i=(1.0 90.0) or square brackets if
+           they represent the real and imaginary
+           parts. <EM>e.g.</EM> i=[0.0 1.0].
+
+<A NAME="calc_column"></A> - COLUMN: A COLumn keyword followed by 1 or 2
+           column_ids (numbers or labels). Give
+           1 column_id if you wish to use the value
+           in that column. Give 2 column_ids if the
+           columns contain complex data. Enclose
+           the keyword and the ids in parentheses
+           if the columns contain an amplitude and
+           a phase. Use square brackets if they
+           contain the real and imaginary parts.
+           If a column value is absent then the
+           whole expression evaluates to absent.
+
+<A NAME="calc_function"></A> FUNCTION  one of the following built-in functions
+
+ - C     : This evaluates to 0 for centric and to
+           1 for acentric reflections
+ - M     : This evaluates to the reflection
+           multiplicity (<EM>e.g.</EM> 2 on two-fold etc)
+ - P     : This evaluates to the phase restriction
+           for centric reflection or MNF for
+           non-centrics
+ - H     : Returns the H-index for this reflection
+ - K     : Returns the K-index for this reflection
+ - L     : Returns the L-index for this reflection
+ - RAN_U : Return a random number from a uniform
+<A NAME="calc_seed"></A>           distribution between 0 and 1. The set of
+           random numbers depends on a seed value
+           which is 1234 by default. To modify the
+           seed value (and hence get a novel set of
+           random numbers) you must issue a command
+           CALC SEED number
+           where number can be any positive integer
+ - RAN_G : Return a random number from a Gaussian
+           distribution with mean 0 and variance 1
+           (see RAN_U for the SEED value)
+ - RFREE(r)
+           Randomly returns 0 and 1 values for use
+           in RFREE for XPLOR. If 0 &lt; r &lt; 1 then r
+           represents the fraction of data to use
+           for the free R-factor. If r &gt; 1 then it
+           represents the absolute number of
+           reflections to use.
+ - STOL  : This evaluates to sin(theta/lambda)
+ - STOLSQ: This evaluates to sin(theta/lambda)**2
+
+<A NAME="calc_result"></A>  RESULT : Indicates where to store the result of
+           the expression. RESULT can be:
+  TYPE COLumn c1, (COLumn c1 c2), [COLumn c1 c2]
+  In the first case a result is stored in column c1
+  The column type will be set to TYPE or to R if no
+  type is specified.
+  In the second case a complex result is stored in
+  columns c1 and c2 as an amplitude and phase resp.
+  The column types are set by the program. In the
+  third case, the complex result is stored as the
+  real and imaginary parts resp. again with the
+  column types set automatically.
+  The result columns are created if necessary
+
+<A NAME="calc_operator"></A>  OPERATOR (REAL OPERANDS, COMPLEX OPERANDS)
+
+      + (2,4) : Summation
+      - (2,4) : Subtraction
+      * (2,4) : Multiplication
+      / (2,4) : Division
+     ** (2,3) : Power. The base may be complex, the
+                exponent not (it can be any! real)
+    SIN (1,-) : Sine
+    COS (1,-) : Cosine
+    TAN (1,-) : Tangent
+    DTR (1,-) : Convert from degrees to radians
+    RTD (1,-) : Convert from radians to degrees
+    ABS (1,2) : Absolute value. For complex values
+                this is the complex vector length
+     LN (1,-) : Natural logarithm
+    EXP (1,-) : Exponent
+    MIN (2,4) : Minimum of two values
+    MAX (2,4) : Maximum of two values
+
+  EXAMPLES:
+  (assume the data base contains 4 columns named; fobs, sigma, fcalc and phase)
+  CALC COL sigma = 0
+    set column sigma to 0
+  CALC COL sigma = COL fobs 10 /
+    set sigma to fobs/10. The result column will
+    keep column type Q
+  CALC COL F/sigF = COL 1 COL 2 /
+    add a column labeled F/sigF and store fobs
+    over sigma in it. The result column will get
+    column type R
+  CALC COL stol = stol
+    add a column labeled stol and store sin(theta)
+    over lambda in it for each reflection
+  CALC COL resol = 0.5 stol /
+    create a column labeled resol and store the
+    resolution in Angstrom {1/(2*stol)}
+  CALC COL 5 = m
+    add a column labeled COLUMN_005 and store the
+    multiplicity for each reflection, <EM>e.g.</EM> 6 for
+    00L reflections in hexagonal space group.
+  CALC COL 7 = m
+    identical including label COLUMN_005
+  CALC COL centric = 1 c -
+    add a column labeled centric that contains 0
+    for acentrics and 1 for centrics
+  CALC COL fcalc = COL fcalc ran_g 100 * +
+    ran_g returns a random number from a Gaussian
+    distribution. Multiply this by 100 to get a
+    mean of 0 and variance of 100 (st. dev. of 10)
+    and then add it to your fcalc
+  CALC q COL newsigma = 2 COL sigma *
+    add column with label newsigma twice the value
+    found in column sigma. Set the type of the new
+    column to Q!!!
+  CALC J COL iobs = 0.001 COL fobs * COL fobs *
+    add column with label iobs and type J iequal to 
+    0.001*fobs*fobs.  ( intensity scaled by 0.001)
+  CALC Q COL sigiobs = 0.002 COL sigma * COL fobs *
+    add column with label sigiobs and type Q equal to 
+    0.002*fobs*sigma.  ( SigI = 2*fobs*sigma scaled by 0.001)
+  CALC (COL Fnew Pnew) = (COL 1 4) (COL 3 4) -
+    create columns Fnew and Pnew and store in it
+    fobs - fcalc as amplitude and phase.
+    Column types are set to F and P
+  CALC [ COL real imag ] = (COL 3 4)
+    convert fcalc and phase to real and imagenary
+    components and stored these in columns labeled
+    real and imag, column types are set to R and R
+  CALC COL test = rfree(0.05)
+    select 5% of the reflections for XPLOR RFREE
+  CALC COL test = rfree(3500)
+    select 3500 reflections for XPLOR RFREE
+</PRE>
+
+<HR>
+<H2><A NAME="checkhkl"></A>CHECKHKL</H2>
+<PRE>
+  OPTION: CHECKHKL [ASUNIT]
+  =========================
+
+  Command to check the reflection indices. It will
+  report the following:
+  - number of reflections outside asymmetric unit
+  - number of centrosymmetric reflections
+  - number of unallowed reflections
+  - number of reflections found on the crystallographic symmetry axes
+
+<A NAME="checkhkl_asunit"></A>  ASUNIT  Asymmetric unit specification by:
+  CCP4    Keyword to use CCP4 definition (default)
+  BIOMOL  Keyword to use BIOMOL definition
+  TNT     Keyword to use TNT definition
+  MATRIX m11 m12 m13 m21 m22 m23 m31 m32 m33
+          Give <A HREF="#reduce">REDUCE</A> HELP to get more information
+          on how to define the asymmetric unit by
+          the MATRIX keyword
+</PRE>
+
+<HR>
+<H2><A NAME="complete"></A>COMPLETE</H2>
+<PRE>
+  OPTION: COMPLETE [SETTINGS] [MODE] [ASUNIT] [COLUMN]
+  ====================================================
+
+  Command to list the data completeness. Only the
+  reflections within the asymmetric unit are used.
+
+<A NAME="complete_settings"></A>  SETTINGS is one of the following:
+<A NAME="complete_settings_shells"></A>  SHELLS n   Display data in n shells (n is saved)
+<A NAME="complete_settings_resol"></A>  RESOL  r   Set maximum resolution [A] (default is
+             the maximum observed resolution)
+
+<A NAME="complete_mode"></A>  MODE is one of the following:
+<A NAME="complete_mode_numbers"></A>  NUMBERS    list the number of reflections in each
+             resolution bin. The default is to
+             print the completeness in percentage
+<A NAME="complete_mode_cumulative"></A>  CUMULATIVE list the cumulative completeness. The
+             default is to list in resolution bins
+<A NAME="complete_mode_pdb"></A>  PDB        Make PDB file OBSERVED.PDB in which
+             OBS &amp; ABS residues indicate observed
+             and absent reflections in rec. space
+             Observed reflections will have their
+             B-value set to the value in column 1
+             (Nice if column 1 contains F/SIGF)
+<A NAME="complete_mode_table"></A>  TABLE      Keyword. When given, the contents of
+             the table will be written to the file
+             COMPLETE.TAB (without header & totals)
+
+<A NAME="complete_asunit"></A>  ASUNIT  Asymmetric unit specification by:
+  CCP4    Keyword to use CCP4 definition (default)
+  BIOMOL  Keyword to use BIOMOL definition
+  TNT     Keyword to use TNT definition
+  MATRIX m11 m12 m13 m21 m22 m23 m31 m32 m33
+          Give <A HREF="#reduce">REDUCE</A> HELP to get more information
+          on how to define the asymmetric unit by
+          the MATRIX keyword
+
+<A NAME="complete_column"></A>  COLUMN  By default, COMPLETE will list the
+          completeness of the first 10 columns. The
+          COLUMN keyword can be used to specify up
+          to 10 specific columns.
+
+  EXAMPLE: COMPLETE COL 1 3 5
+  (list the completeness of columns 1, 3 &amp; 5)
+
+  Data completeness cannot be caught in a single
+  number and resolution limits reported in the
+  literature strongly depend on criteria unknown to
+  the reader. A more objective (still not ideal)
+  specification would be to state: the number of
+  observed reflections corresponds to a 100%
+  complete dataset to X angstrom resolution. a good
+  estimate of the value X is given by SFTOOLS
+</PRE>
+
+<HR>
+<H2><A NAME="correl"></A>CORREL</H2>
+<PRE>
+  OPTION: CORREL [COLUMN c1 c2] [SETTINGS] [TABLE]
+  ================================================
+
+  Command to calculate the correlation and R-factor
+  between two columns.
+
+<A NAME="correl_column"></A>  COLUMN      Keyword which is followed by
+  - c1 c2     2 column-id''s, names or numbers
+
+<A NAME="correl_settings"></A>  SETTINGS changes the table layout as follows:
+  SHELLS      Keyword followed by
+  - nshell    displays data in nshell shells
+  RESOLUTION  Keyword followed by
+  - rmin rmax Resolution limits [A] (<EM>e.g.</EM> 10 2)
+
+<A NAME="correl_table"></A>  TABLE      Keyword. When given, the contents of
+             the table will be written to the file
+             CORREL.TAB (without header &amp; totals)
+
+  The column labels of the table are:
+
+  NSHELL     Number of resolution shell
+  DMIN DMAX  Minimum/maximum resolution
+  RFACT      Rfactor in percent
+             ( 200*Sum|col1-col2|/sum(col1+col2) )
+  CORREL     Correlation coefficient
+  F1 F2      Average value of col1 and col2 in the
+             resolution bin
+  NREF       Number of reflections used for the
+             statistics
+</PRE>
+
+<HR>
+<H2><A NAME="delete"></A>DELETE</H2>
+<PRE>
+  OPTION: DELETE [COLUMN col_ids] [MAP]
+  =====================================
+
+  Command to remove information from the data base
+<A NAME="delete_column"></A>  COLUMN   : Keyword that is followed by column-id
+             Label(s) or number(s) to identify the
+             column(s) that will be deleted
+<A NAME="delete_map"></A>  MAP      : Keyword to indicate that the map has
+             to be deleted
+
+  EXAMPLES:
+
+  DELETE COLUMN 5 6
+  DELETE MAP
+</PRE>
+
+<HR>
+<H2><A NAME="expand"></A>EXPAND</H2>
+<PRE>
+  OPTION: EXPAND [SPAGRP] [SILENT] [ASUNIT]
+  =========================================
+
+  Expand the reflections to lower symmetry.
+  Phase information will be treated, the spacegroup
+  information will be updated and the expanded.
+  Reflections will be sorted.
+
+<A NAME="expand_spagrp"></A>  SPAGRP Space group number to which to expand. This
+         must be a proper subgroup of the original
+         space group (default is 1)
+<A NAME="expand_silent"></A>  SILENT Keyword to suppress output
+<A NAME="expand_asunit"></A>  ASUNIT Asymmetric unit specification which is:
+  CCP4   Keyword for CCP4 definition (default)
+  BIOMOL Keyword for BIOMOL definition
+  TNT    Keyword for TNT definition
+  MATRIX Keyword followed by 9 integers specifying
+         the asymmetric unit. Give <A HREF="#reduce">REDUCE</A> HELP for
+         more details on the MATRIX definitions
+
+  WARNING: if you expand to a SPACEGROUP that has
+  its origin at a different position then the
+  phases will not be correct (<EM>e.g.</EM> P212121 to P21)
+
+  EXAMPLES:
+
+  EXPAND           (expand to P1)
+  EXPAND 3         (expand to P2)
+</PRE>
+
+<HR>
+<H2><A NAME="fft"></A>FFT</H2>
+<PRE>
+  OPTION: FFT COL id1 id2 [STEP x] [GRID nx ny nz]
+  ================================================
+
+  Calculate a map based on the Fourier coefficients
+  in columns id1 (amplitude) and id2 (phase).
+  All active reflections are used. To restrict the
+  data to a certain resolution use option <A HREF="#select">SELECT</A>.
+
+<A NAME="fft_step"></A>  STEP  Force the program to use a grid size that
+        is as close to x Angstrom as allowed
+<A NAME="fft_grid"></A>  GRID  Force the program to use nx, ny and nz
+        grid points along the a, b and c axes
+        respectively. The numbers must be multiples
+        of 2, 3 and 5 and nx must be positive. If
+        an illegal number is given the next valid
+        number will be used
+
+  If neither STEP nor GRID are specified the grid
+  size defaults to 1/3 of the max. resolution
+
+  Note: If your amplitudes are on absolute scale
+  your map will be on absolute scale as well
+
+  EXAMPLES
+  ========
+
+  FFT COL fobs pmir
+  FFT COL 1 2
+  FFT COL 1 2 GRID 96 60 81
+  FFT COL 1 2 STEP 0.8
+</PRE>
+
+<HR>
+<H2><A NAME="fourpt"></A>FOURPT</H2>
+<PRE>
+  OPTION: FOURPT MAPTYPE COLUMNS
+  ==============================
+
+  Command to generate Fourier coefficients for
+  several standard transforms.
+
+<A NAME="fourpt_maptype"></A>  MAPTYPE must be one of the following numbers:
+   0 = ( F1 -  F2),P1      : Fo-Fc-map
+   1 = (2F1 -  F2),P1      : 2Fo-Fc-map
+   2 = (3F1 - 2F2),P1      : 3Fo-2Fc-map
+   3 = |F1|,P1 + |F2|,P2
+   4 = |F1|,P1 - |F2|,P2
+   5 = |F1|,P1             : Straight Fourier
+   6 = |F1|**2             : Patterson
+   7 = (F1-F2)**2          : Patterson
+   8 = |F1|*|F2|,(P1-P2)   : Phased trans. function
+   9 = |F1|*|F2|,(-P1-P2)  : Phased trans. function
+
+<A NAME="fourpt_columns"></A>  COLUMNS is the COL keyword followed by column
+  specifications. The columns have to be specified
+  in the order in which they occur in the formulae
+  F1 and F2 represent amplitude columns. P1 and P2
+  represent phase columns. The map coefficients are
+  stored in 2 new columns with labels FMAP and PMAP
+  (amplitude and phase respectively). The Patterson
+  map options generate only one column with label
+  FPAT. If a dummy phase column with zeroes is
+  required you could make it with the command:
+  CALC COL PPAT = 0
+  If you wish to weight your coefficients with a
+  figure of merit you can do so with the command
+  CALC COL FMAP = COL FMAP COL FOM *
+
+  EXAMPLE: FOURPT 1 COL fobs fcalc pcalc
+</PRE>
+
+<HR>
+<H2><A NAME="fullmdf"></A>FULLMDF</H2>
+<PRE>
+
+  NOTICE: Option FULLMDF will become obsolete in the next release and
+          will no longer be supported. Try to avoid using it in scripts.
+
+  OPTION: FULLMDF
+  ===============
+
+  This option converts a CCP4 MTZ into a BIOMOL MTZ
+  In the first step the user must indicate how to
+  generate absence flags.
+  If a column with anomalous data is found (column
+  type = D) then user input will also be requested
+  to convert the anomalous data.
+  The conversion between asymmetric unit definitions
+  will be made automatically.
+</PRE>
+
+<HR>
+<H2><A NAME="fullmtz"></A>FULLMTZ</H2>
+<PRE>
+
+  NOTICE: Option FULLMTZ will become obsolete in the next release and
+          will no longer be supported. Try to avoid using it in scripts.
+
+  OPTION: FULLMTZ
+  ===============
+
+  This option automatically replaces absence flags
+  (-1E+10) by zeroes.
+
+  If a column with anomalous data is found (column
+  type is D) then user input will be requested if
+  and how the anomalous data has to be converted
+
+  Indices will be reduced to the CCP4 asymmetric
+  unit automatically
+</PRE>
+
+<HR>
+<H2><A NAME="hlconv"></A>HLCONV</H2>
+<PRE>
+  OPTION: HLCONV COL phase fom
+  ============================
+
+  Given a phase and figure of merit, this command
+  will generated the A and B Hendrickson-Lattman
+  coefficients. PLEASE NOTE that this is only
+  advisable if your source of phase information
+  is unimodal. If you have heavy atom phases then
+  you SHOULD use the original bimodal phase
+  distributions derived from them. This option
+  may be useful to generate HL coefficients for
+  phased refinement with XPLOR or REFMAC, based
+  on FOM and phases from a map after density
+  modification
+
+  Example:
+  HLCONV col 2 3
+</PRE>
+
+<HR>
+<H2><A NAME="i2f"></A>I2F</H2>
+<PRE>
+  OPTION: I2F COL I SIGI
+  ======================
+
+  Command to convert intensities plus their
+  sigmas to amplitudes and corresponding sigmas.
+<A NAME="i2f_col"></A>  The argument consists of the keyword COL
+  followed by the column labels (or numbers) of
+  the columns containing I and SigI respectively
+
+  Example: I2F COL 1 2
+  Example: I2F COL Iobs Sigma-I
+
+  The results are stored in columns with labels
+  Fobs and Sigma-Fobs. NOTE: if columns with these
+  labels exist then they will be overwritten !!!
+  The I2F conversion is calculated as:
+
+  Fobs = SQRT(Iobs)
+  Sigma-Fobs = SQRT( SQRT( Iobs**2 + 0.5*Sigma-I**2) - I)
+
+
+  NOTE: it may be better to use the CCP4 program
+  <A HREF="truncate.html">TRUNCATE</A> for this step since it treats negative
+  and very weak data more elegantly (I2F flags
+  negative data as absent!!!)
+</PRE>
+
+<HR>
+<H2><A NAME="list"></A>LIST</H2>
+<PRE>
+  OPTION: LIST [ITEMS]
+  ====================
+
+  Command to list header information
+<A NAME="list_items"></A>  -ITEMS is a list of header items to be shown
+   (it suffices to give the first 3 characters)
+   The default is to list all header items
+
+<A NAME="list_title"></A>   TITLE        title cards
+<A NAME="list_labels"></A>   LABELS       column labels, numbers and types
+<A NAME="list_type"></A>   TYPE         column labels, numbers and types
+<A NAME="list_cell"></A>   CELL         unit cell parameters
+<A NAME="list_dcell"></A>   DCELL       crystal-specific unit cell parameters
+<A NAME="list_dwave"></A>   DWAVE       dataset-specific wavelength
+<A NAME="list_sort"></A>   SORT         sort order
+<A NAME="list_spacegroup"></A>   SPACEGROUP   space group related data
+
+<A NAME="list_reflections"></A>   REFLECTIONS  reflection data. This argument.
+                can be followed by COL and one to
+                six column specifiers
+
+   Example: LIST REF col 1 2 11 12
+            LIST SPA DCELL
+            LIST
+</PRE>
+
+<HR>
+<H2><A NAME="map"></A>MAP</H2>
+<PRE>
+  OPTION: MAP RMS F1 [SHELLS n]
+  OPTION: MAP CORREL F1 P1  F2 P2 [SHELLS n]
+  ==========================================
+
+  Option to calculate the r.m.s. of a map based
+  on the amplitude of its coefficients or to
+  calculate the correlation coefficient between
+  two maps given the coefficients for both maps.
+  The statistics will be listed as function of
+  resolution.
+
+<A NAME="map_rms"></A>  RMS    Keyword to calculate the map r.m.s.
+         based on the amplitude in column F1
+
+<A NAME="map_correl"></A>  CORREL Keyword to calculate the correlation
+         coefficient. F1 P1 and F2 P2 are the
+         column specifiers for the coefficients
+         of map 1 and map 2 respectively
+
+<A NAME="map_shells"></A>  SHELLS n   Keyword followed by the number of
+             shells to use in the analysis.
+             The given value will become the new
+             default. The original default is 20
+
+
+  You can give only one keyword at a time, but
+  if you give the CORREL keyword the program
+  will automatically give you the r.m.s. values
+  of the two maps being correlated
+
+  EXAMPLE:
+
+  MAP RMS 1
+  (rms of a map based on amplitudes in column 1
+  MAP CORREL fobs pmir faveraged paveraged
+  (correlation between mir map and averaged map)
+  MAP CORREL 1 2 5 6 SHELLS 10
+  (As before but list only 10 resolution shells)
+</PRE>
+
+<HR>
+<H2><A NAME="map2sf"></A>MAP2SF</H2>
+<PRE>
+  OPTION: MAP2SF [RESOL r] [F000] [COL id1 id2]
+  =============================================
+
+  Calculate Fourier coefficients from a map. The
+  map to be transformed already has to reside in
+  memory. You will always get coefficients for all
+  reflections that are already in the data base
+  (even if they are unselected).
+
+<A NAME="map2sf_resol"></A>  RESOL r
+  This keyword indicates that ALL legal reflections
+  (except F000) to a resolution of &quot;r&quot; Angstrom
+  will be stored. The default is to store only the
+  reflections for which there is already an entry
+  in the data base. If there are no reflections in
+  the data base and RESOL is not specified, then
+  all legal reflections to a resolution of 3 times
+  the largest grid spacing are calculated
+
+<A NAME="map2sf_f000"></A>  F000
+  If given this indicates that F000 should also be
+  kept (WARNING, many programs, potentially incl.
+  SFTOOLS, do not like the infinite resolution of
+  F000).
+
+<A NAME="map2sf_col"></A>  COL id1 id2
+  If id1 and id2 are text labels, then id1 and id2
+  are given to the new amplitude and phase columns
+  If id1 and id2 are numbers of existing columns
+  then the new amplitude and phase columns will
+  overwrite the id1 and id2 columns. If the COL
+  keyword is not given then SFTOOLS will create 2
+  columns with COLUMN_NNN labels where NNN is the
+  column number
+
+  Note: If your map is on absolute scale then the
+  Fourier coefficients will be as well
+
+  EXAMPLES
+  ========
+
+  MAP2SF
+  MAP2SF COL Fnew Pnew
+  MAP2SF RESOL 2.0 col 3 4
+  MAP2SF RESOL 3 F000 col 3 4
+</PRE>
+
+<HR>
+<H2><A NAME="mapin"></A>MAPIN</H2>
+<PRE>
+  OPTION: MAPIN FILENAME [FORMAT]
+  ===============================
+
+  Command to read in an electron density file.
+
+<A NAME="mapin_filename"></A>  FILENAME    is the name of the file. The program
+    will try to deduce the file format from the
+    extension. It will recognize .mff, .map, .dn6
+<A NAME="mapin_format"></A>  FORMAT      can be one of the following:
+    MFF, MAP, DN6
+    This overrules the file name extension format
+
+  File formats are:
+  MFF   BIOMOL format
+  MAP   CCP4 real*4 format
+  DN6   FRODO / O map format
+
+  NOTE: DN6 maps for hardware other then SGI may not
+        be compatible with SFTOOLS. Please let <A HREF="mailto:bart.hazes@ualberta.ca">me</A>
+        know about problems
+
+  EXAMPLE:
+
+  MAPIN file.mff
+  MAPIN file.map
+  MAPIN file.dn6
+  MAPIN file.rho MFF
+
+  Notes:
+  The input map can be in any order. However it is
+  stored internally in A-B-C order. There can only
+  be one map in memory. An existing map has to be
+  deleted before reading a new one (<A HREF="#delete_map">DELETE MAP</A>)
+</PRE>
+
+<HR>
+<H2><A NAME="maplimit"></A>MAPLIMIT</H2>
+<PRE>
+
+  NOTICE: Option MAPLIMIT will become obsolete in the next release and
+          will no longer be supported. Try to avoid using it in scripts.
+          In the next release the functionality of MAPLIMIT will be
+          moved to the <A HREF="#mapout">MAPOUT</A> command. This allows a fully general and
+          robust implementation.
+
+  OPTION: MAPLIMIT TYPE value(s)
+  ==============================
+
+  Command to restrict a map to certain limits.
+<A NAME="maplimit_type"></A>  The limits can be specified in various ways as
+  indicated by the TYPE keyword which can be one
+  of the following:
+
+<A NAME="maplimit_type_pdb"></A>  PDB filename PLUS r
+    This returns a block of density that surrounds
+    the atoms in the PDB file leaving an extra
+    "r" Angstrom on all sides. If "PLUS r" is not
+    specified a default of 5 Angstrom is used
+
+<A NAME="maplimit_type_grid"></A>  GRID a_l a_u b_l b_u c_l c_u
+    This returns a block of density with lower and
+    upper limits along a, b and c as given in grid
+    coordinates
+
+<A NAME="maplimit_type_fract"></A>  FRACT a_l a_u b_l b_u c_l c_u
+    This returns a block of density with lower and
+    upper limits along a, b and c as given in
+    fractional coordinates
+
+<A NAME="maplimit_type_ortho"></A>  ORTHO a_l a_u b_l b_u c_l c_u
+    This returns a block of density with lower and
+    upper limits along a, b and c as given in
+    orthogonal (Angstrom) coordinates
+
+  EXAMPLES:
+
+  MAPLIMIT PDB protein.pdb PLUS 4
+  MAPLIMIT FRACT 0 0.5 0 0.5 0 0.5
+  MAPLIMIT GRID -5 34 0 60 12 49
+
+  Notes:
+  Every gridpoint in the new map must be present in
+  the current map. It is allowed to go outside the
+  unix cell, but none of the new axes can be larger
+  than a full unit cell axis. <EM>E.g.</EM> if the a-axis
+  runs from 0 to 99, you can ask for the subset
+  -5 to 20, but not -5 to 99
+</PRE>
+
+<HR>
+<H2><A NAME="mapout"></A>MAPOUT</H2>
+<PRE>
+  OPTION: MAPOUT FILENAME [FORMAT] [ORDER a b c]
+  ==============================================
+
+  Command to write a electron density file.
+
+<A NAME="mapout_filename"></A>  -FILENAME is the name of the file. The program
+   will try to deduce the file format from the
+   extension. It will recognize .mff, .map, .dn6
+<A NAME="mapout_format"></A>  FORMAT   can be one of the following:
+   MFF, MAP, DN6
+   This overrules the file name extension format
+<A NAME="mapout_order"></A>  ORDER   By default the map is written with
+          sections along C, rows along B and grid
+          steps along A (ORDER A B C). By giving
+          different permutations of A B C you can
+          change the map layout.
+
+  File formats are:
+  MFF   BIOMOL format
+  MAP   CCP4 real*4 format
+  DN6   FRODO / O map format
+
+  NOTE: I have only created DN6 maps for display on SGI
+        If you use it on different hardware then please
+        let <A HREF="mailto:bart.hazes@ualberta.ca">me</A> know if it works or not.
+
+  EXAMPLE:
+
+  MAPOUT file.mff
+  MAPOUT file.map
+  MAPOUT file.dn6
+  MAPOUT file.rho MFF
+  MAPOUT file.map ORDER A C B
+  (sections along B, rows along C)
+</PRE>
+
+<HR>
+<H2><A NAME="mapstat"></A>MAPSTAT</H2>
+<PRE>
+  OPTION: MAPSTAT [SECTION a b c]
+  ===============================
+
+  Command to list header and statistics of the
+<A NAME="mapstat_section"></A>  current map. Statistics are given per section
+  and for the whole map. You can specify which
+  axis to use as sectioning axis by the SECTION
+  keyword followed by the required sectioning
+  axis. If no SECTION keyword is given then
+  sections will be along the C-axis
+
+  EXAMPLES:
+
+  MAPSTAT
+  MAPSTAT SECTION a
+  MAPSTAT SECTION b
+</PRE>
+
+<HR>
+<H2><A NAME="merge"></A>MERGE</H2>
+<PRE>
+  OPTION: MERGE MODE
+  ==================
+
+  Command to merge reflections with identical
+  indices. There are two modes:
+<A NAME="merge_mode_safe"></A>  SAFE     Reflections are only merged if none of
+           the columns has valid data entries in
+           more than one reflection [default]
+<A NAME="merge_mode_average"></A>  AVERAGE  Merging is done by taking the average
+           of the reflections
+
+  MERGE merges multiple reflections with identical
+  HKL, it does not merge different columns!!!
+  The AVERAGE option exists, but you should never
+  need to use it. If you need it you probably have
+  some kind of problem with your data
+
+  EXAMPLES:
+
+  MERGE SAFE
+  MERGE AVERAGE   (if you know what you are doing)
+</PRE>
+
+<HR>
+<H2><A NAME="mode"></A>MODE</H2>
+<PRE>
+
+  NOTICE: Option MODE will become obsolete in the next release and
+          will no longer be supported. Try to avoid using it in scripts.
+
+  OPTION: MODE BATCH | INTERACTIVE
+  ================================
+
+  Bring the program in or out of Batch mode
+<A NAME="mode_batch"></A>  Use MODE BATCH when running SFTOOLS in batch
+  This suppresses some questions by SFTOOLS, <EM>e.g.</EM>
+  to hit return to see the next page in <A HREF="#list_reflections">LIST REF</A>
+<A NAME="mode_interactive"></A>  Use MODE INTERACTIVE to return to interactive
+  mode if that would ever be useful
+
+  EXAMPLES:
+
+  MODE BATCH
+  MODE INTERACTIVE
+</PRE>
+
+<HR>
+<H2><A NAME="option1"></A>OPTION1</H2>
+<PRE>
+
+  NOTICE: Option MODE will no longer be supported in the next release.
+          If you want to add your own options please contact me.
+
+  OPTION: OPTION1 ....
+  ====================
+
+  Option1 is a dummy option that provides a means
+  for users to add their own option. To do so,
+  insert your code in this subroutine and modify
+  this help text. If you wish to give the option a
+  more sensible name then you have to modify the
+  calling sequence in the main routine, the name
+  in routine lstopt and of course the name in the
+  subroutine header and in the last write statement
+
+  If you plan to do some major programming, then it
+  might be wise to contact <A HREF="mailto:bart.hazes@ualberta.ca">me</A> first, since your
+  option might already exist in my experimental
+  version. In addition I could supply you with a
+  makefile and some other goodies
+
+  If your option is of general interest, then you
+  are urged to return the source code to me so that
+  it can be implemented in the official release
+
+  Bart Hazes, e-mail bart.hazes@ualberta.ca
+</PRE>
+
+<HR>
+<H2><A NAME="phashft"></A>PHASHFT</H2>
+<PRE>
+  OPTION: PHASHFT [COL c1 c2] [SETTINGS] [TABLE] [COSINE]
+  =======================================================
+
+  Command to calculate the average phase difference
+  between two columns of data.
+
+<A NAME="phashft_column"></A>  COLUMN      Keyword followed by
+  - c1 c2     2 column-id''s, names or numbers
+
+<A NAME="phashft_settings"></A>  SETTINGS changes the table layout as follows:
+  SHELLS      Keyword followed by
+  - nshell    Displays data in nshell shells
+  RESOLUTION  Keyword followed by
+  - rmin rmax Resolution limits [A] (default is to
+              use the observed resolution limits)
+
+<A NAME="phashft_table"></A>  TABLE     Keyword. When given, the contents of
+            the table will be written to the file
+            PHASHFT.TAB (without header &amp; totals)
+
+<A NAME="phashft_cosine"></A>  COSINE    Keyword to instruct the subroutine to
+            list the cosine of the phase difference
+            (Default is degrees)
+</PRE>
+
+<HR>
+<H2><A NAME="plot"></A>PLOT</H2>
+<PRE>
+  OPTION: PLOT COL c1 VERSUS [RESOL] [COL c2]
+  ===========================================
+
+  Command to create a plot file with the binwise
+  averages of column c1 on the y-axis. The x-axis
+  can be either resolution bins or bins of values
+  found in column c2.
+
+<A NAME="plot_col_c1"></A>  COL c1   Column keyword followed by column name
+           or number
+
+<A NAME="plot_versus"></A>  VERSUS   Keyword to be typed literally
+
+<A NAME="plot_resol"></A>  RESOL    Keyword to be typed literally if you
+           wish to plot as function of resolution
+
+<A NAME="plot_col_c2"></A>  COL c2   Column keyword followed by column name
+           or number. The data in column c1 will
+           be given as function of the data in
+           column c2
+
+<A NAME="plot_shells"></A>  SHELLS n Keyword followed by the number of bins
+
+  EXAMPLE: plot col fobs versus col sigma
+
+  The output file (PLOT.DATA) has 5 columns
+  - The lower limit of the bin
+  - The upper limit of the bin
+  - The midpoint of the bin
+  - The average of col c1 for the bin
+  - The number of reflections in the bin
+</PRE>
+
+<HR>
+<H2><A NAME="purge"></A>PURGE</H2>
+<PRE>
+  OPTION: PURGE [SELECT] [NODATA] [YES]
+  =====================================
+
+  Command to delete records. Records to be deleted
+  must first be deselected by command <A HREF="#select">SELECT</A>.
+<A NAME="purge_select"></A>  Command SELECT may be given from the main menu
+  or optionally from within PURGE. For help on
+  SELECT, type SELECT HELP from the main menu
+
+<A NAME="purge_yes"></A>  YES     Keyword to indicate that no confirmation
+          should be requested. By default, PURGE
+          will ask a confirmation before starting
+          Keyword yes must appear before select
+
+<A NAME="purge_nodata"></A>  NODATA  Keyword to indicate that all reflections
+  which have absent flags in all columns should be
+  deleted
+</PRE>
+
+<HR>
+<H2><A NAME="read"></A>READ</H2>
+<PRE>
+ OPTION: READ FILENAME [FORMAT] [COLUMN columns]
+ ===============================================
+
+ Command to read a structure factor file.
+
+<A NAME="read_filename"></A> -FILENAME is the name of the file. The program
+  will try to deduce the file format from the
+  extension. It will recognize .mtz, .mdf, .snd,
+  .xpl, .tnt, .31, .fin, .phs, .df, and .fmt
+<A NAME="read_format"></A> FORMAT can be one of the following: MTZ, MDF,
+  SND, XPL, TNT, 31, FIN, PHS, DF or FMT
+  This overrules the file name extension format
+<A NAME="read_column"></A> COLUMN Keyword to select specific columns
+  Columns can be specified by numbers or labels
+  (also mixed), and in any order. The order of
+  columns in SFTOOLS will reflect the specified
+  order and not the order on the MTZ. A column
+  may even be listed more than once!
+  If no columns are given, then the program will
+  ask the user for each column  whether or not
+  to include it. If no COLUMN keyword is given
+  all columns are read
+  THE COLUMN KEYWORD MUST BE THE LAST ARGUMENT !
+
+ File formats are:
+ MTZ   CCP4 format
+ MDF   old BIOMOL format
+ SND   BIOMOL ascii format
+ XPL   XPLOR format
+ TNT   TNT format
+ 31    PHASES short and long binary formats
+ FIN   Xtalview fin-format
+ PHS   Xtalview phs-format
+ DF    Xtalview double fin-format
+ FMT   File in arbitrary ASCII format
+
+ NOTE: All formats except MTZ may need additional
+ header information. The program will request this
+ information interactively if necessary. All but
+ the MTZ, MDF, SND and FMT formats have certain
+ restrictions on the number, order, and type of
+ columns. It is the users responsibility to use the
+ COLUMN keyword to read the appropriate number and
+ types of columns. SFTOOLS will check that you
+ obey these restrictions.
+
+ EXAMPLES:
+
+ READ myfile.mtz
+ (read all columns of myfile.mtz in mtz format)
+
+ READ myfile.hkl MTZ COLUMN 3 1 2
+ (read columns 1, 2 and 3 of myfile.hkl in mtz
+ format. Column 3 will be column 1 in SFTOOLS)
+
+ READ myfile.mtz COL
+ (read myfile.mtz in mtz format and ask for each
+  column whether or not it should be read)
+
+ READ myfile.fmt
+ (read the ASCII file myfile.fmt The program will
+  figure out the format for you based on the first
+  line(s) of the file. It will ignore character
+  data amidst reflection data but you must edit
+  out header lines (try the unix TAIL command).
+  Also, all lines must have the same format as the
+  first line(s). The program will ask you how many
+  lines each reflection uses so that it can handle
+  reflections that span more than one line. It
+  also asks you how phase information is encoded
+  Your file must contain the indices in the first
+  three data columns (preceding character data is
+  no problem though). If this is not the case then
+  you can use the unix AWK command to fix it.
+  The following awk command would correct a file
+  which has the indices in columns 3, 4 and 5
+
+  awk '{printf(&quot;%4d%4d%4d%8.1f%8.1f&quot;,$3,$4,$5,$1,$2)}' file_in &gt; file_out
+
+  One last note: if your file contains missing
+  data in some manner (<EM>e.g.</EM> Sigma=0) then you will
+  have to use the <A HREF="#absent">ABSENT</A> command to insert proper
+  missing number flags (MNFs) for these reflections
+</PRE>
+
+<HR>
+<H2><A NAME="reduce"></A>REDUCE</H2>
+<PRE>
+  OPTION: REDUCE [SILENT] [ASUNIT]
+  ================================
+
+  Command to reduce reflections to the asymmetric
+  unit. Phases &amp; Hendrickson/Lattman coefficients
+  (if present) will be updated
+
+<A NAME="reduce_silent"></A>  SILENT  Keyword to suppress output
+<A NAME="reduce_asunit"></A>  ASUNIT  Asymmetric unit definition which can be:
+  CCP4    Use CCP4 definitions (default)
+  BIOMOL  Use BIOMOL definitions
+  TNT     Use TNT definitions
+  MATRIX  Keyword followed by 9 integers i1-i9
+          which define a packing matrix definition
+
+  The asymmetric unit is defined as the set of
+  reflections which maximize:
+  (i1*h+i2*k+i3*l)*1024**2+(i4*h+i5*k+i6*l)*1024+
+   i7*h+i8*k+i9*l
+
+  Example: P4 hkl:h&gt;=0,l&gt;=0 0kl:k&gt;=0 h&gt;0:k&gt;0
+  MATRIX  0 0 1  1 1 0  0 1 0
+  0 0 1 selects the hemisphere L&gt;=0
+  1 1 0 selects the quadrant H+K&gt;=0
+  0 1 0 selects the 0kl instead of h0l
+
+  EXAMPLE:
+  REDUCE CCP4
+  Reduces all indices to the asymmetric unit defined by CCP4
+</PRE>
+
+<HR>
+<H2><A NAME="reindex"></A>REINDEX</H2>
+<PRE>
+  OPTION: REINDEX [MATRIX]
+  ========================
+
+  Command to transform the indices.
+<A NAME="reindex_matrix"></A>  MATRIX  Keyword followed by 9 numbers specifying
+          the transformation matrix (row-wise). The
+          program does not check the validity of
+          the matrix and phases will not be changed
+          The user also has to update the header
+          manually if required
+
+  After the transformation, the data are resorted
+  and all cells transformed.
+
+  EXAMPLE:
+  REINDEX MATRIX 1 0 0  0 0 1  0 1 0
+  Transforms H K L into H L K
+</PRE>
+
+<HR>
+<H2><A NAME="rfree"></A>RFREE</H2>
+<PRE>
+  OPTION: RFREE nr_of_rfree [SHELL [width]]
+
+  NOTE: this subroutine uses the CCP4 definition
+  of RFREE data with 0=test set and 1=working set
+  When you write out an XPLOR file then these flags
+  are automatically converted to the reverse
+  definition of XPLOR. A future version will also
+  allow flags &gt; 1 for multi-set RFREE flags
+
+  Create a column named RFREE with values set to 0
+  for RFREE reflections and 1 for the others. The
+  number of RFREE reflections is determined by the
+  nr_of_rfree argument. By default RFREE
+  reflections are selected at random.
+
+<A NAME="rfree_shell"></A>  If the optional SHELL keyword is given then RFREE
+  reflections will be taken in resolution shells
+  The width of the resolution shells is 1/400th of
+  the resolution range unless specified otherwise
+  by the user. You may wish to try this if you have
+  non-crystallographic symmetry. However, to get a
+  reasonable number of shells they have to be
+  thinner than I would like. In the future I may allow to
+  actually input your NCS symmetry
+</PRE>
+
+<HR>
+<H2><A NAME="select"></A>SELECT</H2>
+<PRE>
+  OPTION: SELECT [MODE] TARGET CRITERIUM
+  ======================================
+
+  Command to select a subset of reflections
+<A NAME="select_mode"></A>  MODE may be one of the following words
+<A NAME="select_mode_plus"></A>   PLUS    : Add selected records to the set
+<A NAME="select_mode_minus"></A>   MINUS   : Remove selected records from the set
+<A NAME="select_mode_only"></A>   ONLY    : Only selected records will be kept
+<A NAME="select_mode_not"></A>   NOT     : Invert the selection criterium
+             (NOT can combine with other modes)
+<A NAME="select_criterium"></A>  CRITERIUM is one the following:
+   = val   : select records with target = val
+   &gt; val   : select records with target &gt; val
+   &lt; val   : select records with target &lt; val
+   &gt;= val  : select records with target &gt;= val
+   &lt;= val  : select records with target &lt;= val
+   &lt;&gt; val  : select records with target &lt;&gt; val
+             NOTE: &quot;val&quot; should be either a number
+                   or a column reference, <EM>e.g.</EM> col 1
+<A NAME="select_criterium_zone"></A>   ZONE z  : Only when target is INDEX !!! Selects
+             indices in zone z, where z is <EM>e.g.</EM>
+             2n or 3n or 2n + 1 etc
+<A NAME="select_criterium_present"></A>   PRESENT : &gt; -1.0E+10 &lt; 1.0E+10
+<A NAME="select_criterium_absent"></A>   ABSENT  : NOT PRESENT
+<A NAME="select_criterium_all"></A>   ALL     : select all records, no target needed
+<A NAME="select_criterium_none"></A>   NONE    : deselect all records, no target needed
+<A NAME="select_criterium_invert"></A>   INVERT  : select unselected records & vice versa
+<A NAME="select_criterium_sysabs"></A>   SYSABS  : select records with an illegal hkl
+<A NAME="select_criterium_centro"></A>   CENTRO  : select centrosymmetric reflections
+<A NAME="select_criterium_asuerr"></A>   ASUERR  : select reflections outside as. unit
+<A NAME="select_criterium_phaerr"></A>   PHAERR  : select centrosymmetric reflections
+               with an illegal phase
+<A NAME="select_criterium_multi"></A>   MULTI n : select records with multiplicity of n
+
+<A NAME="select_target"></A>  TARGET is one of the following:
+<A NAME="select_target_column"></A>  COLUMN c1  Keyword followed by column-id
+             Criterium refers to column c1
+<A NAME="select_target_resolution"></A>  RESOL      Criterium refers to the resolution
+<A NAME="select_target_index"></A>  INDEX idx  Keyword followed by index-code
+             index-code is [[+|-]H][[+|-]K][[+|-]L]
+
+  EXAMPLES:
+  ========
+
+  In the next examples CURRENT SELECTION is the
+  selection from some previous SELECT command
+
+  MODES: ONLY, PLUS, MINUS, NOT
+  =============================
+  SELECT col 2 &gt; 0
+    current selection AND this selection. So the
+    AND operator is the default. <EM>E.g.</EM> you get a
+    subset of the current selection
+  SELECT only col 2 &gt; 0
+    select refs that match this criterium
+    independent of the current selection
+  SELECT plus col 2 &gt; 0
+    current selection OR this selection
+  SELECT minus col 2 &gt; 0
+    current selection AND NOT this selection
+  SELECT not col 2 &gt; 0
+    current selection AND NOT this selection
+  SELECT plus not col 2 &gt; 0
+    current selection or not this selection
+
+
+  TARGETS: COLUMN, RESOL, INDEX
+  =============================
+  SELECT column 2 &gt; 0 &lt; 100
+    select if value in column 2 is &gt; 2 and &lt; 100
+  SELECT column 1 &gt; column 2
+    select if value in column 2 is &gt; in column 1
+  SELECT resol &lt; 8
+    select if resolution is better then 8 A
+  SELECT INDEX h = 0
+    select the 0kl plane
+  SELECT INDEX h - k = 0
+    select the hhl plane
+  SELECT INDEX h + k + l zone 2n + 1
+    select reflections with h+k+l is odd
+  SELECT index h = 0
+  SELECT index k = 0
+  SELECT index l zone 2n +1
+    select 00l reflections with l is odd
+
+  CRITERIUM
+  =========
+  SELECT col 1 = present
+    select reflection if column 1 is not MNF
+  SELECT col 1 = absent
+    select reflection if column 1 is an MNF
+  SELECT all
+    select all reflections
+  SELECT none
+    deselect all reflections
+  SELECT invert
+    invert the selection currently in memory
+  SELECT sysabs
+    select reflections with indices that should be
+    systematically absent (<EM>e.g.</EM> hkl = 0 3 0 in P2sub1)
+  SELECT centro
+    select centrosymmetric reflections
+  SELECT asuerr
+    select reflections outside the asymmetric unit
+  SELECT phaerr
+    select centrosymmetric reflections with illegal
+    phase
+  SELECT multi n
+    select reflections on a n-fold symmetry axis
+    (n must be an integer)
+</PRE>
+
+<HR>
+<H2><A NAME="set"></A>SET</H2>
+<PRE>
+  OPTION: SET ITEMS
+  =================
+
+  Command to set header information
+<A NAME="set_items"></A>  -ITEMS is a list of header items to be changed
+<A NAME="set_all"></A>   ALL = all header items,
+<A NAME="set_title"></A>   TITLE = title cards,
+<A NAME="set_labels"></A>   LABELS = column labels,
+<A NAME="set_types"></A>   TYPES = column types,
+<A NAME="set_cell"></A>   CELL = unit cell parameters (not used by MTZ),
+<A NAME="set_dcell"></A>   DCELL = crystal-specific unit cell parameters,
+<A NAME="set_dwave"></A>   DWAVE = dataset-specific wavelength,
+<A NAME="set_sort"></A>   SORT = sort order,
+<A NAME="set_spacegroup"></A>   SPACEGROUP = space group related data
+
+  The program will list the old header information.
+  The information given by the user will be used to
+  replace the old data. If the user just gives a
+  return, the old data will be kept.
+
+  For the DCELL and DWAVE keywords the user will be given a list
+  of crystals and datasets respectively. Only one line can be updated
+  at a time.
+
+  For the LABELS and TYPES keywords it is possible
+  to modify a single column by giving the column
+  ID for that column
+
+  Examples:
+  SET DCELL
+  SET TYPES
+  SET TYPES COL 5
+</PRE>
+
+<HR>
+<H2><A NAME="sort"></A>SORT</H2>
+<PRE>
+  OPTION: SORT CRITERIUM DIRECTION
+  ================================
+
+  Command to sort the structure factor data base.
+
+<A NAME="sort_criterium"></A>  CRITERIUM can be one of the following
+  -[h k l] sort order may be specified as h k l
+   or 1 2 3 or permutations thereof. The default
+   is to sort on the current sort order as defined
+   in the header info. The indices are always
+   sorted in ascending order
+  -RESOLution  Sort on resolution
+  -COLumn      Sort on content of column id
+
+<A NAME="sort_direction"></A>  DIRECTION can be either:
+  -UP    Ascending sort order (this is the default)
+  -DOWN  Descending sort order
+
+  Missing data is treated internally as a very
+  small number (-1E+10) and will be sorted as such
+
+  WARNING, the RESOL and COL options will mess up
+  the index sort order. It is advised to restore
+  the old sort order by another call to SORT to
+  prevent funny behavior of subsequent options or
+  programs :-)
+
+  EXAMPLE: SORT l k h
+           SORT resol
+           SORT resol down
+           SORT col fobs
+</PRE>
+
+
+
+<HR>
+<H2><A NAME="stop"></A>STOP</H2>
+<PRE>
+OPTION: STOP
+============
+
+Terminate the program
+</PRE>
+
+<HR>
+<H2><A NAME="window"></A>WINDOW</H2>
+<PRE>
+
+  Notice: This option is still in construction. Use it with care!
+
+  OPTION: WINDOW NWIN COL col_id 
+  ===============================
+
+  This option creates a new column in which it
+  stores a local average of column col_id as
+<A NAME="window_nwin"></A>  function of resolution. The average is calculated
+  by sorting the reflections by resolution and then
+  sliding a window of NWIN reflections along all
+  data points in column col_id. The central point
+  in the window is set to the average value. For
+  the first and last NWIN/2 reflections, which are
+  never in the center of the window, the average
+  will be obtained by linear extrapolation
+</PRE>
+
+<HR>
+<H2><A NAME="write"></A>WRITE</H2>
+<PRE>
+ OPTION: WRITE FILENAME [FORMAT] [COLUMN columns] [HEADER]
+ =========================================================
+
+ Command to write a structure factor file.
+
+<A NAME="write_filename"></A> -FILENAME is the name of the file. The program
+  will try to deduce the file format from the
+  extension. It will recognize .mtz, .mdf, .snd,
+  .xpl, .tnt, .31, .fin, .phs and .df
+<A NAME="write_format"></A> FORMAT can be one of the following:
+  MTZ, MDF, SND, XPL, TNT, 31, FIN, PHS or DF
+  or a valid FORTRAN format string (see <A HREF="#write_format_fortran">below</A>).
+  This overrules the file name extension format
+<A NAME="write_column"></A> COLUMN Keyword to select specific columns.
+  Columns can be specified by numbers or labels
+  (also mixed), and in any order. The order of
+  columns in the output file will reflect the
+  specified order and not the order in SFTOOLS
+  A column may also be given, and therefore
+  written, twice (not always allowed, <EM>e.g.</EM> MTZ)
+  If no columns are given, then the program will
+  ask the user for each column whether or not to
+  include it. If no COLUMN keyword is given all
+  columns are read.
+  THE COLUMN KEYWORD MUST BE THE LAST ARGUMENT !
+
+<A NAME="write_header"></A> HEADER Keyword to specify that only the header
+        should be written to the given file
+
+ File formats are:
+ MTZ   CCP4 format
+ MDF   old BIOMOL format
+ SND   BIOMOL ascii format
+ XPL   XPLOR format
+ TNT   TNT format
+ 31    PHASES long and short binary formats
+ FIN   Xtalview fin-format
+ PHS   Xtalview phs-format
+ DF    Xtalview double fin-format
+
+ NOTE: several file formats do not allow absent
+  data. If one or more written columns of a
+  reflection contain absent data then the whole
+  reflection is rejected
+
+ NOTE: For .fin and .df files sigma and amplitude
+  columns are set to 9999 and 0 respectively if
+  the sigma column is 0 or either column contains
+  absent data
+
+ NOTE: TNT files can have the following columns
+  in the given order:
+  Fobs, Sigma
+  Fobs, Sigma, Phase, FOM
+  Fobs, Sigma, Rfree
+  Fobs, Sigma, Rfree, Phase, FOM
+  Rfree, if present, MUST be column three.
+
+ NOTE: Only the following columns make sense for
+  XPLOR: FOBS, SIGMA, FOM, PHASE, WEIGHT, TEST
+         FCALC, FPARTIAL, PA, PB, PC and PD.
+  Make sure you write out at most one of each type.
+  Use the COLUMN option to prevent the output of
+  non-sensible columns. If the first 3 characters
+  of a column label match the first 3 characters
+  of FOBS, SIGMA, FOM, PHASE, WEIGHT, TEST, FCALC,
+  FPARTIAL, PA, PB, PC or PD then SFTOOLS assumes
+  that that is the XPLOR column type. If your
+  column label does not match any of these, SFTOOLS
+  will ask you to specify the XPLOR column type
+
+<A NAME="write_format_fortran"></A> If you provide a Fortran FORMAT string then the
+ first three values MUST be written as integers
+ since these are the indices. ALL!!! other values
+ MUST!!! be written as reals because that is how
+ they are stored inside the program
+
+ Examples:
+ WRITE myfile.mtz COLUMN 1 2
+ (write column 1 and 2 to myfile.mtz as MTZ file)
+ WRITE myfile.hkl MTZ COL 2 1
+ (write mtz with column 1 and 2 in reversed order)
+ WRITE myfile.hkl FORMAT('HKL ',3i5,2f8.3)
+ (write four columns in given format)
+</PRE>
+
+
+<HR>
+<H2><A NAME="coltyp"></A>MTZ column types</H2>
+<PRE>
+Allowed are the following types :
+
+H = index h, k or l   P = phase angle
+J = intensity         F = amplitude
+D = anom. diff.       Q = standard deviation
+W = weight factor     B = batch number
+I = any integer       R = any real
+A = phase prob. coeff. (Hendrickson/Lattman)
+Y = M/ISYM, partial/reject flag and sym. number
+</PRE>
+<HR>
+
+<H2><A NAME="notes"></A>Notes</H2>
+<P>Memory requirements are governed by parameters set
+in the sftools.inc file, and these may need to be increased for
+large problems. The program will inform you if your problem exceeds
+the current limits. If the program aborts before any program output
+is displayed (you may see a message &quot;killed&quot;) then the array sizes
+are set too large to be handled by your computer. You must either
+decrease the array sizes, free up or buy more memory, or increase
+your swap file.</P>
+
+<P>Program updates in between CCP4 releases will be made available
+by the author. Please subscribe to the SFTOOLS users list (by sending
+<A HREF="mailto:bart.hazes@ualberta.ca">me</A> an e-mail) or subscribe to the
+<A HREF="http://www.ccp4.ac.uk/ccp4bb.php">CCP4 bulletin board</A> to be notified
+of changes.</P>
+
+<H2><A NAME="history"></A>History</H2>
+SFTOOLS was created during 1993 at the university of Groningen while
+converting the BIOMOL software package to the MTZ standard. During
+the period 1994 till 1998 development was continued a the University
+of Alberta. In 1998 SFTOOLS was integrated into the CCP4 program
+package.</P>
+
+<H2><A NAME="references"></A> REFERENCES</H2>
+<ol>
+<!-- KEEP startreferencelist -->
+<li>
+B. Hazes, unpublished results
+<!-- KEEP endreferencelist -->
+</ol>
+
+<H2> AUTHOR</H2>
+Program written by Bart Hazes.
+<ADDRESS> <A HREF="mailto:bart.hazes@ualberta.ca">bart.hazes@ualberta.ca</A> </ADDRESS>
+
+</BODY>
+</HTML>

@@ -1,0 +1,22 @@
+AddOutputFile $MESSAGE_FILENAME $DIR_MESSAGE_FILENAME
+AddOutputFile $XML_MESSAGE_FILENAME $DIR_XML_MESSAGE_FILENAME
+AddOutputFile $LOOPFIT_LOG_FILENAME $DIR_LOOPFIT_LOG_FILENAME
+
+if {$MODE_LOOPY == 1 } {
+   AddOutputFile $OUTPUT_PDB $DIR_OUTPUT_PDB  
+} else {
+  for {set i 0} {$i < $SAVE_BEST_NUMBER} {incr i 1 } {
+    set pdbfile ${SAVE_LOOP_PROP_BASE}_$i.pdb
+    AddOutputFile $pdbfile  $SAVE_LOOP_PROP_DIR
+    set loopfile ${SAVE_LOOP_BASENAME}_$i.pdb
+    AddOutputFile $loopfile $SAVE_LOOP_DIR
+  }
+}
+
+CreateComScript loopy loopy_script
+
+set publications [exec "[GetEnvPath warpbin]/publ_loopy.sh"]
+set publications "<B><FONT COLOR=\"#FF0000\"><!--SUMMARY_BEGIN-->$publications<!--SUMMARY_END--></FONT></B>"
+WriteToLog $publications -nohead -nofoot
+
+set status [Execute "[GetEnvPath warpbin]/loop -paramfile=$loopy_script" $LOG_FILE program_status report]

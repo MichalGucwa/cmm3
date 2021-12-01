@@ -1,0 +1,37 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#===========================================================================
+#
+# sfall.script
+#
+#===========================================================================
+
+  # Create temporary HKLOUT file name
+  set tmp_mtz [GetTmpFileName -ext mtz]
+
+  CreateComScript sfall sfall_script
+  set cmd "[BinPath sfall] HKLOUT \"$tmp_mtz\" $SFALL_SFCALC_IN \"[subst $[subst $SFALL_SFCALC_IN]]\""
+  if $SFALL_SFCALC_HKLIN { append cmd "  HKLIN \"$HKLIN\"" }
+  set status [Execute $cmd $sfall_script program_status report ]
+
+  # Perform the equivalent of sfall's LABOUT ALLIN, using CAD
+  # This is more robust as it can handle all label names
+  # (sfall has problems if a file label duplicates a program label
+  if { $SFALL_SFCALC_HKLIN && $ALLIN } {
+    set cad_script [GetTmpFileName -ext com]
+    WriteFile $cad_script "LABIN FILE 1 ALL
+LABIN FILE 2 E1=$FC E2=$PHIC
+END"
+
+    set cmd "cad HKLIN1 \"$HKLIN\" HKLIN2 \"$tmp_mtz\" HKLOUT \"$HKLOUT\""
+    set status [Execute $cmd $cad_script program_status report]
+  } else {
+    MoveFile $tmp_mtz $HKLOUT
+  }

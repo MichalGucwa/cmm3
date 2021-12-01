@@ -1,0 +1,354 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>CCP4 Program Suite : detwin</TITLE>
+</HEAD>
+<BODY>
+
+<!-- ::INDEX_INFO::DETWIN::Supported::DATA PROCESSING AND REDUCTION::detwins merohedrally twinned data:::::::: -->
+
+<H1>DETWIN (CCP4: Supported Program)</H1>
+<H2>NAME</H2>
+<B>detwin </B>
+- tests for merohedral twinning, and detwins data
+
+<H2>SYNOPSIS</H2>
+
+<P><B>detwin</B> <B>HKLIN</B> <I>foo_in.mtz</I> <B>HKLOUT</B> <I>foo_out.mtz</I>
+<BR>
+<a href="#keywords">[Keyworded input]</a> </P>
+
+<H2><A NAME="description"></A>DESCRIPTION</H2>
+
+<P>Twinned data is measured when two or more copies of the reciprocal lattice
+overlap. Hence we need to deconvolute the two twinned components to obtain useable data.
+The equations for two overlapping reflections, Itrue(h1) and Itrue(h2), are:
+<pre>
+     ITw(h1) = (1-tf)*Itrue(h1)  +     tf*Itrue(h2)
+     ITw(h2) =     tf*Itrue(h1)  + (1-tf)*Itrue(h2)
+
+     where tf is the twin fraction, often denoted as '<A HREF="#twin_fraction">alpha</A>'
+
+
+     thus Itrue(h1) = ((1-tf)*iTw(h1) -tf*iTw(h2)) / (1-2tf)
+     thus Itrue(h2) = ((1-tf)*iTw(h2) -tf*iTw(h1)) / (1-2tf)
+     also
+     var(h1) = ((1-tf)/(1-2tf))**2 * sdTw(h1)**2 + (tf/(1-2tf))**2 * sdTw(h2)**2
+     var(h2) = ((1-tf)/(1-2tf))**2 * sdTw(h2)**2 + (tf/(1-2tf))**2 * sdTw(h1)**2
+</pre>
+<P>This deconvolution is only possible if <TT>tf</TT> is not exactly 0.5.
+As it approaches this value the variances become extremely large.</P>
+
+<P>The occurrence of twinning can often be recognised from the intensity statistics of
+the data set. 
+It is important to first check whether the crystal has a pseudo translation
+relating two or more molecules in the asymmetric unit. Such a translation will 
+result in some reflection classes being very weak.
+This program carries out several tests for twinning as a function of
+both twinning fraction, and resolution. 
+It reads  either intensities or amplitudes from an MTZ file,
+It can also detwin merohedrally twinned data for a given twinning fraction and 
+write either corrected intensities or amplitudes for a given twinning fraction.
+<p>
+The twin operator is required (see <A HREF="twinning.html#lookup_tables">
+TABLE OF POSSIBILITIES</A>),
+and for MTZ output, the chosen twin fraction. The CCP4 GUI suggests possible twinning 
+operators derived from the space group, or it can be entered by the user.
+<p>
+The <STRONG>twinning tests</STRONG> performed are:
+<p>The partial twin test (see <A HREF="#reference4">reference [4]</A>)  &lt;H&gt; = &lt;|Itw1 -Itw2|/(Itw1 +Itw2)&gt;
+plotted against theoretical expectations. 
+
+<p>The estimate of the twinning factor as (0.5 -&lt;H&gt;), plotted against resolution.
+
+<p>Those tabulated against the twinning factor, for values ranging from 0.00 to 0.48, are<BR>
+(<EM>N.B.</EM> it is impossible to evaluate <TT>Itrue</TT> if the twinning-factor is exactly 0.5):
+<ol type=a>
+  <li>Number of negative intensities after detwinning  (Britton plot)
+   This is plotted for all data, and for the subset where Itw is greater than 3 Sigma.
+   <br>
+   If the twinning fraction is too small there should be no negative 
+   intensities generated; if it is too large, the number will increase linearly.
+   Fitting a straight line through the plot gives a good estimate of the
+   twinning fraction.
+   <p>
+ <li>The second moment of Z (which is also the fourth moment of E) as a function
+   of resolution and twinning fraction. Here, Z is defined as I' / &lt;I'&gt; 
+   where I' = I / epsilon, and epsilon is the symmetry factor. For untwinned acentric 
+   data this should equal 2, and for a perfect twin it should be 1.5.
+   <p>
+ <li>The correlation between I1 and I2 before and after detwinning.
+   The overall correlation is dominated by the low resolution data and
+   is therefore not very sensitive, and can be misleading.  However for high 
+   resolution data it should drop to 0.00 UNLESS there is an NCS operator 
+   related to the twinning operator.
+</ol>
+<p>
+If the output MTZ file contains IMEAN, it can be run through 
+<A HREF="truncate.html">TRUNCATE</A> again, and the
+other moments and the N(z) test examined to see if the intensity statistics 
+now follow the expected distribution for non-twinned data.
+twinned. See <A HREF="twinning.html#examples">Cumulative distribution plot</A>, 
+which for twinned data becomes sigmoidal, and the moments of E (or Z) which are 
+different for twinned data than for untwinned.</p>
+<p>
+The general formulae for expected moments &lt;Z^k&gt; for untwinned
+acentric data are (Z defined above):
+<pre>
+
+  k-th moment of Z = Gamma(k+1)  = k!                    if k is an integer
+  k-th moment of Z = sqrt(PI) * k * (k-1) * ... * 0.5    if k equals integer+0.5
+
+  k-th moment of E = (k/2)-th moment of Z
+
+</pre>
+See also the <A HREF="truncate.html#description">truncate documentation</A>. 
+Table of moments:
+<pre>
+
+                    Acentric                        Centric
+              Untwinned data  Perfect twin.   Untwinned data  Perfect twin.
+  &lt;E&gt;             0.886         0.94               0.798       0.886 
+  &lt;E^3&gt;           1.329         1.175              1.596       1.329
+  &lt;Z^2&gt;           2.0           1.5                3.0         2.0
+  &lt;Z^3&gt;           6.0           3.0               15.0         6.0 
+  &lt;Z^4&gt;          24.0           7.5              105.0        24.0 
+
+</pre>
+
+<H2> <A NAME="files"></A>INPUT AND OUTPUT FILES</H2>
+The following input and output files are used by the program:
+<P> 
+Input Files:
+<dl>
+<dt> HKLIN  <dd>
+Input MTZ file. <br>
+This would normally be the output of <a href="scala.html">SCALA</a>
+or <a href="scalepack2mtz.html">SCALEPACK2MTZ</a> containing the
+measured intensities, but structure factor amplitudes can also be used
+as input. See the <A HREF="#labin">LABIN</A> keyword for details.
+</dl>
+<P> 
+Output Files:
+<dl>
+<dt> HKLOUT  <dd>
+Output MTZ file. <br>
+A file containing corrected Is or Fs for a single twin fraction,
+which must be specified with the <A HREF="#twin_fraction">TWIN_FRACTION</A>
+keyword. If the file contains IMEAN, it can be run through 
+<A HREF="truncate.html">TRUNCATE</A>, which tests whether the data has
+been successfully detwinned. If no TWIN_FRACTION keyword is given, then no
+output file is written.
+The column labels will be extended to include the string"_detw".
+</dl>
+
+<H2><A NAME="keywords"></A>KEYWORDED INPUT</H2>
+
+The various data control lines are identified by keywords. Only the
+first 4 letters of each keyword are necessary. The possible keywords are:
+<blockquote>
+<A HREF="#debug">DEBUG</A>,  <A HREF="#plot">PLOT</A>,<A HREF="#labin">LABIN</A>,
+<A HREF="#resolution">RESOLUTION</A>, <A HREF="#operator">OPERATOR</A>,
+<A HREF="#sigmacut">SIGMACUT</A>,<A HREF="#title">TITLE</A>, <A HREF="#twin_fraction">TWIN_FRACTION</A>
+</blockquote>
+<p>
+<H3><A NAME="title"></A>  TITLE &lt;title&gt; </h3> [OPTIONAL INPUT]
+<p>
+Title to write to output reflection file.
+<p>
+Default is to keep the title on the input MTZ file. If there is no
+title on the input MTZ file, then the title is set to:
+&quot;From Detwin on the &lt;date&gt;&quot;
+
+<H3><A NAME="sigmacut"></A>SIGMACUT &lt;Nsig&gt;</H3>
+
+<P>[OPTIONAL INPUT]</P>
+
+<P>The various tests are carried out with all reflections, and repeated for those
+reflections which are greater than &lt;Nsig&gt;*I. Tests such as the Britton plot or
+those using &lt;H&gt; are unreliable for weak data.</P>
+
+<H3><A NAME="resolution"></A>RESOLUTION &lt;Dmin&gt; &lt;Dmax&gt;</H3>
+
+<P>[OPTIONAL INPUT] </P>
+
+<P>Resolution limits - either 4(sin theta/lambda)**2 or d in Angstroms
+(either order). Reflections outside these limits will be excluded from
+all analysis and omitted on output. Defaults are taken from the range of
+data in the input file (i.e. all data included). </P>
+
+<H3><A NAME="operator"></A>OPERATOR &lt;string&gt; </h3> 
+<p>
+Twinning operator, given as the indices of the reflection that is
+related to the reflection (h,k,l) by the twin operator. 
+See <A HREF="twinning.html#lookup_tables">TABLE</A> for likely operators 
+for each space group. 
+If there is only one possibility for a spacegroup this will be used, and there
+is no need to input an operator. Otherwise it is COMPULSORY.
+<p>
+For example for P31
+either  OPERATOR -h,-k, l<br>
+or      OPERATOR  k, h,-l<br>
+or      OPERATOR -k,-h,-l
+
+<H3><A NAME="plot"></A>PLOT &lt;string&gt; </h3> 
+<p>
+If string is set to MURR, a Murray-Rust plot of |Fo1|/|Fo2| is generated. 
+There is no debug information possible. 
+(See <A HREF="#reference5">reference [5]</A>.)
+
+
+<H3><A NAME="twin_fraction"></A>TWIN_FRACTION &lt;alpha&gt; </h3>
+<p>
+If this is given, an output MTZ file will be written to HKLOUT with Is or Fs
+corrected assuming the twin fraction  &lt;alpha&gt;.
+It is difficult to estimate the twinfrac accurately unless the data is of very good
+quality, but look at all the information plotted.
+To carry out the exhaustive TRUNCATE tests you will need to run the program several 
+times and look at the resulting intensity statistics.  The value which 
+gives the best fit to the theoretical distribution for the acentric terms 
+should be used.
+Alternatively, run the Uppsala program &quot;dataman&quot; (keyword GEminin)
+which will estimate the twin fraction.
+<p>
+Once a refined model has been obtained, it is possible to use the
+Fcalc values from this model to obtain a better estimate of the
+twin fraction (not yet implemented).
+
+
+<H3><A NAME="labin"></A>LABIN &lt;program label&gt;=&lt;file label&gt;...</H3>
+
+<P>Specify input column labels. [OPTIONAL INPUT] </P>
+
+<P>Truncate takes output from SCALA and SCALEPACK2MTZ which generate
+standard labels. This is the most common usage of the program, in
+which case LABIN records are not required.</P>
+
+<P>The program labels defined are: F SIGF IMEAN SIGIMEAN F(+) SIGF(+) F(-) SIGF(-) I(+) SIGI(+) I(-) SIGI(-)</P>
+
+NB: Only F/SIGF or IMEAN/SIGIMEAN or F(+) F(-) SIGF(+) SIGF(-) or I(+) I(-) SIGI(+) SIGI(-) 
+can be assigned.
+If F(+-) or I(+-) are assigned the anomalous pairs are detwinned.
+
+<BLOCKQUOTE>
+<DL>
+
+<DT>F</DT>
+
+<DD> A Structure Amplitude. The structure intensity used for detwinning
+is generated on input. </DD>
+
+<DT>SIGF</DT>
+
+<DD> Standard deviation of the above </DD>
+
+<DT>IMEAN</DT>
+
+<DD> Original average Structure Intensity </DD>
+
+<DT>SIGIMEAN</DT>
+
+<DD> Standard deviation of the above </DD>
+
+<DT>I(+)</DT>
+
+<DD>Structure Intensity of hkl </DD>
+
+<DT>SIGI(+)</DT>
+
+<DD>Standard deviation of the above </DD>
+
+<DT>I(-)</DT>
+
+<DD> Structure Intensity of -h -k -l </DD>
+
+<DT>SIGI(-)</DT>
+
+<DD> Standard deviation of the above </DD>
+
+</DL>
+</BLOCKQUOTE>
+
+<H3><A NAME="debug"></A>  DEBUG &lt;ndebug&gt; </h3> [OPTIONAL INPUT]
+<p>
+Debug output will be printed for &lt;ndebug&gt; reflections
+
+<H2>SEE ALSO</H2>
+
+<P><A HREF="truncate.html">truncate</A>
+
+<H2><A NAME="references"></A>REFERENCES</H2>
+
+<OL>
+<!-- KEEP startreferencelist -->
+
+<LI><A NAME="reference1"></A> Rees, D.C. Acta Cryst. (1980) A36, 578-581. The influence of
+Twinning by Merohedry on Intensity Statistics.
+
+<LI><A NAME="reference2"></A> Redinbo, M.R. and Yeates, T.O. (1993) Acta Cryst. D49, 375-380.
+Structure Determination of Plastocyanin from a Specimen with a
+Hemihedral Twinning Fraction of One-Half.
+
+<LI><A NAME="reference3"></A> Gomis-Ruth, F.X., Fita, I., Kiefersauer, R., Huber, R., Aviles,
+F.X. and Navaza, J. (1995) Acta Cryst D51, 819-823. Determination of
+Hemihedral Twinning and Initial Structural Analysis of Crystals of
+the Procarboxypeptidase A Ternary Complex.
+
+<LI><A NAME="reference4"></A> Yeates, T.O. (1997) Methods in Enzymology 276, 344-358.
+Detecting and Overcoming Crystal Twinning.
+
+
+<LI><A NAME="reference5"></A> Murray-Rust, P. (1973) Acta Cryst B29, 2559-2566.
+
+<!-- KEEP endreferencelist -->
+</OL>
+
+<h2>AUTHOR</h2>
+
+ A.G.W. Leslie <br>
+andrew@mrc-lmb.cam.ac.uk<br>
+Modifications by E.J.Dodson (York)
+
+       
+<h2><A NAME="examples"></A>EXAMPLES</h2>
+
+<pre>
+
+#!/bin/csh -fv
+detwin hklin /ss5/hotaylor/andrew/h1_scala.mtz  \
+         hklout $scr0/detwin.mtz  << eof-detwin
+title DETWIN WITH TWIN FRAC 0.4
+SYM -k,-h,-l
+twin 0.4
+LABI IMEAN=I SIGIMEAN=SIGI
+eof-detwin
+
+# Run TRUNCATE to check all moments and N(z) statistics
+trunc:
+truncate hklin $scr0/detwin.mtz  hklout $scr0/trunc_detwin.mtz  <<EOF-trunc
+title Peters rap1 model
+nresidues 490
+labout F=Frap1 SIGF=SIGFrap1
+EOF-trunc
+
+</pre>
+
+<pre>
+#!/bin/csh -f
+#
+detwin HKLIN  s100_tetpt.mtz   \
+HKLOUT $SCRATCH/s100_tetpt-detw.mtz   \
+<< eof
+TITLE Sp100 test R3
+RESO 10 3.5
+#SYMM k,h,-l         #  No need for detwinning operator this is the only possibility for R3
+TWIN 0.19            #  the output file will have Idetw1 and Idetw2
+SIG  6               #  only analyse data where Ih1 and Ih2 are greater than 6Sigma
+LABI F=F SIGF=SIGF
+END
+eof
+
+</pre>
+
+</body></html>
+   

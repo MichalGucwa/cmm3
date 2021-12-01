@@ -1,0 +1,299 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::CCP4::Basic::::introduction to the CCP4 Program Suite:::::::: -->
+
+<H1> CCP4 Suite (CCP4: Basic)</H1>
+<H2> NAME</H2>
+<b>ccp4 </b>
+- introduction to the CCP4 Program Suite
+<H2> SYNOPSIS</H2>
+<b>program</b>
+[
+<b>-n</b>
+] [
+<b>-v</b>
+<i>level</i>
+] [
+<b>-d </b>
+<i>file</i>
+] [
+<b>-e </b>
+<i>file</i>
+] [
+<b>-i </b>
+] [
+<b>-nohtml</b>
+] [
+<b>-nosummary</b>
+] [
+<i>&lt;logical name&gt; &lt;file name&gt; ... </i>
+]
+
+<H2> DESCRIPTION</H2>
+
+<p><i>program</i> is the name of the CCP4 program being run. This documentation
+outlines the general concepts common to running most CCP4 programs. For
+specific details of how to run individual programs you are referred to the
+specific documentation for those programs.</p>
+
+<p>The contents of this documentation are:</p>
+
+<ul>
+<li><a href="#input">Specifying input and output files</a>
+<li><a href="#keywords">Keyworded input</a>
+<li><a href="#options">Command line options</a>
+</ul>
+
+<ul>
+<li><a href="#details">Appendix: details of logical name processing</a>
+</ul>
+
+<ul>
+<li><a href="#examples">EXAMPLES</a>
+<li><a href="#files">FILES</a>
+<li><a href="#see_also">SEE ALSO</a>
+<li><a href="#warnings">WARNINGS</a>
+</ul>
+
+<a name="input"></a>
+<H2>Specifying input and output files</H2>
+
+<p>When running CCP4 programs, input and output data files are normally
+specified by associating the file names with the logical names.
+Logical names are alphanumeric, and can include underscores.</p>
+
+<p>The usual format of a program invocation is</p>
+
+<pre>
+&lt;program name&gt; [ &lt;logical name&gt; &lt;file name&gt; ] ...
+</pre>
+
+<p>where "&lt; &gt;" indicates placeholders and "[ ]" indicates optional
+repeated items i.e. zero or more occurrences (here and elsewhere in the
+documentation).</p>
+
+<p>A concrete example is</p>
+
+<pre>
+fft hklin native-Fs.mtz mapout 2Fo-Fc.map
+</pre>
+
+<ul>
+<li>Logical names are case-insensitive
+<li>Each standard logical name has a default extension associated with it
+</ul>
+
+<p>File extensions are optional and if omitted default values will be used.
+Some common logical names with default extensions are</p>
+
+<table noborder>
+<tr><td><b>HKLIN</b></td><td>input MTZ reflection file (.mtz)</td></tr>
+<tr><td><b>HLKOUT</b></td><td>output MTZ reflection file (.mtz)</td></tr>
+<tr><td><b>MAPIN</b></td><td>input map file (.map)</td></tr>
+<tr><td><b>MAPOUT</b></td><td>output map file (.map)</td></tr>
+<tr><td><b>XYZIN</b></td><td>input coordinate file (.pdb)</td></tr>
+<tr><td><b>XYZOUT</b></td><td>output coordinate file (.pdb)</td></tr>
+</table>
+
+<p>In some cases more than one file corresponding to the same type of
+entry in $CINCL/default.def is required e.g., several input reflection
+files. In this case they are typically specified as
+<tt>HKLIN</tt><i>n</i>, for instance, where <i>n</i> is a sequence number.
+The rules for matching logical names with the default specifications
+given above then apply to the prefix of the name which matches the
+entries in the files $CINCL/environ.def and $CINCL/default.def.</p>
+
+<p>(For information on default.def and environ.def, see the section on
+<a href="#details">details of logical name processing</a>.)</p>
+
+<p>Input files that do not exist are reported and the program stops
+processing. Output files that already exist will also cause the program to
+stop unless the environment variable <b>CCP4_OPEN</b> is set to `UNKNOWN',
+when they will be truncated to zero, overwritten and a warning message
+displayed.</p>
+
+<p>Some file extensions are also treated as special cases and if you use them
+then you may experience unexpected behaviour - see the section on
+<a href="#warnings">warnings</a>.</p>
+
+<a name="keywords"></a>
+<H2>Keyworded input</H2>
+
+<p>Most CCP4 programs take `keyworded' input to set their parameters.</p>
+
+<p>These have a leading keyword followed, possibly, by arguments which might be
+numbers or strings or keyword/value pairs of the form</p>
+ 
+<p><I>keyword</I><B>=</B><I>value.</I></p>
+
+<p>Such arguments are separated by spaces, tabs, commas or `=' characters. 
+The details of the input expected is given in the documentation for each program,
+however there are some general rules:
+
+<ul>
+<li>Only the first four characters of keywords are significant (although you
+are recommended to use complete keywords) and they are case-insensitive.
+
+<li>Records may be continued across line breaks using <b>&amp;</b>,
+<b>-</b> or <b>/</b> as the last non-blank, non-comment character on the line
+to be continued.
+
+<li>Text following a non-quoted <b>!</b> or <b>#</b> is treated as a comment
+and ignored.  A continuation character may precede the comment.
+
+<li>Strings may be single- or double-quoted or unquoted if they don't contain
+any delimiter characters mentioned above or if the whole of the rest of the
+record is read as a single string.
+
+<li>Leading spaces are ignored.
+
+<li>If an input record is of the form <tt>@</tt><i>&lt;filename&gt;</i>, with
+possible surrounding whitespace, the contents of the file <i>&lt;filename&gt;</i>
+will be included as input at that point, after which the following records will
+be read.
+</ul>
+
+<a name="options"></a>
+<H2>Command line options</H2>
+<dl>
+<dt> -n<dd>
+Do <i>not</i> read the global files <b>default.def</b> and
+<B>environ.def</B>.
+<dt> -v level<dd>
+Verbose output; the amount depends on the value of <i>level</i>, 
+which may have a value between 0 and 9, higher values giving more information.
+This mainly affects output from the CCP4 library routines.
+The <i>Logical_name</i> / <i>File_name </i>
+assignments are displayed as they are processed along with other debug
+information.  The default value is 1. Choose 0 if you want to suppress
+some output, or 2 or higher if you want extra output.
+<dt> -d file<dd>
+Use the next argument to specify an alternative to the <b>default.def</b>
+file.
+<dt> -e file<dd>
+Use the next argument to specify an alternative to the <b>environ.def</b>
+file.
+<dt> -i<dd>
+Print CCP4 library version, program name and program version to
+standard output, and exit.
+<dt> -nohtml<dd>
+Suppresses the writing of HTML tags in the program output. This is
+an alternative to setting the CCP_SUPPRESS_HTML environment variable.
+<dt> -nosummary<dd>
+Suppresses the writing of summary tags in the program output. This
+is an alternative to setting the CCP_SUPPRESS_SUMMARY environment
+variable.
+</dl>
+
+<a name="details"></a>
+<H2>Appendix: Details of logical name processing</H2>
+
+<p><i>[The gory details in this section can be skipped by casual users.]</i></p>
+
+<p>The programs normally read two initialisation files (held in the directory
+pointed to by environment variable <b>CINCL</b>):
+
+<ul>
+<li>First the file <b>environ.def</b> is read - this specifies the logical
+names that can be expected and some information about the type of file
+associated with each logical name.
+</ul>
+
+<ul>
+<li>Then <b>default.def</b> is read, which specifies some common logical names
+defined for all CCP4 processes, and the corresponding file names (whose path
+defaults to the value of environment variable <b>CLIBD </b>).
+
+<p>The logical names actually correspond variables in the program's
+environment; the values defined in <b>default.def</b> don't override existing
+values of the environment variables corresponding to the relevant logical names,
+so defaults may be set by the shell's environment which a program inherits
+(e.g. with <b>setenv</b> in <b>csh</b>, or the Bourne shell assignment and
+export mechanism).
+</ul>
+
+<ul>
+<li>Finally the command line arguments are parsed so that the user can override
+the defaults on the command line. Thus the value of logical name <b>FOO</b>
+will come from the following sources in order of precedence:
+
+<p><ol>
+<li>The command line, e.g.:<br>
+<i>program</i> <b>foo ...</b> <i>value ...</i>
+
+<li>The environment, e.g. (C shell):<br>
+<b>setenv FOO</b> <I>value</I><B>   # NOT using set</B><br>
+or Bourne shell:<br>
+<B>FOO=</B><I>value</I><B>; export FOO</B>
+<li>
+Values from
+<B>default.def</B>.
+</ol>
+
+<p>If a logical name hasn't been defined when a program tries to use it,
+e.g. by opening <b>HKLIN</b>, the name of the variable will be used as its
+value if it is meant to define a file.</p>
+
+</ul>
+
+<p>These steps are performed by the CCP4 preprocessor functions
+<tt>CCPFYP</tt> and <tt>ccp4fyp</tt> (for Fortran and C programs respectively).
+For more information on these, see the documentation for
+<a href="ccplib.html">CCPLIB</a>.</p>
+
+<a name="examples"></a>
+<H2> EXAMPLES</H2>
+<blockquote>
+<pre>
+f2mtz hklin xylose.hkl hklout xylose.mtz &lt;&lt;EOF
+SYMMETRY 152
+LABOUT H   K  L   F  SIGF   FreeRflag 
+CTYPE  H   H  H   F  Q      X 
+ ...
+EOF
+</pre>
+</blockquote>
+
+<p>Alternatively, if the keywords are in the file <b>keywords</b>
+then it is possible to simply use:</p>
+
+<blockquote>
+f2mtz hklin xylose.hkl hklout xylose.mtz &lt;keywords
+</blockquote>
+
+<p>See also the example scripts in the directory
+<tt>$CEXAM/unix/runnable</tt>.</p>
+
+<a name="files"></a>
+<H2> FILES</H2>
+<tt>$CINCL/default.def</tt><br>
+<tt>$CINCL/environ.def</tt>
+
+<a name="see_also">
+<H2> SEE ALSO</H2>
+
+<p>Documentation for the program you want to run, via the
+<a href="INDEX.html">index of programs</a>.
+
+<a name="warnings"></a>
+<H2> WARNINGS</H2>
+
+<p>If a file name ends in <b>.lib</b>, <b>.bes </b>, <b>.prt </b> or
+<b>.dic</b> and is <i>not</i> a full path name (i.e. with the full
+directory specified in front of the file name, such as ./foo.bar or
+/foo/bar.baz) then the environment variable <tt>$CLIBD</tt> will be
+prepended to the file name. This can cause files to be written
+in an unexpected directory.</p>
+
+<p>A solution is to write (say) <b>SYMOP ./my_symop.lib</b>, or to use
+a different extension.</p>
+
+<p>If a file name ends in <b>.scr</b>, and is <i>not</i> the full path
+name then the environment variable <tt>$CCP4_SCRATCH</tt> will be
+prepended to the file name. The extension <b>scr</b> will <i>in all cases</i>
+be replaced by the process number to give the file a (reasonably) distinct
+name.</p>
+
+</body></html>

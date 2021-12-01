@@ -1,0 +1,379 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id: aimless.script,v 1.2 2012/06/11 10:56:37 fcx32934 Exp $
+#======================================================================
+#
+# aimless script
+#
+#======================================================================
+
+if { $MERGED_DATA } {
+   WarningMessage "Cannot proceed with merged data"
+   return
+}
+
+#-----------------------------------------------------------------------
+# run Pointless
+#-----------------------------------------------------------------------
+  if { $RUN_POINTLESS } {
+     if { $COPY && $HKLIN_SORTED } {
+#  no need to run Pointless 
+      set SORTED_HKL $HKLIN
+    } else {     
+      # Output file specified on command as #HKLOUT is final file
+      set WRITE_HKLOUT 0
+
+      CreateComScript pointless pointless_script -ampersand
+      # Output file from Pointless     
+      set SORTED_HKL [GetTmpFileName -ext mtz]
+      set cmd "[BinPath pointless] HKLOUT \"$SORTED_HKL\""
+
+      set status [Execute $cmd $pointless_script program_status report]
+
+      AddOutputFile $SORTED_HKL $DIR_HKLOUT
+
+      # If Pointless is run, then no NAME command in Aimless,
+      # even if set in Pointless
+      set SET_PXDNAME 0
+    }
+  } else {
+    set SORTED_HKL $HKLIN
+  }
+
+#==========================================================================
+#
+# run aimless
+#
+#==========================================================================
+
+  # temporary output MTZ file
+  set HKLTMP [GetTmpFileName -ext mtz]
+
+  CreateComScript aimless aimless_script  -ampersand
+
+  set root [SetOutputFileRoot]
+  append SCALES $root .scales
+  append ROGUES $root _rogues.log
+  append NORMPLOT $root _normplot.xmgr
+  append ANOMPLOT $root _anomplot.xmgr
+  append CORRELPLOT $root _correlplot.xmgr
+  append ROGUEPLOT $root _rogueplot.xmgr
+
+  set cmd "[BinPath aimless] HKLIN \"$SORTED_HKL\""
+  append cmd " HKLOUT \"$HKLTMP\""
+  append cmd " SCALES \"$SCALES\" ROGUES \"$ROGUES\" NORMPLOT \"$NORMPLOT\" ANOMPLOT \"$ANOMPLOT\"  CORRELPLOT \"$CORRELPLOT\" ROGUEPLOT \"$ROGUEPLOT\""
+
+  set status [ Execute $cmd  $aimless_script $LOG_FILE program_status report ]
+
+  AddOutputFile $SCALES PROJECT $ROGUES PROJECT $NORMPLOT PROJECT \
+	$ANOMPLOT PROJECT $ROGUEPLOT PROJECT
+
+  #-----------------------------------------------------------------------
+  # Deal with output files and harvesting
+  #-----------------------------------------------------------------------
+  # Determine whether there are multiple output files from aimless
+
+  # If we have one or more merged MTZ files, then the pipeline continues
+  # otherwise it stops here
+
+  # number of datasets
+  set ndatasets [llength $DATASETS_OUT]
+  set MTZ_MERGED_OUT 0
+  # lists of temporary output files from Aimless and their ultimate names,
+  # for later renaming
+  set aimless_outfiles ""
+  set final_outfiles ""
+  set aimless_root [file root $HKLTMP]
+  set final_root [file root $HKLOUT]
+  set ext [file extension $HKLOUT]
+
+  set MTZ_MERGED 0
+  set MTZ_UNMERGED 0
+  if { $OUTPUT_TYPE == "MERGED" } {
+    set MTZ_MERGED 1
+  } elseif { $OUTPUT_TYPE == "UNMERGED" } {
+    set MTZ_UNMERGED 1
+  } elseif { $OUTPUT_TYPE == "BOTH" } {
+    set MTZ_MERGED 1
+    set MTZ_UNMERGED 1
+  }
+
+  set SCA_MERGED 0
+  set SCA_UNMERGED 0
+  if { $OUTPUT_SCALEPACK_TYPE == "MERGED" } {
+    set SCA_MERGED 1
+  } elseif { $OUTPUT_SCALEPACK_TYPE == "UNMERGED" } {
+    set SCA_UNMERGED 1
+  } elseif { $OUTPUT_SCALEPACK_TYPE == "BOTH" } {
+    set SCA_MERGED 1
+    set SCA_UNMERGED 1
+  }
+
+ if { $MTZ_MERGED } {
+  set MTZ_MERGED_OUT 1
+  if { $ndatasets == 1 } {
+      # one merged MTZ file output
+      set aimless_outfiles $HKLTMP
+      set final_outfiles "\"$HKLOUT\""
+      # A single scatter plot
+      AddOutputFile $CORRELPLOT PROJECT
+    } else {
+     # Multiple merged files, construct output file names from Aimless
+     # based on datasets
+      for { set i 0 } { $i < $ndatasets } { incr i } {
+        set dataset_name [lindex $DATASETS_OUT $i]
+	# Generate aimless and final file name lists
+	lappend aimless_outfiles "[subst $aimless_root]_[subst $dataset_name].tmp"
+        lappend final_outfiles "[subst $final_root]_[subst $dataset_name]$ext"
+        # A scatter plot for each output dataset
+        set correlplot "[subst $root]_correlplot_[subst $dataset_name].xmgr"
+        AddOutputFile $correlplot PROJECT
+     }
+    }
+ } else {
+ # no mtz merged files
+  set RUN_TRUNCATE 0
+ }
+
+ # List of files for immediate renaming, not further down the pipeline
+  set aimless_outfiles_1 ""
+  set final_outfiles_1 ""
+
+  if { $MTZ_UNMERGED } {
+  # Unmerged MTZ file output, rename here (a single file for all datasets)
+    lappend aimless_outfiles_1 "[subst $aimless_root]_unmerged.tmp"
+    set finalout "[subst $final_root]_unmerged$ext"
+    lappend final_outfiles_1 $finalout
+    }
+# Scalepack files
+  if { $OUTPUT_SCALEPACK_TYPE != "NONE" } {
+     set extsca ".sca"
+     if { $ndatasets == 1 } {
+	if { $SCA_MERGED } {
+	  lappend aimless_outfiles_1 "[subst $aimless_root].sca"
+	  lappend final_outfiles_1 "[subst $final_root]$extsca"
+	  AddOutputFile [lindex $final_outfiles_1 end] PROJECT
+	}
+	if { $SCA_UNMERGED } {
+	  lappend aimless_outfiles_1 "[subst $aimless_root]_unmerged.sca"
+	  lappend final_outfiles_1 "[subst $final_root]_unmerged$extsca"
+	  AddOutputFile [lindex $final_outfiles_1 end] PROJECT
+	}
+     } else {
+     # Multiple datasets
+      for { set i 0 } { $i < $ndatasets } { incr i } {
+        set dataset_name [lindex $DATASETS_OUT $i]
+	if { $SCA_MERGED } {
+	   lappend aimless_outfiles_1 "[subst $aimless_root]_[subst $dataset_name].sca"
+	   lappend final_outfiles_1 "[subst $final_root]_[subst $dataset_name]$extsca"
+	   AddOutputFile [lindex $final_outfiles_1 end] PROJECT
+	}
+	if { $SCA_UNMERGED } {
+	  lappend aimless_outfiles_1 "[subst $aimless_root]_unmerged_[subst $dataset_name].sca"
+	  lappend final_outfiles_1 "[subst $final_root]_unmerged_[subst $dataset_name]$extsca"
+	  AddOutputFile [lindex $final_outfiles_1 end] PROJECT
+	}
+      }
+    }
+  }
+  # Copy the "immediate" files to their final names
+  set n_files [llength $aimless_outfiles_1]
+
+  if { $n_files > 0 } {
+    for { set i 0 } { $i < $n_files } { incr i } {
+      set old_file [lindex $aimless_outfiles_1 $i]
+      set new_file [lindex $final_outfiles_1 $i]
+      WriteToLog "Renaming file $old_file to\n$new_file"
+      MoveFile $old_file $new_file -overwrite
+    }
+  }
+
+  if { $MTZ_MERGED_OUT } {
+
+  # Running Truncate/Cad means there will be a single output file
+  # This is only possible in OUTPUT MERGED mode
+  if { [StringSame $OUTPUT_TYPE MERGED] && $RUN_TRUNCATE && $RUN_CAD } {
+     set final_outfiles $HKLOUT
+  }
+
+#==========================================================================
+#
+# run truncate
+#
+#==========================================================================
+
+  # We can only run truncate if OUTPUT_TYPE MERGED is selected
+  if { $RUN_TRUNCATE && [StringSame $OUTPUT_TYPE MERGED] } {
+    set RUN_TRUNCATE 1
+  } else {
+    set RUN_TRUNCATE 0
+  }
+
+  if { $RUN_TRUNCATE } {
+
+    # If there are multiple files output from aimless then we need to run
+    # the truncate procedure on each one
+
+    set truncate_outfiles ""
+
+    for { set i 0 } { $i < $ndatasets } { incr i } {
+
+      set dataset_name [lindex $DATASETS_OUT $i]
+      set labout_label [lindex $LABELS_OUT $i]
+      set HKLTMP [lindex $aimless_outfiles $i]
+      set HKL_TRUNCATE [GetTmpFileName -ext "mtz_[subst $dataset_name]"]
+
+      if { $labout_label != "" } {
+        set USE_LABOUT 1
+        if { $ANOMALOUS } {
+          set LABOUT "IMEAN SIGIMEAN Ip SIGIp Im SIGIm F SIGF DANO SIGDANO Fp SIGFp Fm SIGFm ISYM"
+        } else {
+          set LABOUT "IMEAN SIGIMEAN F SIGF"
+        }
+        if { [regsub {^_} $labout_label {} label] } { set labout_label $label}
+        foreach item $LABOUT { 
+          set sign ""
+          if { [regsub p$ $item {} lab0] } { set sign "(+)" }
+          if { [regsub m$ $lab0 {} lab1] } { set sign "(-)" }
+          eval "set $item [subst $lab1]_[subst $labout_label]$sign" 
+        }
+      } else {
+        set USE_LABOUT 0
+      }
+
+      if { $TRUNCATE_PROG == "CTRUNCATE" } {
+        CreateComScript ctruncate ctruncate_script
+        set cmd "[BinPath ctruncate] -hklin \"$HKLTMP\" -hklout \"$HKL_TRUNCATE\""
+        append cmd " -colin \"/*/*/\\\[IMEAN,SIGIMEAN\\\]\""
+        if  { $ANOMALOUS } {
+          append cmd " -colano \"/*/*/\\\[I(+),SIGI(+),I(-),SIGI(-)\\\]\""
+        }
+        if { $COLUMN_ID_TYPE == "USER" } {
+          append cmd " -colout $LABOUT_LABEL"
+        } else {
+          append cmd " -colout $dataset_name"
+        }
+        set status [Execute $cmd $ctruncate_script $LOG_FILE  program_status report  ]
+
+      } else {
+        CreateComScript truncate truncate_script
+        set cmd "[BinPath truncate] HKLIN \"$HKLTMP\" HKLOUT \"$HKL_TRUNCATE\""  
+        set status [Execute $cmd $truncate_script $LOG_FILE  program_status report  ]
+      }
+          
+      # Remove intensities?
+      if { ! $OUTPUT_I } {
+        set HKL_NOIS [GetTmpFileName -ext mtz]
+        if { $ANOMALOUS } {
+          WriteComFile mtzutils_script \
+          "include $F $SIGF $DANO $SIGDANO $Fp $SIGFp $Fm $SIGFm $ISYM"
+        } else {
+	  WriteComFile mtzutils_script "include $F $SIGF"
+        }
+        set status [Execute "[BinPath mtzutils] HKLIN \"$HKL_TRUNCATE\" HKLOUT \"$HKL_NOIS\"" \
+                  $mtzutils_script program_status report ]
+        # Reset the output file name
+        set HKL_TRUNCATE $HKL_NOIS
+      }
+
+      lappend truncate_outfiles $HKL_TRUNCATE
+
+    }
+    set aimless_outfiles $truncate_outfiles
+
+    if { $RUN_CAD } {
+
+      # User has requested merge of files into a single file
+      # There will only be more than one file to merge if we are in
+      # OUTPUT AVERAGE mode and there are more than one datasets
+      if { $ndatasets > 1 && [StringSame $OUTPUT_TYPE MERGED] } {
+
+        set HKL_CAD [GetTmpFileName -ext mtz]
+        
+	# Create Cad command line and script
+        set cmd "[BinPath cad]"
+        set script ""
+        set i 0
+        foreach infile $aimless_outfiles {
+          incr i
+          append cmd " HKLIN$i \"$infile\""
+	  append script "LABIN FILE $i ALL\n" 
+        }
+        append cmd " HKLOUT \"$HKL_CAD\""
+        append script "END\n"
+        WriteFile [set cad_script [GetTmpFileName -ext com]] $script
+
+        set status [Execute $cmd $cad_script $LOG_FILE  program_status report ]
+
+        set aimless_outfiles $HKL_CAD
+      }
+    }
+
+  }
+
+#==================================================================
+# run uniqueify
+#==================================================================
+
+  # We can only run uniqueify if OUTPUT AVERAGE is selected
+  if { $UNIQUEIFY && $MTZ_MERGED_OUT } {
+    set UNIQUEIFY 1
+  } else {
+    set UNIQUEIFY 0
+  }
+
+  if { $UNIQUEIFY } {
+
+    # Protocol now depends on the number of output files ...
+    # If there are multiple files output from Aimless/Truncate then we
+    # need to run the uniqueify procedure on each one
+
+    WriteHtml beg pre
+    source [SearchPath TOP utils phasing_utils.tcl ]
+    
+    set n_files [llength $aimless_outfiles]
+
+    for { set i 0 } { $i < $n_files } { incr i } {
+
+      set HKL_TRUNCATE [lindex $aimless_outfiles $i]
+      set HKLOUT [lindex $final_outfiles $i]
+
+      set cmd "Uniqueify \"$HKL_TRUNCATE\" \"$HKLOUT\""
+
+      if [IfSet $UNIQUEIFY_FREERFRAC] { append cmd " -fraction $UNIQUEIFY_FREERFRAC" }
+
+      if { $COPY_FREER } {
+        append cmd " -copy $COPY_FREER_MTZ $COPY_FREER_LABEL"
+      } elseif { $i > 0 } {
+        append cmd " -copy [lindex $final_outfiles 0] FreeR_flag"
+      }
+
+      if { $UNIQUEIFY_EXTEND && [IfSet $UNIQUEIFY_MAXRES] } {
+        append cmd " -extend $UNIQUEIFY_MAXRES"
+      }
+
+      eval "$cmd"
+    }
+
+    WriteHtml end pre
+
+  } else {
+
+    # Copy the files to their final names
+
+    set n_files [llength $aimless_outfiles]
+    for { set i 0 } { $i < $n_files } { incr i } {
+      set old_file [lindex $aimless_outfiles $i]
+      set new_file [lindex $final_outfiles $i]
+      WriteToLog "Renaming file $old_file to\n$new_file"
+      MoveFile  $old_file $new_file
+    }
+  }
+}
+#==================================================================

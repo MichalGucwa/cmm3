@@ -1,0 +1,60 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#  Create refmac-specific maps
+#  This script is used independently or sourced from refmac script
+#
+
+  source [SearchPath TOP utils map_utils.tcl]
+
+    if { ![info exists MAPOUT1] || $MAPOUT1 == "" } {
+      set mapout_1  [SetOutputFileRoot -map]_FWT.map
+    } else {
+      set mapout_1 $MAPOUT1
+    }
+    if { ![info exists MAPOUT2] || $MAPOUT2 == "" } {
+      set mapout_2  [SetOutputFileRoot -map]_DELFWT.map
+    } else {
+      set mapout_2 $MAPOUT2
+    }
+      
+
+    if { $EXTEND_MAP } {
+      CreateMap $MAPOUT_FORMAT $HKLOUT mapout_1 "2FO-1FC" \
+		[list F1 PHI ] [list $FWT $PHWT] \
+		-cover $XYZOUT $MAP_BORDER
+      CreateMap $MAPOUT_FORMAT $HKLOUT mapout_2 "1FO-1FC" \
+		[list F1 PHI ] [list $DELFWT $PHDELWT] \
+		-cover $XYZOUT $MAP_BORDER
+    } else {
+      CreateMap $MAPOUT_FORMAT $HKLOUT mapout_1 "2FO-1FC" \
+                [list F1 PHI ] [list $FWT $PHWT]
+      CreateMap $MAPOUT_FORMAT $HKLOUT mapout_2 "1FO-1FC" \
+                [list F1 PHI ] [list $DELFWT $PHDELWT]
+    } 
+      
+    AddOutputFile $mapout_1 MAP_DEFAULT $mapout_2 MAP_DEFAULT
+
+    switch $MAPOUT_FORMAT \
+    O {
+        set macro_file [SetOutputFileRoot]_refmac_omap.mac
+        MakeOMapMacro $macro_file [list $mapout_1 $mapout_2 $mapout_2 ] \
+		[list 2fo pos neg ] [list 1.0 2.0 -2.0] \
+		[ list slate_blue red green ] 20.0
+        AddOutputFile $macro_file PROJECT
+    } XtalView {
+
+      set crystal_file [SetOutputFileRoot]_refmac.xtal
+      set macro_file [SetOutputFileRoot]_refmac_xtal.script
+
+      MakeXtalMacro $HKLOUT $crystal_file $macro_file \
+                [list $mapout_1 $mapout_2] [list Fo Fo ] [list 8 8 ]
+
+      AddOutputFile $crystal_file PROJECT $macro_file PROJECT
+    }

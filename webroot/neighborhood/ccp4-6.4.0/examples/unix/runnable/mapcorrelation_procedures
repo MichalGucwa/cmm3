@@ -1,0 +1,144 @@
+#!/bin/sh
+#
+#  Calculations leading up to map correlations.
+# Need two maps, and if you want to tabulate the results 
+# residue by residue, a third "map" output by sfall which 
+# flags each grid point with the residue which makes the 
+# largest contribution to it.
+#  Warning. All grids MUST BE THE SAME!!
+#  It is probably sensible if you want results tabulated according
+# to residue to make this a fine grid, the sfall one should be OK.
+#  Here is a set of command files to check the map correlation of 
+# a structure after refinement to the MIR map,
+#  and to work out real space R factors.
+#  For map correlation we use 1) The MIR map ( should be dm'ed map)
+#                             2) An "FC" map 
+#               and           3) the sfall RESMOD map.
+
+#  For Real space R factors we also need the FO map phased by the PHIcalc.
+#  Here we are getting correlations between final coordinates, and initial ones
+
+set -e
+
+if test ! -f $CCP4_SCR/toxd_phase_mir.mtz; then
+  echo "! run the mlphare procedure first" 1>&2
+  exit 1
+fi
+
+########################################################################
+#  Generate atom map with flags for each residue from FINAL coordinates
+########################################################################
+sfall    			\
+xyzin $CEXAM/toxd/toxd.pdb \
+               mapout $CCP4_SCR/last.map \
+<< END-sfall 
+TITL Toxd Atom map from final coordinates
+GRID 152 96 64
+MODE ATMMAP RESMOD
+SYMM 19
+FORM NGAU 2
+END
+END-sfall
+#
+########################################################################
+#  Calculate sfs for FINAL coordinates - 
+#   Simlest to append output FC and PHIC to MIR mtz file which contains
+#  MIR phase information, also useful for different map generation.
+########################################################################
+sfall    			\
+xyzin $CEXAM/toxd/toxd.pdb \
+               hklin $CCP4_SCR/toxd_phase_mir.mtz  \
+               hklout $CCP4_SCR/toxd_phase_mir_sflast.mtz    \
+<< END-sfall 
+TITL Toxd Sfs for FINAL coordinates.
+GRID 152 96 64
+MODE SFCALC XYZIN HKLIN
+RESO 40.0 1.5
+RSCB 5.0 1.5
+BRESET 1.5
+BINS 20
+SFSG 19
+FORM NGAU 2
+BADD 0
+LABI FP=FTOXD3 SIGFP=SIGFTOXD3
+LABO ALLIN FC=FC_last PHIC=AC_last
+END
+END-sfall
+#
+# Calculate maps:
+#  For real space R factor I need Fo and Fc maps..
+# Fo map phased on original coordinates.
+#
+########################################################################
+# Fo map from final coordinates.  (used for Real Space R factor)
+########################################################################
+#
+fft    			\
+               mapout $CCP4_SCR/folast.map    \
+               hklin $CCP4_SCR/toxd_phase_mir_sflast.mtz    \
+<< END-fft 
+TITL Toxd  1.6A FOlast  map
+GRID 152 96 64
+XYZLIM 0 151 0 95 0 16
+RESO 40.0 3.0
+LABI F1=FTOXD3 PHI=AC_last
+END
+END-fft
+#
+#
+########################################################################
+# Fc map from final coordinates.
+########################################################################
+#
+fft    			\
+               mapout $CCP4_SCR/fclast.map    \
+               hklin $CCP4_SCR/toxd_phase_mir_sflast.mtz    \
+<< END-fft 
+TITL Toxd  1.6A FClast  map
+GRID 152 96 64
+XYZLIM 0 151 0 95 0 16
+RESO 20.0 3.0
+LABI F1=FC_last PHI=AC_last
+END
+END-fft
+########################################################################
+#  mir map
+########################################################################
+fft    			\
+               mapout $CCP4_SCR/fomir.map    \
+               hklin $CCP4_SCR/toxd_phase_mir_sflast.mtz    \
+<< END-fft 
+TITL Toxd  2.5A Mir map
+GRID 152 96 64
+XYZLIM 0 151 0 95 0 16
+RESO 20.0 3.0
+LABI F1=FTOXD3 PHI=PHI_mir W=W_mir
+END
+END-fft
+#
+
+#
+########################################################################
+#  Correlation residue by residue of final coordinates with mir map
+########################################################################
+overlapmap    			\
+               mapin1 $CCP4_SCR/fomir.map    \
+               mapin2 $CCP4_SCR/fclast.map    \
+               mapin3 $CCP4_SCR/last.map \
+<< END-fft 
+CORR RESI
+END
+END-fft
+#
+########################################################################
+#  Real space R factor residue by residue of final coordinates 
+########################################################################
+overlapmap    			\
+               mapin1 $CCP4_SCR/folast.map    \
+               mapin2 $CCP4_SCR/fclast.map    \
+               mapin3 $CCP4_SCR/last.map \
+<< END-fft 
+REAL SPACE 
+END
+END-fft
+#

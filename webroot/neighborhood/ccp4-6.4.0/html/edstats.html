@@ -1,0 +1,726 @@
+<!DOCTYPE HTML PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN'
+http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd>
+<HTML LANG=en DIR=ltr XMLNS=http://www.w3.org/1999/xhtml>
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::MAPROT::Supported::Map calculation and manipulation::map skewing, interpolating, rotating, averaging and correlation masking program:::::::: -->
+
+<BODY>
+<H1>EDSTATS</H1>
+
+<H2>NAME</H2>
+
+<B>edstats</B>
+- Calculates per-residue real-space electron density R factors,
+correlation coefficients, Z(observed) metrics for the
+&rho;<SUB>obs</SUB> Fourier map and Z(difference) metrics for the
+&Delta;&rho; (difference) Fourier; also computes data for the histogram,
+and P-P and Q-Q difference plots for the observed and difference Fourier
+maps.
+
+<H2>SYNOPSIS</H2>
+
+<B>edstats</B>&nbsp MAPIN1 input1.map&nbsp MAPIN2 input2.map&nbsp
+XYZIN input.pdb&nbsp [HISOUT output.his]&nbsp [PPDOUT output.ppd]&nbsp
+[QQDOUT output.qqd]&nbsp [MAPOUT1 output1.map]&nbsp
+[MAPOUT2 output2.map]&nbsp [OUT output.out]&nbsp [XYZOUT output.pdb]
+
+<H2>DESCRIPTION</H2>
+
+The program <B>EDSTATS</B> calculates real-space electron density R
+factors, correlation coefficients, Z<SUB>obs</SUB> and Z<SUB>diff</SUB>
+metrics for main- (includes C&beta; atom) and side-chain atoms of
+individual residues and/or atoms.&nbsp This integrates and replaces the
+functionalities of <A HREF=sfall.html TARGET=_blank>SFALL</A> (MODE
+ATMMAP ATMMOD/RESMOD options) and <A HREF=overlapmap.html
+TARGET=_blank>OVERLAPMAP</A> (CORRELATE ATOM/RESIDUE options).&nbsp In
+addition it recognises the chain ID and the PDB residue label insertion
+code (which SFALL ignores!), and so does not require a specification of
+the residue label mapping for each chain (CHAIN option in
+SFALL/OVERLAPMAP).
+
+<UL>
+<P><LI>The real-space R factor (RSR) is defined (Br&#xe4;nd&#xe9;n &
+Jones, 1990; Jones <I>et al.</I>, 1991) as:
+<P><CENTER>RSR = &Sigma; |&rho;<SUB>obs</SUB> - &rho;<SUB>calc</SUB>| /
+&Sigma; |&rho;<SUB>obs</SUB> + &rho;<SUB>calc</SUB>|</CENTER>
+
+<P><LI>The real-space correlation coefficient (RSCC) is defined as:
+<P><CENTER>RSCC = cov(&rho;<SUB>obs</SUB>,&rho;<SUB>calc</SUB>) /
+sqrt(var(&rho;<SUB>obs</SUB>) var(&rho;<SUB>calc</SUB>))</CENTER>
+<P>where cov(.,.) and var(.) are the sample covariance and variance
+(<I>i.e.</I> calculated with respect to the sample means of
+&rho;<SUB>obs</SUB> and &rho;<SUB>calc</SUB>).
+
+<P><LI>EDSTATS computes two real-space correlation coefficients: the
+'sample' correlation coefficient defined above, and the 'population'
+correlation coefficient, <I>i.e.</I> with respect to the population
+(overall) means, which will be zero if the F(000) terms were not
+included in the map calculation (OVERLAPMAP uses only the sample
+means).&nbsp The RSCC based on the population means seems to be better
+at detecting weak correlations.
+
+<P><LI>The real-space Z<SUB>obs</SUB> metric (RSZO) is defined (Tickle,
+2011) as:
+<P><CENTER>RSZO = mean(&rho;<SUB>obs</SUB>) / &sigma;(&Delta;&rho;)
+</CENTER>
+<P>where &sigma;(&Delta;&rho;) is the standard uncertainty of the
+<B>difference Fourier</B> map.&nbsp Note that this is the standard
+uncertainty of the 'Fo-Fc' map, NOT the RMS value of the '2Fo-Fc' map,
+which bears no relationship whatsoever to the uncertainty!
+
+<P><LI>The real-space Z<SUB>diff</SUB> metrics (RSZD- and RSZD+) are
+defined (Tickle, 2011) as follows for the sets of negative and positive
+values respectively of &Delta;&rho; at the grid points that are covered
+by the group of main- or side-chain atoms under consideration:
+
+<P>1. Order the values in each set in increasing numerical value
+(<I>i.e.</I> ignoring the sign).
+
+<P>2. For each of <I>N</I> subsets of size 1, 2, ..., <I>N</I>-1,
+<I>N</I> of the numerically highest values of the original set of size
+<I>N</I>, compute the cumulative probability of chi-square
+(&chi;<SUP>2</SUP> = &Sigma;
+(&Delta;&rho;/&sigma;(&Delta;&rho;))<SUP>2</SUP>) for the subset.&nbsp
+So the subset of size 1 is simply the numerically highest value
+('maximum order statistic') in the original set, the subset of size 2
+consists of the 2 highest values of the set, the subset of size
+<I>N</I>-1 excludes the lowest value, and the subset of size N is just
+the set itself.
+
+<P>3. In practice this &chi;<SUP>2</SUP> cumulative probability is very
+difficult to compute (even by stochastic numerical integration) for
+subsets other than those of size 1 and <I>N</I> (it involves integrals
+up to dimension <I>N</I> where <I>N</I> may be anything from 10 to
+1000).&nbsp Note that the standard &chi;<SUP>2</SUP> cumulative
+probability assumes that the sample is selected randomly, whereas here
+we are selecting the highest values.&nbsp Therefore we approximate it as
+the product of two components: the standard cumulative probability of
+&chi;<SUP>2</SUP> for a randomly selected subset, and a correction, the
+Dunn-&#x160;id&#xe1;k correction (Sokal & Rohlf, 1995; Gibbons &
+Chakraborti, 2003), in this case the cumulative probability of the order
+statistic, for the fact that we are selecting the highest values.
+
+<P>4. Take the highest cumulative probability over all subsets, and
+convert this to the corresponding normal Z-score, making the Z-score
+negative for the set of negative values; this is the final RSZD- or
+RSZD+ score.&nbsp The program also computes a combined RSZD score which
+is simply the maximum of |RSZD-| and RSZD+.
+
+<P><LI>The real-space Z-scores RSZO, RSZD- and RSZD+ require estimates
+of the standard uncertainty &sigma;(&Delta;&rho;) and offset of the
+'Fo-Fc' map (the offset arises from omission of the F(000) term, which
+may differ from zero since the model is not necessarily complete).&nbsp
+The recommended procedure is to use as an initial estimate the value of
+the &sigma;(&Delta;&rho;) in the map header, with zero as the offset,
+and then rescale &sigma;(&Delta;&rho;) and the offset separately for
+each chain and the bulk solvent.&nbsp Bulk solvent is assigned the chain
+ID '%' for this purpose and ordered waters are considered to belong to a
+chain with ID '0' whatever their actual chain IDs in the PDB file.
+
+<P><LI>The sample size correction above arises because the greater the
+sample size the more likely it is that high values will occur purely by
+chance.&nbsp This correction takes into account the fact that the number
+of grid points is not the same for all residues, because obviously
+different residue types contain different numbers of atoms, and also
+different limiting atom radii will enclose different numbers of grid
+points, because the radius varies with atom type and
+B<SUB>iso</SUB>.&nbsp The correction is therefore necessary to make the
+metrics comparable between different residues and to be able to apply a
+common threshold to the metric for all residues.&nbsp Note that the RSR
+and RSCC metrics do not apply a sample size correction: it is assumed
+that all sample points contribute equally to the metrics independent of
+the sample size.
+
+<P><LI>The number of grid points referred to above is the number of
+statistically independent grid points covering the atoms; this is the
+actual number of grid points with an over-sampling correction
+factor.&nbsp According to the Nyquist-Shannon sampling theorem, the grid
+spacing required for statistical independence is 1/2 the high resolution
+cut-off (<I>d</I><SUB>min</SUB>), so <I>e.g.</I> if a grid spacing of
+<I>d</I><SUB>min</SUB>/4 is used then the effective number of grid
+points is the actual number / 2<SUP>3</SUP>.
+
+<P><LI>The advantage of the real-space Z-scores over the real-space R
+factor and correlation coefficient scores (including the 'population' CC
+metric) is that the former depend purely on model accuracy (RSZD) or
+model precision (RSZO), whereas RSR and RSCC depend on both
+(<I>e.g.</I> it's obvious from the plots that RSR and RSCC are at least
+partially correlated with the atomic B<SUB>iso</SUB>s); this means that
+it's impossible to say how much of the observed effect on the metric is
+due to lack of accuracy and how much to lack of precision.
+
+<P>Note that model accuracy is related to the likelihood of the model
+(<I>i.e.</I> the consistency of the model with the data), and is what is
+improved by model building and refinement.&nbsp The difference Fourier
+density is obviously a measure of any discrepancy between the model and
+the data, so is a direct measure of model accuracy.
+
+<P>Model precision is a property of the crystal and the data (assuming
+the refinement is done optimally), and is related to data quality and
+completeness, resolution, atom type (or atomic scattering factor),
+occupancy and atomic B<SUB>iso</SUB>; hence model precision can only be
+improved by crystallizing in a different crystal form and/or collecting
+better (<I>e.g.</I> more precise and/or higher resolution) data.&nbsp
+The &rho;<SUB>obs</SUB> density, divided by its standard uncertainty
+(note: this is not the same as RMS(&rho;<SUB>obs</SUB>)), is a measure
+of model precision which incorporates all the above factors correlated
+with precision (<I>e.g.</I> the atomic B<SUB>iso</SUB> is also a
+precision metric but it doesn't take account of the variation of
+precision with atom type and occupancy).
+
+<P><LI>The sums and min/max functions required to compute all residue or
+atom metrics are taken over all map grid points within a specified
+distance of each atom centre.&nbsp This distance limit is naturally a
+function of the atom type (<I>via</I> the atomic scattering factors
+computed from the 5-Gaussian approximation table in $CLIBD/atomsf.lib),
+the atomic B<SUB>iso</SUB> values and the resolution limits, as shown in
+the following table of the distance limit <I>r</I><SUB>max</SUB> for an
+O atom.&nbsp Values used by SFALL are also shown for comparison: note
+that the latter depend only on B<SUB>iso</SUB> and are independent of
+atom type and resolution:
+<PRE>
+B/&Aring<SUP>2</SUP>:                   10    20    30    40    50    60    70    80    90
+d<SUB>min</SUB>/&Aring
+      <I>r</I><SUB>max</SUB>/&Aring (SFALL: all atoms)
+ All                   2.35  2.67  2.95  3.21  3.45  3.67  3.88  4.08  4.27
+
+      <I>r</I><SUB>max</SUB>/&Aring (EDSTATS: O atom)
+ 3.5                   1.72  1.78  1.83  1.89  1.95  2.02  2.08  2.15  2.22
+ 3.0                   1.51  1.58  1.65  1.72  1.80  1.88  1.97  2.06  2.14
+ 2.5                   1.31  1.39  1.49  1.59  1.70  1.80  1.91  2.02  2.12
+ 2.0                   1.12  1.24  1.38  1.52  1.66  1.79  1.91  2.02  2.13
+ 1.5                   0.96  1.16  1.35  1.52  1.66  1.79  1.91  2.02  2.13
+<=1.0                  0.91  1.16  1.35  1.52  1.66  1.79  1.91  2.02  2.13
+</PRE>
+Note that the limiting high-resolution values of <I>r</I><SUB>max</SUB>
+are attained at ~ d<SUB>min</SUB> = 1.5&Aring;.
+
+<P><LI>The resolution-dependent distance limit is computed by first
+performing an analytical truncated Fourier transform of the atomic
+scattering factor <I>f</I>(<I>s</I>) to obtain the equation for the
+calculated electron density &rho;(<I>r</I>) for data between specified
+resolution cut-offs, at distance <I>r</I> from the atom centre:
+<PRE>
+                               <I>s</I><SUB>max</SUB>
+        &rho;(<I>r</I>) = FT(<I>f</I>(<I>s</I>)) = (8/<I>r</I>) &#8747 <I>f</I>(<I>s</I>) exp(-<I>Bs</I><SUP>2</SUP>) sin(4&pi;<I>rs</I>) <I>s</I> d<I>s</I>
+                               <I>s</I><SUB>min</SUB>
+</PRE>
+for specified limits <I>s</I><SUB>min</SUB> and <I>s</I><SUB>max</SUB>
+of sin(&theta;)/&lambda;.
+
+<P>Then the ratio of the radius integral of &rho;(<I>r</I>) integrated
+out to the outer limit <I>r</I><SUB>max</SUB> relative to the radius
+integral integrated to infinite distance is:
+<PRE>
+                               <I>r</I><SUB>max</SUB>          &#8734
+        Radius integral ratio = &#8747 &rho;(<I>r</I>) d<I>r</I> / &#8747 &rho;(<I>r</I>) d<I>r</I>
+                                0           0
+</PRE>
+and this equation solved to obtain <I>r</I><SUB>max</SUB> for a radius
+integral ratio = 0.95 (i.e. 95% of the integral lies within distance
+<I>r</I><SUB>max</SUB> of the atom centre).&nbsp The integrals with
+respect to <I>r</I> can be obtained analytically; the integrals with
+respect to <I>s</I> in general have no analytical solution and must be
+computed numerically (using <I>e.g.</I> the <A
+HREF=http://www.netlib.org/quadpack/doc TARGET=_blank>QUADPACK</A>
+library).&nbsp Note that ideally the volume integral of &rho;(<I>r</I>):
+<PRE>
+                         <I>r</I><SUB>max</SUB>           <I>r</I><SUB>max</SUB>
+        Volume integral = &#8747 &rho;(<I>r</I>) d<I>V</I> = 4&pi; &#8747 &rho;(<I>r</I>) <I>r</I><SUP>2</SUP> d<I>r</I>
+                          0              0
+</PRE>
+should be used, but unfortunately this integral does not converge.
+
+<P><LI>For the RSZO metric EDSTATS uses the &rho;<SUB>obs</SUB> map with
+Fourier coefficients 2mF<SUB>o</SUB>-DF<SUB>c</SUB> for acentric
+reflections or mF<SUB>o</SUB> for centrics (Main, 1979; Read, 1986); for
+the RSZD metric it uses the &Delta;&rho; (difference Fourier) map with
+Fourier coefficients 2(mF<SUB>o</SUB>-DF<SUB>c</SUB>) for acentrics, or
+mF<SUB>o</SUB>-DF<SUB>c</SUB> for centrics.&nbsp For the RSR and RSCC
+metrics it uses the &rho;<SUB>obs</SUB> and
+&rho;<SUB>calc</SUB> maps.&nbsp
+<P>However, for the latter, because we cannot rely on the correct Fourier
+coefficient for &rho;<SUB>calc</SUB> being present in the file of map
+coefficients, it is necessary to obtain it as the difference between the
+&rho;<SUB>obs</SUB> and &Delta;&rho; coefficients.&nbsp Since we have:
+<PRE>
+        &Delta;&rho; = &rho;<SUB>obs</SUB> - &rho;<SUB>calc</SUB>
+</PRE>
+or:
+<PRE>
+        &rho;<SUB>calc</SUB> = &rho;<SUB>obs</SUB> - &Delta;&rho;
+</PRE>
+therefore for acentrics:
+<PRE>
+        &rho;<SUB>calc</SUB> = <FONT FACE=UnifrakturCook>F</FONT>(2mF<SUB>o</SUB>-DF<SUB>c</SUB>) - <FONT FACE=UnifrakturCook>F</FONT>(2(mF<SUB>o</SUB>-DF<SUB>c</SUB>))
+         <SUB>    </SUB> = <FONT FACE=UnifrakturCook>F</FONT>(DF<SUB>c</SUB>)
+</PRE>
+whereas for centrics:
+<PRE>
+        &rho;<SUB>calc</SUB> = <FONT FACE=UnifrakturCook>F</FONT>(mF<SUB>o</SUB>) - <FONT FACE=UnifrakturCook>F</FONT>(mF<SUB>o</SUB>-DF<SUB>c</SUB>)
+         <SUB>    </SUB> = <FONT FACE=UnifrakturCook>F</FONT>(DF<SUB>c</SUB>)
+</PRE>
+Hence the correct Fourier coefficient for &rho;<SUB>calc</SUB> is
+DF<SUB>c</SUB> for all reflections.&nbsp Note that it is frequently
+stated that the coefficient for acentrics is
+mF<SUB>o</SUB>-DF<SUB>c</SUB> but if this were used it would give
+completely the wrong result for the &rho;<SUB>calc</SUB> coefficient (it
+would give mF<SUB>o</SUB> !).
+
+<P><LI>EDSTATS also has options to output data for the histogram, 'P-P
+difference' and 'Q-Q difference' plots of the difference Fourier and
+observed Fourier maps.&nbsp Note that the 'P-P difference' and 'Q-Q
+difference' plots are functionally identical to the standard '<A
+HREF=http://en.wikipedia.org/wiki/P-P_plot TARGET=_blank>P-P plot </A>'
+(probability-probability) and '<A
+HREF=http://en.wikipedia.org/wiki/Q-Q_plot TARGET=_blank>Q-Q plot </A>'
+(quantile-quantile: 'quantile' is just another name for 'normalised
+deviate' or 'Z-score').&nbsp The distinction is purely one of
+presentation: whereas the standard 'P-P' or 'Q-Q' plot plots <I>x vs.
+y</I>, where <I>x</I> and <I>y</I> are respectively the normal expected
+and observed probabilitlies or quantiles, the 'P-P difference' or 'Q-Q
+difference' plot plots <I>x vs. y-x</I>.
+</UL>
+
+<A NAME=Input>
+<H2>INPUT</H2>
+
+The input is in 'namelist' format, i.e. it consists of 'keyword = value'
+pairs separated by a comma or newline.&nbsp The keyword is always
+case-insensitive and only the first 4 characters are significant.&nbsp
+The value may be a character string, a logical (true or t or false or f)
+or an integer or real scalar or array.&nbsp The RESLO & RESHI values,
+obtainable from an MTZDUMP summary table for the map coefficient columns
+(NOT the overall values for the file as given in the MTZ header), are
+required; all other input values are optional.
+
+<P>Available options:<UL>
+
+<P><LI>MAIN = <I>string</I>
+<BR>Optional specification of type of averaging used to compute
+main-chain (including C&beta; atom) R factors and correlation
+coefficients (both types), where <I>string</I> is either RESI (default)
+or ATOM (both case-insensitive):
+<P>RESI averages all map values for the main-chain atoms in each
+residue.
+<P>ATOM averages the map values for each atom, but reports the extreme
+values of these as the residue metrics.
+<P>This option has no effect on the real-space Z-scores, which are as
+defined in the DESCRIPTION section above.
+
+<P><LI>SIDE = <I>string</I>
+<BR>Same as MAIN, but for side-chains.
+
+<P><LI>MOLE = <I>string</I>
+<BR>Optional concatenated list of chain IDs defining the molecule for
+which metrics are to be calculated (default is to use all atoms).&nbsp
+Chain IDs are case-sensitive.
+
+<P><LI>RESC = <I>string</I>
+<BR>Optional specification of type of rescaling of &sigma;(&Delta;&rho;)
+by Q-Q plot required: <I>string</I> may be ALL, BULK, CHAIN (default) or
+NONE (all are case-insensitive).
+<P>Scaling type ALL rescales using a single scale factor and offset
+based on all map points in the asymmetric unit.
+<P>BULK rescales using a single scale factor and offset based only on
+points in the bulk solvent.
+<P>CHAIN independently rescales each chain and the bulk solvent with a
+separate scale factor and offset for each group (ordered waters are
+treated as belonging to a single separate chain '0' regardless of their
+chain IDs in the PDB file).&nbsp This is now the recommended procedure.
+<P>NONE does no Q-Q plot rescaling; the value of &sigma;(&Delta;&rho;)
+read from the map header is used, with zero for the offset.
+
+<P><LI>RESLO = <I>real</I>
+<BR><B>Required</B> low resolution cut-off used in map calculation.
+
+<P><LI>RESHI = <I>real</I>
+<BR><B>Required</B> high resolution cut-off used in map calculation.
+
+<P><LI>THR1 = <I>real</I>
+<BR>Optional &sigma; cut-off threshold for Fo map: default is no
+cut-off.
+
+<P><LI>THR2= <I>real</I>
+<BR>Optional &sigma; cut-off threshold for &Delta;F map: default is no
+cut-off.
+
+<P><LI>TEST = <I>integer</I>
+<BR>Debug flag used for testing and obsolete options: sum of debug
+option values as follows:
+<PRE>
+LS-bit  Value  Output
+  0       1    General debugging.
+  1       2    P-P & Q-Q difference plots for chains.
+  2       4    Memory allocation debugging.
+  3       8    ZSCORE s/r debugging for RSZD values.
+  4      16    RSZD outliers.
+  5      32    Cumulative frequencies for RSZDs > 3 &sigma;.
+  6      64    Normality tests.
+</PRE>
+
+<P><LI>USEFO = <I>logical</I>
+<BR>A value TRUE indicates that the density histogram and Q-Q difference
+plots should use the Fo density instead of the &Delta;F density.&nbsp
+This is only intended for demonstration purposes: the Fo density is not
+useful in the calculation of the RSZD metrics so with this option set,
+the program will stop after doing the Q-Q plot calculations.
+</UL>
+
+<A NAME=Input_files>
+<H2>INPUT FILES</H2>
+
+<UL>
+<P><LI>XYZIN - Co-ordinate file in PDB format.
+
+<P><LI>MAPIN1 - Input 2mFo-DFc map in CCP4 format.
+
+<P><LI>MAPIN2 - Input 2(mFo-DFc) map in CCP4 format: this must contain
+the same header info as MAPIN1.
+<P>Both maps should be calculated with a grid spacing between 1/4 and
+1/6 of the high resolution cut-off (usually 1/4 is sufficient), and the
+PDB file and the maps should all be from the same refinement job.
+<P><B>NOTE</B>: it is essential that the MTZ file from the refinement
+job is run through the MTZFIX program before map calculation with FFT to
+ensure that the map coefficients are correct and consistent between
+programs (unfortunately different refinement programs have different
+conventions for the map coefficients!).
+</UL>
+
+<A NAME=Output_files>
+<H2>OUTPUT FILES</H2>
+
+<UL>
+<LI>HISOUT - Optional output file for the histogram of map values,
+containing 2 data columns: the observed Z-score and the observed
+frequency.&nbsp This is used for visualising the deviations of the
+observed distribution of either &Delta;&rho;/&sigma;(&Delta;&rho;) (if
+USEFO = f), or of &rho;<SUB>obs</SUB>/&sigma;(&Delta;&rho;) (USEFO = t),
+from the theoretical normal distribution.&nbsp A normal distribution
+would give the Gaussian curve <I>y</I> = exp(-.5 <I>x</I><SUP>2</SUP>) /
+&radic;(2&pi;), so deviations from this indicate deviations from
+normality.&nbsp However a histogram does not show up outliers nearly as
+clearly as the P-P and Q-Q plots (see below), so is really only suitable
+for demonstration purposes.&nbsp The output is readily visualised using
+a plotting program such as gnuplot, <I>e.g.</I>:
+<PRE>
+&gt gnuplot
+Terminal type set to 'x11'
+gnuplot> plot'edstats.his' w l,exp(-.5*x**2)/sqrt(2*pi)
+</PRE>
+
+<P><LI>PPDOUT - Optional output file for the 'P-P difference' plot,
+containing 2 data columns: the cumulative probability for the normal
+distribution, and the difference (inverse normal cumulative probability
+of the observed quantile - normal probability).&nbsp The output is
+readily visualised using gnuplot (see example for Q-Q difference plot
+below).&nbsp The P-P plot is not as informative as the Q-Q plot, and
+generally is only used for test purposes.
+
+<P><LI>QQDOUT - Optional output file for the 'Q-Q difference' plot,
+containing 2 data columns: the expected quantile (or Z-score) for the
+normal distribution, and the difference (observed quantile - normal
+expected quantile).&nbsp This is used for visualising the deviations of
+the observed distribution of either &Delta;&rho;/&sigma;(&Delta;&rho;)
+(if USEFO = f), or of &rho;<SUB>obs</SUB>/&sigma;(&Delta;&rho;) (USEFO =
+t) from the normal distribution.&nbsp A normal distribution would give
+the straight line <I>y</I> = 0, so deviations from this line indicate
+outliers, <I>i.e.</I> deviations from normality (note that the Q-Q plot
+does <I>not</I> show deviations from zero density, but rather deviations
+from the normal, or other assumed, distribution).&nbsp The numerically
+highest outliers will be in the 'tails', <I>i.e.</I> the negative
+outliers are the troughs in &Delta;&rho;/&sigma;(&Delta;&rho;) or
+&rho;<SUB>obs</SUB>/&sigma;(&Delta;&rho;) and the positive outliers are
+the peaks.&nbsp The output is readily visualised (with the 'normal'
+<I>y</I> = 0 line) using gnuplot, <I>e.g.</I>:
+<PRE>
+&gt gnuplot
+Terminal type set to 'x11'
+gnuplot> plot'edstats.qqd' w l,0 lt 0
+</PRE>
+
+<P><LI>OUT - Optional output file for table of per-residue metrics
+suitable for plotting with <I>e.g.</I> gnuplot.&nbsp If no output file
+is specified the data go to standard output.&nbsp The columns in this
+table are:
+<P><OL>
+<LI>Residue 3-letter code.
+<LI>Chain ID.
+<LI>Residue label (including insertion code if present).
+<LI>Weighted average <I>B</I><SUB>iso</SUB> for main-chain atoms in
+residue (including C&beta;).&nbsp This is weighted according to the
+contribution of the atoms to the total scattering in the resolution
+range specified (Tickle <I>et al.</I>, 1998).
+<LI>Number of statistically independent grid points covered by
+main-chain atoms.
+<LI>Real-space R factor (RSR) for the main-chain atoms in the residue.
+<LI>Real-space correlation coefficient (RSCC).
+<LI>Real-space 'population' correlation coefficient.
+<LI>Real-space Z<SUB>obs</SUB> metric (RSZO).
+<LI>Real-space Z<SUB>diff</SUB> metric (RSZD); this is simply the
+maximum value of |RSZD-| and RSZD+.
+<LI>Real-space Z<SUB>diff</SUB> metric for negative differences (RSZD-).
+<LI>Real-space Z<SUB>diff</SUB> metric for positive differences (RSZD+).
+</OL>
+
+<P>Columns 13-21 contain the same information as columns 4-12 above
+(<I>i.e.</I> add 9), but for the side-chain atoms (excluding C&beta;) if
+present.
+
+<P>To plot the RSZD- and RSZD+ metrics (in columns 11 & 12) by residue
+for the main-chain atoms with the suggested threshold lines at
+&plusmn;3&sigma;, using gnuplot:
+
+<PRE>
+> gnuplot
+Terminal type set to 'x11'
+gnuplot> set style data impulses
+gnuplot> plot'edstats.out'u 11,''u 12,-3 lt 0,3 lt 0
+</PRE>
+
+Similarly use columns 20 & 21 to plot the side-chain values.&nbsp See
+separate section below on interpreting these plots.
+
+<P><LI>MAPOUT1 - Optional rescaled and normalised 2mFo-DFc map,
+<I>i.e.</I> a map of &rho;<SUB>obs</SUB>/&sigma;(&Delta;&rho;) where
+&sigma;(&Delta;&rho;) may vary between grid points.
+
+<P><LI>MAPOUT2 - Optional rescaled and normalised 2(mFo-DFc) map,
+<I>i.e.</I> a map of &Delta;&rho;/&sigma;(&Delta;&rho;) where
+&sigma;(&Delta;&rho;) may vary between grid points.
+
+<P><LI>XYZOUT - Optional co-ordinate file in PDB format; if given, only
+the molecule(s) selected are output and the occupancy column (character
+columns 55-60) is overwritten with the per-atom |RSZD-| metric.
+</UL>
+
+<A NAME=Analysing>
+<H2>ANALYSING THE STANDARD OUTPUT: OVERALL METRICS</H2>
+
+The default run options will produce 2 files: the standard output from
+edstats (edstats.log in the example above) which contains some overall
+metrics, and the output file (<I>e.g.</I>edstats.out) containing the
+table of per-residue metrics (see following section).
+
+<P>The supplied Perl script percent-rank.pl extracts a small subset of
+the overall metrics from the standard output, compares the results with
+a pre-calculated set in the supplied data file pdb-edstats.out, and for
+each metric prints out the per-cent rank (<I>i.e.</I> the percentage of
+structures in the pre-calculated set which have a worse score, so 0% is
+'worst' and 100% is 'best').&nbsp This is intended to a give a quick
+overview of the state of the difference Fourier and is not a meant as a
+substitute for interpreting the per-residue metrics (see next
+section).&nbsp Generally you would probably want your structure to score
+above average on all measures, so at least above the median 50%
+rank.&nbsp But obviously not every structure can be above average!
+
+<P>The data file pdb-edstats.out, or a link to it, must be present in
+the current directory; alternatively set the environment variable
+PDB_EDSTATS to point to it.&nbsp The data were obtained by running
+edstats on ~ 600 supposedly 'good' structures (anonymous!) from <A
+HREF=http://www.cmbi.ru.nl/pdb_redo>PDB_REDO</A> with Rfree &lt 0.175
+and > 100 residues (protein only).&nbsp This is not ideal, since it
+would clearly be much better to bin the known structures by high
+resolution cut-off and compare your structure only with known structures
+at roughly the same resolution; however this will require a much larger
+database than I have the resources to set up in the short term.&nbsp
+Hopefully this feature will be developed and improved in a future
+release.
+
+<P>The columns in the data file pdb-edstats.out contain:
+
+<OL><LI>High resolution cut-off.
+
+<P><LI>Resolution-weighted average B<SUB>iso</SUB> (<I>e.g.</I> the
+effective average of B<SUB>iso</SUB>s 10 and 100 is not 55 but something
+much closer to 10, depending on the resolution cut-offs, since the atom
+with B<SUB>iso</SUB> = 100 only contributes significantly to the
+scattering at low resolution).
+
+<P><LI>Q-Q plot ZD- metric: this gives an overall indication of how much
+the distribution of all negative difference density in the asymmetric
+unit deviates from the expected normal distribution for purely random
+errors.&nbsp Significant negative density outliers giving a high
+numerical Q-Q plot ZD- metric probably indicates wrongly placed atoms,
+over-restrained B factors, problems with the bulk solvent parameters
+(<I>e.g.</I> due to low completeness at low resolution), or generally
+low data completeness.
+
+<P><LI>Q-Q plot ZD+ metric: ditto for all positive difference
+density.&nbsp Low per-cent ranks (large values) for this metric are not
+as indicative of problems as are low ranks for the Q-Q plot ZD- metric
+above, because it can be difficult to interpret residual density
+outliers due to disorder, buffer ions, cryo-protectants and other
+additives, so uninterpreted (and uninterpretable) density is quite
+common in deposited structures.&nbsp Consequently a high value for the
+Q-Q plot ZD+ metric does not necessarily indicate a serious problem; it
+would be better to check the per-residue RSZD+ scores.
+
+<P><LI>Percentage of residue RSZD- metrics numerically above the
+3&sigma; threshold (see also next section).
+
+<P><LI>Percentage of residue RSZD+ metrics above the 3&sigma; threshold.
+</OL>
+
+<P>The percent-rank.pl script prints out the per-cent ranks for metrics
+3-6 above.
+
+<P>Examples of usage:
+<PRE>
+percent-rank.pl edstats.log
+or
+percent-rank.pl *.log
+</PRE>
+
+Note that the overall statistics for the RSZO metrics which appear in
+the standard output are not listed by the percent-rank.pl script; this
+is deliberate: the RSZO metric is a measure of precision and is really
+only meaningful when analysed at the residue level.&nbsp For example it
+may be that only say 50% of the residues score above the threshold of
+the precision metric, but if these 50% tell you all that you wanted to
+know about the biological function, then clearly the experiment can be
+counted as a success (assuming of course that all residues have
+acceptable scores for the accuracy metrics).&nbsp So it all depends on
+which residues have high values of the precision metric.&nbsp On the
+other hand, if only 50% of residues scored above the threshold for the
+accuracy metric then this would be regarded as a poor result, no matter
+which residues they were.
+
+<A NAME=Interpreting>
+<H2>INTERPRETING THE PER-RESIDUE METRICS</H2>
+
+For the per-residue metrics listed in the output file (<I>e.g.</I>
+edstats.out) I have suggested rejection limits of &lt -3&sigma; and &gt
+3&sigma; for the residue RSZD-/+ metrics respectively, and &lt 1&sigma;
+for the residue RSZO metrics, though these may need to be adjusted in
+the light of experience.
+
+<P>The RSZD scores are accuracy metrics, <I>i.e.</I> at least in theory
+they can be improved by adjusting the model (by eliminating the obvious
+difference density), so start by checking the worst offenders
+first.&nbsp Use the Fourier and difference maps in your favourite
+graphics model-building program to guide any adjustments of the model
+that may be required, in the usual way.&nbsp Note that positive density
+deviations are usually more frequent than negative ones, because they
+represent uninterpretable, as opposed to incorrectly interpreted
+density, and are therefore less symptomatic of underlying problems.
+
+<P>The RSZO scores are precision metrics and will be strongly correlated
+with the B<SUB>iso</SUB>s (since that is also a precision metric),
+<I>i.e.</I> assuming you've fixed any issues with accuracy of that
+residue there's nothing you can do about the precision, short of
+re-collecting the data.
+
+<P>The RSR and RSCC (both 'sample' and 'population') metrics are
+tabulated for comparison but are correlated with both accuracy and
+precision, so they can be useful in some circumstances, but they don't
+always help with telling you whether adjustment of the model is
+required, or whether the problem is actually an intrinsic property of
+the structure, or lies with the data.&nbsp Note that the RSR and RSCC
+metrics vary with the program used, since they depend strongly on the
+radius cut-off, scaling algorithm and other variables which can vary a
+lot between programs.
+
+<A NAME=References>
+<H2>REFERENCES</H2>
+
+C-I. Br&#xe4;nd&#xe9;n & T.A. Jones <I>Nature</I> (1990). <B>343</B>,
+687-689.
+<BR>J.D. Gibbons & S. Chakraborti, S. (2003). Nonparametric statistical
+inference, 4th ed., New York: Marcel Dekker, Inc.
+<BR>T.A. Jones, J-Y. Zou, S.W. Cowan & M. Kjeldgaard <I>Acta Cryst.</I>
+(1991). A<B>47</B>, 110-119.
+<BR>P. Main <I>Acta Cryst.</I> (1979). A<B>35</B>, 779-785.
+<BR>R.J. Read <I>Acta Cryst.</I> (1986). A<B>42</B>, 140-149.
+<BR>R.R. Sokal & F.J. Rohlf (1995). Biometry, 3rd ed., New York: WH
+Freeman.
+<BR>I.J. Tickle, R.A. Laskowski, & D.S. Moss <I>Acta Cryst.</I> (1998).
+D<B>54</B>, 243-252.
+<BR>I.J. Tickle <I>CCP4 Study Weekend</I> (2011). <I>Manuscript of
+presentation submitted - to be published in Acta Cryst. D</I>.
+
+<H2>AUTHOR</H2>
+
+<SCRIPT>
+/*<![CDATA[*/
+
+/*****************************************************
+* Encrypt Email script- Please keep notice intact    *
+* Tool URL: http://www.dynamicdrive.com/emailriddler *
+*****************************************************/
+
+var emailriddlerarray=[105,97,110,46,116,105,99,107,108,101,64,97,115,
+  116,120,46,99,111,109]
+var encryptedemail=''
+for(var i=0;i<emailriddlerarray.length;i++)
+  encryptedemail+=String.fromCharCode(emailriddlerarray[i])
+document.write('Ian J. Tickle, Astex Pharmaceuticals'+
+  ' ( <a href="mailto:'+encryptedemail+'">'+encryptedemail+'</a> ).')
+
+/*]]>*/
+</SCRIPT>
+
+<H2>EXAMPLES</H2>
+
+<H3>Example 1</H3>
+This example illustrates how the maps must be prepared.&nbsp Failure to
+follow this recipe is likely to give inaccurate results!
+<PRE>
+#!/bin/tcsh
+# Fix up the map coefficients: FLABEL specifies the label for Fobs &
+# &sigma;(Fobs) (defaults are F/SIGF or FOSC/SIGFOSC).  Here, 'in.mtz'
+# is the output reflection file from the refinement program in MTZ
+# format.
+
+rm -f fixed.mtz
+mtzfix  FLABEL FP  HKLIN in.mtz  HKLOUT fixed.mtz  >mtzfix.log
+if($?) exit $?
+
+# Good idea to check the mtzfix output before proceeding!
+
+less mtzfix.log
+
+# If no fix-up was needed, use the original file.
+
+if(! -e fixed.mtz)  ln -s  in.mtz fixed.mtz
+
+# Compute the 2mFo-DFc map; you need to specify the correct labels for
+# the F and phi columns: 'FWT' & 'PHWT' should work for Refmac.
+# Note that EDSTATS needs only 1 asymmetric unit (but will also work
+# with more).  Grid sampling must be at least 4.
+
+echo 'labi F1=FWT PHI=PHWT\nxyzl asu\ngrid samp 4.5'  | fft  \
+HKLIN fixed.mtz  MAPOUT fo.map
+if($?) exit $?
+
+# Compute the 2(mFo-DFc) map; again you need to specify the right
+# labels.
+
+echo 'labi F1=DELFWT PHI=PHDELWT\nxyzl asu\ngrid samp 4.5'  | fft  \
+HKLIN fixed.mtz  MAPOUT df.map
+if($?) exit $?
+</PRE>
+
+<H3>Example 2</H3><PRE>
+#!/bin/tcsh
+# Q-Q difference plot & main- & side-chain residue statistics.
+
+echo resl=50,resh=2.1  | edstats  XYZIN in.pdb  MAPIN1 fo.map  \
+MAPIN2 df.map  QQDOUT q-q.out  OUT stats.out
+if($?) exit $?
+</PRE>
+
+<H3>Example 3</H3><PRE>
+#!/bin/tcsh
+# Main- & side-chain atom statistics, using chains A & I only & writing
+# PDB file with per-atom Z<SUB>diff</SUB> metrics.
+echo mole=AI,resl=50,resh=2.1,main=atom,side=atom  | edstats  \
+XYZIN in.pdb  MAPIN1 fo.map  MAPIN2 df.map  XYZOUT out.pdb  \
+OUT stats.out
+if($?) exit $?
+</PRE>
+
+</BODY></HTML>

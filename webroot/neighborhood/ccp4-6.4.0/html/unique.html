@@ -1,0 +1,256 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>CCP4 Program Suite</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]">
+</HEAD>
+<BODY>
+
+<!-- ::INDEX_INFO::UNIQUE::Supported::Data Processing and Reduction::Generate a unique list of reflections::including uniqueify:::::: -->
+
+<H1>UNIQUE (CCP4: Supported Program)</H1>
+<H2>NAME</H2>
+<B>unique </B>
+- Generate a unique list of reflections 
+
+<H2>SYNOPSIS</H2>
+
+<P><B>unique hklout</B> <I>foo.mtz</I> <BR>
+[<A HREF="#keywords">Keyworded input</A>] </P>
+
+<H2><A NAME="description"></A>DESCRIPTION</H2>
+
+<P>UNIQUE creates a unique list of reflections for a given unit cell with
+a given symmetry up to a specified high resolution limit. <! --  Have deleted OSCGEN bits (which were comments in this source -- ><! --  file) since this is now supposed to be obsolete. OSCG keyword -- ><! --  still exists in the program source, but will probably go soon. -- ><! --  If you really want to know about this, contact DL. -- >The
+output file can be used to complete a dataset (<EM>i.e.</EM> to give an MTZ file
+with all allowed reflections present whether or not data have been measured
+for them), and to give completeness information on the measured dataset.
+The procedure is as follows: </P>
+
+<OL>
+<LI>Produce a list of the unique reflections in an MTZ file, using UNIQUE
+with the appropriate cell parameters, symmetry and resolution range; </LI>
+
+<LI>Use <A HREF="freerflag.html">FREERFLAG</A> to add a column of free-R flags to the MTZ file, to be
+used later for cross-validation; </LI>
+
+<LI>Add this column of free-R flags to the dataset MTZ file using <A HREF="cad.html">CAD</A>.
+Unmeasured data, <EM>i.e.</EM> reflections that are present in the column of free-R
+flags but not in the original dataset, are represented in the output of
+CAD as Missing Number Flag (MNF) entries. </LI>
+
+<LI>Run <A HREF="mtzdump.html">MTZDUMP</A> on the output of CAD to get various statistics, including
+the number of missing data entries (<EM>i.e.</EM> MNFs) for each column of data.
+This gives the completeness of the dataset for the specified resolution
+range. </LI>
+</OL>
+
+<P>A script to perform steps 1 - 3 is provided in $CETC/uniqueify (see
+<A HREF="#uniqueify_script">below</A>), and an example of its use is given in $CEXAM/unix/runnable/unique-free-R.
+Note that this script only gives a high resolution limit to UNIQUE (see
+<A HREF="#resolution">RESOLUTION</A> keyword), and so the dataset is extended to the lowest
+possible resolution. This is the recommended practice. </P>
+
+<P>The 'uniqueify' script is also a part of the
+<A HREF="../ccp4i/help/modules/mtz_utils.html#import">Convert to MTZ &amp; Standardise</A> task
+in the Reflection Data Utilities of the CCP4 Graphical User Interface (CCP4I).</P>
+
+<P>If a column of free-R flags is already present in the incomplete dataset,
+then a modified procedure should be followed: </P>
+
+<OL>
+<LI>Produce a list of the unique reflections using UNIQUE; </LI>
+
+<LI>Merge the output of UNIQUE with the dataset using <A HREF="cad.html">CAD</A>; </LI>
+
+<LI>Use the <A HREF="freerflag.html#complete">COMPLETE</A> option of FREERFLAG to complete the free-R column;
+</LI>
+
+<LI>Remove the surplus columns originating from UNIQUE using <A HREF="mtzutils.html">MTZUTILS</A>;
+</LI>
+
+<LI>Use <A HREF="mtzdump.html">MTZDUMP</A> again to analyse the dataset. </LI>
+</OL>
+
+<P>This sequence is performed using the -f switch of the $CETC/uniqueify
+script. </P>
+
+<P>The old procedure using COMPLETE is now obsolete. </P>
+
+<H2><A NAME="keywords"></A>KEYWORDED INPUT</H2>
+
+<P>The various data control lines are identified by keywords. Only the
+first 4 letters of each keyword are necessary. </P>
+
+<DL>
+<DT>Compulsory</DT>
+
+<DD>
+<BLOCKQUOTE>
+<A HREF="#cell"><B>CELL</B></A>,
+<A HREF="#resolution"><B>RESOLUTION</B></A>,
+<A HREF="#symmetry"><B>SYMMETRY</B></A>.
+</BLOCKQUOTE>
+</DD>
+
+<DT>Optional</DT>
+
+<DD>
+<BLOCKQUOTE>
+<A HREF="#default"><B>DEFAULT</B></A>,
+<A HREF="#labout"><B>LABOUT</B></A>,
+<A HREF="#run"><B>RUN/GO/END</B></A>,
+<A HREF="#title"><B>TITLE</B></A>.
+</BLOCKQUOTE>
+</DD>
+</DL>
+
+<H3><A NAME="cell"></A>CELL &lt;a&gt; &lt;b&gt; &lt;c&gt; [ &lt;alpha&gt;
+&lt;beta&gt; &lt;gamma&gt; ]</H3>
+
+<P>Specify the unit cell. At least 3 numbers must be entered. Alpha, beta
+and gamma default to 90.0. </P>
+
+<H3><A NAME="resolution"></A>RESOLUTION &lt;Dmax&gt;</H3>
+
+<P>Maximum resolution - either 4(sin theta/lambda)**2 or d in Angstrom.
+Unique reflections up to this limit are output to the MTZ file. </P>
+
+<H3><A NAME="symmetry"></A>SYMMETRY &lt;Space group name or number&gt;</H3>
+
+<P>Symmetry of the output file. </P>
+
+<H3><A NAME="default"></A>DEFAULT &lt;default&gt;</H3>
+
+<P>&lt;default&gt; is a real number or missing data value (NaN) output
+in the F and SIGF columns. It defaults to NaN. </P>
+
+<H3><A NAME="title"></A>TITLE &lt;string&gt;</H3>
+
+<P>Title on the printer output and output MTZ file </P>
+
+<H3><A NAME="labout"></A>LABOUT &lt;Proglab&gt;=&lt;Userlabel&gt; ...</H3>
+
+<P>Specify output column labels. </P>
+
+<P>The default column labels are H K L F SIGF, where F and SIGF have dummy
+values &lt;default&gt; (see <A HREF="#default">DEFAULT</A> keyword). </P>
+
+<H3><A NAME="end"><A NAME="run"><A NAME="go"></A></A></A>RUN | GO | END</H3>
+
+<P>Terminates keyworded input and runs the program. </P>
+
+<H2><A NAME="files"></A>INPUT AND OUTPUT FILES</H2>
+
+<P>The output file is a reflection data file in standard MTZ format (<EM>i.e.</EM>
+one record/reflection) containing 5 items per reflection (see the <A HREF="#labout">LABOUT</A>
+keyword for labels used). </P>
+
+<P>The F and SIGF columns all take the &lt;default&gt; value (see the <A HREF="#default">DEFAULT</A>
+keyword). </P>
+
+<H2><A NAME="output"></A>PRINTER OUTPUT</H2>
+
+<P>The printer output starts with details of the control data and the symmetry.
+Limits of the Miller indices are printed for this resolution range. Details
+of the output MTZ file followed by the total number of reflections tested
+and written out end the output. </P>
+
+<H2><A NAME="function"></A>PROGRAM FUNCTION</H2>
+
+<P>The program UNIQUE reads in control data and calculates a reciprocal
+cell. From this cell the range of Miller indices for the required resolution
+range is calculated. The program then loops through each potential reflection
+and tests whether it satisfies the limiting conditions for this Laue group
+and/or whether the reflection is a systematic absence before outputting
+to the MTZ file. </P>
+
+<H2><A NAME="uniqueify_script"></A>uniqueify SCRIPT</H2>
+
+<P>The full syntax of $CETC/uniqueify is: </P>
+
+<P>uniqueify [-s] [-f &lt;label&gt; | -p &lt;fraction&gt;] &lt;input file&gt;[.mtz]
+[&lt;output file&gt;] </P>
+
+<DL>
+<DT>-s</DT>
+
+<DD> Keep systematic absences in the output MTZ file. </DD>
+
+<DT>-f &lt;label&gt;</DT>
+
+<DD> If your dataset already contains a free-R column you must specify
+this switch and give the label of the free-R column as it appears in the
+input MTZ file. uniqueify will deduce the style and range of flags used
+and preserve them when completing the free-R column. </DD>
+
+<DT>-p &lt;fraction&gt;</DT>
+
+<DD> If your dataset does not already contain a free-R column then you
+may specify the fraction of reflections to be tagged with each free-R indicator.
+&lt;fraction&gt; (default 0.05) is passed as the argument to the <A HREF="freerflag.html#freerfrac">FREERFRAC</A>
+keyword of FREERFLAG (see <A HREF="freerflag.html">FREERFLAG documentation</A>). </DD>
+</DL>
+
+<P>A VMS version ($CETC/UNIQUEIFY.COM) is also provided. </P>
+
+<H2>SEE ALSO</H2>
+
+<P><A HREF="freerflag.html">freerflag</A>, <A HREF="cad.html">cad</A>,
+<A HREF="mtzdump.html">mtzdump</A> </P>
+
+<H2>AUTHOR</H2>
+
+<P>A.G.W.Leslie </P>
+
+<H2><A NAME="examples"></A>EXAMPLES</H2>
+
+<H3>Producing a set of reflection data</H3>
+
+<PRE>     unique HKLOUT x_unq.mtz &lt;&lt; EOF
+     TITLE  Unique data for protease
+     LABOUT  F=FP SIGF=SIGFP
+     SYMM P212121
+     RESOL 1.40
+     CELL 40.0 50.0 71.0
+     EOF
+</PRE>
+
+<H3>Statistics of completeness on a set of measured data</H3>
+
+<PRE>     #! first make the unique data
+     #
+     unique hklout x_unq.mtz &lt;&lt;eof-unique
+     TITLE  Unique data for protease
+     LABOUT  F=FP SIGF=SIGFP
+     SYMM P212121
+     RESOL 1.40
+     CELL 40.0 50.0 71.0
+     eof-unique
+     #
+     #! Now add free-R column
+     #
+     freerflag HKLIN x_unq.mtz HKLOUT x_unq2.mtz &lt;&lt;eof-freerflag
+     END
+     eof-freerflag
+     #
+     #! Now merge the free-R column of the unique file with the 
+     #! measured data
+     #
+     cad HKLIN1 x_unq2.mtz HKLIN2 p14_tru.mtz 
+         HKLOUT p14_tru_complete.mtz &lt;&lt; eof-cad
+     LABI FILE 1  E1=FreeR_flag
+     LABI FILE 2  ALLIN
+     END
+     eof-cad
+     #
+     # ! Now run the merged file through MTZDUMP
+     #
+     mtzdump HKLIN p14_tru_complete.mtz &lt;&lt; eof-mtzdump 
+     NREF 100  
+     END
+     eof-mtzdump 
+</PRE>
+
+</BODY>
+</HTML>

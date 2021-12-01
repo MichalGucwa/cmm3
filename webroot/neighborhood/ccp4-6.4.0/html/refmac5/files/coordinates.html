@@ -1,0 +1,456 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4 Program Suite : refmac - Input and output files</title>
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX64 6.2 IP19) [Netscape]"></head>
+</head>
+<body>
+
+<!-- ::INDEX_INFO::REFMAC::Supported::Model Refinement::macromolecular refinement program:::::::: -->
+
+<a name="xyzin" id="xyzin"></a>
+<a name="xyzout" id="xyzout"></a>
+<h1>REFMAC (CCP4: Supported Program)</h1>
+<h2>User's manual for the program REFMAC, version 5.*</h2>
+
+<h1><a name="pdbfile" id="pdbfile"></a>Input and output files - Coordinate files</h1>
+
+<p>For a complete description of the PDB file see the
+<a href="http://www.rcsb.org/pdb/docs/format/pdbguide2.2/guide2.2_frame.html" target="_blank">PDB guide -
+Format Description Version 2.3</a>. Here only short descriptions of the records used by REFMAC are given.
+REFMAC will use MODRES, SSBOND, LINK and CISPEP records to define restraints used in refinement;
+this is dependent on the <a href="../keywords/restraints.html#makecif">MAKE_restraints</a> keyword input.
+<!--mgwt;lizp;garib: what does it doe with the other records??-->
+There are some CCP4-specific extensions to the standard definitions, which are shown
+<font color="#ff0000">in red</font> below.</p>
+
+<p>Note that PDB is a formatted file, so care should be taken when edited manually. Both the order of
+the records, and the placing of characters in the correct column within a record, is important.
+The easiest way to enter restraints or review and edit the restraints in a file, is using the
+CCP4I task 'Edit Restraints in PDB File'.</p>
+
+<h4>PDB records recognised by REFMAC</h4>
+
+<p>When the program reads a PDB file, it uses the following records from PDB:</p>
+<ul>
+<li><a href="#pdb_aniso">ANISOU</a></li>
+<li><a href="#pdb_atom">ATOM</a></li>
+<li><a href="#pdb_cispep">CISPEP</a></li>
+<!--<li><a href="#pdb_conect">CONECT</a></li>-->
+<li><a href="#pdb_cryst">CRYST1</a></li>
+<!--<li><a href="#pdb_hydbnd">HYDBND</a></li>-->
+<li><a href="#pdb_link">LINK</a></li>
+<li><a href="#pdb_modres">MODRES</a></li>
+<li><a href="#pdb_scale">SCALE</a></li>
+<!--<li><a href="#pdb_sltbrg">SLTBRG</a></li>-->
+<li><a href="#pdb_ssbond">SSBOND</a></li>
+<li><a href="#pdb_term">TER</a></li>
+</ul>
+
+<h4>Summary of CCP4-specific features</h4>
+
+<ul>
+<li>The standard residue name field in the MODRES record is expanded to
+6 characters (the extension is into columns normally used for comment).</li>
+
+<li>An additional ID field in the MODRES record to cross-reference to the
+list of modifications in the CCP4 libraries.</li>
+
+<li>An additional ID field in the LINK record to cross-reference to the
+list of links in the CCP4 libraries.</li>
+
+<li>REFMAC will always check the input symmetry operations for SSBOND and
+LINK records. If both the input operations are 1555 (<em>i.e.</em> the identity
+operator) or are missing, then REFMAC will treat the bond as being within
+the same asymmetric unit but if the input suggests the bond is between asymmetric
+units (<em>e.g.</em> input 1555 and 2555), it will perform a search of all the
+neighbouring asymmetric units to find the correct bond. REFMAC will
+output the correct symmetry operations to the PDB file.</li>
+</ul>
+
+<h2><a name="pdb_cryst" id="pdb_cryst"></a>CRYST1</h2>
+
+<p>This record defines cell dimensions and space group symmetry
+corresponding to this crystal.</p>
+
+<h4><a name="pdb_cryst_format" id="pdb_cryst_format"></a>Record Format</h4>
+
+<blockquote><pre>COLUMNS       DATA TYPE      FIELD         DEFINITION
+-------------------------------------------------------------
+ 1 -  6       Record name    "CRYST1"
+ 7 - 15       Real(9.3)      a             a (Angstroms).
+16 - 24       Real(9.3)      b             b (Angstroms).
+25 - 33       Real(9.3)      c             c (Angstroms).
+34 - 40       Real(7.2)      alpha         alpha (degrees).
+41 - 47       Real(7.2)      beta          beta (degrees).
+48 - 54       Real(7.2)      gamma         gamma (degrees).
+56 - 66       LString        sGroup        Space group.</pre></blockquote>
+
+<h4><a name="pdb_cryst_details" id="pdb_cryst_details"></a>Details</h4>
+
+<ul>
+<li>The Hermann-Mauguin space group symbol is given without parentheses, <em>e.g.</em>
+P 43 21 2. Please note that the screw axis is described as a two digit number.</li>
+<li>The full international Hermann-Mauguin symbol is used, <em>e.g.</em> P 1 21 1 instead
+of P 21.</li>
+<li>For a rhombohedral space group in the hexagonal setting, the lattice type symbol used is H.</li>
+</ul>
+
+<p>Example:</p>
+<blockquote><pre>CRYST1   76.560   55.400   84.650  90.00 116.53  90.00 P 1 21 1</pre></blockquote>
+
+<h2><a name="pdb_modres" id="pdb_modres"></a>MODRES</h2>
+
+<p>MODRES is mainly used to avoid the 3 letter limitation of the pdb residue names.
+Using this record one can change residue names for longer name (maximum 8
+character) which is present in the dictionary file. It could also be used for
+any other modifications described in the dictionary.<p>
+<p>Example:</p>
+<pre>
+1234567890123456789012345678901234567890123456789012345678901234567890123456789
+MODRES      DTT A  950  DTT_oxd                                         RENAME
+</pre>
+<p>It means that residue number 950 of chain A is DTT in pdb but it should be
+interpreted as DTT_oxd which is present in dictionary (either supplied by us
+or created by user).</p>
+<p>Note that as all pdb records it is formatted also. Maximum length for
+renamed residue is 8 characters.</p>
+
+<h2><a name="pdb_scale" id="pdb_scale"></a>SCALEn</h2>
+
+<p>The SCALEn (n = 1, 2, or 3) records present the transformation from the
+orthogonal coordinates as contained in the entry to fractional crystallographic
+coordinates. Non-standard coordinate systems should be explained in the
+remarks.</p>
+
+<h4><a name="pdb_scale_format" id="pdb_scale_format"></a>Record Format</h4>
+
+<blockquote><pre>COLUMNS       DATA TYPE      FIELD          DEFINITION
+----------------------------------------------------------------
+ 1 -  6       Record name    "SCALEn"       n=1, 2, or 3
+
+11 - 20       Real(10.6)     s[n][1]        Sn1
+
+21 - 30       Real(10.6)     s[n][2]        Sn2
+
+31 - 40       Real(10.6)     s[n][3]        Sn3
+
+46 - 55       Real(10.5)     u[n]           Un</pre></blockquote>
+
+<h4><a name="pdb_scale_details" id="pdb_scale_details"></a>Details</h4>
+
+<ul>
+<li>The standard orthogonal Angstroms coordinate system used by the PDB is
+related to the axial system of the unit cell supplied (CRYST1 record) by the
+following definition:
+<blockquote>If vector a, vector b, vector c describe the crystallographic cell edges, and
+vector A, vector B, vector C are unit cell vectors in the default orthogonal
+Angstroms system, then vector A, vector B, vector C and vector a, vector b,
+vector c have the same origin; vector A is parallel to vector a, vector B is
+parallel to vector C times vector A, and vector C is parallel to vector a
+times vector b (<em>i.e.</em> vector c*).</blockquote>
+</li>
+<li>If the orthogonal Angstroms coordinates are X, Y, Z, and the fractional cell
+coordinates are xfrac, yfrac, zfrac, then:
+<blockquote><pre>xfrac = S11X + S12Y + S13Z + U1
+
+yfrac = S21X + S22Y + S23Z + U2
+
+zfrac = S31X + S32Y + S33Z + U3</pre></blockquote>
+</li>
+<li>For NMR, fiber diffraction - fiber sample, and theoretical model entries,
+SCALE is given as an identity matrix with no translation.</li>
+</ul>
+
+<h2><a name="pdb_ssbond" id="pdb_ssbond"></a>SSBOND</h2>
+
+<p>The SSBOND record identifies each disulfide bond in protein and polypeptide
+structures by identifying the two residues involved in the bond.</p>
+
+<h4><a name="pdb_ssbond_format" id="pdb_ssbond_format"></a>Record Format</h4>
+
+<blockquote><pre>COLUMNS       DATA TYPE       FIELD          DEFINITION
+----------------------------------------------------------------------------
+ 1 -  6       Record name     "SSBOND"
+
+ 8 - 10       Integer         serNum         Serial number.
+
+12 - 14       LString(3)      "CYS"          Residue name.
+
+16            Character       chainID1       Chain identifier.
+
+18 - 21       Integer         seqNum1        Residue sequence number.
+
+22            AChar           icode1         Insertion code.
+
+26 - 28       LString(3)      "CYS"          Residue name.
+
+30            Character       chainID2       Chain identifier.
+
+32 - 35       Integer         seqNum2        Residue sequence number.
+
+36            AChar           icode2         Insertion code.
+
+60 - 65       SymOP           sym1           Symmetry operator for 1st residue.
+
+67 - 72       SymOP           sym2           Symmetry operator for 2nd residue.</pre></blockquote>
+
+<h4><a name="pdb_ssbond_details" id="pdb_ssbond_details"></a>Details</h4>
+
+<ul>
+<li>Bond distances between the sulfur atoms must be close to expected values.</li>
+<li>The cysteine closer to the N-terminal is listed first in each intra-chain pair.
+The cysteine which occurs first in the coordinate entry is listed first for
+inter-chain pairs.</li>
+<li>sym1 and sym2 are given as blank when the identity operator (and no cell
+translation) is to be applied to the residue.</li>
+<li><font color="#ff0000">The SSBOND record does not have fields for alternate location
+indicators. The solution to this is to use a LINK record
+to define a disulphide bridge between atoms which have alternate conformations
+and to give the LINK ID 'SS'.</font></li>
+
+</ul>
+
+<h2><a name="pdb_link" id="pdb_link"></a>LINK</h2>
+
+<p>The LINK records specify connectivity between residues that is not implied by
+the primary structure. Connectivity is expressed in terms of the atom names.
+This record supplements information given in CONECT records and is provided
+here for convenience in searching.</p>
+
+<h4><a name="pdb_link_format" id="pdb_link_format"></a>Record Format</h4>
+
+<blockquote><pre>COLUMNS        DATA TYPE       FIELD       DEFINITION
+--------------------------------------------------------------------------------
+ 1 -  6        Record name     "LINK  "
+
+13 - 16        Atom            name1       Atom name.
+
+17             Character       altLoc1     Alternate location indicator.
+
+18 - 20        Residue name    resName1    Residue name.
+
+22             Character       chainID1    Chain identifier.
+
+23 - 26        Integer         resSeq1     Residue sequence number.
+
+27             AChar           iCode1      Insertion code.
+
+43 - 46        Atom            name2       Atom name.
+
+47             Character       altLoc2     Alternate location indicator.
+
+48 - 50        Residue name    resName2    Residue name.
+
+52             Character       chainID2    Chain identifier.
+
+53 - 56        Integer         resSeq2     Residue sequence number.
+
+57             AChar           iCode2      Insertion code.
+
+60 - 65        SymOP           sym1        Symmetry operator for 1st atom.
+
+67 - 72        SymOP           sym2        Symmetry operator for 2nd atom.
+
+<font color="#ff0000">73 - 80        LinkID          linkid      Cross-reference to LINK definition in CCP4 libraries</font></pre></blockquote>
+
+<h4><a name="pdb_link_details" id="pdb_link_details"></a>Details</h4>
+
+<ul>
+<li>The atoms involved in bonds between HET groups or between a HET group
+and standard residue are listed.</li>
+<li>Interresidue linkages not implied by the primary structure are listed (<em>e.g.</em>
+reduced peptide bond).</li>
+<li>Non-standard linkages between residues, <em>e.g.</em> side-chain to side-chain, are
+listed.</li>
+<li>Each LINK record specifies one linkage.</li>
+<li>These records do not specify connectivity within a HET group (see CONECT),
+hydrogen bonds (see HYDBND), or disulfide bridges (see SSBOND).</li>
+<li>Hydrogen bonds and salt bridges are described on HYDBND and SLTBRG
+records, respectively.</li>
+<li>sym1 and sym2 are given as blank when the identity operator (and no cell
+translation) is to be applied to the atom.</li>
+<li>For NMR entries only one set (or model) of LINK records will be supplied</li>
+</ul>
+
+<h2><a name="pdb_cispep" id="pdb_cispep"></a>CISPEP</h2>
+
+<p>CISPEP records specify the prolines and other peptides found to be in the cis
+conformation. This record replaces the use of footnote records to list cis peptides.</p>
+
+<h4><a name="pdb_cispep_format" id="pdb_cispep_format"></a>Record Format</h4>
+
+<blockquote><pre>COLUMNS       DATA TYPE       FIELD        DEFINITION
+-------------------------------------------------------------------------
+ 1 -  6       Record name     "CISPEP"
+
+ 8 - 10       Integer         serNum       Record serial number.
+
+12 - 14       LString(3)      pep1         Residue name.
+
+16            Character       chainID1     Chain identifier.
+
+18 - 21       Integer         seqNum1      Residue sequence number.
+
+22            AChar           icode1       Insertion code.
+
+26 - 28       LString(3)      pep2         Residue name.
+
+30            Character       chainID2     Chain identifier.
+
+32 - 35       Integer         seqNum2      Residue sequence number.
+
+36            AChar           icode2       Insertion code.
+
+44 - 46       Integer         modNum       Identifies the specific model.
+
+54 - 59       Real(6.2)       measure      Measure of the angle in
+                                           degrees.</pre></blockquote>
+
+<h4><a name="pdb_cispep_details" id=pdb_cispep_details"></a>Details</h4>
+
+<ul>
+<li>Cis peptides are those with omega angles of 0&#176;&#177;30&#176;. Deviations larger than 30&#176;
+are listed in REMARK 500.</li>
+<li>Each cis peptide is listed on a separate line, with an incrementally ascending
+sequence number.</li>
+</ul>
+
+<h2><a name="pdb_atom" id="pdb_atom"></a>ATOM</h2>
+
+<p>The ATOM records present the atomic coordinates for standard residues. They
+also present the occupancy and temperature factor for each atom. Heterogen
+coordinates use the HETATM record type. The element symbol is always
+present on each ATOM record; segment identifier and charge are optional.</p>
+
+<h4><a name="pdb_atom_format" id="pdb_atom_format"></a>Record Format</h4>
+
+<blockquote><pre>COLUMNS        DATA TYPE       FIELD         DEFINITION
+---------------------------------------------------------------------------------
+ 1 -  6        Record name     "ATOM  "
+
+ 7 - 11        Integer         serial        Atom serial number.
+
+13 - 16        Atom            name          Atom name.
+
+17             Character       altLoc        Alternate location indicator.
+
+18 - 20        Residue name    resName       Residue name.
+
+22             Character       chainID       Chain identifier.
+
+23 - 26        Integer         resSeq        Residue sequence number.
+
+27             AChar           iCode         Code for insertion of residues.
+
+31 - 38        Real(8.3)       x             Orthogonal coordinates for X in
+                                             Angstroms.
+
+39 - 46        Real(8.3)       y             Orthogonal coordinates for Y in
+                                             Angstroms.
+
+47 - 54        Real(8.3)       z             Orthogonal coordinates for Z in
+                                             Angstroms.
+
+55 - 60        Real(6.2)       occupancy     Occupancy.
+
+61 - 66        Real(6.2)       tempFactor    Temperature factor.
+
+73 - 76        LString(4)      segID         Segment identifier, left-justified.
+
+77 - 78        LString(2)      element       Element symbol, right-justified.
+
+79 - 80        LString(2)      charge        Charge on the atom.</pre></blockquote>
+
+<h4><a name="pdb_atom_details" id="pdb_atom_details"></a>Details</h4>
+
+<ul>
+<li>ATOM records for proteins are listed from amino to carboxyl terminus.</li>
+
+<li>Nucleic acid residues are listed from the 5' to the 3' terminus.</li>
+
+<li>No ordering is specified for polysaccharides.</li>
+
+<li>The list of ATOM records in a chain is terminated by a TER record.</li>
+
+<li>If more than one model is present in the entry, each model is delimited by
+MODEL and ENDMDL records.</li>
+
+<li>For more information on atom naming conventions, see Appendix 3, and for
+residue names, see Appendix 4 and the HET section of this document.</li>
+
+<li>If an atom is provided in more than one position, then a non-blank alternate
+location indicator must be used as the alternate location indicator for each of the
+positions. Within a residue all atoms that are associated with each other in a
+given conformation are assigned the same alternate position indicator.</li>
+
+<li>For atoms that are in alternate sites indicated by the alternate site indicator,
+sorting of atoms in the ATOM/HETATM list uses the following general rules:</li>
+<!--mgwt;garib-->
+</ul>
+
+<h2><a name="pdb_aniso" id="pdb_aniso"></a>ANISOU</h2>
+
+<p>The ANISOU records present the anisotropic temperature factors.</p>
+
+<h4><a name="pdb_aniso_format" id="pdb_aniso_format"></a>Record Format</h4>
+
+<blockquote><pre>COLUMNS        DATA TYPE       FIELD         DEFINITION
+----------------------------------------------------------------------
+ 1 -  6        Record name     "ANISOU"
+
+ 7 - 11        Integer         serial        Atom serial number.
+
+13 - 16        Atom            name          Atom name.
+
+17             Character       altLoc        Alternate location
+                                             indicator.
+
+18 - 20        Residue name    resName       Residue name.
+
+22             Character       chainID       Chain identifier.
+
+23 - 26        Integer         resSeq        Residue sequence number.
+
+27             AChar           iCode         Insertion code.
+
+29 - 35        Integer         u[0][0]       U(1,1)
+
+36 - 42        Integer         u[1][1]       U(2,2)
+
+43 - 49        Integer         u[2][2]       U(3,3)
+
+50 - 56        Integer         u[0][1]       U(1,2)
+
+57 - 63        Integer         u[0][2]       U(1,3)
+
+64 - 70        Integer         u[1][2]       U(2,3)
+
+73 - 76        LString(4)      segID         Segment identifier, left-justified.
+
+77 - 78        LString(2)      element       Element symbol, right-justified.
+
+79 - 80        LString(2)      charge        Charge on the atom.</pre></blockquote>
+
+<h4><a name="pdb_aniso_details" id="pdb_aniso_details"></a>Details</h4>
+
+<ul>
+<li>Columns 7 - 27 and 73 - 80 are identical to the corresponding
+ATOM/HETATM record.</li>
+
+<li>The anisotropic temperature factors (columns 29 - 70) are scaled by a factor
+of 10**4 (Angstroms**2) and are presented as integers.</li>
+
+<li>The anisotropic temperature factors are stored in the same coordinate frame as
+the atomic coordinate records.</li>
+
+<li>ANISOU values are listed only if they have been provided by the depositor.</li>
+</ul>
+
+<h2><a name="pdb_term" id="pdb_term"></a>TER</h2>
+
+<p>termination record. More information to follow.</p>
+<!--mgwt;garib-->
+
+</body>
+</html>

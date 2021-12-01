@@ -1,0 +1,262 @@
+<!DOCTYPE html
+                     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                     "DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<title>CCP4 Interface: Density Improvement Module</title>
+<link rel="stylesheet" type="text/css" href="../ccp4idocs.css" title="CCP4i" />
+<link rev="made" href="mailto:mgwt@ysbl.york.ac.uk" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta name="AUTHOR" content="Maria, Liz, Peter" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="2"><img src="../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logotitle">Density Improvement Module</td></tr>
+</table>
+<br />
+<table border="0">
+<tr><td>
+<a href="build.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="molrepl.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="../index.html" target="_top">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td></tr>
+</table>
+
+<dl>
+<dt><font color="#cc3333"><strong>Background information</strong></font></dt>
+<dd><a href="#important_note" target="_self">Important Note on Density Modification</a></dd>
+</dl>
+<dl>
+<dt><font color="#cc3333"><strong>Tasks in this module:</strong></font></dt>
+</dl>
+
+<dl>
+<dt><a href="#matthews1" target="_self">Cell Content Analysis</a></dt>
+</dl>
+<dl>
+<dt><a href="#professs1" target="_self">Find NCS from Heavy Atoms</a></dt>
+</dl>
+<dl>
+<dt><a href="#getax" target="_self">Real Space Correlation Search</a></dt>
+</dl>
+<dl>
+<dt><a href="#dm" target="_self">Run DM</a></dt>
+<dd><a href="http://www.ysbl.york.ac.uk/~cowtan/dm/workshop.html"
+    target="_EXTERNAL">Kevin Cowtan's <tt>dm</tt> Workshop</a></dd>
+</dl>
+<dl>
+<dt><a href="#solomon" target="_self">Run Solomon</a></p></dt>
+</dl>
+<dl>
+<dt><a href="#dmmulti" target="_self">Run DmMulti</a></p></dt>
+</dl>
+<dl>
+<dt><a href="#pirate" target="_self">Run Pirate</a> - statistical phase improvement program</p></dt>
+</dl>
+<dl>
+<dt><strong><em>Utilities</em></strong></dt>
+<dd><a href="#makereference" target="_self">make Pirate reference</a> - files for pirate.</p></dd>
+</dl>
+
+<dl>
+<dt><font color="#cc3333"><strong>Specialist Help</strong></font> is available on:</dt>
+<dt><a href="#did_it_work" target="_self">Did It Work?</a></dt>
+<dd><a href="#maps" target="_self">Maps</a></dd>
+</dl>
+
+<p>The layout of each task window, <em>i.e.</em> the number of folders present,
+and whether these folders are open or closed by default, depends on the choices
+made in the <strong>Protocol</strong> folder of the task (see
+<a href="../general/intro.html#task_window_format" target="_self">Introduction</a>). Although
+certain folders are closed by default, there are specific reasons why you should
+or may want to look at them. These reasons are described in the Task Window
+Layout sections below.</p>
+
+<h4><a name="important_note"></a>Important Note on Density Modification</h4>
+
+<!--<p>Beware that the final FOMs output by the Solomon process are very over-optimistic and
+can not be used with any reliability in any later processing. It is totally unreasonable
+to run '<tt>dm</tt>' after running Solomon - you could try both processes on the
+same initial data but you can not run them in sequence.</p>-->
+
+<p>Beware that the FOMs produced by density modification are generally
+overestimated and should be treated with considerable care. For
+example, '<tt>dm</tt>' will usually produce better results when given native
+SHARP phases rather than SHARP+SOLOMON phases. The same caution
+applies to using density modified phases in refinement, although this
+may be achieved if only a few cycles of density modification are
+applied and phase blurring is used in REFMAC.</p>
+
+<h3><a name="matthews1"></a>Cell Content Analysis</h3>
+
+<p>The program MATTHEWS_COEF, through the Cell Content Analysis task, can
+provide an estimate of the solvent fraction, which is needed when performing
+density modification. The solvent fraction calculation requires an
+estimate of the molecular weight of the protein (which can be obtained from
+the program 
+<a href="../../../../html/rwcontents.html" target="_PROGDOC">RWCONTENTS</a>,
+for example) and the number of molecules in the asymmetric unit.</p>
+
+<p>See also: <a href="molrepl.html#matthews_layout">Matthews - Task Window Layout</a></p>
+
+<h3><a name="professs1"></a>Find NCS from Heavy Atoms</h3>
+
+<p>PROFESSS is a tool to help in the identification of NCS related atoms from a
+list of heavy atom positions. NCS operators determined from PROFESSS can be
+used to define the NCS averaging mask in `<tt>dm</tt>'.</p>
+
+<p>See also: <a href="exptphase.html#professs">Professs - NCS from HA</a></p>
+
+<h3><a name="getax"></a>Real Space Correlation Search - Getax</h3>
+
+<p>GETAX is a program to search for non-crystallographic symmetry if an initial
+map is available. The only knowledge required is a self rotation solution and a
+crude knowledge of the size/shape of your molecule(s).</p>
+
+<p>See program documentation:
+<a href="../../../../html/getax.html" target="_PROGDOC">GETAX</a>.</p>
+
+<h3><a name="dm"></a>Run DM - density improvement</h3>
+
+<p>DM is an automated procedure to apply real space constraints based on
+known features of a protein electron density map in order to improve
+the approximate phasing obtained from experimental sources. It
+combines automatic solvent and NCS masking, solvent flattening,
+averaging over multiple domains, and a range of other techniques.</p>
+
+<p>The DM program documentation states:
+&quot;Histogram matching is enabled by default. However there may exist some very
+exceptional cases where histogram matching is undesirable. Such cases should
+first be established by careful trials with synthetic data or solved structures.
+Histogram matching is more often disabled through ignorance or superstition. It is
+disabled by adding the NOHIST subkeyword.&quot;</p>
+
+<p>See program documentation:
+<a href="../../../../html/dm.html" target="_PROGDOC">DM</a>.</p>
+
+<p>See also
+<a href="http://www.ysbl.york.ac.uk/~cowtan/dm/workshop.html" target="_EXTERNAL">Kevin
+Cowtan's '<tt>dm</tt>' Workshop</a>.</p>
+
+<h3><a name="solomon"></a>Run Solomon - density improvement</h3>
+
+<p>Solomon takes as input a map and outputs an improved map. By default it is run
+in solvent-flipping mode which corresponds to adding the inverted solvent density to
+the initial map. This is similar to adding negative noise to an image in order to
+strengthen the signal/noise ratio. The alternative solvent flattening mode will just
+attempt to reduce solvent density to zero - this is not usually an advisable option.</p>
+
+<p>The script will generate an initial map and requires the input of initial phases and
+FOMs which would normally come from heavy atom refinement such as MLPHARE. The FOMs
+are needed at a later stage, running SIGMAA, for recombination with newly calculated
+phases.</p>
+
+<p>By default, the CCP4i script runs for ten cycles of alternating Solomon with SFALL
+which does a back transform of the map to give phases which are combined with
+the input phases by SIGMAA. The new phases are then used to generate a
+new map which is input into the next run of Solomon.</p>
+
+<p>The resolution of the phases is usually extended by ~0.2-0.5&#197; during the
+running of this process.</p>
+
+<p>Ideally this process should be run using maps of just the asymmetric unit but due to
+limitations with SIGMAA it may be necessary to use the entire unit cell and treat the
+data as spacegroup P1. If there are still problems in running the script, it may be
+necessary to specify the map grid which is an option in the <em>Infrequently Used
+Options</em> folder.</p>
+
+<p>The present CCP4i Solomon script does not incorporate handling of NCS.</p>
+
+<p>See program documentation:
+<a href="../../../../html/solomon.html" target="_PROGDOC">Solomon</a>,
+<a href="../../../../html/sfall.html" target="_PROGDOC">Sfall</a>,
+<a href="../../../../html/sigmaa.html" target="_PROGDOC">Sigmaa</a>,
+<a href="../../../../html/mlphare.html" target="_PROGDOC">MLphare</a>.</p>
+
+<h3><a name="dmmulti"></a>Run DmMulti - multi-crystal density modification</h3>
+
+<p>DMMULTI is a package which applies real space constraints based on known
+features of a protein electron density map in order to improve the approximate
+phasing obtained from experimental sources. The program may be applied to data
+from one or more crystal forms simultaneously.</p>
+
+<p>See program documentation:
+<a href="../../../../html/dmmulti.html" target="_PROGDOC"><tt>dm</tt>multi</a>.</p>
+
+<h3><a name="pirate"></a>Pirate - statistical phase improvement</h3>
+
+<p>PIRATE performs statistical phase improvement by classifying the
+electron density map by sparseness/denseness and order/disorder, with
+the aim of obtaining superior results to conventional solvent mask
+based methods without requiring knowledge of the solvent content.</p>
+
+<p>The target distributions are generated by a simulation calculation using
+a known 'reference' structure for which calculated phases are available.
+The success of the method is dependent on the features of the reference
+structure matching those of the unsolved, 'work' structure. For the common
+case of a protein of mostly equal atoms (i.e. not a metalloprotein), a
+single reference structures can be used, with modifications automatically
+applied to the reference structure to match its features to the work
+structure.</p>
+
+<p>Suitable reference structures can be constructed from the PDB using
+<a href="makereference">Make Pirate Reference File</a>.</p>
+
+<p>See program documentation:
+<a href="../../../../html/cpirate.html" target="_PROGDOC">PIRATE</a>.</p>
+
+<h3><a name="makereference"></a>Make Reference File for Pirate</h3>
+
+<p>This interface can be used to generate a suitable reference file for
+input into <a href="#pirate">Pirate</a>, given a coordinate file with
+similar features as expected for the target structure.</p>
+
+<p>See program documentation:
+<a href="../../../../html/cpirate.html" target="_PROGDOC">PIRATE</a>.</p>
+
+<p>See also
+<a href="http://www.ysbl.york.ac.uk/~cowtan/pirate/pirate.html" target="_EXTERNAL">Kevin Cowtan's
+'<tt>pirate</tt>' homepage</a>.</p>
+
+<h3><a name="did_it_work"></a>Did It Work?</h3>
+
+<p>The success of a density modification run should be judged by whether the final phases
+produce a better (<em>i.e.</em> more interpretable) map as viewed on graphics. The masks
+produced by '<tt>dm</tt>' can also be viewed by graphics.</p>
+
+<h4><a name="maps"></a>Maps</h4>
+
+<p>It is easiest to create maps by running the FFT task inside the desired Density
+Improvement task. Do this by toggling on the option 'Create map file in ...' in the Protocol
+folder. The format of these maps can then be chosen.</p>
+
+<p>Maps may also be (re)created independently from the Density Improvement tasks,
+through the <a href="maputils.html#task_maps" target="_self">Create Task-Specific Maps</a>
+task in the Map &amp; Mask Utilities module. The only input this task requires is the job number
+of the original job - all other parameters will be restored from the database.
+This task will produce the appropriate maps, even when they were not
+calculated in the original job.</p>
+
+<table border="0" width="100%">
+<tr><td>
+<a href="build.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="molrepl.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="../index.html" target="_top">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td>
+<td align="right"><a href="http://validator.w3.org/" target="_EXTERNAL">Valid XHTML 1.0!</a>
+<a href="http://jigsaw.w3.org/css-validator/" target="_EXTERNAL">Valid CSS!</a></td>
+</tr>
+</table>
+
+</body>
+</html>

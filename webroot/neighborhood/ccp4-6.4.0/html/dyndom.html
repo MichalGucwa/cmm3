@@ -1,0 +1,269 @@
+
+
+<html>
+<head><title>CCP4 Program Suite: dyndom</title></head>
+<body>
+
+<!-- ::INDEX_INFO::DYNDOM::Supported::Model Analysis::determine dynamic domains when two conformations are available:::::::: -->
+
+<H1> DYNDOM (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>dyndom </b>
+- determine dynamic domains when two conformations are available
+<H2> SYNOPSIS</H2>
+<b>dyndom</b>
+<i>command_file</i>
+<br>
+
+<H2><a name="description">DESCRIPTION</a></H2>
+
+<p>
+For complete and up-to-date information, see the 
+<a href="http://www.sys.uea.ac.uk/dyndom">
+DynDom Home Page</a>.
+
+<p>
+DynDom is a program that determines protein domains, hinge axes and
+amino acid residues involved in the hinge bending. It is fully
+automated.
+
+<p>
+You can use DynDom if you have two conformations of the same
+protein. These may be two X-ray structures, or structures generated
+using simulation techniques such as molecular dynamics or normal mode
+analysis.
+
+<p>
+The application of DynDom provides a view of the conformational change
+that is easily understood. The conformational change may be quite
+complicated in detail, but by using DynDom you can visualize it as
+involving the movement of domains as quasi-rigid bodies. The analysis
+of a conformational change in terms of domain movements only makes
+sense if the interdomain deformation is at least comparable to the
+intradomain deformation. You can use DynDom to access this, but the
+results could be misleading if this is not the case.
+
+<H2><a name="files">INPUT AND OUTPUT FILES</a></H2>
+
+<H3> Input</H3>
+<dl compact>
+<dt>command_file
+<dd>The name of the command file should be given as the sole argument to dyndom.
+This file specifies the PDB file names, chain identifiers, if they exist, 
+and the control parameter settings (see <a href="#control">below</a> and
+<A HREF="#examples">examples</A>).
+<dt>Two PDB files
+<dd>The names of the two PDB files containing the two conformations should
+be given in the command file.
+</dl>
+
+<H3> Output</H3>
+<dl compact>
+<dt>foo_info
+<dd>A file that gives all the relevant information on the conformational 
+change in terms of domain motions.
+<dt>foo_pdb
+<dd>An pdb-formated file that gives the coordinates of atoms from both chains.
+The conformation of the first is as it is in its original PBD file.
+The second chain has been repositioned such that its "fixed" domain is
+superposed on the fixed domain of the first. "Arrow molecules" are
+at the end of this file and depict the interdomain screw axes. The residue
+at the centre of each segment of the sliding window has written in the
+B-factor column of the first chain, the absolute rotation (in radians) of the segment.
+One can visualise this by selecting "Temperature" from the "Colours" menu in RasMol.
+<dt>foo_rotvecs
+<dd>A rotation vector file in PDB format for display using RasMol. 
+Each "atom" is located at a point whose coordinates are the components of the
+rotation vector representing the rotation of a particular backbone segment. 
+The number of atom gives the number of the residue at the centre of
+the backbone segment. 
+<dt>foo_rasscript
+<dd>A RasMol script file for display of the protein, its domains, its
+interdomain screw axes and residues involved in the interdomain motion.
+The first conformation will be coloured according to domain and bending region,
+whilst the second is left grey or white. This file can also used to display
+the rotation vectors. 
+<dt>foo_dihedral
+<dd>A dihedral analysis file that compares dihedral angle changes in the bending regions. 
+</dl>
+To display the rotation vectors using RasMol, simply enter the command: 
+<pre>
+
+ rasmol foo_rotvecs -script foo_rasscript 
+
+</pre>
+To display the protein to view the domains etc, simply enter the command: 
+<pre>
+
+ rasmol foo_pdb -script foo_rasscript 
+
+</pre>
+
+<h2><a name="control">Control Parameters</a></h2>
+
+<h3>window</h3>
+A sliding window is used to generate backbone segments whose rotation
+vectors are calculated for the clustering algorithm. The longer the
+window the better local intrasegment rotations, which may have nothing
+to do with the domain motion, are eliminated. A shorter window,
+however, is preferable if one wants to accurately identify those
+residues involved in the interdomain bending. In any case the length
+of the window should be short compared to the minimum domain size. The
+length of the window is specified by the number of residues. The
+length of the window must be odd as the central residue must be
+defined. Default=5
+
+<h3>domain</h3>
+This sets the minimum domain size in number of residues. It depends on
+your feeling on how big a domain should be, to be called a domain. It
+can be set as small as you like, but it wouldn't be logical to make it
+smaller than the window length. Default=10% of total number of
+residues
+
+<h3>ratio</h3>
+This value gives the minimum value for the ratio of interdomain
+displacement to intradomain displacement for a domain pair. For a
+precise definition of this value see the DynDom main reference. There
+is no clear cutoff for this value, but the lower it is for a domain
+pair, the less sensible it is to analyse their motion in terms of an
+interdomain motion. The program calculates this value for every
+prospective domain pair and outputs it to the screen. If you set the
+minimum to a value much less than 1.0 you may end up analyzing
+meaningless results. Default=1.0
+
+<h2>Description of the Basic Methodology</h2>
+
+<p>
+<b>Determination of Dynamic Domains</b>
+<p>
+The program first determines the "dynamic domains." First, a whole
+protein best fit of the two conformations is made. Then, rotation
+vectors of residues or short main-chain segments are determined. A
+clustering algorithm is then used to identify clusters of rotation
+vectors. Groups of residues forming these clusters form possible
+dynamic domains.
+
+<p>
+<b>Determination Hinge Axes</b>
+<p>
+Groups of residues are only accepted for the analysis of hinge axes if
+they satisfy a criterion based on the ratio of the interdomain
+displacement to intradomain displacement with another group of
+residues with which there exists a physical connection. If this is the
+case the two groups of residues form dynamic domains and their
+interdomain motion is meaningful. The axes determined are in fact
+interdomain screw axes. This is based on the theorem of Chasles which
+states that the general displacement of a rigid body is a screw
+motion. The location of the interdomain screw axis tells us something
+about the kind of motion allowed by the interdomain connections. It is
+possible for the interdomain screw axis to be located far away from
+the interdomain connections if they are very flexible. Only if the
+interdomain screw axis is located near to those residues involved in
+the interdomain bending (defined below) can we think of the axis as a
+hinge axis. In such a case we call the axis an, "effective hinge axis"
+and the residues are said to be acting as "mechanical hinges."
+
+<p>
+<b>Determination of Residues Involved in Interdomain Bending</b>
+<p>
+If one domain is fixed in space with the other rotating, then one will
+see a rotational transition in the connecting region between the two
+domains. One can define the residues involved in the interdomain
+bending to be those at the interdomain boundaries, as found by the
+clustering algorithm, plus those neighbouring residues whose rotations
+are outside the main distribution of the domain to which they belong.
+
+<p>
+<b>Closure and Twist Motion</b>
+<p>
+Axes can be classified into two extreme types: those parallel to the
+line joining the centres of mass of a pair of domains, and those
+perpendicular to this line. The former are called twist axes, the
+latter, closure axes. Any axis can be decomposed into components
+parallel or perpendicular to this line and a percentage measure of the
+degree of closure motion can be defined from the square of the
+projection on the closure axis.
+
+<h2>How DynDom Works</h2>
+
+<p>
+DynDom uses the K-means clustering algorithm to find clusters of
+rotation vectors. The number of clusters found is specified by the
+user, but should be set high as DynDom automatically finds the largest
+number of clusters for which one may reasonably regard the
+conformational change in terms of domain motions.
+
+<p>
+DynDom uses the K-means clustering algorithm to find clusters of
+rotation vectors.
+<p>
+A cluster in rotation space may not correspond to a
+cluster in real space, but rather a fragmented region.
+Such a fragmented region one would not normally call a domain.
+DynDom splits up any clusters that do not correspond to heavy
+atoms connected through a network of distances of
+3.5 angstrom or less, into domains. In order for DynDom to analyse
+domain pairs in terms of their interdomain movement two criteria
+must be satisfied.  The first concerns the minimum domain size.  If a
+domain comprises fewer residues than the minimum domain size set by
+the user, then segments from this domain are
+united with the larger domains they are embedded in.
+If <i>all</i> the domains from <i>any single</i> cluster are
+smaller than the minimum domain size, the program
+stops, unless this the first cluster found (K=2).
+<p>
+For every domain larger than the minimum size, the program checks which are
+connected directly through the backbone (not through another domain), and calculates the ratio
+of interdomain displacement to intradomain displacement for every connected pair.
+If this ratio is less than the user specified minimum (the second criterion) then
+ this pair are not analysed.
+The program finds the largest number of clusters for which
+<i>all</i> connected domain pairs that satisfy both criteria.
+It is these domain pairs that are analysed in terms of interdomain screw axes, etc.
+If this is not possible it will analyse any domain pair for
+interdomain screw axes, etc, provided that the two criteria are satisfied.
+
+<H2><A NAME="examples"></A>EXAMPLES</H2>
+
+Example script for adenylate kinase can be found in $CEXAM/unix/runnable/
+
+<ul>
+<LI><A HREF="../examples/unix/runnable/dyndom.exam">dyndom.exam</A> 
+(Runnable unix script.) </LI>
+<li><A HREF="../examples/unix/runnable/adenylate.command">adenylate.command</A> 
+(Command file.) </li>
+</ul>
+
+<H2> AUTHOR</H2>
+Steve Hayward
+
+<H2><a name="references">REFERENCES</a></H2>
+
+<ol>
+<!-- KEEP startreferencelist -->
+
+<li>Method:
+<br>S.Hayward, A.Kitao, H.J.C.Berendsen, 
+<I>Model-Free Methods of Analyzing Domain Motions in Proteins from Simulation:
+A Comparison of Normal Mode Analysis and Molecular Dynamics Simulation of
+Lysozyme</I> <B>Proteins, Structure, Function and Genetics</B>, 27, 425, 1997.
+
+<li>DynDom main reference:
+<br>S.Hayward, H.J.C.Berendsen,
+<I>Systematic Analysis of Domain Motions in Proteins from Conformational Change;
+New Results on Citrate Synthase and T4 Lysozyme</I> 
+<B>Proteins, Structure, Function and Genetics</B>, 30, 144, 1998.
+
+<li>Applications:
+<br>B.L.de Groot, S.Hayward, D.van Aalten, A.Amadei, H.J.C.Berendsen,
+<I>Domain Motions in Bacteriophage T4 Lysozyme; a Comparison between Molecular
+Dynamics and Crystallographic Data</I> <B>Proteins, Structure,
+Function and Genetics</B>, 31, 116, 1998.
+<br>D.Roccatano, A.E.Mark,S.Hayward, <I>Investigation of the Mechanism of
+Domain Closure in Citrate Synthase by Molecular Dynamics Simulation</I> <B>J. Mol. Biol. </B>, 310, 1039, 2001.
+
+<!-- KEEP endreferencelist -->
+</ol>
+
+</BODY> 
+</HTML>

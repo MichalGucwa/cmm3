@@ -1,0 +1,213 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4 Interface: Submitting jobs to batch queues</title>
+<link rel="stylesheet" type="text/css" href="../ccp4idocs.css" title="CCP4i" />
+<meta name="AUTHOR" content="Martyn" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="2"><img src="../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logotitle">Submitting jobs to batch queues</td></tr>
+</table>
+<br />
+
+<p><a href="#introduction" target="_self">Introduction</a></p>
+
+<p><a href="#batch_simple" target="_self">Simple batch queues</a></p>
+
+<p><a href="#batch_complicated" target="_self">More complicated batch queues</a></p>
+
+<p><dl>
+<dt><a href="#batch_specific" target="_self">Specific batch queues</a></dt>
+<dd><a href="#condor" target="_self">Condor</a></dd>
+<dd><a href="#dqs" target="_self">DQS</a></dd>
+<dd><a href="#pbs" target="_self">PBS</a></dd>
+<dd><a href="#sungrid" target="_self">Sun GRID</a></dd>
+</dl>
+</p>
+
+<h3><a name="introduction"></a>Introduction</h3>
+
+<p>This document contains more detail on how to submit jobs to
+batch queues from ccp4i. The first sections give general
+information from a ccp4i point of view. Then there are
+more details on specific batch queues. The latter should be
+taken with a pinch of salt since our experience may be patchy.
+It is hoped that it will be helpful but you should of course
+check the queueing software documentation.</p>
+
+<h3><a name="batch_simple"></a>Simple batch queues</h3>
+
+<p>In the simplest cases, follow these steps:
+
+<ol>
+<li>In the <a href="configure.html#batch_queues">Configure interface</a> (find 
+it under System Administration on right hand side of the main window) and in the 
+"hardware resources" folder, add a batch queue.  
+<li>Enter a name for your queue. This should be something that users 
+will understand when they see it on a menu - it is <em>not</em> a
+computer command.
+<li>For versions of CCP4 <em>after</em> 5.0.2, there is a pull down
+menu to select the type of batch queue. This will also set a default
+command, see next point.
+<li>Enter the command appropriate to your system queueing software.
+This will typically be something like "qsub -cwd". ccp4i automatically
+adds the job command (something like "source /tmp/mdw/30_pdbset.def.com").
+Do not add this yourself in the configure interface.
+<li>Higher up the Configure interface, find "Command to set up CCP4 
+(used by remote jobs)". By default, this is set to "setup_ccp4". Either
+create this script, or remove if from the Configure interface.
+<li> Save the Configure to the installation file if you want 
+all users to see the option, or to your own home directory.
+<li>When you run a job, select "Run Remote/Batch/Later" and you will get a 
+window which has "Remote" set as the default.  Change this to "Batch".  The 
+content of the window should change so that you now see the name of the batch 
+queue that you entered in the Configure window.  Hit the Run button 
+and hopefully everything runs. There is the possibility to add extra command
+line options which appear after the command entered in the Configure
+interface. In the example above, they would appear after "qsub -cwd".
+</ol>
+</p>
+
+<p>ccp4i puts the files 
+which are needed to run the job in the 'TEMPORARY' directory defined in the 
+Directories and ProjectDir window.  By default this is the same as CCP4_SCR.  
+The most likely problem you will have is that the different machines (i.e. your 
+local machine and the batch queue machine) do not look in the same place for 
+'TEMPORARY'. </p>
+
+<h3><a name="batch_complicated"></a>More complicated batch queues</h3>
+
+<p>In some cases, it is not sufficient to send a CCP4 job directly to
+a batch queue, i.e. as an argument to a "qsub" command. Perhaps some
+administration of user options or directories is necessary. In this
+case, one can replace "qsub -cwd" defined in the Configure interface
+(see <a href="#batch_simple" target="_self">above</a>) with
+"myqsub", where <tt>myqsub</tt> is a specially written script.</p>
+
+<p>An example written for use with Condor is:
+<pre>
+
+#!/bin/sh
+
+#get intial dir in terms of yt tree
+home=$YT_TREE
+
+#create ccp4ish.sh
+sh1="#!/bin/csh -f"
+sh2="source /yt/usrloc/sfware/ccp4-4.2.1/include/ccp4.setup "$home"/ztmp"
+sh3=${1+"$@"}
+
+echo $sh1 >  ccp4ish.sh
+echo $sh2 >> ccp4ish.sh
+echo $sh3 >> ccp4ish.sh
+
+chmod 755 ccp4ish.sh
+
+## assign variables for condor script
+uni="universe = vanilla"        
+dir="initialdir = "$home
+exe="executable = ccp4ish.sh"
+out="output = out"
+log="log    = log"
+err="error = err"
+que="queue"
+
+## create condor script
+echo $uni >  script.condor
+echo $dir >> script.condor
+echo $exe >> script.condor
+echo $out >> script.condor
+echo $log >> script.condor
+echo $err >> script.condor
+echo $que >> script.condor
+
+## submit to condor
+condor_submit script.condor
+
+</pre>
+</p>
+<p>This handles, for example, the "yt-tree" directory structure used by
+Condor. </p>
+
+<h3><a name="batch_specific"></a>Specific batch queues</h3>
+
+<h3><a name="condor"></a>Condor</h3>
+
+<a href="http://www.cs.wisc.edu/condor/">Condor home page</a>.
+
+<p>
+<ul>
+<li>Condor provides a job queueing mechanism, scheduling policy, priority scheme, 
+resource monitoring, and resource management. Users submit their serial or parallel 
+jobs to Condor, Condor places them into a queue, chooses when and where to run 
+the jobs based upon a policy, carefully monitors their progress, and ultimately 
+informs the user upon completion. 
+<li>Distributed under Condor Public License, a "very liberal license".
+<li>Runs with heterogenous computing environment (so far, we've included Linux
+and Solaris, but more possible).
+<li>Machines in the "pool" are identified as central manager (1 only), compute 
+machine or submit-only machine.
+<li>Applications can be compiled against Condor C library, but do not have 
+to be.
+</ul>
+</p>
+
+<h3><a name="dqs"></a>DQS</h3>
+
+<a href="http://www.scri.fsu.edu/~pasko/dqs.html">DQS home page</a>.
+
+<p>
+<ul>
+<li>The Distributed Queueing System is designed as a management tool to aid 
+in computational resource distribution across a network. DQS provides 
+architecture transparency for both users and administration across a 
+heterogeneous environment, allowing for seamless interaction for multiple 
+architectures. 
+<li>At the time of writing (June 03) development of DQS appears to
+have stopped. 
+</ul>
+</p>
+
+<h3><a name="pbs"></a>Open PBS</h3>
+
+<a href="http://www.openpbs.org/">Open PBS home page</a>.
+
+<p>
+<ul>
+<li>The Portable Batch System (PBS) is a flexible batch queueing and workload
+management system. It operates on networked, multi-platform UNIX environments, 
+including heterogeneous clusters of workstations, supercomputers, and massively 
+parallel systems.
+<li>There is a commercial version, PBS Pro, which is strongly pushed 
+on the Open PBS web site.
+<li>We have used PBS on an Alpha cluster without problems.
+</ul>
+</p>
+
+<h3><a name="sungrid"></a>Sun Grid Engine</h3>
+
+<a href="http://gridengine.sunsource.net/">Grid Engine project home</a> - free
+under open source licence <br>
+<a href="http://wwws.sun.com/software/gridware/">Sun ONE Grid Engine Software</a> - costs
+<p>
+As far as I know, these two links give the same software. Presumably the second
+one includes support as well.
+<p>
+<ul>
+<li>Grid Engine is distributed resource management software for compute farms
+through to grid computing. It includes queue management.
+<li>For versions of CCP4 <em>after</em> 5.0.2, select "Sun Grid Engine"
+from the pull down menu in Configure Interface (see above). If you don't,
+SGE will complain about "source" in the job command.
+<li>We have SGE working on a computer cluster at Daresbury.
+<li>At least one other group is using SGE for CCP4 jobs.
+</ul>
+</p>
+
+</body>
+</html>
+

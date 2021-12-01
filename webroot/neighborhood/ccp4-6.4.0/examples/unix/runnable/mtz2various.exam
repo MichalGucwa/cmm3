@@ -1,0 +1,57 @@
+#!/bin/sh
+
+set -e
+
+# Convert MTZ file (including free R) to CNS format with anomalous data.
+# F(+h +k +l) and F(-h -k -l) are reconstructed from FP and DP.
+# CNS header lines are written automatically.
+
+mtz2various hklin $CEXAM/toxd/toxd.mtz HKLOUT $CCP4_SCR/toxd.hkl  <<+
+LABIN  FP=FAU20 SIGFP=SIGFAU20 FREE=FreeR_flag DP=ANAU20 SIGDP=SIGANAU20
+OUTPUT CNS
+EXCL SIGP 0.01
+END
++
+
+# Convert MTZ file to user-defined format.
+# MNFs in input file are output as -999.0 (default reflections are not output
+# if they have a MNF entry).
+
+mtz2various HKLIN $CEXAM/toxd/toxd.mtz HKLOUT $CCP4_SCR/toxd.user  <<+
+LABIN   FPH=FAU20 SIGFPH=SIGFAU20 FP=FTOXD3 SIGFP=SIGFTOXD3
+OUTPUT USER '(3I4,4F10.1)'
+MISS -999.0            # comment out -> reflections including MNFs not output
+END
++
+
+# Write out a reflection file of the squares of the isomorphous
+# differences between a heavy atom dataset and a native one. The output
+# can be used in SHELX to solve heavy atom locations by direct methods.
+
+mtz2various HKLIN $CEXAM/toxd/toxd.mtz HKLOUT $CCP4_SCR/toxd.shelx <<+
+LABIN FP=FTOXD3 SIGFP=SIGFTOXD3 FPH=FAU20 SIGFPH=SIGFAU20
+FSQUARED
+SCALE .0001
+OUTPUT SHELX
+RESOLUTION 15.0 2.7
+END
++
+
+# Convert to user-defined format using dummy labels DUM1 etc
+
+mtz2various HKLIN $CEXAM/toxd/toxd.mtz HKLOUT $CCP4_SCR/junk.hkl <<EOF
+OUTPUT USER '(3I4,6F10.2,I4)'
+LABIN FP=FTOXD3  SIGFP=SIGFTOXD3 DUM1=ANAU20 DUM2=SIGANAU20 \
+      DUM4=FAU20 DUM5=FMM11      IDUM1=FreeR_flag
+END
+EOF
+
+# Convert to mmCIF format
+
+mtz2various HKLIN $CEXAM/toxd/toxd.mtz HKLOUT $CCP4_SCR/junk.cif <<EOF
+OUTPUT CIF data_toxd
+LABIN FP=FTOXD3  SIGFP=SIGFTOXD3 FREE=FreeR_flag
+END
+EOF
+#
+

@@ -1,0 +1,77 @@
+#! /bin/sh
+
+set -e
+
+if test ! -f $CCP4_SCR/toxd_aupatt.map; then
+	echo '! run patterson first' 1>&2
+	exit 1
+fi
+
+# Generate Patterson vectors from coordinates of Au sites.
+# XYZIN - atom coordinates in pdb format
+# MAPIN is used to define extent and symmetry of Patterson.
+# XYZOUT contains the vectors.
+
+vectors mapin $CCP4_SCR/toxd_aupatt.map xyzout $CCP4_SCR/vectors1.pdb <<EOF
+symmetry 19           ! space-group symmetry for atoms: NOT Patterson symmetry
+! Au atom sites taken from sites.frc
+ATOM   A    0.177  0.104 -0.114
+ATOM   B    0.218  0.138 -0.105
+END
+EOF
+
+# same again but input from PDB file
+
+coordconv XYZIN $CEXAM/data/sites.frc XYZOUT $CCP4_SCR/sites.pdb <<eof
+INPUT HA 
+OUTPUT PDB ORTH 1
+CELL 73.582   38.733   23.189  90.00  90.00  90.00
+END
+eof
+
+vectors xyzin $CCP4_SCR/sites.pdb mapin $CCP4_SCR/toxd_aupatt.map xyzout $CCP4_SCR/vectors2.pdb <<EOF
+symmetry 19           ! space-group symmetry for atoms: NOT Patterson symmetry
+END
+EOF
+
+# as for first example, but for vectors in volume defined by keyword xyzlim
+# rather than defined by mapin
+
+vectors  xyzout $CCP4_SCR/vectors3.pdb <<EOF
+symmetry 19           ! space-group symmetry for atoms: NOT Patterson symmetry
+CELL   73.582   38.733   23.189  90.00  90.00  90.00
+! Au atom sites taken from sites.frc
+ATOM   A    0.177  0.104 -0.114
+ATOM   B    0.218  0.138 -0.105
+xyzlim asu
+END
+EOF
+
+# example where atoms are input from both xyzin and ATOM keyword lines
+
+vectors xyzin $CCP4_SCR/sites.pdb mapin $CCP4_SCR/toxd_aupatt.map xyzout $CCP4_SCR/vectors4.pdb <<EOF
+symmetry 19           ! space-group symmetry for atoms: NOT Patterson symmetry
+! Au atom sites taken from sites.frc
+ATOM   C    0.177  0.104 -0.114
+ATOM   D    0.218  0.138 -0.105
+END
+EOF
+
+# Now we compare these vectors with the Patterson map.
+
+npo mapin $CCP4_SCR/toxd_aupatt.map xyzin $CCP4_SCR/vectors1.pdb plot $CCP4_SCR/patt.plt <<EOF
+TITLE  Vectors for sites A & B
+SYMM X,Y,Z
+MAP SCALE 4
+CONTRS 2000 TO 10000 BY 2000
+SECTNS 0 40 4
+INPUT BROOK
+SOLID
+RADII ATOMS ALL -0.5
+COLOUR BLUE
+PLOT
+EOF
+
+# You can view the plot file with xplot84driver
+#
+ 

@@ -1,0 +1,105 @@
+#!/bin/sh
+#  The procedure
+#---> pdbset
+#---> sfall
+#---> cad
+#---> tffc
+#  Test of translation function procedure
+#   NB: a translation solution here will be 
+# either 0.0 0.0 0.0
+#   or   0.5 0.0 0.0
+#   or   0.5 0.5 0.0
+#   or   0.5 0.0 0.5
+#   or   0.5 0.5 0.5
+#   or   0.0 0.5 0.0
+#   or   0.0 0.5 0.5
+#   or   0.0 0.0 0.5
+#   since we are "searching" with the actual coordinates
+
+set -e
+
+pdbset	\
+XYZIN $CEXAM/unix/runnable/toxd_mod_p1.pdb \
+XYZOUT $CCP4_SCR/toxd_model_afterrotation.pdb	\
+<< END-pdbset
+CELL  73.58   38.73   23.19   90.00   90.00   90.00
+NCODE 1
+ROTATE EULER 0 0 0
+END-pdbset
+
+
+sfall HKLOUT $CCP4_SCR/toxd_p1.mtz                \
+XYZIN $CCP4_SCR/toxd_model_afterrotation.pdb	\
+              <<END-DATA                     
+TITL SFS P1 toxd_model_afterrotation.pdb
+MODE SFCALC XYZIN
+GRID 144 80 48
+resolution 0.001 0.25661 
+vdwr 2.5
+SYMMETRY  1   ! P1
+SFSGR    1
+badd 0
+FORM ngauss 2
+NAME PROJECT TOXD CRYSTAL MODEL DATASET CALCULATED
+LABOUT  FC=FCp1 PHIC=PHICp1
+end
+END-DATA
+
+cad	\
+HKLIN1 $CEXAM/toxd/toxd.mtz    \
+HKLIN2 $CCP4_SCR/toxd_p1.mtz  \
+HKLOUT $CCP4_SCR/toxd_cad.mtz	\
+<< END-cad
+# New Cell Over write the MTZ input
+RESOLUTION OVERALL 1000000 2.8
+TITLE COMBINING  toxd and rotated domain 1
+LABIN FILE 1 E1=FTOXD3 E2=SIGFTOXD3
+CTYPIN FILE 1 E1=F E2=Q   
+
+LABIN FILE 2 E1=FCp1 E2=PHICp1  
+CTYPIN FILE 2 E1=U     E2=V
+LABOUT FILE 2 E1=FC    E2=PHIC  
+END
+END-cad
+
+tffc HKLIN $CCP4_SCR/toxd_cad.mtz   \
+HKLOUT $CCP4_SCR/toxd_tffc.mtz << END
+TITLE tffc on toxd
+RESOLUTION  20 2.8
+LABIN FP=FTOXD3 SIGFP=SIGFTOXD3  -
+FC1=FC1 PC1=PHIC1 FC2=FC2 PC2=PHIC2 -
+FC3=FC3 PC3=PHIC3 FC4=FC4 PC4=PHIC4 
+END
+
+#
+# ********************************************************************
+# *                                                 16/5/91          *
+# *   Run FFT  in Space group 1
+# *   This is NOT using your real h k l
+# *   Resolution limits are artificial; needs to be twice data 
+# *   resolution usually.
+# *   RESMAX = CELL(1)/"hmax" ( = CELL(2)/"kmax" = CELL(3)/"lmax")
+# *   Grid has to be at least 2*"hmax" +1 , etc
+# *   TFFC tells you the values of "hmax" etc
+# *   Output map should have a single peak giving translation vector.
+# *   Asymmetric unit is from one crystal origin to the next (same as RSEARCH)
+# *   But do 0-1 , 0-1 0-1 if you feel safer.... and check you have
+# *   duplicate solutions.
+# ********************************************************************
+
+fft  HKLIN $CCP4_SCR/toxd_tffc.mtz MAPOUT $CCP4_SCR/tffc.map << endfft
+RESOLUTION 20 1.4
+! symmetry and fftspacegroup are actually both redundant
+SYMMETRY 1
+FFTSPACEGROUP 1
+TITLE FFT  of tffc map
+XYZLIM  0 143 0 79 0 47
+GRID      144   80   48
+LABIN A=A B=B # actually necessary now
+endfft
+
+# stats on the map:
+mapsig mapin $CCP4_SCR/tffc mapin2 $CCP4_SCR/tffc \
+           peak_list $CCP4_SCR/tf.peaks </dev/null
+
+#

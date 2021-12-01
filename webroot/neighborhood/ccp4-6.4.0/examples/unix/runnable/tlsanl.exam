@@ -1,0 +1,31 @@
+#!/bin/sh
+
+set -e
+
+if test ! -x ${CBIN}/refmac5; then
+  echo '! refmac5 not found in $CBIN'
+  exit 0
+fi
+
+if test ! -f $CCP4_SCR/rnase_out.tls; then
+  echo "! run the refmac5_tls.exam procedure first" 1>&2
+  exit 1
+fi
+
+# Analyse TLS parameters from previous fitting procedure.
+
+tlsanl xyzin $CCP4_SCR/rnase_out.pdb tlsin $CCP4_SCR/rnase_out.tls \
+       xyzout $CCP4_SCR/rnase_tlsanl.pdb <<EOF
+bresid
+END
+EOF
+
+# Extract sample results for testing purposes - these can
+# be compared with runs with different versions or on different
+# platforms
+
+echo " " >> $CCP4_SCR/sample_results
+echo " *** tlsanl.exam *** " >> $CCP4_SCR/sample_results
+echo " " >> $CCP4_SCR/sample_results
+grep "A   1 " $CCP4_SCR/rnase_tlsanl.pdb >> $CCP4_SCR/sample_results
+

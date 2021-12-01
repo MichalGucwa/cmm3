@@ -1,0 +1,1218 @@
+<HTML>
+<HEAD>
+     <TITLE>CCP4 Program Suite: BEAST</TITLE>
+</HEAD>
+<BODY>
+<!-- ::INDEX_INFO::BEAST::Deprecated::Molecular replacement::Likelihood-based molecular replacement:::::::: -->
+<H1> BEAST (CCP4: Deprecated Program)</H1>
+<H2> NAME</H2>
+<b>Beast </b>
+- Likelihood-based molecular replacement (version 1.1.1)
+<H2> SYNOPSIS</H2>
+<b>beast HKLIN</b> <i>foo.mtz</i>
+<br>
+[<A HREF="#keywords">Keyworded input</A>]
+
+<H2><a name="description">DESCRIPTION</a></H2>
+
+<p><FONT COLOR="#FF0000">Use <a href="phaser.html">Phaser</a> instead.</FONT></p>
+
+<P>Beast carries out molecular replacement calculations using maximum
+likelihood targets for the rotation and translation functions.  
+If there are multiple alternative models for a molecule, they can all
+be supplied to the program, which will construct from them a
+statistically-weighted set of averaged structure factors. 
+In addition to a moving molecule being used for the search, additional
+molecules can be fixed in just orientation or in orientation and 
+position.
+</P>
+
+<H2><a name="files">INPUT FILES</a></H2>
+<H3> Input</H3>
+<dl compact>
+<dt> HKLIN<dd>
+Input MTZ file containing Fobs for the unknown crystal.
+(Sigma(Fobs) is not yet used.)
+</dl>
+<dl compact>
+<dt> PDB<dd>
+The models are specified by PDB files, named in the keyworded input.
+If there are multiple models for a particular molecule, all the models
+must be superimposed in a common orientation but presented to the 
+program in separate PDB files.
+</dl>
+
+<H2><a name="keywords">KEYWORDED INPUT</a></H2> 
+
+<P>Compulsory keywords: 
+   <A HREF="#labi">LABIn</A>, 
+   <A HREF="#mole">MOLEcule</A>, 
+   <A HREF="#mode">MODEl</A>, 
+   <A HREF="#sear">SEARch</A>
+</P>
+
+<P>Additional keywords:
+   <A HREF="#tria">TRIAl</A>,
+   <A HREF="#fix">FIX</A>,
+   <A HREF="#rlis">RLISt</A>,
+   <A HREF="#tlis">TLISt</A>,
+   <A HREF="#solu">SOLUtion[R/T/F]</A>,
+   <A HREF="#sol_">SOL_[RF/TF]</A>,
+   <A HREF="#reso">RESOlution</A>,
+   <A HREF="#best">BEST</A>,
+   <A HREF="#clus">CLUSter</A>,
+   <A HREF="#aver">AVERage</A>,
+   <A HREF="#pivo">PIVOt</A>
+</P>
+
+<P>Expert keywords:
+   <A HREF="#solp">SOLPar</A>,
+   <A HREF="#outl">OUTLier</A>,
+   <A HREF="#shan">SHANfac</A>,
+   <A HREF="#boxs">BOXScale</A>,
+   <A HREF="#repo">REPOrt</A>,
+   <A HREF="#verb">VERBose</A>
+</P>
+
+<H3><a name="labi">LABIn</a> &lt;program label&gt;=&lt;file label&gt;</H3>
+
+<P>Only F need be defined. SIGF is not yet used.
+</P>
+
+<P>Example:</P>
+
+<PRE>
+LABIN F=Fobs
+</PRE>
+
+
+<H3><a name="mole">MOLEcule</a> &lt;molecule name&gt; &lt;molecule fraction&gt;
+</H3>
+
+<P>One MOLEcule command should be given for each chemically-different
+molecular object that will be sought in the search.  A molecule can be
+anything from a single domain of a protein with hinges to a multimeric
+assembly, as long as it will be adjusted as a rigid body in the molecular
+replacement search.  Multiple copies of the same molecule can be placed
+in the asymmetric unit through a combination of FIX and SEARCH
+commands.
+</P>
+
+<P>The molecule name should be a unique four-character identifier.
+This is used to associate PDB files with each molecule in the 
+MODEl command, and to specify FIXed and moving (SEARch) molecules.
+</P>
+
+<P>The molecule fraction is the fraction of the ordered content of the
+asymmetric unit comprised by each of the models of that molecule.
+To work this out, you may have to consider the composition of any
+complexes expected in the crystal and the degree of non-crystallographic
+symmetry (NCS) expected.
+This information is used in defining the 
+<A HREF="#sacurve">Sigma(A) curve</A> that calibrates
+the likelihood functions, so it is important to give the right numbers.
+If there is uncertainty about the degree of NCS, separate jobs should be
+run with different assumed molecule fractions.  Note that if you reduce
+the number of atoms in your model by trimming side chains or loops, you
+should also reduce the molecule fraction accordingly.
+</P>
+
+<P>Examples:
+</P>
+
+<P>Crystal of a complex of a 40kDa protease and a 10kDa
+protein inhibitor with room for one complex in the asymmetric unit,
+looking for the protease with a complete model.
+</P>
+
+<PRE>
+MOLECULE prot 0.8
+</PRE>
+
+<P>Same complex, but room for 2 or 3 complexes. Try two runs, with either
+
+<PRE>
+MOLECULE prot 0.4
+</PRE>
+
+<P>or</P>
+
+<PRE>
+MOLECULE prot 0.2667
+</PRE>
+
+<P>Same complex, one in a.u., but model of protease comprises only 30kDa.
+For variety, assume we've placed the protease and are now looking for the
+inhibitor, which means we'll need two MOLEcule commands and two (sets of)
+MODEl commands.
+</P>
+
+<PRE>
+MOLECULE prot 0.6
+MOLECULE inhi 0.2
+</PRE>
+
+
+<H3><a name="mode">MODEl</a> &lt;molecule name&gt; &lt;PDB filename&gt; 
+{ IDENt &lt;sequence identity&gt; | 
+  RMS &lt;expected rms error&gt; }</H3>
+
+<P>One or more MODEl commands should be given for each MOLEcule.  The
+corresponding MOLEcule must have been defined before the MODEl command.
+If multiple MODEls are given, they must all comprise essentially the
+same part of the structure, and they must all be placed in a
+common orientation.  Each model must be put in a separate PDB file.
+</P>
+
+<P>For the <A HREF="#sacurve">Sigma(A) curve</A> used to 
+calibrate the likelihood function, 
+there must be an estimate of the effective RMS error of the model.
+This can either be given explicitly with the RMS subkeyword, or
+implicitly with the IDENt subkey.  The sequence identity (given either
+as percent or a fraction) is used to estimate the RMS error from
+an equation of <A HREF="#ref3">Chothia & Lesk (1986)</A>:
+</P>
+
+<P>RMS = 0.4A * exp(1.87*(1-IDENT))
+</P>
+
+<P>Experience has shown that estimated RMS errors below 0.8A are often
+overly optimistic, so 0.8A is set as the minimum value of RMS error
+estimated from the IDENT subkey.
+</P>
+
+<P>For models derived from well-refined crystal structures at medium
+to high resolution, the IDENT subkey should give a reasonable first
+estimate of the RMS error.  However, tests with NMR-derived models
+suggest that it is usually better to supply a larger estimate of RMS, with
+a value of 1.5A having worked in several test cases.  For an NMR ensemble,
+the same RMS error should be given for each member of the ensemble, and
+it should not be small compared to the RMS deviations among members of
+the ensemble.
+</P>
+
+<P>If a molecular replacement search does not yield significantly
+positive LLG scores, this may mean that your model is not as good 
+as you think it is.  
+In that case it would be worthwhile to increase the estimate
+of the effective RMS error and repeat the search.  
+Of course, if the molecule comprises too small a fraction of the 
+asymmetric unit or your model is too inaccurate, the signal 
+may be too weak to be found in the noise.
+</P>
+
+<P>If several possible choices of model are available, it is generally
+best to use all of them simultaneously.  The relative influence of the
+models, as a function of resolution, will depend on their relative
+quality, as specified through the RMS or IDENt subkey.
+Take care, when using the RMS subkey, to assign similar RMS values to
+similar models.  If not, assumptions made in generating
+an ensemble-average structure factor may be violated!
+</P>
+
+<P>If you are using an ensemble of NMR structures, Beast is not currently
+able to interpret MODEL and ENDMDL cards in PDB files, so it is necessary to 
+put the individual models into separate PDB files and give a MODEL command
+for each.  Tests indicate that 10 to 20 models from an ensemble will be
+sufficient, with relatively little gained in signal-to-noise from adding
+further models.  
+</P>
+
+<P>Examples:</P>
+
+<PRE>
+MODEL prot trypsin.pdb IDENT 0.32
+MODEL prot chymotrypsin.pdb IDENT 33
+MODEL inhi ovomucoid.pdb RMS 0.6
+</PRE>
+
+<H3><a name="sear">SEARch</a> &lt;molecule name&gt; 
+   [ <A HREF="#rota">ROTAte</A> { &lt;arguments...&gt; }
+   [ <A HREF="#tran">TRANslate</A> { &lt;arguments...&gt; } ] ]</H3>
+
+<P>In a run of Beast, one copy of one molecule can be moved in a search
+involving rotation and/or translation.  (As discussed below, it is also
+possible to FIX copies of the same or other molecules.)  The molecule
+name must have been defined by a prior MOLEcule command.  
+</P>
+
+<P>If only the molecule name is given, this is taken to specify the
+moving molecule for subsequent TRIAl, SOLUtionT/F or SOL_TF commands.
+</P>
+
+<dl><dt>Subkeywords:<dd>
+<dl><dt>
+<a name="rota">ROTAte</a> { &lt;angles&gt; | LIST | 
+         FULL&nbsp;[&lt;step size&gt;] | 
+         REGIon&nbsp;&lt;a1,a2,b1,b2,g1,g2&gt;&nbsp;[&lt;step size&gt;] |
+         AROUnd&nbsp;{&nbsp;&lt;angles&gt;&nbsp;|&nbsp;LIST&nbsp;}&nbsp;&lt;radius&gt;&nbsp;[&lt;step size&gt;] }
+<dd><BR>The ROTAte subkey has the following options:
+<BR><BR>
+
+&lt;angles&gt;:<BR>
+Euler angles in degrees (defined by the Crowther z-y-z 
+convention that is also used in the fast rotation function and AMoRe).  
+These angles will be used either
+for a single rotation evaluation or (more commonly) as a fixed orientation
+for a TRANslation search.  Note that any Euler angles (or translation vectors) 
+used in Beast apply to the molecule in the original orientation given 
+in the model PDB file(s).
+<BR><BR>
+
+LIST:<BR>
+One or more sets of Euler angles will be given subsequently with the 
+RLISt command.
+<BR><BR>
+
+FULL [&lt;step size&gt;]:<BR>
+Perform search of all unique orientations.  
+The default step size is set according to the dimensions of the model
+and the resolution of the data.
+The geometric mean radial extent of the model is computed, and the 
+rotation step is set to the value that would move atoms at this distance
+by dmin/2.
+The search is carried out over a pseudo-hexagonal-close-packed grid in 
+Lattman angles, with the step size expressing the rotational distance to 
+nearest neighbours in the rotation search.
+Lattman angles are defined as theta+(=alpha+gamma), beta and
+theta-(=alpha-gamma).  These angles are locally orthogonal so they 
+provide a better search space than the original Euler angles.
+<BR><BR>
+
+REGIon &lt;a1,a2,b1,b2,g1,g2&gt; [&lt;step size&gt;]:<BR>
+As for FULL search,
+but instead of Beast working out the search limits for the Euler angles from
+the crystal symmetry, the search is carried out for the Euler angle alpha
+varying from a1 to a2, beta from b1 to b2, and gamma from g1 to g2.
+Again, the search is really carried out in terms of Lattman angles on a
+pseudo-hexagonal-close-packed grid.
+<BR><BR>
+
+AROUnd { &lt;angles&gt; | LIST } &lt;radius&gt; [&lt;step size&gt;]:<BR>
+Search over neighbouring orientations around (and including) the specified 
+(sets of) Euler angles, within a radius giving the maximal rotational 
+distance in degrees.
+A single set of Euler angles can be given here; the LIST option indicates
+that Euler angles will be given with subsequent RLISt commands.
+The default step size is 1/3 of the search radius.
+This option should be used to refine orientations from a FULL search
+prior to carrying out a translation search.
+<BR><BR>
+
+</dl>
+<dl><dt>
+<a name="tran">TRANslate</a> { NONE | &lt;vector&gt; | LIST | 
+         REGIon&nbsp;&lt;x1,x2,y1,y2,z1,z2&gt;&nbsp;[&lt;step size&gt;] |
+         FRACtional&nbsp;&lt;x1,x2,xstep,&nbsp;y1,y2,ystep,&nbsp;z1,z2,zstep&gt; |
+         AROUnd&nbsp;{&nbsp;&lt;vector&gt;&nbsp;|&nbsp;LIST&nbsp;}&nbsp;&lt;radius&gt;&nbsp;[&lt;step size&gt;] }
+<dd><BR>The TRANslate subkey is optional.  The options are:
+<BR><BR>
+
+NONE:<BR>
+Same as omitting TRANslate subkey: perform pure rotation search.
+<BR><BR>
+
+&lt;vector&gt;:<BR>
+Fixed translation vector in fractional coordinates.
+<BR><BR>
+
+LIST:<BR>
+One or more translation vectors will be given subsequently with the
+TLISt command.
+<BR><BR>
+
+REGIon &lt;x1,x2,y1,y2,z1,z2&gt; [&lt;step size&gt;]:<BR>
+Search translation
+vectors over volume from x1 to x2, y1 to y2 and z1 to z2 in fractional
+coordinates.  The search is carried out on a hexagonal-close-packed
+grid, with the distance from one point to its nearest neighbour specified
+by the step size.  Use a step size at least as fine as dmin/4.  
+The default step size is dmin/5.
+If you are searching for the first molecule (<I>i.e.</I> no other molecules 
+with FIXed orientation and position), the search volume should cover the
+Cheshire cell, <I>i.e.</I> the unique volume relative
+to any possible choice of origin.  For instance, for orthorhombic unit
+cells, the origin can be shifted by 1/2 in x, y, or z, so the Cheshire
+cell ranges from 0 to 1/2 in each direction, covering 1/8 of the unit
+cell volume.  (Note, as in this example, that the Cheshire cell is not the 
+same as the asymmetric unit.)  As another example, in a monoclinic cell with 
+<I>b</I> unique, the origin can be shifted by 1/2 in x or z but anything in y,
+so that the Cheshire cell is a plane at y=0, ranging from 0 to 1/2 in
+x and z.  It is important to realise that once you have FIXed the
+position of one molecule you have defined the origin, so in searching
+for a second molecule it is
+necessary to search the whole volume relative to a possible lattice point,
+<I>i.e.</I> the whole cell for a primitive space group, half the cell
+(or less) for a space group with a centered lattice.
+<BR><BR>
+
+FRACtional &lt;x1,x2,xstep, y1,y2,ystep, z1,z2,zstep&gt;:<BR>
+As for REGIon, search translation vectors over volume from x1 to x2, y1 to 
+y2 and z1 to z2 in fractional coordinates, but carry out the search
+on a grid specified in fractional coordinates with separate fractional
+step sizes for x, y and z.  This option is useful to search over
+possible origins when putting together partial solutions.
+<BR><BR>
+
+AROUnd { &lt;vector&gt; | LIST } [&lt;radius&gt; [&lt;step size&gt;]]:<BR>
+Search in a
+spherical volume around one or more starting vectors (specified in fractional
+coordinates), with a radius and step size specified in Angstroms.
+A single vector can be given here; the LIST option indicates that starting
+vectors will be given with subsequent TLISt commands.
+Use a step size at least as fine as dmin/4, or finer if you are
+optimising the solution from a coarser search.  
+The default radius is dmin/2 and the default step size is dmin/5.
+
+</dl>
+</dl>
+<P>Examples:
+</P>
+<P>Carry out rotation search:</P>
+<PRE>
+SEARCH prot ROTATE FULL
+</PRE>
+
+<P>Carry out translation search for specified orientation:</P>
+<PRE>
+SEARCH prot ROTATE 10. 20. 30. \
+            TRANSLATE REGION 0. 0.5   0. 0.5   0. 0.5   0.8
+</PRE>
+
+<P>After finding two molecules independently, search over possible
+choices of origin to place the second molecule relative to the same
+origin as the first one (which has been previously FIXed).
+This example applies to space group P2, where possible choices of 
+origin are related by half-unit-cell shifts along x and z and any
+shift along y.
+</P>
+
+<PRE>
+SEARCH inhi ROTATE 20. 30. 40. \
+            TRANSLATE FRACTIONAL 0.22 0.72 0.5   0.0 1.0 0.01   0.44 0.94 0.5
+</PRE>
+
+<P>Limited 6D search to refine solution (would be better if a REFINE
+command were implemented...)</P>
+<PRE>
+SEARCH prot ROTATE AROUND 10. 20. 30.  3.  0.5 \
+            TRANSLATE AROUND 0.11 0.22 0.33   1.  0.25
+</PRE>
+
+<P>Evaluate a single possible molecular replacement solution (perhaps
+obtained from a different program)</P>
+<PRE>
+SEARCH prot ROTATE 10. 20. 30. TRANSLATE 0.11 0.22 0.33
+</PRE>
+
+<H3><a name="tria">TRIAl</A> &lt;molecule name&gt; &lt;angles&gt;
+    [ &lt;vector&gt; ]</H3>
+
+<P>As an alternative to specifying systematic searches with the ROTAte 
+and TRANslate options of the SEARch command, a list of trial orientations
+and/or translation vectors can be given.  The molecule must have been
+defined by a MOLEcule command and specified by a SEARch &lt;molecule name&gt;
+command before the first TRIAl command is given.
+The molecule name given in the TRIAl command is checked for consistency.
+</P>
+
+<P>Each TRIAl command adds one trial to a list.  
+If there are fewer than 6 numeric arguments, the first three are 
+interpreted as Euler angles and any others (such as the LLG score from
+the TRIAL line from output from a previous run) are ignored.
+If there are six or more numeric arguments, the second set of three
+are interpreted as a translation vector in fractional coordinates.
+The TRIAl command is useful for rescoring possible solutions from 
+other programs, or for testing possible solutions from a prior run
+of Beast, but using new resolution limits or new assumptions about
+the model quality.
+</P>
+
+<P>Note that different types of trials (<I>i.e.</I>
+rotation <I>vs.</I> translation) cannot be mixed in different TRIAl commands.
+</P>
+
+<P>Examples:</P>
+
+<P>Test two possible orientations.</P>
+
+<PRE>
+TRIAL prot 10. 20. 30.
+TRIAL prot 20. 30. 40.
+</PRE
+
+<P>Test two possible rotation/translation solutions.</P>
+
+<PRE>
+TRIAL prot 10. 20. 30. 0.11 0.22 0.33
+TRIAL prot 20. 30. 40. 0.22 0.33 0.44
+</PRE>
+
+
+<H3><a name="fix">FIX</a> &lt;molecule name&gt; &lt;angles&gt; 
+    [ &lt;vector&gt; ]</H3>
+
+<P>Optionally fix a molecule in a known orientation and possibly also position.
+The orientation is specified in Euler angles and the position as a 
+translation vector in fractional coordinates.  The molecule must have been
+defined before the FIX command is given.
+</P>
+
+<P>Examples:</P>
+
+<P>Fix orientation; position still unknown.
+</P>
+
+<PRE>
+FIX prot 10. 20. 30.
+</PRE>
+
+<P>Fix orientation and position of the protease component from
+two complexes before looking for the inhibitor components.
+</P>
+
+<PRE>
+FIX prot 10. 20. 30.   0.11 0.22 0.33
+FIX prot 20. 30. 40.   0.22 0.33 0.44
+</PRE>
+
+
+<H3><a name="rlis">RLISt</a> &lt;molecule name&gt; &lt;angles&gt;</H3>
+
+<P>Following the LIST option being given in the ROTAte subkey of a
+SEARch command, add a trial orientation given as Euler angles.
+The given molecule name is checked for consistency with the SEARch command.
+</P>
+
+<P>Example:</P>
+
+<PRE>
+RLIST prot 10. 20. 30.
+</PRE>
+
+
+<H3><a name="tlis">TLISt</a> &lt;molecule name&gt; &lt;vector&gt;</H3>
+
+<P>Following the LIST option being given in the TRANslate subkey of a
+SEARch command, add a trial position given as a fractional vector.
+The given molecule name is checked for consistency with the SEARch command.
+</P>
+
+<P>Example:</P>
+
+<PRE>
+TLIST prot 0.11 0.22 0.33
+</PRE>
+
+
+<H3><a name="solu">SOLUtion[R/T/F]</A> &lt;dummy arg&gt; 
+  &lt;rotation/[translation]&gt;</H3>
+
+<P>Compatibility command, provided to read in intermediate results from AMoRe,
+in the form of SOLUTIONR (rotation), SOLUTIONT (translation) and
+SOLUTIONF (fitting) records.  For all of these the first argument (model
+number for AMoRe) is ignored.  The molecule name is inferred from a prior
+SEARCH command.
+</P>
+
+<P><B>NB:</B> Make sure that the PDB files are reoriented to the 
+orientation used by AMoRe before using this option to rescore AMoRe results.
+</P>
+
+<P>SOLUTIONR record: add a trial orientation given as Euler angles in the
+second, third and fourth arguments.  This is an alternative to the RLIST
+command.
+</P>
+
+<P>SOLUTIONT or SOLUTIONF record: add a trial rotation/translation solution,
+given as Euler angles and fractional translation in arguments 2-7.  This
+is an alternative to the TRIAL command.
+</P>
+
+<P>Example:</P>
+
+<P>Add a set of Euler angles to the list</P>
+
+<PRE>
+SOLUTIONRC    1   28.03   49.06   47.17  0.0000  0.0000  0.0000 36.2 60.4 30.9 15.0   1
+</PRE>
+
+<P>Add two possible rotation/translation solutions to the list</P>
+
+<PRE>
+SOLUTIONF1_1    1   18.82   63.37  225.30  0.3196  0.3388  0.2196 46.2 58.6 35.8   1
+SOLUTIONF2_1    1   59.76   30.78  263.49  0.2139  0.1010  0.4568 44.8 58.7 38.2   2
+</PRE>
+
+
+<H3><a name="sol_">SOL_[RF/TF]</A> &lt;dummy arg&gt; 
+  &lt;rotation/[translation]&gt;</H3>
+
+<P>Compatibility command, provided to read in intermediate results from Molrep,
+in the form of SOL_RF (rotation) and SOL_TF (translation) records.  
+For both of these the first argument (solution number for Molrep) is ignored.
+The molecule name is inferred from a prior SEARCH command.
+</P>
+
+<P>SOL_RF record: add a trial orientation given as Euler angles in the
+second, third and fourth arguments.  This is an alternative to the RLIST
+command.
+</P>
+
+<P>SOL_TF record: add a trial rotation/translation solution,
+given as Euler angles and fractional translation in arguments 2-7.  This
+is an alternative to the TRIAL command.
+</P>
+
+<P>Example:</P>
+
+<P>Add a set of Euler angles to the list</P>
+
+<PRE>
+Sol_RF  1    85.01   83.84  328.92   63.21  148.05   96.92     4706.      5.05
+</PRE>
+
+<P>Add two possible rotation/translation solutions to the list</P>
+
+<PRE>
+Sol_TF_1  1   85.01   83.84  -31.08  0.901  0.391  0.115   14.31  0.457  0.339
+Sol_TF_1  2   85.01   83.84  -31.08  0.676  0.249  0.943   11.36  0.454  0.341
+</PRE>
+
+
+<H3><a name="reso">RESOlution</a> &lt;dmin&gt; [ &lt;dmax&gt; ]</H3>
+
+<P>Optionally specify resolution, in Angstroms.  
+By default, the program uses all low resolution data and sets dmin to
+twice the estimated RMS error of the best model in the SEARch molecule.
+At a resolution equal to twice the estimated RMS error,
+Sigma(A) is about 0.2 and dropping rapidly, so that the model predicts
+the data only poorly and the contribution to the likelihood score is
+small and noisy.
+For good models, it is probably sufficient to use data to only 3A
+resolution, if computing time is a problem.
+</P>
+
+<P>Examples:</P>
+
+<P>Give high resolution limit only.
+</P>
+
+<PRE>
+RESOLUTION 3.5
+</PRE>
+
+<P>Give both limits.
+</P>
+
+<PRE>
+RESOLUTION 3.5 25.0
+</PRE>
+
+
+<H3><a name="best">BEST</a> [ &lt;NBest&gt; [&lt;NBestT&gt; ] ] 
+   [ FILE &lt;filename&gt; ]</H3>
+
+<P>Optionally change number of best trials to report at end of 
+entire search (NBest) or at end of translation search for 
+each orientation (NBestT).
+NBest defaults to 20, and must be at least 1.
+NBestT defaults to NBest, but may be set to zero.
+If the FILE subkey is given, the NBest results are written to the
+specified file as either RLIST (rotation search) or TRIAL (search
+involving translation) commands that can be input to subsequent
+Beast runs.  This is done most conveniently using the standard CCP4
+"@filename" command, perhaps after commenting out undesired lines
+with the "#" symbol.
+The default is not to save a separate file.
+</P>
+
+<P>Examples:</P>
+
+<P>In a 6D search, report best 10 trials overall and best 3 for 
+each orientation.
+</P>
+
+<PRE>
+BEST 10 3
+</PRE>
+
+<P>Do the same, but save the best 10 trials overall in a file named
+beast_tf.mr.
+</P>
+
+<PRE>
+BEST 10 3 FILE beast_tf.mr
+</PRE>
+
+<P>In a rotation search, save the default number of best trials to
+a file named beast_rf.mr
+</P>
+
+<PRE>
+BEST FILE beast_rf.mr
+</PRE>
+
+
+<H3><a name="clus">CLUSter</a> [ &lt;NClust&gt; ] [ FILE &lt;filename&gt; ]</H3>
+
+<P>Optionally change number of best clusters to report at end of
+entire search.
+NClust defaults to 20.
+Each cluster represents a local maximum in the search space.
+In most cases, the local maximum in an orientation search will give
+the best orientation for a subsequent translation search. 
+However, if the translation search fails it may be useful to search
+on a set of orientations giving the best scores, regardless of whether
+or not they represent local maxima.
+If the FILE subkey is given, the NClust results are written to the
+specified file as either RLIST (rotation search) or TRIAL (search
+involving translation) commands that can be input to subsequent
+Beast runs.  This is done most conveniently using the standard CCP4
+"@filename" command, perhaps after commenting out undesired lines
+with the "#" symbol.
+The default is not to save a separate file.
+</P>
+
+<P>Example:</P>
+
+<PRE>
+CLUSTER 25 FILE beast_rf_clust.mr
+</PRE>
+
+
+<H3><a name="aver">AVERage</a> { STATistical | PRIOr }</H3>
+
+<P>Optionally change method by which ensemble average structure factors
+are computed from multiple models of the same molecule.  The default is
+to use a statistical average (STATistical), 
+in which the relative weights for the
+different models come from the covariance matrix.  However, this can be
+numerically unstable if several of the models are very similar to each
+other, and is a particular problem when using ensembles of NMR models.
+In this case, it is better to fix the relative weights of the models
+to be proportional to prior values given by the Sigma(A) values 
+computed from the four-parameter functional form (PRIOr).
+</P>
+
+<P>Examples:
+</P>
+
+<P>Use statistically-weighted ensemble average for a small number of
+reasonably different models.  (This is the default, so the command need
+not be given.)
+</P>
+
+<PRE>
+AVERAGE STAT
+</PRE>
+
+<P>Use prior relative weights (from Sigma(A) values).
+</P>
+
+<PRE>
+AVERAGE PRIO
+</PRE>
+
+
+<H3><a name="pivo">PIVOt</a> { CENTre | &lt;vector&gt; }</H3>
+
+<P>For TRANslate AROUnd option of SEARCH, optionally change the pivot
+point for the rotation of the moving molecule.  This only comes into play
+when orientations are changed through the AROUnd option of
+the ROTAte subkey, and then only when just a single orientation is
+specified.
+The default is to pivot around the centre of mass of the moving molecule 
+(CENTre).
+If a vector is given, this specifies the pivot point in orthogonal
+Angstroms in terms of the input PDB file for the moving molecule.
+The effect is that, at the centre of the translation search for each
+orientation, the pivot point is placed in the same position.  This
+position is defined by applying the starting orientation and starting
+translation.
+</P>
+
+<P>If it is desired to fix a pivot point for more exhaustive searches
+(for which the PIVOt command would not apply), this can be achieved by 
+translating the model to place the desired pivot point at (0,0,0) in
+the input PDB file.
+</P>
+
+<P>Example:</P>
+
+<P>Pivot around a presumed hinge point when searching for the second
+domain of a two domain molecule after positioning the first domain.
+In the original coordinate set, the hinge point is at (12.,25,-13.),
+and the SEARch is being carried out around the orientation and position
+found for the first domain.
+</P>
+
+<PRE>
+SEARCH dom2 ROTATE AROUND 10. 20. 30. 10. 3. \
+            TRANSLATE AROUND 0.11 0.22 0.33 3. 0.5
+PIVOT 12. 25. -13.
+</PRE>
+
+
+<H3><a name="solp">SOLPar</a> &lt;fsol&gt; &lt;Bsol&gt;</H3>
+
+<P>Optionally change solvent parameters for 
+<A HREF="#sacurve">Sigma(A) curves</A> from the
+default values of fsol=0.95, Bsol=150.  The arguments fsol and Bsol
+can be given in either order, with the larger value assumed to be Bsol.
+The results are not terribly sensitive to these parameters, which 
+affect only lower resolution data, but optimal values will be the
+subject of further study.
+</P>
+
+<P>Example:
+</P>
+
+<PRE>
+SOLPAR 0.9 200.
+</PRE>
+
+
+<H3><a name="outl">OUTLier</a> &lt;probability threshold&gt;</H3>
+
+<P>Optionally change the outlier rejection criterion from its
+default value of 1 chance in a million of seeing a reflection
+this large.  The argument for the OUTLier command can be given
+as the probability or (for convenience) its inverse.
+Only values in the range 
+0&nbsp;&lt;&nbsp;p&nbsp;&lt;=&nbsp;0.001 are allowed.
+The theory of outlier rejection is described in a 
+<A HREF="#ref2">paper</A> published in the 1999 CCP4 proceedings.
+</P>
+
+<P>Examples:</P>
+
+<P>The following commands will all have the effect of setting
+the probability limit to 1 in 100,000.
+</P>
+
+<PRE>
+OUTLIER 0.00001
+
+OUTLIER 1.E-5
+
+OUTLIER 100000
+</PRE>
+
+
+<H3><a name="shan">SHANfac</a> &lt;density oversampling factor&gt;</H3>
+
+<P>Optionally change the Shannon density oversampling factor from 
+its default of 1.5.  
+This is used to choose the grid spacing of electron density in
+the FFT structure factor calculations.  
+With a ShanFac of 1.0 (the theoretical minimum), the density would be
+sampled on a grid of dmin/2.
+The default should be fine, but could be reduced if memory were insufficient 
+for a large problem.
+ShanFac must be at least 1.1, and it is recommended to use at least 1.25.
+</P>
+
+<P>Example:
+</P>
+
+<PRE>
+SHANFAC 1.25
+</PRE>
+
+
+<H3><a name="boxs">BOXScale</a> &lt;molecular transform oversampling factor&gt;</H3>
+
+<P>Optionally change the molecular transform oversampling factor from 
+its default of 2.0.  
+This is used to choose the size of the cell from which the
+finely-sampled molecular transform is computed for each molecule.
+With a BoxScale of 1.0 (the theoretical minimum for a perfect
+molecular transform interpolation scheme), each cell edge would
+be twice the size of the molecule in that direction.  
+Note that because linear interpolation is used, the oversampling should
+be considerably greater than the theoretical minimum.
+</P>
+
+<P>The default should be fine, but could be reduced if memory were 
+insufficient for a large problem.
+However, to reduce memory usage it is better to reduce ShanFac first and
+only reduce BoxScale if necessary.
+BoxScale must be at least 1.2, and it is recommended to use at least 1.5.
+</P>
+
+<P>Example:
+</P>
+
+<PRE>
+BOXSCALE 1.5
+</PRE>
+
+
+<H3><a name="repo">REPOrt</a> { ALL | BEST }</H3>
+
+<P>Optionally change level of reporting of trial scores.
+The default is to report only the best scores (BEST) as they are
+encountered and then in a sorted list at the end.
+If desired, all trials can be reported as scored (ALL).
+This generates excessive output, particularly for translation searches,
+but may be desirable to allow detailed statistical analysis of the data.
+</P>
+
+<P>Example:</P>
+
+<PRE>
+REPORT ALL
+</PRE>
+
+
+<H3><a name="verb">VERBose</a></H3>
+
+<P>Turn on extra output, most of which is there for debugging purposes
+and will not be of interest to most users.
+</P>
+
+
+
+<h2><a name="output">PRINTER OUTPUT</a></h2> 
+
+<P>The most interesting part of the output from Beast is the 
+log-likelihood-gain scores for different trial orientations
+and/or positions, which are given in the form:
+</P>
+
+<P>TRIAL &lt;molecule name&gt; &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt;
+   &lt;LLG score&gt;
+</P>
+
+<P>for rotation searches, and
+</P>
+
+<P>TRIAL &lt;molecule name&gt; &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt;
+   &lt;x-frac&gt; &lt;y-frac&gt; &lt;z-frac&gt; &lt;LLG score&gt;
+</P>
+
+<P>for (rotation and) translation searches.
+</P>
+
+<P>At the end of each translation search for a particular orientation,
+the NBestT translations are optionally printed in a sorted list, headed
+by "BESTT", and at the end of the entire search the NBest trials are
+printed in a sorted list, headed by "BEST".  Finally, the NClust best
+cluster leaders are printed, headed by "CLUST".
+
+<P>At the end of the output, Beast repeats the best score
+found, the mean and rms deviation, and the corresponding signal-to-noise
+(score-mean/rms), which can be useful in judging significance.
+</P>
+
+<P>The CCP4 program pdbset can be used to apply the rotation and
+translation from Beast to the input PDB file, as shown below. 
+(Note that the CELL command is not necessary if your cell is given
+in a CRYST1 card in the input PDB file.)
+</P>
+
+<PRE>
+pdbset XYZIN input.pdb XYZOUT output.pdb
+CELL 80. 90. 100. 90. 90. 90.
+ROTATE EULER 10. 20. 30.
+SHIFT FRACTIONAL 0.11 0.22 0.33
+END
+</PRE>
+
+<H2><a name="function">PROGRAM FUNCTION</a></H2> 
+
+<P>Details of the algorithms are presented in a <A HREF="#ref1">paper</A> 
+published in the CCP4 Proceedings from 2001.
+That should be consulted by anyone who wants to understand in detail
+what is happening in Beast.
+</P>
+
+<P>Very briefly, Beast scores possible molecular replacement solutions
+by likelihood.  There are two types of likelihood score, depending on
+whether all the structure factor contributions from different molecules
+have known relative phases or not.  If the structure factor contributions
+do all have known relative phases (<I>e.g.</I> translation search in
+which FIXed molecules, if any, have been fixed in both orientation and
+position), then the likelihood function is the same as the one used
+in maximum likelihood refinement, <I>i.e.</I> the probability 
+distribution of the true structure factor given a calculated structure
+factor.
+</P>
+
+<P>However, if the relative phases of the contributions of different
+molecules are not known, then there is not a single calculated structure
+factor and a different likelihood function must be used.  This likelihood
+function is the probability that any particular value of the true
+structure factor could be obtained by adding up different contributions
+with unknown relative phases.  This is a random walk problem similar to
+the Wilson distribution.
+</P>
+
+<P>The most common circumstance in which there are unknown relative
+phases is a rotation search, in which for any orientation the amplitude
+of the contributions of symmetry-related molecules is known but not
+their relative phases.  For this reason, the likelihood function for
+unknown relative phases is referred to, more simply, as the rotation
+likelihood function.  However, there are other circumstances in which
+relative phases are unknown, for instance, when the orientation of one
+molecule is known while a translation search for the second molecule
+is being carried out.
+</P>
+
+<P>Beast chooses the appropriate likelihood function automatically.  
+The user only needs to understand that the additional uncertainty of
+the rotation likelihood function increases its noise level compared to
+the translation likelihood function.  This means that, for difficult
+problems, the correct answer may only emerge after carrying out
+translation searches for a number of the top rotation solutions.
+</P>
+
+<P>To put the likelihood scores on an absolute scale, they are 
+expressed in terms of log-likelihood-gain (LLG).  This is defined
+as the difference between the log-likelihood of the model and the
+log-likelihood from the Wilson distribution, <I>i.e.</I> how much
+better does the oriented and/or translated model predict the data
+than the Wilson distribution.  If the best LLG score in a search is
+negative, this means that you are being too optimistic about the 
+quality of the model (completeness or RMS error).  For a true solution,
+the LLG should be significantly greater than zero.  
+</P>
+
+<P>As a hypothesis becomes more specific, the probabilities become
+sharper and the log-likelihood score for a correct solution should 
+increase.  In terms of molecular replacement, this happens when the
+position is added to the orientation, or if more molecules are 
+placed in the unit cell.  At every step, the LLG score should increase.
+</P>
+
+<P>There are relatively few adjustable parameters in Beast.
+The most important ones are those that tell Beast about the quality 
+and completeness of the model(s): the molecule fraction in the
+MOLEcule command and the RMS error in the MODEl command.  
+These are used to compute variances in the likelihood functions and
+thus have a big impact on the quality of the results.  
+If you are over-optimistic about the quality of your model, the
+probability distributions will be too sharp and the correct answer
+may get a low score because each observation misses the peak in its
+assumed distribution.  It is probably better to be a bit pessimistic,
+because the score then will be lowered slightly but not missed 
+completely.
+</P>
+
+<P>Beast calibrates the likelihood functions by computing a Sigma(A)
+curve for each model, using a four-parameter functional form.  
+Apart from the quality (RMS) and completeness (fp) parameters, there are two
+low-resolution terms to account for the lack of a disordered solvent
+model, which can be adjusted with the SOLPar command.
+The equation is the following:
+</P>
+
+<A NAME="sacurve"></A><PRE>
+Sigma(A) = SQRT{fp * [1 - fsol * exp(-Bsol*(sin(theta)/lambda)**2) ]} *
+           exp{-(8*Pi**2/3) * RMS**2 * (sin(theta)/lambda)**2 }
+</PRE>
+
+<P>Note that Beast is quite slow, because it computes the likelihood
+functions reflection by reflection for each orientation or position.
+Typical run times are measured in hours.
+</P>
+
+<H2><a name="examples">EXAMPLES</a></H2> 
+
+<P>Simple rotation function, default step size.
+</P>
+
+<PRE>
+beast HKLIN my.mtz << eof-beast > beast.log
+LABIN F=Fobs
+MOLECULE mol1 1.0
+MODEL mol1 model1.pdb IDENT 0.65
+SEARCH mol1 ROTATE FULL
+END
+eof-beast
+</PRE>
+
+<P>Simple translation function, orthorhombic cell, 0.6A step.
+</P>
+
+<PRE>
+beast HKLIN my.mtz << eof-beast > beast.log
+LABIN F=Fobs
+MOLECULE mol1 1.0
+MODEL mol1 model1.pdb IDENT 0.65
+SEARCH mol1 ROTATE 10. 20. 30. \
+            TRANSLATE REGION 0. 0.5   0. 0.5   0. 0.5   0.6
+END
+eof-beast
+</PRE>
+
+<P>Similar translation search, but trying two possible orientations.
+</P>
+
+<PRE>
+beast HKLIN my.mtz << eof-beast > beast.log
+LABIN F=Fobs
+MOLECULE mol1 1.0
+MODEL mol1 model1.pdb IDENT 0.65
+SEARCH mol1 ROTATE LIST \
+            TRANSLATE REGION 0. 0.5   0. 0.5   0. 0.5   0.6
+RLIST mol1 10. 20. 30.
+RLIST mol1 20. 30. 40.
+END
+eof-beast
+</PRE>
+
+<P>Rotation search for second molecule after finding first one.
+First molecule has two choices of model.
+</P>
+
+<PRE>
+beast HKLIN my.mtz << eof-beast > beast.log
+LABIN F=Fobs
+MOLECULE prot 0.8
+MODEL prot trypsin.pdb IDENT 0.32
+MODEL prot chymotrypsin.pdb IDENT 0.33
+MOLECULE inhi 0.2
+MODEL inhi ovomucoid.pdb IDENT 1.0
+FIX prot 10. 20. 30.  0.11 0.22 0.33
+SEARCH inhi ROTATE FULL
+END
+eof-beast
+</PRE>
+
+<P>Rescore possible solutions from another program or a previous
+run of Beast.
+</P>
+
+<PRE>
+beast HKLIN my.mtz << eof-beast > beast.log
+LABIN F=Fobs
+MOLECULE mol1 1.0
+MODEL mol1 model1.pdb IDENT 0.65
+SEARCH mol1
+TRIAL mol1 10. 20. 30. 0.11 0.22 0.33
+TRIAL mol1 20. 30. 40. 0.22 0.33 0.44
+TRIAL mol1 30. 40. 50. 0.33 0.44 0.55
+END
+eof-beast
+</PRE>
+
+<h3>Unix examples script found in $CEXAM/unix/runnable/</h3>
+
+<li><a href="../examples/unix/runnable/beast_6Dref.exam">beast_6Dref.exam</a>
+<br>Refine orientation and translation.
+
+<li><a href="../examples/unix/runnable/beast_rotate.exam">beast_rotate.exam</a>
+<br>Rotation search (full) for toxd using an ensemble of two models.
+
+<li><a href="../examples/unix/runnable/beast_rref.exam">beast_rref.exam</a>
+<br>Refine orientations.
+
+<li><a href="../examples/unix/runnable/beast_translate.exam">beast_translate.exam</a>
+<br>Translation search after orientation refinement.
+
+<li><a href="../examples/unix/runnable/beast_rescore.exam">beast_rescore.exam</a>
+<br>Rescore rotation function results from external program
+</ul>
+
+<H2>Compiling Separately</H2>
+
+<P>These instructions are for compiling <tt>beast</tt> separately
+from the CCP4 installation.</P>
+
+<P>Beast requires that you have installed CCP4 version 4.1 and set the
+environment variables.  If you only have version 4.0 installed, you will
+need to get the new version of rwbrook.f and compile that in.
+It also requires the LAPACK and BLAS libraries, which are installed
+under CCP4 4.1 when the --with-lapack option is given in the
+configure step.  LAPACK is also available from 
+<A HREF="http://www.netlib.org/lapack/index.html">www.netlib.org</A>, if
+it is not already installed on your system and you don't wish to
+reconfigure your CCP4 installation.
+Beast should compile under Linux, Irix and Compaq Alpha systems,
+using one of the supplied Makefiles.  Perhaps the biggest complications
+will be with Irix, where different choices are sometimes made with the
+compiler flags, e.g. -o32 vs. -n32 or -64.  If it doesn't compile, you may have
+to look at the flags used in the CCP4 Makefiles.  It hasn't been tested
+under other systems, but a variation on one of the Makefiles would probably
+work for most.  To choose your operating system, do one of the following:
+</P>
+
+<PRE>
+cp Makefile.&lt;system&gt; Makefile
+make
+</PRE>
+
+<P>or</P>
+
+<PRE>
+make -f Makefile.&lt;system&gt;
+</PRE>
+
+<P>Beast has been tested most extensively under RedHat Linux 7.1 and,
+if that's your operating system, it should be fine.  Under other systems,
+it's probably a good idea to run one or more of the test jobs in the 
+test directory supplied with the program, and compare your output with 
+the sample output provided.  If you find bugs under any operating system,
+please let me know the details so I can fix them!
+</P>
+
+<P>On multi-processor machines with compilers that support OpenMP
+parallelisation directives, the translation search can be sped up by
+compiling with the OpenMP flags and then using more than one processor.
+Depending on the setup of the system and the number of users sharing
+it, you may wish to limit the number of processors that can be grabbed by
+Beast at any one time.  This is done by setting the environment
+variable OMP_NUM_THREADS before running Beast.
+For instance, the following command would limit Beast to four processors:
+</P>
+
+<PRE>
+setenv OMP_NUM_THREADS 4
+</PRE>
+
+
+<H2> REFERENCES</H2>
+<ol>
+<!-- KEEP startreferencelist -->
+
+<LI><A NAME="ref1"></A>R.J. Read (2001),
+"Pushing the boundaries of molecular replacement with maximum likelihood."
+<I>Acta Cryst.</I> D<B>57</B>: 1373-1382.<BR>
+<A HREF="http://www-structmed.cimr.cam.ac.uk/Personal/randy/pubs/pubs.html#beastref">
+Click here to download.</A>
+</LI>
+
+<LI><A NAME="ref2"></A>R.J. Read (1999),
+"Detecting outliers in non-redundant diffraction data."
+<I>Acta Cryst.</I> D<B>55</B>: 1759-1764.
+<A HREF="http://www-structmed.cimr.cam.ac.uk/Personal/randy/pubs/pubs.html#outliarref">
+Click here to download.</A>
+</LI>
+
+<LI><A NAME="ref3"></A>C. Chothia & A.M. Lesk (1986),
+"The relation between the divergence of sequence and structure in proteins." 
+<I>EMBO J.</I> <B>5</B>: 823-826.
+</LI>
+
+<!-- KEEP endreferencelist -->
+</ol>
+
+<H2> Acknowledgments</H2>
+
+<P>Kay Diederichs provided several code optimisations including 
+parallelisation to speed up the searches, particularly for translations, 
+as well as the code to sort the best results.
+Airlie McCoy and Raj Pannu provided many good suggestions for the 
+program function and numerical analysis.  
+Anne Baker wrote an interface for the CCP4 GUI that will save most users
+from reading this documentation, and provided good suggestions
+for new features.
+
+<H2> AUTHOR</H2>
+Written by Randy J. Read, University of Cambridge
+<br>e-mail:rjr27@cam.ac.uk
+
+</BODY> 
+</HTML>

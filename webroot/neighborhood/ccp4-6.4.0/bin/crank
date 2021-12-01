@@ -1,0 +1,336 @@
+#!/usr/bin/env tclsh
+#
+# Copyright (C) 2003-2004 Steven Ness and Navraj S. Pannu, Leiden University
+# Copyright (C) 2004-2007 Navraj S. Pannu, Leiden University
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+
+set initialtime [clock clicks -millisec ]
+
+if { ! [info exists env(CRANK) ] } {
+  crank_error "please define environment variable CRANK"
+}
+
+set crankbin "[file join $env(CRANK) bin]"
+set crankpath "[file join $env(CRANK)]"
+#set env(PATH) "[file join $crankpath bin]:$env(PATH)"
+set pathsep ":"
+if {$tcl_platform(platform) == "windows"} { set pathsep ";" }
+set env(PATH) "[file join $crankpath bin]$pathsep$env(PATH)"
+set crankplugins "[file join $env(CRANK) plugins]"
+source [file join $crankbin crankutils.tcl]
+
+set version "1.5"
+
+if { [file exists [file join $env(CRANK) VERSION] ] } {
+   set ver [open [file join $env(CRANK) VERSION] r]
+   set version [string trim [read $ver] ]
+   close $ver
+} else {
+   crank_error "VERSION file does not exist in \$CRANK"
+} 
+
+if { [file exists [file join $env(CRANK) bin crank] ] } {
+   set inccp4 0
+} else {
+   set inccp4 1
+} 
+
+if { [lindex $argv 0] == "-v" || [lindex $argv 0] == "--version" } {
+  puts "$version"
+  exit
+} else { 
+  if { ![file exists [lindex $argv 0] ] } {
+    crank_error "An XML file must be input"
+  }
+}
+
+set inputxml [file join [pwd] [lindex $argv 0]]
+if { ![file exists $inputxml] } {
+   crank_error "crank::inputxml file does not exist"
+}
+
+XMLParsefile $inputxml
+
+doplugins_nocheck $crankplugins
+#verifyplugins
+
+if { [info exists XMLParse([join "crank parameters version" __])] } {
+   if { $version != $XMLParse([join "crank parameters version" __]) } {
+      crank_error "crank::crank binary and crank XML version do not match"
+   }
+} else {
+   crank_error "crank::crank XML version info does not exist"
+}
+
+set verbose 0
+if { [info exists XMLParse([join "crank parameters verbose" __])] } {
+   if {$XMLParse([join "crank parameters verbose" __]) >= 1} {
+      set verbose 1
+   }
+} 
+
+#
+# Source all plugin files so we can use their utility functions
+#
+
+for { set step 1 } { [info exists XMLParse(crank__soap__run__step=$step)] } { incr step } {
+
+    set program [string tolower $XMLParse([join "crank soap run step=$step name" __])]
+
+    if { [info exists XMLParse(crank__plugin=${program}__name)] } {
+       set name $XMLParse(crank__plugin=${program}__name)
+    } else {
+       crank_error "No name for program ($program)"
+    }
+
+    if { [info exists XMLParse(crank__plugin=${program}__executable)] } {
+       set executable $XMLParse(crank__plugin=${program}__executable)
+    } else {
+       crank_error "No executable for program ($program)"
+    }
+
+    if { [info exists XMLParse(crank__plugin=${program}__tclproc)] } {
+       set tclproc $XMLParse(crank__plugin=${program}__tclproc)
+    } else {
+       crank_error "No tclproc for program ($program)"
+    }
+
+    if { [info exists XMLParse(crank__plugin=${program}__tclfile)] } {
+       set tclfile $XMLParse(crank__plugin=${program}__tclfile)
+
+       set tclfilename [file join $crankplugins $name $tclfile]
+
+       if { ![file exists $tclfilename] } {
+          crank_error "tclfilename ($tclfilename) does not appear to exist"
+       }
+       source [file join $crankplugins $name $tclfile]
+    } else {
+       crank_error "No tclfile for program ($program)"
+    }
+
+    ${program}_dependencies $step
+    
+    ${program}_input_check $step
+}
+
+set orig_pwd [file join [pwd]]
+set tag [string trim $XMLParse([join "crank soap run step=1 tag" __])]
+set code $XMLParse(crank__parameters__code)
+
+if { [info exists XMLParse(crank__soap__run__directory)] } {
+    set workdir [file join [pwd] $XMLParse(crank__soap__run__directory)]
+    file mkdir $workdir
+    cd $workdir
+} else {
+    set workdir [file join [pwd] run]
+    file mkdir run
+    cd run
+}
+
+file mkdir log
+file mkdir workdb
+
+file mkdir xml
+file copy $inputxml [file join xml input.xml]
+set inputxmldir [file join $workdir xml]
+set inputxml [file join $inputxmldir input.xml]
+
+set input_id [open "[file join xml input.xml]" a+]
+puts $input_id "<crank><soap><orig_pwd>$orig_pwd</orig_pwd></soap></crank>"
+close $input_id
+
+print_banner $version
+
+show_references
+
+check_data
+
+all_necessary_programs
+
+if {$verbose} {
+   puts "-----------------------------------XML INPUT------------------------------------"
+   set xml_fileid [open $inputxml r]
+   while { [gets $xml_fileid line] >= 0 } {
+	puts $line
+   }
+   close $xml_fileid
+   puts "--------------------------------------------------------------------------------"
+}
+
+set i 0
+while { [info exists XMLParse([join "crank soap run step=$i name" __])] } {
+    set j 0
+    while { [info exists XMLParse([join "crank soap run step=$i input exp_columns data=$j atom_name" __])] } {
+	if { [GoodAtomName $XMLParse([join "crank soap run step=$i input exp_columns data=$j atom_name" __])] == 0 } {
+	    crank_error "crank::incorrect atom name"
+	}
+	incr j
+    }
+    incr i
+}
+
+make_one_mtz_file "[file join workdb crank.out.IN.mtz]"
+
+set i 1
+while { [info exists XMLParse([join "crank input_files file=$i type" __]) ] } {
+    set type $XMLParse([join "crank input_files file=$i type" __])
+
+    # Input is a substructure pdb file
+    if { [string compare [string toupper $type] "SUBSTRUCTURE"] == 0 } {
+	set inputfile $XMLParse([join "crank input_files file=$i name" __])
+	if { ![file exists $inputfile] } {
+	    if { [file exists [file join $orig_pwd $inputfile]] } {
+		set inputfile "[file join $orig_pwd $inputfile]"
+	    } else {
+		crank_error "Could not find inputfile ($inputfile)"
+	    }
+	}
+	check_atom $inputfile [file join workdb crank.out.IN.substructure.pdb] 0 0 0
+	check_space_group [file join workdb crank.out.IN.substructure.pdb]
+    } elseif { [string compare [string toupper $type] "PDB"] == 0 } {
+        set inputfile $XMLParse([join "crank input_files file=$i name" __])
+	if { ![file exists $inputfile] } {
+	    if { [file exists "[file join $orig_pwd $inputfile]"] } {
+		set inputfile "[file join $orig_pwd $inputfile]"
+	    } else {
+		crank_error "Could not find inputfile ($inputfile)"
+	    }
+	}
+	file copy $inputfile [file join workdb crank.out.IN.pdb]
+    }
+    incr i
+}
+
+set i 1
+while { [info exists XMLParse([join "crank parameters crystal=$i native" __]) ] } {
+    if { [info exists XMLParse([join "crank parameters crystal=$i substructure coordinate_format" __]) ] } {
+	set format $XMLParse([join "crank parameters crystal=$i substructure coordinate_format" __])
+	set pdbfile [open [file join workdb crank.out.IN.substructure.pdb] w]
+	set j 1
+	set orthx 0.0000
+	set orthy 0.0000
+	set orthz 0.0000
+	set residue "CRA"
+
+ 	while { [info exists XMLParse([join "crank parameters crystal=$i substructure atom=$j name" __]) ] } {
+	    set name $XMLParse([join "crank parameters crystal=$i substructure atom=$j name" __])
+	    set x    $XMLParse([join "crank parameters crystal=$i substructure atom=$j x" __])
+	    set y    $XMLParse([join "crank parameters crystal=$i substructure atom=$j y" __])
+	    set z    $XMLParse([join "crank parameters crystal=$i substructure atom=$j z" __])
+	    set occ  $XMLParse([join "crank parameters crystal=$i substructure atom=$j occ" __])
+	    set bfac $XMLParse([join "crank parameters crystal=$i substructure atom=$j bfac" __])
+	    if { ($format == "Fractional") } {
+		frac2orth $x $y $z orthx orthy orthz
+		puts $pdbfile [format "HETATM %4d %2s  %3s   %3d    %8.3f%8.3f%8.3f%6.2f%6.2f" $j $name $residue $j $orthx $orthy $orthz $occ $bfac]
+	    } else {
+ 		puts $pdbfile [format "HETATM %4d %2s  %3s   %3d    %8.3f%8.3f%8.3f%6.2f%6.2f" $j $name $residue $j $x $y $z $occ $bfac]
+	    }
+	    incr j
+	}
+    }
+    if { [info exists XMLParse([join "crank parameters crystal=$i substructure coordinate_format" __])] } {
+        puts $pdbfile "END"
+        close $pdbfile
+    }
+    incr i
+}
+
+for { set step 1 } { [info exists XMLParse(crank__soap__run__step=$step)] } { incr step } {
+
+    set program [string tolower $XMLParse([join "crank soap run step=$step name" __])]
+    set executable $XMLParse(crank__plugin=${program}__executable)
+    set tclproc $XMLParse(crank__plugin=${program}__tclproc)
+    set tag [string trim $XMLParse([join "crank soap run step=$step tag" __])]
+    set input_id [open "[file join xml input.xml]" a+]
+    puts $input_id "<crank><soap><current_step>$step</current_step></soap></crank>"
+    close $input_id
+
+#    puts "Running $step-$program"
+
+    $tclproc $code $crankbin $executable $crankplugins $inputxml $inccp4 $step
+
+    set nextstep [expr $step + 1]
+
+    if { [info exists XMLParse([join "crank soap run step=$nextstep name" __])] } {
+	set nextprogram [string tolower $XMLParse([join "crank soap run step=$nextstep name" __])]
+
+        if { [info exists XMLParse([join "crank soap run step=$nextstep tag" __])] } {
+
+            # create input mtz for next step
+	    if { !( ($nextprogram == "prep") || ($nextprogram == "shelxc") ) } {
+	       cd workdb
+	       join_all_sftools $nextstep 0
+	       if { [file exists crank.out.$tag.oh.mtz] } {
+ 		   join_all_sftools $nextstep 1
+               }
+	       cd ..
+            }
+        }
+    }
+}
+
+for { set j 1 } { [info exists XMLParse(crank__soap__run__step=$j)] } { incr j } {
+
+    set tag [string trim $XMLParse([join "crank soap run step=$j tag" __])]
+
+    if { [file exists [file join workdb crank.out.$tag.mtz] ] } {
+        set mtz_in [file join workdb crank.out.$tag.mtz]
+    }
+
+    if { [file exists [file join workdb crank.out.$tag.pdb] ] } {
+        set pdb_in [file join workdb crank.out.$tag.pdb]
+    }
+
+    if { [file exists [file join workdb crank.out.$tag.substructure.pdb] ] } {
+        set sub_in [file join workdb crank.out.$tag.substructure.pdb]
+    }
+}
+
+#print_info_summary
+#print_data_summary
+
+if { [info exists mtz_in ] && [info exists XMLParse(crank__output_files__mtz_out__name)] } {
+   set mtz_out $XMLParse(crank__output_files__mtz_out__name)
+   file copy $mtz_in $mtz_out
+}
+
+if { ([info exists pdb_in ] || [info exists sub_in ]) && [info exists XMLParse(crank__output_files__pdb_out__name)]  } {
+   set pdb_out $XMLParse(crank__output_files__pdb_out__name)
+
+   if { [info exists pdb_in ] } {
+      file copy $pdb_in $pdb_out
+   } elseif { [info exists sub_in ] } {
+      file copy $sub_in $pdb_out
+   }
+}
+
+if { [info exists XMLParse(crank__parameters__disk_space] } {
+   set mtzfiles [file join workdb *.mtz]
+   set pdbfiles [file join workdb *.pdb]
+   if { ($XMLParse(crank__parameters__disk_space) == "clean")   ||
+        ($XMLParse(crank__parameters__disk_space) == "compress")  } {
+	 foreach pdbfile $pdbfiles {
+             compress $pdbfile
+         }
+	 foreach mtzfile $mtzfiles {
+             compress $mtzfile
+         }
+   }
+}
+set totaltime [expr ([clock clicks -millisec ]-$initialtime)/1000.]
+puts [format "\nTotal time for all steps: %.3f sec (in minutes: %.3f)\n" $totaltime [expr $totaltime/60.]]
+crank_ccp4_plugin_end 0 "crank" $totaltime

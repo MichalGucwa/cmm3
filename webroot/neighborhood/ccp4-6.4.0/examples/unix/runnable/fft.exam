@@ -1,0 +1,88 @@
+#!/bin/sh
+# awa970502 version 1.1
+# examples taken from the origional documentation
+
+#
+# Calculate difference patterson Example
+#
+
+#  Section along all 3 axes to make it easy to contour Harker sections.
+#  Do all maps over whole asymmetric unit to be sure each section
+#  is on the same scale.
+#   X sections
+#
+fft HKLIN $CEXAM/toxd/toxd MAPOUT $CCP4_SCR/toxd_aupatt_x <<END
+PATTERSON
+AXIS Y Z X
+resolution 100 2.5
+EXCLUDE SIG1 4 SIG2 4 DIFF 2800
+fftspacegroup 47   ! Orignal space group + no trans + center of sym
+title  2.5A AU - NAT patterson - excluding 4 sig , and Diso > 180.
+grid 88 144 80
+xyzlim 0 44 0 72 0 40
+LABIN F1=FAU20 SIG1=SIGFAU20 F2=FTOXD3  SIG2=SIGFTOXD3
+END
+#   Y sections
+#
+fft HKLIN $CEXAM/toxd/toxd MAPOUT $CCP4_SCR/toxd_aupatt_y <<END
+PATTERSON
+AXIS Z X Y
+resolution 100 2.5
+EXCLUDE SIG1 4 SIG2 4 DIFF 2800
+fftspacegroup 47   ! Orignal space group + no trans + center of sym
+title  2.5A AU - NAT patterson - excluding 4 sig , and Diso > 180.
+grid 88 144 80
+xyzlim 0 44 0 72 0 40
+LABIN F1=FAU20 SIG1=SIGFAU20 F2=FTOXD3  SIG2=SIGFTOXD3
+END
+#   Z sections
+#
+fft HKLIN $CEXAM/toxd/toxd MAPOUT $CCP4_SCR/toxd_aupatt_z << END
+PATT
+AXIS X Y Z 
+resol 100 2.5
+EXCLUD SIG1 4 SIG2 4 DIFF 2800
+fftspacegroup 47   ! Orignal space group + no trans + center of sym
+titl  2.5A AU - NAT patterson - excluding 4 sig , and Diso > 2800.
+grid 88 144 80
+xyzlim 0 44 0 72 0 40
+LABI F1=FAU20 SIG1=SIGFAU20 F2=FTOXD3  SIG2=SIGFTOXD3
+END
+
+# 
+# Calculate anomalous difference patterson Example
+#
+
+#   X sections
+#
+fft HKLIN $CEXAM/toxd/toxd MAPOUT $CCP4_SCR/toxd_auanopatt_x <<END
+PATT
+AXIS Y Z X
+resol 100 2.5
+SCALE F2 0.00001   !  Here simply to allow SIG2 rejection
+EXCLUD  SIG2 4 DIFF 300
+fftspacegroup 47   ! Orignal space group + no trans + center of sym
+titl  2.5A AU Ano patterson - excluding FAU20 < 4 sig , and Dano > 300.
+grid 88 144 80
+xyzlim 0 44 0 72 0 40
+LABI F1=ANAU20 SIG1=SIGANAU20 F2=FAU20 SIG2=SIGFAU20
+END
+
+
+# Extract sample results for testing purposes - these can
+# be compared with runs with different versions or on different
+# platforms
+
+echo " " >> $CCP4_SCR/sample_results
+echo " *** fft.exam *** " >> $CCP4_SCR/sample_results
+echo " " >> $CCP4_SCR/sample_results
+mapdump mapin $CCP4_SCR/toxd_auanopatt_x.map <<EOF 1> $CCP4_SCR/junk
+EOF
+
+grep "Mean density" $CCP4_SCR/junk >> $CCP4_SCR/sample_results
+grep "Rms deviation from mean density" $CCP4_SCR/junk >> $CCP4_SCR/sample_results
+
+rm -f $CCP4_SCR/junk
+
+
+

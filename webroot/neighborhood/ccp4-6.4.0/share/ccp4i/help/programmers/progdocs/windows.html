@@ -1,0 +1,834 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4I Documentation for Programmers: Core Documentation</title>
+<link rel="stylesheet" type="text/css" href="../../ccp4idocs.css" title="CCP4i" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+</head>
+<body>
+<H2>CCP4i Documentation for Programmers: Core Documentation</H2>
+<H3>Contents</H3>
+<h3>Creating Windows (src/window.tcl)</h3>
+<a name="Creating_Windows"><h3> Creating Windows </h3> 
+<p>These are general window drawing procedures.  Some procedures which are specific to drawing task windows are in taskwindows.tcl and some procedures which will draw one simple utility window are defined in util_windows.tcl.<p>
+<p>All of the 'standard' windows in CCP4i are created with some standard \procedures:<p>
+<p>OpenWindow: creates the shell of a window<p>
+<p>CreateFrame: called after OpenWindow to create the basic internal folder structure and (very important) to attach an array to the window<p>
+<p>CreateTaskWindow: Does everything OpenWindow and CreateFrame do plus creating some standard action buttons and titled folders.<p>
+<p>The array which is attached to the window contains elements which are associated with the various widgets on the window and contain the currently entered or selected values for the parameters. These elements of the \array correspond to the parameters found in the def file for a task window or which must be defined by the DefineVariable command for use with CreateFrame. There are also elements of the array which perform a control function for things like the message line, the toggleable folders etc.. The elements have names which begin with uppercase e.g. PARAM_FRAME_nn.<p>
+<p>Many procedures require the name of the data array as an argument -almost always referred to as arrayname.  Some routines (e.g. CreateLine) do not require the array name to be input but get it from a saved 'system' variable which has been set by CreateFrame or CreateTaskWindow. This system variable can only be reliably used while the window is being initially defined. Any command which might be issued at a later time (after the user might have opened another window and the system variable being changed) must explicitly input the array name.<p>
+<a name="OpenWindow" ><h4><font color="#CC3333">OpenWindow</font> <em>Open a graphical window</em></h4> 
+<p><em>Argument list:  &lt;w&gt; &lt;title&gt; &lt;icon_name&gt; &lt;args&gt;</em></p>
+<p>This will open a window with a message bar and Help button but without the folder structure or default action buttons of the task window opened byCreatetaskWindow.  This procedure is useful for creating more customised graphics windows and is used mostly by the 'core' ccp4i.<p>
+<p>The window does not absolutely need to have an associated data array but will need to have an array defined if it is to support the message line.<p>
+<p>See also OpenGridWindow<p>
+<p><strong>w</strong>  Name of toplevel window. If this window exists the procedure does nothing.<p>
+<p><strong>title</strong>  Title to appear at top of window<p>
+<p><strong>icon_name</strong>  Short title to appear if the window is iconised<p>
+<p><strong>-help</strong><em>  help_file</em><p>
+<p>Enter the name of a help file to be attached to the window help button<p>
+<p><strong>-target</strong><em>  help_target</em><p>
+<p>Set target in the help file to help_target<p>
+<p><strong>-message</strong><em>  arrayname</em><p>
+<p>Display an message line and use the standard elements of the array arrayname to contain the required message text.<p>
+<p><strong>-class</strong><em>  class</em><p>
+<p>Enter a class definition for the Tk toplevel command NOT USED<p>
+<p><strong>-nomessage</strong><em>  REDUNDANT</em><p>
+<p><strong>-resizeable</strong><p>
+<p>The window will be resizable by the user<p>
+<p><strong>-parent</strong><em>  arrayname</em><p>
+<p>Arrayname is the data array for a 'parent' window. If the parent window is closed then its children will also be closed<p>
+<a name="OpenGridWindow" ><h4><font color="#CC3333">OpenGridWindow</font> <em>Similar to OpenWindow but uses grid geometry manager</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;w&gt; &lt;title&gt; &lt;icon_name&gt; &lt;args&gt;</em></p>
+<p>When the child frames are arranged using the grid geometry manager it seems to be necessary to use grid all the way through the window definition. This procedure is used for customised window such as the file browser and sketcher rather than being a proper API.<p>
+<p>The window is automatically created with a message bar and buttons frame and two additional frames called $w.main and $w.utils<p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>w</strong>  Name of toplevel window. If this window exists the procedure does nothing.<p>
+<p><strong>title</strong>  Title to appear at top of window<p>
+<p><strong>icon_name</strong>  Short title to appear if the window is iconised<p>
+<p><strong>-help</strong><em>  help_file</em><p>
+<p>Enter the name of a help file to be attached to the window help button<p>
+<p><strong>-target</strong><em>  help_target</em><p>
+<p>Set target in the help file to help_target<p>
+<p><strong>-class</strong><em>  class</em><p>
+<p>Enter a class definition for the Tk toplevel command NOT USED<p>
+<p><strong>-menu</strong><p>
+<p>Create a pull-down menu frame<p>
+<a name="CloseWindow" ><h4><font color="#CC3333">CloseWindow</font> <em>Close a window opened by OpenWindow, OpenGridWindow or OpenTaskWindow</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;args&gt;</em></p>
+<p><strong>arrayname</strong>  Name of data array for the window<p>
+<p><strong>-window</strong><em>  window</em><p>
+<p>Set the window id (the Tk id) to override the default array(WINDOW)<p>
+<p><strong>-unset</strong><p>
+<p>Unset the whole of array<p>
+<a name="CreateFrame" ><h4><font color="#CC3333">CreateFrame</font> <em>Set up a frame structure (i.e. folders) in a window opened by OpenWindow</em></h4> 
+<p><em>Argument list:  &lt;w&gt; &lt;arrayname&gt; &lt;args&gt;</em></p>
+<p>To support the folder structure there must definitely be a data array associated with the window to contain the control parameters for the folders. By default the window will have a vertical scroll bar.<p>
+<p><strong>w</strong>  The window id (a Tk id)<p>
+<p><strong>arrayname</strong>  The data array for the window<p>
+<p><strong>-noscroll</strong><p>
+<p>Do not create a scroll bar.<p>
+<a name="CloseFrame" ><h4><font color="#CC3333">CloseFrame</font> <em>End the definition of a frame.</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>This procedure calls update_main_scroll to set the final size of the scrollable frame and run_update_script which tidies up extending frames.<p>
+<a name="OpenFolder" ><h4><font color="#CC3333">OpenFolder</font> <em>Begin the definition of a folder in a task window</em></h4> 
+<p><em>Argument list:  &lt;frame&gt; &lt;args&gt;</em></p>
+<a href=../../../help/programmers/OpenFolder.html>See the CCP4i Programmers Documentation</a><a name="update_folder" ><h4><font color="#CC3333">update_folder</font> <em>Update visibility of folder dependent on protocol defined by OpenFolder</em></h4> 
+<p><em>Argument list:  &lt;folder&gt; &lt;arrayname&gt; &lt;element&gt; &lt;args&gt;</em></p>
+<p>NB this procedure is called from the 'trace variable' function and has three redundant arguments appended to args<p>
+<p><strong>folder</strong>  The folder id<p>
+<p><strong>arrayname</strong>  The name of the task array<p>
+<p><strong>element</strong>  The array element which controls the visibility of the folder<p>
+<p><strong>args</strong>  The arguments input to OpenFolder and defined in:<p>
+<a href=../../../help/programmers/OpenFolder.html>See the CCP4i Programmers Documentation</a><a name="update_folder_display" ><h4><font color="#CC3333">update_folder_display</font> <em>Switch on or off the display of folders dependent on the value of the switch parameter</em></h4> 
+<p><em>Argument list:  &lt;frame&gt; &lt;arrayname&gt; &lt;mode&gt;</em></p>
+<p><strong>frame</strong>  The number of a folder or 'all'<p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>mode</strong>  Optional If mode=view then scroll task window so the opened folder is visible (but this may not be functional).<p>
+<a name="OpenSubFrame" ><h4><font color="#CC3333">OpenSubFrame</font> <em>Open a sub frame  within the context of OpenWindow/CreateFrame or CreateTaskWindow</em></h4> 
+<p><em>Argument list:  &lt;framein&gt; &lt;args&gt;</em></p>
+<a href=../../../help/programmers/OpenSubFrame.html>See CCP4I Programmers Documentation</a><a name="CloseSubFrame" ><h4><font color="#CC3333">CloseSubFrame</font> <em>Close a sub frame </em></h4> 
+<p><em>Argument list: None</em></p>
+<a href=../../../help/programmers/CloseSubFrame.html>See CCP4I Programmers Documentation</a><a name="toggle_frame_display" ><h4><font color="#CC3333">toggle_frame_display</font> <em>Set up a trace command for handler controlling visibility of a line or subframe</em></h4> 
+<p><em>Argument list:  &lt;line&gt; &lt;element&gt; &lt;hitstate&gt; &lt;hitlist&gt; &lt;table_row&gt; &lt;-1&gt;</em></p>
+<p><strong>line</strong>  Tk id of the line or frame<p>
+<p><strong>element</strong>  Array element controlling line/frame visibility<p>
+<p><strong>hitstate</strong>  Visibility state ('open' or 'hide') if value of element matches any value in hitlist<p>
+<p><strong>hitlist</strong>  Tcl list of possible values for the control parameter<p>
+<a name="update_frame_display" ><h4><font color="#CC3333">update_frame_display</font> <em>Handler controlling visibility of a line or subframe</em></h4> 
+<p><em>Argument list:  &lt;line&gt; &lt;arrayname&gt; &lt;element&gt; &lt;hitlist&gt; &lt;hitstate&gt; &lt;args&gt;</em></p>
+<p>Called when user changed value of the control parameter <p>
+<p><strong>line</strong>  Tk id of the line or frame<p>
+<p><strong>arrayname</strong>  name of data array<p>
+<p><strong>element</strong>  Array element controlling line/frame visibility<p>
+<p><strong>hitstate</strong>  Visibility state ('open' or 'hide') if value of element matches any value in hitlist<p>
+<p><strong>hitlist</strong>  Tcl list of possible values for the control parameter<p>
+<a name="update_table_row" ><h4><font color="#CC3333">update_table_row</font> <em>Toggle the display of a line in the table dependent on value of some varaible</em></h4> 
+<p><em>Argument list:  &lt;table&gt; &lt;arrayname&gt; &lt;element&gt; &lt;hitlist&gt; &lt;hitstate&gt; &lt;\&gt;</em></p>
+<p>This proc is equivalent to update_frame_display but for rows in a table and is called when the variable is changed.  The row is made invisible by setting the height to zero.<p>
+<p><strong>table</strong>  Tk id of the table<p>
+<p><strong>arrayname</strong>  name of data array<p>
+<p><strong>element</strong>  Array element controlling line/frame visibility<p>
+<p><strong>hitstate</strong>  Visibility state ('open' or 'hide') if value of element matches any value in hitlist<p>
+<p><strong>hitlist</strong>  Tcl list of possible values for the control parameter<p>
+<p><strong>table_row</strong>  The number of the row in the table (first row = 0)<p>
+<p><strong>height</strong>  The normal height of the row when it is displayed<p>
+<a name="toggle_button_disabled" ><h4><font color="#CC3333">toggle_button_disabled</font> <em>Set up a trace command for handler controlling greying of a varbutton</em></h4> 
+<p><em>Argument list:  &lt;button&gt; &lt;element&gt; &lt;hitstate&gt; &lt;hitlist&gt;</em></p>
+<p><strong>line</strong>  Tk id of the line or frame<p>
+<p><strong>element</strong>  Array element controlling line/frame visibility<p>
+<p><strong>hitstate</strong>  Visibility state ('open' or 'hide') if value of element matches any value in hitlist<p>
+<p><strong>hitlist</strong>  Tcl list of possible values for the control parameter<p>
+<a name="update_button_disabled" ><h4><font color="#CC3333">update_button_disabled</font> <em>Handler controlling greying out of a varbutton</em></h4> 
+<p><em>Argument list:  &lt;button&gt; &lt;arrayname&gt; &lt;element&gt; &lt;\&gt;</em></p>
+<p>Called when user changed value of the control parameter <p>
+<p><strong>button</strong>  Tk id of the button<p>
+<p><strong>arrayname</strong>  name of data array<p>
+<p><strong>element</strong>  Array element controlling line/frame visibility<p>
+<p><strong>hitstate</strong>  Visibility state ('open' or 'hide') if value of element matches any value in hitlist<p>
+<p><strong>hitlist</strong>  Tcl list of possible values for the control parameter<p>
+<a name="scrolled_frame" ><h4><font color="#CC3333">scrolled_frame</font> <em>Create a scrollable frame</em></h4> 
+<p><em>Argument list:  &lt;w&gt; &lt;contents&gt;</em></p>
+<p>The mechanism for creating a scrolling frame is devious. This procedure will create the basic scrollable frame and scroll bar and will then create the required contents of the scrollable frame by evaluating the script which is passed into this procedure as a block of text. The script is actually evaluated in the variable context one level up by using the uplevel command.<p>
+<p>This is a very important procedure used by all windows with scroll bars.<p>
+<p><strong>w</strong>  The window id (a Tk id)<p>
+<p><strong>contents</strong>  The text for a script to define the contents of the frame.<p>
+<a name="update_main_scroll" ><h4><font color="#CC3333">update_main_scroll</font> <em>Update the scrollable extent of a task window.</em></h4> 
+<p><em>Argument list:  &lt;frame&gt; &lt;args&gt;</em></p>
+<p>The mechanism controlling scrolling needs to know the extent of the scrollable frame in the task window. This update is slow and is done only if the number of lines displayed in a task window has changed.  If the system parameter block_scroll_update is set to 1 (true) then update_main_scroll does nothing. This blocking mechanism is used to prevent any unnecessary and time consuming update of the scrollable extent while the task window is initially being drawn.<p>
+<p><strong>frame</strong>  The Tk frame id of any frame or widget within the task window.<p>
+<a name="UnsetArrayExtras" ><h4><font color="#CC3333">UnsetArrayExtras</font> <em>Delete the 'extra' elements from a task window array</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt;</em></p>
+<p>The extra elements control the display of extending frames etc. in a task window. If a task window is deleted it is safer to delete these elements before possibly redrawing the task window again.<p>
+<p><strong>arrayname</strong>  Name of task window array<p>
+<p>The array has already been tied to an interface and is probably going to be tied to a new interface. Variables which have a trace on them are listed in TRACE_LIST. These traces must be deleted to avoid attempts to access widgets that no longer exist.<p>
+<p><strong>arrayname</strong>  The name of an array<p>
+<a name="run_update_script" ><h4><font color="#CC3333">run_update_script</font> <em>After defining a new window tidy up the extending frames</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt;</em></p>
+<p>The array element UPDATE_SCRIPTS may contain the text for some commands that extending frames require to be run after the rest of the windows are defined.<p>
+<p><strong>arrayname</strong>  The data array for the window<p>
+<a name="GetNewWindowName" ><h4><font color="#CC3333">GetNewWindowName</font> <em>Return a unique name for an array root_$n </em></h4> 
+<p><em>Argument list:  &lt;root&gt;</em></p>
+<p><strong>Root</strong>  name for an array<p>
+<h3>Help, Message Line and Wait Commands</h3>
+<a name="SetProgramHelpFile" ><h4><font color="#CC3333">SetProgramHelpFile</font> <em>Set the name of the help file for the current window</em></h4> 
+<p><em>Argument list:  &lt;program_name&gt;</em></p>
+<a href=../../../help/programmers/SetProgramHelpFile.html>See CCP4i Programmers Documentation</a><p> The file name set using this procedure is used for all subsequent 'help' commands in the CreateLine procedure.  If a task interface requires access to more than one help file then this procedure can be called multiple times to derefine the default help file.<p>
+<p><strong>program_name</strong>  Usually just the name of a ccp4 program which will be assumed to have a help file in {$CCP4/html.} If this is not the case then the full path name of the help file should be given.<p>
+<a name="KeywordHelp" ><h4><font color="#CC3333">KeywordHelp</font> <em>Open a web browser to display a help document.</em></h4> 
+<p><em>Argument list:  &lt;help_file&gt; &lt;help_target&gt;</em></p>
+<p><strong>help_file</strong>  Name of html file to display<p>
+<p><strong>help_target</strong>  Optional target within help file<p>
+<a name="SetMessage" ><h4><font color="#CC3333">SetMessage</font> <em>Bind cursor entering a widget to display help textline</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;w&gt; &lt;m&gt;</em></p>
+<p>This is a generic interface to setting the inline help display.<p>
+<p><strong>arrayname</strong>  Name of task interface array<p>
+<p><strong>w</strong>  The id of a widget within the task window<p>
+<p><strong>m</strong>  The text message to be displayed<p>
+<a name="ShowHelp" ><h4><font color="#CC3333">ShowHelp</font> <em>Show inline help text message</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;w&gt; &lt;m&gt;</em></p>
+<p>Help messages are displayed in the message line in each CCP4i window. Depending on the configuration the help message will also be displayed as "bubble help", with the text appearing next to the appropriate widget after a short time delay.<p>
+<p><strong>arrayname</strong>  Name of task interface array<p>
+<p><strong>w</strong>  The id of a widget within the task window<p>
+<p><strong>m</strong>  The text message to be displayed<p>
+<a name="CancelHelp" ><h4><font color="#CC3333">CancelHelp</font> <em>Cancel display of inline help text message</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;w&gt;</em></p>
+<p>This is the counterpart of the ShowHelp command, which displays the messages in the first place.<p>
+<p><strong>arrayname</strong>  Name of task interface array<p>
+<p><strong>w</strong>  The id of a widget within the task window<p>
+<a name="InitialiseBubbleHelp" ><h4><font color="#CC3333">InitialiseBubbleHelp</font> <em>Initialise bubble help functionality</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>Call this to set up the toplevel widget for bubble help.<p>
+<p>The toplevel widget is created and then hidden - when required it is filled with the appropriate text and placed in the correct position before being remapped to the screen.<p>
+<a name="bubblehelp_pending" ><h4><font color="#CC3333">bubblehelp_pending</font> <em>Initiate display of help text via bubble help</em></h4> 
+<p><em>Argument list:  &lt;w&gt;</em></p>
+<p>This command is triggered when the cursor moves over the widget. After a delay the help message is displayed (unless cancelled e.g. by the cursor leaving the widget). <p>
+<p><strong>w</strong>  The id of a widget within the task window<p>
+<a name="bubblehelp_show" ><h4><font color="#CC3333">bubblehelp_show</font> <em>Display help text in a help bubble.</em></h4> 
+<p><em>Argument list:  &lt;w&gt;</em></p>
+<p>Called from bubblehelp_pending after a suitable delay<p>
+<p><strong>w</strong>  The id of a widget within the task window<p>
+<a name="bubblehelp_cancel" ><h4><font color="#CC3333">bubblehelp_cancel</font> <em>Cancel display of help text via bubble help</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>This command is triggered when the cursor moves out of a widget.<p>
+<a name="set_message" ><h4><font color="#CC3333">set_message</font> <em>Display the given text in the message line</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;m&gt; &lt;args&gt;</em></p>
+<p><strong>arrayname</strong>  Name of task interface array<p>
+<p><strong>m</strong>  The text message to be displayed<p>
+<p><strong>-block</strong><p>
+<p>Block any subsequent attempt to set the message until the -unblock option is used<p>
+<p><strong>-unblock</strong><p>
+<p>Unset any block on updating the message line<p>
+<a name="PleaseWait" ><h4><font color="#CC3333">PleaseWait</font> <em>Display a 'Please wait' message</em></h4> 
+<p><em>Argument list:  &lt;message&gt;</em></p>
+<a href=../../../help/programmers/PleaseWait.html>See CCP4I Programmers Documentation</a><a name="TkBusy'" ><h4><font color="#CC3333">TkBusy'</font> <em>Iteratively set the cursor for all child windows to a watch/arrow</em></h4> 
+<p><em>Argument list:  &lt;w&gt; &lt;d&gt;</em></p>
+<p>This function should not be used directly - use TkBusy<p>
+<p><strong>w</strong>  The id for a window<p>
+<p><strong>d</strong>  If false (0) set cursor to watch, if true (1) then reset cursor to arrow<p>
+<a name="TkBusy" ><h4><font color="#CC3333">TkBusy</font> <em>Set the cursor style for a window and all of it's children</em></h4> 
+<p><em>Argument list:  &lt;w&gt; &lt;d&gt; &lt;0&gt;</em></p>
+<p>A watch cursor is used to indicate that the process is busy.<p>
+<p><strong>w</strong>  The id for a window<p>
+<p><strong>d</strong>  Optional, default 0. If false (0) set cursor to watch, if true (1) then reset cursor to arrow<p>
+<h3>File Selection Widgets</h3>
+<a name="CreateInputFileLine" ><h4><font color="#CC3333">CreateInputFileLine</font> <em>Draw a line to select an input file</em></h4> 
+<p><em>Argument list:  &lt;linein&gt; &lt;message&gt; &lt;label&gt;</em></p>
+<a href=../../../help/programmers/CreateInputFileLine.html>See the CCP4i Programmers Documentation</a><a name="CreateOutputFileLine" ><h4><font color="#CC3333">CreateOutputFileLine</font> <em>Draw a line to select an output file</em></h4> 
+<p><em>Argument list:  &lt;linein&gt; &lt;message&gt; &lt;label&gt; &lt;fileout&gt; &lt;fileout_dir&gt; &lt;args&gt;</em></p>
+<a href=../../../help/programmers/CreateOutputFileLine.html>See the CCP4i Programmers Documentation</a><a name="FileViewer0" ><h4><font color="#CC3333">FileViewer0</font> <em>Extracts file name from a data array and passes to FileViewer</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;fileVar&gt;</em></p>
+<p>When the file viewer functionality is part of a callback, attached to a button (eg the 'Browse' button), then it is necessary to extract the name of the file from data array at the time the command is issued.<p>
+<p><strong>arrayname</strong>  The data array for the window<p>
+<p><strong>fileVar</strong>  The element of the array containing the file name<p>
+<a name="FileDialog" ><h4><font color="#CC3333">FileDialog</font> <em>Open a file selection dialog box associated with one file input line</em></h4> 
+<p><em>Argument list:  &lt;openmode&gt; &lt;arrayname&gt; &lt;fileVar&gt; &lt;dirVar&gt;</em></p>
+<p>This uses the SelectFile procedure to provide the file selection dialog but also ensure that any selection on the file input line is passed to SelectFile and that the returned selection is put into the correct variable<p>
+<p><strong>openmode</strong>  Should be 'open' for an input file or 'save' for an output file.#d_arg arrayname Name of task interface array<p>
+<p><strong>fileVar</strong>  The name of the element in the array containing the file name<p>
+<p><strong>dirVar</strong>  The name of the element in the array containing the directory alias<p>
+<a name="DirBrowser" ><h4><font color="#CC3333">DirBrowser</font> <em>Present a 'file' browser for user to select a directory</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;arrayindex&gt;</em></p>
+<p>This assumes that there is a text input widget for the directory path in a task interface and this procedure is called if the user clicks a 'Browse' button.<p>
+<p><strong>arrayname</strong>  Name of task interface array<p>
+<p><strong>arrayindex</strong>  Name of an element in the array which contains the directory name<p>
+<a name="CheckFileInput" ><h4><font color="#CC3333">CheckFileInput</font> <em>Check user input to file selection  and return 1 if OK, 0 otherwise</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;fileVar&gt; &lt;mode&gt; &lt;dirVar&gt; &lt;args&gt;</em></p>
+<p>The user input of a file name is OK if an input file exists or an output file does not exist.  For input files the procedure will attempt file name completion- e.g. adding an extension to a file name.<p>
+<p><strong>arrayname</strong>  Name of task interface array<p>
+<p><strong>fileVar</strong>  Name of an element in the array containing the file name<p>
+<p><strong>mode</strong>  Should be 'open' for an input file or 'save' for an output file<p>
+<p><strong>dirVar</strong>  Name of an element in the array containing the directory alias<p>
+<p><strong>-notoblig</strong><p>
+<p>Entering a file name is not obligatory so field will not have a contrast colour if it is left blank<p>
+<p><strong>-ext</strong><em>  ext</em><p>
+<p>Enter a file extension to use in file name completion<p>
+<p><strong>-title</strong><em>  title</em><p>
+<p>If attempted file name completion finds several files which are consistent with input then present user with list to select correct file. The title is used as a title for the selection dialog box.<p>
+<a name="IsPathADefaultDir" ><h4><font color="#CC3333">IsPathADefaultDir</font> <em>Check if explicitly entered path corresponds to a project or aliased directory.</em></h4> 
+<p><em>Argument list:  &lt;path&gt; &lt;aliasVar&gt;</em></p>
+<p>The user might type in a full path name rather than use the project or aliases.  It is easier for ccp4i to keep track of files if the project or alias \is used so test any input full path and convert to a project/alias if possible.<p>
+<p><strong>path</strong>  Full path name for file<p>
+<p><strong>aliasVar</strong>  Returned project/alias.<p>
+<a name="ResolveDirInput" ><h4><font color="#CC3333">ResolveDirInput</font> <em>Expand user input directory path</em></h4> 
+<p><em>Argument list:  &lt;dirin&gt;</em></p>
+<p>Resolve ~ or environment variable specifications and return a full path.<p>
+<p><strong>dirin</strong>  The input directory path to be expanded.<p>
+<a name="CheckDirInput" ><h4><font color="#CC3333">CheckDirInput</font> <em>Validate user input of directory path</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;dir&gt;</em></p>
+<p>The procedure will handle input of ~ or environment variable<p>
+<p>The widget for the directory input is updated with status colour depending on the validity of the user input.<p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>dir</strong>  Array element containing directory path<p>
+<a name="update_default_dir" ><h4><font color="#CC3333">update_default_dir</font> <em>Update the path to file name in file selection line when user changes default directory</em></h4> 
+<p><em>Argument list:  &lt;mode&gt; &lt;arrayname&gt; &lt;dir&gt; &lt;file&gt;</em></p>
+<p><strong>mode</strong>  REDUNDANT<p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>dir</strong>  Array element containing directory alias<p>
+<p><strong>file</strong>  Array element containing file name<p>
+<a name="MoveFileNameLeft" ><h4><font color="#CC3333">MoveFileNameLeft</font> <em>For long file name move position of file name in widget</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;file&gt;</em></p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>file</strong>  Array element containing file name<p>
+<a name="UpdateOutputFilename" ><h4><font color="#CC3333">UpdateOutputFilename</font> <em>Derive an output file name from an input file name</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;input_fileVar&gt; &lt;output_dir&gt;</em></p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>input_fileVar</strong>  Name of array element containing the input file name<p>
+<p><strong>output_dir</strong>  Name of array element containing output directory alias<p>
+<p><strong>output_file</strong>  Name of array element containing output filename<p>
+<p><strong>output_ext</strong>  An extension to the filename root (usually _taskname) note this is not the usually meaning of file extension<p>
+<p><strong>-in</strong><p>
+<p>The 'output' file is actually an input file - do file validation as for an input file.<p>
+<a name="add_file_command" ><h4><font color="#CC3333">add_file_command</font> <em>Bind a command to be issued after user has selected a file</em></h4> 
+<p><em>Argument list:  &lt;linelist&gt; &lt;cmd&gt;</em></p>
+<p>It's tricky to know when the user has finished entering a file name and we don't want to bind commands (which may be slow) to events such as one keyboard stroke cos liable to be slow.  Compromise is to bind commands to user hitting Return or Tab or releasing middle mouse (ie. pasting).<p>
+<p><strong>linelist</strong>  A Tcl list of Create*putLine lines to have bound command<p>
+<p><strong>cmd</strong>  Text script of command to be bound<p>
+<a name="SetParamFromFile" ><h4><font color="#CC3333">SetParamFromFile</font> <em>Handler for the -setfileparam argument to CreateInputLine</em></h4> 
+<p><em>Argument list:  &lt;paramtype&gt; &lt;arrayname&gt; &lt;format&gt; &lt;filename&gt; &lt;element&gt;</em></p>
+<p>This is called after user has selected an input file. The file can be MTZ, map or pdb format. The GetParamFromFile procedure is called to get the data from the file and this procedure puts the data into the array element and updates the validity status for the element.<p>
+<p><strong>paramtype</strong>  The name of the type of data - corresponding to element in *_file_data array<p>
+<p><strong>arrayname</strong>  Name of the task array<p>
+<p><strong>format</strong>  The file format (MTZ/PDB/MAP)<p>
+<p><strong>filename</strong>  The array element containing the input file name<p>
+<p><strong>element</strong>  The name of the element to be assigned a value<p>
+<a name="GetParamFromFile" ><h4><font color="#CC3333">GetParamFromFile</font> <em>Get specified type of data from a specified file header</em></h4> 
+<p><em>Argument list:  &lt;format&gt; &lt;file&gt; &lt;param&gt; &lt;datain&gt;</em></p>
+<p><strong>format</strong>  The file format (MTZ/PDB/MAP)<p>
+<p><strong>file</strong>  The full path input file name<p>
+<p><strong>param</strong>  The name of the type of data - corresponding to element in *_file_data array<p>
+<p><strong>datain</strong>  Output. The returned data value<p>
+<h3>The Generic Line Widget</h3>
+<a name="CreateLine" ><h4><font color="#CC3333">CreateLine</font> <em>Draw a line in a window</em></h4> 
+<p><em>Argument list:  &lt;linein&gt; &lt;args&gt;</em></p>
+<a href=../../../help/programmers/CreateLine.html>See the CCP4i Programmers Documentation</a><a name="CreateCheckbutton" ><h4><font color="#CC3333">CreateCheckbutton</font> <em>Create a checkbutton</em></h4> 
+<p><em>Argument list:  &lt;widget_name&gt; &lt;args&gt;</em></p>
+<p>This wraps the Tk checkbutton command and sets the colours appropriately depending on the platform and the Tcl/Tk version. It accepts any argument that is also acceptable to the checkbutton command.<p>
+<p>The wrapper is necessary because the colour scheme for 8.4 and earlier is not compatible with that in 8.5.<p>
+<p><strong>widget_name</strong>  The name of the checkbutton widget<p>
+<a name="CreateLineTemplate" ><h4><font color="#CC3333">CreateLineTemplate</font> <em>Define a template for the layout of a line</em></h4> 
+<p><em>Argument list:  &lt;name&gt; &lt;xpos&gt;</em></p>
+<a href=../../../help/programmers/CreateLineTemplate.html>See the CCP4i Programmers Documentation</a><a name="PackByTemplate" ><h4><font color="#CC3333">PackByTemplate</font> <em>Apply the template defined by CreateLineTemplate to pack a line</em></h4> 
+<p><em>Argument list:  &lt;line&gt; &lt;pack_template&gt;</em></p>
+<p>This procedure called by CreateLine for any line with command 'format template'.  The procedure uses the Tk place command (rather than pack) to set the position of each widget on a line.<p>
+<p><strong>line</strong>  The Tk id for the line<p>
+<p><strong>pack_template</strong>  The name of the template to apply<p>
+<a name="UpdateDependentParams" ><h4><font color="#CC3333">UpdateDependentParams</font> <em>Callback afer user selects item from menu update the array element</em></h4> 
+<p><em>Argument list:  &lt;selection&gt; &lt;arrayname&gt; &lt;param0&gt; &lt;args&gt;</em></p>
+<p>There is a 'problem' with Tk that when a user selects the item from a menu the data in the array element associated with the menubutton is not updated.  The menubutton argument -textvariable might look like it will do the trick but there is an issue of which context the variable is defined in (i.e. in the context of a procedure or the global context). <p>
+<p><strong>selection</strong>  The text of the selected menu item<p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>param0</strong>  The name of the array element associated with the menubutton<p>
+<a name="initialise_menu" ><h4><font color="#CC3333">initialise_menu</font> <em>Create a menu or reinitiallise an existing one</em></h4> 
+<p><em>Argument list:  &lt;field&gt;</em></p>
+<p>This procedure used to support variable menus and CreateLabin (which is a special case of a variable menu)<p>
+<p><strong>field</strong>  The menubutton widget<p>
+<a name="UpdateVarLabel" ><h4><font color="#CC3333">UpdateVarLabel</font> <em>Update a variable label to an explicitly entered value</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;var&gt; &lt;value&gt;</em></p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>var</strong>  Name of array element associated with the variable label widget<p>
+<p><strong>value</strong>  New value for variable label<p>
+<a name="update_varlabel" ><h4><font color="#CC3333">update_varlabel</font> <em>Update a variable label when the associated variable is changed</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;arrayindex&gt; &lt;widget_name&gt; &lt;n1&gt; &lt;n2&gt; &lt;op&gt;</em></p>
+<p>The Tcl trace command is used to call this procedure whenever the associated variable is changed.<p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>arrayindex</strong>  Name of array element containing the variable text for the label<p>
+<p><strong>widget_name</strong>  Name of the widget (Tk id) to be updated<p>
+<p><strong>n1,n2,op</strong>  Additional arguments added by the trace command<p>
+<a name="add_command" ><h4><font color="#CC3333">add_command</font> <em>Bind a command to a widget which may be a menu or an entry widget</em></h4> 
+<p><em>Argument list:  &lt;field&gt; &lt;cmd&gt;</em></p>
+<p>The command will be issued when  the user changes the selected menu item or hits Return key or moves focus out of the entry widget<p>
+<p>This procedure needs to check the existing command string and append to it.<p>
+<p><strong>field</strong>  The Tk id for the widget<p>
+<p><strong>cmd</strong>  The command to be bound<p>
+<a name="paste_into_entries" ><h4><font color="#CC3333">paste_into_entries</font> <em>Paste into multiple fields</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;line&gt; &lt;ientry&gt;</em></p>
+<a href=../../../help/general/intro.html#cut_n_paste>See User Documentation on Cut-n-Paste</a><p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>line</strong>  The Tk id of the selected line<p>
+<p><strong>ientry</strong>  The number of the selected entry field (n_atom in name)<p>
+<a name="continue_paste" ><h4><font color="#CC3333">continue_paste</font> <em>Handler for user input for paste GUI</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;mode&gt;</em></p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>mode</strong>  User's input of 'continue' mode<p>
+<a name="toggle_on" ><h4><font color="#CC3333">toggle_on</font> <em>Handler to toggle on a checkbutton when user inputs anywhere on a line</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;toggleonvar&gt;</em></p>
+<p>Handles the -toggleon  option in CreateLine<p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>toggleonvar</strong>  Name of element in array to be toggled on<p>
+<a name="check_input" ><h4><font color="#CC3333">check_input</font> <em>Check entry widget input is consistent with data type</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;arrayindex&gt; &lt;format&gt; &lt;oblig&gt; &lt;0&gt;</em></p>
+<p>Checking is not very strict - for numerical input the data type defines integer/real and possible range.  This procedure will try to correct poor input and will set the widget to the warning colour if input is wrong.<p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>arrayindex</strong>  Name of element in array<p>
+<p><strong>format</strong>  Optional data type for the array element<p>
+<p><strong>oblig</strong>  Optional 1=some data input is obligatory<p>
+<a name="set_field_colour" ><h4><font color="#CC3333">set_field_colour</font> <em>Set the colour of an input widget dependent on validity of user input</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;arrayindex&gt; &lt;status&gt;</em></p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>arrayindex</strong>  Name of element in array containing variable<p>
+<p><strong>status</strong>  validity of user input 1=valid 0=invalid<p>
+<h3>Other Complex Widgets</h3>
+<a name="CreateButton" ><h4><font color="#CC3333">CreateButton</font> <em>Create an action button in the 'button' frame of a window created by 'CreateFrame'</em></h4> 
+<p><em>Argument list:  &lt;w&gt; &lt;name&gt; &lt;text&gt; &lt;command&gt; &lt;args&gt;</em></p>
+<p><strong>w</strong>  The window id (a Tk id)<p>
+<p><strong>name</strong>  The button name (appended to the Tk widget id)<p>
+<p><strong>text</strong>  Text to appear on button<p>
+<p><strong>command</strong>  The command to be bound to the button<p>
+<p><strong>-message</strong><em>  message</em><p>
+<p>help message to associate with button<p>
+<p><strong>-default</strong><p>
+<p>undocumented<p>
+<a name="CreateText" ><h4><font color="#CC3333">CreateText</font> <em>Create a Tk text widget, optionally scrollable.</em></h4> 
+<p><em>Argument list:  &lt;textframeVar&gt; &lt;stuff&gt; &lt;args&gt;</em></p>
+<p>NOTE: This procedure needs an extra option to allow the user to edit the text.  The text probably ought to be associated with an array element (i.e. treated like any other widget) but there is question of when to update the array parameter.<p>
+<p>And then should be fully documented API<p>
+<p><strong>textframeVar</strong>  Returned Tk text widget id<p>
+<p><strong>stuff</strong>  Text to enter in the text widget<p>
+<p><strong>-scroll</strong><p>
+<p>Make widget vertically scrollable<p>
+<p><strong>-height</strong><em>  height</em><p>
+<p>Height of widget in number of text lines<p>
+<p><strong>-arguments</strong><em>  arguments</em><p>
+<p>Arguments to configure the text widget (i.e. valid Tk arguments)<p>
+<a name="AppendTextWindow" ><h4><font color="#CC3333">AppendTextWindow</font> <em>Append text to CreateText widget</em></h4> 
+<p><em>Argument list:  &lt;w&gt; &lt;text&gt; &lt;args&gt;</em></p>
+<p><strong>w</strong>  Tk id of the text widget<p>
+<p><strong>text</strong>  Text to append to widget<p>
+<p><strong>-init</strong><p>
+<p>Reinitialise the widget (i.e. delete any existing text)<p>
+<a name="add_modalDialog_safeguard" ><h4><font color="#CC3333">add_modalDialog_safeguard</font> <em>Add the modalDialog bindtag to a window</em></h4> 
+<p><em>Argument list:  &lt;w&gt;</em></p>
+<p>When triggered, the modalDialog binding deiconifies and raises the window in question. When combined with the "grab" command, this is used to ensure that a window doesn't get lost under other windows on the desktop - attempts to access functions in other windows (e.g. by clicking on buttons) will instead trigger the binding to bring the specified window to the fore.<p>
+<p><strong>w</strong>  Window to add the modalDialog binding to<p>
+<a name="break_menu_column" ><h4><font color="#CC3333">break_menu_column</font> <em>Internal procedure to set the -columnbreak value for items in a menu</em></h4> 
+<p><em>Argument list:  &lt;counterVar&gt; &lt;column_length&gt;</em></p>
+<p>When invoked this procedure increments the counter for the number of items in the current menu column, if this exceeds the number in column_length then the counter is reset and 1 is returned (indicating that the current item should appear at the head of a new column); otherwise 0 is returned (indicating that the item should appear underneath the previous item in the same column).<p>
+<p><strong>counterVar</strong>  Name of a counting variable which must be set to zero in the calling procedure for each menu<p>
+<p><strong>column_length</strong>  The maximum number of items which can appear in each column of the menu<p>
+<h3>Task Window Utilities (src/taskwindow.tcl)</h3>
+<a name="Task_Window_Utilities__src_taskwindow_tcl_"><h3> Task Window Utilities (src/taskwindow.tcl) </h3> 
+<p>Utitlities specific to drawing task windows. Complements the utilities in windows.tcl which are more generic<p>
+<a name="RunTask" ><h4><font color="#CC3333">RunTask</font> <em>Initialise parameters for task and draw task window</em></h4> 
+<p><em>Argument list:  &lt;taskname&gt; &lt;args&gt;</em></p>
+<p>This procedure is called when the user clicks on a task in the modules and tasks menu.  It is also called from other context when a task window is to be drawn.<p>
+<p>This procedure initialises parameters from the tasks/taskname.def file \sources the taskname.tcl file and runs the foo_setup and foo_task_window procedures.<p>
+<p><strong>taskname</strong>  The name of the task<p>
+<p><strong>-array</strong><em>  arrayname</em><p>
+<p>By default the task parameters are placed in an array called taskname_project. An alternative arrayname can be specified here.<p>
+<p><strong>-args</strong><em>  argstring</em><p>
+<p>The text string argstring appended as argument when calling the taskname_run procedure<p>
+<p><strong>-subsiduary</strong><em>  subsiduary_taskname</em><p>
+<p>Also open a subsidiary task window for subsiduary_taskname by calling RunTask<p>
+<p><strong>-def</strong><em>  deffile</em><p>
+<p>The default def file defining initial parameters is ccp4i/tasks/taskname.def and this file will always be read if it exists.  The optional deffile will be read after this default df file.<p>
+<p><strong>-module</strong><em>  module</em><p>
+<p>By default the taskname.tcl file which defines the interface should be in ccp4i/tasks directory but if module is defined then it will be expected to be in ccp4i/module/ directory<p>
+<a name="draw_task_window" ><h4><font color="#CC3333">draw_task_window</font> <em>Procedure called at end of RunTask to actually put the window on the screen</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt;</em></p>
+<p>A major time consumer when drawing a task window is updating the scrollable frame controlled by the right hand side scroll bar.  Updating this is done by update_main_scroll which is blocked while the window is been defined by taskname_run but is called after taskname_run is finished. #d_desc This procedure also deiconifies (i.e. displays the window on the screen)<p>
+<a name="RerenderTask" ><h4><font color="#CC3333">RerenderTask</font> <em>Redraw an existing task window</em></h4> 
+<p><em>Argument list:  &lt;w&gt; &lt;arrayname&gt; &lt;taskname&gt;</em></p>
+<p>This is a wrapper to RunTask, which does some cleaning up of the original window prior to invoking RunTask.<p>
+<p>Any parameters set in the array are preserved and will be displayed in the redrawn window.<p>
+<p><strong>arrayname</strong>  Name of array containing parameters for task<p>
+<p><strong>w</strong>  The window id for the task window<p>
+<p><strong>taskname</strong>  The name of the task<p>
+<a name="CreateTaskWindow" ><h4><font color="#CC3333">CreateTaskWindow</font> <em>Called from taskname_run to define general appearance of task window</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;title&gt; &lt;icon_name&gt; &lt;frame_list&gt; &lt;args&gt;</em></p>
+<p>The arrayname and window id set up in the procedure are 'remembered' and used by subsequent calls to procedures such as CreateLine  and CreateLabin.  This procedure creates the folders for the task window and the action buttons.<p>
+<p>Create task window taking task name and window name from array(TASK) and array(WINDOW)<p>
+<p><strong>arrayname</strong>  Name of array containing parameters for task<p>
+<p><strong>title</strong>  Title for task window<p>
+<p><strong>icon_name</strong>  Name to appear on iconised window<p>
+<p><strong>folder_list</strong>  A list of titles for folders in task window.<p>
+<p><strong>-action_buttons</strong><em>  actions</em><p>
+<p>Enter a list of action buttons to appear at the bottom of the widow.  Options are: quit, reset, save, interactive, run, exit<p>
+<p><strong>-default_button</strong><em>  default_action</em><p>
+<p>Specify default_action as the default action button<p>
+<p><strong>-title</strong><p>
+<p>REDUNDANT<p>
+<p><strong>mode</strong><p>
+<p>REDUNDANT<p>
+<p><strong>-help_file</strong><em>  help_file</em><p>
+<p>The default help file is the file for the curr<p>
+<a name="DrawRunButton" ><h4><font color="#CC3333">DrawRunButton</font> <em>Draw the 'Run' button for task windows</em></h4> 
+<p><em>Argument list:  &lt;wbuttons&gt; &lt;taskname&gt; &lt;w&gt; &lt;arrayname&gt;</em></p>
+<p>Draw the default run button with option to 'Run Remote' etc.<p>
+<p><strong>wbuttons</strong>  The Tk frame id for the 'buttons' frame<p>
+<p><strong>taskname</strong>  The task name<p>
+<p><strong>w</strong>  The window id for the task window<p>
+<p><strong>arrayname</strong>  Name of array containing parameters for task<p>
+<a name="UnsetProjectDefault" ><h4><font color="#CC3333">UnsetProjectDefault</font> <em>Handle 'Unset Project default' option on Save or Restore menubutton</em></h4> 
+<p><em>Argument list:  &lt;taskname&gt; &lt;w&gt; &lt;arrayname&gt;</em></p>
+<p>Give user option to delete current task defaults file or move it. The task project defaults are in the project directory CCP4_DATABASE/taskname.def<p>
+<p><strong>taskname</strong>  The task name<p>
+<p><strong>w</strong>  The window id for the task window<p>
+<p><strong>arrayname</strong>  Name of array containing parameters for task<p>
+<a name="task_display_log" ><h4><font color="#CC3333">task_display_log</font> <em>Handle option to 'Display Log Files' which is presented to user in 'task' mode of running ccp4i.</em></h4> 
+<p><em>Argument list:  &lt;mode&gt; &lt;old_njobs&gt;</em></p>
+<p><strong>mode</strong>  May be 'list' or 'graphs' to display listing or log graphs.<p>
+<p><strong>old_njobs</strong>  The number of jobs in the project database when the task is first created. Log files will only be displayed for jobs run subsequently.<p>
+<a name="redraw_task_window_title" ><h4><font color="#CC3333">redraw_task_window_title</font> <em>Redraw task window title with information on the origin of the initial parameters</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt;</em></p>
+<p><strong>arrayname</strong>  The name of the task array<p>
+<a name="SaveUserDefinedDef" ><h4><font color="#CC3333">SaveUserDefinedDef</font> <em>Handler to save current parameters to user specified file</em></h4> 
+<p><em>Argument list:  &lt;taskname&gt; &lt;arrayname&gt; &lt;field&gt;</em></p>
+<p><strong>taskname</strong>  The task name<p>
+<p><strong>arrayname</strong>  Name of array containing parameters for task<p>
+<p><strong>field</strong>  REDUNDANT<p>
+<a name="SaveProjectDef" ><h4><font color="#CC3333">SaveProjectDef</font> <em>Handler to save current parameters to the user or the project default file.</em></h4> 
+<p><em>Argument list:  &lt;taskname&gt; &lt;arrayname&gt; &lt;args&gt;</em></p>
+<p>By default this procedure saves the defaults for the project in the file project_directory/CCP4_DATABASE/taskname.def.  Alternatively the 'user' defaults are saved in \$HOME/.CCP4/tasks/taskname.def. For some specific context the defaults may be saved to a file named defined in the task array as array(TASK_INPUT_DEF_FILE).<p>
+<p><strong>taskname</strong>  The task name<p>
+<p><strong>arrayname</strong>  Name of array containing parameters for task<p>
+<p><strong>-input</strong><p>
+<p>Save to file specified in array(TASK_INPUT_DEF_FILE) parameter<p>
+<p><strong>-user</strong><p>
+<p>Save to the 'user' defaults file<p>
+<a name="RedrawTaskWindow" ><h4><font color="#CC3333">RedrawTaskWindow</font> <em>Redraw a task window from scratch after destroying existing window.</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;taskname&gt;</em></p>
+<p>After destroying the window the UnsetArrayExtras procedure removes all parameters in the array which are set up to control the window. These will be redefined when the window is redrawn.<p>
+<a name="ReCreateTaskWindow" ><h4><font color="#CC3333">ReCreateTaskWindow</font> <em>Load parameters from a def file and redraw the task window.</em></h4> 
+<p><em>Argument list:  &lt;mode&gt; &lt;taskname&gt; &lt;w&gt; &lt;arrayname&gt; &lt;field&gt;</em></p>
+<p>After reloading parameters there are often major changes in a window particularly in the number of extending frames and such like.  It is easiest to redraw the window from scratch.<p>
+<p><strong>mode</strong>  May be: JOB_NUMBER - prompt user for number of job from which parameters should be taken, USER_DEFINED - prompt user for def file name, CURRENT - reset from ccp4i default parameters, PROJECT - user parameters from the project default file.<p>
+<p><strong>taskname</strong>  The task name<p>
+<p><strong>w</strong>  The window id for the task window<p>
+<p><strong>arrayname</strong>  Name of array containing parameters for task<p>
+<a name="DeleteTaskWindow" ><h4><font color="#CC3333">DeleteTaskWindow</font> <em>Close a task window cleanly.</em></h4> 
+<p><em>Argument list:  &lt;w&gt; &lt;arrayname&gt; &lt;taskname&gt; &lt;args&gt;</em></p>
+<p>If a taskname_close procedure exists then invoke it.  Close the window and exit the interface if running in task mode.<p>
+<p><strong>w</strong>  The window id for the task window<p>
+<p><strong>arrayname</strong>  Name of array containing parameters for task<p>
+<p><strong>taskname</strong>  The task name<p>
+<p><strong>-noexit</strong><p>
+<p>Don't exit if running in stand alone mode<p>
+<p><strong>-nounsetarray</strong><p>
+<p>Don't unset the array<p>
+<a name="SaveOnProgramExit" ><h4><font color="#CC3333">SaveOnProgramExit</font> <em>Specify a task array which will be saved to a def file if the user exits the interface.</em></h4> 
+<p><em>Argument list:  &lt;taskname&gt; &lt;arrayname&gt;</em></p>
+<p>Currently only used for mr_database.<p>
+<p><strong>arrayname</strong>  Name of array containing parameters for task<p>
+<p><strong>taskname</strong>  The task name<p>
+<a name="LockInterface" ><h4><font color="#CC3333">LockInterface</font> <em>"Lock" the interface to prevent it from exiting</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>This command can be called to place a lock on the interface to prevent it from exiting before an operation is finished.<p>
+<a name="UnlockInterface" ><h4><font color="#CC3333">UnlockInterface</font> <em>Unlock the interface after a call to LockInterface</em></h4> 
+<p><em>Argument list: None</em></p>
+<a name="InterfaceIsLocked" ><h4><font color="#CC3333">InterfaceIsLocked</font> <em>Check whether the interface is locked and prevented from exiting</em></h4> 
+<p><em>Argument list: None</em></p>
+<a name="ConfirmExitInterface" ><h4><font color="#CC3333">ConfirmExitInterface</font> <em>Prompt for user confirmation before exiting the interface</em></h4> 
+<p><em>Argument list:  &lt;source&gt; &lt;&gt;</em></p>
+<p>This is a wrapper to ExitInterface which pops up a confirmation dialog before exiting, and allows the user to change their mind.<p>
+<p>The source argument can be used to indicate which interface component has triggered the call to exit the interface, as this may affect whether or not the user should be prompted to confirm the exit operation. Currently only "*exit*" (e.g. "exitbutton") is recognised, and indicates that the "Exit" button from the main CCP4i window was used to trigger the exit process.<p>
+<p><strong>source</strong>  (optional) A keyword indicating the source of the exit request.<p>
+<a name="ExitInterface" ><h4><font color="#CC3333">ExitInterface</font> <em>On exiting the interface save the status file and database file</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>The system(TERMINATE) parameter is also reset so any procedure attached to the trace set by SaveOnProgramExit will be called.<p>
+<a name="CreateTitleLine" ><h4><font color="#CC3333">CreateTitleLine</font> <em>Draw the title line which is standard at top of task window.</em></h4> 
+<p><em>Argument list:  &lt;lineVar&gt; &lt;element&gt;</em></p>
+<p><strong>lineVar</strong>  Return the Tk frame id for the line<p>
+<p><strong>element</strong>  The name of the parameter holding the title text.<p>
+<a name="check_title_line" ><h4><font color="#CC3333">check_title_line</font> <em>Hander when user enters title line test to remove 'bad' characters</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;element&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array containing parameters for task<p>
+<p><strong>element</strong>  The name of the parameter holding the title text.<p>
+<a name="WriteCredits" ><h4><font color="#CC3333">WriteCredits</font> <em>Write author credits at bottom of task window</em></h4> 
+<p><em>Argument list:  &lt;author_list&gt; &lt;args&gt;</em></p>
+<p><strong>author_list</strong>  A list of authors (NB should be Tcl list)<p>
+<p><strong>-link</strong><em>  link_text link_target</em><p>
+<p>A URL link to be added to credits line.<p>
+<p><strong>-label</strong><em>  lab</em><p>
+<p>Override the default text 'Program author'<p>
+<a name="WriteImage" ><h4><font color="#CC3333">WriteImage</font> <em>Write an image into a task window</em></h4> 
+<p><em>Argument list:  &lt;linein&gt; &lt;args&gt;</em></p>
+<p>WriteImage accepts images as either files or as Tcl images (created using the Tcl image command). If using an image file then the command will try to determine the type (currently either bitmap or photo) from the filename extension. To over-ride this, use the -type option to explicitly set the type.<p>
+<p>See the Tcl image command for more information on images.<p>
+<p><strong>linein</strong>  Return the Tk frame id for the line<p>
+<p><strong>-file</strong><p>
+<p>File name specifying the image. Not required if using the -image option.<p>
+<p><strong>-type</strong><p>
+<p>Image type as recognised by the Tcl image command. Not required if using the -image option.<p>
+<p><strong>-image</strong><p>
+<p>Identifier of an image already created by the Tcl image command. Not required if using the -file option.<p>
+<a name="RunUtility" ><h4><font color="#CC3333">RunUtility</font> <em>Start up a utility using the specified command</em></h4> 
+<p><em>Argument list:  &lt;utilname&gt; &lt;run_command&gt;</em></p>
+<p>This procedure is called when the user clicks on a utility in the modules and tasks menu.<p>
+<p>This command may ultimately be better placed elsewhere in the CCP4i source code, however it is loosely analogous to RunTask - which is why it appears here for now.<p>
+<p><strong>utilname</strong>  The name of the utility as it appears on the launch button<p>
+<p><strong>run_command</strong>  Command to be executed to start the utility<p>
+<h3>Extending and Toggle Frames (src/exframe.tcl)</h3>
+<a name="Extending_and_Toggle_Frames"><h3> Extending and Toggle Frames </h3> 
+<p>Read the Programmers Guide in main CCP4i Documentation.<p>
+<a href=../../../help/programmers/task_windows.html#extending_and_toggle_frames>See here.</a><p>The application programmer must provide a procedure which draws one 'row' of the extending or toggle frame (it may be more than one line).  The name of this procedure is used as a reference for the parameters used to support this functionality (eg array(XF_INDEX_$def_proc0) where def_proc0 is the name of the defining procedure.<p>
+<p>Either extending or toggle frames can have a 'child' extending frame nested inside the 'parent' frames.  Many of the following procedures have an argument 'counter' which is the number of the parent frame for a child frame.  This parameter is set to 0 if the frame is not nested within another frame.<p>
+<a name="CreateToggleFrame" ><h4><font color="#CC3333">CreateToggleFrame</font> <em>Create a toggle frame widget</em></h4> 
+<p><em>Argument list:  &lt;indexVar&gt; &lt;def_proc0&gt; &lt;message&gt; &lt;title&gt; &lt;\&gt;</em></p>
+<p>A toggle frame widget differs from an extending frame in that each 'row' of the widget has a title line, similar to a folder title line, which may be clicked on to toggle the visibility of the 'row'.<p>
+<p><strong>indexVar</strong>  Name of array element which is the counter for the number of open toggle frames.<p>
+<p><strong>def_proc0</strong>  Name of procedure which defines the content of one 'row'<p>
+<p><strong>message</strong>  The message line associated with the 'Add whatever' button<p>
+<p><strong>title</strong>  Title line for each toggle frame<p>
+<p><strong>add_text</strong>  Text to appear in the 'Add whatever' button<p>
+<p><strong>indexed_parameters</strong>  A list of all of the parameters which are referenced in the def_proc0 procedure<p>
+<p><strong>-depend</strong><em>  dependent_frame</em><p>
+<p>The name of the defining procedure for another toggle frame or extending frame widget which is incremented and edited in sync with the 'master' widget.<p>
+<p><strong>-child</strong><em>  child_frame</em><p>
+<p>The name of the defining procedure for another toggle frame or extending frame widget which is nested within this 'master' widget.<p>
+<p><strong>-noadd</strong><p>
+<p>Do not draw the Edit menu button and increment button for this widget.  \This implies that this widget is dependent on another 'master' widget.<p>
+<p><strong>-edit_proc</strong><em>  edit_procedure</em><p>
+<p>When the user increments or edits the rows in the widget call the procedure edit_procedure.  This procedure should be defined in the taskname.tcl file.<p>
+<p><strong>-justify</strong><em>  side</em><p>
+<p>Set the justification of the subframes. 'Side' can be left, right or center. The default is center.<p>
+<a name="create_toggle_button" ><h4><font color="#CC3333">create_toggle_button</font> <em>Create the title line for the toggle frame</em></h4> 
+<p><em>Argument list:  &lt;frame&gt; &lt;arrayname&gt; &lt;def_proc0&gt; &lt;counter&gt; &lt;c1&gt;</em></p>
+<p><strong>frame</strong>  Tk id for the toggle frame<p>
+<p><strong>arrayname</strong>  Name of array<p>
+<p><strong>def_proc0</strong>  Name of procedure which defines the content of one 'row'<p>
+<p><strong>counter</strong>  The 'row' number for the top level of nesting if this is a nested toggle frame (is 0 for a top level toggle frame).<p>
+<p><strong>c1</strong>  The 'row' number for the toggle frame.<p>
+<a name="SetToggleTitle" ><h4><font color="#CC3333">SetToggleTitle</font> <em>Reset the title for a toggle frame</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;def_proc0&gt; &lt;c1&gt; &lt;title&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array<p>
+<p><strong>def_proc0</strong>  Name of procedure which defines the content of one 'row'<p>
+<p><strong>c1</strong>  The 'row' number for the toggle frame<p>
+<p><strong>title</strong>  New title for the toggle frame<p>
+<a name="update_subframe_display" ><h4><font color="#CC3333">update_subframe_display</font> <em>Update the visibility of a toggle frame.</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;def_proc&gt; &lt;counter&gt;</em></p>
+<p>The visibility is dependent on the (FRAME_TOGGLE_....) parameter which is controlled by the checkbutton on toggle frame title line.<p>
+<p><strong>arrayname</strong>  Name of array<p>
+<p><strong>def_proc</strong>  Name of procedure which defines the content of one 'row'<p>
+<p><strong>counter</strong>  The 'row' number<p>
+<p><strong>indexVar</strong>  Name of array element which is the counter for the number of open toggle frames.<p>
+<p><strong>def_proc0</strong>  Name of procedure which defines the content of one 'row'<p>
+<p><strong>message</strong>  The message line associated with the 'Add whatever' button<p>
+<p><strong>add_text</strong>  Text to appear in the 'Add whatever' button<p>
+<p><strong>indexed_parameters</strong>  A list of all of the parameters which are referenced in the def_proc0 procedure<p>
+<p><strong>-depend</strong><em>  dependent_frame</em><p>
+<p>The name of the defining procedure for another extending frame widget which is incremented and edited in sync with the 'master' widget.<p>
+<p><strong>-child</strong><em>  child_frame</em><p>
+<p>The name of the defining procedure for another toggle frame or extending frame widget which is nested within this 'master' widget.<p>
+<p><strong>-noadd</strong><p>
+<p>Do not draw the Edit menu button and increment button for this widget.  \This implies that this widget is dependent on another 'master' widget.<p>
+<p><strong>-edit_proc</strong><em>  edit_procedure</em><p>
+<p>When the user increments or edits the rows in the widget call the procedure edit_procedure.  This procedure should be defined in the taskname.tcl file.<p>
+<a name="UpdateExtendingFrame" ><h4><font color="#CC3333">UpdateExtendingFrame</font> <em>Explicit programmer command to add or remove lines from an extending frame</em></h4> 
+<p><em>Argument list:  &lt;def_proc0&gt; &lt;counter&gt; &lt;arrayname&gt; &lt;increment&gt;</em></p>
+<p>This is called after the programmer has explicitly changed the data for an extending frame; for example after reading a file and loading default data.  Note that the programmer is responsible for ensuring that the data is consistent - particularly that all parameters are set for every new line to be added. BUT the value of the index variable should NOT be updated.<p>
+<p><strong>def_proc0</strong>  Name of procedure which defines the content of one 'row'<p>
+<p><strong>counter</strong>  For child frames: the frame number of the parent<p>
+<p><strong>arrayname</strong>  The name of the array<p>
+<p><strong>increment</strong>  The increment to the index variable (i.e. the number of lines to be added or deleted).<p>
+<a name="set_open_frame" ><h4><font color="#CC3333">set_open_frame</font> <em>Save information on the currently open frame (i.e. the one currently being drawn) to the systemvar array.</em></h4> 
+<p><em>Argument list:  &lt;frame&gt; &lt;arrayname&gt; &lt;args&gt;</em></p>
+<p> This is used by CreateLine and other general widget drawing procedures.#d_arg frame Tk id of currently open frame<p>
+<p><strong>arrayname</strong>  The name of the array<p>
+<a name="create_addline_command" ><h4><font color="#CC3333">create_addline_command</font> <em>Draw the Edit menubutton and the increment button for toggle frames and extending frames.</em></h4> 
+<p><em>Argument list:  &lt;lineVar&gt; &lt;message&gt; &lt;c1&gt; &lt;command&gt; &lt;def_proc0&gt; &lt;counter&gt; &lt;\&gt;</em></p>
+<p><strong>lineVar</strong>  Return the Tk id for the line<p>
+<p><strong>message</strong>  The message line to be associated with the increment button<p>
+<p><strong>indexVar</strong>  The name of the element containing the number of toggle/extending frame created.<p>
+<p><strong>command</strong>  The appropriate command to update i.e. update_extendingframe0 or update_toggleframe0<p>
+<p><strong>def_proc0</strong>  Name of procedure which defines the content of one 'row'<p>
+<p><strong>counter</strong>  For child frames the frame number of the parent<p>
+<p><strong>add_text</strong>  The text which appears on the increment button<p>
+<p><strong>ifedit</strong>  Logical value 0/1 which indicates if the 'Edit' menu should have {	he} usual edit functions (or if =0, will just have 'Delete Last Line' option).<p>
+<a name="exframe_select" ><h4><font color="#CC3333">exframe_select</font> <em>Update the edit menu button after the user has selected a row for editing</em></h4> 
+<p><em>Argument list:  &lt;mode&gt; &lt;arrayname&gt; &lt;def_proc0&gt; &lt;counter&gt;</em></p>
+<p>The menu options and the message line are updated when the user deletes or copies rows within the toggle or extending frames.<p>
+<p><strong>mode</strong>  The edit mode: quit/delete/copy<p>
+<p><strong>arrayname</strong>  Name of array<p>
+<p><strong>def_proc0</strong>  Name of procedure which defines the content of one 'row'<p>
+<p><strong>counter</strong>  For child frames the frame number of the parent<p>
+<a name="exframe_edit" ><h4><font color="#CC3333">exframe_edit</font> <em>Handle mouse click tied to editing extending frames</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;def_proc0&gt; &lt;counter&gt; &lt;c1&gt; &lt;args&gt;</em></p>
+<p> User has clicked right mouse in a widget in an extending frame. If they are in edit mode  then $array(XF_EDIT_$def_proc) specifies the edit mode.<p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>def_proc0</strong>  Procedure name and name for this frame<p>
+<p><strong>counter</strong>  For child frames the frame number of the parent<p>
+<p><strong>c1</strong>  The number of the selected row<p>
+<p><strong>-parent</strong><em>  parent_def_proc</em><p>
+<p>For child frame the name of the procedure drawing the parent frame<p>
+<p><strong>-before</strong><p>
+<p>Insert before the selected row<p>
+<a name="delete_frame" ><h4><font color="#CC3333">delete_frame</font> <em>Delete a frame</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;def_proc0&gt; &lt;counter&gt; &lt;dframe&gt;</em></p>
+<p>In practice the graphical object corresponding to the highest number frame is deleted.  The data is shuffled up to overwrite the data in the frame selected for deletion.<p>
+<p><strong>arrayname</strong>  Name of array<p>
+<p><strong>def_proc0</strong>  Name of procedure which defines the content of one 'row'<p>
+<p><strong>counter</strong>  For child frames the frame number of the parent<p>
+<p><strong>dframe</strong>  The number of the frame to be deleted<p>
+<a name="delete_frame_data" ><h4><font color="#CC3333">delete_frame_data</font> <em>Delete the data when a frame is deleted</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;def_proc0&gt; &lt;counter&gt; &lt;dframe&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array<p>
+<p><strong>def_proc0</strong>  Name of procedure which defines the content of one 'row'<p>
+<p><strong>counter</strong>  For child frames the frame number of the parent<p>
+<p><strong>dframe</strong>  The number of the frame to be deleted<p>
+<a name="unset_child_indexed_params" ><h4><font color="#CC3333">unset_child_indexed_params</font> <em>Unset the array variables for all the child frames of  def_proc</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;def_proc0&gt; &lt;counter&gt; &lt;c1&gt;</em></p>
+<p>This procedure used to cleanup the child frames when the user has opted to delete the parent extending frame<p>
+<p><strong>arrayname</strong>  Name of array<p>
+<p><strong>def_proc0</strong>  Name of procedure which defines the content of one 'row'<p>
+<p><strong>counter</strong>  For child frames the frame number of the parent<p>
+<p><strong>c1</strong>  The number of rows in the child frame<p>
+<a name="copy_frame" ><h4><font color="#CC3333">copy_frame</font> <em>Copy the data in one row to another row</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;def_proc0&gt; &lt;counter&gt; &lt;fromin&gt; &lt;toin&gt;</em></p>
+<p><strong>arrayname</strong>  Name of the data array<p>
+<p><strong>def_proc0</strong>  Name of procedure which defines the content of one 'row'<p>
+<p><strong>counter</strong>  The id of the parent frame if this is a child frame<p>
+<p><strong>fromin</strong>  The source row<p>
+<p><strong>toin</strong>  The target row (If = 0 append the data to the end of the extending frame)<p>
+<a name="copy_frame_c1" ><h4><font color="#CC3333">copy_frame_c1</font> <em>Copy parameters of a child frame from one parent (from) to another (to)</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;def_proc0&gt; &lt;from&gt; &lt;to&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array<p>
+<p><strong>def_proc0</strong>  Name of procedure which defines the content of one 'row'<p>
+<p><strong>from</strong>  Copy data from this parent frame<p>
+<p><strong>to</strong>  Copy data to this parent frame<p>
+<a name="append_extend_frame" ><h4><font color="#CC3333">append_extend_frame</font> <em>Add another frame to the bottom of extending frame</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;def_proc0&gt; &lt;counter&gt; &lt;c1In&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array<p>
+<p><strong>def_proc0</strong>  Name of procedure which defines the content of one 'row'<p>
+<p><strong>counter</strong>  For child frames the frame number of the parent<p>
+<p><strong>c1in</strong>  Optional parameter. If set is the number for the new frame to be draw. Other the new frame number is the current number of frames plus 1<p>
+<a name="append_toggle_frame" ><h4><font color="#CC3333">append_toggle_frame</font> <em>Add another frame to the bottom of a toggle frame widget</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;def_proc0&gt; &lt;counter&gt; &lt;c1In&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array<p>
+<p><strong>def_proc0</strong>  Name of procedure which defines the content of one 'row'<p>
+<p><strong>counter</strong>  For child frames the frame number of the parent<p>
+<p><strong>c1in</strong>  Optional parameter. If set is the number for the new frame to be draw. Other the new frame number is the current number of frames plus 1<p>
+<a name="append_frame_c1" ><h4><font color="#CC3333">append_frame_c1</font> <em>Draw child frames when called from append_*_frame</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;def_proc0&gt; &lt;counter&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array<p>
+<p><strong>def_proc0</strong>  Name of procedure which defines the content of one 'row'<p>
+<a name="bind_edit_select" ><h4><font color="#CC3333">bind_edit_select</font> <em>Add the edit function right-mouse button bindings</em></h4> 
+<p><em>Argument list:  &lt;f&gt; &lt;arrayname&gt; &lt;def_proc0&gt; &lt;counter&gt; &lt;c1&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array<p>
+<p><strong>def_proc0</strong>  Name of procedure which defines the content of one 'row'<p>
+<p><strong>counter</strong>  The frame number of the parent<p>
+<p><strong>c1</strong>  The frame number of the child extending frame<p>
+<a name="SetIndexedParam" ><h4><font color="#CC3333">SetIndexedParam</font> <em>Assign values to a group of indexed elements with the same index</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;varlist&gt; &lt;values&gt; &lt;c1&gt; &lt;c2&gt;</em></p>
+<p>This is called when an extra frame is added to an extending frame to initialise all the array elements in that frame.  If an array element <p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>varlist</strong>  List of the root names for the array elements<p>
+<p><strong>values</strong>  List of values for the array elements. Can be an empty string.<p>
+<p><strong>c1</strong>  The first index for the elements<p>
+<p><strong>c2</strong>  Optional. The second index for the elements<p>
+<a name="UnsetIndexedParam" ><h4><font color="#CC3333">UnsetIndexedParam</font> <em>Unset the elements of array for a parameter, its data type and widget</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;varlist&gt; &lt;c1&gt; &lt;c2&gt; &lt;&gt;</em></p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>varlist</strong>  List of elements in array<p>
+<p><strong>c1</strong>  The first index number<p>
+<p><strong>c2</strong>  The optional second index number<p>
+<h3>Using the BLT Table Widget</h3>
+<a name="Using_the_BLT_Table_Widget"><h3> Using the BLT Table Widget </h3> 
+<p>These functions require using bltwish rather than wish.  They draw a table with edit menu button and increment button similar to extending frames but are more efficient at handling larger amounts of data. The data for the table must be in a separate array - see the description of CreateTable<p>
+<a name="CreateTable" ><h4><font color="#CC3333">CreateTable</font> <em>Create a table using the BLT table function</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;table_id&gt; &lt;dataVar&gt; &lt;data_spec&gt; &lt;f&gt; &lt;args&gt;</em></p>
+<p>This widget is created very differently to the extending frames and toggle frames but (for a consistent interface) has similar edit menu button and increment button at the bottom of the table.  The table is designed \to have column titles but each element of the table is an entry widget and additional labels are not supported.<p>
+<p>See the table by the side of the Monomer Library Sketcher window or the Edit Restraints in PDB window for examples.<p>
+<p><strong>arrayname</strong>  Name of array<p>
+<p><strong>table_id</strong>  A unique identifying name for the table<p>
+<p><strong>dataVar</strong>  Array containing the tabulated data displayed in the table The data array is a 2-dimensional array with element names {$column_name,$ir} where {$column_name} is the name of the column and {$ir} is the row number.<p>
+<p><strong>data_spec</strong>  A specification of the table - a list with one list item for each column. Each list item is also a list with the items: 0 - name of data in the column 1 - column title 2 - data type if not represented as a simple entry widget 3 - width of entry widget (number of characters) 4 - default initial value 5 - message line describing the data in the column<p>
+<p><strong>f</strong>  The Tk id of the frame in which to create the table<p>
+<p><strong>-scroll</strong><p>
+<p>Put the table inside a scrolling frame with a vertical scroll bar.<p>
+<p><strong>-noedit</strong><p>
+<p>Do not draw the edit menu button and increment button under the table<p>
+<p><strong>-nolabel</strong><p>
+<p>Do not draw column titles<p>
+<p><strong>-row</strong><em>  row_procedure</em><p>
+<p>Specify the procedure to draw one row of the table<p>
+<a name="CreateTableTitle" ><h4><font color="#CC3333">CreateTableTitle</font> <em>Draw column titles in table</em></h4> 
+<p><em>Argument list:  &lt;t&gt; &lt;column_titles&gt;</em></p>
+<p><strong>t</strong>  The Tk frame id for the table<p>
+<p><strong>column_titles</strong>  The list of column titles<p>
+<a name="table_edit_buttons" ><h4><font color="#CC3333">table_edit_buttons</font> <em>Draw the edit menu button and increment button under the table</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;table_id&gt; &lt;frame&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array<p>
+<p><strong>table_id</strong>  A unique identifying name for the table<p>
+<p><strong>frame</strong>  The Tk frame id for the table buttons frame<p>
+<a name="TableDrawRow" ><h4><font color="#CC3333">TableDrawRow</font> <em>Draw one row of a table</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;table_id&gt; &lt;ir&gt;</em></p>
+<p>If the -row argument to CreateTable specified a procedure to draw a row then call that procedure with the arguments arrayname and ir (the row number).  Otherwise draw a default format row using the information on data type and entry widget width provided as argument to CreateTable.<p>
+<p><strong>arrayname</strong>  Name of array<p>
+<p><strong>table_id</strong>  A unique identifying name for the table<p>
+<p><strong>ir</strong>  The row number<p>
+<a name="TableAddRow" ><h4><font color="#CC3333">TableAddRow</font> <em>Add an extra row to the table to support the edit functions</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;table_id&gt; &lt;row&gt; &lt;mode&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array<p>
+<p><strong>table_id</strong>  A unique identifying name for the table<p>
+<p><strong>row</strong>  Add new row after row number row. row = end => append to end of table row = query => query user<p>
+<p><strong>mode</strong>  Optional. If mode is copy then initialise the new row with data determined by the row argument: row = query => query user row = {[list} copy_from_row copy_to_row\]<p>
+<a name="TableDeleteRow" ><h4><font color="#CC3333">TableDeleteRow</font> <em>Delete a row from the table</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;table_id&gt; &lt;ir&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array<p>
+<p><strong>table_id</strong>  A unique identifying name for the table<p>
+<p><strong>ir</strong>  The number of the row to delete or ir = end => delete last row ir = query => query user<p>
+<a name="TableDeleteContents" ><h4><font color="#CC3333">TableDeleteContents</font> <em>Delete the entire contents of the table but keep the column titles.</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;table_id&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array<p>
+<p><strong>table_id</strong>  A unique identifying name for the table<p>
+<a name="TableGetExtent" ><h4><font color="#CC3333">TableGetExtent</font> <em>Return the Cnumber of rows in the table</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;table_id&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array<p>
+<p><strong>table_id</strong>  A unique identifying name for the table<p>
+<a name="get_table_extent" ><h4><font color="#CC3333">get_table_extent</font> <em>Return the Cnumber of rows in the table</em></h4> 
+<p><em>Argument list:  &lt;t&gt;</em></p>
+<p><strong>t</strong>  The Tk id for the table<p>
+<a name="TableUpdateScroll" ><h4><font color="#CC3333">TableUpdateScroll</font> <em>Update the scrollable area of the table.</em></h4> 
+<p><em>Argument list:  &lt;f&gt;</em></p>
+<p>Must be called after adding or deleting a row.<p>
+<p><strong>f</strong>  The id of the Tk frame containing the table<p>
+<h3>Variable Menus (src/varmenu.tcl)</h3>
+<a name="Variable_Menus"><h3> Variable Menus </h3> 
+<p>This is the mechanism to handle menus whose menuitems may change during the lifetime of the window. For example in the AMoRe interface there is a menu to select a TEST_SPACE_GROUP which is must be one of the alternative \in the same Laue group as the space group of the input data.  The appropriate menu can only be set after the user has entered the input MTZ file which provides the input space group information.  To implement this there are the following definitions in the amore.def file:<p>
+<p>TEST_SPACE_GROUP        _laue_space_group       ""<p>
+<p>LAUE_SPGP_LIST          _list_of_text           ""<p>
+<p>LAUE_SPGP_ALIAS         _list_of_text           ""<p>
+<p>The TEST_SPACE_GROUP will be the test space group which the user will select from a menu which is defined in amore_setup:<p>
+<p>set typedef(_laue_space_group) { varmenu LAUE_SPGP_LIST LAUE_SPGP_ALIAS 8 }<p>
+<p>Here the datatype _laue_space_group is defined as a variable menu which has the menuitems taken from the parameter LAUE_SPGP_LIST and the 'alias' of the menuitems taken from the parameter LAUE_SPGP_ALIAS. Both of these parameters have been defined in the amore.def and are initially empty. When the user selects an input MTZ file the procedure amore_set_test_space_group is called which finds the appropriate Laue space groups and loads them into the variables LAUE_SPGP_LIST and LAUE_ALIAS_LIST and then calls the procedure UpdateVariableMenu to update the variable.<p>
+<p>In these handling procedures the datatype for the variable menu (e.g. LAUE_SPGP_LIST) in the above example) is referred to as the deflistVar.Note that is quite possible for there to be multiple widgets which have the same variable menu and a list of these is stored in array(DEPVARS_$deflistVar).<p>
+<a name="create_varmenu" ><h4><font color="#CC3333">create_varmenu</font> <em>Called from CreateLine procedure to update array(DEPVARS_$deflistVar)</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;depvar&gt;</em></p>
+<p>array(DEPVARS_$deflistVar) is list of all variables which are attached to created widgets which have list of possible values $deflistVar.<p>
+<p><strong>arrayname</strong>  The name of the task array<p>
+<p><strong>depvar</strong>  The name of the variable which associated which the widget which is been created.<p>
+<a name="UpdateVariableMenu" ><h4><font color="#CC3333">UpdateVariableMenu</font> <em>Invoked by user to update the variable menu</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;mode&gt; &lt;nn&gt; &lt;deflistVar&gt; &lt;input&gt; &lt;\&gt;</em></p>
+<p>The input parameters aliaslistVar and alias are optional and not required if an alias parameter has not been defined.<p>
+<p><strong>arrayname</strong>  The name of the task array<p>
+<p><strong>mode</strong>  Can be 'initialise', 'append' or 'replace'<p>
+<p><strong>n</strong>  The number of the menu item to be replaced in 'replace' mode<p>
+<p><strong>deflistVar</strong>  Element of array containing the list of menu item<p>
+<p><strong>input</strong>  input value(s) for deflistVar<p>
+<p><strong>aliaslistVar</strong>  Element of array containing the aliases for menu items<p>
+<p><strong>alias</strong>  input value(s) for aliaslistVar<p>
+<a name="update_varmenu" ><h4><font color="#CC3333">update_varmenu</font> <em>Handler to update one item of variable menu</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;mode&gt; &lt;varmenu_element&gt; &lt;\&gt;</em></p>
+<p>This procedure is called by a trace mechanism if the user changes another text widget which defines an item on the variable menu.<p>
+<p><strong>arrayname</strong>  The name of the task array<p>
+<p><strong>mode</strong>  Expected to be replace<p>
+<p><strong>varmenu_element</strong>  The number of the menu item to be replaced in 'replace' mode<p>
+<p><strong>varmenu_name</strong>  Element of array containing the list of menu items<p>
+<p><strong>inputVar</strong>  Element of array containing the new value for the replaced menu item<p>
+<a name="update_menu" ><h4><font color="#CC3333">update_menu</font> <em>Called from UpdateVariableMenu to redraw the menu(s) associated with one variable.</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;element&gt; &lt;menu_listVar&gt; &lt;input_command&gt;</em></p>
+<p>Because each variable could potentially be attached to more than one widget this procedure call update_menu0 which redraws each individual instance of the menu.<p>
+<p><strong>arrayname</strong>  The name of the task array<p>
+<p><strong>element</strong>  The array element which has a variable menu widget<p>
+<p><strong>menu_listVar</strong>  Element of array containing the list of menu items<p>
+<p><strong>input_command</strong>  An additional command associated with the menu<p>
+<a name="update_menu0" ><h4><font color="#CC3333">update_menu0</font> <em>Update each individual instance of a variable menu</em></h4> 
+<p><em>Argument list:  &lt;field&gt; &lt;arrayname&gt; &lt;element&gt; &lt;menu_list&gt; &lt;input_command&gt;</em></p>
+<p><strong>field</strong>  The widget name of the menu<p>
+<p><strong>arrayname</strong>  The name of the task array<p>
+<p><strong>element</strong>  The array element attached to the variable menu widget<p>
+<p><strong>menu_list</strong>  The list of menu items<p>
+<p><strong>input_command</strong>  Optional command to be bound to an menu selection<p>
+</body>
+</html>
+

@@ -1,0 +1,70 @@
+#!/bin/csh -f
+#
+#sigmaa   \
+# hklin ../../ejd/lcf/andrew-sfall.lcf hklout testout.lcf \
+#<< 'eof'
+sigmaa    \
+hklin andrew-sfall.mtz hklout testout.mtz \
+<< 'eof'
+TITLE   MTZ SIGMAA test.
+RESOLUTION  100. 2.6     !# Resolution limits
+RANGES 20   5000     !#  No of bins for analysing agst S, 
+SYMMETRY 19          !#  Spacegroup no (see symop for symm ops)
+PARTIAL              !# Option for Fo-Fc type coefficients
+ERROR
+LABI  FP=FNAT25P   SIGFP=SIGNAT25P   -
+      FC=FC        PHIC=PHCAL
+LABO  WWT=WWT1     DELFWT=DELWFT1    -
+      FWT=FWT1     PHWT=PHWT1
+'eof'
+#
+
+
+
+  part of wang solvent flattening
+sigmaa:
+#
+#goto mapcalc
+/bin/rm $SCRATCH//cell_comb1.mtz
+sigmaa			\
+  HKLIN $SCRATCH/cellulase_mir_mod.mtz  \
+HKLOUT 	$SCRATCH//cell_comb1.mtz \
+<< 'END-sigmaa'		| col -b
+TITLE   Phase combination cellulase 1st wanging
+RANGES 10 1000
+RESO  10.0 2.5 
+SYMM  4
+ERROR
+COMBINE  1 
+
+LABI FP=F_NAT_W SIGFP=SIG_NAT_W                  -
+HLA=A HLB=B HLC=C HLD=D PHIBP=PHIZB  WP=FOMZ     -
+FC=FCWANGWT1 PHIC=ACWANGWT1
+
+LABO PHCMB=PHCMB1 WCMB=FOMCMB1 FWT=FWT1 PHWT=PHWT1
+END
+'END-sigmaa'
+
+
+  Phase analysis againbst 2 weights
+
+
+#
+/bin/rm del.mtz
+sigmaa			\
+HKLIN $SCRATCH/phcomp_px.mtz	\
+HKLOUT del.mtz	\
+<< 'END-sigmaa'		| col -b
+TITLE   Phase analysis chmi model vs phase extended phases
+RANGES 20 1000
+RESO  100.0 2.6 
+SYMM  92
+ERROR
+
+LABI FP=F SIGFP=SIGF                  -
+PHIBP=PHCMB1 WP=FOMCMB1 -
+PHIB2=PHI W2=FOMCMB1                  
+
+ANALYSE
+END
+'END-sigmaa'

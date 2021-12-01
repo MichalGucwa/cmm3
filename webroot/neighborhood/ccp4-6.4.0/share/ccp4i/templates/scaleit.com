@@ -1,0 +1,58 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+{ [ IfSet $TITLE ] } title  $TITLE
+$SYMMETRY symmetry $SPACE_GROUP
+$CELL cell $CELL_1 $CELL_2 $CELL_3 $CELL_4 $CELL_5 $CELL_6
+
+$EXCLUDE_RESOLUTION resolution $EXCLUDE_RESOLUTION_MIN $EXCLUDE_RESOLUTION_MAX
+
+$WEIGHT_BY_SD WEIGHT | NOWT
+$CONVERGE_NCYC converge NCYC $CONVERGE_NCYC_LIMIT
+$CONVERGE_ABS converge ABS $CONVERGE_ABS_LIMIT
+$CONVERGE_TOL converge TOLR $CONVERGE_TOL_LIMIT
+$GRAPH graph 
+ - $ANALYSE_H H
+ - $ANALYSE_K K
+ - $ANALYSE_L l
+ - $ANALYSE_MODF MODF
+
+LOOP N 1 $NEXCLUDE 
+1 exclude
+ - { ![StringSame $EXCLUDE_APPLY($N) "all" ] } $EXCLUDE_APPLY($N)
+ - 1 $EXCLUDE_MODE($N)
+ CASE $EXCLUDE_MODE($N)
+ CASEMATCH SIG
+   - 1 $EXCLUDE_SIGMAF($N)
+ CASEMATCH FMAX
+   - 1 $EXCLUDE_F($N)
+ CASEMATCH DMAX
+   - 1 $EXCLUDE_SIGMAD($N)
+ CASEMATCH DIFF
+   - 1 $EXCLUDE_DIF_FP($N)
+ ENDCASE
+ENDLOOP
+
+CASE $SCALE_MODE
+CASEMATCH ANALYSIS
+1 ANALYSE
+CASEMATCH SCALE
+1 REFINE $REFINE_MODE
+ - $WILSON_SCALING WILSON
+ENDCASE
+
+$IFAUTO auto
+
+LABELLINE LABIN $LABIN_FP
+LOOP N 1 $N_DERIVS
+  LABELLINE - $LABIN_FPH $N
+IF $ANOMALOUS_DATA
+  LABELLINE - $LABIN_DPH $N
+ENDIF
+ENDLOOP

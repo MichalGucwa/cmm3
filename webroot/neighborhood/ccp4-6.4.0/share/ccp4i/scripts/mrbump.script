@@ -1,0 +1,49 @@
+#
+#     Copyright (C) 2005 Ronan Keegan 
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Application.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#===========================================================================
+#
+# mrbump.script
+#
+#===========================================================================
+
+global env
+
+############################################################################
+# Make a note of the main directory to run in
+############################################################################
+
+ set rundir [FileJoin [GetDefaultDirPath] search_$job_params(JOB_ID)]
+ AddOutputDir $rundir
+
+############################################################################
+# Start the job 
+############################################################################
+
+ CreateComScript mrbump mrbump_script
+
+ if { [info exists env(MRBUMP)] } {
+        set mrbump_py [file join $env(MRBUMP) bin/mrbump]
+ } else {
+        set mrbump_py [file join $env(CCP4) bin/mrbump]
+ }
+
+ if { $MRBUMP_MODE == "MODELS" } {
+    set cmd "[BinPath ccp4-python] -u $mrbump_py SEQIN $SEQIN"
+ } elseif { $MRBUMP_MODE == "FULLMR" } {
+    set cmd "[BinPath ccp4-python] -u $mrbump_py HKLIN $HKLIN SEQIN $SEQIN HKLOUT $HKLOUT XYZOUT $XYZOUT"
+ } else {
+    set cmd "[BinPath ccp4-python] -u $mrbump_py HKLIN $HKLIN PREPDIR $PREPDIR HKLOUT $HKLOUT XYZOUT $XYZOUT"
+ }
+
+ set status [Execute $cmd $mrbump_script program_status report]
+
+ if { $HTMLOUT } {
+    set RESULTS_HTML "results_$job_params(JOB_ID).html"
+    AddOutputFile $RESULTS_HTML PROJECT
+ }

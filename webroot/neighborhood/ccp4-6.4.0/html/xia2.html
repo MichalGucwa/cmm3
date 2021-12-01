@@ -1,0 +1,650 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::XIA2::Supported::Data Processing and Reduction::Automated data reduction:::::::: -->
+
+<H1> XIA2 (CCP4: Unsupported Program)</H1>
+<H2> NAME</H2>
+<b>xia2 </b>
+- automated data reduction.
+<H2> SYNOPSIS</H2>
+<b>xia2</b>
+<b>-xinfo</b>
+<i>project.xinfo</i>
+
+    <p>xia2 is a new automated data reduction system designed to work from raw
+      diffraction data and a little metadata, and produce usefully reduced
+      data in a form suitable for immediately starting phasing and structure
+      solution, e.g. through Mr BUMP or your favourite experimental phasing
+      suite.</p>
+
+    <p>The following steps are performed (although not strictly in 
+      this order)</p>
+
+    <ul>
+      <li>Integration with feedback and complex lattice selection stuff</li>
+      <li>Reindexing to standard setting for spacegroup (e.g. P 2 21 21 to
+	P 21 21 2)</li>
+      <li>Scaling together of all data to maximise anomalous signal</li>
+      <li>Estimation of number of molecules in ASU and solvent fraction
+	based on sequence information (if provided)</li>
+    </ul>
+
+    <p>There is a lot of fun stuff which goes on in there - run it to find 
+      out more...</p>
+    
+    <p>The system is designed to cope with MAD data and data measured in 
+      multiple passes, or a combination of the two. The input is a therefore
+      a little complex, but consists only of information you should have 
+      to hand anyway - here is a simple example, a more complex example 
+      can be found below.</p>
+
+    <pre>
+! This is a demonstration .xinfo file which illustrates how to cope
+! with a simple case - this example is a native cubic insulin data
+! set measured on 14.2 at the SRS
+
+BEGIN PROJECT DEMONSTRATION
+
+BEGIN CRYSTAL INSULIN
+
+BEGIN AA_SEQUENCE
+
+! this is only really needed at the moment for assessing the solvent
+! content and number of residues in the asu
+
+GIVEQCCASVCSLYQLENYCN
+FVNQHLCGSHLVEALYLVCGERGFFYTPKA
+
+END AA_SEQUENCE
+
+BEGIN WAVELENGTH NATIVE
+
+! this doesn't have to be here - if it is 
+! not included then the values from 
+! the image headers will be used - however 
+! if it is there then it should
+! be correct!
+
+WAVELENGTH 0.979000
+
+! in here you can also have
+! F' value
+! F'' value
+
+END WAVELENGTH NATIVE
+
+BEGIN SWEEP NATIVE
+WAVELENGTH NATIVE
+IMAGE insulin_1_001.img
+
+! you will probably need to change this - 
+! this is the only thing which 
+! you will need to change for the 
+! demonstration data set
+
+DIRECTORY /media/data1/graeme/demo/
+
+! additionally you can add the following 
+! information - if it is wrong in the headers
+! BEAM x y (mm)
+! DISTANCE z (mm)
+
+! this describes the order in which 
+! the sweeps were collected - 
+! it usually comes from the image header 
+! if that information is in there
+! EPOCH 5
+
+! you can also add this to only reduce 
+! a subset of the data 
+! START_END 1 30 (image numbers)
+
+END SWEEP 
+
+END CRYSTAL INSULIN
+
+END PROJECT DEMONSTRATION
+    </pre>
+
+    <p>This uses test images which are available from the links below. 
+      Thanks to John Cowan for providing this test data!</p>
+
+    <ul>
+      <li><a href="demo.zip">Windows (as .zip file)</a></li>
+      <li><a href="demo.tar.bz2">Unix (as .tar.bz2 file)</a></li>
+      <li><a href="demo.tar.gz">Unix (as .tar.gz file)</a></li>
+    </ul>
+
+    <p>Here are a couple of templates - for native data from two sweeps, 
+      SAD data from one sweep, MAD data from three wavelengths - all 
+      you need to do is select an appropriate one and add your own
+      information! Please note - if you wish to comment something out
+      from a .xinfo file, simply at a "!" at the beginning 
+      of the appropriate lines.</p>
+
+    <ul>
+      <li><a href="NATIVE.xinfo">Native data</a></li>
+      <li><a href="SAD.xinfo">SAD data</a></li>
+      <li><a href="MAD.xinfo">MAD data</a></li>
+    </ul>
+
+    <p>More examples can be found in $DPA_ROOT/examples. Remember - you need 
+      to tell xia2 where to find your data! Answers to frequently asked
+      questions can be found <a href="faq.html">here</a>.</p>
+
+    <p>To assist in generating the .xinfo file I have written a small
+      program xia2setup, which is passed in the directory where your data
+      are stored, and will write to the standard output an illustrative
+      .xinfo file. This will number the wavelengths and sweeps, and so 
+      will not add sensible information, and will get all of it's information
+      from the image headers, which are sometimes unreliable.</p>
+    
+    <p>The new program is run thus:</p>
+
+    <pre>
+xia2setup -atom se -project foo -crystal bar \
+-beam 109,105 /path/to/image/directory > automatic.xinfo
+    </pre>
+
+    <p>This will look for sequence files (.seq) scan files (.scan) and
+      images files (.img, .osc, .mar345, .mccd, .cbf) and make a good
+      guess as to what is going on. If you have a scan file in there and
+      you have chooch installed, then xia2 will have a stab at identifying
+      the different wavelengths. This is a guess and may be wrong. For this
+      to work I have made the following assumptions:</p>
+
+    <ul>
+      <li>All images are from one crystal only.</li>
+      <li>The scan, if present, was the one used to select the wavelengths 
+	for data collection. If more than one is present, the alphabetically
+	latest one will be used.</li>
+      <li>The sequence file, if present, should be in the one letter form
+	and all comment lines should begin with a character not in A-Z.
+	Again the alphabetically latest sequence file will be used.</li>
+      <li>If the sequence file is provided, and the atom is "se", then
+	xia2setup will assume that you are doing a SeMet experiment
+	and will provide an appropriate number of atoms per monomer - though
+	<b>you will still have to uncomment this</b> to include it,
+	in case it has guessed wrong.</li>
+    </ul>
+
+    <p>If you want to combine data from a number of crystals in the same
+      .xinfo file, then you will need to copy out all text from
+      BEGIN CRYSTAL to END CRYSTAL from one .xinfo file to the other.</p>
+    
+    <p>You should then load automatic.xinfo in your favourite editor, and 
+      check that the sequence looks correct and that the names are sensible
+      as well as checking that the epoch numbers are set correctly and
+      also that the wavelengths and beam centres are correct. If you 
+      provided a heavy atom there is a place to say how many to look for.</p>
+
+    <p>Finally, if you have labelit installed xia2setup will run this 
+      to update the beam positions. If this happens, you will see a comment
+      to this effect above the BEAM records in the sweeps.</p>
+    
+    <h1>Platforms</h1>
+    
+    <p>The following platforms are supported (see notes at bottom of page
+      for platform specific advice.)</p>
+    
+    <ul>
+      <li>GNU/Linux on i386 (and 64 bit extensions)</li>
+      <li>OS X 10.4 i386 and Power PC G4/G5</li>
+      <li>Microsoft Windows 2000/XP (Vista doesn't work - problem with 
+	the mosflm SPOTOD file - currently investigating)</li>
+    </ul>
+    
+    <h1>Supported Detector Types</h1>
+    
+    <p>The following detectors are supported:</p>
+    
+    <ul>
+      <li>ADSC CCD detectors</li>
+      <li>MAR CCD detectors</li>
+      <li>MAR 345 image plates</li>
+      <li>RAXIS IV image plates</li>
+      <li>Rigaku Saturn CCDs (Binned and unbinned)</li>
+    </ul>
+    
+    <p>If you have another detector class which needs support, please get 
+      in touch.</p>
+
+    <h1>Requirements</h1>
+
+    <p>The only software which is actually required is CCP4 6.0.1/2 and Python
+      2.4.x. On Windows the PyWin32 module is also required, to provide
+      additional process control functionality. If you are using this 
+      on a Windows platform and wish to be able to use the integration
+      functionality, you should get in touch with Harry Powell for a custom
+      build of Mosflm.</p>
+
+    <p>In addition the autoindexing program Labelit is supported but the 
+      system will work without it. If it is installed (and it should be a 
+      moderately recent version) then it will be used for autoindexing.</p>
+
+    <h1>License</h1>
+
+    <p>This software is distributed under the BSD license for all users.
+      Everyone who uses this software is invited to join the xia2bb
+      mailing list. Finally, if you use this software in solving a structure
+      which is published, please acknowledge it! Thanks!</p>
+
+    <p>A copy of the license is available <a href="license.html">here
+      </a>.</p>
+
+    <p>This software depends upon CCP4 and will also make use of Labelit - 
+      users are reminded that it is their responsibility to have properly
+      obtained licenses for this software.</p>
+
+    <h1>Usage</h1>
+
+    <p>Once the software is installed, the first thing you need to do is 
+      prepare a .xinfo file (example above) to run from. This contains a 
+      description of the experiment, which will allow xia2 to decide how to 
+      handle your data and what information to put in the MTZ headers.</p>
+      
+    <p>Essentially the input file just needs a description of the data
+      which were collected from each crystal - for instance, if you measured
+      three MAD wavelengths, a peak, inflection and high remote, then 
+      there should be three WAVELENGTH blocks in the file, containing the 
+      fp, fpp and wavelength values. The images that you measured from these
+      should then be described in the SWEEP block, which is then assigned to 
+      a wavelength. This structure simplifies handling of multiple passes
+      contributing to one wavelength. In the reduced output, the wavelength 
+      names will correspond to MTZ datasets. If you are interested in 
+      keeping the harvesting information, and you have more than one crystal
+      to process in a single xia2 run, you will need to ensure that the 
+      WAVELENGTH names are globally unique within the input file.</p>
+    
+    <p>The program is actually run with:</p>
+
+    <pre>
+xia2 -xinfo project.xinfo
+    </pre>
+    
+    <p>And all data reduction is performed in the working directory, with the
+      a directory structure CRYSTAL/WAVELENGTH/SWEEP. Interesting log files
+      can be found in the CRYSTAL/scale directory.</p>
+
+    <h1>Acknowledgements</h1>
+
+    <p>Development of xia2 is supported by the BBSRC e-HTPX grant and the 
+      EU framework 6 BioXHit initiative. xia2 makes extensive use of Phil 
+      Evans's program Pointless, and I would like to thank him for the 
+      extensive modifications made to the program. I would also like to thank
+      the US structural genomics JCSG group for providing their extensive
+      collection of raw diffraction data to methods developers. Finally I 
+      would like to acknowledge CCP4, for without their software this project
+      would go nowhere!</p>
+
+    <h1>The More Complex Example</h1>
+
+    <p>This example has two crystals, one of which is selenomethionated,
+      with two wavelengths (inflection and low remote) measured for the 
+      derivative and two native sweeps measured for the native sample.
+      Lines beginning with # or ! will be treated as comments.</p>
+
+    <pre>
+BEGIN PROJECT TS01
+BEGIN CRYSTAL 12847
+
+BEGIN AA_SEQUENCE
+
+MKVKKWVTQDFPMVEESATVRECLHRMRQYQTNECIVKDREGHFRGVVNKEDLLDLDLDSSVFNKVSLPD
+FFVHEEDNITHALLLFLEHQEPYLPVVDEEMRLKGAVSLHDFLEALIEALAMDVPGIRFSVLLEDKPGEL
+RKVVDALALSNINILSVITTRSGDGKREVLIKVDAVDEGTLIKLFESLGIKIESIEKEEGF
+
+END AA_SEQUENCE
+
+BEGIN WAVELENGTH NATIVE
+WAVELENGTH 0.99187
+END WAVELENGTH NATIVE
+
+! high resolution native pass
+
+BEGIN SWEEP NATIVE_HR
+WAVELENGTH NATIVE
+BEAM 109.0 105.0
+IMAGE 12847_4_001.img
+DIRECTORY /Volumes/Arthur/JCSG Data/1vr9/data/jcsg/als1/8.2.1/20050121/collection/TM0892/12847/
+END SWEEP NATIVE_HR
+
+! low resolution native pass
+
+BEGIN SWEEP NATIVE_LR
+WAVELENGTH NATIVE
+BEAM 109.0 105.0
+IMAGE 12847_5_001.img
+DIRECTORY /Volumes/Arthur/JCSG Data/1vr9/data/jcsg/als1/8.2.1/20050121/collection/TM0892/12847/
+END SWEEP NATIVE_LR
+
+END CRYSTAL 12847
+
+BEGIN CRYSTAL 13140
+
+BEGIN AA_SEQUENCE
+
+MKVKKWVTQDFPMVEESATVRECLHRMRQYQTNECIVKDREGHFRGVVNKEDLLDLDLDSSVFNKVSLPD
+FFVHEEDNITHALLLFLEHQEPYLPVVDEEMRLKGAVSLHDFLEALIEALAMDVPGIRFSVLLEDKPGEL
+RKVVDALALSNINILSVITTRSGDGKREVLIKVDAVDEGTLIKLFESLGIKIESIEKEEGF
+
+END AA_SEQUENCE
+
+BEGIN HA_INFO
+ATOM SE
+NUMBER_PER_MONOMER 5
+END HA_INFO
+
+BEGIN WAVELENGTH INFL
+WAVELENGTH 0.979741
+F' -10.0
+F'' 3.2
+END WAVELENGTH INFL
+
+BEGIN WAVELENGTH LREM
+WAVELENGTH 1.019859
+F' -2.6
+F'' 0.55
+END WAVELENGTH LREM
+
+BEGIN SWEEP INFL
+WAVELENGTH INFL
+BEAM 108.7 102.0
+IMAGE 13140_1_E1_001.img
+DIRECTORY /Volumes/Arthur/JCSG Data/1vr9/data/jcsg/als1/8.3.1/20050105/collect/TM0892/13140/
+END SWEEP
+
+BEGIN SWEEP LREM
+WAVELENGTH LREM
+BEAM 108.7 102.0
+IMAGE 13140_1_E2_001.img
+DIRECTORY /Volumes/Arthur/JCSG Data/1vr9/data/jcsg/als1/8.3.1/20050105/collect/TM0892/13140/
+END SWEEP
+
+END CRYSTAL 13140
+
+END PROJECT TS01
+    </pre>
+
+    <p>This is a particularly complex example, but it illustrates the 
+      capability of the system well. There are data from two crystals, one 
+      native and the other selenomethionated. The native set is measured in 
+      two sweeps. Currently (version 0.2.6.3) no attempt is made to combine 
+      data from multiple crystals, however this is on the to-do list.</p>
+    
+    <h1>Release Notes</h1>
+
+    <p>Changes since 0.2.6.2</p>
+    <ul>
+      <li>Now works for images with long image numbers, as typically 
+	recorded on Rigaku X-Ray sets.</li>
+      <li>Signed off for operation with Rigaku Saturn and RAXIS IV
+	detectors.</li>
+      <li>Now works with no input, e.g.
+	<pre>
+xia2 -project TG6623 -crystal X77788 -atom se /my/images/are/here
+	</pre>
+	However this relies on your image headers being accurate and the
+	images having some kind of recognisable format...
+      </li>
+      <li>Repaired operation on ppc and intel macs - added required libraries
+	to the installation and reset the library paths appropriately.</li>
+      <li>Slightly improved error reporting from xinfo file errors.</li>
+    </ul>
+
+
+    <p>Changes since 0.2.6.1</p>
+    <ul>
+      <li>Now carefully select the images to use for cell refinement based
+	on the orientation of the crystal lattice.</li>
+      <li>Fixed numerous bugs to do with the naming of the detector class
+	which changed in the previous version.</li>
+    </ul>
+
+    <p>Changes since 0.2.6.0</p>
+
+    <ul>
+      <li>Fixed bug where if the distance was read incorrectly from the 
+	image header (or was wrong therein) XDS would get the wrong value
+	even if you had put the correct value in the .xinfo file.</li>
+      <li>Now "unroll" the unmerged reflections from XSCALE and then 
+	merge them in their original sweeps in Scala. This should give
+	a useful Rmerge vs. time plot.</li>
+      <li>Including updated versions of Pointless and Scala.</li>
+      <li>Includes new and more robust handling of pointgroups, lattices
+	and unstable refinement of parameters during integration.</li>
+      <li>Include support for a reference reflection file, which will 
+	ensure that the reflections are indexed in the same way and 
+	with the same spacegroup - useful for mutants.</li>
+      <li>Now always use three wedges of images for the cell refinement
+	with Mosflm as this makes the lattice elimination more reliable.
+      </li>
+      <li>If one of the images in a sweep is broken (e.g. corrupted) 
+	xia2 will tell you more helpfully rather than just crashing.</li>
+      <li>Now correctly read distance from Mar 165 images. Thanks to 
+	Francois Remacle for this fix to DiffractionImage.</li>
+      <li>Fixed the use of xia2 -3d with RAXIS IV detectors.</li>
+      <li>Use more images for Mosflm autoindexing (three instead of two)
+	as this gives uniformly better results.</li>
+    </ul>
+
+    <p>Changes since 0.2.5.2</p>
+
+    <ul>
+      <li>Now works for highly incomplete data sets, so long as you 
+	have either 4 times the mosaic spread or 8 images, whichever
+	is the larger. This is to allow pointgroup identification 
+	from e.g. the first 10 images in a data set - designed to assist
+	in synchrotron / lab source data collection.</li>
+      <li>Now include the latest Mosflm binaries in the extras package - 
+	these are often better than those in the CCP4 distribution,
+	as they come directly from Harry Powell's web page.</li>
+      <li>Added -ehtpx_xml_out option which will write out marked
+	up metadata about the data reduction, for inclusion in the
+	e-HTPX data reduction portal and, perhaps, other automated
+	systems. Usage:
+	<pre>
+xia2 -ehtpx_xml_out project.xml
+	</pre>
+      </li>
+      <li>If data are very incomplete (e.g. less than 50% complete) then don't 
+	try to refine the error parameters. This is both incorrect and a 
+	waste of time.</li>
+      <li>Renamed the output reflection files - these are now in DataFiles
+	directory with names like "PROJECT_CRYSTAL_free.mtz." This makes
+	them a little easier to identify.</li>
+      <li>Harvesting (deposition) files now in subdirectory of Harvest
+	rather than being spread around the place. These will have 
+	names Harvest/DepositFiles/PROJECT/WAVELENGTH.scala etc.</li>
+      <li><b>Have now fixed xia2setup so it works much more sensibly - 
+	  the decision about when a new sweep starts was a little broken
+	  (rounding errors issue) now fixed!</b></li>
+      <li>Added -parallel flag to work when using XDS for data reduction.</li>
+      <li><b>Added XDS support!</b> This is however much less mature than
+	the support for Mosflm/CCP4. It is also worth noting that this 
+	relies on many CCP4 tools.</li>
+      <li>Added selection of the "pipeline" to use through a command line 
+	option, either -2d for mosflm/ccp4 or -3d for xds/xscale though 
+	the latter still uses a number of CCP4 programs.</li>
+    </ul>
+
+    <p>Changes since 0.2.5.1 - big changes in <b>bold</b></p>
+    <ul>
+      <li><b>Process data as native if no heavy atom information, only one 
+	  wavelength specified and no anomalous scattering form factors
+	  provided. Otherwise separate anomalous pairs for scaling.</b></li>
+      <li><b>Added a -quick option to the xia2 command line, which will
+	  cut out many of the data reduction optimisation steps (not 
+	  refine detector parameters, resolution or scaling parameters)
+	  but will still include everything else. This is to allow quick
+	  characterisation of data at the beamline, and perhaps map 
+	  calculation?</b></li>
+      <li>Correctly print the unmerged scalepack file name for single
+	wavelength data.</li>
+      <li>Perform radiation damage analysis using R merge and B factor
+	as a function of <i>time</i> - note that this is not <i>batch.</i>
+	This is likely to have interesting side-effects.</li>
+      <li>If time of data collection not recorded in header <i>but</i>
+	the time stamp for the images are correct (e.g. you have not moved
+	them since collection) then the command line flag
+	<pre>-trust_timestamps</pre> can be used, which will use the 
+	time stamps on the image files to analyse things like radiation
+	damage.</li>
+      <li>If you are running this on a cluster, have added an option 
+	to migrate the diffraction data to a local disk (e.g. /tmp.)
+	To do this add <pre>-migrate_data</pre> to the command line - 
+	the data will be removed from the local disk once the processing
+	is finished.</li>
+      <li>Copy all final reflection files to a DataFiles directory.</li>
+      <li>Now, when something goes horribly wrong, just write the actual
+	message to the screen and the horrible stack trace gunk to a file
+	called xia2.error. This should be sent in for error reports!</li>
+      <li>Remerge individual wavelengths to get the merging statistics to
+	the most appropriate resolution limit, rather than the furthest
+	extent of any data, for the summary table.</li>
+      <li>If GAIN included in SWEEP block, will be used as the default
+	value for integration. E.g. GAIN 0.25.</li>
+    </ul>
+
+    <p>Changes since 0.2.5</p>
+    <ul>
+      <li>Fixed problem with spacegroup R3:H (naming convention problem
+	- there's a surprise.)</li>
+      <li>GAIN estimation temporarily removed.</li>
+      <li>Pointgroup evaluation fixed - found a <b>major</b> gremlin in 
+	there</li>
+      <li>Allow environment variables and tilde in DIRECTORY token:
+	<pre>DIRECTORY $DATA/example or ~/data or %DATA%/example (win32)</pre>
+      </li>
+      <li>Now tracks the citations for the programs used, writing them
+	to the standard output in plain text and to xia-citations.bib
+	in BIBTeX format.</li>
+      <li>Removed [XIA2] tokens from standard output - the reason for 
+	having this there no longer applies.</li>
+    </ul>
+
+
+    <p>Changes since 0.2.4</p>
+
+    <ul>
+      <li>xia2setup will now add the f', f'' values if a scan is available
+	and has been processed by chooch</li>
+      <li>GAIN now estimated by diffdump - enabling future parallelisation 
+	of the integration stage.</li>
+      <li>For detectors formed as a mosaic of a number of tiles, with "gaps"
+	in between, now mask those gapped areas in Mosflm to reduce the
+	number of bad reflections.</li>
+      <li>Now has a fix for the ongoing indexing problem which gave rise 
+	to errors like "something horrible has happened in indexing".</li>
+      <li>The "best" log file for each process will now be recorded in a
+	LogFiles directory - which means no more hunting around for the 
+	final scala log file and what not.</li>
+      <li>Chaling now produces unmerged reflection files in scalepack format
+	as well as merged scalepack and merged MTZ format. This is done by 
+	scala (if used) by recycling the final SCALES and adding 
+	"output polish unmerged."</li>
+      <li>Now runs a twinning test using the CCP4 program sfcheck, and
+	will warn you if your data look twinned.</li>
+      <li>Now allow up to 100 cycles of scale refinement to cope with 
+	more extreme cases where data at very different resolutions
+	are scaled together.</li>
+    </ul>
+
+    <p>Changes since 0.2.3</p>
+    <ul>
+      <!-- <li>Added support for XDS</li> -->
+      <li>Added <a href="preferences.html">preferences file</a></li>
+      <li>Added xia2setup program to create the .xinfo file - this will 
+	also run LABELIT to configure the beam centre if it is installed</li>
+      <li>Added a strategy-of-data-reduction step to the pipeline</li>
+      <li>Added run-time check that CCP4 and so on are available</li>
+    </ul>
+
+    <p>Changes since 0.2.2.4:</p>
+
+    <ul>
+      <li>Changed to a BSD license</li>
+      <li>Added "python setup" check to xia2</li>
+      <li>Relaxed criteria on isomorphism to 1% not 0.5A etc.</li>
+      <li><b>Now wavelengths in wavelength record will override header
+	values if provided, but do not (indeed, should not) be included
+	if wavelength values are correct.</b></li>
+    </ul>
+
+    <p>Changes since 0.2.2.3:</p>
+    
+    <ul>
+      <li>Created version for Power PC G4/G5</li>
+      <li>Fixed .csh setup scripts</li>
+      <li>If wavelength values not specified in the .xinfo file will use
+	values from the image headers</li>
+      <li>If loggraph output from scala is broken by having Mn(I/sigma)
+	greater than 99.99 can now cope (ignores that record)</li>
+      <li>Will now use a maximum of 180 degrees of data for deciding 
+	e.g. the point group, spacegroup and correct indexing standards -
+	this helps the cases where exceptionally high redundancy data 
+	has been measured</li>
+    </ul>
+    
+    <p>Changes since 0.2.2.2:</p>
+
+    <ul>
+      <li>Updated printheader to cope with MAR 165</li>
+      <li>Cleaner error messages when data missing</li>
+      <li>Added support for MAR image plate data</li>
+      <li>Included more example .xinfo files in the examples directory</li>
+      <li>Relaxed refinement parameters in Mosflm cell refinement</li>
+    </ul>
+
+    <h1>Platform Specific Advice</h1>
+
+    <h2>Gfortran compiled CCP4</h2>
+
+    <p>Recent versions of the gcc compiler suite have included a new compiler
+      called "gfortran" in place of "g77". This has, unfortunately, been 
+      designed with buffering too high on the agenda, and the output
+      from programs can sometimes be mashed. If this happens you need to
+      set "GFORTRAN_UNBUFFERED_ALL" to 1 in your environment.</p>
+
+    <h2>Linux</h2>
+    
+    <p>There should be no particular problems on this platform - assuming
+      that you have a recent version of Python. Any 2.4 version should work,
+      but I have mostly used 2.4.3 and 2.4.4, and would recommend them.
+      If the version you have on your system by default (type "python"
+      to find out what version you have)is too old, you can easily install
+      a new version, perhaps in the xia directory, from 
+      <a href="http://www.python.org/download/releases/2.4.4/">here</a>.
+      This is best installed by unpacking the tarball (tar xvfz 
+      Python-2.4.4.tgz) then doing ./configure /where/I/want/it then
+      make, make install.</p>
+
+    <h2>OS X 10.4</h2>
+
+    <p>The only potential problem with this platform is that the Python 
+      which comes as standard is 2.3 - however a universal binary is 
+      available from 
+      <a href="http://www.python.org/download/releases/2.4.4/">here</a>,
+      which should sort out any problems. Just follow the instructions in 
+      the disk image.</p>
+
+    <h2>Windows XP</h2>
+
+    <p>Once more you will need a recent version of Python - which can be found
+      <a href="http://www.python.org/download/releases/2.4.4/">here</a>,
+      however, you will also need "pywin32" to provide a little more
+      job control functionality - this is available from 
+      <a href="http://sourceforge.net/projects/pywin32/">here</a>. Both are
+      simple, double-click, binary installers.</p>
+    <p>There is now a version of Labelit available for Windows, which 
+      can be found <a href="http://adder.lbl.gov/labelit/">here.</a></p>
+    <p>The mosflm binary which comes with 
+      <a href="http://www.mrc-lmb.cam.ac.uk/harry/imosflm/index.html">
+	iMosflm</a> works well with xia2.</p>
+
+<H2> AUTHOR</H2>
+Graeme Winter
+  </body>
+</html>

@@ -1,0 +1,70 @@
+#!/bin/sh
+#
+#  PHASE ANALYSIS is done by phistats, if you insist.
+#  It will analyse any two sets of phases.
+#  Here it is used to check the agreement between MIR phases
+#  and PHIcalc.
+#  It is probably better to do map correlation.
+
+set -e
+
+if test ! -f $CCP4_SCR/toxd_phase_mir.mtz; then
+  echo '! run the mlphare procedure first' 1>&2
+  exit 1
+fi
+
+#  Calculate structure factors.
+#  File toxd_mir.mtz  can be generated using mlphare.com
+sfall           \
+HKLIN $CCP4_SCR/toxd_phase_mir.mtz                        \
+HKLOUT $CCP4_SCR/toxd_sf_mir.mtz             \
+XYZIN $CEXAM/toxd/toxd.pdb                        \
+<< END-sfrkall
+TITL Structure factors calculed for toxd.
+GRID 152 96 64    !div CELL by these should give .=. 0.7 A
+MODE SFCALC XYZIN HKLIN
+RESO 37 2.1
+BINS  60
+RSCB 8.0 2.1
+SFSG 19
+LABI FP=FTOXD3 SIGFP=SIGFTOXD3 
+LABO ALLIN FC=FCtoxd PHIC=PHICtoxd
+END-sfrkall
+
+# Phase analysis 
+#  Assign Weight 1 to FOM, Weight 2 to FC magnitude.
+#
+#          Analyse two sets of phases (no phase combination)
+
+phistats hklin $CCP4_SCR/toxd_sf_mir << END
+TITLE   Phase analysis
+RESOLUTION  40. 2.   # Resolution limits
+RANGES 10   500      #  No of bins for analysing agst S, 
+LABIN FP=FTOXD3 SIGFP=SIGFTOXD3 PHIBP=PHI_mir WP=W_mir  -
+      PHIB2=PHICtoxd W2=FCtoxd
+END
+
+#  Optional extra - combine these phases..
+#
+#         Set option to combine phase information from
+# eg isomorphous  replacement with partial structure
+
+sigmaa    \
+hklin $CCP4_SCR/toxd_sf_mir hklout $CCP4_SCR/junk \
+<< END-sigmaa
+TITLE   Phase combination
+RESOLUTION  40. 2.   # Resolution limits
+RANGES 10   500      #  No of bins for analysing agst S, 
+ERROR
+COMBINE PART 1 
+
+LABI FP=FTOXD3 SIGFP=SIGFTOXD3 PHIBP=PHI_mir WP=W_mir  -
+HLA=HLA HLB=HLB HLC=HLC HLD=HLD  -
+FC=FCtoxd PHIC=PHICtoxd
+
+LABO PHCMB=PHICMB_all_FC  WCMB=FOMCMB_all_FC -
+     DELFWT=mFo-DFc_Comb  PHDELFWT=PHmFo-DFc_Comb -
+     FWT=2mFo-DFc_Comb    PHFWT=PH2mFo-DFc_Comb
+END
+END-sigmaa
+#

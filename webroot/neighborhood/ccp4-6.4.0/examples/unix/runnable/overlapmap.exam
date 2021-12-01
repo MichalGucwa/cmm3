@@ -1,0 +1,47 @@
+#!/bin/sh
+#  overlapmap reads two or three maps, on the same grid, and 
+#  works out certain useful functions.
+#   Key words are:
+# MAP AVERAGE - add two maps and output new map
+# MAP EXCLUDE - exclude points from output map if they   exist in map1
+# MAP INCLUDE - include points from output map if they   exist in map1
+# CORRELATE  SECTION - correlation - section by section
+# CORRELATE  RESIDUE - correlation - residue by residue
+# CORRELATE  ATOM - correlation - atom by atom
+# REAL SPACE R - tabulated residue by residue
+# CHAIN  chain_ID  1st_residue_number  last_residue_number
+#         Repeat residue numbering by chain, as in SFALL
+#
+#  Correlation residue by residue of final coordinates with mir map
+#  See mapcorrelation_procedures.
+#
+#  Warning. All grids MUST BE THE SAME!!
+#
+
+if test ! -f $CCP4_SCR/fomir.map; then
+  echo '! run mapcorrelation_procedures first' 1>&2
+  exit 1
+fi
+
+########################################################################
+#  Correlation residue by residue of final coordinates with mir map
+########################################################################
+overlapmap       \
+               mapin1 $CCP4_SCR/fomir.map    \
+               mapin2 $CCP4_SCR/fclast.map    \
+               mapin3 $CCP4_SCR/last.map \
+<< eof
+CORR RESID
+eof
+#
+
+########################################################################
+#  Correlation section by section
+########################################################################
+overlapmap       \
+               mapin1 $CCP4_SCR/fomir.map    \
+               mapin2 $CCP4_SCR/fclast.map    \
+<< eof
+CORR SECT
+eof
+#

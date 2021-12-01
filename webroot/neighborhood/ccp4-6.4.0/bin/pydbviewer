@@ -1,0 +1,65 @@
+#! /usr/bin/env python
+#
+#     Copyright (C) 2005 Ronan Keegan 
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Application.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+
+# A python launcher script for the CCP4i dbviewer program
+# Ronan Keegan 9/07/07 
+
+import os, string, sys
+import subprocess
+
+# Set the debug flag
+debug=True
+project_found=False
+
+# Set the path to the users home directory
+if os.name=="nt":
+   ccp4DB_dir=os.path.join(os.environ["USERPROFILE"], "CCP4")
+else:
+   ccp4DB_dir=os.path.join(os.environ["HOME"], ".CCP4")
+
+# Check to see if a project name was given
+if len(sys.argv)==2:
+   project=string.strip(sys.argv[1])
+elif len(sys.argv)==1:
+   project=""
+else:
+   sys.stdout.write("Usage: pydbviewer <project_name>\n")
+   sys.stdout.write("\n")
+   sys.exit()
+
+# Check to see if the given project is listed in the directories_mr.def file
+if project != "" and os.path.isfile(os.path.join(ccp4DB_dir, "directories_mr.def")):
+   dir_file=open(os.path.join(ccp4DB_dir, "directories_mr.def"), "r")
+   line=dir_file.readline()
+   while line:
+      if "PROJECT_ALIAS" in line and project in line:
+         project_found=True 
+      line=dir_file.readline()
+   dir_file.close()
+
+   # Check for the project found flag
+   if project_found == False:
+      sys.stdout.write("Error: specified project name was not found in the MrBUMP projects definition file\n")
+      sys.stdout.write("\n")
+      sys.exit()
+
+# Set the DBCCP4i_TOP environment variable
+if os.environ.has_key("MRBUMP"):
+   os.environ["DBCCP4I_TOP"] = os.path.join(os.environ["MRBUMP"], "include", "dbccp4i")   
+else:
+   os.environ["DBCCP4I_TOP"] = os.path.join(os.environ["CCP4"], "share", "mrbump", "include", "dbccp4i")   
+
+dbviewer=os.path.join(os.environ["DBCCP4I_TOP"], "application", "viewer.tcl")
+
+# Now call the dbviewer program with the input project name (if given)
+if os.name=="nt":
+   subprocess.Popen("wish " + dbviewer + " %s -directories %s -title MRBUMP " % (project, os.path.join(ccp4DB_dir, "directories_mr.def")))
+else:
+   os.system("wish " + dbviewer + " " + project + " -directories %s -title MRBUMP &" % os.path.join(ccp4DB_dir, "directories_mr.def"))

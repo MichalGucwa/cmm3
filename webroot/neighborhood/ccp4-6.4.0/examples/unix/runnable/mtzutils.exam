@@ -1,0 +1,37 @@
+#!/bin/sh
+
+set -e 
+
+if test ! -f $CCP4_SCR/toxd_sf.mtz; then
+  echo '! run sf_calc first' 1>&2
+  exit 1
+fi
+
+# Changing the symmetry of a mtz file
+
+mtzutils hklin1 $CEXAM/toxd/toxd.mtz  \
+hklout $CCP4_SCR/junk.mtz <<end
+onefile      ! Compulsory if INCLUDE is used & there is only one file
+include all
+symm 96
+end
+
+######### 2nd Example #############
+
+mtzutils hklin1 $CEXAM/toxd/toxd.mtz  \
+hklin2 $CCP4_SCR/toxd_sf.mtz  \
+hklout $CCP4_SCR/junk.mtz << eof
+SYMMETRY P212121
+HISTORY  testing 
+# Totally wrong cell - Live for the excitement!
+CELL 86.16 111.93 71.71 90.0 90.0 90.0
+HEADER ALL
+# Change column names
+COLUMNS 1 FTOXD3=TOM SIGFTOXD3=HARRY FreeR_flag=DICK
+COLUMNS 2 AC_sf=FRED
+# Exclude columns
+EXCLUDE 1 ANAU20
+EXCLUDE 1 SIGFI100
+RUN
+eof
+#

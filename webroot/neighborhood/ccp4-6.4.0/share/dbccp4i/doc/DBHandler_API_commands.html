@@ -1,0 +1,1140 @@
+<html>
+<head>
+<title>DB Handler Commands
+</title>
+</head>
+<body>
+<! -- CVS_Id: $Id: DBHandler_API_commands.html,v 1.9 2008/08/12 10:48:16 pjx Exp $ -->
+<center><h1>DB handler commands & API commands</h1>
+<p><em>Wanjuan Yang </em></p><p><em>May 4, 2007</em></p>
+</center>
+
+
+<li><a href="#NewDb">NewDb</a></li>
+<li><a href="#DbOpen">DbOpen</a></li>
+<li><a href="#DbNewRecord">DbNewRecord</a></li>
+<li><a href="#DbDeleteRecord">DbDeleteRecord</a></li>
+<li><a href="#DbSetData">DbSetData</a></li>
+<li><a href="#Updatetime">Updatetime</a></li>
+<li><a href="#DbGetData">DbGetData</a></li>
+<li><a href="#DbItemExists">DbItemExists</a></li>
+<li><a href="#DbSelectRecords">DbSelectRecords</a></li>
+<li><a href="#ListJobs">ListJobs</a></li>
+<li><a href="#DbReturnRecord">DbReturnRecord</a></li>
+<li><a href="#ListProjects">ListProjects</a></li>
+<li><a href="#GetNProjects">GetNProjects</a></li>
+<li><a href="#ImportProject">ImportProject</a></li>
+<li><a href="#DeleteProject">DeleteProject</a></li>
+<li><a href="#AddDefDirRef">AddDefDirRef</a></li>
+<li><a href="#DeleDefDirRef">DeleDefDirRef</a></li>
+<li><a href="#GetProjectDir">GetProjectDir</a></li>
+<li><a href="#ListDefDirs">ListDefDirs</a></li>
+<li><a href="#GetDefDir">GetDefDir</a></li>
+<li><a href="#GetNJOB">GetNJOB</a></li>
+<li><a href="#GetNextJobList">GetNextJobList</a></li>
+<li><a href="#GetAllLinks">GetAllLinks</a></li>
+<li><a href="#GetLinks">GetLinks</a></li>
+<li><a href="#DbGetListofRecords">DbGetListofRecords</a></li>
+<li><a href="#GetAllChildren">GetAllChildren</a></li>
+<li><a href="#GetAllParents">GetAllParents</a></li>
+<li><a href="#GetChildren">GetChildren</a></li>
+<li><a href="#GetParents">GetParents</a></li>
+<li><a href="#GetAllParentsChildren">GetAllParentsChildren</a></li>
+<li><a href="#GetNotebook">GetNotebook</a></li>
+<li><a href="#DbClose">DbClose</a></li>
+</ul>
+<h4>Commands for accessing to SQLite backend</h4>
+<ul>
+<li><a href="#NewDB_sql">NewDB_sql</a></li>
+<li><a href="#OpenDB_sql">OpenDB_sql</a></li>
+<li><a href="#GetJobData_sql">GetJobData_sql</a></li>
+<li><a href="#GetProjectId">GetProjectId</a></li>
+<li><a href="#GetData">GetData</a></li>
+<li><a href="#GetProjectList">GetProjectList</a></li>
+<li><a href="#GetJobList">GetJobList</a></li>
+<li><a href="#GetRowofTable">GetRowofTable</a></li>
+<li><a href="#NewProject_sql">NewProject_sql</a></li>
+<li><a href="#NewJob_sql">NewJob_sql</a></li>
+<li><a href="#SetJobData_sql">SetJobData_sql</a></li>
+<li><a href="#SetData">SetData</a></li>
+<li><a href="#NewRecord">NewRecord</a></li>
+
+<li><a href="#CloseDB_sql">CloseDB_sql</a></li>
+</ul>
+
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbRegister"></a>
+<p><b>DbRegister</b> <em>username</em><em> pid  [ broadcast_flag ]</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Client registers with the handler. This is the first
+request that a client should send to db handler before sending any other requests.</p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>username</td>   <td>user name of the system</td></tr>
+<tr><td>pid</td>        <td>process Id</td></tr>
+<tr><td>broadcast_flag</td><td>True if client wishes handler to send
+broadcast message to it. False otherwise.</td></tr>
+</table>
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>DbHandlerConnect</td></tr>
+<tr><td><b>Python</b></td><td>DbRegister <em>username </em> <em>pid</em> <em>broadcast</em></td></tr>
+</table>
+
+<p></p>
+
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbRequestStatus"></a>
+<p><b>DbRequestStatus</b> </p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b> Get the status of the handler</p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>None</td>  </tr>
+</table>
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>CheckServerStatus</td></tr>
+<tr><td><b>Python</b></td><td>CheckServerStatus</td></tr>
+</table>
+
+<p></p>
+
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbSupported"></a>
+<p><b>DbSupported</b> <em>dbtype</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b> Check if handler supports the given db backend. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>dbtype</td><td>database backend, e.g def, SQLite</td>  </tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>DbSupported <em>db</em></td></tr>
+<tr><td><b>Python</b></td><td>DbSuppoted <em>db</em></td></tr>
+</table>
+
+<p></p>
+
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbDisconnect"></a>
+<p><b>DbDisconnect</b> </p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b> Disconnect to the handler. Handler sends 'True' to client for this request.                            </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>None</td>  </tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>DbHandlerDisconnect</td></tr>
+<tr><td><b>Python</b></td><td>HandlerDisconnect</td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="ShutDown"></a>
+<p><b>ShutDown</b> </p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b> Shutdown the handler. Handler doesn't send any
+response to client for this request.                            </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>None</td>  </tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>DbShutdown</td></tr>
+<tr><td><b>Python</b></td><td>ShutDown</td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="NewDb"></a>
+<p><b>NewDb</b> <em>project</em><em> dir</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Create a new project in def backend. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>project</td>   <td>the name of the project</td></tr>
+<tr><td>dir</td>        <td>directory of the project</td></tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>CreateDatabase <em>project</em> <em>db</em> <em>messageVar</em> <em>args</em></td></tr>
+<tr><td><b>Python</b></td><td>CreateDatabase <em>project</em> <em>dir</em></td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbOpen"></a>
+<p><b>DbOpen</b> <em>project</em><em>  [ -grablock/-readonly ]</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Create a new project in def backend. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>project</td>   <td>the name of the project</td></tr>
+<tr><td>-grablock</td>        <td>Optional. If the database is locked, with
+this option, the lock will be overwritten. </td></tr>
+<tr><td>-readonly</td>        <td>Optional. If the database is locked, with
+this option, the database is readonly. </td></tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>OpenDatabase <em>project</em> <em>args</em></td></tr>
+<tr><td><b>Python</b></td><td>OpenDatabase <em>project</em> <em>grablock</em> <em>readonly</em></td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbNewRecord"></a>
+<p><b>DbNewRecord</b><em>  project</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Create a job in database. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>project</td>   <td>the name of the project</td></tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>NewRecord <em>project</em></td></tr>
+<tr><td><b>Python</b></td><td>NewRecord <em>project</em></td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbDeleteRecord"></a>
+<p><b>DbDeleteRecord</b><em>  project</em><em> jobid</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Delete a job in database. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>project</td>   <td>the name of the project</td></tr>
+     <td>jobid</td>   <td>the id of the job to be deleted.</td></tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>DeleteRecord <em>project</em> <em>jobid</em></td></tr>
+<tr><td><b>Python</b></td><td>DeleteRecord <em>project</em> <em>jobid</em></td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbSetData"></a>
+<p><b>DbSetData</b><em>  project</em><em> jobid</em><em>
+item</em><em> value</em><em> [ item2 value2 [...] ]</p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Set the value(s) of one or more data item(s) for a job in project.</p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td>
+    <td>project</td>   <td>the name of the project</td></tr>
+     <td>jobid</td>   <td>the id of the job to be set data.</td></tr>
+     <td>item</td>   <td>item name of the job.</td></tr>
+     <td>value</td>   <td>value of the item.</td></tr>
+</table>
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>SetData <em>project</em> <em>jobid</em> <em>args</em></td></tr>
+<tr><td><b>Python</b></td><td>SetData <em>project</em> <em>jobid</em> <em>args</em></td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbGetData"></a>
+<p><b>DbGetData</b><em>  project</em><em> jobid</em><em>
+item</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Retrieve the values of one or more data item(s) from a job in a project.</p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>project</td>   <td>the name of the project</td></tr>
+     <td>jobid</td>   <td>the id of the job.</td></tr>
+     <td>item</td>   <td>item name of the job.</td></tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>GetData <em>project</em> <em>jobid</em> <em>args</em></td></tr>
+<tr><td><b>Python</b></td><td>GetData <em>project</em> <em>jobid</em> <em>items</em></td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="Updatetime"></a>
+<p><b>Updatetime</b><em>  project</em><em> jobid</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Update the time of a job.</p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>project</td>   <td>the name of the project</td></tr>
+     <td>jobid</td>   <td>the id of the job.</td></tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>Updatetime<em>project</em> <em>jobid</em> </td></tr>
+<tr><td><b>Python</b></td><td>Updatetime <em>project</em> <em>jobid</em></td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbItemExists"></a>
+<p><b>DbItemExists</b><em>  project</em><em> jobid</em><em> item</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Check that item exists for a job. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>project</td>   <td>the name of the project</td></tr>
+    <td>jobid</td>   <td>the id of the job.</td></tr>
+    <td>item</td>   <td>the item name of the job.</td></tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>ItemExists <em>project</em> <em>jobid</em> <em>item</em></td></tr>
+<tr><td><b>Python</b></td><td>ItemExists <em>project</em> <em>jobid</em> <em>item</em></td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbSelectRecords"></a>
+<p><b>DbSelectRecords</b><em>  project</em><em> item</em><em> pattern</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b>Retrieve a list of jobs based on some selection criterion. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>project</td>   <td>the name of the project</td></tr>
+    <td>item</td>   <td>the item name of the job.</td></tr>
+    <td>pattern</td>   <td>regular expression pattern.</td></tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>SelectJobs <em>project</em> <em>item</em> <em>pattern</em></td></tr>
+<tr><td><b>Python</b></td><td>SelectJobs <em>project</em> <em>item</em> <em>pattern</em></td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="ListJobs"></a>
+<p><b>ListJobs</b><em>  project</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b>List all the job ids of a project. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>project</td>   <td>the name of the project. </td></tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>ListJobs <em>project</em></td></tr>
+<tr><td><b>Python</b></td><td>ListJobs <em>project</em> </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbReturnRecord"></a>
+<p><b>DbReturnRecord</b><em>  project</em><em> joblist</em><em>
+itemlist</em><em> format</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b>Given a list of job ids, return a list of descriptions
+       which are generated from the suppied lists of data items in itemlist
+       and format. </p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td>
+    <td>project</td>   <td>the name of the project</td></tr>
+    <td>joblist</td>   <td>a list of job ids to be retrived description. </td></tr>
+    <td>itemlist</td>   <td>a list of items to be retrived.</td></tr>
+    <td>format</td><td> the format in which to display the result - this is
+                        a list of integers (one integer per item specified in
+			the itemlist) that specifies the field width (number
+			of characters) to allocate to the corresponding
+			datat item.</td></tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>GetDescription <em>project</em> <em>joblist</em> <em>db_display</em> <em>db_display_format</em></td></tr>
+<tr><td><b>Python</b></td><td>GetDescription <em>project</em> <em>joblist</em> <em>db_display</em> <em>db_display_format</em></td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="ListProjects"></a>
+<p><b>ListProjects</b></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> List all the project names which are recorded in directories.def.</p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>None</td> </tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>ListProjects </td></tr>
+<tr><td><b>Python</b></td><td>ListProjects</td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetNProject"></a>
+<p><b>GetNProject</b></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Get the total number of projects.</p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>None</td> </tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>GetNProjects </td></tr>
+<tr><td><b>Python</b></td><td>GetNProjects</td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="ImportProject"></a>
+<p><b>ImportProject</b><em> alias</em><em> path</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b>  Add a reference of a project (alias and path) in the
+directories.def file. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td></tr>
+    <tr><td>alias</td><td> The alias of the project. </td> </tr>
+    <tr><td>path</td><td> The directory of the project. </td> </tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>ImportProject <em>alias</em> <em>path</em></td></tr>
+<tr><td><b>Python</b></td><td>ImportProject <em>alias</em> <em>path</em></td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DeleteProject"></a>
+<p><b>DeleteProject</b><em> project</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b>   Delete the reference of a project in directories.def.  </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td></tr>
+    <tr><td>project</td><td> The name of the project. </td> </tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>DeleteProject <em>project</em> </td></tr>
+<tr><td><b>Python</b></td><td>DeleteProject <em>project</em></td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="AddDefDirRef"></a>
+<p><b>AddDefDirRef</b><em> dir_def</em><em> path</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b>  Add a reference of a default directory in the
+directories.def file. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td></tr>
+    <tr><td>dir_def</td><td> The default directory name. </td> </tr>
+    <tr><td>path</td><td> The path of the default directory. </td> </tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>AddDefDirRef <em>def_dir</em> <em>path</em></td></tr>
+<tr><td><b>Python</b></td><td>AddDefDirRef <em>def_dir</em> <em>path</em></td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DeleDefDirRef"></a>
+<p><b>DeleDefDirRef</b><em> dir_def</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b>   Delete the reference of a default directory in directories.def.  </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td></tr>
+    <tr><td>def_dir</td><td> The name of the default directory. </td> </tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>DeleDefDirRef <em>def_dir</em></td></tr>
+<tr><td><b>Python</b></td><td>DeleDefDirRef <em>def_dir</em></td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetProjectDir"></a>
+<p><b>GetProjectDir</b><em> project</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Get the directory name of the project.</p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td></tr>
+    <tr><td>project</td><td> The name of the project. </td> </tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>GetProjectDir <em>project</em> </td></tr>
+<tr><td><b>Python</b></td><td>GetProjectDir <em>project</em> </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="ListDefDirs"></a>
+<p><b>ListDefDirs</b></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b>  Return a list of the user's default directories.</p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td></tr>
+    <tr><td>None</td> </tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>ListDefDirs </td></tr>
+<tr><td><b>Python</b></td><td>ListDefDirs </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetDefDir"></a>
+<p><b>GetDefDir</b><em> def_dir</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b>  Return the directory corresponding to a def dir name.</p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td></tr>
+    <tr><td>def_dir</td><td>default directory name.</td> </tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>GetDefDir <em>def_dir</em> </td></tr>
+<tr><td><b>Python</b></td><td>GetDefDir <em>def_dir</em> </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetNJOB"></a>
+<p><b>GetNJOB</b><em> project</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Return the last number of job in project. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td></tr>
+    <tr><td>project</td><td>The name of the project.</td> </tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>GetNJOB <em>project</em> </td></tr>
+<tr><td><b>Python</b></td><td>GetNJOB <em>project</em> </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetNextJobList"></a>
+<p><b>GetNextJobList</b><em> project </em><em> jobid </em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Return a list of job ids which are related to the given job. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td></tr>
+    <tr><td>project</td><td>The name of the project.</td> </tr>
+    <tr><td>jobid</td><td>The id of the job. </td> </tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>GetNextJobList <em>project</em> <em>jobid</em></td></tr>
+<tr><td><b>Python</b></td><td>GetNextJobList <em>project</em> <em>jobid</em></td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetAllLinks"></a>
+<p><b>GetAllLinks</b><em> project </em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Returns a list of job pairs. Each pair of jobs
+indicates these two jobs are related to each other. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td></tr>
+    <tr><td>project</td><td>The name of the project.</td> </tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>GetAllLinks <em>project</em></td></tr>
+<tr><td><b>Python</b></td><td>GetAllLinks <em>project</em> </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetLinks"></a>
+<p><b>GetLinks</b><em> project </em> <em> joblist</p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Given the job list, for each job id in the job list, return a list of job pairs. Each pair of jobs
+indicates these two jobs are related to each other. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td></tr>
+    <tr><td>project</td><td>The name of the project.</td> </tr>
+    <tr><td>joblist</td><td>A list of job ids.</td> </tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>GetLinks <em>project</em> <em>joblist</em></td></tr>
+<tr><td><b>Python</b></td><td>GetLinks <em>project</em> <em>joblist</em></td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbGetListofRecords"></a>
+<p><b>DbGetListofRecords</b><em> project </em><em> joblist </em><em> itemlist</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Get a list of jobs' item value.</p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td></tr>
+    <tr><td>project</td><td>The name of the project.</td> </tr>
+    <tr><td>joblist</td><td>A list of job ids.</td> </tr>
+    <tr><td>itemlist</td><td>A list of item names.</td> </tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>GetListofRecords <em>project</em> <em>joblist</em> <em>itemlist</em></td></tr>
+<tr><td><b>Python</b></td><td>GetListofRecords <em>project</em> <em>joblist</em> <em>itemlist</em></td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetAllChildren"></a>
+<p><b>GetAllChildren</b><em> project </em><em> jobid</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> For a particular project, given a job id, get all the jobs
+which are children(all levels) of this job.</p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td></tr>
+    <tr><td>project</td><td>The name of the project.</td> </tr>
+    <tr><td>jobid</td><td>job id</td> </tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>GetAllChildren <em>project</em> <em>jobid</em> </td></tr>
+<tr><td><b>Python</b></td><td>GetAllChildren <em>project</em> <em>jobid</em> </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetAllParents"></a>
+<p><b>GetAllParents</b><em> project </em><em> jobid</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> For a particular project, given a job id, get all the jobs
+which are parent (all levels) of this job.</p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td></tr>
+    <tr><td>project</td><td>The name of the project.</td> </tr>
+    <tr><td>jobid</td><td>job id</td> </tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>GetAllParents <em>project</em> <em>jobid</em> </td></tr>
+<tr><td><b>Python</b></td><td>GetAllParents <em>project</em> <em>jobid</em> </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetChildren"></a>
+<p><b>GetChildren</b><em> project </em><em> jobid</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> For a particular project, given a job id, get all the jobs
+which are children of this job.</p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td></tr>
+    <tr><td>project</td><td>The name of the project.</td> </tr>
+    <tr><td>jobid</td><td>job id</td> </tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>GetChildren <em>project</em> <em>jobid</em> </td></tr>
+<tr><td><b>Python</b></td><td>GetChildren <em>project</em> <em>jobid</em> </td></tr>
+</table>
+
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetParents"></a>
+<p><b>GetParents</b><em> project </em><em> jobid</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> For a particular project, given a job id, get all the jobs
+which are parent of this job.</p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td></tr>
+    <tr><td>project</td><td>The name of the project.</td> </tr>
+    <tr><td>jobid</td><td>job id</td> </tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>GetParents <em>project</em> <em>jobid</em> </td></tr>
+<tr><td><b>Python</b></td><td>GetParents <em>project</em> <em>jobid</em> </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetAllParentsChildren"></a>
+<p><b>GetAllParentsChildren</b><em> project </em><em> jobid</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> For a particular project, given a job id, get all the jobs
+which are parent of this job.</p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td></tr>
+    <tr><td>project</td><td>The name of the project.</td> </tr>
+    <tr><td>jobid</td><td>job id</td> </tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>GetAllParentsChildren <em>project</em> <em>jobid</em> </td></tr>
+<tr><td><b>Python</b></td><td>GetAllParentsChildren <em>project</em> <em>jobid</em> </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetNotebook"></a>
+<p><b>GetNotebook</b><em> project </em><em> jobid</em> </p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Return full path notebook name.</p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td></tr>
+    <tr><td>project</td><td>The name of the project.</td> </tr>
+    <tr><td>jobid</td><td>job id</td> </tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>GetNotebook <em>project</em> <em>jobid</em> </td></tr>
+<tr><td><b>Python</b></td><td>GetNotebook <em>project</em> <em>jobid</em> </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbClose"></a>
+<p><b>DbClose</b> <em>project</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Close a project. </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>project</td>   <td>the name of the project</td></tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>CloseDatabase <em>project</em> </td></tr>
+<tr><td><b>Python</b></td><td>CloseDatabase <em>project</em> </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="NewDB_sql"></a>
+<p><b>NewDB_sql</b> <em>dbname</em><em> dir</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Create a new database in SQLite.</p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>dbname</td>   <td>the name of the database</td></tr>
+    <td>dir</td>   <td>the directory of the database</td></tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>?</td></tr>
+<tr><td><b>Python</b></td><td>NewDB <em>dbname</em> <em>dir</em> </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="OpenDB_sql"></a>
+<p><b>OpenDB_sql</b> <em>dbname</em><em> dir</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Open an existing database in SQLite.</p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>dbname</td>   <td>the name of the database</td></tr>
+    <td>dir</td>   <td>the directory of the database</td></tr>
+</table>
+
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>OpenDBsql <em>dbname</em> <em>dir</em></td></tr>
+<tr><td><b>Python</b></td><td>OpenDB <em>dbname</em> <em>dir</em> </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetJobData_sql"></a>
+<p><b>GetJobData_sql</b> <em> jobid</em><em> item</em><em> [ item2 ...]</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b>  Return the value(s) of one or more items in a job.
+ </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>jobid</td>   <td>the id of job.</td></tr>
+    <td>item</td>   <td>item name of the job. Could specify one or more item names. </td></tr>
+</table>
+
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>GetJobDatasql <em>jobid</em> <em>args</em></td></tr>
+<tr><td><b>Python</b></td><td>getData <em>jobid</em> <em>item</em> </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetProjectId"></a>
+<p><b>GetProjectId</b> <em> projectname</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Given a project name, return project id.
+ </p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>projectname</td>   <td>the name of the project.</td></tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>None</td></tr>
+<tr><td><b>Python</b></td><td>getProjectId <em>projectname</em> </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetData"></a>
+<p><b>GetData</b> <em> table</em><em> id</em><em> attribute</em><em> [
+attribute1 ...]</p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Given a table name and id of the record and attribute(s),,
+return the value of the attribute(s). 
+ </p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td>
+    <td>table</td>   <td>the table name.</td></tr>
+    <td>id</td> <td>the id of the record</td></tr>
+    <td>attribute</td><td> attribute of the table, could specify one or more
+    attributes. </td></tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>None</td> </tr>
+<tr><td><b>Python</b></td><td>GetData(in db class) <em>table</em> <em>id</em> <em>attribute</em></td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetProjectList"></a>
+<p><b>GetProjectList</b> </p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Return a list of projects in the database.
+ </p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td>
+    <td>None</td></tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>None</td></tr>
+<tr><td><b>Python</b></td><td>GetProjectList </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetJobList"></a>
+<p><b>GetJobList</b> project</p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Return a list of job records for a given proejct.
+ </p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td>
+    <td>project</td><td> the name of project.</td></tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>None</td></tr>
+<tr><td><b>Python</b></td><td>GetJobList <em>projectname</em> </td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetRowofTable"></a>
+<p><b>GetRowofTable</b> table</p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Return a row of a table..
+ </p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td>
+    <td>id</td><td> the id of record.</td></tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>None</td></tr>
+<tr><td><b>Python</b></td><td>GetRowofTable <em>table</em> <em>rid</em> </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="NewProject_sql"></a>
+<p><b>NewProject_sql</b> projectname</p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Create a new project.
+ </p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td>
+    <td>projectname</td><td> the project name</td></tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>NewProjectsql <em>projectname</em></td></tr>
+<tr><td><b>Python</b></td><td>newProject <em>projectname</em> </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="NewJob_sql"></a>
+<p><b>NewJob_sql</b> projectname</p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Create a new job in a project.
+ </p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td>
+    <td>projectname</td><td> the project name</td></tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>NewJobsql <em>projectname</em></td></tr>
+<tr><td><b>Python</b></td><td>newJob <em>projectname</em> </td></tr>
+</table>
+
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="NewRecord"></a>
+<p><b>NewRecord</b> <em>table</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Create a new record in table.
+ </p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td>
+    <td>table</td><td> the table name</td></tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>None</td></tr>
+<tr><td><b>Python</b></td><td>NewRecord(in db class) <em>table</em> </td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="SetJobData_sql"></a>
+<p><b>SetJobData_sql</b> <em> jobid</em><em> item</em><em> value</em><em>
+[item1 value1 ... ]</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Set item/attribute value for a given job.
+ </p>
+</tr></td>
+<tr><td rowspan=4><b>Arguments</b></td></tr>
+    <tr><td>jobid</td><td> the job id</td></tr>
+    <tr><td>item</td><td> the item/attribute of job. Could set one or more
+    item/value at a time.</td></tr>
+    <tr><td>value</td><td> the value of the item</td></tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>None</td></tr>
+<tr><td><b>Python</b></td><td>setData(in job class) <em>jobid</em>  <em>item</em> <em>value</em></td></tr>
+</table>
+
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="SetData"></a>
+<p><b>SetData</b> <em> table</em><em> recordid</em><em> attribute</em><em>
+value</em><em> [ attribute1 value1 ...]</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Set one or more item/attribute value for a table record. 
+ </p>
+</tr></td>
+<tr><td rowspan=5><b>Arguments</b></td></tr>
+    <tr><td>table</td><td> the table name</td></tr>
+    <tr><td>recordid</td><td> record id.</td></tr>
+    <tr><td>attribute</td><td> the attribute of the item, could set one or
+    more pairs of attribute/value.</td></tr>
+    <tr><td>value</td><td> the value of the attribute</td></tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>None</td></tr>
+<tr><td><b>Python</b></td><td>SetData(in db class) <em>table</em>  <em>id</em> <em>attribute</em> <em>value</em></td></tr>
+</table>
+
+<p></p>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="CloseDB_sql"></a>
+<p><b>CloseDB_sql</b></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary: </b> Close database in SQLite.</p>
+</tr></td>
+<tr><td rowspan=3><b>Arguments</b></td>
+    <td>None</td></tr>
+</table>
+
+<table border=1>
+<tr><td align="center"><b>Corresponding API commands</b></td></tr>
+<tr><td><b>Tcl</b></td><td>CloseDBsql</td></tr>
+<tr><td><b>Python</b></td><td>CloseDB(in job class) </td></tr>
+</table>
+
+
+
+<p>Last Update: $Date: 2008/08/12 10:48:16 $</p>
+</body>
+</html>

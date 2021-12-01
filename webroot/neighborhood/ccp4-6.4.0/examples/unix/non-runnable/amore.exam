@@ -1,0 +1,225 @@
+#!/bin/csh -f
+goto here
+#####################################################3
+#    sorting run: 
+#####################################################3
+#  mtz file contains cell and symmetry.
+#
+amore \
+hklin $CTEST/toxd/toxd.mtz \
+hklpck0 $SCRATCH/toxd.hkl  \
+<<'END'
+VERBOSE
+TITLE   ** packing h k l F for crystal**
+
+SORTFUN RESOL 100.  3.
+LABI FP=FTOXD3  SIGFP=SIGFTOXD3
+'END'
+
+
+#!bin/csh -f
+#####################################################3
+#    tabling run: 
+#####################################################3
+#  rotate , shift coordinates and produce table:
+#    xyzout is the rotated and shifted coordinates.
+#
+amore \
+xyzin1  $CTEST/toxd/toxd.pdb \
+xyzout1 $SCRATCH/toxd.pdb \
+TABLE1 $SCRATCH/search.tab \
+<<'END'
+
+ TITLE :  Produce table for MODEL FRAGMENT
+VERBOSE 
+TABFUN  
+CRYSTAL ORTH 1 CELL  73.58   38.73   23.19 90 90 90
+MODEL 1 BREPLACE 0 BADD 0 
+SAMPLE 1 TMIN 3 SHANN 2 SCALE       4.0
+ 
+'END'
+# 
+#   Q. for Jorge: I am still not very clear about the relationship of 
+#                 "dmin" and "shann" and box "scale" here.
+
+
+
+#####################################################3
+#    roting run: 
+#####################################################3
+#!/bin/csh -f
+# 
+
+amore \
+TABLE1 $SCRATCH/search.tab \
+HKLPCK1 $SCRATCH/search.hkl \
+hklpck0 $SCRATCH/toxd.hkl  \
+clmn1 $SCRATCH/search.clmn \
+clmn0 $SCRATCH/toxd.clmn  \
+MAPOUT $SCRATCH/amore.map  \
+<<'END'
+#
+ROTFUN 
+VERB
+ TITLE : Generate HKLPCK1 from MODEL FRAGMENT   1
+
+GENE 1   RESO 20.0 4.0  CELL 80 75 65 90 90 90 NMOL 1
+
+CLMN CRYSTAL ORTH  1 FLIM 0.E0 1.E8   SHARP 0.0 RESO  20.0  4.0 -
+SPHERE  0.0 20
+
+CLMN MODEL 1  FLIM 0.E0 1.E8    RESO  20.0  4.0 SPHERE  0.0 20
+
+ROTA  CROSS  MODEL 1  BESLIMI 6 120 STEP 2.5 NSR 0 0 -
+ PKLIM 0.5  NPIC 50 BMAX 90
+
+'END'
+#
+#   Q. for Jorge: I am still not very clear about the relationship of 
+#                 "bessel limits" and "dang" here.
+#   Q2.   No idea about NSR values.
+
+#   Q3.   RPTS?  DELTA??? - seems very small..
+
+exit
+#####################################################3
+#    traing run:   NMOL = 1
+#####################################################3
+#!/bin/csh -f
+# 
+amore \
+TABLE1 $SCRATCH/search.tab \
+hklpck0 $SCRATCH/toxd.hkl  \
+MAPOUT $SCRATCH/amore.map  \
+<<'END'
+
+TRAFUN CB   NMOL 1 RESO 8 4     -
+ PKLIM 0.5  NPIC 100
+VERB
+ TITLE : Translation function
+CRYSTAL ORTH  1 FLIMI 0.E0 1.E8   SHARP 0.0 
+SOLUTION     1    30.46    79.40   248.27  0.00000  0.00000  0.00000 28.5  0.0
+#  As the mapout is requested, we need to do each solution in a seperate
+#  run - else the map is over written & only refers to the final sol
+#SOLUTION     1    24.90    75.58   178.38  0.00000  0.00000  0.00000 17.2  0.0
+#SOLUTION     1    70.01    44.53   325.55  0.00000  0.00000  0.00000 14.5  0.0
+'END'
+
+#   Qs.  TMIN SHANN??
+#   Comment:  Symmetry changed to P65 - they werent sure of Spacegroup at
+#             first.
+#   Comment SOLUTION stuff cut out of LOG file. Not sure that it is worth
+#           writing fort.9 and having all the oic stuff. Just as easy with
+#           an editor.
+exit
+#####################################################3
+#    traing run:   NMOL = 2
+#####################################################3
+#!/bin/csh -f
+amore \
+TABLE1 $SCRATCH/search.tab \
+hklpck0 $SCRATCH/toxd.hkl  \
+TRAFUN $SCRATCH/trafun.9 \
+<<'END'
+TRAFUN CB   NMOL 2 RESO 8 4    -
+ RPTS 0.5  NPIC 10
+SYMM P212121
+VERB
+ TITLE : Translation function - 2 mols together.
+CRYSTAL ORTH  1 FLIMI 0.E0 1.E8   SHARP 0.0
+SOLUTION FIX 1 27.76   100.74   350.08  0.14596  0.56602  0.00000 17.4 52.5
+SOLUTION 1    27.94   115.80   353.60  0.14747  0.59881  0.00000 19.3 52.0
+
+SOLUTION     1    45.98    98.41   293.85  0.00000  0.00000  0.00000  7.4  0.0
+
+'END'
+
+#####################################################3
+#    traing run:   NMOL = 3
+#####################################################3
+#!/bin/csh -f
+amore \
+TABLE1 $SCRATCH/search.tab \
+hklpck0 $SCRATCH/toxd.hkl  \
+<<'END'
+TRAFUN CB   NMOL 3 RESO 8 4    -
+ PKLIM 0.5  NPIC 10
+SYMM P212121
+VERB
+ TITLE : Translation function - 3 mols together.
+CRYSTAL ORTH  1 FLIMI 0.E0 1.E8   SHARP 0.0
+
+SOLUTION  FIX 1 25.21   105.57   339.45  0.11330  0.56704  0.00000 38.0 46.7
+SOLUTION  FIX 1 27.76   100.74   350.08  0.14660  0.57107  0.65289 38.0 46.7
+SOLUTION 1    27.94   115.80   353.60  0.14943  0.60250  0.00000 10.3 54.5
+
+SOLUTION  FIX 1 25.21   105.57   339.45  0.11330  0.56704  0.00000 38.0 46.7
+SOLUTION  FIX 1 27.94   115.80   353.60  0.14943  0.60250  0.00000 10.3 54.5
+SOLUTION 1    27.76   100.74   350.08  0.14660  0.57107  0.00000 38.0 46.7
+
+SOLUTION  FIX 1 27.94   115.80   353.60  0.14943  0.60250  0.00000 10.3 54.5
+SOLUTION  FIX 1 27.76   100.74   350.08  0.14660  0.57107  0.65289 38.0 46.7
+SOLUTION 1    25.21   105.57   339.45  0.11330  0.56704  0.00000 38.0 46.7
+
+'END'
+
+#
+#!/bin/csh -f
+#####################################################3
+#    fiting run: 
+#####################################################3
+#
+here:
+
+amore  \
+TABLE1 $SCRATCH/search.tab \
+hklpck0 $SCRATCH/toxd.hkl  \
+<<'END'
+FITFUN CB  NMOL 1  RESO 20 4.5  ITER 10 CONV   1.E-3
+ title 
+VERBOSE
+CRYSTAL ORTH  1 FLIMI 0.E0 1.E8   SHARP 0.0
+
+REFSOL   AL     BE   GA     X   Y    Z   BF 
+
+SOLUTION   1    30.46    79.40   248.27  0.10148  0.18489  0.42647 78.4 28.9
+SOLUTION   1    24.90    75.58   178.38  0.24202  0.46692  0.34705 23.7 53.4
+SOLUTION   1    70.01    44.53   325.55  0.35779  0.13919  0.46713 21.0 54.7
+'END'
+exit
+#
+#/bin/csh -f
+########### ########### ########### ###########
+#   MR2IC - ing Shifting back to original space group.
+########### ########### ########### ###########
+# The keyword SHIFt can be given with other keywords (TABFun, ROTFun, etc)
+# or by it self. If on its own give the TABLING output For Center of Mass
+# and Euler angles with SHIFT 'Model_No.' COM . . . EULE . . .
+#	Alternativly when with the TABFUN keyword the Center of Mass &
+#  Euler angles are already calculated - So don't need to be read in.
+# After FITFun or TRAFun the new Solutions are used.
+#
+#   Needed input HKLPCK0 - For the cell.
+#
+amore HKLPCK0 $SCRATCH/toxd.hkl \
+SHIFT 1 EULER 179.62    69.89    33.13 COM  -8.64     9.84     2.90
+SOLU 1    81.51    46.59    10.10  0.11227  0.30425  0.25867 42.2 55.7   8.
+SOLU 1    91.01    79.14   168.07  0.43855  0.00328  0.25466 47.5 56.4  23.
+SOLU 1    99.47   133.13   191.13  0.38797  0.30447  0.24184 42.1 55.8   8.
+'END'
+#
+#  Example of running at the same time as TABFUN
+#
+amore xyzin1  $CTEST/toxd/toxd.pdb \
+xyzout1 $SCRATCH/toxd.pdb \
+TABLE1 $SCRATCH/search.tab \
+TABLOUT $SCRATCH/tablout.9 << 'END'
+TABFUN 
+VERBOSE
+MODEL 1 BREPLACE 0 BADD 0
+SAMPLE 1 TMIN 3 SHANN 2 SCALE       4.0
+SHIFT 1
+SOLU 1    81.51    46.59    10.10  0.11227  0.30425  0.25867 42.2 55.7   8.
+SOLU 1    91.01    79.14   168.07  0.43855  0.00328  0.25466 47.5 56.4  23.
+SOLU 1    99.47   133.13   191.13  0.38797  0.30447  0.24184 42.1 55.8   8.
+'END'

@@ -1,0 +1,523 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>CCP4 Program Suite</TITLE>
+</HEAD>
+<BODY>
+
+<!-- ::INDEX_INFO::FFFEAR::Supported::Density Fitting and Model Building::map interpretation package:::::::: -->
+
+<H1>FFFEAR (CCP4: Supported Program)</H1>
+<H2>NAME</H2>
+<B>fffear </B>
+- Fast Fourier Feature Recognition for density fitting, release 1.9, 19/10/00
+
+<H2>SYNOPSIS</H2>
+
+<P><B>fffear HKLIN</B> <I>foo.mtz</I> [<B>XYZIN</B> <I>foo.pdb</I>] [<B>MAPIN</B> <I>foo.map</I>] [<B>MAXIN</B> <I>foo.max</I>] <B>XYZOUT</B> <I>bar.pdb</I> [ <B>SOLIN</B> <I>foo.msk</I> ] <BR> 
+[<A HREF="#keywords">Keyworded input</A>]
+
+<H2>REFERENCE</H2>
+
+<UL>
+<P><!-- KEEP startreferencelist --></P>
+
+<LI>K. Cowtan (1998), Acta Cryst. D54, 750-756.
+ Modified phased translation functions and their application to
+ molecular fragment location.
+</LI>
+<!-- KEEP endreferencelist -->
+</UL>
+
+<H2><A NAME="description"></A>DESCRIPTION</H2>
+
+<P>`fffear' is a package which searches for molecular fragments in
+poor quality electron density maps. It was inspired by the Uppsala
+`ESSENS' software (Kleywegt+Jones, 1997), but achieves greater speed
+and sensitivity through the use of Fast Fourier transforms, maximum
+likelihood, and a mixed bag of mathematical and computational
+approaches (Cowtan, 1998). Currently, the main application is the
+detection of helices in poor electron density maps (5.0A or better),
+and the detection of beta strands in intermediate electron density
+maps (4.0A or better).  It is also possible to use electron density as
+a search model, allowing the location of NCS elements. Approximate
+matches may be refined, and translation searches may be performed
+using a single orientation. The results are scored using an agreement 
+function based on the mean squared difference between model and map over 
+a masked region. </P>
+
+<p>The program takes as input an mtz file containing the Fourier
+coefficients of the map to be searched, and a search model in the form
+of a pdb file, map, or maximum likelihood target. A `fragment mask' is
+generated to cover the fragment density, and orientations and
+translations are searched to find those transformations which give a
+good fit between the fragment density and map density within the
+fragment mask.</P>
+
+<p>The program has been highly optimised using reciprocal-space
+rotations and grid-doubling FFT's, and crystallographic symmetry
+(Rossman+Arnold, 1993) giving 4-50 times speed improvement over the
+results published in 1998. The speed of the calculation is almost
+independent of the size of the model, thus the program may also be
+used for molecular replacement calculations where weak phases are
+available.</p>
+
+<p>A maximum likelihood search function is under consideration for
+future versions.</p>
+
+
+<H3>`fffear' Recipes</H3>
+
+For a map with 3.5A phases try something like this:
+<pre>
+fffear hklin ~/hkl/gmto-unique.mtz xyzin alpha-helix-10.pdb xyzout alpha10-rot.pdb &lt;&lt; eof
+<!-- this code is invalid unless viewed in a browser -->
+SOLC 0.35
+SEARCH STEP 10
+RESO 1000.0 3.5
+CENTRE ORTH   7.464  16.169  16.893
+LABI FP=FP SIGFP=SIGFP PHIO=PHIB FOMO=FOM
+END
+eof
+</pre>
+
+At 5.0A some of the fragment density is no longer localised. This can
+cause a mismatch between the fragment and protein density. One
+solution is to use the 'FILTER MAP' keyword to match the map and
+fragment densities. A better option is to use the 5.0A maximum
+likelihood search target. The search target is provided on MAXIN, a
+model is also provided for visualisation purposes only:
+
+<pre>
+fffear hklin ~/hkl/gmto-unique.mtz maxin ml-helix-9-5.0A.max xyzin ml-helix-9.pdb xyzout alpha10-rot.pdb &lt;&lt; eof
+<!-- this code is invalid unless viewed in a browser -->
+SOLC 0.35
+SEARCH STEP 15
+RESO 1000.0 5.0
+FILTER MAP RADIUS 6.0
+CENTRE ORTH   7.464  16.169  16.893
+LABI FP=FP SIGFP=SIGFP PHIO=PHIB FOMO=FOM
+END
+eof
+</pre>
+
+When the search model is large (i.e. molecular replacement
+calculations or density fragment searches to find NCS of
+cross-crystal operators), the search can be foiled by long range
+variations in either the map or fragment density. In this case
+filtering should be applied to both the map and the search model:
+
+<pre>
+fffear hklin ~/hkl/rnase-unique.mtz mapin rnase-mol.map &lt;&lt; eof
+<!-- this code is invalid unless viewed in a browser -->
+SOLC 0.35
+SEARCH STEP 15
+MASK RADI 2.5
+RESO 1000.0 5.0
+FILTER MAP MODEL RADIUS 6.0
+CENTRE ORTH   7.464  16.169  16.893
+LABI FP=FP SIGFP=SIGFP PHIO=PHIB FOMO=FOM
+END
+eof
+</pre>
+
+In the case of molecular replacement calculation and NCS searches it
+is important that the search model and map should be scaled correctly:
+<ol>
+
+<li>To perform molecular replacement with a sharpened model (like the
+supplied helix fragments), no SCALE keyword is required. Ensure all
+the B-factors in the input pdb are set to 0.00.
+
+<li>To perform molecular replacement with a natural-B model, specify
+SCALE NATURAL.
+
+<li>To perform an NCS search with density cut from the same map, both
+maps will be on the same scale already, so you must specify SCALE 1.0
+0.0.
+
+<li>To refine the result of an MR or NCS search, use the MODEL ROTATE
+keyword with the approximate orientation, and change the SEARCH STEP
+and RANGE.
+</ol>
+
+FILTER MAP is useful in all three cases to match the mean of the map
+and the fragment.
+
+<H2><A NAME="files"></A>INPUT/OUTPUT FILES</H2>
+
+The structure factors and estimated phases must be provided in
+HKLIN. The search model must be specified by an coordinate model or
+map fragment in XYZIN or MAPIN.
+
+<H3>HKLIN<A NAME="hklin"></A></H3>
+
+<P>Input mtz file - This should contain the conventional (CCP4) asymmetric
+unit of data (see CAD).</P>
+
+<P>The mtz file should contain all reflections to the limit of the
+measured diffraction pattern, since all the reflections are used to
+accurately scale the data. However, only those reflection with phases,
+to the resolution limit specified by the compulsory RESOLUTION
+keyword, will actually be used in the search procedure.</P>
+
+<H3>XYZIN<A NAME="xyzin"></A></H3>
+
+<P>Input pdb file. This may contain an arbitrary crystal header, or
+none at all. The only restriction is that the atomic coordinates are
+given in Angstroms on arbitrary orthogonal axes. The B-factors of the
+input atoms should be set to an average value of (around)
+zero. Normally, all B-factors should be equal, unless some prior
+information about the B-factors of atoms in the desired fragment is
+available. (It is legitimate for example to make the B-factors of the
+C-beta or Oxygen atoms higher).</P>
+
+<H3>MAPIN<A NAME="mapin"></A></H3>
+
+<P>Input map file. This may be specified as an alternative to XYZIN to
+perform a search for NCS or cross-crystal operators. The map should
+contain the search density, placed in a cubic cell. Regions of the map
+outside the search mask should be set to zero. The search map will
+usually be generated using <A HREF="maprot.html">maprot</A> in map
+cutting mode, e.g.
+<small><blockquote><pre>
+maprot wrkin rnase-mir.map mskin rnase-mol.msk cutout rnase-mol.map &lt;&lt; eof
+MODE TO
+CELL UNIT 100 100 100 90 90 90
+GRID UNIT 150 150 150
+AVER 1
+ROTA POLAR 0 0 0
+TRAN 0 0 0
+eof
+</pre></blockquote></small>
+If the input map is calculated for the same structure factors which
+are given to fffear, the scaling can be overridden using
+<tt>SCALE&nbsp;1.0&nbsp;0.0</tt>.
+</P>
+<P>
+An input coordinate file may also be provided on XYZIN. This will not
+be used for the search, but will be rotated and output for
+visualisation purposes.
+</P>
+
+<H3>MAXIN<A NAME="maxin"></A></H3>
+
+<P>Input maximum likelihood search target. This is used in the same
+way as an input map, however it also contains density variance
+information. (Special software is used for the construction of ML
+targets for fffear). ML targets are resolution dependent, so the
+appropriate target should be used in conjunction with the RESOLUTION
+keyword. XYZIN may again be used for visualisation purposes.</P>
+
+<H3><A NAME="xyzout"></A>XYZOUT</H3>
+
+<p>Output pdb file. This contains multiple copies of the input
+fragment, rotated and translated to the positions of the best matches
+between the fragment density and and map density. The fragments are
+sorted in order of quality, with the best first. The b-factor is set
+to the value of the search function, with low values representing a
+good fit.</p>
+
+<p>Good matches to major secondary structure features are usually
+obvious because several fragments link up or overlap in sensible
+manners. At better than 4.0A resolution, the direction of the chain is
+commonly correct as well.</p>
+
+<p>The output pdb file may be further analysed with `ffjoin'.</p>
+
+<H3><A NAME="mapout"></A>MAPOUT</H3>
+
+<p>A map of the best fragment fit at each position in the map. Values
+closest to zero represent the best fit.</p>
+
+<H3><A NAME="solin"></A>SOLIN</H3>
+
+<P>Input mask - this is used as a filter for the results. Any
+rotation/translation solutions whose centre-of-mass falls in the
+solvent (zero) region of the mask will be excluded from the output.
+If no mask is given, the whole cell is allowed.
+</P>
+
+<P>Generally there is no point providing a solvent mask, since the
+solvent density generally does not provide a match to atomic
+features. However this may be useful when fitting a molecular
+replacement map from a very incomplete model, to exclude hits to the
+MR model.
+</P>
+
+
+<H2><A NAME="keywords"></A>KEYWORDS</H2>
+
+<P>Input is keyworded. Available keywords are: <A
+HREF="#solc">SOLC</A>, <A HREF="#labin">LABIN</A>, <A
+HREF="#resolution">RESOLUTION</A>, <A HREF="#model">MODEL</A>, <A
+HREF="#mask">MASK</A>, <A HREF="#filter">FILTER</A>, <A
+HREF="#search">SEARCH</A>, <A HREF="#scale">SCALE</A>, <A
+HREF="#centre">CENTRE</A>, <A HREF="#grid">GRID</A>, <A
+HREF="#form">FORM</A>, <A HREF="#truncate">TRUNCATE</A>, <A
+HREF="#strucfac">STRUCFAC</A>.
+
+<H2><A NAME="keywords_basic"></A>BASIC KEYWORDS</H2>
+<P>(SOLC and LABIN are compulsory. RESOLUTION is strongly recommended.) </P>
+
+<div align=center><table width=90% border=0><tr><td bgcolor=#a0ffa0>
+
+<H3><A NAME="solc"></A>SOLC &lt;solc&gt; [MEAN &lt;solvval&gt; &lt;protval&gt;]</H3>
+
+<DL>
+<DT>&lt;solc&gt;</DT>
+
+<DD> solvent content for scaling. <b>Always input the correct
+solvent content here to ensure correct scaling</b>. 0.0=all protein,
+1.0=all solvent. </DD>
+
+<DT><A NAME="solc_mean"></A>MEAN &lt;solvval&gt; &lt;protval&gt;</DT>
+
+<DD> used to set mean density for solvent and protein regions. This affects
+scaling and density modification. <BR>
+&lt;solvval&gt; = mean density in solvent region. <BR>
+&lt;protval&gt; = mean density in protein region. <BR>
+(defaults 0.32, 0.43 electrons per cubic angstrom) </DD>
+</DL>
+
+<H3><A NAME="labin"></A>LABIN FP=.. [SIGFP=..] PHIO=.. [FOMO=..]</H3>
+
+<P>Enough columns must be provided to allow calculation of a
+map. Common combinations include (calculated_magnitude + phase),
+(observed_magnitude + phase + weight), (weighted_magnitude + phase).
+<DL>
+<DT>FP</DT>
+
+<DD> = F magnitude </DD>
+
+<DT>SIGFP</DT>
+
+<DD> = standard deviation, 0 for unmeasured </DD>
+
+<DT>PHIO</DT>
+
+<DD> = best initial phase estimate </DD>
+
+<DT>FOMO</DT>
+
+<DD> = weight attached to PHIO </DD>
+</DL>
+</P>
+
+<H3><A NAME="resolution"></A>RESOLUTION &lt;rmin&gt; &lt;rmax&gt; </H3>
+
+<P>Resolution range of reflections to include in the translation
+search stage of the calculation. This should be set to cover the
+resolution range for which significant phase information is
+available. Good results are obtained with phases to 4.0A or better;
+for larger fragments (10 residues or more) information may be obtained
+at still lower resolutions. <BR> (default is the whole range of the
+input mtz file)
+</P>
+
+<H3><A NAME="model"></A>MODEL [RADIUS &lt;mdlrad&gt;] [RESOLUTION &lt;mrmax&gt;] [BFACTOR &lt;bfac&gt;] [ROTATE &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt;] </H3>
+
+<P>Set the parameters for the model atoms.
+<dl>
+<dt>&lt;mdlrad&gt;<dd>is the radius over which the atomic density is
+calculated (as VDWR in sfall).
+<dt>&lt;mrmax&gt;<dd> is the resolution at which the atomic shape
+functions are calculated. At higher resolutions this should make
+little difference, however at lower resolutions a significant amount
+of the atomic density leaks out of the fragment mask, and so better
+results are obtained if the atomic shape function is corrected.
+If &lt;mrmax&gt; is set to zero, resolution truncation is disabled
+and the true shape function is used.
+<dt>&lt;bfac&gt;<dd> Temperature factor to add to all the atoms in the input
+fragment. By default the search is conducted in a map sharpened to
+Boverall=0. If a different type of map is used through use of the
+SCALE card, the B-factors of the model atoms should be adjusted
+accordingly.
+<dt>&lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt;<dd> An initial rotation
+to apply to the model before starting the search. This rotation is
+included in the output rotation angles. Useful for doing a translation
+search at fixed orientation, or for refining an MR solution.
+</dl>
+Defaults: &lt;mdlrad&gt;=2.5A, &lt;mrmax&gt;=&lt;rmax&gt;,
+&lt;bfac&gt;=0, &lt;alpha&gt;=&lt;beta&gt;=&lt;gamma&gt;=0.</P>
+
+<H3><A NAME="mask"></A>MASK [RADIUS &lt;mskrad&gt;] </H3>
+
+<P>Set the radius of the fragment mask about the model atoms. This
+determines the volume over which the agreement between the map and the
+model are compared. Defaults: &lt;mskrad&gt;=2.5A.</P>
+
+<H3><A NAME="filter"></A>FILTER [MAP] [MODEL] [VARIANCE] [RADIUS
+&lt;fltrad&gt;] </H3>
+
+<P>Apply a filter to the map and/or model before starting the
+search. The filter may match either the local mean (default) within
+the filter radius, or it may match both the local mean and
+variance. This is useful at low resolutions or when performing MR or
+NCS searches.
+<dl>
+<dt>MAP<dd> apply filter to map.
+<dt>MODEL<dd> apply filter to search model.
+<dt>VARIANCE<dd> match both local mean and variance.
+<dt>&lt;fltrad&gt;<dd> radius of sphere for local mean/variance calculation.
+</dl>Defaults: do not filter either map or model, do not match
+variance, &lt;fltrad&gt;=5.0A</P>
+
+<H3><A NAME="search"></A>SEARCH [STEP &lt;step&gt;] [RANGE &lt;beta&gt;] [PEAKS &lt;npeaks&gt;] [GRID &lt;sampling&gt;]</H3>
+
+<P>Set the parameters for the search function.
+<dl>
+<dt>&lt;step&gt;<dd> is the orientation step angle in degrees. At 4.0A
+resolution or better, a search step of 10 degrees is sufficient for a
+10 residue fragment. The search step should be smaller at higher
+resolutions or for larger models. A quick and dirty result may often
+be obtained with a much coarser search step, as large as 30
+degrees.
+<dt>&lt;range&gt;<dd> Set the maximum range in degrees for the
+search. To perform a translation search on a single orientation, set
+&lt;range&gt; to 0.1. To refine the result of a previous search, use
+SEARCH STEP 2 RANGE 10 and give the approximate orientation with MODEL
+ROTATE.
+<dt>&lt;npeaks&gt;<dd> is the number of peaks in the resulting search
+function for which rotated fragment atoms will be output.  Defaults:
+&lt;step&gt;=10degrees, &lt;npeaks&gt;=100.
+<dt>&lt;sampling&gt;<dd> is the factor by which the search grid is oversampled. Higher values give finer search grids, and potentially better results at the cost of time. Default: &lt;sampling&gt;=1.333.
+</dl>
+</P>
+
+<H3><A NAME="scale"></A>SCALE [NATURAL] [&lt;scale&gt; &lt;bfac&gt;] </H3>
+
+<P>Override internal scaling and scale input data by:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;F<sup>2</sup>&nbsp;=&nbsp;&lt;scale&gt;&nbsp;exp&nbsp;(&lt;bfac&gt;&nbsp;s/2)&nbsp;F<sub>obs</sub><sup>2</sup><br>
+Scaling is critical to correctly fitting the density with a model. The
+data scale will be accurately determined automatically if structure
+factor magnitudes are provided to better than 4.5A, otherwise it is a
+good idea to provide a SCALE card. 
+<dl>
+<dt>NATURAL<dd>place the map on an absolute scale but do not adjust the B-factor.
+</dl>
+</P>
+
+<H3><A NAME="centre"></A>CENTRE FRAC/ORTH &lt;x&gt; &lt;y&gt; &lt;z&gt; </H3>
+
+<P>Center the output fragment positions in an asymmetric unit around
+&lt;x&gt; &lt;y&gt; &lt;z&gt;, given in fractional or orthogonal
+coordinates in accordance with the preceding keyword. Useful to put
+your matches in the same region and any model you are working on.</p>
+
+
+</table></div>
+
+
+<H2><A NAME="keywords_other"></A>OTHER KEYWORDS</H2> Don't use these
+unless you really know what you are doing. In which case you'd better
+have a better idea of what you are doing than I do.
+<div align=center><table width=90% border=0><tr><td bgcolor=#ff8080><small>
+
+<H3><A NAME="grid"></A>GRID &lt;nx&gt; &lt;ny&gt; &lt;nz&gt;</H3>
+
+<P>Set the grid for the calculation. Ideally the grid spacing should
+be 1/5 of the resolution of the phases, thus for 4.0A phases the grid
+spacing must be 0.8A. Spacings greater than 1/4 of the resolution will
+cause an error. Grid sampling must be a multiple of 4 and obey any
+other requirements imposed by the spacegroup.<BR>
+
+<H3><A NAME="form"></A>FORM &lt;z&gt; &lt;a1&gt; &lt;b1&gt; &lt;a2&gt; &lt;b2&gt; </H3>
+
+<P>Alternate 2-gaussian formfactor coefficient for atomic number
+&lt;z&gt;.
+f=&lt;a1&gt;exp(&lt;b1&gt;s)+&lt;a2&gt;exp(&lt;b2&gt;s). Formfactors
+are supplied for H, N, C, O, S and other atom types are scaled from
+these. Given that the model B-factors will generally be wrong, a crude
+approximation is sufficient for all common cases.</P>
+
+<H3><A NAME="truncate"></A>TRUNCATE &lt;rmin&gt; &lt;rmax&gt; </H3>
+
+<P>Resolution range of reflections to include in the data scaling
+stage. This keyword can be used to exclude part of the input data by
+resolution cutoffs. This is generally highly inadvisable.<BR> (default
+is the whole range of the input mtz file)</P>
+
+<H3><A NAME="strucfac"></A>STRUCFAC [REAL &lt;rscale&gt;] [RECIP &lt;hscale&gt;] </H3>
+
+<P>Use a (slow) direct Fourier to calculate the model and mask
+structure factors instead of the default FFT. The REAL and RECIP
+keywords may then be used to set the spacing of the real space grid
+used to calculate the fragment density and mask, and the reciprocal
+space sampling of the fragment and mask transforms.
+<dl>
+
+<dt>&lt;rscale&gt;
+<dd>The spacing in Angstroms of the grid on which the fragment model density
+and mask are calculated. Default 0.5 A.
+
+<dt>&lt;hscale&gt;
+<dd>The spacing in reciprocal Angstroms of the grid on which the
+fragment and mask transforms (structure factors) are calculated. This
+grid needs to be quite fine to ensure accurate interpolation when the
+fragment transform is related. The default value is sufficient for a
+model whose longest axis is 15A, for larger models decrease this
+number proportionally. Default 0.01 A<sup>-1</sup>.
+
+</dl>
+</P>
+
+
+</small></table></div>
+
+<H2>OUTPUT</H2>
+
+<P>The output PDB file (XYZOUT) contains up to 1000 copies of the
+input molecule in decreasing order of fit to the density. For the
+purposes of visualisation I find it useful to get the header and the
+first 250 C-alpha atoms from this file, as follows:
+
+<br><tt>grep 'C[AR]' XYZOUT | head -250 > ca.pdb</tt>
+</P>
+
+<P>The translation function map (which omits the orientation
+information) is also output on MAPOUT. This has peaks where the
+origins of the good orientations are found. If the input model has an
+alpha carbon at the origin a rough backbone trace of map regions
+matching the fragment may be obtained.
+</P>
+
+<H2>AUTHOR</H2>
+
+<P>Kevin D. Cowtan, Department of Chemistry, University of York <BR>
+email: cowtan@ysbl.york.ac.uk </P>
+
+<H2><A NAME="references"></A>REFERENCES</H2>
+
+<OL>
+<P><!-- KEEP startreferencelist --></P>
+
+<LI>K. Cowtan (1998), Acta Cryst. D54, 750-756.
+ Modified phased translation functions and their application to
+ molecular fragment location.
+</LI>
+
+<LI>Kleywegt G. J., Jones T. A. (1997) Acta Cryst., D53, 179-185.
+ Template convolution to enhance or detect structural features in
+ macromolecular electron-density maps.
+</LI>
+
+<LI>Rossman M. G., Arnold E. (1993) International Tables for
+Crystallography Volume C, Section 2.3: Patterson and molecular
+replacement techniques (Kluwer Academic Publishers).
+</LI>
+
+<!-- KEEP endreferencelist -->
+</OL>
+
+<H2>SEE ALSO</H2>
+
+<P><A HREF="fffear_fraglib.html">fffear fragment library</a>, <A HREF="ffjoin.html">ffjoin</a>, <A HREF="maprot.html">maprot</A>, <A HREF="xloggraph.html">xloggraph</A>
+</P>
+
+<H2><A NAME="examples"></A>EXAMPLES</H2>
+
+<P><A HREF="../examples/unix/runnable/fffear.exam">fffear</A> </P>
+
+</BODY>
+</HTML>

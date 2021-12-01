@@ -1,0 +1,168 @@
+<html>
+<head><title>CCP4 Program Suite: omit</title></head>
+<body>
+
+<!-- ::INDEX_INFO::OMIT::Supported::Map calculation and manipulation::program to calculate omit-maps according to Bhat procedure:::::::: -->
+
+<H1> OMIT (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>omit </b>
+- program to calculate omit-maps according to Bhat procedure
+<H2> SYNOPSIS</H2>
+<b>omit HKLIN</b>
+<i>foo_in.mtz</i>
+<b>MAPOUT</b>
+<i>foo_out.map</i>
+<br>
+ [Key-worded input]
+
+<H2><a name="description">DESCRIPTION</a></H2>
+The present program has combined the original conglomerate
+of separate programs, all needed to calculate an omit-map, into
+one single automatic procedure. The user is strongly advised
+to read the paper "CALCULATION OF AN OMIT MAP" by T.N. BHAT,
+<i>J. Appl. Cryst.</i> (1988) <b>21</b>, 279-281.
+
+<p>
+<b>Note:</b> Memory requirements are governed by a parameter
+MAXREF set in the program, and this may need to be increased for
+large problems. If this is the case, the program will hopefully
+exit gracefully and let you know. Change it as necessary (top of 
+the program source code) and recompile. Increasing MAXREF increases
+the record lengths for some scratch files, and this can cause 
+problems on some systems. These scratch files are also large
+in total, which may also cause problems.
+
+<H2><a name="files">INPUT AND OUTPUT FILES</a></H2>
+<H3> Input</H3>
+<dl compact>
+<dt> HKLIN<dd>
+Input data in MTZ format. This file should contain observed
+and/or calculated structure factor amplitudes, and phases from
+some source.
+</dl>
+<H3> Output</H3>
+<dl compact>
+<dt> MAPOUT<dd>
+Output binary omit-map. By default, this is in CCP4 format, but
+if the keyword <a href="#mffoutput">MFFOUTPUT</a> is specified then
+it will be output in MFF format (Groningen Master Fourier File format).
+The fast, medium and slow axes are set to be Z, X and Y respectively.
+An output CCP4 map can be manipulated by the programs
+<a href="mapmask.html">MAPMASK</a> or <a href="maprot.html">MAPROT</a>
+if required.
+</dl>
+
+<H2><a name="keywords">KEYWORDED INPUT</a></H2>
+
+<H3><a name="labin">LABIN</a> &lt;program label&gt;=&lt;file label&gt;...</H3>
+(Compulsory.)
+<p>
+Program labels are:
+<dl compact>
+<dt>FP <dd> Observed structure factor amplitudes, Fobs.
+<dt>FC <dd> Calculated structure factor amplitudes, Fcalc.
+<dt>PHI <dd> Phases, Phi.
+</dl>
+
+<H3><a name="scale">SCALE</a> &lt;scale_fobs&gt; &lt;scale_fcalc&gt; </H3>
+(Compulsory.)
+<p>
+&lt;scale_fobs&gt; and &lt;scale_fcalc&gt; are scale
+factors for Fobs and Fcalc respectively. For example,
+&lt;scale_fobs&gt; = 2.0 and &lt;scale_fcalc&gt; = -1.0
+allows one to calculate a 2FO-FC omit-map.
+
+<H3><a name="resolution">RESOLUTION</a> &lt;resmin&gt; &lt;resmax&gt;</H3>
+Resolution limits, either 4(sin theta/lambda)**2 or d in Angstrom
+(either order). If this card isn't given, resolution range
+will be read from HKLIN.
+
+<H3><a name="truncate">TRUNCATE</a></H3>
+Include this card to truncate initial map, so that the
+density values fall between -1.0*RMSMAP and 20.0*RMSMAP (ITRUNC=1). 
+Default is ITRUNC= 0 (recommended).
+
+<H3><a name="histogram">HISTOGRAM</a></H3>
+Include this card to apply HISTOGRAM MAPPING to
+the omit map, so that the histogram of densities of the
+omit map equals that of the starting map (IHIST =1). 
+Default is IHIST = 0 (recommended).
+
+<H3><a name="dlimit">DLIMIT</a> &lt;dstlmt&gt;</H3>
+Points in the electron density map within &lt;dstlmt&gt; of
+a symmetry related grid point are set to -RMS density value
+of the map. Set &lt;dstlmt&gt; = 0.0 for no modification
+of input map; 3.0-3.5 Angstrom seems a good value otherwise.
+[Default 3.0]
+
+<H3><a name="grid">GRID</a> &lt;nx&gt; &lt;ny&gt; &lt;nz&gt;</H3>
+Number of sampling divisions along each unit cell edge for the
+output map. The number of points along each axis should be
+even, and a product of the factors 2, 3, 4 or 5 (each of
+which may appear any number of times). There is also a maximum
+value for the number of points set in the program. If any
+of &lt;nx&gt; &lt;ny&gt; and &lt;nz&gt; do not satisfy these
+conditions, then they will be reset appropriately. If this
+keyword is omitted, then the program will choose appropriate
+values automatically.
+
+<H3><a name="mffoutput">MFFOUTPUT</a></H3>
+Output omit map in MFF format (Groningen Master Fourier File format).
+The default is to output the omit map in CCP4 format.
+
+<H3><a name="title">TITLE</a> &lt;title&gt;</H3>
+&lt;title&gt; will be written to MAPOUT.
+
+<H3><a name="end">END</a></H3>
+End input and run program.
+
+<H2><a name="function">PROGRAM FUNCTION</a></H2>
+
+Internal settings of the program:
+<ul>
+<li>The neutral volume (see Bhat's article!) has been fixed to
+a volume of two (2!) gridpoints around the phased volume.
+<li>In contrast to what Bhat mentions (step J of his procedure),
+in the current version of the program, structure factors are
+obtained by Fourier transformation of a map in which the
+density values in the phased and neutral volumes have been
+set to 0.0.
+<li>Before starting the OMIT procedure, the electron density
+map may be truncated such that the density values are 
+between -1.0*RMSMAP and 20.0*RMSMAP.
+</ul>
+
+<H2><a name="examples">EXAMPLES</a></H2>
+
+<H3>Unix example script found in $CEXAM/unix/runnable/</H3>
+<ul>
+<li><a href="../examples/unix/runnable/omit.exam">omit.exam</a>
+</ul>
+
+<H2> REFERENCES</H2>
+<ol>
+<!-- KEEP startreferencelist -->
+<li>
+T.N. Bhat, "CALCULATION OF AN OMIT MAP", <i>J. Appl. Cryst.</i>,
+<b>21</b>, 279-281 (1988)
+<li>
+F.M.D.Vellieux and B.W.Dijkstra, 
+"Computation of Bhat's OMIT maps with different coefficients",
+<i>J. Appl. Cryst.</i>, <b>30</b>, 396-399 (1997)
+<!-- KEEP endreferencelist -->
+</ol>
+
+<H2> AUTHOR</H2>
+Program written by Bauke Dijkstra (April 1994).
+<ADDRESS> <A HREF="mailto:b.w.dijkstra@rug.nl">bauke@chem.rug.nl</A> </ADDRESS>
+<p>
+Modified by Fred. Vellieux to include histogram mapping and the option
+of skipping the map truncation step (Feb. 1996).
+<ADDRESS> <A HREF="mailto:vellieux@ibs.fr">vellieux@lccp.ibs.fr</A> </ADDRESS>
+<p>
+CCP4 modifications made by Martyn Winn (July 1997).
+<ADDRESS> <A HREF="mailto:m.d.winn@dl.ac.uk">m.d.winn@dl.ac.uk</A> </ADDRESS>
+
+</BODY>
+</HTML>

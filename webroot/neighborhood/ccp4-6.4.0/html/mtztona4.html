@@ -1,0 +1,103 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::MTZTONA4::Supported::MTZ manipulations / conversions::interconvert MTZ reflection file and ASCII format:::::::: -->
+
+<H1> MTZTONA4 (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>mtztona4, na4tomtz </b>
+- interconvert MTZ reflection file and ASCII format.
+<H2> SYNOPSIS</H2>
+<b>mtztona4 hklin</b>
+<i>foo.mtz </i>
+<b>hklout </b>
+<i>foo.na4</i>
+<br>
+<b>na4tomtz  hklin</b>
+<i>foo.na4  </i>
+<b>hklout </b>
+<i>foo.mtz</i>
+<H2> DESCRIPTION</H2>
+The 
+<b>mtztona4</b>
+and
+<b>na4tomtz</b>
+programs interconvert binary and ASCII reflection files for transport
+of reflection data between machine types.
+<P> 
+No input is required, other than the command line with file
+assignments.
+<P> 
+mtztona4 can optionally produce a run-length-encoded (RLE) format that
+is more compact than the original NA4 format; however the old version
+of na4tomtz cannot read the new format (it will echo the input data to
+standard output without converting it).  Only the current version of
+na4tomtz can convert the RLE format back to MTZ (of course the current
+na4tomtz can also convert the old NA4 format to MTZ).
+<P> 
+To select the RLE option in mtztona4, define the environment variable:
+CCP4_RLENA4  (na4tomtz does not require this to be defined as it detects
+automatically NA4 or RLE format).
+<P> 
+N.B.  With the current version of the CCP4 library there is little
+need for the NA4 format since MTZ files may be read transparently on
+different architectures (though it is useful for sending data by e-mail).
+<H2> DETAILS OF OPERATION</H2>
+<b>mtztona4</b>
+gets index values from the ranges for each column
+for REAL to CHARACTER*4 inter-conversion, with REALs converted
+to INTEGER in the range 0 to 2**24-1.  (Negative numbers are 
+converted to 2's complement.)  Then the INTEGER value is converted to
+CHARACTER*4 using a 64-character translation table.
+<P> 
+After an ASCII readable header is output to HKLOUT
+the reflection data are stored as characters.  A sample of an output
+file is given below:
+<pre>
+
+u000200000002Kk0eU0000000000000000000000000000000000
+u000200040005ts0B000000000007hc07w000000000000000000
+u000200080003Kk0K80000000000000000000000000000000000
+
+
+</pre>
+<P> 
+If the MTZ file is converted so that unmeasured items are flagged (F's with
+zero sigmas changed to NaN's), and the CCP4_RLENA4 option is activated, the
+same piece of output looks like this:
+<pre>
+
+u%02*22Kk0eU%.7
+u%02%04%05ts0B%0.17hc07w%.3
+u%02%08%03Kk0K8%.7
+
+
+</pre>
+<H2> ACCURACY</H2>
+The errors are in relation to the largest absolute value in the column,
+so in general you will have an error of 0.01 relative to about 90000 
+or 1 in 10**8, which is not likely to cause any problems.  
+<H2> FILE SIZES</H2>
+The run-length-encoded format gives a somewhat smaller file than either
+the original MTZ file or the old NA4 file, for example (sizes in bytes):
+<pre>
+-rw-r--r--  1 programs   169684 Mar  2 13:14 toxd.mtz
+-rw-r--r--  1 programs   172130 Mar  3 12:12 toxd.na4
+-rw-r--r--  1 programs   110437 Mar  3 12:14 toxd_flag.rle
+</pre>
+<H2> EXAMPLE</H2>
+<pre>
+  mtztona4  hklin toxd  hklout  toxd.na4
+  na4tomtz  hklin  toxd.na4  hklout  toxd
+</pre>
+<H2> AUTHOR</H2>
+Ian Tickle, Birkbeck College
+
+
+
+
+
+
+
+</body></html>

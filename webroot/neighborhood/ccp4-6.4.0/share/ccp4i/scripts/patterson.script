@@ -1,0 +1,305 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#===========================================================================
+#
+# patterson.script
+#
+#===========================================================================
+
+# Source file with utility procedures
+  source [SearchPath TOP src CCP4_utils.tcl]
+  source [SearchPath TOP utils map_utils.tcl]
+  source [SearchPath TOP utils phasing_utils.tcl]
+# Read the crystal parameters files
+  ReadSymops [FileJoin [GetEnvPath CLIBD] symop.lib]
+  ReadCrystalData [SearchPath TOP etc crystal.lib]
+
+  if { $RUN_FFT } {
+
+  set SAVE_IFXYZLIM $IFXYZLIM
+  if { $IFXYZLIM } {
+    set MAPASU [GetTmpFileName -ext map]
+    set IFXYZLIM 0
+  } else {
+    set MAPASU $MAPOUT
+  }
+
+  if { [regexp DIFFERENCE|ANOMALOUS $PATTERSON_MODE ] \
+     && $EXCLUDE_BYDIFF && $EXCLUDE_BYDIFF_DIFF == "" } {
+# Run scaleit ot find optimal value for exclude cutoff
+    set EXCLUDE_BYDIFF [FindScaleitDiff $HKLIN \
+	$F1 $SIG1 $F2 $SIG2 EXCLUDE_BYDIFF_DIFF ]
+  }
+
+  if {$SIG1 == "Unassigned" || $SIG1 == ""} {set EXCLUDE_BYSIGMA 0} 
+
+  CreateComScript fft patterson_script
+
+  set status [ Execute "[BinPath fft] HKLIN \"$HKLIN\" MAPOUT \"$MAPASU\""  \
+   $patterson_script program_status report]
+
+  if { $SAVE_IFXYZLIM } { 
+
+    set IFXYZLIM 1
+    set SAVE_SPACE_GROUP $SPACE_GROUP
+    set SPACE_GROUP {}
+
+    CreateComScript mapmask extend_script
+
+    set cmd "[BinPath mapmask] MAPIN \"$MAPASU\" MAPOUT \"$MAPOUT\""
+    set status [Execute "$cmd" $extend_script program_status report ]
+
+    set SPACE_GROUP $SAVE_SPACE_GROUP
+
+    # 17/02/2003 Set MAPASU to MAPOUT so that peaksearch and plotting
+    # is done from the extended map
+    set MAPASU $MAPOUT
+
+  }
+
+
+  } else {
+
+# User has input map (name is MAPOUT) but need to define MAPASU for some context
+
+    set MAPASU $MAPOUT
+
+  }
+
+
+#==EXPORT+MAP============================================================
+
+
+   if { ![regexp CCP4 $FFT_MAP_FORMAT ] } {
+     ConvertMapFormat $FFT_MAP_FORMAT $MAPOUT $EXPORT_FILE $LOG_FILE    
+   }
+
+
+#==========================================Find out the harker sections
+
+  if { $RUN_NPO && $PLOT_SECTIONS_MODE == "HARKER" } {
+
+    set hsect_list [GetHarkerSections $SPACE_GROUP]
+    if { $hsect_list == 0 } {
+      # GetHarkerSections returns zero if the spacegroup
+      # wasn't located in the lookup table in crystal.lib
+      WriteToLog "Warning: no harker sections found for $SPACE_GROUP"
+      set hsect_list {}
+    }
+    set N_SECTIONS 0
+    set SECTION_FRAC 1
+
+    foreach hsect $hsect_list {
+      incr N_SECTIONS
+      set SECTION_AXIS($N_SECTIONS)  [lindex $hsect 0]
+      set F_SECTION($N_SECTIONS)  [lindex $hsect 2]
+      set L_SECTION($N_SECTIONS) $F_SECTION($N_SECTIONS)
+      set SKIP_SECTION($N_SECTIONS) 1
+    }
+  }
+
+
+#==create maps with alternative axis order =====================MAPMASK
+
+# Do we need to run Mapmask
+
+  set MAXIS(X) 0
+  set MAXIS(Y) 0
+  set MAXIS(Z) 0
+  set mapmask_order(X) "Y Z X" 
+  set mapmask_order(Y) "Z X Y" 
+  set mapmask_order(Z) "X Y Z" 
+
+# Find out what axis order is in existing map  - run mapdump
+
+  if { ![GetMapHeader $MAPASU space_group cell xyzlim grid axes] } {
+    WriteToLog "ERROR extracting information from header of map $MAPASU
+Check that the file is created and that the mapdump utility is available on your system"
+    TerminateScript 0 -report "ERROR extracting information from header of map $MAPASU
+Check that the file is created and that the mapdump utility is available on your system"
+  }
+  set lattice [GetSpaceGroupLattice $space_group]
+  set section_axis [lindex $axes 2]
+
+# For peaksearch to output peak list in reasonable order make sure 
+# map sectioned on Z for all but monoclinic space groups
+  if { $IFPEAKSEARCH || ( $RUN_NPO && [regexp PEAKS $COORDS_MODE ] ) } {
+    if { [regexp MONO $lattice] } {
+      set MAXIS(Y) 1
+    } else {
+      set MAXIS(Z) 1
+    }
+  }
+
+#  Need to generate permuted maps if we are going to run NPO to
+#  generate plot
+
+  if { $RUN_NPO && $N_SECTIONS > 0 } {
+    for { set n 1 } { $n <= $N_SECTIONS } { incr n } {
+      set axis  $SECTION_AXIS($n)
+      set MAXIS($axis) 1
+    }
+  }
+
+# Do map permutation if necessary
+
+  foreach axis [list X Y Z ] {
+    if { $MAXIS($axis) }  {
+
+      if { [regexp $section_axis $axis ] } { 
+        set PERMUT_MAP_FILE($axis) $MAPASU 
+      } else {
+        set PERMUT_MAP_FILE($axis) [GetTmpFileName -ext "_map_$axis" ]
+        WriteComFile mapmask_script "AXIS  $mapmask_order($axis)\nEND"
+
+        set cmd "[BinPath mapmask] MAPIN \"$MAPASU\" MAPOUT \"$PERMUT_MAP_FILE($axis)\""
+
+        set status [Execute  $cmd  $mapmask_script program_status report ]
+      }
+    }
+  }
+
+
+#============================================coordinates from peakmax or vectors
+
+  if { $IFPEAKSEARCH || ( $RUN_NPO && [regexp PEAKS $COORDS_MODE ] ) } {
+    if { [regexp MONO $lattice] }  {
+      set searchmap $PERMUT_MAP_FILE(Y)
+    } else {
+      set searchmap $PERMUT_MAP_FILE(Z)
+    }
+
+    set XYZFRC [SetOutputFileRoot]_peaks.ha
+
+    CreateComScript peakmax peaks_script
+    set cmd "[BinPath peakmax]"
+    append cmd " MAPIN \"$searchmap\""
+    append cmd " XYZOUT \"$PEAK_FILE\""
+    append cmd " XYZFRC \"$XYZFRC\""
+    set status [Execute $cmd $peaks_script program_status report ]
+
+    set XYZ_FILE $PEAK_FILE
+    AddOutputFile $XYZFRC PROJECT
+
+  }
+
+  if { $RUN_NPO && [regexp VECTORS $COORDS_MODE ] } {
+
+    if { [regexp FILE $VECTOR_ATOM_MODE ] } {
+
+      # read the coords from a ha file 
+      set status [ReadFile $VECTOR_ATOM_FILE ha_list -split]
+
+      if { $status } {
+
+        set VECTORS_NATOMS 0
+        foreach line $ha_list {
+          if { [regexp ^ATOM|HETATM $line] } {
+            incr VECTORS_NATOMS
+            set VECTORS_ATOM_NAME($VECTORS_NATOMS) [lindex \
+     [list 0 A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]  \
+     			[iremainder  $VECTORS_NATOMS 26] ]
+
+            set VECTORS_ATOM_X($VECTORS_NATOMS) [lindex $line 2]
+            set VECTORS_ATOM_Y($VECTORS_NATOMS) [lindex $line 3]
+            set VECTORS_ATOM_Z($VECTORS_NATOMS) [lindex $line 4]
+          }
+        }
+
+        # Report successful file read
+        WriteToLog "$VECTORS_NATOMS atoms read from $VECTOR_ATOM_FILE"
+
+      } else {
+
+        # There was a problem reading the file
+        WriteToLog "ERROR reading atoms from $VECTOR_ATOM_FILE"
+
+      }
+    }
+
+    set XYZ_FILE "[SetOutputFileRoot]_vectors.pdb"
+
+    CreateComScript vectors vectors_script
+
+    set cmd "[BinPath vectors] MAPIN \"$MAPASU\" XYZOUT \"$XYZ_FILE\""
+    set status [Execute $cmd $vectors_script program_status report ]
+
+     AddOutputFile $XYZ_FILE PROJECT
+
+  }
+
+
+#===Create 2D plot ===========================================NPO
+
+  if { $RUN_NPO && $N_SECTIONS > 0 } {
+
+    if { $NPO_SCALE == ""  } {
+      if { $NPO_MAX_SIZE == "" } { set NPO_MAX_SIZE 15.0 }
+      for { set i 1 } { $i <= $N_SECTIONS } { incr i } { 
+		lappend axes_list $SECTION_AXIS($i) }
+      NpoMapScale $SPACE_GROUP $cell $N_SECTIONS $axes_list $NPO_MAX_SIZE \
+        NPO_SCALE 
+    }
+
+
+# extract atom names from PDB file
+    set NATOMS 0
+    if { [StringSame $COORDS_MODE PEAKS FILE ] \
+			&& $NPO_LABELS == "NUMBER"  } {
+      if { [ReadFile $XYZ_FILE atom_list ] &&  \
+        [ExtractTextLine $atom_list " " 0 all atomname] } {
+        if { [regexp VECTORS $COORDS_MODE ] } {
+          while { [ExtractTextLine - ATOM 0 1 atomname ] } {
+            incr NATOMS; append ATOM($NATOMS) $atomname
+          }
+        } else {
+          while { [ExtractTextLine - ATOM 0 [list 3 5 4] atomname ] } {
+            incr NATOMS
+            append ATOM($NATOMS) [lindex $atomname 0] \
+			[lindex $atomname 1 ] [lindex $atomname 2 ]
+          }
+        }
+      }
+    }
+    if { $NATOMS > 100 } { set NATOMS 100 }
+    if { $NATOMS <= 0 } { set NPO_LABELS LABEL }
+
+    set PLOT_FILE_ROOT [SetOutputFileRoot]
+
+    for { set n 1 } { $n <= $N_SECTIONS } { incr n } {
+
+      set AXIS $SECTION_AXIS($n)
+      if { $SECTION_FRAC && $PLOT_SECTIONS_MODE != "HARKER"} {
+        set FIRST_SECTION $FRAC_F_SECTION($n)
+        set LAST_SECTION $FRAC_L_SECTION($n)
+        set SKIP_SECTIONS $FRAC_SKIP_SECTION($n)
+      } else {
+        set FIRST_SECTION $F_SECTION($n)
+        set LAST_SECTION $L_SECTION($n)
+        set SKIP_SECTIONS $SKIP_SECTION($n)
+      }
+
+#    puts "N_SECTION $n $AXIS $FIRST_SECTION $LAST_SECTION $SKIP_SECTIONS"
+
+      CreateComScript npo npo_script($n)
+
+      set cmd "[BinPath npo] MAPIN \"$PERMUT_MAP_FILE($AXIS)\""
+
+      if { $COORDS_MODE != "NO" } { append cmd " XYZIN1 \"$XYZ_FILE\"" }
+
+      set NPO_PLOT_FILE $PLOT_FILE_ROOT 
+      append NPO_PLOT_FILE "_" $n ".plt"
+      append cmd " PLOT \"$NPO_PLOT_FILE\""
+
+      set status [Execute $cmd $npo_script($n) program_status report ]
+
+      AddOutputFile $NPO_PLOT_FILE  PROJECT
+    }
+  }

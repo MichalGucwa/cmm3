@@ -1,0 +1,38 @@
+#
+#     Copyright (C) 2005 Ronan Keegan 
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Application.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#===========================================================================
+#
+# dimple.script
+#
+#===========================================================================
+
+global env
+global job_params
+
+############################################################################
+# Make a note of the main directory to run in
+############################################################################
+
+ #set rundir [FileJoin [GetDefaultDirPath] search_$job_params(JOB_ID)]
+ #AddOutputDir $rundir
+
+############################################################################
+# Start the job 
+############################################################################
+
+ CreateComScript dimple dimple_script
+
+ set workdir [GetDefaultDirPath]
+ set rundir [string trimright [file join $workdir $job_params(JOB_ID)_dimple_pipeline _] _]
+ AddOutputDir $rundir
+
+ set cmd "[BinPath ccp4-python] -m dimple $HKLIN $XYZIN --hklout $HKLOUT --xyzout $XYZOUT --icolumn $IMEAN --sigicolumn $SIGIMEAN $rundir"
+
+ set status [Execute $cmd $dimple_script program_status report]
+

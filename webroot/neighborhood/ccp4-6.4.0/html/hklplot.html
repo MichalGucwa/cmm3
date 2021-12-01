@@ -1,0 +1,136 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::HKLPLOT::Supported::Plotting / Graphics::plots a precession photo from an HKL data file:::::::: -->
+
+<H1> HKLPLOT (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>hklplot </b>
+- plots a precession photo from an HKL data file
+<H2> SYNOPSIS</H2>
+<b>hklplot  hklin  </b>
+<i>foo[.mtz]  </i>
+<b>plot</b>
+<i>foo[.plt]</i>
+<br>
+ [<A HREF="#keywords">Keyworded input</A>]
+<H2> SEE ALSO</H2>
+Consider using 
+<b>hklview</b>
+rather than
+<b>hklplot</b>
+(
+<b>hklview </b>
+is an X-windows based display program doing more or less the same thing).
+<H2><a name="description">DESCRIPTION</a></H2>
+This program plots a 
+<i>simulated precession photograph</i>
+from an HKL file input,
+and gives the percentage of the total reflections in the file
+for each (sin (theta)/lambda)^2 range.
+<b>hklplot</b>
+can also generate a reciprocal lattice pattern for any cell and spacegroup
+(which can be useful for teaching).
+<br>
+The output is a
+<i>plot84 </i>
+<i>metafile,</i>
+which can be plotted with 
+<b> xplot84driver</b>
+or 
+<B>pltdev</B>.<br>
+<H2><A NAME="keywords"></A> KEYWORDED INPUT</H2>
+The various data control lines are identified by keywords, those
+available being:
+<blockquote>
+<A HREF="#anom"><B>ANOM</B></A>, <A HREF="#bins"><B>BINS</B></A>,
+<A HREF="#cell"><B>CELL</B></A>, <A HREF="#end"><B>END</B></A>,
+<A HREF="#labin"><B>LABIN</B></A>, <A HREF="#list"><B>LIST</B></A>,
+<A HREF="#nspgroup"><B>NSPGROUP</B></A>, <A HREF="#projection"><B>PROJECTION</B></A>,
+<A HREF="#resolution"><B>RESOLUTION</B></A>, <A HREF="#scale"><B>SCALE</B></A>,
+<A HREF="#sigma"><B>SIGMA</B></A>, <A HREF="#square"><B>SQUARE</B></A>,
+<A HREF="#symbol"><B>SYMBOL</B></A>, <A HREF="#title"><B>TITLE</B></A>,
+<A HREF="#zone"><B>ZONE</B></A>
+</blockquote>
+<H3><a name="title">TITLE</a> &lt;title&gt;</H3>
+&lt;title&gt; 
+is a title for plot.
+<H3><A NAME="symbol"></A> SYMBOL &lt;num&gt;</H3>
+&lt;num&gt;
+is symbol number. See Plot84 writeup. Default is a diamond shape.
+<H3><a name="resolution">RESOLUTION</a> [ &lt;dmin&gt; ] &lt;dmax&gt;</H3>
+One or two numbers. Resolution limits either as 4(sin(theta)/lambda)^2
+or in Angstroems. If only one number is supplied, this is taken to be
+the high resolution cut-off.  Either order.
+<H3> <A NAME="square"></A>SQUARE </H3>
+Input F's to be squared before plotting.
+<H3> <A NAME="zone"></A>ZONE &lt;zone1&gt; [ &lt;zone2&gt; ... ]</H3>
+zone definitions: <EM>e.g.</EM>
+<br>
+ZONE h0l h1l 0kl
+<H3> <A NAME="bins"></A>BINS &lt;bins&gt;  </H3>
+&lt;bins&gt; is the number of bins for analysing completeness.
+<H3> <A NAME="nspgroup"></A>NSPGROUP &lt;Number&gt; | &lt;Name&gt;</H3>
+Spacegroup Number or Name.
+It is possible to over-ride the SpaceGroup in the MTZ file. Not recommended!
+<H3> <A NAME="sigma"></A>SIGMA &lt;nsig&gt;</H3>
+An &lt;nsig&gt;*SIGMA cutoff for reflections is applied.  The default is no
+cut-off applied.
+<H3> <A NAME="projection"></A>PROJECTION &lt;ih&gt; &lt;ik&gt; &lt;il&gt; &lt;projht&gt; &lt;prjlim&gt;</H3>
+Plot the layer of reciprocal space 
+perpendicular to 
+&lt;ih&gt; &lt;ik&gt; &lt;il&gt;
+and within reciprocal distance 
+&lt;projht&gt; +/-&lt;prjlim&gt;
+from (0 0 0).  This is useful for looking for lost 3 fold axes etc..
+<br>
+ZONE and PROJECTION cards are mutually exclusive.
+<H3> <A NAME="list"></A>LIST</H3>
+all reflections plotted are listed to log file.
+<H3> <A NAME="anom"></A>ANOM POS | NEG</H3>
+POS(itive) or NEG(ative).  Anomalous measurements for 
+F+(hkl) or F-(hkl) plotted.
+<P> 
+BEWARE - this does NOT plot a true precession image with the
+F(+) and F(-) in the correct part of reciprocal space. It will
+plot two near identical sections which can be overlapped to look
+for differences.
+<H3><a name="scale">SCALE</a> &lt;scale&gt;</H3>
+By default, reflections are automatically scaled to the Largest F in
+the file. But this automatic scaling can result in many very 
+insignificant spots...
+If &lt;scale&gt; is given all symbols are scaled up or down by &lt;scale&gt;. All symbols
+greater than maximum are scaled to the maximum size.
+<H3><a name="labin">LABIN</a> &lt;program label&gt;=&lt;file label&gt; ...</H3>
+Change labels in the input file to match those expected by the
+program, which needs F=... and SIGF=...
+<H3><a name="cell">CELL</a> &lt;a&gt; &lt;b&gt; &lt;c&gt; [ &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt; ]</H3>
+Useful if you want to generate
+the reciprocal lattice pattern (I use it for illustrating spacegroups).
+<H3><a name="end">END</a></H3>
+last card.
+<H2><A NAME="examples"></A> EXAMPLE</H2>
+<pre>
+
+hklplot 
+hklin  {$SCRATCH}mary2.mtz 
+&lt;&lt; END-mtzprec
+RESO 10 5.00
+BINS  10
+ZONE 0kl h0l hk0 1kl h1l hk1 
+TITLE w89f c6 test
+NSPGRP 16
+SCALE 0.5 
+SYMB 15
+LABI F=FP SIGF=SIGFP 
+END   
+END-mtzprec
+</pre>
+<H2> AUTHOR</H2>
+Eleanor Dodson November 1991
+<H2> SEE ALSO</H2>
+ <A HREF=pltdev.html>pltdev</A>,
+ <A HREF=xplot84driver.html>xplot84driver</A>,
+ <A HREF="hklview.html">hklview</A> (1)
+</body></html>

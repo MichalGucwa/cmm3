@@ -1,0 +1,458 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>CCP4 Program Suite : rantan</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]">
+</HEAD>
+<BODY>
+
+<!-- ::INDEX_INFO::RANTAN::Supported::Experimental Phasing::Direct Method module for the determination of heavy atom positions:::::::: -->
+
+<H1>RANTAN (CCP4: Supported Program)</H1>
+<H2>NAME</H2>
+<B>rantan</B> 
+- is a Direct Method module for the determination of heavy atom positions 
+in a macro-molecule structure or to determine a small molecule structure.
+
+<H2>SYNOPSIS</H2>
+
+<P><B>rantan hklin</B> <I>foo_in.mtz</I> <B>hklout</B> <I>foo_out.mtz</I>
+<BR>
+[<A HREF="#keywords">Keyworded input</A>] </P>
+
+<H2><A NAME="description"></A>DESCRIPTION</H2>
+
+<P>RANTAN [1] reads in the E values calculated by 
+<a href="ecalc.html"> ECALC</a> and the known phases
+with weights if they are available. The programme determines the reflections
+for fixing origin and enantiomorph by CONVERGENCE procedure from MULTAN
+[2]. A set of random phases with weights (default 0.25) will be assigned
+to the rest of the large E values in the starting set. The phases will be refined
+by the tangent formula [3] and expanded to the whole set of large E values
+which are enough to determine the positions of heavy atoms or a small molecule
+structure. </P>
+
+<P>The traditional figures of merit are used to indicate solutions. Up
+to 5 sets of refined phases and weights with the best combined figures
+of merit are output. </P>
+
+<P>Input phases with weights greater than 0.85 can be used as known phases
+and of these those phases with weights greater than 0.98 will not be refined
+until the last two cycles. These so-called &quot;known&quot; phases will be
+combined with randomly generated phases as a starting set [4]. If there
+are more than 80% of large E values with &quot;known&quot; phases, only
+one set of refined phases will be output. </P>
+
+<P>All the items in the input file will be echoed in the output file plus
+the new phases and weights. For MAD data, <A HREF="revise.html">REVISE</A>
+should be used first to obtain the estimates of FM, from which E values
+can be calculated by ECALC and input to RANTAN.
+</P>
+
+<P>RANTAN can be used to determine a small molecule structure too, but
+all the default values are for the determination of heavy atom sites in
+a macro-molecule structure. When ECALC is used to calculate the E values
+for a small molecule, the number of reflections in each shell in ECALC
+should be smaller than default (200). </P>
+
+<H2><A NAME="keywords"></A>KEYWORDED INPUT</H2>
+
+<P>The various data control lines are identified by keywords. Only the
+first 4 characters of a keyword are significant. The keywords can be in
+any order, except END (if present) which must be last. Numbers and characters
+in &quot;[ ]&quot; are optional. The only compulsory keyword is LABIN.
+The available keywords are: <BR>
+<A HREF="#emax"><B>EMAX</B></A>,
+<A HREF="#emin"><B>EMIN</B></A>,
+<A HREF="#epsi"><B>EPSI</B></A>,
+<A HREF="#kmax"><B>KMAX</B></A>,
+<A HREF="#kmin"><B>KMIN</B></A>,
+<A HREF="#labin"><B>LABI</B></A>,
+<A HREF="#labout"><B>LABO</B></A>,
+<A HREF="#list"><B>LIST</B></A>,
+<A HREF="#maxs"><B>MAXS</B></A>,
+<A HREF="#nout"><B>NOUT</B></A>,
+<A HREF="#nran"><B>NRAN</B></A>,
+<A HREF="#nref"><B>NREF</B></A>,
+<A HREF="#nset"><B>NSET</B></A>,
+<A HREF="#nzro"><B>NZRO</B></A>,
+<A HREF="#reso"><B>RESO</B></A>,
+<A HREF="#skip"><B>SKIP</B></A>,
+<A HREF="#swtr"><B>SWTR</B></A>,
+<A HREF="#title"><B>TITL</B></A>,
+<A HREF="#wfom"><B>WFOM</B></A>,
+<A HREF="#wmin"><B>WMIN</B></A>,
+<A HREF="#wtri"><B>WTRI</B></A>,
+<A HREF="#end"><B>END</B></A>. </P>
+
+<H3><A NAME="title"></A>TITLE &lt;title&gt;</H3>
+
+<P>(optional) 80 character title to replace old title in MTZ file. </P>
+
+<H3><A NAME="labin"></A>LABIN &lt;program label&gt;=&lt;file label&gt;...</H3>
+
+<P>(COMPULSORY) This keyword defines which items are to be used in the calculation.
+The following &lt;program label&gt;s can be assigned: </P>
+
+<PRE>  EVAL      PHI        WT
+
+Example:
+
+  LABI EVAL=EM_RE
+
+  LABI EVAL=EM_RE PHI=AC WT=WTAC
+</PRE>
+
+<H3><A NAME="labout"></A>LABOUT &lt;program label&gt;=&lt;file label&gt;...</H3>
+
+<P>(optional) This keyword allows the user to assign their own labels to the extra
+labels in the output file. All labels in LABIN will automatically be in the
+output file. The following &lt;program label&gt;s can be assigned: </P>
+
+<PRE>  PHI1  WT1  PHI2  WT2  PHI3  WT3  PHI4  WT4  PHI5  WT5
+
+Example:
+
+  LABO PHI1=NEWPHASE1 WT1=NEWWT1 -
+       PHI2=NEWPHASE2 WT2=NEWWT2 -
+       PHI3=NEWPHASE3 WT3=NEWWT3
+</PRE>
+
+<P>In cases where the &quot;known&quot; phases are more than 80% of the
+number of large E values, only one set of refined phases will be output.
+So only PHI1 and WT1 can be assigned by LABOUT or do not assign any labels
+if the number of &quot;known&quot; phases is unknown and then PHI1 and
+WT1 will be in the output file. </P>
+
+<H3><A NAME="wfom"></A>WFOM [ABS &lt;wabs&gt;] [PSI &lt;wpsi&gt;] [RES
+&lt;wres&gt;]</H3>
+
+<P>(optional) The weights of three figures of merit for calculating the
+combined figure of merit; the programme will normalize the values to obtain
+wabs + wpsi + wres = 1.0. If small E values to calculate PSIZERO are not
+reliable, a lower value can be given to wpsi. <BR>
+Default: wabs = 0.1, wpsi = 0.4 and wres = 0.5. </P>
+
+<PRE>Example:
+
+  WFOM ABS 0.3 PSI 0.1 RES 0.6
+</PRE>
+
+<H3><A NAME="emax"></A>EMAX &lt;emax&gt;</H3>
+
+<P>(optional) The maximum E value to be used in RANTAN. This can be used
+to exclude particularly large E values. <BR>
+Default: emax = 5.0. </P>
+
+<PRE>Example:
+
+  EMAX 4.5
+</PRE>
+
+<H3><A NAME="emin"></A>EMIN &lt;emin&gt;</H3>
+
+<P>(optional) The minimum E value to be used in RANTAN. <BR>
+Default: emin = 1.2. </P>
+
+<PRE>Example:
+
+  EMIN 1.0
+</PRE>
+
+<H3><A NAME="epsi"></A>EPSI &lt;epsi&gt;</H3>
+
+<P>(optional) The maximum E value to be used to calculate PSIZERO figure
+of merit. <BR>
+Default: epsi = 0.3. </P>
+
+<PRE>Example:
+
+  EPSI 0.1
+</PRE>
+
+<H3><A NAME="kmin"></A>KMIN &lt;kmin&gt;</H3>
+
+<P>(optional) The minimum KAPPA value for a triplet to be used in RANTAN.
+<BR>
+Default: kmin = 0.6. </P>
+
+<PRE>Example:
+
+  KMIN 1.0
+</PRE>
+
+<H3><A NAME="kmax"></A>KMAX &lt;kmax&gt;</H3>
+
+<P>(optional) The maximum KAPPA value for a triplet to be used in RANTAN.
+<BR>
+Default: kmax = 50.0. </P>
+
+<PRE>Example:
+
+  KMAX 20.0
+</PRE>
+
+<H3><A NAME="reso"></A>RESO &lt;res1&gt; &lt;res2&gt;</H3>
+
+<P>(optional) The resolution range of E values from &lt;res1&gt; to &lt;res2&gt;
+used in RANTAN. <BR>
+Default: same as the whole data set. </P>
+
+<PRE>Example:
+
+  RESO 10.0 3.5
+or
+  RESO 3.5 10.0
+</PRE>
+
+<H3><A NAME="maxs"></A>MAXS &lt;maxs&gt;</H3>
+
+<P>(optional) The number of sets of random phases (number of trials). The
+maximum number is 2000. <BR>
+Default: maxs = 500. </P>
+
+<PRE>Example:
+
+  MAXS 200
+</PRE>
+
+<H3><A NAME="list"></A>LIST</H3>
+
+<P>(optional) Print out full details about running RANTAN. <BR>
+Default: Print out normally enough information about running RANTAN. </P>
+
+<PRE>Example:
+
+  LIST
+</PRE>
+
+<H3><A NAME="nran"></A>NRAN &lt;nran&gt;</H3>
+
+<P>(optional) The number of random phases to be assigned to the starting
+set (size of starting set). <BR>
+Default: nran = 250. </P>
+
+<PRE>Example:
+
+  NRAN 600
+</PRE>
+
+<H3><A NAME="nref"></A>NREF &lt;nref&gt;</H3>
+
+<P>(optional) The number of large E values to be used in RANTAN. The maximum
+number is to keep &lt;nref&gt; + &lt;nzro&gt; less than 2000. <BR>
+Default: nref = 600. </P>
+
+<PRE>Example:
+
+  NREF 800
+</PRE>
+
+<H3><A NAME="nzro"></A>NZRO &lt;nzro&gt;</H3>
+
+<P>(optional) The number of small E values to be used to calculate PSIZERO.
+Normally default value is large enough. <BR>
+Default: nzro = 100. </P>
+
+<PRE>Example:
+
+  NZRO 50
+</PRE>
+
+<H3><A NAME="nset"></A>NSET &lt;nset1&gt; &lt;nset2&gt; ...</H3>
+
+<P>(optional) The particular set number assigned by user to be refined
+and output. User can use this keyword to investigate any set of phases
+and maps after the first run of RANTAN. The number must be given in accretion
+order. The maximum number of sets assigned by user is 5. <BR>
+Default: no set number assigned by user. </P>
+
+<PRE>Example:
+
+  NSET 4 39 199 250
+</PRE>
+
+<H3><A NAME="nout"></A>NOUT &lt;nout&gt;</H3>
+
+<P>(optional) The number of the best refined phase sets to be output. The
+maximum number is 5. <BR>
+Default: nout = 3. </P>
+
+<PRE>Example:
+
+  NOUT 5
+</PRE>
+
+<H3><A NAME="skip"></A>SKIP &lt;skip&gt;</H3>
+
+<P>(optional) The first &lt;skip&gt; phase sets will be skipped and RANTAN
+starts from set &lt;skip&gt;+1. <BR>
+Default: skip = 0. </P>
+
+<PRE>Example:
+
+  SKIP 500
+</PRE>
+
+<H3><A NAME="wmin"></A>WMIN &lt;wmin&gt;</H3>
+
+<P>(optional) The weight for a random phase. Higher weights can be used
+if known phases are used or the first run of RANTAN was not successful.
+<BR>
+Default: wmin = 0.25. </P>
+
+<PRE>Example:
+
+  WMIN 0.45
+</PRE>
+
+<H3><A NAME="wtri"></A>WTRI &lt;wtri&gt;</H3>
+
+<P>(optional) The weight for a triplet; the value depends on the number
+and type of atoms in the unit cell. <BR>
+Default: wtri = 0.1. </P>
+
+<PRE>Example:
+
+  WTRI 0.2
+</PRE>
+
+<H3><A NAME="swtr"></A>SWTR</H3>
+
+<P>(optional) There are two procedures in RANTAN to refine random phases:
+a fast procedure called FASTAN and a statistical weighting tangent formula
+called SWTR which should be used when most of the ABS figures of merit
+are greater than 1.3. <BR>
+Default: FASTAN. </P>
+
+<PRE>Example:
+
+  SWTR
+</PRE>
+
+<H3><A NAME="end"></A>END</H3>
+
+<P>of input. If present, this must be the last keyword. </P>
+
+<H2><A NAME="files"></A>INPUT AND OUTPUT FILES</H2>
+
+<P>The input files are the keyword file and a standard MTZ reflection data
+file. <BR>
+Input: <BR>
+HKLIN input data file(MTZ). <BR>
+Output: <BR>
+HKLOUT output data file(MTZ). </P>
+
+<P>Here are the definitions for each label: </P>
+
+<PRE>     Name        Item
+
+     H, K, L     Miller indices.
+
+     EVAL        E values (normalized structure factors).
+     PHI         Known phases.
+     WT          Weights of known phases.
+
+     PHI1        New phases of the best set 1.
+     WT1         Weights for the new phases of the best set 1.
+
+     PHI2        New phases of the best set 2.
+     WT2         Weights for the new phases of the best set 2.
+
+     PHI3        New phases of the best set 3.
+     WT3         Weights for the new phases of the best set 3.
+
+     PHI4        New phases of the best set 4.
+     WT4         Weights for the new phases of the best set 4.
+
+     PHI5        New phases of the best set 5.
+     WT5         Weights for the new phases of the best set 5.
+
+</PRE>
+
+<H2><A NAME="output"></A>PROGRAM OUTPUT</H2>
+
+<P>The program output starts with details from the input keyword data lines.
+Then information from the input MTZ file follows. An error message will
+be printed out if any illegal input in the keyword data lines has been
+found and the program will stop. </P>
+
+<P>The full details of running RANTAN will be printed out if the keyword
+<A href="#list">LIST</A> is given and that will include all the E
+values, the convergence map and figures of merit for each of the <A
+href="#maxs">MAXS</A> phase sets. Otherwise E values and convergence
+map will not be printed out and the figures of merit for the phase
+sets will be printed out only if the combined figure of merit is
+greater than 0.6. If a refined phase set is similar to a previous phase 
+set, it will be flagged as such.</P>
+
+<P>The best <A href="#nout">NOUT</A> phase sets, as determined by the
+combined figures of merit, are then listed. Note that if the combined
+figures of merit are similar, then the phase sets may be related by
+an origin shift, symmetry operation and/or change of hand. Finally,
+details of the output MTZ file are listed, including the additional
+columns for the <A href="#nout">NOUT</A> phase sets.</P>
+
+<H2><A NAME="reference"></A>REFERENCE</H2>
+
+<OL>
+<P><!-- KEEP startreferencelist --></P>
+
+<LI>Yao Jia-xing, (1981). <I>Acta. Cryst.</I> <B>A</B>37, 642-644. </LI>
+
+<LI>Germain,G. and Woolfson,M.M. (1968) <I>Acta. Cryst.</I> <B>B</B>24,
+91-97. </LI>
+
+<LI>Karle,J. and Hauptman,H. (1956) <I>Acta. Cryst.</I> <B>9</B>, 635.
+</LI>
+
+<LI>Yao Jia-xing, (1983). <I>Acta. Cryst.</I> <B>A</B>39, 35-37. </LI>
+
+<!-- KEEP endreferencelist -->
+</OL>
+
+<H2><A NAME="authors"></A>AUTHORS</H2>
+
+<P>Yao Jia-xing </P>
+
+<H2><A NAME="examples"></A>EXAMPLES</H2>
+
+<P>This example is to use E values after REVISE and ECALC: </P>
+
+<PRE>rantan \
+hklin $HOME/test.mtz \
+hklout $SCRATCH/test-rantan.mtz \
+&lt;&lt; eof
+TITLE   testing RANTAN.
+LABI EVAL=EM_RE
+
+LABO PHI1=NEWPHASE1 WT1=NEWT1 -
+     PHI2=NEWPHASE2 WT2=NEWT2
+
+RESO 10.0 3.5
+
+END
+eof
+</PRE>
+
+<P>This example is to use known phases with weights: </P>
+
+<PRE>rantan \
+hklin $HOME/test.mtz \
+hklout $SCRATCH/test-rantan.mtz \
+&lt;&lt; eof
+TITLE   testing RANTAN.
+LABI EVAL=EM_RE PHI=AC WT=WTAC
+
+RESO 10.0 3.5
+NREF 800
+WMIN 0.45
+MAXS 100
+NOUT 1
+
+END
+eof
+</PRE>
+
+</BODY>
+</HTML>

@@ -1,0 +1,173 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#======================================================================
+#
+# cad script
+#
+#======================================================================
+
+#==================================================================
+# check for and reindex inconsistent datasets
+#==================================================================
+
+  if { $AUTO_REINDEX && $NFILES > 1 } {
+    WriteToLog "Checking to see if files are consistently indexed before merging"  -nofooter
+    
+    # Source the necessary files to get access to the commands
+    # we will need e.g. GetMtzParam
+    source [SearchPath TOP src CCP4_utils.tcl]
+
+    # Need spacegroup from MTZ file, or new spacegroup specified by the user
+    # Spgrp number should be returned in var spacegroup
+    if { $OVERRIDE_SPACE_GROUP } {
+      set spacegroup $SPACE_GROUP
+    } else {
+      GetMtzParam $HKLIN(1) SPACE_GROUP_NAME spacegroup
+    }
+    WriteToLog "Spacegroup name is $spacegroup" -noheader -nofooter
+
+    # Then check in crystal.lib to get a list of possible reindexing
+    # operations - list of possible ops returned in var reindex_ops as a list
+    InitialiseXtlData
+    GetTwinData $spacegroup reindex_ops
+
+    set n_reindex_ops [llength $reindex_ops]
+    if { $n_reindex_ops > 0 && $reindex_ops != "None" } {
+
+      # Reindexing is possible in this spacegroup
+      WriteToLog "Reindexing is possible in this spacegroup: operators are $reindex_ops" -noheader
+
+      # Initialise XML commands
+      source [SearchPath TOP utils xml_utils.tcl]
+
+      # Treat the first file as the reference
+      # For each of the others, check for reindexing against this one
+
+      # Find a pair of columns of types F/Q
+
+      GetMtzColumnByType $HKLIN(1) {F} col_list_f typ_list_f
+      GetMtzColumnByType $HKLIN(1) {Q} col_list_q typ_list_q
+      if { [llength $col_list_f] > 0 && [llength $col_list_q] > 0 } {
+        set f_file1 [lindex $col_list_f 0]
+        set sigf_file1 [lindex $col_list_q 0]
+      } else {
+        set f_file1 ""
+        set sigf_file1 ""
+        WriteToLog "Cannot find columns of type F and Q in $HKLIN(1)
+Automatic indexing checking will not be performed"
+      }
+        
+      if { $f_file1 != "" && $sigf_file1 != "" } {
+
+        for { set n 2 } { $n <= $NFILES } { incr n } {
+
+          # Find pair of columns of type F/Q
+          GetMtzColumnByType $HKLIN($n) {F} col_list_f typ_list_f
+          GetMtzColumnByType $HKLIN($n) {Q} col_list_q typ_list_q
+
+          if { [llength $col_list_f] > 0 && [llength $col_list_q] > 0 } {
+
+            # Only proceed if we have columns to work with
+            set f_file2 [lindex $col_list_f 0]
+            set sigf_file2 [lindex $col_list_q 0]
+
+            # Run almn to do cross comparision and write the result to
+            # an xml file
+            set xmlfile [GetTmpFileName -ext xml]
+            set cmd "[BinPath almn] HKLIN \"$HKLIN(1)\" HKLIN2 \"$HKLIN($n)\" XMLFILE \"$xmlfile\""
+            WriteFile [set almn_script [GetTmpFileName -ext _com]] \
+                  "TITLE $spacegroup reindexing search $HKLIN($n) against $HKLIN(1)
+CROSS 3 20
+RESOLUTION 10 4
+CRYSTAL FILE 1
+LABIN FILE 1 F=$f_file1 SIGF=$sigf_file1
+CRYSTAL FILE 2
+LABIN FILE 2 F=$f_file2 SIGF=$sigf_file2
+LIMITS 0 180 5
+FIND 0.5 50 RMS
+XMLOUTPUT
+"
+            WriteToLog "Running ALMN to compare $HKLIN($n)\nagainst $HKLIN(1)"
+            set status [Execute $cmd $almn_script program_status report]
+
+            # Check - do we need to reindex
+            # Find out by examining the XML output
+            set reindex_op [GetAlmnReindexOp $xmlfile]
+
+            if { $reindex_op == "None" } {
+              WriteToLog "MTZ files $HKLIN($n) and $HKLIN(1) are consistently indexed"
+            } elseif {  $reindex_op == "" } {
+              WriteToLog "Error parsing the XML output from ALMN
+No reindexing will be performed for $HKLIN($n)"
+            } else {
+              # Perform the reindexing
+              WriteToLog "Inconsistent indexing detected between MTZ files $HKLIN($n)
+and $HKLIN(1)
+Running REINDEX on $HKLIN($n) with
+reindexing operator $reindex_op"
+              set tmpmtzfile [GetTmpFileName -ext mtz]
+              set cmd "[BinPath reindex] HKLIN \"$HKLIN($n)\" HKLOUT \"$tmpmtzfile\""
+              WriteFile [set reindex_script [GetTmpFileName -ext _com]] \
+                  "reindex hkl $reindex_op\nnoreduce\nend"
+              set status [Execute $cmd $reindex_script program_status report]
+
+              # Reset HKLIN(n) to be the reindexed file
+              set HKLIN($n) $tmpmtzfile
+            }
+
+          } else {
+
+            # There were no suitable columns in the second file
+            WriteToLog "No suitable columns of types F/Q were found in $HKLIN($n)
+Automatic indexing test was not performed for this file"
+          }
+
+        }
+        # Finished loop over input files
+        WriteToLog "Finished checking for consistent indexing"
+      }
+
+    } else {
+
+        WriteToLog "No reindexing is possible in this spacegroup" -noheader
+
+    }
+
+  }
+
+#==================================================================
+# run cad
+#==================================================================
+
+  CreateComScript cad cad_script
+  set cmd [BinPath cad]
+  for { set n 1 } { $n <= $NFILES } { incr n } {
+    append cmd " HKLIN$n \"$HKLIN($n)\""
+  }
+
+  if $UNIQUEIFY {
+    set HKL_TMP [GetTmpFileName -ext mtz]
+    append cmd " HKLOUT \"$HKL_TMP\""
+  } else {
+    append cmd " HKLOUT \"$HKLOUT\""
+  }
+
+  set status [Execute $cmd $cad_script program_status report ]
+
+#==================================================================
+# run uniqueify
+#==================================================================
+
+  if $UNIQUEIFY {
+    source [SearchPath TOP utils phasing_utils.tcl ]
+    set cmd "Uniqueify \"$HKL_TMP\" \"$HKLOUT\""
+    if ($KEEP_FREER) { append cmd " -keep $KEEP_FREER_LABEL" }
+    eval "$cmd"
+  }

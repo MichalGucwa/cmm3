@@ -1,0 +1,35 @@
+#!/bin/sh
+
+set -e 
+
+#  Tabulates differences between 2 or 3 sets of coordinates, 
+#   against atom type and B value and residue number.
+# COMPARISON OF COORDINATES - ON XYZIN1 XYZIN2  AND PROVISIONALLY XYZIN3.
+#CARD 1 - TITLE
+#CARD 2 - NSETS - NUMBER OF CORD SETS FOR COMPARISON (2 OR 3.)
+#CARD 3 - DELXYZ DELB FOR MONITORING
+
+#  RMSTAB is written out - useful for SQUID
+#  A temporary file called TMPOUT is written.
+
+if test ! -x ${CBIN}/refmac5; then
+  echo '! refmac5 not found in $CBIN'
+  exit 0
+fi
+
+if test ! -f $CCP4_SCR/rnase_out.pdb; then
+  echo '! run refmac5_tls.exam first' 1>&2
+  exit 1
+fi
+
+compar				\
+  XYZIN1 $CEXAM/rnase/rnase.pdb     \
+  XYZIN2 $CCP4_SCR/rnase_out.pdb     \
+  RMSTAB $CCP4_SCR/rnase.rms        \
+  << END-compar 
+comparing rnase coordinates before and after refinement
+2                                     
+3.0 16                                
+END-compar
+#
+

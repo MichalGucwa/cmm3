@@ -1,0 +1,36 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+# Draw specific maps for review after run of ncsref
+# This script is used stand-alone from task_maps or sourced from ncsref script
+
+  source [SearchPath TOP utils map_utils.tcl]
+
+  set mapout_1 [SetOutputFileRoot -map]_2FOFC.map
+  set mapout_2 [SetOutputFileRoot -map]_FOFC.map
+  set mapout_3 [SetOutputFileRoot -map]_average.map
+
+  CreateMap $MAPOUT_FORMAT $HKLOUT mapout_1 "2FO-1FC" \
+                [list F1 PHI ] [list  FWT PHWT]
+
+  CreateMap $MAPOUT_FORMAT $HKLOUT mapout_2 "1FO-1FC" \
+                [list F1 PHI ] [list DELFWT PHDELWT]
+
+  if { [regexp XtalView $MAPOUT_FORMAT] } {
+# The XtalView phases file needs an extra column of dummy FOMs - set all to 1
+    foreach hkl_file [list $mapout_1 $mapout_2] {
+       AddXtalMapFom $hkl_file
+    }
+  }
+
+  CreateMap $MAPOUT_FORMAT $HKLOUT mapout_3 "Averaged map" \
+      [list F1 PHI W] [list FDMAVER PHIDMAVER FOMDMAVER]
+
+
+  AddOutputFile $mapout_1 MAP_DEFAULT $mapout_2 MAP_DEFAULT $mapout_3 MAP_DEFAULT

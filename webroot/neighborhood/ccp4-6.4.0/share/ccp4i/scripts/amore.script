@@ -1,0 +1,532 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#===========================================================================
+#
+# amore.script
+#
+#===========================================================================
+
+  set sensible_resolution 1
+
+# Set root name for solution files
+  set SOLOUT [SetOutputFileRoot]
+
+# Source the file with utility procedures for running amore script
+  source [SearchPath TOP utils amore_utils.tcl ]
+
+  if { $sensible_resolution && $RESOLUTION_MAX < $MTZ_RESOLUTION_MAX } {
+    WriteToLog "High resolution limit of experimental data is $MTZ_RESOLUTION_MAX
+You are asking for a model SF table file of resolution $RESOLUTION_MAX
+This is unnecessarily high resolution - resetting resolution limit to $MTZ_RESOLUTION_MAX + 0.1"
+    set RESOLUTION_MAX [expr $MTZ_RESOLUTION_MAX + 0.1]
+  }
+  set SORT_RESOLUTION_MAX $RESOLUTION_MAX
+  set TABLE_RESOLUTION_MAX $RESOLUTION_MAX
+
+
+# Use a temporary log file which can be search for solutions
+  set tmp_log_file [GetTmpFileName -ext log]
+
+
+# If the process is self rotation then set ROTFUN_ROTATE_MODE
+# and reset process to ROTFUN
+  if { [regexp SELFROT $PROCESS] } {
+    set ROTFUN_ROTATE_MODE SELF
+    set ROTFUN_GENERATE 0
+    set PROCESS ROTFUN
+    set MODEL_TITLE SELF
+  } else {
+    set ROTFUN_ROTATE_MODE CROSS
+    set ROTFUN_GENERATE 1
+  }
+
+
+#=======================================================Origin shifted coords
+# Just run the tabling option to recreate origin shifted coords
+
+  if [StringSame $PROCESS RESHIFT ] {
+
+    if { ![IfSet $MODEL_XYZSHFT] } { TerminateScript 0  -report \
+     "No file name given for the shifted coordinates - see the MR Database"
+    }
+
+# put tabling file to temporary file
+    set tmp_tab_file [GetTmpFileName -ext tab]
+    set comline "[BinPath amore] XYZIN1 \"$MODEL_XYZIN\"  TABLE1 \"$tmp_tab_file\""
+    append comline " XYZOUT1 \"$MODEL_XYZSHFT\""
+    foreach var [list TABLING_MI TABLING_MR TABLING_MC HKLTABLING_MC ] {
+      eval "if \[IfSet \$$var\] \{ append comline \" $var \$$var\"\}"
+    }
+
+    set RESOLUTION_MAX 5
+
+    CreateComScript amore_table table_comfile
+
+    set status [Execute $comline $table_comfile program_status report ]
+
+    DeleteFile $tmp_tab_file
+   
+    TerminateScript 1 
+  }
+
+#=======================================================SORT
+# Apply sorting if packed hkl does not exist
+
+
+  if { [StringSame $PROCESS SETUP] || ![file exists $HKLPCK0] } {
+
+
+# user explicitly opted to sort/tabling again - delete any 
+# existing file
+    if { [file exists $HKLPCK0] } {
+      WriteToLog "Deleting existing packed reflection file $HKLPCK0
+and regenerating the file using SORTFUN"
+      DeleteFile $HKLPCK0
+    } else {
+      WriteToLog "There is no packed reflection file $HKLPCK0
+Generating this file using SORTFUN"
+    }
+
+    set FP $FP0
+    set SIGFP $SIGFP0
+
+    set comline "[BinPath amore] HKLIN \"$HKLIN\" HKLPCK0 \"$HKLPCK0\""
+    if { [IfSet $SORTING_NR] }  { append comline " SORTING_NR $SORTING_NR" }
+
+    CreateComScript amore_sort sort_comfile
+    set status [Execute $comline $sort_comfile program_status report ]
+
+    AddOutputFile $HKLPCK0 PROJECT
+
+  }
+
+# Apply sort function to input model map 
+
+  if { [StringSame $PROCESS AUTO ROTFUN ]  &&
+	![regexp SELF $ROTFUN_ROTATE_MODE] &&
+      ![regexp XYZIN $MODEL_MODE ] && 
+	![file exists $MODEL_SF_TABLE] } {
+
+    WriteToLog "There is no SF Table file for the map of the model coordinates
+Generating the file $MODEL_SF_TABLE"
+
+    set SORTFUN_MODEL 1
+    set LABIN "FC PHIC"
+    set FC $MODEL_FC
+    set PHIC $MODEL_PHIC
+    set tmppck0 [GetTmpFileName -ext hkl]
+
+    set comline "[BinPath amore] HKLIN \"$MODEL_HKLIN\" HKLPCK0 \"$tmppck0\" TABLE1 \"$MODEL_SF_TABLE\""
+
+    if { [IfSet $SORTING_NR] }  { append comline " SORTING_NR $SORTING_NR" }
+
+    CreateComScript amore_sort sort_model_comfile
+
+    set status [Execute $comline $sort_model_comfile program_status report ]
+
+    AddOutputFile $MODEL_SF_TABLE PROJECT
+
+# End of running sort function if SF table file does not exist
+
+  }
+
+#==========================================================TABLING
+
+# Only ever need to do tabling if the input model is coordinates
+# Then do it if the user explicitly choose setup process or is
+# running rotation function and the tabling file or parameters are missing
+
+  set do_tabling 0
+  if { [regexp XYZIN $MODEL_MODE ] } { 
+    if { [StringSame $PROCESS SETUP] }  {
+      set do_tabling 1
+    } elseif { [StringSame $PROCESS ROTFUN AUTO ] && \
+			![regexp SELF $ROTFUN_ROTATE_MODE] } {
+      if { ![file exists $MODEL_SF_TABLE] || 
+          ![IfSet $MODEL_CELL_1] || ![IfSet $MODEL_IRMAX] ||
+          ![IfSet $MODEL_COM_1] || ![IfSet $MODEL_EULER_1] } {
+        set do_tabling 1
+      }
+    }
+  }
+
+  if { $do_tabling } {
+
+    if { ![file exists $MODEL_SF_TABLE] } {
+      WriteToLog "There is no SF Table file for the model coordinates  so
+Generating the file $MODEL_SF_TABLE"
+    } elseif { ![StringSame $PROCESS SETUP] } {
+      WriteToLog "There are no model cell and radius parameters stored in the database 
+so rerunning the tabling (TABFUN) procedure"
+    }
+
+
+  if { $sensible_resolution && $RESOLUTION_MAX < $MTZ_RESOLUTION_MAX } {
+    set TABLE_RESOLUTION_MAX [max $RESOLUTION_MAX 2.0] 
+    WriteToLog "Low resolution limit of experimental data is $MTZ_RESOLUTION_MAX
+You are asking for a model SF table file of resolution $RESOLUTION_MAX
+This is unnecessarily high resolution - resetting resolution limit to 2.0"
+  } else {
+    set TABLE_RESOLUTION_MAX $RESOLUTION_MAX
+  }
+
+# For the test model you need a table file and data (cell parameters or sphere)
+# to bung into the rotfun
+
+# Create the com file and a command line
+# Also save the log file to a temporary file which can be searched
+# for required key data
+     DeleteFile $tmp_log_file
+
+     set comline "[BinPath amore]"
+     foreach var [list TABLING_MI TABLING_MR TABLING_MC HKLTABLING_MC ] {
+       eval "if \[IfSet \$$var\] \{ append comline \" $var \$$var\"\}"
+     }
+     append comline " XYZIN1 \"$MODEL_XYZIN\""
+     append comline " TABLE1 \"$MODEL_SF_TABLE\""
+     if [IfSet $MODEL_XYZSHFT] { append comline " XYZOUT1 \"$MODEL_XYZSHFT\"" }
+
+     set table_comfile ""
+
+     CreateComScript amore_table table_comfile
+
+     set status [Execute $comline $table_comfile \
+        program_status report -copy_log $tmp_log_file -noexit ]
+
+# If Amore fails it leaves a junk tabling file so clean up before exiting
+     if { !$status } { 
+	DeleteFile $MODEL_SF_TABLE 
+	TerminateScript 0 -report $report
+     }
+
+     AddOutputFile $MODEL_SF_TABLE PROJECT
+
+# Extract minimal box info from log file
+
+     if { ![IfSet $MODEL_CELL_1 ] || ![IfSet $MODEL_IRMAX] } {
+       amore_get_tabling_data $tmp_log_file box max_dcom com euler
+
+# Try to save this information to the amore_model database def file
+       if { $UPDATE_DATABASE } { amore_update_database  \
+        $AMORE_DATABASE $MODEL_TITLE \
+        [ list  [list  MINIMAL_BOX $box ] \
+                [list  MAX_DCOM $max_dcom ] ] }
+
+# Guess reasonable values for model box and irmax
+
+       amore_calc_model_cell \
+	  [list $CRYSTAL_CELL_1 $CRYSTAL_CELL_2 $CRYSTAL_CELL_3 ] \
+		$box $max_dcom model_cell model_irmax
+       if { $MODEL_IRMAX == "" } { set MODEL_IRMAX $model_irmax }
+       set i 0; foreach mc $model_cell {
+         incr i; set MODEL_CELL_[subst $i] $mc
+       }
+     }
+
+# If don't know the origin shifting transformation then save it now
+     if { ![IfSet $MODEL_COM_1] || ![IfSet $MODEL_EULER_1] } {
+       amore_get_tabling_data $tmp_log_file box max_dcom com euler
+       if { $UPDATE_DATABASE } { amore_update_database \
+	$AMORE_DATABASE $MODEL_TITLE \
+	  [ list [list MODEL_COM $com ] \
+		[list MODEL_EULER $euler ] ] }
+     }
+  } 
+
+  if { $N_SOLFIL > 0 } { 
+    for { set ns 1 } { $ns <= $N_SOLFIL } { incr ns } {
+      
+      if { [ReadFile $SOLFIL($ns) text ] && 
+         [ExtractTextLine $text "CCP4 SCRIPT" 0 all line] } {
+        foreach model [lrange $line 4 end] {
+          set mm [lsearch $MODEL_LIST $model]
+#          puts "Checking table file for $model $mm"
+          if { $mm < 0 } { 
+            WriteToLog "Model name $model in solution file $SOLFIL($ns) not recognised"
+            TerminateScript 0 
+          }
+          set table_file [eval GetFullFileName [lindex $SF_TABLE_LIST $mm]]
+          if { ![file exists $table_file] } {
+            set comline "[BinPath amore]"
+            append comline \
+		" XYZIN1 \"[eval GetFullFileName [lindex $XYZIN_LIST $mm]]\""
+            append comline " TABLE1 \"$table_file\""
+
+            set table_comfile ""
+
+            CreateComScript amore_table table_comfile
+
+            set status [Execute $comline $table_comfile \
+                 program_status report ]
+          }
+        }
+      }
+    }
+
+# End of running tabling if file does not exist
+  }
+
+  if [regexp SETUP $PROCESS] {TerminateScript 1 }
+
+#==========================================================ROTFUN
+
+  if [StringSame $PROCESS AUTO ROTFUN] {
+
+  set CLMN0 ""; append CLMN0 [file rootname $HKLPCK0] _0 .clmn
+  set CLMN1 [ChangeFileExt $MODEL_SF_TABLE .clmn ]
+  set MAPOUT [SetOutputFileRoot -map]_rot.map
+
+# set up the command line
+  set comline [BinPath amore] 
+  append comline " HKLPCK0 \"$HKLPCK0\""
+  append comline " CLMN0 \"$CLMN0\"" 
+  append comline " MAPOUT \"$MAPOUT\""
+
+# add input and intermediate file names for each model
+# for now there is always only 1 model
+
+# Input the model files - not needed for self-rotation
+  if { [regexp CROSS $ROTFUN_ROTATE_MODE] } {
+    append comline " TABLE1 \"$MODEL_SF_TABLE\""
+    append comline " CLMN1 \"$CLMN1\""
+    append comline " HKLPCK1 \"[GetTmpFileName -ext hkl]\""
+  }
+
+  foreach var [list ROTING_MI ROTING_MR ROTING_MC ROTING_MD ] {
+      eval "if \[IfSet \$$var\] \{ append comline \" $var \$$var\"\}"
+  }
+
+  DeleteFile $tmp_log_file
+
+# Create the com file and run the rotation function
+  CreateComScript amore_rotate rotate_comfile
+
+  set status [Execute $comline $rotate_comfile \
+      program_status report -copy_log $tmp_log_file ]
+
+# Delete the map file if not required
+  if { $IFMAPOUT } { 
+    AddOutputFile $MAPOUT MAP_DEFAULT
+  } else { DeleteFile $MAPOUT }
+
+# Extract the solution from the log file and save to a solution file
+# Save the name of the solution file to the database
+
+  set ROT_SOLUTION_FILE $SOLOUT
+  append ROT_SOLUTION_FILE  _rot_ $MODEL_TITLE .mr
+  switch $ROTFUN_ROTATE_MODE CROSS { set logmode rot } \
+    SELF  { set logmode self }
+
+  set nsol [amore_get_log_solution $logmode $MODEL_TITLE \
+	  $tmp_log_file $ROT_SOLUTION_FILE \
+          -symmetry $TEST_SPACE_GROUP \
+          -cell $CRYSTAL_CELL_1 $CRYSTAL_CELL_2 $CRYSTAL_CELL_3 \
+	        $CRYSTAL_CELL_4 $CRYSTAL_CELL_5 $CRYSTAL_CELL_6 \
+          -resolution $RESOLUTION_MAX $RESOLUTION_MIN ]
+  if { $nsol <= 0 } { TerminateScript 0  -report \
+    "No solutions extracted from log file. Can not continue with Amore" }
+
+  AddOutputFile $ROT_SOLUTION_FILE PROJECT
+#END of ROTFUN ..
+  } 
+
+#=========================================================TRAFUN
+
+  if [StringSame $PROCESS AUTO TRAFUN] {
+
+
+# Set up the command line - the table files for any fixed solutions must
+# come before the test solution
+
+  set MAPOUT [SetOutputFileRoot -map]_tran.map
+  set comline [BinPath amore]
+  append comline " HKLPCK0 \"$HKLPCK0\""
+  append comline " MAPOUT \"$MAPOUT\""
+  foreach var [list TRAING_NR TRAING_MEQ TRAING_MRT TRAING_MT TRAING_MR] {
+    eval "if \[IfSet \$$var\] \{ append comline \" $var \$$var\"\}"
+  }
+
+  set model_list {}
+  set output_model_list {}
+  set NMOL  [amore_get_solution $ROT_SOLUTION_FILE " " \
+		model_list output_model_list all solution_list]
+  if { [llength $solution_list]  <= 0 } {
+    WriteToLog "No solutions read from $ROT_SOLUTION_FILE"
+    TerminateScript 0 
+  }
+    
+#  puts "NMOL $NMOL solution_list $solution_list model_list $model_list output_model_list $output_model_list"
+
+  if { $N_SOLFIL > 0 } {
+    for { set ns 1 } { $ns <= $N_SOLFIL } { incr ns } {
+      set solution_list_0 $solution_list; set solution_list ""
+      set inc_nmol [amore_get_solution $SOLFIL($ns) \
+	fix model_list output_model_list all solution_list $solution_list_0 ]
+      if { $inc_nmol <= 0 } {
+        WriteToLog "Could not read solution file $SOLFIL($ns)"
+        TerminateScript 0 
+      }
+      incr NMOL $inc_nmol
+#      puts "NMOL $NMOL solution_list $solution_list"
+    }
+  }
+
+  set nm 0; foreach model $model_list { incr nm
+    set mm [lsearch $MODEL_LIST $model]
+    if { $mm < 0 } {
+      WriteToLog "Solution file is for model $model
+There is no model of this name in the model database"
+      TerminateScript 0 
+    }
+    append comline " TABLE$nm \"[eval GetFullFileName [lindex $SF_TABLE_LIST $mm]]\""
+  }
+
+
+# Extract the solutions log file to a solution file TRAN_SOLUTION_FILE
+  set TRAN_SOLUTION_FILE $SOLOUT
+  append TRAN_SOLUTION_FILE _tran_ [lindex $output_model_list 0] ".mr"
+  set append ""
+
+  set maxruns [expr 499/$NMOL]
+  set ntestsol [llength $solution_list]
+
+  for { set irun 1 } { $irun <= [expr $ntestsol/$maxruns + 1] } \
+			{ incr irun } {
+
+    DeleteFile $tmp_log_file
+    set if [expr ($irun -1)*$maxruns ]
+    set il [min [expr $irun * $maxruns -1 ] [expr $ntestsol -1] ]
+#    puts "irun $irun if $if il $il"
+    if { $il >= $if } { 
+
+# take the list from solution_list and write to SOLUTIONS
+      set SOLUTIONS ""
+      foreach sol [lrange $solution_list $if $il] { append SOLUTIONS $sol }
+
+
+# Create the com file and run the rotation function
+      set translate_comfile ""
+      CreateComScript amore_translate translate_comfile
+
+      set status [Execute $comline $translate_comfile \
+        program_status report -copy_log $tmp_log_file ]
+
+      set nsol [amore_get_log_solution tran $output_model_list \
+	            $tmp_log_file $TRAN_SOLUTION_FILE $append  \
+          -symmetry $TEST_SPACE_GROUP \
+          -cell $CRYSTAL_CELL_1 $CRYSTAL_CELL_2 $CRYSTAL_CELL_3 \
+	        $CRYSTAL_CELL_4 $CRYSTAL_CELL_5 $CRYSTAL_CELL_6 \
+          -resolution $RESOLUTION_MAX $RESOLUTION_MIN ]
+
+      set append "-append"
+
+  if { $nsol == 0 } { TerminateScript 0  -report \
+     "No solutions extracted from log file. Can not continue with fitting" }
+    }
+
+  }
+
+# Delete the map file if not required
+  if { $IFMAPOUT } { 
+    AddOutputFile $MAPOUT MAP_DEFAULT
+  } else { DeleteFile $MAPOUT }
+
+  AddOutputFile $TRAN_SOLUTION_FILE PROJECT
+
+# END of trafun ..
+  }
+
+#=========================================================FITTING
+
+  if [StringSame $PROCESS AUTO FITFUN] {
+
+# Add the translation solution file to the list of solution files
+  incr N_SOLFIL
+  set SOLFIL($N_SOLFIL) $TRAN_SOLUTION_FILE
+
+  set comline [BinPath amore]
+  append comline " HKLPCK0 \"$HKLPCK0\""
+  foreach var [list FITING_MEQ FITING_MT FITING_NR FITING_NP ] {
+    eval "if \[IfSet \$$var\] \{ append comline \" $var \$$var\"\}"
+  }
+
+  set model_list {}
+  set output_model_list {}
+  set solution_list {}
+
+  set NMOL 0
+  for { set ns 1 } { $ns <= $N_SOLFIL } { incr ns } {
+    set solution_list_0 $solution_list; set solution_list {}
+    set inc_nmol [amore_get_solution $SOLFIL($ns) " " \
+       model_list output_model_list all solution_list $solution_list_0 ]
+    if { $inc_nmol <= 0 } {
+      WriteToLog "Could not read solution file $SOLFIL($ns)"
+      TerminateScript 0 
+    }
+    incr NMOL $inc_nmol
+#    puts "NMOL $NMOL solution_list $solution_list"
+  }
+  
+  set nm 0; foreach model $model_list { incr nm
+    set mm [lsearch $MODEL_LIST $model]
+    append comline \
+      " TABLE$nm \"[eval GetFullFileName [lindex $SF_TABLE_LIST $mm]]\""
+  }
+
+  set maxruns [expr 49/$NMOL]
+  set ntestsol [llength $solution_list]
+  set append " "
+
+  set solution_file $SOLOUT
+  append solution_file _fit_ [lindex $output_model_list 0] ".mr"
+
+
+# Only give amore 49 solutions max for any one run
+
+  for { set irun 1 } { $irun <= [expr $ntestsol/$maxruns + 1] } \
+                        { incr irun } {
+
+    DeleteFile $tmp_log_file
+
+    set if [expr ($irun -1)*$maxruns ]
+    set il [min [expr $irun * $maxruns -1 ] [expr $ntestsol -1] ]
+#    puts "irun $irun if $if il $il"
+    if { $il >= $if } {
+
+# take the list from solution_list and write to SOLUTIONS
+      set SOLUTIONS ""
+      foreach sol [lrange $solution_list $if $il] { append SOLUTIONS $sol }
+
+# Create the com file and run the fitting
+      set fitting_comfile ""
+      CreateComScript amore_fit fitting_comfile
+
+      set status [Execute $comline $fitting_comfile \
+         program_status report -copy_log $tmp_log_file ]
+
+# Extract the solution from the log file and save to a solution file
+      set nsol [amore_get_log_solution fit $output_model_list \
+                   $tmp_log_file $solution_file $append \
+          -symmetry $TEST_SPACE_GROUP \
+          -cell $CRYSTAL_CELL_1 $CRYSTAL_CELL_2 $CRYSTAL_CELL_3 \
+	        $CRYSTAL_CELL_4 $CRYSTAL_CELL_5 $CRYSTAL_CELL_6 \
+          -resolution $RESOLUTION_MAX $RESOLUTION_MIN ]
+
+      set append "-append"
+    }
+  }
+
+  AddOutputFile $solution_file PROJECT
+
+#end of FITTING ..
+  }
+
+  DeleteFile $tmp_log_file
+  TerminateScript 1

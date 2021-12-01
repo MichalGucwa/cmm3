@@ -1,0 +1,260 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::REINDEX::Supported::Data Processing and Reduction::produces an MTZ file with h k l reindexed and/or the symmetry changed:::::::: -->
+
+<h1>REINDEX (CCP4: Supported Program)</h1>
+<h2>NAME</h2>
+<p><b>reindex</b>
+- produces an MTZ file with h k l reindexed. There are options to
+change the symmetry, and to reduce the reflection to the (new) asymmetric unit.</p>
+
+<h2>SYNOPSIS</h2>
+<p><b>reindex hklin</b>
+<i>foo_in.mtz</i>
+<b>hklout</b>
+<i>foo.mtz</i><br />
+[<a href="#keywords">Keyworded input</a>]</p>
+
+<h2><a name="description"></a>DESCRIPTION</h2>
+<p>Reindex reflections and/or change symmetry and/or reduce to asymmetric
+unit again. The input file may be:</p>
+<ol type="a">
+<li>an unmerged (multirecord) file, in which the operations are
+carried out on the original indices (reconstructed using the M/ISYM
+column of HKLIN), or</li>
+<li>a merged file (one record per reflection), in which only
+reindexing is allowed. The file should not contain phase or phase
+coefficient columns: these will be left unchanged, and will probably be
+wrong. If the reflection indices are reduced to the asymmetric unit
+(default unless <a href="#noreduce"> NOREDUCE</a> is specified), then
+any anomalous difference columns will be negated, and F+/- I+/- columns
+swapped, if the hand of the index is changed by the reduction process.</li>
+</ol>
+
+<p>This program is useful, for example when:</p>
+<ol>
+<li>you have unmerged integrated data, which will need to be reduced to the asymmetric unit
+after reindexing, <em>e.g.</em> <b>mosflm</b>.</li>
+<li>you have unmerged data, and you want to change to a different point group.
+This will have a different definition of the asymmetric unit.</li>
+<li>you have merged data which needs to be reindexed, <em>e.g.</em> you might want to
+change h,k,l to k,h,-l in a tetragonal system. Beware, not all
+reindexing is appropriate, and the program does no check (<em>e.g.</em> reindexing
+l,h,k is invalid for a tetragonal crystal).</li>
+</ol>
+
+<p>The program operates on each reflection in turn, without sorting them.
+Therefore, the output file will normally need to be resorted before further 
+use (see <a href="cad.html">CAD</a> or <a href="sortmtz.html">SORTMTZ</a>).
+For the reindex option, the new unit cell is determined and written to
+the output file. For unmerged data, the orientation data (cell and Umat)
+are also updated for all batches.</p>
+
+<p>The following operations are carried out on each reflection:</p>
+<ol>
+<li>If unmerged data (multirecord file): reconstruct original indices</li>
+<li>Reindex if requested</li>
+<li>Reject reflections with non-integral indices</li>
+<li>(Optionally) reduce reflection to asymmetric unit, using new
+symmetry (if different). 
+Anomalous difference, F+/- and I+/- columns will be corrected as
+necessary, <em>i.e.</em> if the hand of the index is changed by the
+reduction process.</li>
+</ol>
+
+<h2><a name="keywords"></a>KEYWORDED INPUT</h2>
+<p>Available keywords are:</p>
+<blockquote>
+<a href="#end"><b>END</b></a>,
+<a href="#lefthand"><b>LEFTHAND</b></a>,
+<a href="#match"><b>MATCH</b></a>,
+<a href="#noreduce"><b>NOREDUCE</b></a>,
+<a href="#reindex"><b>REINDEX</b></a>,
+<a href="#symmetry"><b>SYMMETRY</b></a>
+</blockquote>
+
+<h3><a name="reindex"></a>REINdex</h3>
+<p>Subkeywords HKL or AXIS (default HKL) followed by a transformation.</p>
+<p>The transform can be given a similar way to symmetry operations (see below for
+examples).</p>
+
+<dl>
+<dt>Subkeyword <b>HKL</b></dt>
+<dd>
+  <dl>
+  <dt><pre>reindex HKL   k, h, -l</pre></dt>
+  <dd>implies h<sub>new</sub> = k<sub>old</sub>, k<sub>new</sub> = h<sub>old</sub>,
+      l<sub>new</sub> = -l<sub>old</sub>
+      <em>i.e.</em> this defines a matrix to reindex the reflection data, such that
+      <pre>     [hn kn ln]          =  [ho ko lo] [M]</pre></dd>
+  <dt><pre>reindex HKL   k, h, -l</pre></dt>
+  <dd>generates a reindexing matrix:
+  <pre>     [M] =  [ 0  1  0]
+            [ 1  0  0]
+            [ 0  0 -1]</pre></dd>
+  <dt><pre>reindex HKL   h, -k, -h/2-l/2</pre></dt>
+  <dd>would generate a matrix:
+  <pre>     [M] =  [ 1.0  0.0  0.0]
+            [ 0.0 -1.0  0.0]
+            [-0.5  0.0 -0.5]</pre></dd>
+  <dt><pre>reindex HKL   h-1, k, l</pre></dt>
+  <dd>would result in all h indices being reduced by 1.</dd>
+  </dl><br />
+</dd>
+
+<dt>Subkeyword <b>AXIS</b></dt>
+<dd><p>If the program <a href="axissearch.html">AXISSEARCH</a> has been used to find
+possible alternative reciprocal axes, the reindexing matrix can be specified in
+terms of reciprocal axes, for example:</p>
+  <dl>
+  <dt><pre>reindex AXIS   a*+c*,c*,-b*</pre></dt>
+  <dd>implies a*<sub>new</sub> = a*<sub>old</sub>+c*<sub>old</sub>,
+  b*<sub>new</sub> = -c*<sub>old</sub>, c*<sub>new</sub> = -b*<sub>old</sub>
+  (which is in fact equivalent to <tt>reindex HKL h,l-k,-k</tt>)</dd>
+  <dd><pre>    If     [a*new] = [M]**-1 [a*old]
+           [b*new]           [b*old]
+           [c*new]           [c*old]
+
+    Since   [hn kn ln] [a*n]    =  [ho ko lo] [a*o]
+                       [b*n]                  [b*o]
+                       [c*n]                  [c*o]
+
+      [hn kn ln] [M] **-1 [a*o] =     [ho ko lo] [a*o]
+                          [b*o]                  [b*o]
+                          [c*o]                  [c*o]
+
+    and     [hn kn ln]          = [ho ko lo]  [M] as before</pre></dd>
+  </dl><br />
+</dd>
+</dl>
+
+<p>Cell dimensions will be recalculated for the redefined cell.
+Be careful that the index transformation preserves the hand of the axes (unless
+you want to invert the hand), <em>i.e.</em> that the matrix has a positive
+determinant.  If it does invert the hand, the program will change the sign of
+all reindexing elements unless
+the keyword <a href="#lefthand">LEFTHAND</a> is present.</p>
+
+<p>If the transformation 
+leads to fractional indices for some cases (as in the 2nd example above), these
+reflections will be rejected.  
+<!--EJD  Could this ever happen? !-->
+If the reindexing operations include
+translations, then the orientation data in the output file will not be
+strictly correct.</p>
+
+<h3><a name="match"></a>MATCH</h3>
+<p>In some complicated cases it is easier to specify how three new reciprocal
+vectors should be matched onto three old ones. The program <a href="axissearch.html">AXISSEARCH</a> allows 
+you to check reciprocal vector lengths and angles, and you may wish to 
+convert a P1 cell say to one which approximately matches a C2 one with 
+angles approximately 90 degrees. The program can deduce the reindexing matrix from
+this information.</p>
+<pre>    match   2h'=h +k -l  * 2k'= -h +k + l * 1l'= 1h</pre>
+
+<h3><a name="symmetry"></a>SYMMetry &lt;spacegroup_name | spacegroup_number | symmetry operations&gt;</h3>
+<p>For unmerged files, set new symmetry for reduction to asymmetric unit 
+(after optional reindexing). Defaults to input symmetry from HKLIN file. New symmetry 
+is written to the HKLOUT file. If the output symmetry is a lower symmetry,
+then all input reflections will output, but there will be a lower completeness over
+the asymmetric unit. If the output symmetry is a higher symmetry, then all input 
+reflections will output, with more observations per h k l set.</p>
+<p>For merged files, new symmetry is written to HKLOUT but reduction to 
+asymmetric unit is turned off. This option is therefore not advisable for
+merged data, unless you know what you are doing. </p>
+
+<h3><a name="lefthand"></a>LEFTHAND</h3>
+<p>Allow the reindexing transformation to invert the hand (EXTREMELY
+unwise unless you are very sure you know what you are doing!). Anomalous differences will
+NOT be altered by a reindexing operation inverting the hand.</p>
+
+<h3><a name="noreduce"></a>NOREduce</h3>
+<p>Do not reduce merged reflections to asymmetric unit after reindexing.
+Reflections in unmerged files are always reduced to the
+asymmetric unit defined by the (new) symmetry.</p>
+
+<h3><a name="end"></a>END</h3>
+<p>Terminate control input, also done by end-of-file.</p>
+
+<h2><a name="files"></a>INPUT AND OUTPUT FILES</h2>
+<dl>
+<dt>HKLIN</dt>
+<dd>Input MTZ file. This may contain unmerged or merged reflections,
+depending on what you want to do, see <a href="#description">DESCRIPTION</a>
+section above.</dd>
+<dt>HKLOUT</dt>
+<dd>Output MTZ file, containing reindexed reflections.</dd>
+</dl>
+
+<h2><a name="examples"></a>EXAMPLES</h2>
+
+<h3>unix example scripts found in $CEXAM/unix/runnable/</h3>
+
+<ul>
+<li><a href="../examples/unix/runnable/reindex.exam">reindex.exam</a></li>
+</ul>
+
+<h3>Non-runnable examples of reindexing and sort</h3>
+
+<ol>
+<li>
+<p>Data processed by MOSFLM in P1 with cell
+<pre>
+
+   73.6510  126.4434  126.6338  120.6573   89.7704   89.9541
+
+</pre>
+We want to convert this to P3 for scaling and merging in SCALA. As
+well as changing the point group, we need to reindex such that the
+120 degree angle is gamma. 
+<pre>
+
+reindex HKLIN processed-p1.mtz HKLOUT junk.mtz &lt;&lt;EOF
+reindex HKL k, l, h
+symm P3
+end
+EOF
+
+sortmtz hklin junk.mtz HKLOUT processed-p1-to-p3.mtz &lt;&lt;EOF
+H K L M/ISYM BATCH I SIGI
+EOF
+
+</pre>
+Note that the data needs sorting again after reindex.</p>
+
+<li>
+<p>Converting P1 cell to approximate C2 form:</p>
+<pre>
+ #  Reindex
+ reindex hklin $CCP4_SCR/P1.mtz hklout $SCRATCH/C2.mtz &lt;&lt;eof
+        match   2h'=h +k -l  * 2k'= -h +k + l * 1l'= 1h
+ eof
+</pre>
+
+<li>
+<p>Changing P21 with h+l = 2n +1 absent to standard P21 form:</p>
+<pre>
+ #  Reindex
+ reindex hklin $CCP4_SCR/bigcell.mtz hklout $SCRATCH/JUNK.mtz &lt;&lt;eof
+        reindex h/2-l/2, k, h/2+l/2
+ eof
+ #  Same transformation given in terms of reciprocal axes
+ #
+ reindex hklin $CCP4_SCR/bigcell.mtz hklout $SCRATCH/JUNK.mtz &lt;&lt;eof
+        reindex AXIS a*-c*,b*,a*+c*
+ eof
+ # Sort and reconvert to asymmetric unit again
+ cad hklin1 $SCRATCH/JUNK hklout $CCP4_SCR/newcell &lt;&lt;eof
+        LABI FILE 1 ALLIN
+ eof
+</pre>
+</ol>
+
+<h2>SEE ALSO</h2>
+
+<p><a href="axissearch.html">axissearch</a>, <a href="reindexing.html">reindexing</a></p>
+
+</body></html>
+

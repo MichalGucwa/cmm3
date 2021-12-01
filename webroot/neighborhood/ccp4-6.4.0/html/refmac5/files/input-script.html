@@ -1,0 +1,127 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4 Program Suite : refmac - Input and output files</title>
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX64 6.2 IP19) [Netscape]"></head>
+</head>
+<body>
+
+<!-- ::INDEX_INFO::REFMAC::Supported::Model Refinement::macromolecular refinement program:::::::: -->
+
+<h1>REFMAC (CCP4: Supported Program)</h1>
+<h2>User's manual for the program REFMAC, version 5.*</h2>
+
+<h2><a name="script" id="script"></a>Input and output files - Input script</h2>
+
+<p>A REFMAC input script has the same form as the most of the 
+<a href="../../INDEX.html"><b>CCP4</b></a> programs; <em>i.e.</em>:</p>
+
+<blockquote><pre>refmac logical_file1 &lt;actual_file1&gt; logical_file2 &lt;actual_file2&gt; \
+... &lt;&lt; eor
+
+Command lines
+
+END
+eor</pre></blockquote>
+
+<p>Where <tt>logical_filei</tt> are logical names of files to be used and <tt>actual_filei</tt> are 
+actual file names.</p>
+
+<p>For example:<br />
+Restrained refinement with <tt>file_crd.pdb</tt> as input coordinate file and <tt>file_mtz.mtz</tt> as
+input reflection file and results written to output files <tt>file_refmac.mtz</tt> (reflection file
+to be used for map caclulation) and <tt>file_refmac.pdb</tt> (coordinate file):</p>
+
+<blockquote><pre>refmac \
+hklin file_mtz.mtz \
+xyzin file_crd.pdb  \
+hklout file_refmac.mtz \
+xyzout file_refmac.pdb &lt;&lt; eor
+
+Command lines
+ 
+END
+eor</pre></blockquote>
+
+<h3>Logical names and description of possible input and output files</h3>
+
+<dl>
+<dt>HKLIN</dt>
+<dd>Input reflection file. Format MTZ.</dd>
+<dt>HKLOUT</dt>
+<dd>Output reflection file. Format MTZ. Contains coefficients for map calculations.</dd>
+<dt>XYZIN</dt>
+<dd>Input coordinate file. Preferred format PDB. mmCIF can also
+be used. From mmCIF, REFMAC uses only information necessary for refinement.</dd>
+<dt>XYZOUT</dt>
+<dd>Output coordinate file. Current format is PDB.</dd>
+<dt><a href="tls.html#tlsin">TLSIN</a></dt>
+<dd>Input file containing TLS parameters.</dd>
+<dt><a href="tls.html#tlsout">TLSOUT</a></dt>
+<dd>Output file containing new refined TLS parameters.</dd>
+<dt>SYMOP</dt>
+<dd>File containing symmetry operations. Only set explicitly if non-default symmetry
+libraries are used.</dd>
+<dt>LIBIN</dt>
+<dd>Input user supplied library of ligand descriptions.</dd>
+<dt>LIBOUT</dt>
+<dd>Output library of descriptions. It will be written if new ligand is encountered.</dd>
+<dt>ATOMSF</dt>
+<dd>File containing atomic form factors. Only set explicitly if non-default atomic structure
+factor libraries are used.</dd>
+</dl>
+
+<h3>Command lines</h3>
+
+<p>Command lines could directly contain keywords as described in the
+<a href="../keywords/index.html"><b>Keyworded input</b></a> section.</p>
+
+<p>Command lines could also contain a file of command lines. In this case a &#64 sign should preceed
+the file name. For example:</p>
+<blockquote><pre>refmac hklin file_mtz.mtz  \
+       xyzin file_crd.pdb  \
+       hklout file_refmac.mtz \
+       xyzout file_refmac.pdb &lt;&lt; eor
+LABIn ....
+   
+&#64my_favourite_defaults_for_low_resolution
+ 
+....
+END
+eor</pre></blockquote>
+
+<p>Then &quot;<tt>my_favourite_defaults_for_low_resolution</tt>&quot; could contain following the keywords:</p>
+<blockquote><pre>#
+#   Do not use hydrogens even if they are in the input file
+#
+MAKE_restraints HYDRogens No
+#
+#   Set all B values to 30 before starting refinement
+#
+BFACtors SET_to 30
+#
+#Do 10 cycle of TLS refinement before individual atomic
+#
+REFInement TLSCycle 10 
+#
+# Do overall B value refinement
+#
+BREFinement OVERall 
+#
+# Use tight restraints
+#
+WEIGt MATRix 0.1 
+#
+# Fix Babinet's B value to 200
+#
+SCALe LSSCale FIXBulk BBULk 200
+#
+#   Damp down shifts by 0.3 at every cycle
+#
+DAMPing_factors 0.3 0.3
+</pre></blockquote>
+
+<p>See <a href="../usage/examples.html"><b>Examples</b></a> section for scripts for various purposes.</p>
+
+</body>
+</html>

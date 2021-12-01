@@ -1,0 +1,98 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#===========================================================================
+#
+# superpose.script
+#
+#===========================================================================
+
+  if { $RUN_PDBMERGE} {
+    set XYZOUT_LOCAL [GetTmpFileName -ext pdb]
+  } else {
+    set XYZOUT_LOCAL $XYZOUT
+  }
+
+  if { [regexp GES $SUPERPOSE_MODE ] } {
+
+    set cmd "[BinPath gesamt] \"$XYZIN2\" -s \"$GES_MOVING\" \"$XYZIN1\" -s \"$GES_FIXED\" \"$XYZOUT_LOCAL\""
+    set status [Execute $cmd "" program_status report ]
+
+  } elseif { [regexp SSM $SUPERPOSE_MODE ] } {
+
+    set cmd "[BinPath superpose] \"$XYZIN2\" -s \"$SSM_MOVING\" \"$XYZIN1\" -s \"$SSM_FIXED\" -o \"$XYZOUT_LOCAL\""
+    set status [Execute $cmd "" program_status report ]
+
+  } elseif { [regexp TOP $SUPERPOSE_MODE ] } {
+
+# Make a directory to work in so no chance of two top jobs fighting for
+# the same fort.nn
+
+    set topp_dir [SetOutputFileRoot -tmp]_topp_
+
+    DeleteFile $topp_dir
+    CreateDir $topp_dir
+    ChangeDirectory  $topp_dir
+    set newfile_root [file root [file tail $TOPOUT ] ]
+
+    WriteToLog "Creating directory $topp_dir for output files"
+
+    set tmp_log_file [GetTmpFileName -ext log]
+
+    CreateComScript topp topp_script -nocontinue
+
+    set status [Execute [BinPath topp] $topp_script \
+	program_status report -copy_log $tmp_log_file ]
+
+    set addoutfile AddOutputFile
+
+    if { [ReadFile $tmp_log_file log_list] &&
+	[ExtractTextLine $log_list guoguang 0 all outfile ] } {
+      set n 0
+      while { [ExtractTextLine - "Superimposed coordinates" 0 5 outfile] } {
+         incr n; set newfile [subst $newfile_root]_$n.pdb
+         MoveFile [FileJoin $topp_dir $outfile] \
+		[FileJoin [GetDefaultDirPath $DIR_TOPOUT] $newfile] -overwrite
+         append addoutfile " $newfile $DIR_TOPOUT"
+      }
+    }
+      
+    DeleteFile $tmp_log_file
+    eval "$addoutfile"
+
+
+  } else {
+
+    CreateComScript lsqkab lsqkab_script
+
+    set cmd "[BinPath lsqkab] XYZIN2 \"$XYZIN2\""
+    if [regexp FIT|COMPARE  $SUPERPOSE_MODE] { append cmd " XYZIN1 \"$XYZIN1\"" }
+    if $IFOUTPUTXYZ { append cmd " XYZOUT \"$XYZOUT_LOCAL\"" }
+    if $IFOUTPUTDELTAS { 
+      append DELTAS [SetOutputFileRoot] _deltas.log
+      append cmd " DELTAS $DELTAS" 
+    }
+    if $IFOUTPUTRMS {
+      append RMSTAB [SetOutputFileRoot] _rmstab.graph
+      append cmd " RMSTAB $RMSTAB"
+    }
+
+    set status [Execute $cmd $lsqkab_script program_status report ]
+
+    if $IFOUTPUTDELTAS { AddOutputFile $DELTAS $job_params(PROJECT) }
+    if $IFOUTPUTRMS { AddOutputFile $RMSTAB $job_params(PROJECT) }
+  }
+
+  if { $RUN_PDBMERGE} {
+
+    CreateComScript pdb_merge pdb_merge_script
+    set cmd "[BinPath pdb_merge] xyzin1 \"$XYZIN1\" xyzin2 \"$XYZOUT_LOCAL\" xyzout \"$XYZOUT\""
+    set status [Execute $cmd $pdb_merge_script program_status report ]
+    
+  }

@@ -1,0 +1,641 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4i Documentation for Programmers: Program Command Template File</title>
+<link rel="stylesheet" type="text/css" href="../ccp4idocs.css" title="CCP4i" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="3" class="logopic"><img src="../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logoprog">Documentation for Programmers</td></tr>
+<tr><td class="logotitle">The Command Template File</td></tr>
+</table>
+<br />
+<table border="0">
+<tr><td>
+<a href="run_scripts.html" target="_PROGMAIN">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="window_demo.html" target="_PROGMAIN">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="intro.html" target="_PROGMAIN">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td></tr>
+</table>
+
+<p><a href="#intro" target="_self">Introduction</a></p>
+<p><a href="#using_createcomscript" target="_self">Using
+CreateComScript in a Script File</a></p>
+<p><a href="#intro_file_format"
+target="_self">Introduction to the Template File Format</a></p>
+<p><a href="#parameter_substitution"
+target="_self">Parameter Substitution and the Write Flag</a></p>
+<dl>
+<dt><a href="#splitting_commands"
+target="_self">Splitting Commands into Components - Continuation Lines</a><dt>
+<dd><a href="#sub_components"
+target="_self">Sub-components and Double-Continuation</a></dd>
+<dd><a href="#inline_else" target="_self">The
+<tt>|</tt> character - an inline ELSE</a></dd>
+</dl>
+<p><a href="#undefined_parameters"
+target="_self">Undefined Parameters and Why Split Commands into Components</a></p>
+<dl>
+<dt><a href="#control_structures" target="_self">Control
+Structures</a></dt>
+<dd><a href="#if_else_endif" target="_self">IF-ELSE-ENDIF</a></dd>
+<dd><a href="#loop" target="_self">LOOP-ENDLOOP</a></dd>
+<dd><a href="#case" target="_self">CASE-CASEMATCH-ENDCASE</a></dd>
+</dl>
+<p><a href="#labelline" target="_self">LABELLINE
+- Writing LABIN and LABOUT Commands</a></p>
+<p><a href="#at" target="_self">AT
+- Including the contents of an external file</a></p>
+<p><a href="#hints" target="_self">Hints for
+Programmers</a></p>
+<p><a href="#appendix" target="_self">Appendix: Some
+Examples of Write Flags</a></p>
+
+<h3><a name="intro"></a>Introduction</h3>
+
+<p>First read the
+<a href="overview.html" target="_self">Overview</a> of the
+files required for a task interface.</p>
+
+<p>It is common in scripts to run CCP4 programs to redirect the command
+input from the script file using &lt;&lt; but in CCP4i the commands are
+written to a separate file (chiefly to enable VMS&nbsp;support). Command
+templates are used to generate the command files for CCP4 (or other) programs.</p>
+
+<p>The procedure <em>CreateComScript</em> will substitute parameters into
+the template to create a command file. There is usually one command template
+file per program, though if program function is very modular it may be
+reasonable to have separate templates for different functions (<em>e.g.</em> see
+the <em>amore_*.com</em> templates in <em>$CCP4I_top/templates</em>). Note
+that the templates are all kept in the directory <em>$CCP4I_top/templates</em>.
+Before writing a new task interface, check here for existing templates
+for program(s) you may want to use - particularly because the rest
+of the task interface must use the same parameter names that are used in
+the template.</p>
+
+<h3><a name="using_createcomscript"></a>Using CreateComScript in a Script File</h3>
+
+<p>The <em>CreateComScript</em> procedure is usually called from a run script
+- a few example lines of a run script might be:</p>
+
+<pre>
+set TITLE &quot;This should be a really good fiddle&quot;
+set FACTOR_1 0.1
+set FACTOR_2 400
+set FACTOR_3 27.1
+set EXTRA_FIDDLE 1
+
+CreateComScript $CCP4I_top/templates/fiddleprog.com fp_script
+</pre>
+
+<p>The first argument to<em> CreateComScript</em> is the name of the <em>fiddleprog</em>
+template file and the second argument returns the name of a temporary file
+which is created and will contain the command lines:</p>
+
+<pre>
+title&nbsp;'This should be a really good fiddle'
+fiddlefactors 0.1 400 -
+27.1
+</pre>
+
+<p>Note that the values of the parameters set in the run file are not
+passed to the <em>CreateComScript</em> procedure - a bit of Tcl black magic
+enables it to see the variables at the higher, calling, level in the stack.</p>
+
+<h3><a name="intro_file_format"></a>Introduction to the Template File Format</h3>
+
+<p>The commands for many CCP4 programs are very complex with many optional
+keywords and subkeywords and variable numbers of parameters. The format
+of the template file is designed so that only the required keywords, subkeywords
+and parameters are written to the command file - in most cases nothing
+will be written so:</p>
+
+<li>the program will be able to choose its own defaults</li>
+
+<li>if the user chooses to look at the command file it will be as simple
+as possible </li>
+
+<p>In order to implement this, each command line must be broken down into
+its various components and with the option of an independent decision whether
+or not to write each component to the command file.</p>
+
+<h3><a name="parameter_substitution"></a>Parameter Substitution and the Write Flag</h3>
+
+<p>To control whether a command line is written or not, the first parameter
+on a standard line in the template file is a logical variable. For example
+to create a command line:</p>
+
+<pre>
+resolution 10.0 3.0
+</pre>
+
+<p>the line in the template file could be:</p>
+
+<pre>
+$SET_RESOLUTION_LIMITS resolution $RESOLUTION_MIN $RESOLUTION_MAX
+</pre>
+
+<p>Any word on the template line beginning with <tt>$</tt> will be treated as a
+variable and the value substituted. Thus the line above requires the parameters
+<tt>SET_RESOLUTION_LIMITS</tt>, <tt>RESOLUTION_MIN</tt> and <tt>RESOLUTION_MAX</tt>
+to be set. The values of these variables will be substituted into the template line.
+All other words will be retained as they are.</p>
+
+<p>The first word in the template line is treated as a
+<strong><em>write flag</em></strong>. It must be a logical with value 1 (true) or
+0 (false). A line will only be written to the command file if the write flag is true.
+The write flag is not written to the command file.</p>
+
+<p>If a line should always be written, the write flag can be given a
+fixed value of 1:</p>
+
+<pre>
+1 resolution $RESOLUTION_MIN $RESOLUTION_MAX
+</pre>
+
+<p>If the decision whether to write the line is more complex, a more
+complex function can be used, providing it has a logical (<em>i.e.</em> 0 or 1)
+result, for example:</p>
+
+<pre>
+{ $SET_RESOLUTION_LIMITS &amp;&amp; $RESOLUTION_MAX &gt; 0.0 } resolution $RESOLUTION_MIN $RESOLUTION_MAX
+</pre>
+
+<p>For the command line to be written, $SET_RESOLUTION_LIMITS must
+be true and $RESOLUTION_MAX must be greater than zero. Note that the
+write flag function is enclosed in curly braces <tt>{}</tt> and is in the Tcl
+language. Examples of some functions which might be useful, are given
+<a href="#appendix" target="_self">below</a>.</p>
+
+<h3><a name="splitting_commands"></a>Splitting Commands into Components - Continuation Lines</h3>
+
+<p>The definition of one command may be spread over several lines in the
+template file. Each line of the template file is processed independently
+so each of the components of the command is treated independently. Thus for
+an example command line:</p>
+
+<pre>
+fiddlefactors &lt;factor_1&gt; &lt;factor_2&gt; [ &lt;factor_3&gt; ]
+</pre>
+
+<p>where the third parameter &lt;factor_3&gt; is optional, the template
+might be:</p>
+
+<pre>
+1 fiddlefactors $FACTOR_1 $FACTOR_2
+- $EXTRA_FIDDLE&nbsp;$FACTOR_3
+</pre>
+
+<p>The first line will always be written, as it has a write flag of 1.</p>
+
+<p>The second line encodes a component of the command which will only be written
+if the parameter <tt>$EXTRA_FIDDLE</tt> is 1 (true).
+The <tt>-</tt> character at the beginning of
+the second line indicates that it is a continuation of the preceding line. In
+CCP4 command files the continuation character goes on the end of the preceding line.
+The reason for the different convention here will become apparent
+<a href="#double_continuation" target="_self">later</a>.
+Of course, when the template file is processed, the resulting command file has the
+continuation character at the end of the preceding line.</p>
+
+<p>An alternative form for the template is:</p>
+
+<pre>
+$SET_FIDDLEFACTORS fiddlefactors $FACTOR_1 $FACTOR_2
+- $EXTRA_FIDDLE $FACTOR_3
+</pre>
+
+<p>Here writing the first line is dependent on the value of the parameter
+<tt>$SET_FIDDLEFACTORS</tt>. If this is 1 (true), the command line is written
+as above, but if it is 0 (false), nothing is written. The second, continuation,
+line is NOT written if the preceding line is not written.</p>
+
+<p>Analysing command lines can result in several components which can be
+written as continuation lines, <em>e.g.</em> the refi command in the refmac
+interface:</p>
+
+<pre>
+1 refi
+- 1 type $REFINE_TYPE
+- $IFRESI resi $RESIDUAL
+- 1 meth $MINIMISATION
+</pre>
+
+<p>Note that if the <tt>$IFRESI</tt> parameter were 0, the resi keyword
+would not be written out but the subsequent meth keyword would still be
+written.</p>
+
+<h4><a name="sub_components"></a>Sub-components and Double-Continuation</h4>
+
+<p>There are a few complex commands which can be interpreted as having
+sub-components of the components and these are represented as starting
+with <tt>--</tt> on a line. The line will only be written if the preceding command
+line and component line are written. For example in the fft template file:</p>
+
+<pre>
+1 exclude
+- $EXCLUDE_BYSIGMA sig1 $EXCLUDE_BYSIGMA_1
+-- [IfSet $EXCLUDE_BYSIGMA_2] sig2 $EXCLUDE_BYSIGMA_2
+- $EXCLUDE_MINIMUM f1min $EXCLUDE_MINIMUM_1
+-- [IfSet $EXCLUDE_MINIMUM_2] f2min $EXCLUDE_MINIMUM_2
+</pre>
+
+<p>The sub-component keywords <em>sig2</em> and <em>f2min</em> will only be
+written out if the preceding components are written and if their own write
+flag function is true (the <em>IfSet</em> procedure is described more fully
+in the <a href="indexframeset.html" target="_blank">library of CCP4i commands</a>
+- essentially it checks that a parameter is not an empty string).</p>
+
+<p>Where there is a 'double-continuation' in the template file, only a
+single continuation will be written to the end of the preceding line in
+the command file.</p>
+
+<p><a name="double_continuation"></a><em>The continuation character in the
+template file is put at the beginning of lines rather than the end so the
+'double-continuation character' of sub-components can be used unambiguously.</em></p>
+
+<h4><a name="inline_else"></a>The <tt>|</tt> character - an inline ELSE</h4>
+
+<p>If there is a <tt>|</tt> character in the template line, the interpretation
+of the write flag is changed. If the write flag is 1 (true), the words
+<em>preceding</em> the <tt>|</tt> character will be written to the command file. If the
+write flag is 0 (false), the words <em>after</em> the <tt>|</tt> character will be written
+to the command file. In this case, there is NO option not to write to the command
+file.</p>
+
+<p>An example from the scala template:</p>
+
+<pre>
+$TAILS_FIX_V FIX V | UNFIX V
+</pre>
+
+<p>Dependent on the value of $TAILS_FIX_V, either &quot;FIX V&quot; or
+&quot;UNFIX V&quot; will be written to the command file.</p>
+
+<p>This is equivalent to (see
+<a href="#if_else_endif" target="_self">section on
+IF-ELSE-ENDIF</a>):</p>
+
+<pre>
+IF $TAILS_FIX_V
+ 1 FIX V
+ELSE
+ 1 UNFIX V
+ENDIF
+</pre>
+
+<h3><a name="undefined_parameters"></a>Undefined Parameters and Why Split Commands into Components</h3>
+
+<p>Many template files contain a large number of variables but it is not
+necessary to set values for all of them in order to use the template file.
+The template file is processed one line at a time and if ANY parameter
+in the line is not set, the line will not be written (it will be treated
+as if the write flag was 0 (false)). A major incentive to split commands
+into component lines is that if a parameter is not set for one component
+it will not stop other components being processed and written successfully.</p>
+
+<p>Note that a parameter can be set to the empty string:</p>
+
+<pre>
+set RESOLUTION &quot;&quot;
+</pre>
+
+<p>and it will still be considered as defined. This can lead to errors
+in the command file where parameters are 'missing'. You need to check that
+parameters are not just an empty string using the IfSet procedure.</p>
+
+<!--
+<p><font color="#ff0000">NOTE: THIS&nbsp;IS&nbsp;HORRIBLE&nbsp;- at least
+IfSet should be called something more sensible.</font></p>
+-->
+
+<h3><a name="control_structures"></a>Control Structures</h3>
+
+<p>The command template format supports control structures of the form
+IF-ELSE-ENDIF, LOOP and CASE. Note that the keywords MUST be uppercase
+and written on separate lines. It is permissible to nest LOOPs and IFs.</p>
+
+<p>The control structures can be used within the definitions for a single
+command or around one or more commands.</p>
+
+<h4><a name="if_else_endif"></a>IF-ELSE-ENDIF</h4>
+
+<p>IF-ELSE-ENDIF has the form:</p>
+
+<pre>
+IF { logical_function }
+..
+..
+ELSE
+..
+..
+ENDIF
+</pre>
+
+<p>The ELSE component is optional. An example from the refmac template:</p>
+
+<pre>
+1 refi
+ - 1 type $REFINE_TYPE
+ - 1 resi $RESIDUAL
+ - 1 meth $MINIMISATION
+IF { [StringSame $REFINE_TYPE IDEA RIGID] }
+ - $B_REFINEMENT bref over
+ELSE
+ - $B_REFINEMENT bref $B_REFINEMENT_MODE
+ENDIF
+</pre>
+
+<p>Here the IF-ELSE-ENDIF is used with the definition of the refi
+command. The <em>StringSame</em> procedure is being used to test if $REFINE_TYPE is
+set to IDEA or RIGID and the line written to the command file depends on the result.</p>
+
+<p>The logical function could be a variable name or any Tcl function.</p>
+
+<h4><a name="loop"></a>LOOP-ENDLOOP</h4>
+
+<p>LOOP-ENDLOOP has the form:</p>
+
+<pre>
+LOOP loop_variable start_value end_value
+..
+..
+ENDLOOP
+</pre>
+
+<p>The loop variable should be a simple name (<em>e.g.</em> &quot;n&quot;); the value
+of the loop variable can be accessed inside the loop (<em>e.g.</em> as &quot;$n&quot;).
+The start_value and end_value should be integers, end_value should be greater
+than start_value. Currently there is no option for increment values other
+than 1.</p>
+
+<p>An example from the refmac template to write out scaling factors for
+a variable number of partials:</p>
+
+<pre>
+IF { $NPARTIALS &gt; 0 }
+1 scpa
+  LOOP N 1 $NPARTIALS
+   - 1 $PARTIAL_SCALE($N)
+  ENDLOOP
+ENDIF
+</pre>
+
+<h4><a name="case"></a>CASE-CASEMATCH-ENDCASE</h4>
+
+<p>CASE-CASEMATCH-ENDCASE has the form:</p>
+
+<pre>
+CASE $case_variable
+CASEMATCH value_1
+..
+CASEMATCH value_2
+..
+......
+..
+CASEMATCH value_n
+..
+..
+ENDCASE
+</pre>
+
+<p>The action depends on whether the value of <em>case_variable</em> matches
+any of the values <em>value_1</em>, <em>value_2</em>, .. <em>value_n</em>.</p>
+
+<p>An example from the refmac template in generating the weight
+command. The parameters written to the command file depend on the value of
+<tt>$WEIGHTING_METHOD</tt>:</p>
+
+<pre>
+1 weight
+ - { !$EXPERIMENTAL_WEIGHTING } NOEX
+CASE $WEIGHTING_METHOD
+CASEMATCH MATRIX
+ - 1 MATRIX $MATRIX_WEIGHT
+CASEMATCH GRADIENT
+ - 1 GRADIENT $GRADIENT_WEIGHT
+CASEMATCH SIGMA
+ - 1 SIGMA $SIGMA_WEIGHT
+ENDCASE
+</pre>
+
+<p>NOTE that in { !$EXPERIMENTAL_WEIGHTING } the '!' means 'not' and so this
+statement is true if $EXPERIMENTAL_WEIGHTING is set to zero (<em>i.e.</em> false).
+See also
+<a href="#example_5" target="_self">examples
+below</a>.</p>
+
+<h3><a name="labelline"></a>LABELLINE - Writing LABIN and LABOUT Commands</h3>
+
+<p>The usual form for LABELLINE is:</p>
+
+<pre>
+LABELLINE label_keyword program_label_list label_index
+</pre>
+
+<p>The label_keyword is usually LABIN, or LABOUT. It could be the continuation
+character <tt>-</tt> if it is a continuation from a previous LABELLINE.
+The program_label_list is a list of program labels. The label_index is optional
+and, if used, should be a positive integer value.</p>
+
+<p>For example if the following parameters are set:</p>
+
+<pre>
+set LABIN &quot;F1 SIGF1 PHI&quot;
+set F1 FP
+set SIGF1 SIGFP
+set PHI PHIC
+</pre>
+
+<p>then the template line:</p>
+
+<pre>
+LABELLINE labin $LABIN
+</pre>
+
+<p>will result in the command line:</p>
+
+<pre>
+labin F1 = FP -
+SIGF1 = SIGFP -
+PHI = PHIC
+</pre>
+
+<p>For each of the program labels listed in the variable $LABIN the
+appropriate assignment has been written to the command file. The program_label_list
+does not need to be a variable; the line:</p>
+
+<pre>
+LABELLIST labin &quot;F1 SIGF1 PHI&quot;
+</pre>
+
+<p>with the program labels grouped inside double inverted commas, would
+also work. Many programs have variable program labels dependent on their
+mode of use and it is usually advisable to make the program_label_list
+a variable which is set in the
+<a href="task_windows.html#taskname_run" target="_self"><em>taskname_run</em>
+procedure</a>.</p>
+
+<p>Some programs have 'indexed' program labels which usually correspond
+to derivatives numbered 1 to n. So, for example, for MLPHARE, the usual
+program labels (with no anomalous data) are: FP SIGFP FPH1
+SIGFPH1 .. FPHn SIGFPHn. The template lines for these are:</p>
+
+<pre>
+LABELLINE labin &quot;FP SIGFP&quot;
+LOOP n 1 $N_DERIVS
+ LABELLINE - &quot;FPH SIGFPH&quot; $n
+ENDLOOP
+</pre>
+
+<h3><a name="at"></a>AT - Including the contents of an external file</h3>
+
+<p>The AT construct allows the contents of an external com file to be included
+in the final com file. An example of its usage is:</p>
+
+<pre>
+AT { [FileJoin [GetEnvPath CCP4I_TOP] templates harvest.com] }
+</pre>
+
+<p>The instructions that the referenced file contains will be processed within
+the current context and the resulting commands written to the output com file
+at the position of the AT command.</p>
+
+<p><strong>Known Bug With The AT Command</strong></p>
+
+<p>There is a known bug with the AT mechanism when used within a LOOP
+construct to include several different external files. In these
+circumstances each AT command will insert the contents of all the
+previously read AT commands within the loop. (AT commands outside the
+loop are not affected.) The use of the AT mechanism in these situations
+is therefore deprecated.</p>
+
+<h3><a name="hints"></a>Hints for Programmers</h3>
+
+<p>When writing a task interface, write the command template file first.
+It will give you a chance to look at the details of the program input.</p>
+
+<p>Use existing templates wherever possible. Contact the
+<a href="mailto:ccp4gui@dl.ac.uk">Interface developers</a>
+if you want to check if a template has been recently created or if
+you have some argument with an existing template.</p>
+
+<p>If you are the first person to write a template for a particular program,
+please do not take short cuts (for example leaving out keywords that you
+do not want to use or making assumptions of parameters being equivalent
+where it is not necessarily so). This just makes for problems in the future.
+</p>
+
+<p>Split commands into components.</p>
+
+<p>If there is an error in the template file, the resultant error messages
+are not always very helpful so you need to be able to spot errors in the
+file. Use indentation to make the control structure of the template file
+more obvious.</p>
+
+<p>90% of errors in the template file are forgetting to put a <em>write
+flag</em> in a command line or are typos in variable names.</p>
+
+<p>It is not necessary that every parameter in the command template maps
+onto a widget in the task window seen by the user. Some parameters may
+be irrelevant for a particular task and it is often desirable to present
+the user with fewer, simplified parameters - these can be expanded to the
+parameters required by the template file at either of two stages: in
+the taskname_run procedure or in the task script.</p>
+
+<p>The easiest way to test a template file is simultaneously with testing
+the task window. Use the <em>Run&amp;ViewComFile</em> option when running
+the task so you can see the resultant command file and check it is what
+you expect for the parameters set in the task window.</p>
+
+<h3><a name="appendix"></a>Appendix: Some Examples of Write Flags</h3>
+
+<p>This is intended as a very quick introduction to the snippets of Tcl
+that you may need to use in defining a write flag. Note that <em>IfSet</em>
+and <em>StringSame</em> are CCP4i procedures and are documented in the
+<em>Text Handling Utilities</em> section of the
+<a href="indexframeset.html" target="_blank">library of CCP4i commands</a>.</p>
+
+<dl>
+<dt><a name="example_1"></a>
+<pre>
+{ [IfSet $TITLE] } title $TITLE
+</pre>
+</dt>
+<dd>write the title command line if the <tt>$TITLE</tt> string is not empty.</dd>
+
+<dt><a name="example_2"></a>
+<pre>
+{ [regexp MIN $REFINE_MODE] } ......
+</pre>
+</dt>
+<dd>write the line if the string in variable <tt>$REFINE_MODE</tt> includes
+the string <tt>MIN</tt> (<em>N.B.</em> it does not have to be an exact match). <em>regexp</em>
+is a very powerful regular expression procedure, of which the full range of functionality
+is described very tersely in the
+<a href="http://sunscript.sun.com/man/tcl8.1/TclCmd/regexp.htm" target="_blank">Tcl
+documentation</a>
+<!--
+<font color="#ff0000">(I'm looking for a good introduction to regexp - anyone know a good
+reference?)</font>.</dd>
+-->
+
+<dt><a name="example_3"></a>
+<pre>
+{[StringSame $REFINE_MODE MINI MAXI ]} ....
+</pre>
+</dt>
+<dd>write the line if the string in variable <tt>$REFINE_MODE</tt> is an exact
+match to any of the subsequent arguments to the <em>StringSame</em> procedure.
+Note that the procedure can have two or more arguments.</dd>
+
+<dt><a name="example_4"></a>
+<pre>
+{[expr $N - 1] == $HIT_VALUE } ....
+</pre>
+</dt>
+<dd>the line is written if $N -1 is equal to <tt>$HITVALUE</tt>. All arithmetic operations
+in Tcl should be done with the <em>expr</em> procedure (see the
+<a href="http://sunscript.sun.com/man/tcl8.1/TclCmd/expr.htm" target="_blank">Tcl
+documentation</a>).
+The Tcl operators such as == are also described in the <em>expr</em> documentation.</dd>
+
+<dt><a name="example_5"></a>
+<pre>
+!$FIX unfix
+</pre>
+</dt>
+<dd>write out &quot;unfix&quot; if NOT <tt>$FIX</tt>. The exclamation mark is the
+'not' operator.</dd>
+
+<dt><a name="example_6"></a>
+<pre>
+{ $TEST_1 &amp;&amp; $TEST_2 } ....
+</pre>
+</dt>
+<dd>the line is written if both <tt>$TEST_1</tt> and <tt>$TEST_2</tt> are true</dd>
+
+<dt><a name="example_7"></a>
+<pre>
+{ $TEST_1 || $TEST_2 } ....
+</pre>
+</dt>
+<dd>the line is written if <tt>$TEST_1</tt> or <tt>$TEST_2</tt> is true</dd>
+
+<dt><a name="example_8"></a>
+<pre>
+{ ($TEST_1 &amp;&amp; $TEST_2) || $TEST_3 } ..
+</pre>
+</dt>
+<dd>the line is written if both <tt>$TEST_1</tt> and <tt>$TEST_2</tt> are true OR if
+<tt>$TEST_3</tt> is true</dd>
+
+</body>
+</html>

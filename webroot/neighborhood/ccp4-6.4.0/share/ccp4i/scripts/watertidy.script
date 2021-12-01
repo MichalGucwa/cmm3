@@ -1,0 +1,178 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+
+  source [SearchPath TOP utils pdb_utils.tcl]
+
+# procedure to  find new unique new chain ids
+
+#--------------------------------------------------------------
+proc watertidy_next_id { chain_list nnew } {
+#--------------------------------------------------------------
+
+# Append 1-char chain ids to this list if you have a run out of names
+  set names [list A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]
+  set ln [llength $names]
+
+  set nfound 0
+  set n -1
+  while { $nfound < $nnew } { incr n
+    if { $n > $ln } { 
+      WriteToLog "ERROR Can not find suitable unique chain name
+Try editting the file CCP4I_TOP/scripts/watertidy.script to add 
+new chain names to the list called 'names'"
+      TerminateScript 0
+    }
+    set new_id [lindex $names $n]
+    if { [lsearch $chain_list $new_id] < 0 } {
+      incr nfound
+      lappend new_id_list $new_id
+    }
+  }
+  return $new_id_list
+}
+
+#---------------------------------------------------------------------------------
+#Initial Setup
+#---------------------------------------------------------------------------------
+
+# Save the original input file name
+  set pdbin $XYZIN
+
+# Keep a list of the chain ids assigned to waters
+  set water_chains {}
+
+# Keep a list of the temporary files holding the individual water shells
+  set shell_pdbs {}
+
+# Assign unique names for the new water chains
+
+# get a full list of the chains in protein and the atom id ranges (atomid argument)
+  PdbGetChains $XYZIN chain_list chain_range  -atomid
+# work out suitable names for output chains
+  set next_chain_ids [watertidy_next_id $chain_list $NHOST_CHAIN]
+  for { set n 1 } { $n <= $NHOST_CHAIN } { incr n } {
+      set WATOUT_ID($n) [lindex  $next_chain_ids [expr $n -1] ]
+      lappend chain_list $WATOUT_ID($n)
+      set text($n) "Solvent around chain $CHAIN_ID($n) assigned chain ids $WATOUT_ID($n)"
+      lappend water_chains $WATOUT_ID($n)
+  }
+  set INTRA_MOL 1
+# find the range of the water 'chain'
+  set nn [lsearch $chain_list $WATIN_ID]
+  set FROMRANGE ATOM
+  set FROMATOM1 1
+  set FROMATOM2 200000
+  set TORANGE ATOM
+  set TOATOM1 [lindex [lindex $chain_range $nn] 0]
+  set TOATOM2 [lindex [lindex $chain_range $nn] 1]
+
+
+#---------------------------------------------------------------------------------
+#  Loop though distang/watertidy
+#---------------------------------------------------------------------------------
+
+  for { set cycle $FIRST_SHELL } { $cycle <= $LAST_SHELL } { incr cycle } {
+    
+    set tmp_log_file [GetTmpFileName -ext log_$cycle ]
+    set pdbout [GetTmpFileName -ext pdb_$cycle]
+    set WATERTIDY_SHELL $cycle
+
+# run distang
+    set distang_script {}
+    CreateComScript distang distang_script
+
+    set status [Execute "distang XYZIN \"$XYZIN\" DISTOUT \"$tmp_log_file\"" \
+        $distang_script program_status report]
+
+
+# run watertidy
+    set watertidy_script {}
+    CreateComScript watertidy watertidy_script
+
+    set status [Execute "watertidy XYZIN \"$XYZIN\" XYZOUT \"$pdbout\" DISTOUT \"$tmp_log_file\"" \
+                $watertidy_script $LOG_FILE program_status report]
+
+# the output file has the waters all the waters for this shell
+# Add to the list of files, once for each host chain
+    for { set i 0 } { $i < $NHOST_CHAIN } { incr i } {
+       lappend shell_pdbs $pdbout
+    }
+
+    if { $cycle < $LAST_SHELL } {
+      set XYZIN $pdbout
+      set next_chain_ids [watertidy_next_id $chain_list $NHOST_CHAIN]
+      for { set n 1 } { $n <= $NHOST_CHAIN } { incr n } {
+        set CHAIN_ID($n) $WATOUT_ID($n)
+        set WATOUT_ID($n) [lindex $next_chain_ids [expr $n -1 ] ]
+        lappend chain_list $WATOUT_ID($n)
+        append text($n) " $WATOUT_ID($n)"
+        lappend water_chains $WATOUT_ID($n)
+      }
+    }
+  }
+
+#---------------------------------------------------------------------------------
+#  Attempt to reassemble the coordinate file with the waters sorted by chain
+#---------------------------------------------------------------------------------
+
+# Get temporary version of input file without waters
+# Use this as the base file
+
+  set tmp_base_file [GetTmpFileName -ext pdb]
+  WriteComFile pdbset_script "EXCLUDE HOH\nEND\n"
+  set status [Execute "[BinPath pdbset] XYZIN \"$pdbin\" XYZOUT \"$tmp_base_file\"" \
+                $pdbset_script status report ]
+
+# Add original water chain to the list of water chains
+# as some waters might not have been reassigned in the last cycle
+
+  lappend water_chains $WATIN_ID
+  lappend shell_pdbs $pdbout
+
+# Get water chains on their own
+# Merge each chain into the new version of the file
+
+  set last $tmp_base_file
+  set cycle 0
+
+  foreach chn $water_chains {
+
+    set next [GetTmpFileName -ext pdb]
+
+    set tmp_chain_file [GetTmpFileName -ext pdb]
+    set pdbout [lindex $shell_pdbs $cycle]
+
+    WriteComFile pdbset_script "EXCLUDE HEADER\nSELECT CHAIN $chn\nEND\n"
+    set status [Execute "[BinPath pdbset] XYZIN \"$pdbout\" XYZOUT \"$tmp_chain_file\"" \
+                $pdbset_script status report ]
+
+    WriteComFile pdb_merge_script "END\n"
+    set status [Execute "[BinPath pdb_merge] XYZIN1 \"$last\" XYZIN2 \"$tmp_chain_file\" \
+                XYZOUT \"$next\"" $pdb_merge_script status report ]
+    set last $next
+    incr cycle
+
+  }
+
+# Finished
+
+  MoveFile $last $XYZOUT
+
+#---------------------------------------------------------------------------------
+#  Report what has been done
+#---------------------------------------------------------------------------------
+
+  set text0 "\n\n *********Chain Ids for solvent in output PDB*******"
+  for {  set n 1 } { $n <= $NHOST_CHAIN } { incr n } {
+     append text0 "\n$text($n)"
+  }
+  append text0 "\n..corresponding to solvent shells $FIRST_SHELL to $LAST_SHELL\n\n"
+
+  WriteToLog $text0

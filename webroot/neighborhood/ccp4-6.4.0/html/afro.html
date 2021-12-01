@@ -1,0 +1,353 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>AFRO - Documentation</title>
+
+<style>
+
+h1  { font-family: 'Lucida Grande', Geneva, Verdana, Arial, Helvetica, sans-serif; font-size: 22px; color: #115522 }
+
+h2  { font-family: 'Lucida Grande', Geneva, Verdana, Arial, Helvetica, sans-serif; font-size: 20px; color: #113322 }
+
+h3  { font-family: 'Lucida Grande', Geneva, Verdana, Arial, Helvetica, sans-serif; font-size: 18px; color: #113322 }
+
+h4  { font-family: 'Lucida Grande', Geneva, Verdana, Arial, Helvetica, sans-serif; font-size: 16px; color: #113322 }
+
+h5  { font-family: 'Lucida Grande', Geneva, Verdana, Arial, Helvetica, sans-serif; font-size: 14px; color: #113322 }
+
+p  { font-family: 'Lucida Grande', Geneva, Verdana, Arial, Helvetica, sans-serif; font-size: 15px; margin-left: 20px }
+
+p.end { font-size: 7px; }
+
+address { font-size: 7px; }
+
+dt { font-family: 'Lucida Grande', Geneva, Verdana, Arial, Helvetica, sans-serif; font-size: 15px; margin-left: 20px; font-weight: bold }
+
+dd  { font-family: 'Lucida Grande', Geneva, Verdana, Arial, Helvetica, sans-serif; font-size: 15px; margin-left: 20px; }
+
+body { font-family: 'Lucida Grande', Geneva, Verdana, Arial, Helvetica, sans-serif; font-size: 20px; background: white ; margin: 20px }
+
+A:link { color: #3333DD } 
+A:visited { color: #AAAAFF } 
+A:active { color: #33DD33 } 
+
+
+</style>
+
+  </head>
+
+  <body>
+<center>
+    <h1>AFRO Version 0.85 - Documentation</h1>
+</center>
+
+<h2>NAME</h2>
+
+<p>afro - multivariate substructure factor amplitude estimation for SAD/MAD and SIRAS.</p>
+
+<h2>SYNOPSIS</h2>
+
+<p>afro hklin foo.mtz hklout foo_out.mtz</p>
+<p>Keyworded input</p>
+
+
+<h2>DESCRIPTION</h2>
+
+<p>This program will determine normalized substructure factor amplitudes (ie.
+E(A) values) which are needed for direct methods substructure determination
+programs.  In this version, the multivariate formulas are not implemented,
+but just a standard approach is taken for finding SAD or SIR differences (and
+attempting to find the best wavelength to calculate the anomalous differences).
+</p>
+
+
+<h2>GETTING STARTED</h2>
+
+<p>The best way to start is to use the example scripts. </p>
+
+
+<h2>KEYWORDED INPUT</h2>
+
+<h3>XTAL &lt;ID&gt;</h3>
+
+<dl>
+  <dt>&lt;ID&gt;
+  <dd>
+	  The crystal's name/identification string. 
+</dl>
+
+<h3>XTAL SUBKEYWORDS:</h3>
+
+  <h4>CELL</h4><p> &lt;a&gt; &lt;b&gt; &lt;c&gt; &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt;</p>
+
+<dl>
+  <dt>
+	  &lt;a&gt; &lt;b&gt; &lt;c&gt; &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt;
+  <dd>
+	  Cell parameters for the given XTAL.  
+	  Default: take the values from the mtz file.
+</dl>
+
+  <h4>DNAMe &lt;ID&gt;</h4>
+<p>The dataset identifier.  This keyword is required.</p>
+
+  <h4>DNAMe SUBKEYWORDS:</h4>
+
+    <h5>COLUmn F=&lt;f&gt; SF=&lt;sf&gt; F+=&lt;f+&gt; SF+=&lt;sf+&gt; F-=&lt;f-&gt; SF-=&lt;sf-&gt; </h5>
+<p>
+      Diffraction data for the XTAL and DNAMe defined. 
+      If anomalous data is not to be used, set F and SF only.  If using
+      anomalous data, set F+, SF+, F-, SF-.  Setting both F and F+ will result
+      in an error.  If only F and DANO is present in the mtz file, use the ccp4 
+      program mtzMADmod to change F/DANO to F+/F-.
+</p>
+
+<dl>
+  <dt>
+	  &lt;f&gt;
+  <dd>
+        |F| (observed structure factor amplitude *if no anomalous data is present*). 
+  <dt>
+      &lt;sf&gt;
+  <dd>
+        Corresponding sigma for &lt;f&gt;. 
+  <dt>
+      &lt;f+&gt;
+  <dd>
+        |F+| (observed structure factor amplitude of positive Bijvoet pair).
+  <dt>
+      &lt;sf+&gt;
+  <dd>
+        Corresponding sigma of &lt;f+&gt;.
+  <dt>
+      &lt;f-&gt;
+  <dd>
+        |F-| (observed structure factor amplitude of negative Bijvoet pair).
+  <dt>
+      &lt;sf-&gt;
+  <dd>
+        Corresponding sigma of &lt;f-&gt;.
+</dl>	  
+
+    <h5>RESO &lt;hires&gt; &lt;lores&gt; </h5>
+<p>   Specify resolution limits for the given XTAL and DNAMe diffraction data.
+      Do not use this keyword to specify a resolution cut-off for substructure detection,
+      but use the HIREs keyword from AFRO instead.  Only use this keyword if you wish to
+      remove some data that you believe to be useless.
+      Default: use all the data available in the mtz file. 
+</p>
+
+    <h5>EXCLude [ SIGF &lt;nsigf&gt; ] [ SANO&lt;nsano&gt; ] [SISO <nsiso>] </h5>
+<p>   Set criteria for excluding E-values to output for the given XTAL and DNAMe
+      diffraction data.  This is essential for correct substructure determination.  
+      The default is to use all the data available in the mtz file and this is not 
+      optimal for EA calculation. 
+</p>
+
+<p>
+     The criteria and cuxtoff recommendations for the subkeywords are the following:
+</p>
+
+        <h5>SIGF &lt;nsigf&gt;</h5>
+
+        <p>
+        exclude reflections if FP &lt; &lt;nsigf&gt; * SIGF.  The recommended setting is 3.
+        </p>
+
+        <h5>SANO &lt;nsano&gt;</h5>
+
+        <p>
+        exclude reflections if DANO  &lt; &lt;nsano&gt * SDANO.  The recommended setting is 1.
+        (DANO = abs(|F+| - |F-|) and SDANO is the standard deviation of DANO in measurement.
+        </p>
+
+        <h5>SISO &lt;nsiso&gt;</h5>
+
+        <p>
+        exclude reflections if abs(|Fder| - |Fnat|) < <nsiso> * SDISO.  The recommended setting is 1.
+        SDISO is sqrt(SIGFder^2 + SIGFnat^2).
+        </p>
+
+    <h5>BINS</h5>
+<p>
+      Number of bins for luzzati parameter estimation and refinement and output of
+      statistics.
+</p>
+
+<h2>OPTIONAL KEYWORDS:</h2>
+
+<h3>OUTPut &lt;outputname&gt;</h3>
+<p>
+  &lt;outputname&gt; is the string associated with the ASCII file
+  that afro writes out.  The default &lt;outputname&gt; is "heavy".
+  </p>
+
+<h3>ASCIi</h3>
+<p>
+  Write out an unsorted drear file suitable for crunch2.
+</p>
+
+<h3>HIREs &lt;hireslimit&gt; </h3>
+<p>
+  Only output FA values to the following high resolution limit.  The default is for the
+  program to calculate it automatically.
+
+</p>
+
+<h3>ACENtric</h3>
+<p>
+  Only acentric reflections will be used.  This is the default for SAD data.
+</p>
+
+<h3>CENTric</h3>
+<p>
+  Only centric reflections will be used.  
+</p>
+
+<h3>TITLe &lt;title&gt;</h3>
+<p>
+  Title to be added to the mtz file. Default: "EA values from AFRO".
+</p>
+
+<h3>VERBose &lt;n&gt;</h3>
+<p>
+  Specify amount of information to be outputted (where n is a positive integer).
+  n = 0 is the normal output,  n = 1 is more output and n = 2 is for debugging
+  purposes.  Default: n = 0.
+<p>
+
+<h2>OUTPUT:</h2>
+
+<h3>COLUMNS in HKLOUT</h3>
+
+
+<h2>EXAMPLES</h2>
+
+
+<h2>Example 1 - SAD experiment</h2>
+<pre>
+
+#!/bin/sh
+
+set -e
+
+afro HKLIN $CEXAM/tutorial/data/gere_MAD_nat.mtz \
+    HKLOUT $CCP4_SCR/gere_SADEA.mtz << eof-afro
+
+Xtal SeMET
+ DNAME PEAK
+   COLUmn F+=F_peak(+) SF+=SIGF_peak(+) F-=F_peak(-) SF-=SIGF_peak(-)
+   EXCLUDE SIGF 3 SANO 1       # don't use data with F/SF < 3 or DANO/SIGDANO < 1
+   RESOL HICUt 0.5             # only use data 0.5 Angstroms about hi res limit
+ALLIn
+
+eof-afro
+
+<h2>Example 2: MAD EA value generation</h2>
+
+#!/bin/sh
+
+set -e
+
+afro HKLIN $CEXAM/tutorial/data/gere_MAD_nat.mtz \
+    HKLOUT $CCP4_SCR/gere_MADEA.mtz << eof-afro
+
+Xtal SeMET
+ DNAME PEAK
+   COLUmn F+=F_peak(+) SF+=SIGF_peak(+) F-=F_peak(-) SF-=SIGF_peak(-)
+   EXCLUDE SIGF 3 SANO 1        # don't use data with F/SF < 3 or DANO/SIGDANO < 1
+   RESOL HICUt 0.5              # only use data 0.5 Angstroms about hi res limit
+ DNAME INFL
+   COLUmn F+=F_infl(+) SF+=SIGF_infl(+) F-=F_infl(-) SF-=SIGF_infl(-)
+   EXCLUDE SIGF 3 SANO 1 SISO 1 # don't use data with F/SF < 3 or DANO/SIGDANO < 1
+                                # or isomorphous/dispersive difference < 1
+   RESOL HICUt 0.5              # only use data 0.5 Angstroms about hi res limit
+ DNAME HIGH
+   COLUmn F+=F_hrm(+) SF+=SIGF_hrm(+) F-=F_hrm(-) SF-=SIGF_hrm(-)
+   EXCLUDE SIGF 3 SANO 1        # don't use data with F/SF < 3 or DANO/SIGDANO < 1
+   RESOL HICUt 0.5              # only use data 0.5 Angstroms about hi res limit
+
+                                # NOTE! Afro takes only isomorphous/dispersive differences between
+                                # the first two defined data sets!!!
+                                # You could also define the low remote as well...
+ALLIn
+
+eof-afro
+
+<h2>Example 3: SIRAS EA value generation</h2>
+
+#!/bin/sh
+
+set -e
+
+afro HKLIN $CEXAM/tutorial/data/gere_MAD_nat.mtz \
+    HKLOUT $CCP4_SCR/gere_SIRASEA.mtz << eof-afro
+
+# define the native first!!
+
+Xtal NATIVE
+ DNAME NATIVE
+   COLUmn F=F_nat SF=SIGF_nat
+   EXCLUDE SIGF 3               # don't use data with F/SF < 3
+   RESOL HICUt 0.5              # only use data 0.5 Angstroms about hi res limit
+
+Xtal SeMET
+ DNAME PEAK
+   COLUmn F+=F_peak(+) SF+=SIGF_peak(+) F-=F_peak(-) SF-=SIGF_peak(-)
+   EXCLUDE SIGF 3 SANO 1 SISO 1 # don't use data with F/SF < 3 or DANO/SIGDANO < 1
+ 	                        # or isomorphous difference/sigma < 1
+   RESOL HICUt 0.5              # only use data 0.5 Angstroms about hi res limit
+
+ALLIn
+
+eof-afro
+
+<h2>Example 4: MAD + Native EA value generation</h2>
+
+#!/bin/sh
+
+set -e
+
+afro HKLIN $CEXAM/tutorial/data/gere_MAD_nat.mtz \
+    HKLOUT $CCP4_SCR/gere_MADNATEA.mtz << eof-afro
+
+# define the native first!!
+
+Xtal NATIVE
+ DNAME NATIVE
+   COLUmn F=F_nat SF=SIGF_nat
+   EXCLUDE SIGF 3               # don't use data with F/SF < 3
+   RESOL HICUt 0.5              # only use data 0.5 Angstroms about hi res limit
+
+Xtal SeMET
+ DNAME PEAK
+   COLUmn F+=F_peak(+) SF+=SIGF_peak(+) F-=F_peak(-) SF-=SIGF_peak(-)
+   EXCLUDE SIGF 3 SANO 1 SISO 1 # don't use data with F/SF < 3 or DANO/SIGDANO < 1
+ 	                        # or isomorphous difference/sigma < 1
+   RESOL HICUt 0.5              # only use data 0.5 Angstroms about hi res limit
+ DNAME INFL
+   COLUmn F+=F_infl(+) SF+=SIGF_infl(+) F-=F_infl(-) SF-=SIGF_infl(-)
+   EXCLUDE SIGF 3 SANO 1 SISO 1 # don't use data with F/SF < 3 or DANO/SIGDANO < 1
+                                # or isomorphous/dispersive difference < 1
+   RESOL HICUt 0.5              # only use data 0.5 Angstroms about hi res limit
+ DNAME HIGH
+   COLUmn F+=F_hrm(+) SF+=SIGF_hrm(+) F-=F_hrm(-) SF-=SIGF_hrm(-)
+   EXCLUDE SIGF 3 SANO 1        # don't use data with F/SF < 3 or DANO/SIGDANO < 1
+   RESOL HICUt 0.5              # only use data 0.5 Angstroms about hi res limit
+
+                                # NOTE! Afro takes only isomorphous/dispersive differences between
+                                # the first two defined data sets!!!
+                                # You could also define the low remote as well...
+ALLIn
+
+##############################################################
+</pre>
+
+<hr>
+<p class=end>
+<!-- hhmts start -->
+Last modified: Fri Aug 12 19:22:44 CEST 2005
+<!-- hhmts end -->
+</p>
+  </body>
+</html>

@@ -1,0 +1,81 @@
+#!/bin/sh
+
+# EXAMPLE 1: AUTOMATED MAD SOLUTION WITH DEFAULT PIPELINE (AFRO/CRUNCH2/BP3/SOLOMON/ARP/wARP+REFMAC) 
+
+set -e
+
+# Name of the sub-directory crank will be run in.
+
+ROOT=mad_gere
+
+#
+# Step 1: Generate crank XML
+#
+
+gcx HKLIN $CEXAM/tutorial/data/gere_MAD_nat.mtz SEQIN $CEXAM/data/gere.pir HKLOUT $ROOT.mtz  << END > $ROOT.log
+
+ALLIN
+outp $ROOT
+
+# comment out DNAME INFL and subkeywords for just SAD
+# remove comments of DNAME HREM for 3 wavelength MAD
+
+Xtal DER1
+  ATOM SE
+  NUMB 2   ! number of heavy atoms/monomer
+  DNAME PEAK
+    COLUmn F+=F_peak(+) SF+=SIGF_peak(+) F-=F_peak(-) SF-=SIGF_peak(-)
+    FORM Se FP=-3.6 FPP=5.4
+  DNAME INFL
+    COLUmn F+=F_infl(+) SF+=SIGF_infl(+) F-=F_infl(-) SF-=SIGF_infl(-)
+    FORM Se FP=-5.6 FPP=3.4
+! DNAME HREM
+!   COLUmn F+=F_hrm(+) SF+=SIGF_hrm(+) F-=F_hrm(-) SF-=SIGF_hrm(-)
+!   FORM Se FP=-2.0 FPP=4.3
+! DNAME LREM
+!   COLUmn F+=F_lrm(+) SF+=SIGF_lrm(+) F-=F_lrm(-) SF-=SIGF_lrm(-)
+!   FORM Se FP=-2.3 FPP=1.0
+
+
+END
+
+mkdir $ROOT
+
+cd $ROOT
+
+#
+# Step 2:  actual crank job!
+#
+
+crank ../$ROOT.xml >> ../$ROOT.log
+
+
+# EXAMPLE 2: AUTOMATED SIRAS SOLUTION WITH DEFAULT PIPELINE (AFRO/CRUNCH2/BP3/SOLOMON/ARP/wARP+REFMAC) 
+
+ROOT=siras_rnase
+
+gcx HKLIN $CEXAM/rnase/rnase25F+F-.mtz SEQIN $CEXAM/rnase/rnase.pir HKLOUT $ROOT.mtz  << END > $ROOT.log
+
+outp $ROOT
+
+# native
+
+Xtal NATIVE
+  DName NATIVE
+    COLUmn F=FNAT SF=SIGFNAT
+
+# first derivative
+
+Xtal DER1
+   ATOM Pt
+     NUMB 3 ! guess of the number of substructure atoms/monomer
+   DNAME DER1
+     COLUmn F+=FPTNCD25(+) SF+=SIGFPTNCD25(+) F-=FPTNCD25(-) SF-=SIGFPTNCD25(-)
+
+END
+
+mkdir $ROOT
+
+cd $ROOT
+
+crank ../$ROOT.xml >> ../$ROOT.log

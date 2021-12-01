@@ -1,0 +1,110 @@
+#!/bin/csh -f
+#
+# Calculate map PFA after Xplor
+#
+set saved = ~/pfk/bsr
+cd $scr0
+
+
+set fobs = ${saved}/bsr2_F
+set cycle = 46
+set coords = ${saved}/bsrpfa_${cycle}.pdb
+set maxres = 2.5
+set map = bsrpfa_${cycle}
+
+
+
+sfall hklin ${fobs} xyzin ${coords}  \
+	hklout ${fobs}_Fc << eof-1
+title BSR crystal 2 (phosphate/F6P/AMPPNP), Fc from cyc ${cycle} (Fru6P)
+grid 240 160 120
+bins 40
+rscb  5.0 ${maxres}
+mode  sfcalc hklin xyzin
+sfsgrp P1
+symmetry I222
+ngauss 2
+form P Mg+2
+labin FP=FPFA SIGFP=SIGFPFA
+labout  FC=FC PHIC=PHIC
+end
+eof-1
+
+rstats hklin  ${fobs}_Fc << eof
+title . . for analysis only
+resolution 10 2.5
+rscb        5 2.5
+output nohkl
+cycles  3
+labin FP=FPFA SIGFP=SIGFPFA FC=FC PHIC=PHIC
+eof
+
+
+
+sigmaa:
+sigmaa hklin  ${fobs}_Fc  hklout ${fobs}_FcW << eof
+partial
+ranges 10
+labin FP=FPFA SIGFP=SIGFPFA  FC=FC PHIC=PHIC
+end
+eof
+
+maps:
+#
+# 2Fo-Fc map
+#
+fftbig hklin ${fobs}_FcW  mapout ${map}_2fo <<EOF-fft
+TITLE BSR crystal 2 (phosphate/F6P/AMPPNP), Fc from Cyc ${cycle}, 2Fo-Fc (SigA)
+GRID   140 96 70
+XYZLIM 0 0.5  0 .25  0 1
+LABIN  F1=FWT SIG1=FWT PHI=PHWT
+EOF-fft
+
+extend  mapin ${map}_2fo  mapout ${map}_2fox \
+	xyzin ${coords} << eof-x
+border 10
+eof-x
+
+mappage << eof-mp
+${map}_2fox.map
+${map}_2fox.o
+CCP4
+n
+eof-mp
+
+
+#
+# Fo-Fc map
+#
+difmap:
+fftbig hklin ${fobs}_FcW  mapout ${map}_df <<EOF-fft2
+TITLE BSR crystal 2 (phosphate/F6P/AMPPNP), Fc from Cyc ${cycle}, Fo-Fc (SigA)
+GRID   140 96 70
+XYZLIM 0 0.5  0 .25  0 1
+LABIN   F1=DELFWT SIG1=DELFWT PHI=PHWT
+EOF-fft2
+
+extend  mapin ${map}_df  mapout ${map}_dfx \
+	xyzin ${coords} << eof-x2
+border 10
+eof-x2
+
+peakmax:
+peakmax mapin  ${map}_dfx xyzout peaks_${cycle}.pdb << eof
+threshold 0.3
+!200 0.3 -2 1 0
+eof
+
+watpeak xyzin ${coords} peaks peaks_${cycle}.pdb \
+        xyzout wpeaks_${cycle}.pdb << eof
+Title  Peaks (Waters ?) from  bsrpfa ${cycle}
+distance 4.0
+eof
+
+
+mappage << eof-mp2
+${map}_dfx.map
+${map}_dfx.o
+CCP4
+n
+eof-mp2

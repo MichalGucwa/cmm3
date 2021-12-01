@@ -1,0 +1,1307 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <meta http-equiv="CONTENT-TYPE" content="text/html; charset=utf-8"><title>CCP4 Program Suite: pointless</title>
+  
+  <meta name="GENERATOR" content="NeoOffice 2.2  (Unix)">
+  <meta name="CREATED" content="20071210;14505200">
+  <meta name="CHANGED" content="20080222;11540900"><!-- ::INDEX_INFO::POINTLESS::Supported::Data Processing and Reduction::determine Laue group:::::::: --></head><body dir="ltr" lang="en-GB">
+<h1>POINTLESS (CCP4: Supported Program)</h1>
+<h2><a name="NAME"></a>NAME</h2>
+<p><b>pointless </b>
+</p>
+<h2>SYNOPSIS</h2>
+<p><b>pointless </b>[-c[opy]] <b>[[HKLIN]</b> <i>foo_in.mtz</i>]
+[<b>XDSIN</b> foo_in.HKL] [<b>SCAIN</b> foo_in.HKL] [<b>HKLREF
+</b><i>reference_file.mtz</i>] [<span style="font-weight: bold;">XYZIN </span><span style="font-style: italic;">reference_coords.pdb</span><span style="font-weight: bold;">]</span> [<b>HKLOUT</b> <i>output_file.mtz</i>]
+[XMLOUT xml_output.xml]<br>
+<a href="#keywords">[Keyworded
+Input]</a><br>
+<br>
+<a href="#References">References</a> <br>
+<a href="#input_and_output_files">Input
+and Output files </a><br>
+<a href="#examples">Examples </a><br>
+<a href="#release_notes">Release
+Notes</a></p>
+<h2><a name="description"></a>DESCRIPTION</h2>
+<p>Pointless
+scores all the possible Laue groups consistent with the crystal
+class, which is based on cell dimension restraints. It does this by
+matching potential symmetry equivalent reflections. For chiral
+systems, the Laue group uniquely implies the point group. It then
+checks sets of reflections which may be systematically absent to
+suggest a possible spacegroup. There is no check for lattice
+centering, ie no check for whole classes of reflections having
+essentially zero intensity (although there is a check for potentially lattice-centred reflections missing from the list.)<br>
+<font size="2"><i>[</i></font><font size="2"><i><b>Note</b></i></font><font size="2"><i>:
+strictly speaking, the program determines the Patterson group rather
+than the Laue group, since the Laue group is a point group, not
+including any lattice centring type (P,C,I,F,H,R). Lattice centring
+is included in the reported Laue group,</i></font> <font size="2"><i>and
+reindexing from the original setting may change the lattice
+type.]</i></font><br>
+<br>
+The principal (test) reflection input is taken from
+one or more unmerged MTZ files (<a href="#hklin">HKLIN</a>) such as those from Mosflm (or
+Combat), or alternatively unmerged XDS ASCII files (XDS_ASCII or
+INTEGRATE, <a href="#xdsin">XDSIN</a>), unmerged Scalepack files
+(<a href="#scain">SCAIN</a>) (produced with the Scalepack option "nomerge original
+index"),&nbsp; SHELX files (also <a href="#scain">SCAIN)</a> or SAINT files&nbsp;(also <a href="pointless.html#scain">SCAIN)</a>.
+Input types may be mixed. Merged files may be checked for under-merging
+&amp; for systematic absences. Files given as HKLIN will be checked for
+their filetype, so other types will be recognised. <br>
+<br>
+For some crystal
+classes and when there is more than one input file, it is necessary
+to establish first that a consistent indexing convention has been
+used for all runs (see
+<a href="http://www.ccp4.ac.uk/dist/html/reindexing.html">http://www.ccp4.ac.uk/dist/html/reindexing.html</a>
+for an explanation and list). Note that if there are multiple input
+files and no reference file, the first input file is used as a
+temporary reference for subsequent files, to check for consistent
+indexing in cases of ambiguity.This may not work correctly if
+this first file is indexed in the wrong Laue group: the keyword <a href="#testfirstfile">TESTFIRSTFILE</a>
+may be used to force a Laue group check on the first file before
+adding in the others.</p><p>For the alternative indexing check, a reference file (<a href="#hklref">HKLREF</a>, merged or unmerged) or a reference coordinate list (<a href="#xyzin">XYZIN</a>)
+may be given and the indexing of the test file will be checked against
+this. The space group of the reference data is assumed to be correct.<br></p><p>If there is more than one input file the
+program checks the batch numbering schemes do not overlap, and if
+necessary it renumbers batches.<br>
+</p>
+<p>Multilattice files from Mosflm/FECKLESS can be read: the different
+lattices are for now (pending refactoring of the data objects) are
+mapped into different runs, with BATCH numbers incremented by multiples
+of 1000 (in FECKLESS). By default only the first Run, corresponding to
+the first Lattice, is used in symmetry determination, but all runs are
+written to the output HKLOUT file. Other runs may be selected with the <a href="#use">USE</a> command.<br>
+</p>
+<p>
+If HKLOUT is assigned it
+produces a sorted reflection list (possibly after reindexing and
+renumbering batches) which is ready for input to AIMLESS or SCALA. <br>
+<br>
+It
+has other subsidiary uses described in more detail below: it can
+convert other formats to MTZ, check and reindex an input file to
+match an existing reference set of amplitudes, or apply a
+pre-selected reindex operator. The command line option "-copy"
+(or "-c") may be used just to copy files to MTZ (equivalent
+to the <a href="#copy">COPY</a> command).</p>
+
+<h2><b>Description of functions:</b></h2>
+<h3 style="margin-left: 2cm;"><b>1</b>. Determination of Laue group
+and space group (LAUEGROUP mode). </h3>
+<p style="margin-left: 2cm;">This mode is the default, if no <a href="hklref_file">HKLREF</a>
+file is specified. <br>
+<br>
+Given test data comprising unmerged
+observations (file(s) HKLIN, XDSIN or SCAIN), the program looks for
+possible symmetry based on the unit cell in order to determine the
+Laue group, ie the symmetry of the diffraction pattern. It then
+examines axial reflections (and zones for non-chiral crystals) to
+look for systematic absences to determine the space group.<br>
+&nbsp;<br>
+If
+a file is assigned to<a href="#hklout_file"> HKLOUT</a>, the
+reindexed file will be written out from the <a href="#hklin_file">HKLIN</a>
+file, using the selected reindexing. The hklout file is assigned to
+the "best" space group or point group (or the SPACEGROUP if
+given).<br>
+<i><br>
+Warning Notes</i>: </p>
+
+    <p style="margin-left: 120px;">• The optimum scoring method remains
+to be discovered. The true solution may not have the top score, but
+should be close to the top</p><p style="margin-left: 120px;"> • The program will find symmetry: there is no guarantee that this
+symmetry is crystallographic or correct! Caveat emptor.</p><h3 style="margin-left: 2cm;">2. Testing of alternative indexing
+schemes (INDEX mode)</h3>
+<p style="margin-left: 2cm;">This mode is selected if an <a href="#hklref_file">HKLREF</a> dataset or an <a href="#xyzin">XYZIN</a> coordinate file is specified. <br>
+<br>
+Given a test dataset, merged or
+unmerged (file(s) HKLIN), and a merged or unmerged reference dataset
+in a known space group (file HKLREF), the program tests all possible
+alternative indexing schemes of the test dataset to find which one
+best matches the reference set. Alternative indexing schemes
+arise in high symmetry space groups when the lattice symmetry is
+higher than the point group symmetry (eg for trigonal space groups),
+but may also arise in any space group from special relationships
+between cell parameters (eg an orthorhombic cell with a=b or more
+complicated examples involving cell diagonals).<br>
+<br>
+If a file is
+assigned to<a href="#hklout"> HKLOUT</a>, then the reindexed file
+will be written out from the HKLIN file, using the best reindexing.
+The hklout file is assigned to the spacegroup of the reference file.</p>
+<h3 style="margin-left: 2cm;">3. Checking the centre of the
+diffraction pattern</h3>
+<p style="margin-left: 2cm;">It is occasionally (though rarely)
+possible to misindex the diffraction pattern by (say) +-1, usually on
+a long axis approximately parallel to the rotation axis. In this
+case, the centre of symmetry of the diffraction pattern is apparently
+not at hkl 0,0,0 as it should be. The CENTRE option does an R-factor
+search for the correct centre. Note that if the Laue group symmetry
+is wrong, this search may be less reliable: a LAUEGROUP command may
+be given to reset the symmetry. If the centre is wrong, the images
+should be re-integrated, as there will be other errors which cannot
+be easily corrected.</p>
+<h3 style="margin-left: 2cm;">4. Reindexing</h3>
+<p style="margin-left: 2cm;">The program may also be used just to
+reindex or change the spacegroup, if both HKLIN and HKLOUT files are
+defined, and keywords SPACEGROUP and/or REINDEX are given. If the
+HKLIN file is a merged file, then any anomalous difference columns
+will be negated, and F+/- I+/- columns swapped, if the hand of the
+index is changed by the reduction process. Note that in this case
+there is no reliable check made that the reindexing operator is
+consistent
+with the space group: if a SPACEGROUP command is not given, the
+reindexed space group will be used if it is valid, otherwise you will
+have to specify the space group. Any reflections with non-integral
+indices after
+reindexing are discarded, so this may be used to select reflections
+corresponding to a sub-cell. Files containing phase columns can now be
+reindexed, as long as you are just changing the setting, not the space
+group (eg I2&lt;-&gt;C2, P2 21 21 &lt;-&gt; P21 21 2 etc).</p>
+<h3 style="margin-left: 2cm;">5. Converting XDS, Scalepack, SHELX or SAINT format to
+MTZ</h3>
+<p style="margin-left: 2cm;">The command line option "-copy"
+(or "-c") may be used just to convert an XDS, Scalepack or SHELX
+file to the MTZ format. The NAME keyword is required, and for
+SCALEPACK or SHELX input the CELL must be given. For SAINT input it is recommended to give a CELL (as it may be more accurate).</p>
+<h3>Choice of solution for the output file</h3>
+<p style="margin-left: 2cm;">A “solution” is a space group (or
+point group) and a reindexing operator. In INDEX mode, the solution
+is always chosen to give the best match to the reference file. In
+LAUEGROUP mode, the default is to choose the solution with the
+highest joint score in the Laue group search and the systematic
+absence test. If several non-enantiomorphic space groups have the
+same score (due to lack of information), then the corresponding point
+group is chosen (eg P222 for Laue group Pmmm). This automatic choice
+may be over-ridden in several ways, usually after examining the
+scores from an initial run.</p>
+<ol>
+  <li>
+    <p>The command <a href="#choose">CHOOSE</a> carries out the Laue
+group search and the systematic absence test, but the choice of
+solution is specified explicitly rather than chosen automatically</p>
+  </li>
+</ol>
+<ol type="a">
+  <li>
+    <p>CHOOSE SOLUTION &lt;n&gt; </p>
+    <p>Choose a Laue group solution by number in the ranked list: the
+systematic absence test will then be done as normal </p>
+  </li>
+  <li>
+    <p>CHOOSE LAUEGROUP &lt;name&gt;</p>
+    <p>Choose a Laue group solution by name, choosing the first match
+in the ranked list: the systematic absence test will then be done as
+normal </p>
+  </li>
+  <li>
+    <p>CHOOSE SPACEGROUP &lt;name&gt;</p>
+    <p>Choose the corresponding Laue group solution by name, choosing
+the first match in the ranked list, then choose the specified space
+group in the systematic absence test list</p>
+  </li>
+</ol>
+<ol start="2">
+  <li>
+    <p>The command <a href="#lauegroup">LAUEGROUP</a> skips the Laue
+group search, and just uses the given Laue group, typically with a
+given REINDEX operator. The systematic absence test will then be done
+as normal.</p>
+  </li>
+  <li>
+    <p>The command <a href="#spacegroup">SPACEGROUP</a> skips all
+searches, and just uses the given space group, typically with a given
+REINDEX operator. This is equivalent to the operation of the CCP4
+program REINDEX.</p>
+  </li>
+</ol>
+<p style="margin-left: 2cm;">Note that when a Laue group name is
+needed, either the actual Laue group name (as printed) may be given,
+or the name of any space group in that Laue group (eg P2/m may be
+given as P2)</p>
+<h3>Details of LAUEGROUP mode</h3>
+<ol>
+  <li>
+    <p style="margin-bottom: 0cm;">The intensity data are read from the
+HKLIN file(s) (or XDSIN or SCAIN). If multiple files are given, the
+first one is treated as a reference, and subsequent files are placed on
+the same indexing scheme in the same way as INDEX mode, if there are
+alternatives, using the symmetry from the first file (multiple files
+defined with wild-cards are assumed by default to have the same
+indexing, see <a href="#assumesameindexing">ASSUMESAMEINDEXING</a>).
+Note that the default is to assume that the first file has valid
+symmetry and indexing: the keyword <a href="#testfirstfile">TESTFIRSTFILE</a>
+may be used to force a determination of the Laue group before adding
+subsequent files. Batch numbers are forced to be unique if necessary by
+incrementing them by multiples of 1000. In a "file series" defined by an <a href="#hklin">HKLIN</a>
+command with wild-cards in the file name, files which cannot be read
+(eg because they are are still being written) are ignored, and <a href="#allow">by default</a> acceptance of files is terminated on a file which is out of chronological order. </p>
+  </li>
+  <li>
+    <p style="margin-bottom: 0cm;">The maximum lattice symmetry
+consistent with the unit cell dimensions from the HKLIN file is
+determined, within an angular tolerance of 2 degrees (or that given on
+the TOLERANCE command). Alternatively, if the command ORIGINALLATTICE
+is given, the lattice symmetry corresponding to the space group in the
+HKLIN file is used, or the LAUEGROUP command may be used to specify a
+particular Laue group.</p>
+  </li>
+  <li>
+    <p style="margin-bottom: 0cm;">The data are reindexed in the
+asymmetric unit of the lattice symmetry (if necessary), and sorted to
+bring potentially equivalent observations together. </p>
+  </li>
+  <li>
+    <p style="margin-bottom: 0cm;">The intensities are normalised to E<sup>2</sup>
+, making &lt;E<sup>2</sup>&gt; = 1, using an overall B-factor and a
+further correction smoothed on resolution bins, plus a time-dependent
+B-factor within each run. The batch number relative to the start of the
+run is used as a proxy for "time", and this correction is not done if
+there are only a few batches in the run (&lt; 20 batches).&nbsp; Unless
+resolution limits are explicitly set (RESOLUTION command), an automatic
+high resolution limit is applied, at the approximate point where
+&lt;I&gt;/&lt;sigmaI&gt; &lt; IsigLimit (default value 4.0, set with
+ISIGLIMIT command). It is best to exclude weak high resolution data
+from the scoring functions, as they contain no useful information for
+this purpose. </p>
+  </li>
+  <li>
+    <p style="margin-bottom: 0cm;">All
+rotational symmetry elements of
+the lattice symmetry are first scored separately. For example, in a
+tetragonal lattice, the symmetry elements are: 4-fold axis along c;
+2-fold axes along a, b, c, (110) and (1-10). If the input file was
+merged, then symmetry elements implicit in the merged group are flagged
+as present. </p>
+  </li>
+  <li>
+    <p>The most useful scoring function seems to be a correlation
+coefficient (CC) on E<sup>2</sup> , calculated for pairs of
+observations related by a particular symmetry element. Another score
+calculated is&nbsp; R<sub>meas</sub>, the multiplicity-weighted
+R-factor. In order to allow for small samples, the CC score is
+converted to a likelihood, and to "significance" score or Z-score by
+dividing by an estimated standard deviation. This is calculated by
+taking many pairs of observations at the same resolution which cannot
+be related by symmetry, dividing them into groups of the same size as
+the test sample (with a maximum of 200), the score calculated for each
+group and their mean &amp; standard deviation calculated. Then Z(score)
+= [Score - Mean(UnrelatedScore)]/Sigma(UnrelatedScore)]</p>
+  </li>
+  <li>
+    <p>All
+Laue groups which are sub-groups of the lattice group are
+generated by combining pairs of symmetry elements (including the
+identity) and completing the groups. For merged files, sub-groups of
+the merged symmetry are excluded, The sub-groups are then scored by
+combining the scores for the individual elements, counting scores for
+elements present in the sub-group as positive &amp; those elements not
+in the sub-group as negative.&nbsp; <br>
+It is not clear what is the best way of combining the element scores:
+at present two scores are printed</p>
+    <ol>
+      <li>
+        <p style="margin-bottom: 0cm;">A "likelihood" (probability)
+estimate: this seems to be the most useful.</p>
+      </li>
+      <li>
+        <p style="margin-bottom: 0cm;">Combined Z-Score ("Zc" in
+logfile)<br>
+The correlation coefficients are recalculated (summed) over all "for"
+and over all "against" elements, Z(for) and Z(against) are calculated,
+then NetZ = Z(for) - Z(against) </p>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <p style="margin-bottom: 0cm;">The potential Laue groups are ranked
+according to scoring method (i), and tested for acceptance for further
+output and testing. A group is accepted if its likelihood score is
+greater than (AcceptanceLimit * Largest likelihood score)&nbsp; where
+AcceptanceLimit is set by the ACCEPT command [default 0.2]&nbsp;&nbsp; </p>
+    <p style="margin-bottom: 0cm;">If too many of the symmetry elements
+have no observations, then only the Laue group from the HKLIN file is
+accepted, unless the command LAUEGROUP ALL is given.</p>
+  </li>
+  <li>
+    <p style="margin-bottom: 0cm;">All accepted Laue groups are tested
+for relevant systematic absences. These are scored to produce a
+combined score for possible space groups.&nbsp; </p>
+    <ol>
+      <li>
+        <p style="margin-bottom: 0cm;">Each relevant "zone" in the
+lattice group is tested for absences. Zones are typically axes tested
+for absences due&nbsp; to screws, or (in the case of non-chiral
+spacegroups) zones to be tested for glide planes. </p>
+      </li>
+      <li>
+        <p style="margin-bottom: 0cm;">Observations which lie in the
+zone, such as along an axis, are scored by a Fourier analysis of
+I'/sigma(I). The score used is the peak height at the appropriate point
+in Fourier space, eg at 1/2 for a 2(1) screw, relative to the origin: a
+perfect score for exact absences is thus 1.0, a score for no absences
+might be 0.0. I' is an “adjusted” intensity, calculated by subtracting
+a small fraction (see NEIGHBOUR, default 0.02) of neighbouring
+intensities along the axis, to allow for possible contamination of a
+weak reflection by a neighbouring strong one.</p>
+      </li>
+      <li>
+        <p>For each spacegroup in the Laue group a probability estimate
+is made from the Laue group score and the systematic absence score, and
+the space groups are ranked accordingly. In some case, more than one
+space group may have identical scores. </p>
+      </li>
+    </ol>
+  </li>
+</ol>
+<h3><a name="SettingNote"></a>A note on setting conventions</h3>In some
+space-groups there may be a difference between the IUCr "standard"
+setting and the "reference" setting given in given as the principle
+setting in International Tables. For chiral space groups, this affects
+only primitive orthorhombic (P 2x 2x 2x) and centred
+monoclinic (C2) groups. For primitive orthorhombic space groups the
+conventional standard setting has a &lt; b &lt; c irrespective of which
+axes are screws, eg space group 18 may be P 2 21 21 rather than the
+reference setting P 21 21 2. This convention allows the indexing
+program (eg Mosflm) to label the axes with a &lt; b &lt; c, without you
+needing to reindex the data at a later stage when the correct space
+group becomes clear. For a centred
+monoclinic cell, the choice for the standard is either C2
+(side-centred) or I2 (body-centred), whichever has the smaller beta
+angle.<br><br>Pointless offers a choice of using the standard (CELL-BASED) or the reference (SYMMETRY-BASED) settings, see the <a href="#setting">SETTING</a> command.<br><br>For more information see:<br><a href="http://nvl.nist.gov/pub/nistpubs/jres/107/4/j74mig.pdf">http://nvl.nist.gov/pub/nistpubs/jres/107/4/j74mig.pdf</a><br><a href="http://nvl.nist.gov/pub/nistpubs/jres/106/6/j66mig.pdf">http://nvl.nist.gov/pub/nistpubs/jres/106/6/j66mig.pdf</a><br><br><span style="font-weight: bold;">Rhombohedral lattices</span>:
+these will generally be handled in a hexagonal centred-lattice&nbsp;(H
+lattice). There is limited support for the primitive rhombohedral
+lattice setting (R lattice, a=b=c, alpha=beta=gamma), but at present
+use of a reference file in the R setting is not supported. If a space
+group or Laue group is explicitly given as eg R 3, this will taken as a
+request for the hexagonal H setting: if you want the R-lattice setting,
+you must give the name as eg "R 3 :R"<h2><a name="keywords"></a>KEYWORDED INPUT - DESCRIPTION</h2>
+<p>Keywords are: <br>
+<a href="#accept">ACCEPT</a>, <a href="#allow">ALLOW</a>,&nbsp;
+<a href="#assumesameindexing">ASSUMESAMEINDEXING</a>, <a href="#blank">BLANK</a>, <a href="#cell">CELL</a>,
+<a href="#centre">CENTRE</a>, <a href="#choose">CHOOSE</a>, <a href="#copy">COPY</a>,
+<a href="#exclude">EXCLUDE</a>, <a href="#hklin">HKLIN</a>, <a href="#hklout">HKLOUT</a>,
+<a href="#hklref">HKLREF</a>, <a href="#isiglimit">ISIGLIMIT</a>,
+<a href="#labin">LABIN</a>, <a href="#labref">LABREF</a>, <a href="#lauegroup">LAUEGROUP</a>, <a href="#multiply">MULTIPLY</a>,&nbsp;
+<a href="#namecommand">NAME</a>, <a href="#neighbour">NEIGHBOUR</a>, <a href="#nonchiral">CHIRALITY</a>,
+<a href="#originallattice">ORIGINALLATTICE</a>, <a href="#partials">PARTIALS</a>, <a href="#polarisation">POLARISATION</a>,
+<a href="#reindex">REINDEX</a>, <a href="#resolution">RESOLUTION</a>,
+<a href="#scain">SCAIN</a>, <a href="#merged">MERGED</a>, <a href="#setting">SETTING</a>,
+<a href="#spacegroup">SPACEGROUP</a>, <a href="#sysabs">SYSTEMATICABSENCES</a>,
+<a href="#testfirstfile">TESTFIRSTFILE</a>, <a href="#tolerance">TOLERANCE</a>, <a href="pointless.html#use">USE</a>, <a href="#wavelength">WAVELENGTH</a>, <a href="#wildfile">WILDFILE</a>,
+<a href="#xdsin">XDSIN</a>, <a href="#xmlout">XMLOUT</a>, <a href="#xyzin">XYZIN</a></p><p>
+All
+input is optional. Only the first four characters of each keyword are
+significant, and keywords are case-insensitive.</p>
+<h3><a name="testfirstfile"></a>TESTFIRSTFILE</h3>
+<p>An input "reference" file (HKLREF) is always assumed to
+have the correct symmetry, but if there is no reference file and more
+the one input test file is given (HKLIN etc),&nbsp; then the first
+defined file is used as a reference for subsequent test input files
+(HKLIN). By default, this first HKLIN file will be assumed for this
+purpose to have to
+correct symmetry and indexing, but&nbsp; this command
+TESTFIRSTFILE&nbsp;
+makes the program determine the Laue group for the first file before
+appending subsequent files. The Laue group test will be repeated
+after all data files have been read. NOTESTFIRSTFILE turns off this
+check, and is the default.</p>
+<h3><a name="exclude"></a>EXCLUDE&nbsp; [FILE | SERIES
+&lt;series_number&gt;] BATCH &lt;batch range&gt; | &lt;batch list&gt;</h3>
+<p>Exclude batches from all calculations and the output file. Batches
+may be specified as a range &lt;b1&gt; TO &lt;b2&gt;&nbsp; or as a
+list&nbsp; &lt;b1&gt; &lt;b2&gt; &lt;b3&gt; ... <br>
+If there are
+multiple HKLIN input files, specifying the batch number may be
+complicated by the automatic renumbering of batches which is done to
+make them unique.&nbsp; In this case the keyword FILE (or its synonym
+SERIES) may be used to specify the file number or file series number
+in the original input file: in the absence of this keyword, the batch
+numbers refer to the numbers <i>after</i> any renumbering. Files are
+numbered from 1 in the order they are specified on the command line
+or on HKLIN commands. File series specified by wild-cards on an HKLIN
+command or the command line have the same file number for this purpose.</p>
+ <h3><a name="originallattice"></a>ORIGINALLATTICE</h3>
+<p>Use the original lattice symmetry from the file instead of
+determining the maximum lattice symmetry from the cell dimensions.</p>
+<h3><a name="resolution"></a>RESOLUTION [[LOW] &lt;ResMin&gt;]
+[[HIGH] &lt;ResMax&gt;</h3>
+<p>Resolution limits in A, either order or with keys HIGH or LOW. If
+this command is absent, the program imposes an automatic high
+resolution limit based on a minimum value for &lt;I&gt;/&lt;sigmaI&gt;
+within resolution shells (see <a href="#isiglimit">ISIGLIMIT</a>).
+Limits given here override the I/sigma limits.</p>
+<h3><a name="isiglimit"></a>ISIGLIMIT
+&lt;minimum&lt;I&gt;/&lt;sigmaI&gt;&gt;</h3>
+<p>Minimum value for &lt;I&gt;/&lt;sigmaI&gt; within resolution
+shells. This is used to set the maximum resolution for inclusion of
+data in the scoring. This is overridden by explicit <a href="#resolution">RESOLUTION</a>
+limits. Default value 6.0.</p>
+<h3><a name="nonchiral"></a>CHIRALITY CHIRAL | NONCHIRAL |
+CENTROSYMMETRIC</h3>
+<p>If this is NONCHIRAL the lists of possible space groups include
+non-chiral (or just centrosymmetric) ones as well as the chiral ones.
+The default is derived from the space group given in the input MTZ
+file.</p>
+<h3><a name="labref"></a>LABREF&nbsp; [F | I =]&lt;columnlabel&gt;</h3>
+<p>Only for INDEX MODE (ie if HKLREF is assigned). For the
+reference dataset, this defines the column label for intensity or
+amplitude (which will be squared to an intensity). If this command is
+omitted, the first intensity column (or if no intensities, the first
+amplitude) will be used. The next column is assumed to contain the
+corresponding sigma.</p>
+<h3><a name="labin"></a>LABIN&nbsp; [F | I =]&lt;columnlabel&gt;</h3>
+<p>Only if the
+test dataset is merged. For the test dataset, this defines the column
+label for intensity or amplitude (which will be squared to an
+intensity). If this command is omitted, the first intensity column
+(or if no intensities, the first amplitude) will be used. The next
+column is assumed to contain the corresponding sigma, but this not compulsory.</p>
+<h3><a name="lauegroup"></a>LAUEGROUP&nbsp; HKLIN || &lt;Laue group
+name&gt; || ALL</h3>
+<p>Specify a Laue group instead of testing all possible ones, ie set
+one solution for further processing in the systematic absence
+testing. A REINDEX command should be be given to specify a particular
+reindexing operator except in the case of a change of setting for the
+same Laue group (eg C2/m to I2/m, "LAUEGROUP I2"). The
+keyword HKLIN indicates that the Laue group from the input HKLIN file
+should be used, otherwise the Laue group name.&nbsp;&nbsp; The
+keyword ALL may be used to force the program to accept all possible
+Laue groups for systematic absence analysis, even if there appear to
+be insufficient symmetry-related observations to distinguish them.</p>
+<h3><a name="spacegroup"></a>SPACEGROUP&nbsp; HKLIN || &lt;Space
+group name&gt; </h3>
+<p>Specify a space group to write to the output HKLOUT file. A REINDEX
+command should be given to specify a particular reindexing operator,
+except in the case of a change of setting for the same space group
+(eg C2 to I2, "SPACEGROUP I2"). The keyword HKLIN indicates
+that the Laue group from the input HKLIN file should be used,
+otherwise the space group name.&nbsp; In this case all that the
+program does is to reindex the data into the given space group and
+write it out.</p>
+<h3><a name="choose"></a>CHOOSE [SOLUTION &lt;SolutionNumber&gt;] ||
+[LAUEGROUP &lt;group name&gt;]</h3>
+<p>Choose a Laue group solution from the ranked list in the search,
+usually chosen from a previous run: a solution includes the
+reindexing operator. The Laue group solutions are ranked by the
+probability score, so solution 1 is always the most probable which is
+chosen by default. This choice may be over-ridden with this command,
+either as a solution number or as a group name: the systematic
+absence check will then be done to try to determine the space group.
+The Laue group name may be given either as the name as printed or as
+any space group name belonging to that Laue group. This command may
+also be used to explicitly choose C2/m or I2/m settings for centred
+monoclinic system, overriding the default choice (qv <a href="#setting">SETTING</a>),
+eg CHOOSE LAUEGROUP I2</p>
+<h3><a name="choose1"></a>CHOOSE SPACEGROUP &lt;group name&gt;</h3>
+<p>Choose a space group solution from the search: first the
+equivalent Laue group solution is chosen from the ranked list in the
+search, usually selected from a previous run: a solution includes the
+reindexing operator. Then systematic absence check will then be done
+and the specified space group is chosen.</p>
+<h3><a name="setting"></a>SETTING CELL_BASED || SYMMETRY-BASED || C2<br>
+</h3>
+<p>This affects only primitive orthorhombic space groups (and
+non-chiral I &amp; F centred orthorhombic groups), notably P 2 2 2<sub>1</sub>
+(17) and P 2<sub>1</sub> 2<sub>1</sub> 2 (18), when a space group is
+being chosen based on the systematic absences, and also centred
+monoclinic ones (eg Laue group C 1 2/m 1), but only in the absence of
+a reference file (which defines the space group &amp; setting, and
+overrides any other convention). In the primitive orthorhombic cases,
+the axis order may either be set according to the general
+orthorhombic (International Tables) convention from the unit cell
+lengths with a &lt; b &lt; c (CELL-BASED), or in a “reference”
+setting which puts the “unique” axis along c. In the first
+convention (CELL-BASED, the default), for example, space group 18 may
+be set as P 2 2<sub>1</sub> 2<sub>1</sub>, P 2<sub>1</sub> 2 2<sub>1</sub>,
+or P 2<sub>1</sub> 2<sub>1</sub> 2. If SYMMETRY-BASED is selected,
+then eg space group 18 always P 2<sub>1</sub> 2<sub>1</sub> 2
+irrespective of axis lengths. </p>
+<p>The default CELL-BASED option also affects the Laue group setting
+for centred monoclinic lattices: in this case the body-centred
+setting (I 1 2/m 1, eg space group I2) will be chosen if it leads to
+a less oblique cell (smaller beta angle) than the C-centred setting
+(C 1 2/m 2, eg space group C2). The SYMMETRY-BASED or C2 options will
+always
+select the C2 setting.</p><p>See <a href="#SettingNote">note</a> above.</p>
+<h3><a name="reindex"></a>REINDEX&nbsp; [LEFTHANDED] [&lt;reindex
+operator&gt;] ||&nbsp; [MATRIX &lt;H11&gt; &lt;H21&gt;
+&lt;H31&gt;&nbsp; &lt;H12&gt; &lt;H22&gt; &lt;H32&gt; &lt;H13&gt;
+&lt;H23&gt; &lt;H33&gt;]
+</h3>
+<p>Specify a reindex operator, either in the form eg "k,h,-l", or as a
+matrix. The matrix is given in the same order as that in the XDS REIDX
+command, <br>
+ie h' = H11 h + H21 k + H31 l;&nbsp; k' = H12 h + H22 k + H32 l; l' =
+H13 h + H23 k + H33 l<br>
+</p>
+<p>If&nbsp; a space group is specified (<a href="#spacegroup">SPACEGROUP</a>),
+then that is used, otherwise the spacegroup from the HKLIN file is
+changed by the reindex operator. The reindexed data are written to
+the HKLOUT file. Note that there is no check that the operator is
+sensible and consistent with the space group, so be careful. If no
+space group is specified, the reindex transformation will be applied to
+the input space group, but this may lead to an unrecognised space group
+(eg non-cyclic permutations in P 21 21 21), in which case you will have
+to give the space group explicitly.</p><p>Normally this
+<b>must </b>be a right-handed operator (ie correspond to a matrix
+with positive determinant), and the program will fail if it is not,
+but the keyword LEFTHANDED allows a negative-determinant
+transformation to be applied. <b style="color: red;">Be
+VERY sure that you really want to
+do this! It is only valid if the hand of data has been inverted by
+some previous mistake in the integration program, ie VERY rarely. Do
+not use this option unless you really know what you are doing.</b></p>
+<h3><a name="tolerance"></a>TOLERANCE &lt;LatticeTolerance&gt;</h3>
+<p>Tolerance in degrees for determination of lattice symmetry
+[default 2 degrees]. Tolerance is the maximum deviation from the
+expected angle between two-fold axes in the lattice group, eg for a
+putative tetragonal lattice where a~=b, the expected angle between
+the diagonals is 90 degrees, and the deviation&nbsp;&nbsp; delta =
+2tan^-1(a/b) - 90<br>
+When testing alternative indexing schemes to
+match HKLIN to HKLREF datasets, this angular tolerance is converted
+to a "average length" tolerance by multiplying by the
+average cell edge.</p>
+<h3><a name="accept"></a>ACCEPT &lt;AcceptanceLimit&gt;</h3>
+<p>Parameters for acceptance criterion. A group is accepted if its
+likelihood score is greater than (AcceptanceLimit * Maximum
+likelihood score)&nbsp; where AcceptanceLimit is set by the ACCEPT
+command [default 0.2]&nbsp; </p>
+<h3><a name="partials"></a>PARTIALS [[NO]CHECK] [TEST
+&lt;lower_limit&gt;
+&lt;upper_limit&gt;] [CORRECT &lt;minimum_fraction&gt;] </h3>
+<p>Set criteria for accepting complete or incomplete partials. After
+all parts have been assembled, the total observation is accepted if:-</p>
+<ol>
+  <li>
+    <p style="margin-bottom: 0cm;">the CHECK flag is set [default] and
+the MPART flags are all consistent (these flags indicate that a set of
+parts is eg 1 of 3, 2 of 3, 3 of 3) </p>
+  </li>
+  <li>
+    <p style="margin-bottom: 0cm;">if CHECK fails, then the total
+fraction is checked to lie between lower_limit &amp; upper_limit
+[default 0.95, 1.05] </p>
+  </li>
+  <li>
+    <p>if this fails, then the incomplete partial is scaled up by the
+total fraction if&nbsp; it is &gt; minimum_fraction [default 0.6] </p>
+  </li>
+</ol>
+<h3><a name="copy"></a>COPY</h3>
+<p>Just copy input to output: useful for converting an XDS (<a href="#xdsin_file">XDSIN</a>)
+file or SCAIN to MTZ format&nbsp; (<a href="#hklout_file">HKLOUT</a>), or just
+to sort HKLIN file(s). This is equivalent to the command line option
+"-copy" or "-c"</p>
+<h3><a name="centre"></a>CENTRE [&lt;hgrid&gt; &lt;kgrid&gt;
+&lt;lgrid&gt;]</h3>
+<p>Search for centre of symmetry in the lattice. This should be at
+index 0,0,0, but occasionally the pattern has been misindexed, eg by
++-1 along the rotation axis. This option performs an R-factor (Rmeas)
+search around 0,0,0, by default for +-2 grid points in each
+direction&nbsp; (the size of the search grid may be reset to hgrid,
+kgrid, lgrid here). The lowest R should be at 0,0,0. Note that if the
+Laue group symmetry is wrong, this search may be less reliable: a
+LAUEGROUP command may be given to reset the symmetry. If an HKLOUT
+file is specified, the reindexed data is written (even if the
+reindexing operator is the identity).</p>
+<h3><a name="namecommand"></a>NAME [PROJECT &lt;project_name&gt;]
+[CRYSTAL &lt;crystal_name&gt;] [DATASET &lt;dataset_name&gt;]</h3>
+<p>Assign or reassign project/crystal/dataset names, for output file.
+XDS files (<a href="#xdsin_file">XDSIN</a>) and SCALEPACK (<a href="#scain_file">SCAIN</a>)
+do not contain this information, so the NAME command may be used to
+supply this, for writing to the output HKLOUT file. In the case of
+MTZ input, the names given here supersede those in the input file: if
+there are multiple files, NAME commands may be interspersed with
+HKLIN | XDSIN | SCAIN commands to (re)assign datasets. Note that for
+files defined with input commands, this command must precede the
+relevant HKLIN | XDSIN |
+SCAIN command: a single NAME command may be given anywhere to (re)name
+datasets for files defined on the command line.</p>
+<h3><a name="sysabs"></a>SYSTEMATICABSENCE&nbsp; ON | OFF</h3>
+<p>Usually after checking for Laue group, reflections in special
+zones (axes) are checked for systematic absences to try to determine
+the space group. If this flag is OFF, the systematic absence check is
+skipped, and the "best"&nbsp; Laue group is accepted. </p>
+<h3><a name="neighbour"></a>NEIGHBOUR &lt;neighbour_fraction&gt;</h3>
+<p>For the systematic absence analysis along axes, intensities are
+“corrected” for possible corruption by neighbouring strong
+reflections which may inflate the value of reflections which should
+be absent. This is done by subtracting a small fraction of the
+neighbouring intensities from each intensity, not allowing the result
+to be negative: this corrected I' is used in the Fourier analysis of
+I'/sigma(I). The default value of neighbour_fraction is 0.02,</p>
+<h3><a name="cell"></a>CELL &lt;a&gt; &lt;b&gt; &lt;c&gt; &lt;alpha&gt;
+&lt;beta&gt; &lt;gamma&gt;</h3>
+<p>Read cell dimensions. This is required for SCALEPACK unmerged
+and SHELX files,&nbsp; as the cell is missing from the file. For other
+cases, this
+may be used to override the cell from the input file, but note that
+no check is made that the input values are appropriate (though a
+warning is given if they are very different from those in the file). It
+is also recommended for SAINT files, as the cell inferred from the data
+may not be very accurate. Note that to take effect, this command must
+precede the relevant
+HKLIN | XDSIN | SCAIN command, and the file names must be given as
+input commands, not on the command line.</p><h3><a name="wavelength"></a>WAVELENGTH &lt;lambda&gt;</h3>Read wavelength to set the value for SCALEPACK or SHELX files, and to override the value from SAINT files. At present this is <span style="font-weight: bold;">not</span> used for MTZ or XDS files
+<h3><a name="assumesameindexing"></a>ASSUMESAMEINDEXING [ON | OFF]</h3>
+<p>If there are multiple input files for the test data, it may be
+necessary to test that the 2nd and subsequent files are on the same
+indexing system as the earlier files.&nbsp; By default, this test is
+done if separate file names are given (on the command line or as
+HKLIN commands), but not done within a “file series” ie a set of
+multiple input files are generated from wild-cards (eg "hklin
+foo_*.mtz"). This
+flag can be used to stop the index test ("ON"), which saves
+time, or to force the program to do the test ("OFF" or
+alternatively the command DONOTASSUMESAMEINDEXING). </p>
+<h3><a name="hklin"></a>HKLIN&nbsp;&nbsp; &lt;test data file name&gt;</h3>
+<p>The filename for the input test data (MTZ format or others) may be given
+with this command, as an alternative to (usually) putting it on the
+command line (see <a href="#hklin_file">HKLIN</a>). Wild-cards "*"
+and "?" (as on the command line) may be used to specify
+multiple files (a “file series”).&nbsp;HKLIN may be used for non-MTZ files and the program will auto-detect the type.</p>
+<h3><a name="wildfile"></a>WILDFILE [&lt;template&gt;]</h3>
+<p>Treat the filenames given on&nbsp; the HKLIN command as if they
+contain wild cards&nbsp; to define a file series. If this command is
+given without an argument, then the default template is "*_###.*,
+suitable for dealing with the output from MOSFLM with the "Multiple MTZ
+files" option. [This option is here mainly to get round limitations in
+ccp4i]<br>
+</p>
+
+<h3><a name="xdsin"></a>XDSIN&nbsp;&nbsp; &lt;test data file name&gt;</h3>
+<p>The filename for the input test data (XDS format, XDS_ASCII or
+INTEGRATE) may be given with this command, as an alternative to&nbsp;putting it on the command line, or when there are multiple
+input files (see <a href="#xdsin_file">XDSIN</a>). HKLIN may also be used and the program will auto-detect the type.</p>
+<h3><a name="polarisation"></a>POLARISATION [XDS | MOSFLM] [&lt;polarisation_factor&gt;]</h3>
+INTEGRATE.HKL files from XDS have been corrected for the polarisation
+from an unpolarised incident beam, but not for the additional
+polarisation correction from a synchrotron source, so this additional
+correction needs to be applied, and will be applied by default for this
+file type. This command has no effect on other types of input files. <br>
+<br>
+There seem to be two definitions for the "polarisation ratio" &lt;polarisation_factor&gt;: <br>
+<ul>
+  <li>the definition used in eg Mosflm, which follows Kahn et al.
+(ref below), J' in their Appendix: this has a value of&nbsp; 0 for an
+unpolarised beam and +1.0 for a fully polarised synchrotron beam</li>
+  <li>the
+definition used in XDS, parameter FRACTION_OF_POLARIZATION: this has a
+value 0.5 for an unpolarised beam and +1.0 for a fully polarised
+synchrotron beam</li>
+</ul>
+Here the value given is assumed to be in the XDS convention, unless the
+subkeyword MOSFLM is given, and it is then converted to the Kahn/Mosflm
+convention for internal use. Set polarisation_factor = 0.0 for an
+unpolarised beam.<br>
+
+<br>
+The default value if not set explicitly = 0.99, = XDS 0.98, unless the
+wavelength corresponds to a likely in-house source, in which case the
+unpolarised value is left unchanged (recognised
+wavelengths are CuKalpha 1.5418 +- 0.0019, Mo 0.7107 +- 0.0002, Cr 2.29
++- 0.01)<br>
+<br>
+&nbsp;(Reference: Kahn, Fourme, Gadet, Janin, Dumas, &amp; André,&nbsp; J. Appl. Cryst. (1982). 15, 330-337)<br>
+
+<h3><a name="scain"></a>SCAIN&nbsp;&nbsp; &lt;test data file name&gt;</h3>
+<p>The filename for the input test data (SCALEPACK format, "unmerged
+original indices") may be given with this command, as an
+alternative to (usually) putting it on the command line, or when
+there are multiple input files (see <a href="#xdsin_file">XDSIN</a>).
+A <a href="#cell">CELL</a>
+command must be given, since the file does
+not contain the unit cell. Note that SCALEPACK may already have
+removed systematic absences, invalidating the analysis here. This
+command may also be used to read files from SHELX or from SAINT. Note
+that SCALEPACK files do not contain all the geometrical information
+from the data collection, and SHELX files contain no geometrical
+information, so output MTZ files (HKLOUT) are not really
+suitable for further scaling in SCALA (see SCALA documentation). SAINT
+files have all necessary information (but note that Scala versions
+before 3.3.18 do not deal properly with the secondary beam correction
+for Phi
+scans).&nbsp;HKLIN may also be used and the program will auto-detect the type. For merged ShelX files, a <a href="#merged">MERGED</a> command should be given to indicate the space group (or point group) used for merging.</p><h3><a name="merged"></a>MERGED &lt;space group name&gt;</h3>Only required for merged ShelX files, to tell the program that the file is merged, and in what space group
+<h3><a name="hklref"></a>&nbsp;HKLREF &nbsp; &lt;reference data file name&gt;</h3>
+<p>The filename for the reference data may be given with this
+command, as an alternative to putting it on the command
+line</p><h3><a name="xyzin"></a> XYZIN &lt;reference coordinate file name&gt;</h3>The
+filename for a reference coordinate set. Structure factors will be
+calculated to use as a reference, in the same way as HKLREF. The file
+should contain a valid space group name (full name with spaces, eg "P
+21
+21 21", "P 1 21 1" etc) and unit cell parameters (ie a CRYST1 line in
+PDB format). These values from the file may be overridden (or supplied)
+by SPACEGROUP and CELL commands if necessary.
+<h3><a name="hklout"></a>HKLOUT &nbsp; &lt;output file name&gt;</h3>
+<p>The filename for the output data may be given with this command,
+as an alternative to&nbsp;putting it on the command line</p>
+<h3><a name="xmlout"></a>XMLOUT &nbsp; &lt;xml output file name&gt;</h3>
+<p>The filename for the XML output data may be given with this
+command, as an alternative to putting it on the command
+line</p><h3><a name="allow"></a>ALLOW OUTOFSEQUENCEFILES</h3>In
+a "file series" defined with a wild-card (see <a href="#hklin">HKLIN</a>), by default the modification
+times of files are examined to check that they in ascending time order.
+If a file is found to be out of sequence, that file and the rest of the
+series are rejected. This command ignores this check: all files in the
+series will be used. Modification times may also be reset with the
+system command "touch". [No time check is made on Windows
+systems].&nbsp;
+<h3><a name="multiply"></a>MULTIPLY &lt;input_scale&gt;</h3>
+Scale all input intensities by this factor (default 1.0)<br><h3><a name="blank"></a>BLANK [NONE] [RESO[FRACTION] &lt;resofraction&gt;] [NEGATIVE &lt;negativefraction&gt;]</h3>Define
+criteria for recognising "blank" images which be eliminated from
+consideration and from the output file. A batch is considered to be
+blank&nbsp;if the proportion of negative intensities out to a
+resolution of &lt;resofraction&gt;*maximum resolution is greater than
+&lt;negativefraction&gt;. By default this test is not done (ie BLANK
+NONE): the keyword BLANK on it's own sets default values of
+resofraction = 0.5,
+negativefraction = 0.3. The value of &lt;negativefraction&gt; may be
+automatically increased above this value in cases of very weak data.<br>
+<br>
+<h3><a name="use"></a>USE [ALL | EXCEPT]&nbsp; &lt;run list&gt;</h3>
+Select which runs to use in symmetry determination. This is largely
+intended for data from multiple lattices (file from FECKLESS): in that
+case, by default only Run 1 is used as this will (for now) correspond
+to the first (primary) lattice (ie default is USE 1). This command then
+allows override of this default. USE EXCEPT 2 for example uses all runs
+except run 2. USE ALL uses all. All runs are written to the output
+HKLOUT file, even if not used for symmetry determination.<br>
+<span style="color: red; font-weight: bold;">NB, beware:</span> this command will likely change in future to apply to Lattice rather than Run (when the Lattice class is implemented)  <br>
+<h2 style="margin-left: 0.00999999cm;"><a name="input_and_output_files"></a>Input
+and output files</h2>
+<h3><a name="hklin_file"></a>HKLIN</h3>
+<p style="margin-bottom: 0cm;">The file or files containing the test
+dataset. Files may be specified either on the command line with or
+without the optional keyword HKLIN, or as command input, keyword
+HKLIN.&nbsp; HKLIN may be used for other filetypes, as alternative to
+XDSIN and SCAIN: the program will automatically detect the filetype.
+Multiple files may be specified with "wild-cards"
+"*" or "?".<br>
+<br>
+<i><b>Lauegroup Mode</b></i><i>.</i>
+This should normally be an unmerged file of intensities eg from Mosflm</p>
+
+<p style="margin-left: 1.06cm; margin-bottom: 0cm;">Compulsory columns
+are H, K, L, M/ISYM, BATCH, I, SIGI<br>
+Optional columns are IPR,
+SIGIPR, TIME, XDET, YDET, ROT, WIDTH, MPART, FRACTIONCALC, LP, FLAG,
+BGPKRATIOS, SCALE, SIGSCALE<br>
+<br>
+If a SCALE column is present it
+will be applied on input.</p><p style="margin-left: 40px;">A
+merged file can only be checked for under-merging ie for the true Laue
+group being a higher symmetry than that used for merging. A LABIN
+command may be given to specify the column labels for a merged file,
+otherwise the first column of type J (intensity) or F (amplitude) will be used.</p><p>&nbsp;<i><b>Index or Reindex Mode</b></i>. This may be unmerged (as
+above) or merged. Unless a column is specified in the control input,
+the first column of type J (intensity) or F (amplitude) will be used
+for comparison with the reference dataset. Amplitudes are squared to
+intensities on input.</p>
+<h3><a name="xdsin_file"></a>XDSIN</h3>
+<p>An XDS_ASCII file (or INTEGRATE): HKLIN may also be used. The
+file must be unmerged (MERGE=FALSE). Project, Crystal and Dataset
+names may be given with the <a href="#name">NAME</a> command.</p>
+<h3><a name="scain_file"></a>SCAIN</h3>
+<p>A SCALEPACK, SHELX or SAINT file: HKLIN may also be used The file should be
+unmerged ("unmerged original indices"): a merged file can
+be read, but probably is not much use. Project, Crystal and Dataset
+names may be given with the <a href="#name">NAME</a> command. A <a href="#cell">CELL</a>
+command must be given except for SAINT files. Note that SCALEPACK may
+already have removed
+systematic absences, invalidating the analysis here: a warning is
+printed if this seems to have been done. Note that Scala versions
+before 3.3.18 did not deal properly with the secondary beam correction
+for Phi
+scans. </p>
+<h3><a name="hklref_file"></a>HKLREF, XYZIN</h3>
+<p>The file containing the reference dataset for Mode 2
+(alternative). This may be merged or unmerged. For a merged reference
+file, unless a column is specified in the control input, the first
+column of type J (intensity) or F (amplitude) will be used for
+comparison with the reference dataset. Amplitudes are squared to
+intensities on input. As an alternative, a coordinate file XYZIN may be
+given, in which case calculated intensities will be used as the
+reference.</p>
+<h3><a name="hklout_file"></a>HKLOUT</h3>
+<p>In LAUEGROUP mode, the test dataset reindexed in the "best"
+space group or point group. In ALTERNATIVE mode, the test dataset
+with the best reindexing, in the spacegroup of the reference dataset.</p>
+<h3><a name="xmlout_file"></a>XMLOUT</h3>
+<p>An XML version of the logfile is written to a file if XMLOUT is
+assigned. This includes a BestSolution block<br>
+eg <br>
+<font face="monospace">&lt;BestSolution
+Type="pointgroup"&gt;<br>
+&nbsp;&nbsp; &lt;GroupName&gt;P 2
+2 2&lt;/GroupName&gt;<br>
+&nbsp;&nbsp;
+&lt;ReindexOperator&gt;h,k,l&lt;/ReindexOperator&gt;<br>
+&nbsp;&nbsp;
+&lt;ReindexMatrix&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1<br>
+&nbsp;&nbsp;&nbsp;
+&lt;/ReindexMatrix&gt;<br>
+&nbsp;&nbsp; &lt;Confidence&gt;&nbsp;&nbsp;&nbsp;
+1.000&lt;/Confidence&gt;<br>
+&nbsp;&nbsp; &lt;TotalProb&gt;&nbsp;
+0.567&lt;/TotalProb&gt;<br>
+&lt;/BestSolution&gt;<br>
+</font><br>
+Type
+is "spacegroup" if a unique space group is determined, or
+"pointgroup" if there is an ambiguity. The reindex matrix
+[H] post-multiplies the row vector <b>h</b> (ie <b>h</b>' = <b>h</b>
+[H])&nbsp;<br>
+</p>
+
+<h2><a name="References"></a>References</h2>
+
+<p>P.R.Evans, Scaling and assessment of data quality, Acta Cryst. <span style="font-weight: bold;">D62</span>, 72-82 (2006).</p>
+<p>The scoring scheme has changed somewhat since this paper was
+written, particularly in the calculation of the probabilities<br>
+</p>
+<h2><a name="examples"></a>Examples</h2>
+<p><i>Simple usage, all defaults (mode Lauegroup):</i></p>
+<p style="margin-left: 1.06cm; margin-bottom: 0cm;">&nbsp;pointless
+[hklin] &lt;filename.mtz&gt;</p>
+<p><br>
+<i>With reference dataset (mode alternative)</i>:</p>
+<p style="margin-left: 1.06cm; margin-bottom: 0cm;">pointless hklref
+amph_I.mtz hklin amph_scaled.mtz</p>
+<p><i><br>
+With reference dataset and control input (mode
+alternative)</i>:</p>
+<p style="margin-left: 1.06cm; margin-bottom: 0cm;">pointless hklref
+n20n6c1c2n6x2x14e10e7.mtz \<br>
+&nbsp;&nbsp;&nbsp; &nbsp; hklin
+cd3_1_F.mtz &lt;&lt; eof<br>
+resolution 4.0<br>
+labref&nbsp;
+F_nat20<br>
+labin F_cd3_1<br>
+eof</p>
+<p><br>
+<i>Just reindexing</i></p>
+<p style="margin-left: 1.06cm;">pointless hklin &lt;infile&gt; hklout
+&lt;outfile&gt; &lt;&lt; eof<br>
+reindex k,h,-l<br>
+spacegroup P31<br>
+eof</p>
+<p><i>Just copying (converting XDS file)</i></p>
+<p style="margin-left: 1.06cm; margin-bottom: 0cm;">pointless -copy
+xdsin &lt;infile&gt; hklout &lt;outfile&gt;</p>
+<p><br>
+<i>Multiple input files</i></p>
+<p style="margin-left: 1.06cm; margin-bottom: 0cm;">pointless hklout
+12287.mtz &lt;&lt; eof<br>
+name project JCSG crystal 12287 dataset
+INFL<br>
+hklin 12287_1_E1_001.mtz<br>
+name project JCSG crystal 12287
+dataset LREM<br>
+hklin 12287_1_E2_001.mtz<br>
+name project JCSG crystal
+12287 dataset PEAK<br>
+hklin 12287_2_001.mtz<br>
+eof</p>
+<p style="margin-bottom: 0cm;"><i><br>
+Multiple input files with
+exclusions</i></p>
+<p style="margin-left: 1.06cm; margin-bottom: 0cm;">pointless &lt;&lt;
+eof<br>
+#&nbsp; File 1<br>
+hklin IID3_r5.mtz<br>
+#&nbsp; File 2<br>
+hklin
+IID3_r6.mtz<br>
+exclude&nbsp; batch
+1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+# final numbering, from file 1<br>
+exclude&nbsp; file 2 batch&nbsp;
+4&nbsp;&nbsp;&nbsp;&nbsp; # original numbering in file 2<br>
+exclude&nbsp;
+batch&nbsp; 1007 to 1008&nbsp;&nbsp; # after re-numbering, from file
+2<br>
+copy<br>
+hklout r5r6<br>
+eof</p>
+<p><i><br>
+Multiple input files</i></p>
+<p style="margin-left: 1.06cm; margin-bottom: 0cm;">pointless hklin
+abc_1.mtz abc_2.mtz&nbsp; hklout 12287.mtz </p>
+<p><br>
+<i>Multiple input files with wild-card</i></p>
+<p style="margin-left: 1.06cm; margin-bottom: 0cm;">pointless &lt;&lt;
+eof</p>
+<p style="margin-left: 1.06cm; margin-bottom: 0cm;">hklin
+abc_*_001.mtz</p>
+<p style="margin-left: 1.06cm; margin-bottom: 0cm;">hklout abc_1.mtz</p>
+<p style="margin-left: 1.06cm; margin-bottom: 0cm;">eof</p>
+<p><br>
+<i>Scalepack input</i></p>
+<p style="margin-left: 1.06cm; margin-bottom: 0cm;">pointless scain
+gp6_e1_nomerge.sca</p>
+<p><br>
+</p>
+<h2><a name="release_notes"></a>Release notes</h2>
+<h3>1.8.7</h3>Bug fix for multilattice data: when expanded to higher
+symmetry lattice, overlaps were not excluded from calculations. If a
+reference file is given, always score the test data against this, even
+if no alternative indexing is present, and write score to XML file.
+Changed Likelihood calculation for alternative indexing to a straight
+comparison between CCs, rather than allowing (wrongly) for
+pseudo-symmetry, which is only relevant for actual Laue group
+determination.<br>
+<h3>1.8.6</h3>
+
+
+Correct rationalisation of input of multiple MTZ files with
+different space groups in the same crystal system (eg R3 and R32), etc<br>
+In output of analysis of individual symmetry operators for primitive orthorhombic, print axis directions in original frame
+<h3>1.8.5</h3>
+
+Fix obscure bug in NAME command ("crystal dataXXX" misinterpreted as
+DATASET keyword). Rationalise input of multiple MTZ files with
+different space groups in the same crystal system (eg R3 and R32)<br>
+
+<h3>1.8.4</h3>
+
+Fix for new version of XDS May 2013<br>
+<h3>1.8.3</h3>
+write "proper" CCP4 standard symmetry information to MTZ
+file, pointgroup name "PGxxx" and strange spacegroup numbers eg 3018
+for P 2 21 21<br>
+<h3>1.8.2</h3>
+
+Some fix-ups when checking merged files for under-merging. May set
+unknown initial spacegroup to eg C1 which wasn't allowed previously<br>
+<h3>1.8.1</h3>
+Dataset handling extended to handle better the case of a dataset coming from multiple crystals (really code for Aimless)<br>
+Options for handling multilattice data, using singletons only, by default from Run 1 only (see USE keyword)<br>
+Additional XML for ccp4i2<br>
+<h3>1.7.5</h3>
+XDS "batch" set to int(ZD)+1 instead of Nint(ZD)+1<br>
+<h3>1.7.0,1,2,4</h3>
+Major reorganisation: add Dataset class which may contain multiple Xdatasets. Additional XML output for ccp4i2.<br>
+Automatically use input MTZ space group if compatible with solutions found, eg P212121 instead of P222<br>
+<h3>1.6.21</h3>Bug fix in reading XDS files from Windows on non-Windows. Fix "choose spacegroup" for eg P21 2 21 etc (didn't work)<br>
+<h3>1.6.19</h3>
+
+
+Fix in pointgroup.cpp to cope with new cctbx<br>
+<h3>1.6.18</h3>
+Allow "*" in XDS headers (but not "***" which indicates format overflow)<br>
+<h3>1.6.15, 16, 17<br>
+</h3>
+
+Set "spg_confidence" flag in output MTZ file&nbsp; to indicate whether
+space group, enantiomorphic pair or point group have been determined<br>
+(17) bug fix from Aimless in Batch class<br>
+<h3>1.6.14</h3>
+Changed ice ring rejection tolerance from 4 to 3 sd<br>
+<h3>1.6.13</h3>
+
+Better scoring for 6-fold screw axes<br>
+<h3>1.6.11</h3>
+XDS input guarded against illegal batch = 0 (reset to 1)<br>
+<h3>1.6.10</h3>
+Minor infelicity in MeanSD class (could give sqrt(negative)) scala_util.cpp<br>
+<h3>1.6.9</h3>
+
+Remove non-fatal error with some Saint files, worked but stopped ccp4i pipeline<br>
+<h3>1.6.8<br>
+</h3>
+<h3>
+</h3>
+Always do twinning test, even when there is a reference file<br>
+<h3>1.6.7</h3>
+Fixed bugs in H &lt;-&gt; R lattice reindexing<br>
+<h3>1.6.6</h3>
+Bug fix for very small number of overlaps with reference file leading to SD = 0 in probability calculation<br>
+<h3>1.6.5</h3>
+Fixed a nasty bug in accessing a potentially deleted
+object in probability calculation (thanks to Charles Ballard) which
+crashed in Windows, also some&nbsp; "uninitialised variable" errors
+found by Clemens Vonrhein<br>
+<h3>1.6.4</h3>
+
+Reindexing merged files now deals properly with phase and ABCD columns,
+eg for I2&lt;-&gt;C2 or&nbsp; P2 21 21 &lt;-&gt; P21 21 2 conversions<br>
+Improved/fixed detection of new space group after reindexing<br>
+
+<h3>1.6.3</h3>Trap "*****" fields from format overflow in XDS headers, just to give a sensible error message<br>
+<h3>1.6.2</h3>
+
+<span style="font-weight: normal;">XDS XSCALE now puts [U] = [I] to
+evade bug in Reindex, used in Xia2. Also restored the History record in
+the MTZ header (lost at some previous point)</span> <br>
+<h3>1.6.1 <br>
+</h3>
+<h3>
+</h3>
+fixed serious bug present in all 1.5.x versions. If an MTZ file
+input is in the highest point group of the higher symmetry group,
+specifically 422, 622, R32 or 432, and the final output file is in the
+same point group, then the symmetry operators were scrambled relative
+to the ISYM flags on the observations, leading to wrong original hkl
+being generated in Scala/Aimless: this then affects the secondary beam
+calculation and hence the absorption correction&nbsp; &nbsp; <br>
+<h3>1.5.22</h3>
+
+
+WILDFILE option<br>
+For enantiomorpic space groups, prefer to pick the one that matches the input file<br>
+Minor fix to reading XSCALE output files<br>
+Fixed long-standing bug messing up the phi start, phi end when there
+are a large number of images (eg &gt; 1638), leading to unwanted breaks
+in a run in Aimless (this bug was also present in Scala, fixed in
+version 3.3.20))<br>
+<h3>1.5.21</h3>
+Fixed nasty bug introduced in 1.5.18 or 19, data accepted in lower
+symmetry than the lattice group were output unsorted, leading to
+completeness in Scala/Aimless of &gt; 100%. 1.5.17 and earlier are OK<br>
+Added POLARISATION correction for XDS/INTEGRATE files<br>
+<h3>1.5.20</h3>
+Recognise scalepack unmerged files from Scala/Aimless (space group names with spaces in them)<br>
+<h3>1.5.19</h3>
+Twinning analysis, by L-test<br>
+Improved analysis of 6-fold screw axes<br>
+<h3>1.5.18</h3>
+
+Likelihood score for alternative indexing<br>
+<h3>1.5.17</h3>
+If ROT column is missing or all zero (or all the same), use BATCH number instead of ROT <br>
+<h3>1.5.16</h3>
+Add more ice rings, from Harry Powell<br>
+<h3>1.5.15</h3>
+
+Check and monitor multiple inconsistent unit cells within a dataset<br>
+
+
+<h3>1.5.14<br>
+</h3>
+
+
+<span style="font-weight: normal;"></span><span style="font-weight: normal;">Force "setting C2" if C2 explicitly chosen "choose spacegroup C2" or </span><span style="font-weight: normal;">"choose lauegroup C2/m"</span><span style="font-weight: normal;"> </span>
+<h3>1.5.11, 12<br>
+</h3>
+BLANK test off by default<br>
+
+Moved my modified Rotation class (rotation.hh/.cpp)&nbsp; from namespace clipper to namespace scala to avoids clashes. <br>
+<h3>1.5.10</h3>
+Reads XDS CORRECT output, but puts batch number in the ROT column (since OSCILLATION_RANGE is unlnown)<br>
+<h3>1.5.8</h3>
+Change order of output symmetry elements so that 2-folds for point groups 321 &amp; 312 are grouped together<br>bug fix in string_util, &nbsp;std::string changed to char*<h3>1.5.5, 6, 7</h3>More checks for merged files to handle some data weirdnesses<h3>1.5.4</h3>Improved (corrected) Laue group scoring for merged files, added explicit warning message for undermerging of merged files&nbsp; <h3>1.5.3</h3>Fix
+symmetry handling to : (a) handle the unconventional space group I 1 21
+1 (and any other that are in the CCP4 library file syminfo.lib); (b)
+improve handling of rhombohedral lattice centering (R as opposed to H),
+though this is still incomplete (reference file cannot be in the
+R-setting); (c) improved robustness to weird lattices in merged files<h3>1.5.2</h3>Bug fix for obscure pseudo-R3 case<br>Output
+MTZ file spacegroup will be labelled as eg "H 3" for rhombohedral
+lattices in the hexagonal setting, as in versions before 1.5.0&nbsp; <h3>1.5.1</h3>More refactoring<br>The
+program will auto-detect the file type (XDS, SCA etc) for recognised
+types, for files given on the command line or with the HKLIN keyword.<h3>1.5.0</h3>XYZIN option to generate reference data from coordinate file<br>Refactored some symmetry classes (hkl_symmetry) to use Clipper classes instead of CCP4 classes: functionally equivalent<br>Some rationalisation of the treatment of merged files.<h3>1.4.9</h3>Made
+geometry calculations, and batch header information from SAINT correct
+for phi scans on 3-axis goniostats, and with rotations going backwards
+("time" then = -phi)&nbsp; <h3>1.4.8</h3>Fixed bug introduced in 1.4.6 when there is a 1-image gap (reset phi to wrong value)<h3>1.4.7</h3>Fixed bug in writing unmerged file read from a merged file<h3>1.4.6</h3>Detects
+and eliminates blank images (see BLANK command). Doesn't now crash on
+incomplete or missing files (this worked&nbsp;from 1.3.7, but was
+broken in 1.4.1)<br><h3>1.4.5</h3>Fixed bug in reference file reading without a sigma (eg Fcalc)<h3>1.4.4</h3>Fixed long-standing but usually harmless bug in intensity normalisation (could lead to nans in bad cases)<h3>1.4.3</h3><span style="font-weight: normal;"></span><span style="font-weight: normal;">SAINT file input option (SCAIN)</span><h3>1.4.1</h3>Many
+changes to file reading to allow input of merged MTZ files (also
+Scalepack &amp; ShelX files). Merged files may be checked for
+under-merging &amp; for systematic absences. Allow an F to be used
+without a corresponding sigma (eg Fcalc).<br>SHELX format input, automatic detection from SCAIN command.<br>Fixed bug in detection of 4(1) axes in I-centred cells introduced in 1.3.13<br>Fixed long-standing bug in pointgroup class, which fortunately only affected rare cases (&amp; probably only non-chiral ones)<h3>1.3.14</h3>An explicit RESOLUTION setting now properly overrides the automatic cutoff for Laue group determination on min&lt;I/sigI&gt;<h3>1.3.13</h3>Detect systematically missing axial data (eg odd-ordered indices previously deleted), &amp; print warning.<br>Changed (improved?) probability estimates for systematic absences  <h3>1.3.11</h3>Fixed bug in assigning partials in files missing an MPART column <h3>1.3.10</h3>Changed scoring of systematic absences to make it more robust to negative intensities<h3>1.3.9</h3>Check
+times in file series defined on command line as well as on HKLIN
+command. Allow input files specified both on the command line and on
+commands.&nbsp; <h3>1.3.8</h3>Fixed
+bug in reindexing a merged HKLIN file against a reference HKLREF: it
+now picks the correct reindexing instead of always [h,k,l]<h3>1.3.7</h3>In a
+file series HKLIN: (a) incomplete files are ignored (an error message
+is printed by the CCP4 library); (b) files are checked for being in
+time sequence, and out-of-sequence files are rejected: this can be
+overridden with the ALLOW OUTOFSEQUENCEFILES command (not done on
+Windows) <h3>1.3.6</h3>The output file always takes the spacegroup from the reference file, if present.<h3>1.3.5</h3>Corrected calculation of Rmeas: numbers are larger than before, but are now correct!<h3>1.3.3</h3>Profile-fitted overloads are now actually used (they always were supposed to be!) <h3>1.3.2&nbsp;</h3>Fixed occasional bug in systematic absence test, if there are only a few reflections ("results requested with SD unset")<h3>1.3.0, 1&nbsp;</h3>Major rewrite of input file (hklin) reading, to speed up reading of large number of files<br>Fixed
+bug in systematic absence checks to select on reduced hkl instead of
+original hkl. &nbsp;Previous versions missed eg 0k0 reflections&nbsp;
+in point group 422: these are now treated as equivalent to h00.<br>Fixed
+some infelicities with non-chiral space groups (introduced by other
+changes), including gettting the dreaded space group 205 right (ie in
+the International Tables setting, rather than in the non-cyclic
+permutation of axes)<h3>1.2.26</h3>
+MTZ batch header was wrong if 1st batch was excluded: now fixed<br>
+<h3>1.2.25</h3>
+Use full resolution range for systematic absence check<br>
+<h3>1.2.24</h3>
+bug fix - EXCLUDE BATCH now works for single file<br>
+<h3>1.2.19</h3>
+Returns STATUS = +1 for all fatal errors (I hope). Fixed XDS bug with
+STARTING_FRAME != 1<br>
+<h3>1.2.16</h3>
+NAME command for files defined on command line. REINDEX MATRIX option.
+Now recognises NAME for XDSIN.<br>
+<h3>1.2.15</h3>
+Fixed bug in SETTING SYMMETRY-BASED settings in primitive orthorhombic
+cases. SETTING C2 option<br>
+<h3>1.2.14</h3>
+<p>For XDS input, flag as bad PKratio (= 99.99)&nbsp; &amp; omit MISFIT
+observations (flagged in XDS
+file with SD &lt; 0)</p>
+<h3>1.2.13</h3>
+<p>Multiple file series, no index checking within a series. Bug fix
+in XDS reading if STARTING_FRAME != 1</p>
+<h3>1.2.12</h3>
+<p>SETTING option, SPACEGROUP without REINDEX, fixed bug in CELL
+command for MTZ files.<br>
+Corrected intensities for systematic absence analysis (NEIGHBOUR option)<br>
+</p>
+<h3>1.2.9,10,11</h3>
+<p>Faster XDS reading, various bug fixes, EXCLUDE BATCH option,
+CHOOSE option</p>
+<h3>1.2.7</h3>
+<p>Multiple HKLIN files from HKLIN command</p>
+<h3>1.2.6</h3>
+<p>Read XDS INTEGRATE.HKL files </p>
+<h3>1.2.5</h3>
+<p>Multiple input files with wild-cards on command line ("pointless
+hklin abc*.mtz"), ASSUMESAMEINDEXING&nbsp; option</p>
+<h3>1.2.4</h3>
+<p>Testing alternative indexing to reference (either HKLREF or first
+HKLIN) now uses unmerged observations instead of the reflection
+average, to allow for misindexing in confusing cases, where
+observations which are actually different may have been assigned to
+the same reduced reflection. Added TESTFIRSTFILE option.</p>
+<h3>1.2.3</h3>
+<p>Fix problems with reindexing relative to reference file in
+non-standard setting or accidental alternative indexing. <br>
+Also&nbsp;
+"reindex" command&nbsp; will change space group&nbsp; if
+required&nbsp; (eg P21 2 21 reindexed&nbsp; [l,h,k] to P21 21 2) </p>
+<h3>1.2.0-2</h3>
+<p>Multiple input files, put on to the same indexing scheme with
+unique batch numbers.<br>
+Time-dependent B-factor normalisation (a
+simple-minded radiation damage correction)<br>
+SCALEPACK input
+(SCAIN), CELL command</p>
+<h3>1.1.5</h3>
+<p>Added XDS input (XDSIN), NAME command, COPY (&amp; -copy) options</p>
+<h3>1.1.3, 4</h3>
+<p>Alternative indexing option now lists correct cell deviation from
+reference cell<br>
+Fixed bug in reading eg "reindex -h,l,k"
+where leading "-" were stripped</p>
+<h3>1.1.2 </h3>
+<p>Fixed up systematic absence scoring so that it works properly for
+6-fold screws (allow for non-independence of Fourier terms): previous
+versions were wrong&nbsp; (to use a technical term) for 6(1)
+axes.<br>
+Refactor reflection reading to allow for input other than
+from MTZ files in future.</p>
+<h3>1.1.1...</h3>
+<p>New (and better) scoring scheme: P(CC) based on Lorentzian
+distribution rather than Gaussian; probabilities combined for all
+symmetry elements in putative Laue group in different &amp; simpler
+way</p>
+<h3>1.1.0.6</h3>
+<p>Fixed bug,&nbsp; hklout file was written in Laue group instead of
+space group under some circumstances</p>
+<h3>1.1.0.5</h3>
+<p>Tolerance in alternative indexing now based on RMS difference of
+base vectors, rather mean square, tolerance converted from angular
+value using mean cell edge. Fixed omission of resolution limits from
+merged HKLOUT file in reindexing.</p>
+<h3>1.1.0</h3>
+<p>New likelihood scoring scheme for Laue groups, seems to work
+better than Net-Zc, modified acceptance scheme to go with this.</p>
+<h3>1.0.8</h3>
+<p>XML output from Index &amp; Centre modes</p>
+<h3>1.0.7</h3>
+<p>Reindex mode tidied up (this is when either REINDEX or SPACEGROUP
+commands given). Anomalous columns are swapped if necessary (probably
+only if LEFTHANDED option is used, not recommended). Discard
+fractional indices after reindexing.<br>
+CENTRE option added. Uses
+scaled partials if incomplete &amp; fraction &gt; [0.6] (PARTIALS
+command)</p>
+<h3>1.0.6</h3>
+<p>Use profile-fitted overloads in systematic absence test</p>
+<h3>1.0.5</h3>
+<p>XML output if xmlout is assigned</p>
+<h3>1.0.0, 1</h3>
+<p>Systematic absence analysis to choose spacegroup<br>
+Correction of
+various bugs</p>
+<h3>0.5.0,1,2 </h3>
+<p>Alternative ways of combining Z+ &amp; Z- (Za, Zc), remove
+combined RMSD printing, more input controls (ORIGINALLATTICE,
+LAUEGROUP, REINDEX, TOLERANCE, ACCEPT)</p>
+<h3>0.4.0</h3>
+<p>HKLOUT output added</p>
+<h3>0.3.0</h3>
+<p>Mode Alternative, labin, labref</p>
+<h3>0.2.0</h3>
+<p>User input, resolution, Isiglimit, Nonchiral</p>
+</body></html>

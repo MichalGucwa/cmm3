@@ -1,0 +1,675 @@
+<html>
+<head>
+<title>Test procedures for dbCCP4i</title>
+<style>
+/* Inline stylesheet */
+table.ManualTestHeader  { border-style: none;
+                          width: 100%;
+                          margin-top: 5px; }
+table.ManualTestHeader td { vertical-align: top;
+                            font-weight: normal;
+                            background: lightgrey; }
+table.ManualTestHeader td:first-child { font-weight: bold;
+                                        background: grey; }
+div.ManualTestProcedure { border-style: solid;
+                          border-width: 1px;
+                          margin-bottom: 5px; }
+div.ManualTestProcedure p:first-child { font-weight: bold; }
+
+table.TestScripts { border-style: solid;
+                    border-color: black;
+                    width: 100%; }
+table.TestScripts tr td { vertical-align: top;
+                          border-color: grey;
+                          border-style: solid;
+                          border-width: 1px; }
+table.TestScripts tr td:first-child { font-weight: bold;
+                                      background: lightgrey;
+                                      width: 20%; }
+</style>
+</head>
+<body>
+<h1>Test procedures for dbCCP4i</h1>
+
+<h2>Introduction</h2>
+
+<p>This document gives an overview of test procedures for the CCP4i
+project database handler "dbccp4i" and the underlying code. The tests
+are divided into different types:</p>
+
+<ul>
+<li><a href="#scripted_tests">Scripted tests</a>: these are the mainstay
+    for validating the behaviour of the system.</li>
+<li><a href="#manual_tests">Manual test procedures</a>: these are early
+    test procedures that use the dbconsole. They are retained here as they
+    may occasionally be of use, however they are not generally used now.</li>
+<li><a href="#other_tools">Other test tools</a>: these are additional
+    tools that can be of help in diagnosing problems, but like the manual
+    tests are not generally used now.</li>
+</ul>
+
+<a name="scripted_tests"></a>
+<h2>Scripted Tests</h2>
+
+<p>There are a number of test scripts in the <tt>test</tt> directory
+of the dbccp4i distribution.</p>
+
+<p>A Tcl wrapper script called <tt>run_tests.tcl</tt> is provided which
+runs all the test scripts, and reports any failures. It is invoked from
+the command line with:</p>
+
+<pre>
+% tclsh run_tests.tcl
+</pre>
+
+<p>however it is possible to invoke it from any location provided that 
+the appropriate path to the script is provided. The wrapper script uses
+helper scripts located in the <tt>test/helper</tt> subdirectory.</p>
+
+<p>The tests should run on both Unix and Windows platforms. Note that the
+wrapper script will refuse to run if it detects a dbccp4i process already
+running. This is to prevent the tests from interfering with the operation
+of other existing client applications, and vice versa.</p>
+
+<p>Note also that the tests currently use the existing directories.def
+file of the user that runs them - so if the tests fail, in the worst
+cases references to the test directories may be left behind. This should
+not be a problem however the user will at some point need to remove
+the references manually.</p>
+
+<p>The following sections outline the test scripts that are included in
+the test directory and which are run by the wrapper script. They can also
+be run standalone.</p>
+
+<h3>Basic Python Tests</h3>
+
+<table class="TestScripts">
+<tr>
+<td>test_ccp4i.py</td>
+<td><p>Test functions for the classes and methods in the ccp4i.py module,
+    built using the Python <tt>unittest</tt> module.</p>
+   <p>Usage: <tt>% python test_ccp4i.py</tt></p>
+</td>
+</tr>
+<tr>
+<td>test_dbsocket.py</td>
+<td><p>Unit tests that check the classes and functions in dbsocket.py directly
+    (specifically, the XML wrapping and unwrapping functions), built using
+    the Python <tt>unittest</tt> module.</p>
+    <p>Usage: <tt>% python test_dbsocket.py</tt></p></td>
+</tr>
+<tr>
+<td>dbccp4i_test_client.py</td>
+<td>A simple client test application that tries basic operations via
+    the Python client API.</td>
+</tr>
+</table>
+
+<h3>Basic Tcl Tests</h3>
+
+<table class="TestScripts">
+<tr>
+<td>test_dbxml.tcl</td>
+<td><p>Unit tests that check the procedures in dbxml.tcl directly.
+   Loads the functions from dbxml.tcl in the ClientAPI directory and 
+   attempts various operations to test the functions.</p>
+   <p><b>Usage:</b> tclsh test_dbxml.tcl</p>
+   <p>The script attempts to perform the following actions:</p>
+   <ul>
+   <li>Wraps a number of requests into XML using WrapDbRequest</li>
+   <li>Unwraps a number of XML responses using UnwrapDbResponse</li>
+   <li>Unwraps an XML  broadcast using UnwrapDbBroadcast</li>
+   </ul>
+   <p>Note that this script tests the functions directly without
+   invoking the handler or the client API.</p></td>
+</tr>
+<tr>
+<td>dbccp4i_test_client.tcl</td>
+<td>A client application that tests various operations via the Tcl
+    client API.</td>
+</tr>
+<tr>
+<td>broadcast_test_client.tcl</td>
+<td>A client application that tests the broadcast messages sent by the
+    handler in response to various operations.</td>
+</tr>
+<tr>
+<td>dirlock_client.tcl</td>
+<td><p>A client application that tests how dbccp4i handles a lock on the
+   user's directories.def file when client attempts to register.</p>
+   <p><b>Usage:</b> tclsh dirlock_client.tcl</p>
+   <p>If the test succeeds then the handler should deal correctly
+   with the lock it encounters.</p></td>
+</tr>
+<tr>
+<td>rude_client.tcl</td>
+<td><p>A client application that tests for handler failure on unexpected
+    client disconnection.</p>
+   <p><b>Usage:</b> tclsh rude_client.tcl</p>
+  <p>If the test succeeds then the handler should still be
+   running correctly after the client disconnects.</p></td>
+</tr>
+<tr>
+<td>test_directories_client.tcl</td>
+<td><p>A client application that tests for the consistency between two
+    different methods of acquiring data about projects and data dirs.</p></td>
+</tr>
+</table>
+
+<h3>MrBump Compatibility Tests</h3>
+
+<p>These tests attempt to check used by the version of MrBUMP that
+uses the handler with a custom directories.def.</p>
+
+<table class="TestScripts">
+<tr>
+<td>dbccp4i_test_client.tcl -directories <em>directories_mr</em></td>
+<td>Run the test client application using the custom directories.def
+    for MrBUMP, rather than the default directories.def file.</td>
+</tr>
+<tr>
+<td>test_directories_mr.py</td>
+<td>Simple client application that uses the custom directories.def file
+    for MrBUMP via the Python client API.</td>
+</tr>
+</table>
+
+<h3>Tests Using a Temporary Project</h3>
+
+<p>These tests require that a pre-existing project be supplied as an
+argument. Within the run_tests.tcl script, helper scripts
+<tt>setup_test_project.tcl</tt> and <tt>teardown_test_project.tcl</tt>
+are used to create a temporary project with a unique name that the
+tests are subsequently run using.</p>
+
+<table class="TestScripts">
+<tr>
+<td>bigrequest_client.tcl <em>project</em> -limit 10000</td>
+<td><p>Operates in one of two modes. In the first (default) mode, it opens the
+   specified project and then submits requests which are longer each time,
+   until the handler fails to return consistent output, giving a rough
+   estimate of the maximum size of the request that the  system is able to
+   process through the Tcl client API.</p>
+   <p>In the second mode the user specifies a maximum number of jobs that
+   the system must process, and the script reports whether this number can
+   be successfully processed.</p>
+   <p><b>Usage:</b> tclsh bigrequest_client.tcl <em>&lt;project_name&gt; [-limit
+   &lt;n&gt; ] [ -adjust_timeout ]</em></p>
+   <p>In the default mode, the script attempts to perform the following actions:</p>
+   <ul>
+   <li>Open the project and acquire the id for the last job in that project</li>
+   <li>Submit a GetDescription request asking for the descriptions for a list
+    of jobs consisting of that job repeated one hundred times, and check
+    that the number of descriptions returned is equal to the number of
+    job ids.</li>
+   <li>Increase the list of jobs by 100 and repeat until failure occurs.</li>
+   </ul>
+   <p>The script reports the size (in terms of numbers of jobs) of the failing
+   request.</p>
+   <p>If <em>-limit</em> is specified then the script tries a single request with
+   a list of <em>&lt;n&gt;</em> jobs, and reports whether or not this was
+   successfully processed.</p>
+   <p><b>Notes:</b></p>
+   <p>This test is of limited use in ascertaining the maximum size of requests
+   that the system can deal with.</p>
+   <ul>
+   <li>In either mode the maximum number of jobs is not a precise
+       value, and may vary depending on the length of the data values
+       associated with the job that is chosen for the test - essentially
+       it is a ballpark indication only.</li>
+   <li>The upper limit is also dependent on the timeout that is chosen for
+       the client API; for large requests the default timeout of 5000ms
+       is too short for the transaction to be completed. This can lead to
+       discrepancies in the maximum number of jobs obtained using the two
+       different modes.<br />
+       Specifying the <em>-adjust_timeout</em> option attempts to adjust
+       the timeout period to compensate.<br />
+       It is possible that other factors such as machine load might also
+       make a difference to the maximum request size observed.</li>
+   </ul>
+    <p>For reference: with the default timeout in the iterative mode, the
+    maximum request size on one particular machine. is around 16300 jobs. In
+    the same mode with the adjusted timeout option, the maximum request size
+    obtained is significantly higher (41400 jobs).</p>
+    <p>A value of "10000" is used in the wrapper script as a baseline
+    limit.</p></td>
+</tr>
+<tr>
+<td>ccp4icompat_client.tcl <em>project</em></td>
+<td><p>Client application that attempts to simulate the situation when a second
+   process (e.g. CCP4i) interfering with the project lock and database files
+   while the handler is also accessing the project.</p>
+   <p><b>Usage:</b> tclsh ccp4icompat_client.tcl <em>&lt;project_name&gt;</em></p>
+   <p>The script attempts to perform the following actions:</p>
+   <ul>
+   <li>Open the database for the specified project</li>
+   <li>Override the lock on the project database</li>
+   <li>Update the modification time on the project database</li>
+   </ul>
+   <p>At each step the script attempts to get data from the project
+   to verify that the behaviour is as expected.</p></td>
+</tr>
+<tr>
+<td>openclose_client.tcl <em>project</em></td>
+<td><p>Client application that attempts to close unopened or previously closed
+   projects, and to open projects that have already been opened.</p>
+   <p><b>Usage:</b> tclsh openclose_client.tcl <em>&lt;project_name&gt;</em></p>
+   <p>The script attempts to perform the following actions:</p>
+   <ul>
+   <li>Close the project before opening it</li>
+   <li>Open the project, and then open it again</li>
+   <li>Close the project, and then close it again</li>
+   </ul>
+   <p>The script reports the success or failure for each of these actions,
+   which should all fail if the tests are successful.</p></td>
+</tr>
+<tr>
+<td>opendb_client.tcl <em>project</em></td>
+<td><p>Client application that tests for dealing with existing lock on project
+   database when client attempts to open it.</p>
+   <p><b>Usage:</b> tclsh opendb_client.tcl <em>&lt;project_name&gt;</em></p>
+   <p>If the test succeeds then the script should report the list
+   of jobs found in the project.</p></td>
+</tr>
+<tr>
+<td>demanding_client.tcl <em>project</em></td>
+<td><p>Client application that attempts to simulate the effect of a client that
+   generates large numbers of new jobs and other changes to a project in a short
+   space of time (for example, an automated script).</p>
+   <p><b>Usage:</b> tclsh demanding_client.tcl <em>&lt;project_name&gt;</em>
+   <em>&lt;task_name&gt;</em></p>
+   <p>The script attempts to perform the following actions:</p>
+   <ul>
+   <li>Open the database for the specified project</li>
+   <li>Creates ten new jobs with the specified taskname and modifies the data
+       associated with each</li>
+   </ul>
+   <p>The script can be edited to adjust the time interval between the
+   creation of new jobs. Outside of the wrapper script, multiple instances of
+   the script can be run simultaneously to test the effect of multiple
+   demanding clients, e.g.:</p>
+   <pre>
+   #!/bin/sh -e
+   #
+   # Run many instances of the demanding client
+   tclsh demanding_client.tcl JUNK fake1 &amp;
+   tclsh demanding_client.tcl JUNK fake2 &amp;
+   tclsh demanding_client.tcl JUNK fake3 &amp;
+   tclsh demanding_client.tcl JUNK fake4 &amp;
+   tclsh demanding_client.tcl JUNK fake5 &amp;
+   tclsh demanding_client.tcl JUNK fake6 &amp;
+   </pre>
+   <p><b>Warning</b> this script is very messy - it will leave large numbers
+   of "fake" jobs in the project that it is run in. Either use a temporary
+   project, or else open the project in CCP4i and use the "Delete/Archive..."
+   options to remove this jobs in bulk.</p></td>
+</tr>
+<tr>
+<td>dbitems_client.tcl <em>project</em></td>
+<td>Client application tests that the data items available from the handler
+    matches the list expected from looking at the default database.def
+    file.</td>
+</tr>
+<tr>
+<td>test_addfiles.py <em>project</em> 1 <em>filename</em></td>
+<td>Client application to simulate the addition of the same <em>filename</em>
+    to a job multiple times.<p>
+    <p>Usage:</p>
+    <pre>
+    % python test_addfiles.py &lt;project&gt; &lt;job_id&gt; &lt;filename&gt;
+    </pre></td>
+</tr>
+</table>
+
+<h3>Other Test Scripts</h3>
+
+<p>These are not true automated tests, as they do report success or failure
+in a way that can be checked from the wrapper script.</p>
+
+<table class="TestScripts">
+<tr>
+<td>dbsocket_crash.py <em>project</em> 1</td>
+<td>Python client application that is designed to crash. In this situation the
+    Python client API should also terminate.</p>
+   <p>Usage:</p>
+   <pre>
+   % python dbsocket_crash.py &lt;project&gt; &lt;job_id&gt;
+   </pre></td>
+</tr>
+</table>
+
+<a name="manual_tests"></a>
+<h2>Manual Test Procedures</h2>
+
+<p>The following procedures outline manual tests that can be performed
+to check that the software exhibits the correct behaviours.</p>
+
+<!-- Manual test #1 -->
+<table class="ManualTestHeader">
+<tr><td>Identifier</td><td>#1</td></tr>
+<tr><td>Name</td><td>Only one handler runs per user</td></tr>
+<tr><td>Description</td><td>Only one instance of the handler should run for
+    each user of the system. Starting a subsequent
+    instance of the handler should result in control
+    being passed to the existing one, and the
+    subsequent instance should then stop.</td></tr>
+</table>
+<div class="ManualTestProcedure">
+<p>Procedure &amp; Expected Outcomes</p>
+
+<p>On UNIX/Linux:</p>
+
+<ol>
+<li>
+<p><b>Start a handler in one terminal window using the "dbccp4i debug" command</b></p>
+<p>You should see the startup message from the handler:</p>
+<pre>
+================================================================
+DB Handler started at 2006-10-30 15:06:12.258985
+Version:  $Revision: 1.9 $
+================================================================
+</pre></li>
+<li><p><b>Start a second handler in another terminal in the same way</b></p>
+<p>You should see the following message from the second handler:</p>
+<pre>
+There is another handler running on port 4090.
+</pre></li>
+<li><p><b>Do "ps -ef | grep python"</b></p>
+<p>Only one python handler process should be running:</p>
+<pre>
+pjx      22602 15780  2 15:09 pts/11   00:00:00
+         python /home/pjx/BIOXHIT/Bioxhit_db/dbccp4i/dbccp4i/dbccp4i.py
+</pre></li>
+<ol>
+</div>
+
+<!-- Manual test #2 -->
+<table class="ManualTestHeader">
+<tr><td>Identifier</td><td>#2</td></tr>
+<tr><td>Name</td><td>Multiple clients</td></tr>
+<tr><td>Description</td><td>Two clients operating on behalf of the same user
+    should be able to connect to the same handler, and
+    modify and read the same data.</td></tr>
+<tr>
+</table>
+<div class="ManualTestProcedure">
+<p>Procedure &amp; Expected Outcomes</p>
+<p>On UNIX/Linux:</p>
+<ol>
+<li>
+<p><b>Start a handler process using the "dbccp4i debug" command</p></b>
+<p>You should see the startup message from the handler:</p>
+<pre>
+================================================================
+DB Handler started at 2006-11-02 13:54:58.231302
+Version:  $Revision: 1.9 $
+================================================================
+</pre>
+</li>
+<li>
+<p><b>Start a console process in another window</b></p>
+<p>You should see the console start up message and list of commands.</p>
+</li>
+<li>
+<p><b>Start a second console process in yet another window</b></p>
+<p>You should see the console start up message and list of commands.</p>
+</li>
+<li>
+<p><b>Open the same project in both consoles by doing <tt>OpenDatabase
+   </tt> in each</b></p>
+<p>The project should be opened, e.g.:</p>
+<pre>
+% OpenProject JUNK
+OpenProject JUNK
+Result:
+OK
+</pre>
+</li>
+<li>
+<p><b>Create a new job in the first console</b></p>
+<p>A new job should be created and the id number returned, e.g.:</p>
+<pre>
+% NewJob JUNK
+NewJob JUNK
+Result:
+3
+</pre>
+<p>Broadcast messages should be received in each console:</p>
+<pre>
+% ******************************************************
+Received broadcast message:
+
+Update JUNK 3
+******************************************************
+</pre>
+</li>
+<li>
+<p><b>List the jobs in the second console</b></p>
+<p>The new job id number should also appear in the list, e.g.:</p>
+<pre>
+% ListJobs JUNK
+ListJobs JUNK
+Result:
+1 2 3
+</pre>
+</li>
+<li>
+<p><b>In the second console, set the TASKNAME, TITLE and STATUS data
+items for the new job</b></p>
+<pre>
+% SetData JUNK 3 TASKNAME test TITLE "This is a test" STATUS REPORTED
+SetData JUNK 3 TASKNAME test TITLE "This is a test" STATUS REPORTED
+Result:
+1
+</pre>
+<p>Broadcast messages should be received in each console:</p>
+<pre>
+% ******************************************************
+Received broadcast message:
+
+Update JUNK 3
+******************************************************
+</pre>
+</li>
+<li>
+<p><b>In the first console, check the values of the TASKNAME, TITLE and
+STATUS data items for the new job</b></p>
+<pre>
+% GetData JUNK 3 TASKNAME STATUS TITLE
+GetData JUNK 3 TASKNAME STATUS TITLE
+Result:
+test REPORTED {This is a test}
+</pre>
+</li>
+</ol>
+</div>
+
+<!-- Manual test #3 -->
+<table class="ManualTestHeader">
+<tr><td>Identifier</td><td>#3</td></tr>
+<tr><td>Name</td><td>ccp4i/dbhandler compatibility</td></tr>
+<tr><td>Description</td><td>When running both dbhandler (including
+      its clients) and ccp4i, ccp4i should be able to take control of
+      the database while the handler should be able to read database
+      and reflect the database update which made by ccp4i, but handler
+      shouldn't be able to write to the database. </td></tr>
+</table>
+<div class="ManualTestProcedure">
+<p>Procedure &amp; Expected Outcomes</p>
+<p>On UNIX/Linux:</p>
+<ol>
+<li>
+<p><b>Start a dbconsole</b></p>
+<p>You should see the console start up message and list of commands.</p>
+<p>open a project in console by doing <tt>OpenDatabase projectname</tt></p>
+<p>The project should be opened, e.g.:</p>
+<pre>
+% OpenProject TEST
+Added item INPUT_FILES_STATUS to the db
+Added item OUTPUT_FILES_STATUS to the db
+Warning: directory in file is /home/wy45/projects/TEST/CCP4_DATABASE
+OpenProject TEST
+Result:
+1
+</pre>
+</li>
+<li>
+<p><b>Start a ccp4i and open the same project. </b></p>
+<p>You should see a warning lock message, click 'Override Lock', the jobs
+should appear in the job window in ccp4i. </p>
+</li>
+<li>
+<p><b>Attempt to update data from console.</b></p>
+<p>In console, do <tt>SetData TEST 1 STATUS RUNNING</tt></p>
+<p>This operation should failed. e.g.:</p>
+<pre>
+% SetData TEST 1 STATUS RUNNING
+SetData TEST 1 STATUS RUNNING
+Result:
+0
+</pre>
+<p>however, the console should be able to read the data. do <tt>GetData TEST 1
+STATUS </tt></p>
+<p>you should see the following:</p>
+<pre>
+% GetData TEST 1 STATUS
+GetData TEST 1 STATUS
+Result:
+FINISHED
+</pre>
+</li>
+<li>
+<p><b>Update database from ccp4i</b></p>
+<p>In ccp4i, edit the job 1, change status to FAILED</p>
+<p>console should receive broadcast message. </p>
+<pre>
+% Warning: directory in file is /home/wy45/projects/TEST/CCP4_DATABASE
+******************************************************
+Received broadcast message:
+
+TEST is changed by other process, the database is reloaded with readonly mode.
+******************************************************
+</pre>
+<p>in console, do <tt>GetData TEST 1 STATUS </tt></p>
+<pre>
+% GetData TEST 1 STATUS
+GetData TEST 1 STATUS
+Result:
+FAILED
+</pre>
+</li>
+<li><b>Exit both console and ccp4i.</b></li>
+<p>Exit console by doing <tt>exit</tt></p>
+<pre>
+% exit
+Disconnecting before exit, please wait...
+==========================================================
+ Finished
+==========================================================
+wy45@WY45PORT:~/work/Bioxhit_db/dbccp4i/application> ======================================================================
+DB Handler stopped at 2007-03-09 14:57:11.859556
+======================================================================
+</pre>
+<p>Exit ccp4i by clicking 'Exit' button.</p>
+<li>
+<p><b>Start a dbviewer.</b></p>
+<p>You should see the display of one of the existing project.</p>
+</li>
+<li>
+<p><b>Start a ccp4i and open the same project.</b></p>
+<p>You should see a warning lock message, click 'Override Lock', the jobs
+should appear in the job window in ccp4i. </p>
+</li>
+<li>
+<p><b>Update database from ccp4i</b></p>
+<p>In ccp4i, edit the job 1, change status to FINISHED</p>
+<p>In dbviewer, you should see it automatically refresh the display and the job
+number 1 status change to green. </p>
+</li>
+<li>
+<p><b>Exit both ccp4i and dbviewer.</b></p>
+</li>
+<li><p><b>Start ccp4i.</b></p> 
+</li>
+<li><b>Start a console, Open the same project.</b></p>
+<p>e.g <tt>OpenProject TEST</tt>.</p>
+<pre>
+% OpenProject TEST
+Added item INPUT_FILES_STATUS to the db
+Added item OUTPUT_FILES_STATUS to the db
+OpenProject TEST
+Result:
+0
+</pre>
+Open the project with readonly mode by doing <tt>OpenDatabase TEST
+-readonly</tt>. 
+<pre>
+% OpenProject TEST -readonly
+Added item INPUT_FILES_STATUS to the db
+Added item OUTPUT_FILES_STATUS to the db
+OpenProject TEST -readonly
+Result:
+1
+</pre>
+</li>
+<p>Repeat step 3 &amp; 4.</p>
+<li>
+<p>
+<b>Start a dbviewer, repeat step 8.
+</p>
+</li>
+<li>
+<p><b>Exit ccp4i, dbconsole &amp; dbviewer.</p>
+</li>
+</ol>
+</div>
+
+<a name="other_tools"></a>
+<h2>Other Test Tools</h2>
+
+<p>These are documented here in case they are useful in special circumstances,
+when they may help as debugging tools.</p>
+
+<table class="TestScripts">
+<tr>
+<td>dbccp4i_diagnose.tcl</td>
+<td><p>A basic diagnostic tool.</p>
+   <p><b>Usage:</b> tclsh dbccp4i_diagnose.tcl</p>
+   <p>This script reports basic data about the environment, versions of
+   Tcl, availability of SQLite and so on, and runs a set of diagnostics on
+   each of the projects that it finds. This can be a very lengthy procedure
+   which is not particularly informative.</p>
+</td>
+</tr>
+<tr>
+<td>check_saves.tcl</td>
+<td><p>Independently monitors saves of the database.def file for a
+   project</p>
+   <p><b>Usage:</b> tclsh check_saves.tcl <em>&lt;project_name&gt;</em></p>
+   <p>This monitoring script is intended to be used in conjunction with
+   the console application. It checks periodically on the last
+   modification time of the project in question, and reports when the
+   file has been updated (i.e. rewritten). Ideally writes should only
+   happen when the database content has been updated by the console
+   (or other) application.</p>
+</td>
+</tr>
+<tr>
+<td>test_cache.tcl</td>
+<td><p>Intended to help in manally testing the internal caching mechanism
+    in the Tcl client API.</p>
+</td>
+</tr>
+<tr>
+<td>test_nocache.tcl</td>
+<td><p>Intended to help in manally testing the internal caching mechanism
+    in the Tcl client API.</p>
+</td>
+</tr>
+</table>
+
+<hr />
+
+<p>CVS Id: $Id: tests.html,v 1.9 2008/08/12 10:48:16 pjx Exp $</p>
+
+</body>

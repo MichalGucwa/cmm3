@@ -1,0 +1,950 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::POSTREF::Unsupported::::Post-refinement of reflection data::unsupported:::::: -->
+
+<H1> POSTREF (CCP4: Unsupported Program)</H1>
+<H2> NAME</H2>
+<b>postref </b>
+- Post-refinement of reflection data
+<H2> SYNOPSIS</H2>
+<b>postref hklin</b>
+<i>foo_in.mtz</i>
+<b>hklout</b>
+<i>foo_out.mtz</i>
+<br>
+ [Key-worded input file]
+<H2> DESCRIPTION</H2>
+This program refines orientation and cell parameters for one
+or more rotation film packs, by comparing the intensities of
+partial reflections with a reference intensity.
+<H2> KEY WORDED INPUT </H2>
+Most cards are optional (except BATCH), and all are free format,
+with fields separated by 'space'. Cards may be in any order, except
+for BATCH and END. Any keyword may be abbreviated to 4 letters, and
+they are case-insensitive. Data for any card may be continued if
+necessary on the next line, by the character '-' or '&' at the end
+of the line.
+<P> 
+The following keywords are available
+<pre>
+
+       TITLE       ROCK          BEAM         MOSAICITY     SDFAC
+       REFINE      CONSTRAINT    FIX          FREE          DELAY
+       REJECT      RESOLUTION    PRINT        DEBUG         REFMEAN
+       REFSUM      REFALL        WAVELENGTH   CELL          MISSET
+       SCALE       OUTPUT        INSCALE      BATCH         CRYSTAL
+       END
+
+</pre>
+<H3> TITLE  title</H3>
+Title to write to printer output.
+<H3> ROCK  keyword(s)</H3>
+Rocking curve keywords are STEP, COSINE  (default)  or  TANH  for
+square profile, cosine profile,  or  hyperbolic  tangent  profile
+respectively,  and  ISOTROPIC  (default)   or   ANISOTROPIC   for
+isotropic or anisotropic divergence refinement. If present, STEP,
+COSINE or TANH must precede ISOTROPIC or ANISOTROPIC.
+<P> 
+ISOTROPIC is equivalent to 
+<pre>
+     FREE ET
+     FIX  DH DV DL CD
+</pre>
+ANISOTROPIC is equivalent to
+<pre> 
+     FREE DH DV
+     FIX  ET DL CD
+</pre>
+<P> 
+For the tanh profile, the TANH keyword may  be  followed  by  the
+keyword WTANH (alias LIMIT) and a value for the truncation  limit
+WTANH ( = w in section following expression (c) above)  which  is
+used to make the tanh function into  a  bounded  curve;  and  the
+keyword QTANH (alias SCALE) may be followed by a scale factor for
+the argument of the tanh function ( = q in expression (c) above):
+the refined value of the reflection width or divergence  will  be
+dependent on the value of w/q, since as w is increased,  more  of
+the tail of the profile is included in the reflection width.  The
+default value of w = WTANH = 2.7 ( tanh(2.7)  =  0.991  ),  which
+means that the curve is truncated at Pcal =  0.0045  and  Pcal  =
+0.9955. The default value of q = QTANH = 2.0
+<H3> MOSAICITY &lt;eta&gt;</H3>
+Specify crystal mosaicity eta (degrees) to override value in file
+<H3> BEAM   [FILE] | [&lt;DH&gt;  &lt;DV&gt;  &lt;DL&gt; &lt;CD&gt;]</H3>
+Define beam parameters to override values in file.
+<P> 
+If the keyword FILE is given, the beam parameters and mosaicity
+will be picked up from the input file (from OSCGEN and
+ABSCALE) (this the default).
+<dl>
+<dt> DH<dd>
+horizontal beam divergence (degrees)
+<dt> DV <dd>
+vertical beam divergence (degrees)
+<dt> DL <dd>
+delta(lambda)/lambda = dispersion
+<dt> CD <dd>
+correlated component of the spectral dispersion
+</dl>
+<H3> FIX or FREE followed by labels</H3>
+Specifies which parameters are to  be  refined.  The  2-character
+parameter labels are:
+<pre>
+          A*, B*, C*   cell edges
+ 
+          AA, BA, GA   cell angles
+ 
+          WL           wavelength
+ 
+          ZM, ZD       mean and difference of epsilon-z
+ 
+          YM, YD       mean and difference of epsilon-y
+ 
+          ET           mosaicity (eta)
+ 
+          DH, DV       horizontal, vertical beam divergence
+
+          DL           dispersion, delta lambda/lambda (leave fixed)
+
+          CD           correlated dispersion (leave fixed)
+</pre> 
+The keywords FIX or FREE may be mixed with parameter labels to
+specify the status of subsequent parameters given on the card.
+<P>  
+Defaults: cell parameters normally default to the flags given in
+the orientation block, but if any cell parameter label is given
+here, all the cell parameters will default to free. The cell
+flags in the file also indicate constraints tying cell edges
+together (eg a* = b* ): these constraints are not affected by FIX
+or FREE cards. Other parameters are by default fixed except for
+ZM, YM and ET (or DH & DV if the divergence is anisotropic:
+a ROCK ... ANISOTROPIC card sets DH & DV free and fixes ET).
+If WL is free, the cell edges A*, B* and C* are automatically fixed. 
+You would be ill-advised (probably) to refine beam
+parameters other than ET or DH+DV.
+<H3> DELAY  label  delay ....</H3>
+This card takes a series of pairs  of  parameter-label,  'LABEL',
+(see FIX card) and a number DELAY,  which  makes  that  parameter
+fixed for the first DELAY cycles, after which it reverts  to  its
+status as defined by FIX and FREE cards.  All  delays  default  to
+zero.
+<H3> CONSTRAINT  icon(1) ... icon(6)</H3>
+Set cell constraint flags to  override  those  derived  from  the
+input file. If ICON(I) =  J, the I'th cell dimension is
+constrained to equal the J'th: normal values are 1 2 3 4 5 6 .
+<H3> REFINE  ncyc  convrg   fltlim   fltstt  fltdec</H3>
+NCYC is the number of cycles (defaults to 8).
+<P>  
+CONVRG is a convergence limit (default =  0.02);  the  refinement
+has converged if the change of SIG = Sqrt ( Sum ( w del**2 ) )  /
+(Nobs - Npar) is less than CONVRG.
+<P>  
+FLTLIM, FLTSTT, FLTDEC. The filter-level is the amount  added  to
+all eigenvalues to  speed  convergence:  it  has  the  effect  of
+damping  shifts  in  the  directions   corresponding   to   small
+eigenvalues.  The  filter  level  starts  at   FLTSTT,   and   is
+decremented  by  FLTDEC  until  it   reaches   FLTLIM   (defaults
+0.0,0.05,0.02)
+<H3> REJECT  fincr rejfac(1) rejfac(2) cutoff rejang frlow frdec rejsd frclim</H3>
+Reflection rejection limits etc.
+<blockquote>
+<dl>
+<dt> FINCR     <dd>
+Intensity  increment  for  analysis  against  intensity
+(default = 1000).  Used  only  when  PRINT  is  set  to
+ANALYSIS or FULL. Max. no. of bins fixed at 12.
+<dt> REJFAC(1) <dd>
+reject reflections with Iobs  &lt;  REJFAC(1)  *  sd(Iobs)
+(default = 0) The refinement  seems  to  converge  best
+with all data included.
+<dt> REJFAC(2) <dd>
+reject reflections with Iref  &lt;  REJFAC(2)  *  sd(Iref)
+(default = 0)
+<dt> CUTOFF    <dd>
+reject  reflections  with  sd(fraction  obs)  &gt;  CUTOFF
+(default=0.5)
+<dt> REJANG    <dd>
+reject reflection closer than  REJANG  degrees  to  the
+rotation axis on the film (default = 3 degrees)
+<dt> FRLOW,FRDEC <dd>
+define which non-fractional reflections are used.  In
+each  cycle,  reflections  are  used  with   calculated
+fraction Pcal such that
+<pre>
+         -FRL &lt; Pcal &lt; 1 + FRL
+</pre> 
+FRL  starts  at  FRLOW  on  the  first  cycle,  and  is
+decremented by FRDEC on each cycle  until  FRL  =  0.0.
+This allows reflections  which  are  just  outside  the
+fractional range to be used in  the  early  cycles,  in
+case they are really fractional. These reflections  are
+weighted by
+<pre> 
+      (1 - exp( - (delta I)**2/2(sd(I))**2 ) )
+</pre> 
+to weight  down  those  reflections  which  are  really
+non-fractional. (Defaults 0.0, 0.0)
+<dt> REJSD     <dd>
+reject reflections for which   Pobs - Pcal   &gt; REJSD  *
+sd(Pobs) (default = 10.0)
+<dt> FRCLIM    <dd>
+omit reflections altogether  from  calculation  if  the
+calculated fraction in the input file  FRACTIONCALC  is
+greater than FRCLIM.  If  this  fraction  is  reliable,
+leaving out the safe fully recorded reflections  speeds
+up the calculation considerably.
+</dl>
+</blockquote> 
+<H3> REFMEAN</H3>
+Use mean of safe fully recorded reflections (IMEAN) as  reference
+intensity (default, cards REFSUM and REFALL are alternatives).
+<H3> REFSUM</H3>
+Use summed partials (ISUM) as reference intensity.
+<H3> REFALL</H3>
+Use summed partials (ISUM) as reference intensity if present,
+otherwise IMEAN
+<H3> RESOLUTION  res1 [res2]</H3>
+RES1,RES2. Set resolution limits in Angstrom,  either  order.  If
+only one number given, use as high resolution limit. Default, use
+all data.
+<H3> SDFAC  sdfac  sdadd</H3>
+Read modification factors for standard deviation of Iobs, as  for
+ROTAVATA and AGROVATA.
+<P>  
+Variance(Iobs):= SDFAC**2 ( Var(Iobs) + (SDADD * Iobs)**2 )
+<P>  
+(Default 1.0, 0.0 ie no change)
+<H3> CELL  a  b  c  [alpha  beta  gamma]</H3>
+Read real cell dimensions  (Angstrom  and  degrees)  to  override
+those on the file. Angles default to 90. This needs to be repeated 
+for each CRYSTAL card.
+<H3> WAVELENGTH  wavelength</H3>
+WAVELENGTH is the wavelength in Angstrom  to  override  value  in
+file. If this  card  is  present  but  no  value  is  given,  the
+wavelength is set to 1.54182 (Cu Kalpha). This needs to be repeated 
+for each CRYSTAL card.
+<H3> MISSET  phix  phiy  phiz  [phix2  phiy2  phiz2]</H3>
+Read mis-setting angles (degrees) to override those in the  file.
+Two  different  sets  of   three   angles   may   be   specified,
+corresponding to the start and finish of the rotation range (phi1
+and phi2). By default, the two sets  are  equal  (ie  no  crystal
+slippage). This needs to be repeated for each CRYSTAL card.
+<H3> SCALE  scale  bfac</H3>
+Read scale and temperature factor for the next batch, to override
+the values in the file. If this card is present, the  next  BATCH
+card must specify one batch only.
+<H3> OUTPUT  [keyword]</H3>
+The keyword OFF switches off output of reflections to the  output
+MTZ file. The keyword ALL makes the program copy all  batches  to
+the output file, even if they are not  refined.  An  OUTPUT  card
+with no keyword resets the default option, to write to the output
+file only those batches which are refined.
+<H3> INSCALE  [keyword]</H3>
+By default, a scale correction is applied if a column SCALE is present
+in the file. The INSCALE card switches the application of this scale
+off or on again. Keywords OFF or ON may be present, otherwise the card
+switches to the opposite state
+<H3> PRINT  keyword</H3>
+Set amount of analysis etc printed.  The optional keywords are:
+<blockquote>
+<dl>
+<dt> BRIEF     <dd>
+(default) minimal  output,  prints  only  the  analysis
+against fraction
+<dt> SHIFTS    <dd>
+(or PRINT with no keyword) prints also  the  shifts  on
+EACH cycle and the orientation  data  from  the  header
+records for each batch.
+<dt> ANALYSIS  <dd>
+additional extensive  analysis  after  the  last  cycle
+(this is worth doing for at least a few films).
+<dt> FULL      <dd>
+is equivalent to both SHIFTS and ANALYSIS
+<dt> REFLECTIONS <dd>
+in addition to the FULL analysis, all reflections are
+printed on the last cycle.
+<dt> VECTORS   <dd>
+prints eigenvectors of normal matrix on last cycle,  as
+well as eigenvalues.
+</dl>
+</blockquote> 
+<H3> DEBUG  ibug</H3>
+Set debug flag to give extensive (!) output for debugging.
+<H3> BATCH   [ batch-specification ]</H3>
+This card is an alternative to the CRYSTAL card, specifies  which
+batches are to be refined as independent films, and refines them.
+Note that unlike other cards which specify parameters  or  flags,
+the BATCH card tells the program to refine the specified batches,
+after which further cards  are  read  to  change  parameters  and
+refine more batches if required. Batches must always be specified
+in the order they occur in the file, ie  in  ascending  order  of
+batch number.
+<P>  
+Specification of batches
+<blockquote>
+<dl>
+<dt> (a) <dd>
+ALL all batches (default if no keyword on BATCH card)
+<dt> (b) <dd>
+list of batches  n1 n2 n3 etc
+<dt> (c) <dd>
+range of batches  n1 TO n2
+<dt> (d) <dd>
+EXCLUDE with list n1 n2 n3 etc  This  may  follow  ALL  or  a
+range.
+</dl>
+</blockquote> 
+<H3> CRYSTAL   [keywords]     batch-specification</H3>
+This card is an alternative to BATCH, and specifies  a  group  of
+films to be refined together (up to 50). The batch specifications
+are the same as for  the  BATCH  card.  By  default,  mis-setting
+angles and rocking curve parameters are refined independently for
+each  film.  The  keyword  ONEMISSET  causes  the  same  set   of
+mis-setting angles to be refined for all files, and  the  keyword
+ONEROCK the same set of rocking curve parameters.  Both  keywords
+may be present. Note that the ONEMISSET option will not work well
+with a set of films covering a large rotation angle, since the 
+refinement of mis-setting within each cycle is done in the camera
+frame rather than the crystal frame.
+<H3> END</H3>
+This terminates the program. Alternatively, the program  ends  on
+end-of-file on  stream  5.  If  OUTPUT  ALL  was  specified,  any
+remaining unrefined batches in the file are copied to the  output
+file.
+<H2> INPUT AND OUTPUT FILES</H2>
+Input Files
+<blockquote>
+The control data file
+<P> 
+HKLIN   The input reflection data file. This  is  a  multi-record
+MTZ file (See section PROGRAM FUNCTION for details)
+</blockquote> 
+Output Files
+<blockquote> 
+HKLOUT  The output reflection data file. This is  a  multi-record
+MTZ file (See section PROGRAM FUNCTION for details)
+</blockquote>
+<H2> PRINTER OUTPUT</H2>
+Comments on the printer output
+<P>  
+Definitions of statistics:
+<pre>
+Avdel = 1/n Sum  delta I
+ 
+Avsd  = 1/n Sum sqrt(1/weight)
+ 
+rmsdel= sqrt( 1/n Sum(delta I **2) )
+ 
+rmsesd= sqrt( 1/n Sum(1/weight) )
+ 
+      = sqrt( 1/n Sum( Var(Iobs)) )
+ 
+RDEL    = Rfactor = Sum  Icorr - Iref  / Sum  Iref
+ 
+RSIG    = fractional mean sd(Icorr-Iref)
+ 
+        = Sum{sqrt[Var(Iobs)/(Pcal**2) + Var(Iref)]} / Sum Iref
+ 
+RDEL and RSIG exclude reflections with Pcal &lt; 0.1
+ 
+DPER    = weighted mean delta(fraction)
+ 
+        = Sum[(Pobs - Pcal)/Var(Pobs)] / Sum[1/Var(Pobs)]
+ 
+ADPER   = weighted mean  delta(fraction)
+ 
+        = Sum[ Pobs - Pcal /Var(Pobs)] / Sum[1/Var(Pobs)]
+ 
+ESD     = rms sd(fraction) = sqrt[Sum Var(Pobs)/n]
+ 
+RMS     = rms delta(fraction) = sqrt[Sum(Pobs-Pcal)**2/n]
+ 
+Q = S/NR = mean delta(fraction)**2/variance
+ 
+         = 1/n Sum[(Pobs-Pcal)**2 / Var(Pobs)]
+ 
+For all statistics, Pcal = 1 for a fully recorded reflection,
+ 
+                         = 0 for a non-recorded one.
+
+</pre>
+<H2> ERROR MESSAGES</H2>
+Data control card errors
+<pre>
+!!!! Keyword KEY not recognised !!!!
+ 
+!!!! Syntax error on card !!!!
+ 
+!!!!!! Unrecognised parameter label: LABEL         (FIX/FREE/DELAY)
+ 
+!!!! Scale card is only valid with one batch specified on card !!!!
+ 
+Errors in opening units
+ 
+STOP **UNABLE TO OPEN UNIT 5 OR 6**
+ 
+STOP **UNABLE TO OPEN UNIT 9**
+ 
+Too many parameters
+ 
+!!!!! Too many free parameters, maximum is N
+ 
+Problems with the Batch Handling
+ 
+!!!! Too many batches in list: N
+ 
+!!!!! No orientation data found for batch N
+ 
+!!!!! Too many films for this crystal, maximum = N
+ 
+NB batch N has no reflections contributing to refinement !!!!
+ 
+**** Batch number not found in file ****
+ 
+!!! Error in batch titles in NEWFIL !!!
+ 
+Point Group dictionary
+ 
+Point group PG not found in library !!!!
+ 
+!!!!!!! Warning: point group name was previously set to PG !!!!!!!!
+ 
+Matrix handling
+ 
+!!!!!! Symmetry matrix is singular !!!!!!
+ 
+MTZ file errors
+ 
+!!!!! First five columns of input file are out of order Nq1 N2 N3 N4 N5
+ 
+Error on reading MTZ file: Error no. N
+
+</pre> 
+Error messages may also be produced by  the  MTZ  file  handling  routines.
+These start with the message **MTZ ERROR** and are documented elsewhere.
+<H2> PROGRAM FUNCTION</H2>
+This program is based on the post-refinement program  by  Winkler  and
+Schutt (ref. 1). It refines orientation and cell parameters for one or more
+rotation film packs, by comparing the intensities  of  partial  reflections
+with a reference intensity. The reference intensity is typically  the  mean
+of safe fully recorded reflections from the same or different films, or the
+sum of the spot with its  other  half.  The  reference  intensity  and  the
+appropriate scale factor may be provided by the program ROTAVATA.
+<P> 
+The residual minimized is
+<pre>
+
+           Sum w ( Iobs - Pcal Iref )**2
+
+</pre> 
+where the calculated fraction Pcal is  a  function  of  the  following
+parameters:
+<blockquote>
+Cell dimensions
+<P> 
+Wavelength (as an alternative to cell edges)
+<P> 
+Misorientation  angles  phi-z,  phi-y,  phi-x  (optionally
+different at the two ends of the rotation  range).  Within
+each cycle the program refines the mis-setting  angles  in
+the camera frame epsilon-z and epsilon-y (ZM and YM),  and
+optionally their difference ZD and YD,  then  rotates  the
+epsilon shifts into the  reference  frame  (phi-z,  phi-y,
+phi-x ) after each cycle.
+<P>  
+Rocking curve parameters (divergence and dispersion)
+</blockquote>
+The program may refine each film pack (batch) separately,  or  a  group  of
+films (up to 50) may be refined together with  the  same  cell  dimensions,
+with the same or different mis-setting angles and rocking curve  parameters
+(see CRYSTAL card).
+<P>  
+The program allows three alternative forms of rocking curve to  relate  the
+angular fraction to the intensity fraction:  both  have  a  finite  angular
+width 2g, such that the intensity fraction
+<pre>
+
+          Pcal = 1/2 ( 1 +- f(b) )
+
+</pre> 
+where b is the angular fraction (ie fraction of g) = delta beta / g
+<pre>
+
+      (a) square profile   f(b) = b
+ 
+      (b) cosine profile   f(b) = sin ( b * pi/2 )
+ 
+      (c) hyperbolic tangent profile f(b) = tanh ( q * b )
+ 
+          where q = QTANH is a scale for the tanh function (see ROCK card).
+ 
+</pre> 
+Note that function (b) is defined only for -1 &lt; b &lt; 1 and  (c)  for   b   &lt;
+(w/q): otherwise function (a) is used. The tanh function (c) is  equivalent
+to a peak with tails compared to the cosine function. For the tanh profile,
+b = (w/q)*(delta beta / g ), and b is truncated at  b  = w/q : w = WTANH is
+the truncation limit (see ROCK card). This scaling ( parameters w and  q  )
+makes the divergence for the tanh function more comparable  with  that  for
+the cosine curve.
+<P> 
+The reflection width g includes a dispersion term, and may be anisotropic.
+<pre>
+ 
+   g = 1/2 * ( sqrt( (2  TANtheta  *  CD  +  DH  COSalpha)**2  +  (DV  *
+       SINalpha)**2) + ET + DL * TANtheta )
+
+</pre> 
+see Greenhough & Helliwell (ref. 2) and Greenhough (ref. 3) (see BEAM card)
+where alpha = (tan)**-1 y/z , the azimuthal angle  on  the  film. 
+Note that g is the half-width of  the  reflection,  but  the  rocking-curve
+parameters ET, DH & DV refer to  the  full-width  of  the reflection.
+<H3> A note on convergence</H3>
+If the program is  refining  parameters  for  one  film  at  a  time,  some
+parameters are poorly determined. This may not be too serious, since we are
+not interested in the parameters themselves, but only in the  fractionality
+calculated for each reflection from  the  parameters.  In  particular,  the
+mis-setting angle about the rotation axis phi-z (epsilon-z)  is  correlated
+with the cell dimensions perpendicular to the rotation  axis.  Cell  angles
+are even more correlated, and it is doubtful whether  cell  angles  can  be
+refined sensibly with only one film. The program has three facilities which
+may assist convergence.
+<dl>
+<dt> a)  <dd>
+Eigenvalue filtering (see REFINE card)
+<br>
+A number (filter) may be added to all eigenvalues of the  normal
+matrix during the calculation of shifts. This is  equivalent  to
+adding the filter value to all diagonal elements of  the  normal
+matrix (Marquardt method), and has the effect of damping  shifts
+in the direction corresponding to the smallest eigenvalues.  The
+filtering seems useful on the first few  cycles,  to  allow  the
+most sensitive parameters  to  refine  first,  but  it  is  best
+decremented to zero after 3 or 4  cycles  (as  is  done  in  the
+default settings).
+<dt> b)  <dd>
+Parameter delay (see DELAY card)
+<br>
+Any parameter may be fixed for the first few cycles. This may be
+useful for the parameters ZD and YD, which define the difference
+of orientation at the beginning and end of the rotation range.
+<dt> c)  <dd>
+Inclusion of reflections which are not partial, but  are  nearly
+so. (parameters FRLOW and FRDEC on REJECT card)
+<br>
+It is possible to include reflections bordering on the partial in the early
+cycles, since they may become partial as the parameters change. This  seems
+not to be helpful, but may be in some cases
+</dl>
+<H3> Details of input reflection file</H3>
+The input MTZ file may be prepared by ROTAVATA and SORTMTZ. It  contains  a
+series of  films  (batches)  which  are  processed  sequentially,  although
+individual batches may be selected for inclusion  or  exclusion.  The  file
+must be sorted with BATCH as the most significant key. The file is expected
+to contain columns
+<pre>
+H K L M/ISYM BATCH I SIGI FRACTIONCALC IMEAN SIGIMEAN ISUM SIGISUM
+</pre>
+where IMEAN and ISUM are alternative  reference  intensities,  respectively
+the mean of the safe fully recorded reflections, and the  sum  of  the  two
+adjacent partials.
+<P> 
+The file should also a batch header and orientation block for each
+batch.  The orientation block contains starting values of the
+orientation parameters, constraint flags for cell parameters, and the
+relative scale and temperature factor (from ROTAVATA) to put this
+batch on the same scale as the reference intensity. The orientation
+blocks are put into the file by ABSCALE. The orientation parameters in
+the file may be overridden by control data (see above).
+<P> 
+Orientation data (see also libmtz.doc)
+<pre>
+
+       1.  6 cell dimensions (Angstrom and degrees,  real  numbers).  These
+           cell dimensions define an orthogonalization matrix B to  convert
+           indices hkl to Cartesian crystal axes xyz
+ 
+           x  =  B  h
+ 
+           B = (a*        b* cos gamma*    c* cos beta*            )
+               (0         b* sin gamma*   -c* sin beta* cos alpha  )
+               (0               0             lambda / c           )
+
+                                               (Busing & Levy 1967)
+ 
+           This gives x parallel to a*, and y in the a* b* plane.
+ 
+       2.  6 cell dimension flags (integer) defining which parameters may
+           be varied.
+ 
+               Flag = -1       parameter is freely variable
+ 
+                    =  0       parameter is fixed (ie cell angle  =  90  or
+                               120)
+ 
+                    = I(.gt.0) parameter is constrained to  have  the  same
+                                value as parameter number I .
+ 
+       3.  Orthonormal matrix U (9 real numbers in order U11, U12, U13, U21
+           etc) to rotate the crystal Cartesian coordinates to  the  camera
+           Cartesian coordinates. The IDXREF matrix is A = U B . The matrix
+           U defines a standard orientation,  and  is  a  function  of  the
+           mounting axis and the axis defined as phi = 0 , but  it  is  not
+           dependent on the misorientation angles. Typically, U will  be  a
+           permutation matrix.
+ 
+       4.  JUMPAX, the 'mounting' axis, as defined for  OSCGEN  (1,2,3  for
+           h,k,l) (not used)
+ 
+       5.  6 misorientation angles, rotation  axis  mis-setting  (6
+           real numbers):
+ 
+                 PHIX1 , PHIY1 , PHIZ1 , PHIX2 , PHIY2 , PHIZ2 
+ 
+           The first three refer to the orientation at the beginning of the
+           rotation range (at phistart), the second three  phi  angles  (if
+           present) refer to the end of the rotation range (at  phiend).
+           The second set should be set  equal  to  the  first  set  if  no
+           crystal slippage is assumed.
+ 
+       6.  Start and stop rotation angles.  (  2  real  numbers)  phistart,
+           phiend
+ 
+       7.  crystal mosaicity in degrees 
+ 
+       8.  lambda, delta lambda/lambda, correlated dispersion
+ 
+       9.  Scale, Temperature factors for this batch ( from Rotavata etc).
+           The correction to be applied is
+ 
+                 SC * exp ( -2 * B * (sin theta/lambda)**2 )
+ 
+</pre>
+<H3> Details of output reflection file</H3>
+The output MTZ file is similar in structure to the input file. The  refined
+orientation parameters are  placed  in  the  orientation  block.  For  each
+reflection, the calculated fraction and its standard deviation  are  placed
+in columns labelled FRACTIONCALC and SIGFRACTCALC, and the partial  flag  M
+is updated (in column M/ISYM). Valid values of M are:
+<pre>
+
+                   M = 0  fully recorded
+ 
+                     = 1  partial ( 0  =&lt; P &lt; 1.0 )
+ 
+                     = 2  not recorded ( P &lt; 0 )
+ 
+                     = 3  partial at both ends of the range
+ 
+                     = 4  too near axis (see REJANG above on REJECT) card
+
+</pre> 
+Reflections with M &gt; 1 will be rejected in AGROVATA.
+<H2> REFERENCES</H2>
+<ol>
+<!-- KEEP startreferencelist -->
+<li>
+Winkler F.K., Schutt C.E. & Harrison S.C., Acta Cryst., (1979), A35, 
+901 - 911.
+<li>
+Greenhough T.J. & Helliwell J.R., J. Appl. Cryst., (1982), 15, 493 - 508
+<li>
+Greenhough T.J., CCP4 Information Quarterly for Protein Crystallography,
+Feb. 1983, Daresbury Laboratory.
+<!-- KEEP endreferencelist -->
+</ol>
+
+<H2> AUTHORS </H2>
+Originator   : Winkler and Schutt
+<br>
+Contact      : Phil Evans, MRC Cambridge
+
+<H2> EXAMPLES</H2>
+Example 1.
+<pre>
+
+!
+! Sort output file from Rotavata for postrefinement
+!
+$SORTMTZ HKLIN RPFKPRF2 HKLOUT RPFKPRF2S BATCH H K L M/ISYM
+!
+! Now postrefine
+!
+$POSTREF HKLIN RPFKPRF2S HKLOUT RPFKPRFT6
+TITLE PFK R-native, 2nd postrefine rescaled, averaged cell, tanh 2.3
+POINTGROUP PG222
+FREE WL
+FIX A* B* C* AA BA GA
+REFINE 20 0.01 0.0 0.05 0.02
+ROCK TANH LIMIT 2.3
+REJECT 1000 0 0 0.5 10 
+CELL 122.17 84.30 61.26
+BATCH 200 TO 299
+CELL 122.84 84.39 61.60
+BATCH 300 TO 399
+CELL 122.67 84.39 61.53
+BATCH 400 TO 499
+CELL 122.67 84.20 61.59
+BATCH 500 TO 599
+CELL 122.77 84.10 61.86
+BATCH 600 TO 699
+CELL 122.70 84.64 61.52
+BATCH 700 TO 799
+!
+! Resort data ready for Agrovata or Rotavata
+!
+$SORT: SORTMTZ HKLIN RPFKPRFT6 HKLOUT RPFKPFTS6 H K L M/ISYM BATCH
+
+</pre>
+Example 2.
+<pre>
+
+$SORTMTZ HKLIN ROTSTR3 HKLOUT ROTSORT BATCH H K L M/ISYM
+$POSTREF HKLIN ROTSORT HKLOUT PREFSTR2
+TITLE STR-ATP C* POSTREF
+POINTGROUP PG222
+ROCK TANH LIMIT 2.5
+CRYSTAL ONEROCK 1391 TO 1394
+CRYSTAL ONEROCK 1501 TO 1504
+CRYSTAL ONEROCK 1521 TO 1524
+CRYSTAL ONEROCK 1531 TO 1535
+CRYSTAL ONEROCK 1541 TO 1543
+CRYSTAL ONEROCK 1545 TO 1548
+CRYSTAL ONEROCK 1551 TO 1555
+CRYSTAL ONEROCK 1561 TO 1564
+CRYSTAL ONEROCK 1567 TO 1569
+END
+.
+
+</pre>
+Example 3.
+<pre>
+
+#!/bin/csh -f
+#
+#  Recycle Rotavata & Postref
+#
+# Number of cycles controlled by parameters in next few lines
+#   To do final merge, set cycle = maxcycle
+#
+cd $scr0
+set dataset = bst
+set cycle = 3
+set nextcycle = $cycle           # For final merging only: else reset below
+set maxcycle = 3
+set saved = /ss1/pre/pfk/bst
+
+# Following line to do final merge
+if ($cycle == $maxcycle && $cycle != 1) then
+ goto agro
+endif
+
+
+#  Skip initial Rotavata if restarting after cycle 1
+
+if ($cycle == 1) then
+
+rotavata  hklin  ${saved}/${dataset}_sort  
+   hklout ${dataset}_save_${cycle}  
+          scales  ${dataset}_${cycle}.scales &lt;&lt; end_rota
+title BST PFK T9 + T10
+batches 100
+bins    10
+brefine on
+cycles  5
+scale unity
+output  postref
+resolution 20 2.6
+rejlim 4
+width  1500
+intensities  profile
+process  full  partial
+sdinflate  sdfac = 1 sdadd = 0.04
+anomalous off
+records  truncate
+end_rota
+
+endif
+
+########### Return here for next cycle
+cycle:
+echo =============================================================
+echo 
+echo    Postrefinement cycle $cycle 
+echo 
+echo =============================================================
+
+@ nextcycle = $cycle + 1
+
+#  Sort for Postref on BATCH
+#
+sortmtz hklin  ${dataset}_save_${cycle} 
+        hklout ${dataset}_prfrs_${cycle} &lt;&lt; eof-sort
+BATCH H K L M/ISYM
+eof-sort
+
+postref:
+postref hklin  ${dataset}_prfrs_${cycle} 
+        hklout ${dataset}_savep_${cycle} 
+ summary ${saved}/${dataset}_${cycle}.prfsum &lt;&lt; eof-prf
+Title  PFK B.st T-state crystals  T9 & T10 cycle ${cycle}
+rock tanh limit 2.3 isotropic
+crystal 900 to 944
+crystal 1000 to 1042
+eof-prf
+
+# Resort for Rotavata
+#
+sortmtz hklin  ${dataset}_savep_${cycle} 
+        hklout ${dataset}_prfs_${cycle} &lt;&lt; eof-s1
+H K L M/ISYM BATCH
+eof-s1
+
+rota:
+rotavata  hklin  ${dataset}_prfs_${cycle}  
+   hklout ${dataset}_save_${nextcycle}  
+          scales  ${saved}/${dataset}_${cycle}.scales &lt;&lt; end_rota
+title BST PFK T9 + T10
+batches 100
+bins    10
+brefine on
+cycles  5
+scale postref
+output  postref
+resolution 20 2.6
+rejlim 4
+width  1500
+intensities  profile
+process  full  partial
+sdinflate  sdfac = 1 sdadd = 0.04
+anomalous off
+records  truncate
+end_rota
+
+end_cycle:
+# Clean up unwanted files
+ /bin/rm ${dataset}_prf*
+
+# Recycle if required
+
+if ($cycle &lt; $maxcycle) then
+ @ cycle = $cycle + 1
+ goto cycle
+endif
+
+
+time
+
+##exit
+
+
+##############################################################
+#
+#  Final merging
+#
+
+agro:
+
+agrovata  hklin ${dataset}_save_${nextcycle}  
+                hklout ${saved}/${dataset}_merge &lt;&lt;end-agro
+@${saved}/${dataset}_${cycle}.scales
+intensities profile
+process full partial all
+frmin 0.7
+end-agro
+#
+exit
+
+time
+
+trunc:
+truncate  hklin  ${saved}/${dataset}_merge 
+          hklout ${saved}/${dataset}_F &lt;&lt;EOF-trunc
+title BST PFK T9 + T10
+wilson
+#resolution  
+nresidue   1280
+labout  F=FT SIGF=SIGFT
+EOF-trunc
+
+
+time
+
+</pre>
+Example 4:
+<pre>
+
+#!/bin/csh -f
+#
+#  Postrefinement
+#
+#
+#  First resort data on batch
+sortmtz hklin $scr0/cx88_scl1 hklout $scr0/bc93_s &lt;&lt; eof-1
+BATCH  H K L M/ISYM
+eof-1
+
+# now for Postref
+postref hklin $scr0/bc93_s hklout $scr0/bc93_p &lt;&lt; eof-2
+Title  Postrefinement B.st. PFK C2
+
+rock   tanh  isotropic
+!beam 0.03 0.01
+refine 6
+refall
+sdfac  0.8 0.08
+crystal  61   to  699
+crystal  701  to  799
+crystal  811  to  899
+crystal  911  to  999
+crystal 1111  to 1199
+crystal onemisset 1311  to 1319
+crystal 1321  to 1399
+crystat 2011  to 2099
+crystal 2111  to 2199
+eof-2
+#
+
+#
+# exit
+#
+
+# sort back for Rotavata
+sortmtz hklin $scr0/bc93_p hklout $scr0/bc93_post &lt;&lt; eof-3
+H K L M/ISYM BATCH
+eof-3
+
+</pre>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</body></html>

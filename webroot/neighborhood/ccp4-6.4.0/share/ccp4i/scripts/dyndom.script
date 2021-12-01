@@ -1,0 +1,45 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs, Francois Remacle
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 licence agreement as `Part 1' (Annex 2) software.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#======================================================================
+#
+# dyndom script
+#
+#======================================================================
+  set cmdfile [GetTmpFileName]
+    
+  set commands "title=ccp4idyn\nfilename1=$XYZIN\n"
+  if {"$CHAIN1" != ""} {
+    append commands "chain1id=$CHAIN1\n"
+    }
+  append commands "filename2=$XYZIN2\n"
+  if {"$CHAIN1" != ""} {
+    append commands "chain2id=$CHAIN2\n"
+  }
+  append commands "clusters=$CLUSTERS\niterations=$ITERATIONS\n\
+                   window=$SLIDEWINDOW\ndomain=$DOMAIN\nratio=$RATIO\n"
+                
+  WriteFile $cmdfile $commands
+  
+  set cmd "[BinPath dyndom] $cmdfile"
+      
+  set status [Execute "$cmd" "" program_status report]
+  
+  MoveFile ccp4idyn_pdb $XYZOUT
+  MoveFile ccp4idyn_rotvecs $XYZOUT2
+  MoveFile ccp4idyn_dihedral $FILE
+  MoveFile ccp4idyn_rasscript $FILE1
+  MoveFile ccp4idyn_info $INFO
+  
+  if { [regexp ROTVEC $DOMODE] } {
+      set RASARGS "$XYZOUT2 -script $FILE1"
+    } elseif { [regexp PROT $DOMODE] } {
+      set RASARGS "$XYZOUT -script $FILE1"
+    } else {
+      set RASARGS ""
+    }

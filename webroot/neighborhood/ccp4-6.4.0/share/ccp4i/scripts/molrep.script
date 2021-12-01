@@ -1,0 +1,150 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs, Alexei Vagin
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id: molrep.script,v 1.12 2006/07/26 14:22:48 fr45 Exp $
+#======================================================================
+#
+# molrep script
+#
+#======================================================================
+
+#######################################################################
+# Setup temporary Molrep filenames
+#######################################################################
+
+  # Set the output file basename
+  # All output files (tmp or otherwise) from this run of molrep
+  # will have this basename
+
+  set basename [SetOutputFileRoot -tmp]_molrep_
+
+#######################################################################
+# Run Molrep
+#######################################################################
+
+  # Sort out some messy parameters
+  switch $MOLREP_MODE \
+  TRANSFORM {
+    set FUNCTION T
+  }
+
+  # Set PATH_OUT and PATH_SCR to use the basename
+  set cmd "[BinPath molrep] PATH_SCR \"$basename\" PATH_OUT \"$basename\""
+
+  # Set up the command line files
+  if { ![StringSame $MOLREP_MODE FIT LN] } {
+    if { [StringSame $INPUT_SF_TYPE HKLIN] } {
+      append cmd " HKLIN \"$HKLIN\""
+    } 
+    if { [StringSame $INPUT_SF_TYPE CIFIN] } {
+      append cmd " HKLIN \"$CIFIN\""
+    } 
+    if { [StringSame $INPUT_SF_TYPE MAPIN] } {
+      append cmd " MAPIN \"$MAPIN\""
+    }
+  }
+  if { ![StringSame $MOLREP_MODE SELF RB HA] } {
+    append cmd " MODEL \"$XYZIN\""
+  }
+  if { [StringSame $MOLREP_MODE FIT RB] } {
+    append cmd " MODEL2 \"$XYZIN2\""
+  }
+  if { [StringSame $MOLREP_MODE HA] && [StringSame $IHA N] } {
+    append cmd " MODEL2 \"$XYZIN2\""
+  }
+  if { $IFFIXED } {
+    append cmd " MODEL2 \"$XYZFIXED\""
+  }
+
+  CreateComScript molrep molrep_script
+  set status [Execute $cmd $molrep_script program_status report]
+
+#######################################################################
+# Deal with the output files
+#######################################################################
+
+
+  # Set a root name for files which will be copied to the project dir
+  set rootname [SetOutputFileRoot]
+
+  # Doc file molrep.doc
+  set docfile0 "[subst $basename]molrep.doc"
+  append docfile "$rootname" "_molrep.doc"
+  MoveFile $docfile0 $docfile
+  AddOutputFile $docfile PROJECT
+
+  # Model file XYZOUT
+  switch $MOLREP_MODE \
+  SELF {
+    # No model output in this mode
+  } HA {
+    # No model output in this mode
+  } default {
+
+
+   if { !$MODEL_MAP } {
+    # Everything else
+    append model_out $basename molrep.pdb
+    MoveFile $model_out $XYZOUT -overwrite
+   }
+  }
+
+  # Other output files are handled in a lazy fashion i.e. don't
+  # worry about which files are written in which configurations
+  # Just copy any that are found automatically
+  # Note that .tab extension in CCP4i means an Amore table file
+  # so molrep is given a .molrep_rf extension instead
+
+  # Tab files
+  append rf_file0 $basename molrep_rf.tab
+  if { [file exists $rf_file0] } {
+    append rf_file $rootname "_rf.molrep_rf"
+    MoveFile $rf_file0 $rf_file
+    AddOutputFile $rf_file PROJECT
+  }
+  append srf_file0 $basename molrep_srf.tab
+  if { [file exists $srf_file0] } {
+    append srf_file $rootname "_srf.molrep_rf"
+    MoveFile $srf_file0 $srf_file
+    AddOutputFile $srf_file PROJECT
+  }
+
+  # Postscript files
+  append ps_file0 $basename molrep_rf.ps
+  if { [file exists $ps_file0] } {
+    append ps_file $rootname "_rf.ps"
+    MoveFile $ps_file0 $ps_file
+    AddOutputFile $ps_file PROJECT
+  }
+
+  append fobs_dns_file0 $basename molrep_fobs_dns.ps
+  if { [file exists $fobs_dns_file0] } {
+    append fobs_dns_file $rootname "_molrep_fobs_dns.ps"
+    MoveFile $fobs_dns_file0 $fobs_dns_file
+    AddOutputFile $fobs_dns_file PROJECT
+  }
+
+  append mod_dns_file0 $basename molrep_mod_dns.ps
+  if { [file exists $mod_dns_file0] } {
+    append mod_dns_file $rootname "_molrep_mod_dns.ps"
+    MoveFile $mod_dns_file0 $mod_dns_file
+    AddOutputFile $mod_dns_file PROJECT
+  }
+
+  append align_file0 $basename align.pdb
+  if { [file exists $align_file0] } {
+    append align_file $rootname "_align.pdb"
+    MoveFile $align_file0 $align_file
+    AddOutputFile $align_file PROJECT
+  }
+  append dimer_file0 $basename molrep_dimer.pdb
+  if { [file exists $dimer_file0] } {
+    append dimer_file $rootname "_molrep_dimer.pdb"
+    MoveFile $dimer_file0 $dimer_file
+    AddOutputFile $dimer_file PROJECT
+  }

@@ -1,0 +1,1174 @@
+<!DOCTYPE html
+                     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                     "DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<title>CCP4 Interface: Experimental Phasing Module</title>
+<link rel="stylesheet" type="text/css" href="../ccp4idocs.css" title="CCP4i" />
+<link rev="made" href="mailto:mgwt@ysbl.york.ac.uk" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta name="AUTHOR" content="Maria, Liz, Peter" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="2"><img src="../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logotitle">Experimental Phasing Module</td></tr>
+</table>
+<br />
+<table border="0">
+<tr><td>
+<a href="molrepl.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="datred.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="../index.html" target="_top">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td></tr>
+</table>
+
+
+<dl>
+<dt><font color="#cc3333"><strong>Background information</strong></font> is
+available on: <a href="#solution_files" target="_self">Solution Files (HA files)</a></dt>
+</dl>
+<dl>
+<dt><font color="#cc3333"><strong>Tasks in this module:</strong></font></dt>
+</dl>
+<dl>
+<dt><strong><em>Data Preparation</em></strong></dt>
+<dd><a href="#cad" target="_self">Combine Datasets - CAD</a></dd>
+<dd><dl><dt><a href="#scaleit" target="_self">Scale and Analyse Datasets -
+SCALEIT and FHSCAL</a></dt>
+<dd><a href="#scaleit_layout" target="_self">Scale and Analyse Datasets -
+Task Window Layout</a></dd></dl></dd>
+<dd><a href="#prephadata" target="_self">Prepare Data for HA Search - Revise, Ecalc, MTZ2various</a></dd>
+</dl>
+<dl>
+<dt><strong><em>Automated Search &amp; Phasing</em></strong></dt>
+<dd><a href="#shelx_cde" target="_self">SHELX C/D/E - HA Search and Phasing</a></dd>
+<dd><a href="#crank" target="_self">Crank - automated structure solution
+package</a></dd>
+<dd><a href="#autoSHARP" target="_self">autoSHARP</a></dd>
+</dl>
+<dl>
+<dt><strong><em>Heavy Atom Location</em></strong></dt>
+<dd><a href="#patterson" target="_self">Generate Patterson Map</a></dd>
+<dd><dl></dt>
+<dd><a href="#patterson_exclude" target="_self">Excluding Large Intensity
+Differences</a></dd>
+<dd><a href="#patterson_layout" target="_self">Generate Patterson Map -
+Task Window Layout</a></dd></dl></dd>
+<dd><a href="#acorn" target="_self">ACORN - <em>ab initio</em> Phasing</a></dd>
+<dd><a href="#professs" target="_self">Professs - NCS from HA</a></dd>
+<dd><a href="#rantan" target="_self">RANTAN - Direct Methods</a></dd>
+<dd><a href="#shelx" target="_self">SHELXS - Heavy Atom Search</a></dd>
+<dd><a href="#rsps" target="_self">Real Space Patterson Search - RSPS</a></dd>
+</dl>
+<dl>
+<dt><strong><em>Phasing &amp; Refinement</em></strong></dt>
+<dd><a href="#bp3" target="_self">BP3 - multivariate refinement and phasing</a></dd>
+<dd><a href="#phaser_EP" target="_self">Phaser for Experimental Phasing</a></dd>
+<dd><a href="#mlphare" target="_self">Run MLPHARE</a></dd>
+<dd><dl><dd><a href="#mlphare_data_harvesting" target="_self">Data Harvesting</a></dd>
+<dd><a href="#mlphare_maps" target="_self">Maps</a></dd>
+</dl></dd>
+<dd><a href="#acorn1" target="_self">ACORN - <em>ab initio</em> Phasing</a></dd>
+<dd><a href="#oasis" target="_self">Oasis - SAD/SIR phasing</a></dd>
+</dl>
+<dl>
+<dt><strong><em>Visualisation</em></strong></dt>
+<dd><a href="#run_mapslicer" target="_self">Mapslicer for map sections</a></dd>
+</dl>
+<dl>
+<dt><strong><em>Utilities</em></strong></dt>
+<dd><a href="#coordconv" target="_self">Convert HA solution files to other formats</a></dd>
+<dd><a href="#phasematch" target="_self">Phase analysis using Phasematch</a></dd>
+</dl>
+
+<dl>
+<dt><font color="#cc3333"><strong>Specialist Help</strong></font> is available on:</dt>
+<dd><a href="appendices/scalechoose.html" target="_APPENDIX">ScaleChoose</a> - choosing the
+right scaling program for your datasets</dd>
+</dl>
+
+<p>The layout of each task window, <em>i.e.</em> the number of folders present,
+and whether these folders are open or closed by default, depends on the choices
+made in the <strong>Protocol</strong> folder of the task (see
+<a href="../general/intro.html#task_window_format" target="_self">Introduction</a>). Although
+certain folders are closed by default, there are specific reasons why you should
+or may want to look at them. These reasons are described in the Task Window
+Layout sections below.</p>
+
+<h3><a name="solution_files"></a>Solution Files</h3>
+
+<h4>Heavy Atom (.ha) Files</h4>
+
+<p>Heavy atom (HA) files are short files which keep a record of the proposed
+heavy atom sites in a structure. They are analogous to the
+<a href="molrepl.html#solution_files" target="_self">MR files</a> of the
+Molecular Replacement module. The format of the file is similar
+to the ATOM input line for the MLPHARE heavy atom refinement program.
+There is one line per atom site and the line is free format beginning with
+the word ATOM:</p>
+
+<pre>
+ATOM atom_name x y z occupancy anomalous_occupancy BFAC B-factor
+</pre>
+
+<p>The interface to MLPHARE can use an HA file as input and HA files are output by:</p>
+
+<dl>
+<dt>PEAKMAX program</dt><dd>using the OUTPUT FRAC option</dd>
+<dt>RANTAN task</dt><dd>the files are actually generated by the PEAKMAX program
+which searches the maps generated from RANTAN's output phases</dd>
+<dt>ACORN task</dt><dd>the files are actually generated by the PEAKMAX program
+which searches the maps generated from ACORN's output phases</dd>
+<dt>Generate Patterson Map task</dt><dd>when the PEAKSEARCH option is on</dd>
+<dt>Real Space Patterson Search (RSPS) task</dt><dd>when the site analysis option is
+used. The script for the task reads the RSPS program log file and extracts
+the sites information to HA files</dd>
+<dt>MLPHARE task</dt><dd>after each refinement run the current refined coordinates are
+extracted from the log file to an HA file</dd>
+</dl>
+
+<p>HA files are generated with a default file name which is
+<em>project_jobid_n.ha</em> where <em>n</em>=1,2,3... . If you select an HA
+file from the menu under the <tt>View Files from Job</tt> button, it will be
+displayed in an HA file viewer which is similar to the MR file viewer and
+which has some simple functionality to edit the file. Picking a line in the
+file will put a <tt>#</tt> character at the beginning of a line and this line
+will then be ignored on input to MLPHARE. A second pick will remove the
+<tt>#</tt> character. There is a <tt>Change All</tt> button at the bottom of
+the viewer which will add or remove <tt>#</tt>'s from all ATOM lines. There
+is also an <tt>Edit Columns</tt> button which presents options to set the atom
+name, occupancy, anomalous occupancy and Bfactor for all the atoms in the file.</p>
+
+<h3><a name="cad"></a>Combine Datasets - CAD</h3>
+
+<p>This task interfaces to the CAD program which can be used to:</p>
+<ol type="a">
+<li>Delete columns from an MTZ file</li>
+<li>Merge data from two or more MTZ files</li>
+<li>Reset the resolution range in the MTZ file(s)</li>
+<li>Change the sort order or HKL limits or space group</li>
+</ol>
+ 
+<p>To input more than one MTZ file, click on the <tt>Add input MTZ file</tt> button.
+By default all the data in the input MTZ file is put into the output file but you can
+change the Input option from 'all columns' to 'selected columns' and then select the
+columns using the <tt>Add column</tt> button. If you want to have the majority of the
+columns in the file, then click on the <tt>List All Columns</tt> button and then delete
+the columns you do not require using the <tt>Delete selected item</tt> option under the
+<tt>Edit list</tt> menu button. You will then need to select the column by clicking on
+one of the fields for that column with the right mouse button. See also
+<a href="../general/intro.html#extending_frames" target="_self">Extending Frames and
+Toggle Frames</a>.</p>
+ 
+<p><em>CAD can not deal with more than 29 columns.</em></p>
+ 
+<p><em>Do not include columns H, K and L in input. These are transferred
+to output automatically, and only upset the program.</em></p>
+ 
+<p><a name="cad_uv"></a>Two special data types are used to signal that
+you are preparing data for translation functions of various types. They are:</p>
+<dl compact="compact">
+<dt>U</dt><dd>partial FC</dd>
+<dt>V</dt><dd>partial PHIC</dd>
+</dl>
+<p>There must be only one FCpart PHICpart per input file, and they must be the last items specified for
+LABIN. CAD generates equivalent reflections using only the ROTATIONAL part of the primitive
+symmetry operator (<em>i.e.</em> if the spacegroup is P212121, these reflections are analysed as
+though the spacegroup was P222). This is allowed for in the
+<a href="../../../../html/tffc.html" target="_PROGDOC">TFFC</a> and
+<a href="../../../../html/rsearch.html" target="_PROGDOC">RSEARCH</a> programs.</p>
+
+<h4><a name="cad_layout"></a>CAD - Task Window Layout</h4>
+ 
+<p>Features to look out for in the CAD Task are:</p>
+<table border="1">
+<tr><th>Folder title</th><th>Importance</th>
+<th>Comment</th></tr>
+<tr><td>Files Folder</td><td>Add input MTZ file</td><td>To include more than one MTZ file</td></tr>
+<tr><td>Define MTZ Output</td><td>override space group,
+cell dimensions, <a name="cad_sort"></a>sort order, hkl limits <em>etc.</em></td>
+<td>can also be done with <a href="mtz_utils.html#sftools" target="_self">SFTOOLS</a></td></tr>
+</table>
+ 
+<p>See program documentation:
+<a href="../../../../html/cad.html" target="_PROGDOC">CAD</a>,
+<a href="../../../../html/sftools.html" target="_PROGDOC">SFTOOLS</a></p>
+
+<h3><a name="scaleit"></a>Scale and Analyse Datasets - SCALEIT and FHSCAL</h3>
+
+<p>For the scaling of derivative to native datasets, two CCP4 programs are available: SCALEIT
+and FHSCAL. The tutorial on isomorphous replacement by I. Tickle describes
+<a href="appendices/scalechoose.html" target="_APPENDIX">the strengths and weaknesses</a> of those programs.
+Note that there is no unique solution to the problem of scaling together two different datasets.
+Various problems can arise from:</p>
+<ul>
+<li><a href="../../../../html/scaleit.html#inappropriate_resolution_range" target="_PROGDOC">
+scaling over an inappropriate resolution range</a></li>
+<li><a href="../../../../html/scaleit.html#random_errors" target="_PROGDOC">
+random errors within the datasets themselves</a></li>
+<li><a href="../../../../html/scaleit.html#poor_estimates_of_sigma" target="_PROGDOC">
+poor estimates of SIGMA</a></li>
+<li><a href="../../../../html/scaleit.html#systematic_errors" target="_PROGDOC">
+systematic errors</a></li>
+<li><a href="../../../../html/scaleit.html#rogue_information" target="_PROGDOC">
+rogue reflections</a></li>
+<li><a href="../../../../html/scaleit.html#actual_differences_between_crystals" target="_PROGDOC">
+actual differences between crystals</a></li>
+<li><a href="../../../../html/fhscal.html#caveat" target="_PROGDOC">high resolution derivative
+measurements without native counterparts</a></li>
+<li><a href="../../../../html/scaleit.html#diso_and_dano" target="_PROGDOC">
+non-isomorphism or data quality falling off</a></li>
+</ul>
+
+<h4><a name="anomdisp_scaleit"></a>Scale Datasets with Anomalous Dispersion Data</h4>
+
+<p>The Scale Datasets task will run SCALEIT to scale together all the <tt>DPHn</tt>
+(the dispersive difference for the <tt>n</tt>th wavelength).</p>
+
+<p>It will optionally do a cross-comparison of the anomalous data sets - this
+involves rerunning SCALEIT with the input:</p>
+
+<pre>
+LABIN FP = FPHn SIGFP = SIGFPHn FPH1 = FPHm SIGFPH1=SIGFPHm DPH1 = DPHm SIGDPH1= SIGDPHm
+</pre>
+
+<p>for all possible pairwise combinations of wavelengths <tt>n</tt> and <tt>m</tt>.
+From these runs, the cross-comparison Rfactor and normal probability for the acentric
+data are extracted.</p>
+
+<p>It is also optional to perform analysis of dispersive differences by rerunning SCALEIT
+with the input:</p>
+
+<pre>
+LABIN FP = FPH(+)n SIGFP = SIGFPH(+)n FPH1 = FPH(-)n SIGFPH1= SIGFPH(-)n
+</pre>
+
+<p>From this analysis, the normal probabilities for the acentric and centric data and the
+Rfactor are extracted. The input MTZ file must contain the <tt>FPH(+)n</tt> and
+<tt>FPH(-)n</tt>. If you do not have data in this form, you should run the
+<a href="../../../../html/mtzmadmod.html" target="_PROGDOC">mtzMADmod</a> program
+which converts <tt>DPHn</tt> to the appropriate form.
+This program is not interfaced. A better solution is to use the latest version of the
+TRUNCATE program which retains the <tt>FPH(+)n</tt> and <tt>FPH(-)n</tt> on output.</p>
+
+<p>The results of both these analyses are tabulated in a summary file called
+<em>project</em>_<em>jobid</em>_scaleit.summary.
+<!--mgwt: Interpretation  ???--></p>
+
+<h4><a name="scaleit_layout"></a>Scale Datasets - Task Window Layout</h4>
+
+<p>In the <strong>Protocol</strong> folder of the Scale Datasets task, you can choose:</p>
+<ol>
+<li><strong>analysis only</strong> - use SCALEIT without refinement</li>
+<li><strong>scale refinement using SCALEIT</strong> - use SCALEIT refinement</li>
+<li><strong>scale refinement using FHSCAL (Kraut's method)</strong> - use FHSCAL refinement</li>
+<li><strong>FHSCAL scale refinement &amp; SCALEIT analysis</strong> - in effect, a combination of options
+1 and 3</li>
+<li><strong>apply input scale factors</strong> - use SCALEIT with externally determined scale factors -
+not usually used</li>
+</ol>
+
+<p>Features to look out for in the Scale Datasets Task are:</p>
+<table border="1">
+<tr><th>Protocol option</th><th>Folder title</th><th>Importance</th><th>Comment</th></tr>
+<tr><td><center>1</center></td><td>Analysis</td><td>Graphs of differences between datasets</td>
+<td>Analysis against resolution always performed.</td></tr>
+<tr><td><center>2</center></td><td>Refinement Parameters</td><td>Apply Wilson scaling</td>
+<td>Final Wilson scaling (affects scale factor only) after least-squares scaling (scale
+<em>and</em> temperature factors). See also
+<a href="../../../../html/scaleit.html#refine_wilson" target="_PROGDOC">Wilson</a>.</td></tr>
+<tr><td><center>3</center></td><td>Fhscal Scaling Parameters</td><td></td><td>Perform Kraut scaling with FHSCAL.
+In extreme cases, namely if the high resolution limit of the native dataset is lower than that of (one of)
+the derivatives, certain reflections may not get output. See also
+<a href="../../../../html/fhscal.html#caveat" target="_PROGDOC">Caveat in FHSCAL program documentation</a>.</td></tr>
+<tr><td><center>4</center></td><td>Analysis</td><td>Analysis of FHSCAL results</td>
+<td>SCALEIT ANALYSE is performed after scaling using FHSCAL (see protocol options 1 and 3).</td></tr>
+<tr><td><center>5</center></td><td>Input Scaling Factors</td><td></td>
+<td>Externally determined scales applied and analysis performed. No refinement. See also
+<a href="../../../../html/scaleit.html#scale" target="_PROGDOC">SCALE</a>.</td></tr>
+</table>
+
+<p>See program documentation:
+<a href="../../../../html/scaleit.html" target="_PROGDOC">SCALEIT</a>,
+<a href="../../../../html/fhscal.html" target="_PROGDOC">FHSCAL</a>.</p>
+
+<h3><a name="prephadata"></a>Prepare Data for HA Search - Revise, Ecalc, MTZ2various</h3>
+
+<p>You will need to run this task for the following cases:</p>
+<table border="0" width="100%">
+<tr><th align="left">Input Data</th><th align="left">Phasing Method</th></tr>
+<tr>
+<td>MAD</td>
+<td>RANTAN or ACORN, SHELXS, RSPS, Anomalous Difference Patterson Maps</td>
+</tr>
+<tr>
+<td>SAD</td>
+<td>RANTAN or ACORN, SHELXS</td>
+</tr>
+<tr>
+<td>SIR</td>
+<td>RANTAN or ACORN, SHELXS</td>
+</tr>
+</table>
+
+<p>In the <strong>Prepare Data for HA Search</strong> task window you should only need to identify the
+type of your data and which phasing program you intend to run, and the interface will make
+the necessary conversions described
+<a href="#data_conversion" target="_self">below</a>.</p>
+
+<p>MAD data is rescaled by the REVISE program to give an estimate of the normalised anomalous
+scattering magnitude (given the column label FM by RANTAN and ACORN but sometimes referred to as FA in
+the literature). The input data can be in the form of F(+) and F(-) for each wavelength or be
+anomalous differences Dano for each wavelength. The output FM can then be used in similar
+fashion to a single anomalous difference (Dano) or isomorphous difference (Diso). The theory
+behind this is described in the
+<a href="../../../../html/revise.html" target="_PROGDOC">REVISE program documentation</a>.</p>
+
+<h4><a name="data_conversion"></a>Data conversion</h4>
+
+<p>Direct methods programs such as SHELXS, RANTAN and ACORN usually work with data in the form of
+normalised intensities rather than the structure factors which are normally used in
+macromolecular crystallography. So structure factor data must be converted to normalised
+structure amplitudes for  use in direct methods programs. The SHELXS program has an internal
+procedure to do this conversion but data intended for RANTAN and ACORN must go through the
+ECALC program which calculates normalised structure amplitudes (usually given the column
+label E).</p>
+
+<p>RANTAN, ACORN and all other CCP4 programs work with experimental data in MTZ file format but
+SHELXS requires the data in an ASCII format described in the SHELX documentation. The
+<strong>Prepare Data for HA Search</strong> task will use MTZ2VARIOUS to convert an MTZ file to SHELXS
+format.</p>
+
+<p>See program documentation:
+<a href="../../../../html/revise.html" target="_PROGDOC">REVISE</a>,
+<a href="../../../../html/mtz2various.html" target="_PROGDOC">MTZ2VARIOUS</a>,
+<a href="../../../../html/ecalc.html" target="_PROGDOC">ECALC</a>.</p>
+
+<h3><a name="shelx_cde"></a>SHELX C/D/E - HA Search and Phasing</h3>
+
+<p>The SHELX C/D/E task uses George Sheldrick's SHELX suite of programs,
+specifically SHELXC, SHELXD and SHELXE, which can be obtained from 
+<a href="http://shelx.uni-ac.gwdg.de/SHELX/" target="_EXTERNAL">THE&nbsp;SHELX&nbsp;HOMEPAGE</a>.
+It also borrows heavily from ideas and design in the HKL2MAP interface
+developed by Thomas Pape and Thomas R. Schneider.</p>
+
+<p>If you use the SHELX programs in your structure determination then please
+be sure to acknowledge their use:
+
+<p><b>SHELXD References:</b>
+
+<ul>
+<li>Us&oacute;n &amp; Sheldrick (1999) <em>Curr. Opin. Struct. Biol.</em>
+    <b>9</b> 643-648</li>
+<li>Sheldrick, Hauptman, Weeks, Miller &amp; Us&oacute;n (2001)
+    <em>International Tables for Crystallography Vol. F,</em> eds.
+    Arnold &amp; Rossmann, pp. 333-351</li>
+<li>Schneider &amp; Sheldrick (2002) <em>Acta Cryst.</em> <b>D58</b>
+    1772-1779</li>
+</ul>
+
+<p><b>SHELXE References:</b>
+
+<ul>
+<li>Sheldrick (2002) <em>Z. Kristallogr.</em> <b>217</b> 644-650</li>
+</ul>
+
+<h4>Overview</h4>
+
+<p>The SHELX C/D/E task offers a way of running the SHELX suite of
+programs as an automated "pipeline". It also allows the individual
+programs to be run on their own. The pipeline uses
+<a href="#shelxc_step">SHELXC</a> to analyse the data and prepare input
+for the later stages of the procedure, <a href="#shelxd_step">SHELXD</a>
+to search for heavy atom sites, and <a href="#shelxe_step">SHELXE</a>
+to refine the sites and optionally to distinguish between the two
+possible enantiomorphs.</p>
+
+<p>Note that if any of the required SHELX programs are not installed on your path
+then the interface cannot be launched from the main CCP4i window.</p>
+
+<a name="shelxc_step"></a>
+<h4>SHELXC Step: Data Analysis and Preparation</h4>
+
+<p>SHELXC prepares the data for the heavy atom search and refinement
+steps by calculating the F<sub>A</sub> values and phase shifts &alpha;
+from experimentally measured reflection data. The user must provide
+information on the type of experiment and the format in which the
+reflection data will be provided.</p>
+
+<p>SHELXC can deal with the following types of experiments:
+
+<ul>
+<li><b>MAD Experiment</b><br />
+    Data collected from at two wavelengths, at least one of which
+    must be either the peak or the inflection point data.<br />
+    A native dataset can also be provided, however if no native data
+    is available then SHELXC analyses the MAD datasets to generate
+    "native" data - in which case you should switch on the option
+    specifying that the native structure contains heavy atoms in the
+    <em>Phasing and Density Modification</em> folder.
+    </li>
+<li><b>SAD Experiment</b><br />
+    Data collected from a single wavelength is required.
+    </li>
+<li><b>SIR and SIRAS</b><br />
+    Requires a native dataset and a dataset from the heavy atom
+    derivative. 
+    </li>
+</ul>
+
+<p>The SHELX C/D/E task allows the reflection data to be provided in a
+number of different formats:</p>
+
+<ol>
+<li>Scalepack files with one file per dataset<br />
+    Reflection files formatted as Scalepack can also be generated from the
+    <a href="datred.html#scala_layout">SCALA</a> task.
+    </li>
+<li>A single MTZ file containing the data as intensities in the form of
+    I(+) and I(-) pairs<br />
+    In this case the interface generates Scalepack-formatted files for
+    each dataset using the MTZ2VARIOUS program.
+    </li>
+<li>A single MTZ file containing the data as structure factor amplitudes
+    in the form of F(+) and F(-) pairs<br />
+    This is the least recommended form of input as the estimation of the
+    intensities from the structure factor amplitudes involves
+    approximations which may be detrimental to the final data.
+    </li>
+</ol>
+
+<p>The SHELXC step also requires the following information:</p>
+
+<ul>
+<li>Spacegroup</li>
+<li>Cell parameters</li>
+</ul>
+
+<p>This will be extracted from the MTZ header if using MTZ input (and the
+Scalepack header if present), otherwise it must be entered manually. Note
+that SHELX doesn't recognise spaces in spacegroup names (which is different
+from the CCP4 programs), however CCP4i will attempt to convert spacegroup
+names to the correct format.</p>
+
+<p><b>Output from SHELXC step</b></p>
+
+<p>The SHELXC step outputs the following files:</p>
+
+<ul>
+<li>Calculated native dataset in SHELX .hkl format</li>
+<li>Calculated FA file in SHELX .hkl format</li>
+<li>SHELXD input parameter file (".ins" file)</li>
+</ul>
+
+<p>The .ins parameter file is automatically given a name which consists
+of the CCP4i project name and the job number (e.g.
+<em>PROJECT_115_shelxc_fa.ins</em>). These files are used as
+input to the SHELXD and SHELXE steps. If SHELXD is being run immediately
+after the SHELXC step then these files are passed on automatically to the
+heavy atom location.</p>
+
+<p>The SHELX_CDE task generates a number of graphs from the output of
+SHELXC, which can be viewed using loggraph. Certain graphs are only
+generated for specific experiments:</b></p>
+
+<table border=2>
+<tr>
+  <th>Table</th>
+  <th>Graph</th>
+  <th>Experiment(s)</th>
+  <th>Comments</th>
+</tr>
+  <td rowspan=4>Analysis of &lt;I/sig&gt;, completeness ...
+  <td>&lt;I/sig&gt; vs Resolution</td>
+  <td>All</td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <!-- first element from a previous row -->
+  <td>% Completeness vs Resolution</td>
+  <td>All</td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <!-- first element from a previous row -->
+  <td>&lt;d'/sig&gt; vs Resolution</td>
+  <td>SIRAS, SIR</td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <!-- first element from a previous row -->
+  <td>&lt;d''/sig&gt; vs Resolution</td>
+  <td>MAD, SAD, SIRAS</td>
+  <td>For SAD the high resolution cutoff can be estimated from
+      where &Delta;F/&sigma;F falls below about 1.2.</td>
+</tr>
+  <td>Anomalous CC analysis
+  <td>Anomalous CC versus Resolution</td>
+  <td>MAD</td>
+  <td>For MAD the high resolution cutoff can be estimated from
+      finding where the correlation coefficient (CC) between
+      the anomalous differences for wavelengths with the highest
+      anomalous signal falls below about 30%.</td>
+</tr>
+</table>
+
+<a name="shelxd_step"></a>
+<h4>SHELXD Step: Heavy Atom Location</h4>
+
+<p>The SHELXD step performs heavy atom location and takes the output
+from a SHELXC run as its input. If SHELXD follows on directly from
+SHELXC then the interface passes these on automatically, otherwise
+the user needs to specify them explicitly:</p>
+
+<ul>
+<li>Calculated FA file in SHELX .hkl format</li>
+<li>SHELXD input parameter file (".ins" file)</li>
+</ul>
+
+<p>The interface allows the user to set a number of critical parameters
+which are required for the heavy atom location step:</p>
+
+<table border=2>
+<tr>
+  <th>Parameter</th>
+  <th>Comments</th>
+</tr>
+<tr>
+  <td>Number and type of heavy atoms to search for</td>
+  <td>The estimated number of sites should be within around 20% of
+      the true number.</td>
+</tr>
+<tr>
+  <td>Number of attempts at locating the heavy atoms</td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <td>Resolution cutoffs applied to the input data</td>
+  <td>The high resolution cutoff is a critical parameter for the
+      heavy atom location, and it is recommended that the value
+      calculated by SHELXC is used. This is written into the .ins
+      file from SHELXC and picked up automatically by the task.</td>
+</tr>
+<tr>
+  <td>Minimum distance between heavy atoms</td>
+  <td>The most common user error is to keep the default value of
+      3.5&Aring; even though the distances between heavy atoms are
+      normally less than this value.</td>
+</tr>
+<tr>
+  <td>Allow for heavy atoms lying on special positions</td>
+  <td>Normally these sites are rejected by SHELXD</td>
+</tr>
+</table>
+
+<p><b>A note on running the SHELXD step without SHELXC</b></p>
+
+<p>The interface allows the user to run the SHELXD step independently
+of SHELXC, by taking the output from a SHELXC run from a previous job.
+In this case the user can alter some of the values in the .ins file,
+as detailed in the table above. Note however that some of the values
+generated by SHELXC are dependent upon the above parameters (for example
+the value used by the UNIT command), and that therefore differences in
+output may occur if the SHELXD step is run without rerunning SHELXC first
+to update the generated parameters too.</p>
+
+<p><b>Output from SHELXD step</b></p>
+
+<p>The SHELXD step outputs the following files:</p>
+
+<ul>
+<li>PDB file containing the best heavy atom solutions
+<li>Result file (.res) which is used as input to the phasing and density
+    modification step (SHELXE)
+<li>Listing file (.lst)
+</ul>
+
+<p>The user can provide a name for the output heavy atom PDB file.
+The .res and .lst files are automatically given a name which consists
+of the CCP4i project name and the job number (e.g.
+<em>PROJECT_115_shelxc_fa.ins</em>).
+
+<p>If SHELXD doesn't write a .res file (because no CC value reached the target)
+then the task will terminate. Failure to generate a .res file usually means:
+<ol type="a">
+<li>More tries are needed,
+<li>The resolution cutoff should be changed,
+<li>The sites are all on special positions but the option has not been
+    set to allow this, or
+<li>There is no signal.
+</ol>
+
+<p>The SHELXD step produces a number of graphs:</p>
+
+<table border=2>
+<tr>
+  <th>Table</th>
+  <th>Graph</th>
+  <th>Comments</th>
+</tr>
+<tr>
+  <td>Occupancy for each site</td>
+  <td>Occupancy for each site</td>
+  <td>There should be a sharp drop in occupancy after the last true site.
+      <br/>
+      If the occupancy of the last site is more than 0.2 it is worth
+      rerunning the heavy atom location and increasing the number of sites
+      to search for.</td>
+</tr>
+<tr>
+  <td>CC All/Weak for each try
+  <td>CC All/Weak per try</td>
+  <td>&nbsp;</td>
+</tr>
+</table>
+
+<a name="shelxe_step"></a>
+<h4>SHELXE Step: Phasing and Density Modification</h4>
+
+<p>The SHELXE step performs phasing and density modification using the
+results of the SHELXD and SHELXC steps, and produces calculated structure
+factors and phases which can be used to generate an initial electron
+density map.</p>
+
+<p>If SHELXE follows on directly from SHELXC and SHELXD then the
+interface passes these on automatically, otherwise the user needs to
+specify them explicitly:</p>
+
+<ul>
+<li><b>Running SHELXE standalone:</b>
+    <ul>
+      <li>HKL file with native data from SHELXC</li>
+      <li>HKL file with FA data from SHELXC</li>
+      <li>Result file (.res) from a previous SHELXD run</li>
+    </ul>
+    </li>
+<li><b>If running SHELXE directly after SHELXD:</b>
+    <ul>
+      <li>HKL file with native data from SHELXC</li></li>
+    </ul>
+    </li>
+</ul>
+
+<p>The following input parameters are available for the SHELXE step:</p>
+
+<tableborder=2>
+<tr>
+  <th>Parameter</th>
+  <th>Comments</th>
+</tr>
+<tr>
+  <td>Solvent Content</td>
+  <td>This is the most critical parameter for SHELXE and it is worth
+      varying the value in steps of 0.05 in order to maximise the
+      difference in contrast between the two enantiomorphs (see
+      below).<br />
+      The solvent content can be estimated using the Matthews task,
+      which in turn requires an estimate of the molecular weight of
+      the protein. This may be experimentally measured, or else can
+      be estimated from the number of residues or the sequence of the
+      protein.</td>
+</tr>
+<tr>
+  <td>Phase using original, inverted or both enantiomorphs</td>
+  <td>The default option is to phase both enantiomorphs by running
+      SHELXE twice in a single run of the task. The results can
+      be compared to determine which is the correct hand (see
+      below).</td>
+</tr>
+<tr>
+  <td>Number of cycles of phasing and refinement</td>
+  <td>It may be necessary to use several hundred cycles if the
+      starting phase information is weak but the resolution is very
+      high. For low resolution data using more than 20 cycles is
+      normally counter-productive.</td>
+</tr>
+<tr>
+  <td>Heavy atoms are present in the "native" structure</td>
+  <td>Use this option e.g. for MAD data where there is no true native
+      data.</td>
+</tr>
+</table>
+
+<p><b>Output from SHELXE step</b></p>
+
+<p>The SHELXE step generates the following output:</p>
+
+<ul>
+  <li>A listing file .lst (automatically named by the task)</li>
+  <li>Protein phases in either MTZ format, or in XtalView .phs
+      format.
+</ul>
+
+<p>For both XtalView and MTZ format output there is one file for each
+requested enantiomorph. Note that for some spacegroups SHELXE will
+convert to the inverted symmetry when phasing the inverted enantiomorph
+(e.g. from P4<sub>1</sub> to P4<sub>3</sub>). For MTZ output the
+interface takes account of this inversion automatically.</p>
+
+<p>The phases from SHELXE can be used to generate maps
+which can be viewed for example using the FFT task in CCP4i.</p>
+
+<p>The SHELXE step produces a number of graphs:</p>
+
+<table border=2>
+<tr>
+  <th>Table</th>
+  <th>Graph</th>
+  <th>Comments</th>
+</tr>
+<tr>
+  <td rowspan=2>Contrast and Connectivity
+  <td>Contrast versus Cycle</td>
+  <td>A big difference in the contrast of the two heavy atom
+      enantiomorphs usually indicates a good SHELXE solution.</td>
+</tr>
+<tr>
+  <!-- first element from a previous row -->
+  <td>Connectivity versus Cycle</td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <td>Estimated CC(map)
+  <td>Estimated CC(map) vs Resolution</td>
+  <td>A big difference in the correlation coefficient of the two
+      heavy atom enantiomorphs usually indicates a good SHELXE
+      solution.</td>
+</tr>
+</table>
+
+<h3><a name="crank"></a>Crank - automated structure solution package</h3>
+
+<p>Crank is an automated package for structure solution via experimental
+phasing. Currently it covers heavy atom location, heavy atom refinement
+and phasing, and density modification. Crank provides the automation, while
+existing programs do the individual calculations. Note that the CCP4 version is
+a cut-down version appropriate to CCP4 programs - the full Leiden version
+allows the use of alternative programs for the various steps.</p>
+
+<p>In the protocol folder, select the procedure you wish to use, followed
+by the programs to use. You then need to specify an MTZ file containing
+the relevant datasets. Finally, there are a small number of required
+parameters to supply: the type and number of the heavy atoms, the number
+of protein and nucleotide residues in the asymmetric unit, and an estimate
+of the B-factor and solvent content. The latter can be estimated by the 
+interface (click on "Calculate B and Solv. Content"), using the program 
+Wilson to estimate the overall B-factor.
+The closed folders at the bottom of the interface allow access to
+the program-specific parameters for each step of the procedure.</p>
+
+<p> See <a href="../../../../html/crank.html" target="_PROGDOC">program
+documentation</a>.</p>
+
+<h3><a name="autoSHARP"></a>autoSHARP</a></h3>
+
+<p>SHARP/autoSHARP is software for the experimental phasing
+of macromolecular crystal structures. This interface enables autoSHARP
+jobs to be run from within CCP4i.</p>
+
+<p><strong>Note that SHARP/autoSHARP is not
+part of the CCP4 suite and must be acquired separately from Global
+Phasing.</strong></p>
+
+<p>See <a href="http://www.globalphasing.com/" target="_PROGDOC">www.globalphasing.com</a>.</p>
+
+<h3><a name="patterson"></a>Generate Patterson Map</h3>
+
+<p>The Generate Patterson Map Task performs the following:</p>
+
+<ul>
+<li>Run SCALEIT to find an optimal cutoff for excluding reflections
+with suspiciously large differences</li>
+<li>Run FFT PATTERSON in default sectioning mode to get first direction
+of map sections</li>
+<li>Run MAPMASK to resection output map, to produce all necessary Harker sections</li>
+<li>Run PEAKMAX to search maps for peaks and write these to the "Peak coord" file and
+to an HA file (see <a href="#solution_files" target="_self">above</a>)</li>
+<li>Plot Harker sections with NPO</li>
+</ul>
+
+<p>Optionally:</p>
+<ul>
+<li>The user can give the coordinates of points to be plotted on the Patterson map</li>
+<li>The user can give the coordinates of putative heavy atom sites and the VECTORS
+program is run to determine the predicted cross-vectors which are then plotted on
+the Patterson map</li>
+</ul>
+
+<h4><a name="patterson_exclude"></a>Excluding Large Intensity Differences</h4>
+
+<p>Erroneously large intensity differences can affect a Patterson map disproportionately
+because the parameter used, the intensity, is the square of the structure factor, and
+the square of a large number is a very large number. The effect seen in the Patterson
+map is ridges.</p>
+
+<p>It is therefore usually a good idea to exclude the reflections with very high
+differences: <tt>FPH</tt>-<tt>FP</tt> from the difference Patterson and
+<tt>FPH+</tt>-<tt>FPH-</tt> from the anomalous difference Patterson. By default the
+Interface will run the SCALEIT program to analyse the data and use the value of
+4.1*RMS(FPH-FP) which is a reasonable first estimate of a suitable cutoff. It may be
+worthwhile to try different cutoff values and look at the resultant Patterson map -
+the value used can be set at the top of the <strong>Exclude Reflections</strong> folder.
+Excluding 'good' reflections tends to degrade the map so it is not good to
+over-estimate the cutoff value. For very good data it may be unnecessary to exclude any
+data. The SCALEIT log file also has a table of Isomorphous and (if appropriate) Anomalous
+differences which show the number of reflections with given differences as a function
+of resolution shell.</p>
+
+<h4><a name="patterson_layout"></a>Generate Patterson Map - Task Window Layout</h4>
+
+<p>Features to look out for in the Generate Patterson Map Task are:</p>
+<table border="1">
+<tr><th>Protocol option</th><th>Folder title</th><th>Importance</th><th>Comment</th></tr>
+<tr>
+<td>difference Patterson</td>
+<td>Exclude Reflections</td>
+<td>Exclude reflections with erroneously large (intensity) differences between F1 and F2 (<em>i.e.</em>
+<tt>FPH</tt> and <tt>FP</tt>)</td>
+<td>see <a href="#patterson_exclude" target="_self">Excluding Large Intensity Differences</a></td>
+</tr>
+<tr>
+<td>anomalous difference Patterson</td>
+<td>Exclude Reflections</td>
+<td>Exclude reflections with erroneously large (intensity) differences between F1 and F2 (<em>i.e.</em>
+<tt>FPH+</tt> and <tt>FPH-</tt>)</td>
+<td>see <a href="#patterson_exclude" target="_self">Excluding Large Intensity Differences</a></td>
+</tr>
+</table>
+
+
+<!--<p>To look at the Patterson map, the Interface uses various programs:
+<a href="../../../../html/npo.html" target="_PROGDOC">NPO</a>,
+<a href="../../../../html/vectors.html" target="_PROGDOC">Vectors</a></p>
+ ****Vectors needs FRACTIONAL coordinates, so
+that needs to be sorted out by the Interface, too****</p>-->
+
+<p>See program documentation:
+<a href="../../../../html/scaleit.html" target="_PROGDOC">SCALEIT</a>,
+<a href="../../../../html/fft.html" target="_PROGDOC">FFT</a>,
+<a href="../../../../html/mapmask.html" target="_PROGDOC">MAPMASK</a>,
+<a href="../../../../html/peakmax.html" target="_PROGDOC">PEAKMAX</a>,
+<a href="../../../../html/npo.html" target="_PROGDOC">NPO</a>,
+<a href="../../../../html/vectors.html" target="_PROGDOC">VECTORS</a>,
+<a href="../../../../html/havecs.html" target="_PROGDOC">HAVECS</a>.</p>
+
+<h3><a name="acorn"></a>ACORN - <i>ab initio</i> Phasing at Atomic Resolution</h3>
+
+<!--mgwt ramblings:
+atomic resolution, but also ha determination from MAD at 'normal' reso (in which case
+REVISE has to be run, like for RANTAN;
+LABIN always compulsory, either with one of the ACORN-MR keywords, or combined with PHIN;
+-->
+
+<p>ACORN is an <i>ab initio</i> procedure to solve a protein structure when
+atomic resolution data is available. In case of a structure containing heavy
+atoms, its procedures can be used for
+determination of anomalous scatterers from anomalous data where the
+resolution can be as low as 3&#197; to 4&#197;.</p>
+
+<p>MAD data for ACORN must be preprocessed by the REVISE program
+(see <a href="#prephadata" target="_self">above</a>) which generates estimates
+of FM which is the normalised anomalous scattering factor. The input to REVISE is
+the <tt>FP</tt> and <tt>FPH(+)n</tt> and <tt>FPH(-)n</tt> for dataset <tt>n</tt>.
+These data should have been scaled by the SCALEIT program. REVISE also needs to know the
+wavelength, <em>f'</em> and <em>f''</em> for each wavelength.</p>
+
+<h4><a name="acorn_layout"></a>Acorn - Task Window Layout</h4>
+ 
+<p>Features to look out for in the Acorn Task are:</p>
+<table border="1">
+<tr><th>Protocol option</th><th>Folder title</th><th>Importance</th><th>Comment</th></tr>
+<tr>
+<td>search and phase with starting coordinates</td>
+<td>ACORN-MR Parameters</td>
+<td>Choose between a limited search with a POSItioned fragment, or a full ROTation Function and TRANslation function
+search</td>
+</tr>
+<tr>
+<td>determine small molecule structure</td>
+<td>General Acorn Parameters</td>
+<td>Choose appropriate grid sampling</td>
+<td>Grid sampling defaults to 1/3 of the high resolution limit which, in case of small
+molecule structures, is commonly around 1&#197;</td>
+</tr>
+<tr>
+<td>search for heavy atom(s) at lower resolution</td>
+<td></td>
+<td>Separate window opens to 'Prepare Data for Experimental Phasing Programs'</td>
+</tr>
+<tr>
+<td>search for heavy atom(s) at lower resolution</td>
+<td>Selecting Data</td>
+<td>Choose appropriate resolution limits</td>
+</tr>
+</table>
+
+<p>See program documentation:
+<a href="../../../../html/acorn.html" target="_PROGDOC">ACORN</a>,
+<a href="../../../../html/ecalc.html" target="_PROGDOC">ECALC</a>,
+<a href="../../../../html/revise.html" target="_PROGDOC">REVISE</a>,
+<a href="../../../../html/scaleit.html" target="_PROGDOC">SCALEIT</a>.</p>
+
+<h3><a name="professs"></a>Professs - NCS from HA</h3>
+
+<p>PROFESSS is a tool to help in the identification of NCS related atoms from a
+list of heavy atom positions. At the moment, PROFESSS only works with 'traditional'
+PDB files. HA files as produced by ACORN or RANTAN (for instance) can not be fed
+into PROFESSS - the HA file needs to be converted through the
+<a href="coord_utils.html#coordconv" target="_self">Convert Coordinate Formats</a>
+task in the Coordinate Utilities module.</p>
+
+<h4>Professs - reading the output</h4>
+
+<p>The program first lists the triangles of atoms which it has found, then it
+analyses each pair of triangles as a possible NCS match. For each possible operator,
+a list of all matching atoms is given. For each pair of atoms, a 'loop factor' is
+listed. If the NCS operator is an N-fold rotation, the atom will be part of a 'loop' of
+N atoms (unless one is missing). This, along with an appropriate 3rd polar angle, can
+confirm the existence of a proper NCS operator.</p>
+
+<p>Atoms are described by the atom serial number from the input PDB, along with 4
+numbers listed in square brackets. The first of these is the number of the
+crystallographic symmetry operators, and the other three are the unit cell
+translations applied after the symmetry operator.</p>
+
+<h4>Professs - beware</h4>
+
+<p>When calculating the distance between a pair of atoms, all symmetry equivalents are
+considered, but only the cell repeat giving the least distance is considered. In a very
+few cases of low order crystallographic symmetry this may cause atoms to be missed.</p>
+
+<h3><a name="rantan"></a>RANTAN - Direct Methods</h3>
+
+<p>The RANTAN Direct Methods program can be applied to solving MAD data or isomorphous
+replacement data. The Interface will set the key input parameters appropriately for
+the type of data.</p>
+
+<p>For isomorphous data, RANTAN works optimally with the input in the form of normalised
+amplitudes rather than structure factors so the Interface will usually run the ECALC
+program to convert SFs to normalised amplitudes. The Interface will alternatively allow
+input of either precalculated normalised amplitudes or normalised amplitudes and initial
+phases.</p>
+
+<p>MAD data for RANTAN will be preprocessed by the REVISE program (see <a href="#prephadata" target="_self">above</a>) which generates estimates
+of FM which is the normalised anomalous scattering factor. The input to REVISE is
+the <tt>FP</tt> and <tt>FPH(+)n</tt> and <tt>FPH(-)n</tt> for dataset <tt>n</tt>.
+These data should have been scaled by the SCALEIT program. REVISE also needs to know the
+wavelength, <em>f'</em> and <em>f''</em> for each wavelength.</p>
+
+<p>See program documentation:
+<a href="../../../../html/rantan.html" target="_PROGDOC">RANTAN</a>,
+<a href="../../../../html/ecalc.html" target="_PROGDOC">ECALC</a>,
+<a href="../../../../html/revise.html" target="_PROGDOC">REVISE</a>,
+<a href="../../../../html/scaleit.html" target="_PROGDOC">SCALEIT</a>.</p>
+
+<h3><a name="shelx"></a>SHELXS - Heavy Atom Search</h3>
+
+<p>The SHELX program can be obtained from
+<a href="http://shelx.uni-ac.gwdg.de/SHELX/" target="_EXTERNAL">THE&nbsp;SHELX&nbsp;HOMEPAGE</a>.
+The CCP4i interface is for SHELXS-97. To ensure that CCP4i scripts can find the SHELX program,
+the full path name of the program needs to be entered in the Configure Interface window which
+is accessed from a button in the System Administration menu on the right hand side of the Main Window.</p>
+
+<p>For more information on the SHELX programs, see
+<a href="http://shelx.uni-ac.gwdg.de/SHELX/" target="_EXTERNAL">THE&nbsp;SHELX&nbsp;HOMEPAGE</a>.
+This has references to various FAQs:
+<a href="http://shelx.uni-ac.gwdg.de/SHELX/#FAQs macromol" target="_EXTERNAL">The
+SHELX Homepage; Frequently asked questions (macromolecules)</a>, and
+<a href="http://shelx.uni-ac.gwdg.de/~trs/shelxl_faq/shelxlfaq_index.html" target="_EXTERNAL">Thomas
+Schneider's FAQs</a>.</p>
+
+<h3><a name="rsps"></a>Real Space Patterson Search - RSPS</h3>
+
+<p>RSPS is a grid search program that provides search options (to solve heavy atom derivatives) as
+well as interactive options for examining potential solutions (as a fit of potential sites to the
+difference Patterson map). All options operate in real and vector space. Searches can be performed
+to locate either heavy atom positions, or, under certain conditions, to locate the position of
+molecules with internal (NCS) symmetry. The goal of RSPS is not to generate a complete solution to
+the heavy atom difference Patterson, but rather to find enough sites to allow initial phases to be
+calculated for difference Fourier analysis.</p>
+
+<p>Searches are carried out by assigning trial positions on a grid covering the asymmetric unit of
+the crystal, and then computing a score for each trial position, based on the Patterson densities
+at the positions corresponding to the predicted vectors for each position. From the symmetry
+operators (crystallographic and/or non-crystallographic) all unique transformations that map a point
+in real (crystal) space to a point in vector (Patterson) space are generated. In other words, these
+transformations map a point in real space to the Patterson vectors associated with that point.</p>
+
+<h3><a name="bp3"></a>BP3 - multivariate refinement and phasing</h3>
+
+<p>This task is a simple interface to the BP3 program for heavy atom
+refinement and phasing, using multivariate likelihood techniques. It
+requires datasets for native and derivatives supplied in the file HKLIN,
+and initial coordinates for the heavy atoms. Use the Add Crystal button
+to add details of all the crystals you have. For each crystal, you
+can add heavy atom coordinates, and also datasets recorded for the
+crystal. </p>
+<p>If a heavy atom site occurs in more than one crystal, then select
+"Same site in more than one crystal", and Add Site.</p>
+<p>Rather than inputting all the details manually, parameters can
+be entered as an XML file, e.g. as obtained from the output of the
+heavy atom location program Crunch2.</p>
+
+<p>See
+<a href="../../../../html/bp3.html" target="_PROGDOC">program
+documentation</a>.</p>
+
+<h3><a name="phaser_EP"></a>Phaser - Experimental Phasing</h3>
+
+<p>Phaser is a program for phasing macromolecular crystal structures with
+maximum likelihood methods. This interface gives access to Phaser's
+functions for experimental phasing by single-wavelength anomalous diffraction
+(SAD), which optionally can exploit information from a partial (molecular
+replacement) model.</p>
+
+<p>See
+<a href="../../../../html/phaser.html" target="_PROGDOC">program
+documentation</a>.</p>
+
+<h3><a name="mlphare"></a>Run MLPHARE</h3>
+
+<p>MLPHARE can be used to refine either isomorphous or anomalous data. Check the
+'<tt>Use anomalous difference data</tt>' box at the top of the MLPHARE interface if
+appropriate. The initial default interface only provides for describing one derivative
+or wavelength; click on the <tt>Add Another Derivative</tt> button under the 'MTZ in'
+section to open space for additional data.</p>
+
+<p>The minimal input then required is some initial heavy atom definitions in
+the folder <strong>Describe Derivatives &amp; Refinement</strong>. For each derivative
+enter a name, and the name of the <a href="#solution_files" target="_self">HA&nbsp;file</a>
+containing the data for that
+derivative. Alternatively, enter the atoms explicitly by changing the <tt>Use data
+'from file'</tt> menu option to <tt>Use data 'entered below'</tt> and then typing in the
+information. The <a href="../general/intro.html#cut_n_paste" target="_self"><tt>Cut and
+Paste</tt></a> tool may be useful. For anomalous data you will
+need to enter the same HA file for each wavelength.</p>
+
+<p>It is possible to edit the HA files 'on line' by clicking the <tt>View</tt> button on the file
+selection line. The HA file viewer has some simple editing tools but more complex changes
+may need to be done in an editor.</p>
+
+<p>The output MTZ file contains columns <em>PHIB_mlphare1</em>, <em>FOM_mlphare1</em>
+<em>etc.</em>. If you use this file as input to another MLPHARE run,
+set a new unique column name extension. Change the parameter 'Output label identifier'
+from <em>mlphare1</em> to <em>mlphare2</em> for instance. Each run of MLPHARE within
+the Interface also outputs one HA file for each derivative.
+These HA files can be used as input to the next MLPHARE run.</p>
+
+<p>The SCALEIT documentation states: &quot;MLPHARE has a built in weighting scheme which
+means that it doesn't do much harm to include less good data in phasing. After all the
+poor hkl should get low FOMs, and then DM can use the few reflections with reasonable
+phases to help in the phase extension procedure.&quot;</p>
+
+<p>The <a href="../../../../html/mlphare.html" target="_PROGDOC">MLPHARE program
+documentation</a> has several helpful hints, <em>e.g.</em>:
+&quot;NB: If an occupancy becomes near to 0.0 the coordinate shifts will possibly
+be meaningless&quot;, and a whole section of
+<a href="../../../../html/mlphare.html#notes_on_usage" target="_self">Notes on usage</a>.</p>
+
+<p>Suggested input numbers for Estimated Lack of Closure:</p>
+<ul>
+<li>The program documentation suggests no input at all for the very first run.</li>
+<li>The Interface has default 0.0 for all the numbers, even in the very
+first run.</li>
+<li>Some people 'always' use a certain number (10% of F?!) in the very first
+run.</li>
+</ul>
+
+<h4><a name="mlphare_data_harvesting"></a>Data Harvesting</h4>
+
+<p>MLPHARE is one of the <a href="../../../../html/harvesting.html" target="_PROGDOC">Data Harvesting</a>
+programs. See <a href="../general/harvesting.html" target="_self">Data Harvesting in CCP4i</a>
+for implications for the Interface.</p>
+
+<h4><a name="mlphare_maps"></a>Maps</h4>
+
+<p>The MLPHARE interface has the option to output double difference maps which can be used
+to search for further heavy atoms. In this case the PEAKMAX program will also be run to
+list the peaks to a PDB file and to an HA file with the name <em>project_jobid_label_peaks.ha</em>
+where <em>label</em> is the MTZ column label of the derivative FPH. If you wish to do any other
+analysis on the map, it can be input to the 'Generate Patterson Map' task when the
+'Run FFT ...' option at the top of the task window has been toggled off.</p>
+
+<p>It is easiest to create maps by running the FFT task inside the Run Mlphare task. Do this
+by toggling on the option to 'Generate double difference maps files ...'.</p>
+
+<p>In some cases it may be necessary to (re)create maps independently from the
+MLPHARE task. It is not possible to do this through the Create Task-Specific Maps task
+in the Map &amp; Mask Utilities module. And only if you know exactly what you are doing
+should you attempt to do this through the <a href="maputils.html#fft" target="_self">Run
+FFT - Create Map</a> task in the Map &amp; Mask Utilities module.</p>
+
+<p>See program documentation:
+<a href="../../../../html/mlphare.html" target="_PROGDOC">MLPHARE</a>,
+<a href="../../../../html/peakmax.html" target="_PROGDOC">PEAKMAX</a>,
+<a href="../../../../html/fft.html" target="_PROGDOC">FFT</a>.</p>
+
+<h3><a name="acorn1"></a>ACORN - <i>ab initio</i> Phasing at Atomic Resolution</h3>
+
+<p>See the <a href="#acorn">documentation on using the Acorn interface</a>
+elsewhere in this document.</p>
+
+<h3><a name="oasis"></a>Oasis - SAD/SIR phasing</h3>
+
+<p>OASIS is a computer program for breaking phase ambiguity in One-wavelength Anomalous
+Scattering or Single Isomorphous Replacement (Substitution) protein data. The phase problem
+is reduced to a sign problem once the anomalous-scatterer or the replacing-heavy-atom sites
+are located. OASIS applies a direct method procedure to break the phase ambiguity intrinsic
+to OAS or SIR data.</p>
+
+<h3><a name="run_mapslicer"></a>Run Mapslicer - 2d plots of map sections</h3>
+
+<p>Mapslicer is an interactive viewer which displays 2d contoured sections through
+CCP4 map files, most usefully for seeing peaks in Patterson maps.</p>
+
+<p> See <a href="../../../../html/mapslicer.html" target="_PROGDOC">program
+documentation</a>.</p>
+
+<h3><a name="coordconv"></a>Convert HA solution files to other formats</h3>
+
+<p>The program COORDCONV is used to convert coordinate files from various
+formats, including HA files into other suitable formats such as PDB format.</p>
+
+<p>See program documentation: <a href="../../../../html/coordconv.html" target="_PROGDOC">COORDCONV</a></p>
+
+<h3><a name="phasematch"></a>Phase analysis using Phasematch</h3>
+
+<p>The Clipper Phasematch program can compare two sets of phases and provide
+appropriate analyses.</p>
+
+<hr />
+<p>See also
+<a href="appendices/ir-bathtutorial/irbath98.htm" target="_EXTERNAL">MIRTutorial(Bath)</a>
+(the HTML equivalent of $CDOC/Iso_repl_itickle_tut.bath.ps),<br />
+<a href="http://sanda.cryst.bbk.ac.uk/xtal/mir/index.htm" target="_EXTERNAL">
+Isomorphous&nbsp;Replacement&nbsp;(Birkbeck)</a>,<br />
+<a href="http://www-structure.llnl.gov/Xray/comp/compserv.htm" target="_EXTERNAL">
+LLNL&nbsp;-&nbsp;Bernhard&nbsp;Rupp's Crystallographic Web Applets</a>
+(containing an applet which calculates expected anomalous dispersion ratios),<br />
+<a href="http://Lagrange.mrc-lmb.cam.ac.uk/doc/gwyndaf/Chooch.html" target="_EXTERNAL">
+Chooch</a> (a program for calculating Anomalous Scattering Factors from X-ray fluorescence
+data).</p>
+
+<table border="0" width="100%">
+<tr><td>
+<a href="molrepl.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="datred.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="../index.html" target="_top">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td>
+<td align="right"><a href="http://validator.w3.org/" target="_EXTERNAL">Valid XHTML 1.0!</a>
+<a href="http://jigsaw.w3.org/css-validator/" target="_EXTERNAL">Valid CSS!</a></td></tr>
+</table>
+
+</body>
+</html>

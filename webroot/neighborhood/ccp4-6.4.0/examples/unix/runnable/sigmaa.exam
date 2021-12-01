@@ -1,0 +1,78 @@
+#!/bin/sh
+
+set -e 
+
+if test ! -f $CCP4_SCR/toxd_sf.mtz; then
+  echo '! run sf_calc first' 1>&2
+  exit 1
+fi
+
+if test ! -f $CCP4_SCR/toxd_phase_mir.mtz; then
+  echo '! run the mlphare.exam procedure first' 1>&2
+  exit 1
+fi
+
+# Calculate m|Fo| - D|Fc| and 2m|Fo| - D|Fc| coefficients from
+# native structure factor amplitude and calculated structure
+# factor. These are similar to the coefficients output by REFMAC.
+
+# used to distinguish different runs in html logfile
+CCP_PROGRAM_ID=run1
+export CCP_PROGRAM_ID
+
+sigmaa hklin $CCP4_SCR/toxd_sf hklout $CCP4_SCR/junk << eof
+TITLE   MTZ SIGMAA test.
+RANGES 10   500      !#  No of bins for analysing agst S, 
+PARTIAL              !# Option for Fo-Fc type coefficients
+ERROR
+LABIN  FP=FTOXD3   SIGFP=SIGFTOXD3   -
+       FC=FC_sf        PHIC=AC_sf
+LABOUT  WCMB=WWT1     DELFWT=DELWFT1    -
+        FWT=FWT1
+END
+eof
+
+##############################################################
+#         Set option COMBINE to combine phase information from
+# eg isomorphous  replacement with partial structure
+#
+#  Calculate structure factors.
+#  File toxd_mir.mtz  can be generated using mlphare.sh
+sfall \
+HKLIN $CCP4_SCR/toxd_phase_mir \
+HKLOUT $CCP4_SCR/toxd_sf_mir \
+XYZIN $CEXAM/toxd/toxd.pdb \
+<< END
+TITLE Structure factors calculed for toxd.
+GRID 152 96 64    !div CELL by these should give .=. 0.7 A
+MODE SFCALC XYZIN HKLIN
+RESOLUTION 37 2.1
+BINS  60
+RSCB 8.0 2.1
+SFSG 19
+LABIN FP=FTOXD3 SIGFP=SIGFTOXD3 
+LABOUT ALLIN FC=FCtoxd PHIC=PHICtoxd
+END
+
+# used to distinguish different runs in html logfile
+CCP_PROGRAM_ID=run2
+export CCP_PROGRAM_ID
+
+sigmaa \
+HKLIN  $CCP4_SCR/toxd_sf_mir \
+hklout $CCP4_SCR/junk \
+<< END-sigmaa
+TITLE   Phase combination
+RANGES 10   500      !#  No of bins for analysing agst S, 
+ERROR
+COMBINE  PART 1 
+
+LABI FP=FTOXD3 SIGFP=SIGFTOXD3 PHIBP=PHI_mir WP=W_mir  -
+HLA=HLA HLB=HLB HLC=HLC HLD=HLD  -
+FC=FCtoxd PHIC=PHICtoxd
+
+LABO PHCMB=PHCMB1 WCMB=FOMCMB1 FWT=FWT1 PHFWT=PHWT1
+END
+END-sigmaa
+
+#

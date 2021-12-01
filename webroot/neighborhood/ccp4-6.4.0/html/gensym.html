@@ -1,0 +1,178 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::GENSYM::Supported::Coordinate file manipulations::generate sites by symmetry:::::::: -->
+
+<H1> GENSYM (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>gensym </b>
+- generate sites by symmetry
+<H2> SYNOPSIS</H2>
+<b>gensym </b>
+[
+<b>XYZIN</b>
+<i>foo_in.pdb</i>
+] [
+<b>XYZOUT</b>
+<i>foo_out.pdb</i>
+] 
+<br>
+ [<A HREF="#keywords">Keyworded input</A>]
+<H2><a name="description">DESCRIPTION</a></H2>
+Generate all symmetry-related sites from a list of input atoms, entered
+either explicitly (<EM>e.g.</EM> for heavy atom sites) or from a PDB file.
+<p>
+GENSYM may not be suitable for applications where symmetry-related protein
+chains are required, since the program constrains the generated coordinates
+to lie within a volume which can be no larger than the unit cell.
+The <a href="pdbset.html#symgen">SYMGEN</a> option of PDBSET is
+the preferred method for generating symmetry-related protein chains.
+
+<H2><A NAME="keywords"></A>KEYWORDED INPUT</H2>
+
+<P>Available keywords are:
+<blockquote>
+<A HREF="#atom"><B>ATOM</B></A>, <A HREF="#brookhaven"><B>BROOKHAVEN</B></A>,
+<A HREF="#cell"><B>CELL</B></A>, <A HREF="#chain"><B>CHAIN</B></A>
+<A HREF="#end"><B>END</B></A>,
+<A HREF="#grid"><B>GRID</B></A>, <A HREF="#noprint"><B>NOPRINT</B></A>,
+<A HREF="#orthogonalization"><B>ORTHOGONALIZATION</B></A>, <A HREF="#read"><B>READ</B></A>,
+<A HREF="#residue"><B>RESIDUE</B></A>, <A HREF="#sort"><B>SORT</B></A>,
+<A HREF="#sphere"><B>SPHERE</B></A>, <A HREF="#symmetry"><B>SYMMETRY</B></A>,
+<A HREF="#title"><B>TITLE</B></A>, <A HREF="#xyzlim"><B>XYZLIM</B></A>
+</blockquote>
+<H3><a name="title">TITLE</a> &lt;title&gt;       </H3>
+Title for the run, written to the output file as a REMARK record.
+<H3><a name="symmetry">SYMMETRY</a> &lt;space-group-name | space-group-number | symmetry operation&gt;</H3>
+[COMPULSORY] <br>
+Space-group symmetry for the atoms (NOT the Patterson).
+This may be given in 3 ways:-
+<dl compact>
+<dt> (a) <dd>
+space-group name
+<dt> (b) <dd>
+space-group number
+<dt> (c) <dd>
+symmetry operations as in International Tables, separated
+by '*', on a series of SYMMETRY lines if necessary, e.g.<br>
+<tt>SYMMETRY -X,Y,-Z * 1/2+X,1/2+Y,Z</tt>
+</dl>
+<P> 
+For options (a) and (b), symmetry operations are read from the
+library file SYMOP (see <A HREF="symlib.html">SYMLIB</A>).
+<H3><A NAME="orthogonalization"></A> ORTHOGONALIZATION  &lt;ncode&gt;</H3>
+Vectors are written out to a PDB file in an orthogonal frame
+defined by this code. The default is &lt;ncode&gt; = 1, which is the
+usual frame for Brookhaven files, so normally this command
+can be omitted.
+
+<H3><a name="xyzlim">XYZLIM</a>  &lt;Xmin&gt; &lt;Xmax&gt; &lt;Ymin&gt; &lt;Ymax&gt; &lt;Zmin&gt; &lt;Zmax&gt;</H3>
+Limits of volume, in fractional or grid coordinates. If the limits are
+supplied in grid units then the <a href="#grid">GRID</a> keyword must also be
+supplied, to set the grid sampling.<br>
+The alternative to XYZLIM is <a href="#sphere">SPHERE</a>.<br>
+Default: 0.0 1.0 0.0 1.0 0.0 1.0
+
+<H3><a name="sphere">SPHERE</a> [ORTHOGONAL] Xcen Ycen Zcen Radius</H3>
+Define spherical volume (alternative to <a href="#xyzlim">XYZLIM</a>).
+The coordinates of the centre
+of the sphere are <b>Xcen</b> <b>Ycen</b> <b>Zcen</b>, and are in fractional
+coordinates unless the keyword ORTHOGONAL is present. The radius of the
+sphere is in &Aring;.<br>
+
+<H3><a name="cell">CELL</a>   &lt;a&gt; &lt;b&gt; &lt;c&gt; &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt;</H3>
+Cell dimensions for orthogonalization (for Brookhaven file). If XYZIN
+is assigned then the default is to read the cell dimensions from
+the CRYST1 record.
+
+<H3><a name="grid">GRID</a>  &lt;NX&gt; &lt;NY&gt; &lt;NZ&gt;</H3>
+Sampling intervals along x,y,z, for grid coordinates (used only
+for output listing). The GRID keyword is required by <a href="#xyzlim">XYZLIM</a>,
+if the volume limits have been supplied in grid units. <br>
+Default: 100 100 100
+
+<H3><A NAME="brookhaven"></A> BROOKHAVEN</H3>
+Write Brookhaven file to logical name XYZOUT. <br>
+Default: do not write file.
+
+<H3><A NAME="residue"></A> RESIDUE  &lt;residue_name&gt;</H3>
+Input a residue name for following atoms, until changed,
+for labelling output.
+
+<H3><a name="atom">ATOM</a>  &lt;atomname&gt; &lt;x&gt; &lt;y&gt; &lt;z&gt;</H3>
+Input an atom. &lt;atomname&gt; is a
+1-character unique identifier for this site; &lt;x&gt; &lt;y&gt; &lt;z&gt; are the
+FRACTIONAL coordinates.
+
+<H3><A NAME="read"></A> READ  [&lt;file_name&gt;]</H3>
+Read coordinates from PDB file (containing orthogonal coordinates), instead of
+from ATOM commands. The file is read from XYZIN.
+
+<H3><A NAME="noprint"></A> NOPRINT</H3>
+Don't print list of sites to output log. <br>
+Default: do.
+
+<H3><A NAME="sort"></A>SORT SYMMETRY | CHAIN</H3>
+This determines the order in which the symmetry-generated positions are listed
+in the output. The options are:
+<dl>
+<dt>SYMMETRY
+   <dd>the positions generated from a single target position by different symmetry
+   operations will be grouped together. This means that the sequence of positions
+   in the input file will be lost.
+<dt>CHAIN
+   <dd>all the positions from a single symmetry operation are listed together,
+   followed by all those from the next symmetry operation etc. This preserves
+   the sequence of positions from the original file.
+</dl>
+Default: SYMMETRY
+
+<H3><a name="chain">CHAIN SYMMETRY Nsym [orig_chn] new_ch</a></H3>
+This allows symmetry generated atoms from an input pdb file to be assigned
+chain names on output. It is based on the
+<a href="pdbset.html#chain">CHAIN</a> option of PDBSET.
+
+<p>Positions generated by symmetry operation <b>Nsym</b> (and optionally
+from an original position with chain id <b>orig_chn</b>) will be assigned
+a chain id of <b>new_ch</b>. If <b>orig_chn</b> is not present then all
+positions generated from the specified symmetry operation will be assigned
+the requested chain name.
+
+<H3><a name="end">END</a></H3>
+End of input, also end-of-file will do
+<H2><a name="examples">EXAMPLES</a></H2>
+<pre>
+
+$!
+$! Convert heavy atom coordinates to Brookhaven file
+$!
+$!
+$ gensym xyzout hasites.pdb
+TITLE  A95 sites for X16, X17, X18, X19
+BROOKHAVEN
+SYMMETRY 1
+XYZLIM 0 0.5  0 0.5  0 0.25
+CELL 148.13 148.13 148.13 
+GRID 144 144 144 
+RESIDUE  X16  
+ATOM   A  0.2617  0.2671  0.1936 
+ATOM   B  0.2383  0.2778  0.1908 
+ATOM   C  0.2027  0.2760  0.2161 
+ATOM   D  0.2217  0.2856  0.2043 
+RESIDUE   X17  
+ATOM   A  0.2368  0.1373  0.1435 
+ATOM   B  0.3362  0.3478  0.2257 
+ATOM   C  0.2483  0.1403  0.1189 
+ATOM   D  0.3140  0.3428  0.2415 
+RESIDUE   X18  
+ATOM   A   0.3959  0.1636  0.1751 
+ATOM   B   0.2648  0.3357  0.0835 
+RESIDUE   X19  
+ATOM   A   0.3713  0.1320  0.2208 
+ATOM   B   0.2175  0.3570  0.1147 
+
+</pre>
+<H2> AUTHOR</H2>
+Phil Evans, MRC LMB Cambridge, August 1990
+</body></html>

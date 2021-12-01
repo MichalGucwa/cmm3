@@ -1,0 +1,125 @@
+#! /bin/sh
+
+# Use printf if available:
+type printf >/dev/null 2>&1
+[ $? -eq 0 ] && ECHON=printf || ECHON='echo -n'
+
+# run all possible examples to test for regressions
+
+# Make sure all the data is available to run tests with
+test -f $CEXAM/toxd/toxd.mtz || (cd $CEXAM/toxd; ./na4tomtz.exam; ./completedata.exam)
+test -f $CEXAM/toxd/toxd_old.mtz || (cd $CEXAM/toxd; ./na4tomtz.exam; ./completedata.exam)
+
+test -f $CEXAM/rnase/rnase18.mtz || (cd $CEXAM/rnase; ./rnase_na4tomtz.exam; ./rnase_completedata.exam)
+test -f $CEXAM/rnase/rnase25.mtz || (cd $CEXAM/rnase; ./rnase_na4tomtz.exam; ./rnase_completedata.exam)
+
+mkdir $CCP4_SCR/test-results 2>/dev/null
+
+CCP4_SCR=$CCP4_SCR/test-results
+export CCP4_SCR
+
+# bug # 3192 - run-all examples produce harvest files - well to counteract 
+# this here set HARVESTHOME to somewhere in $CCP4_SCR - and uncomment the 
+# following...
+
+# HARVESTHOME=$CCP4_SCR
+# export HARVESTHOME
+
+test -f $CCP4_SCR/sample_results && rm -f $CCP4_SCR/sample_results
+
+for prog in mlphare.exam 3fo2fcmap abs.exam act.exam scala.exam \
+  acorn.exam almn.exam angles.exam anisoanl.exam \
+  axissearch.exam baverage.exam bp3.exam bulk.exam cad.exam \
+  cavenv.exam chainsaw.exam cif2xml.exam combat.exam \
+  contact.exam coordconv.exam dimple.exam \
+  crossec.exam cross_validate.exam ctruncate.exam areaimol.exam \
+  scalepack2mtz.exam surface.exam \
+  distang.exam dm.exam dyndom.exam ecalc.exam sf_calc mtz2various.exam mtz2cif.exam \
+  f2mtz.exam fffear.exam fft.exam fhscal.exam findncs.exam fofcmap fractional-orthogonal \
+  freerflag.exam gensym.exam geomcalc.exam havecs.exam helixang.exam \
+  hgen.exam hklplot.exam icoefl.exam lsqkab.exam mapcorrelation_procedures \
+  scaleit.exam makedict.exam mapmask.exam mapcutting.exam mir_steps.exam mrbump.exam mtzdump.exam \
+  mtzmnf.exam mtztona4.exam mtzutils.exam ncont.exam \
+  ncsmask.exam npo.exam oasis_oas.exam oasis_sir.exam overlapmap.exam \
+  patterson pdbcur.exam pdb_merge.exam pdbset.exam phase_analysis \
+  phased_translation_calc phistats.exam polarrfn.exam \
+  professs.exam prosmart.exam rebatch.exam reindex.exam revise.exam \
+  rotamer.exam rotmat.exam solomon.exam tffc_procedure \
+  rsps.exam rwcontents.exam superpose.exam symconv.exam \
+  sigmaa.exam sortmtz.exam sortwater.exam stereo.exam surface-volume-calc tracer.exam \
+  truncate.exam unique.exam unique-free-R vecref.exam vectors.exam waterpeaks watpeak.exam \
+  watertidy-3shells wilson.exam hbond.exam mat2symop.exam symop2mat.exam \
+  matthews_coef.exam diffdump.exam printpeaks.exam detwin.exam crunch2.exam cparrot.exam \
+  pdb2to3.exam gesamt.exam pisa.exam procheck.exam raster3d.exam; do
+
+$ECHON "$prog"
+
+# I don't know a way round using the o/p file.  Something like a=`foo|tail`
+# always returns success...
+if $CEXAM/unix/runnable/$prog >$CCP4_SCR/log 2>&1; then
+  $ECHON ","
+else
+  echo; echo
+  echo "*** $prog failed"
+  tail $CCP4_SCR/log
+  echo
+fi
+
+done
+
+# optional examples
+for prog in refmac5_tls.exam tlsanl.exam refmac_sad.exam refmac_twin.exam \
+  compar.exam libcheck.exam molrep.exam cpirate.exam cbuccaneer.exam \
+  phaser.exam phaser_EP.exam phaser_sculptor.exam phaser_ensembler.exam \
+  rampage.exam pointless.exam chef.exam sfcheck.exam scala-complete.exam \
+  refmac-rigid.exam aimless.exam ; do
+
+  $ECHON $prog
+  # Check dependency
+  case $prog in
+    refmac5_tls.exam) binprog=refmac5 ;;
+    tlsanl.exam)      binprog=refmac5 ;;
+    compar.exam)      binprog=refmac5 ;;
+    refmac_sad.exam)  binprog=refmac5 ;;
+    refmac_twin.exam) binprog=refmac5 ;;
+    libcheck.exam)    binprog=libcheck ;;
+    molrep.exam)      binprog=molrep ;;
+    phaser.exam)      binprog=phaser ;;
+    phaser_EP.exam)   binprog=phaser ;;
+    phaser_sculptor.exam)   binprog=phaser.sculptor ;;
+    phaser_ensembler.exam)   binprog=phaser.ensembler ;;
+    cpirate.exam)     binprog=cpirate ;;
+    cbuccaneer.exam)  binprog=cbuccaneer ;;
+    rampage.exam)     binprog=rapper ;;
+    pointless.exam)   binprog=pointless ;;
+    chef.exam)        binprog=chef ;;
+    sfcheck.exam)     binprog=sfcheck ;;
+    refmac-rigid.exam) binprog=refmac5 ;;
+    scala-complete.exam) binprog=pointless ;;
+    aimless.exam) binprog=aimless ;;
+  esac
+  if test -f $CBIN/$binprog ; then
+    # Run the example
+    if $CEXAM/unix/runnable/$prog >$CCP4_SCR/log 2>&1; then
+      $ECHON ","
+    else
+      echo; echo
+      echo "*** $prog failed"
+      tail $CCP4_SCR/log
+      echo
+    fi
+  else
+    echo; echo
+    echo "*** $prog: $binprog not found in CBIN"
+    echo
+  fi
+
+done
+echo ""
+
+#omit.exam     # long
+#toxd-RF-Es ; MR-with-amore ; RF-with-Es     # long
+
+test -f $CCP4_SCR/sample_results && cp -f $CCP4_SCR/sample_results $CCP4_SCR/..
+rm -rf $CCP4_SCR   # clean up
+

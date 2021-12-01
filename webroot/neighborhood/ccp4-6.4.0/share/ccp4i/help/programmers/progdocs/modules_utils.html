@@ -1,0 +1,252 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4I Documentation for Programmers: Core Documentation</title>
+<link rel="stylesheet" type="text/css" href="../../ccp4idocs.css" title="CCP4i" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+</head>
+<body>
+<H2>CCP4i Documentation for Programmers: Core Documentation</H2>
+<H3>Contents</H3>
+<h3>Utilities for building CCP4i modules data structure (src/modules_utils.tcl)</h3>
+<p>Some utilities for constructing and interrogating the  task and module references used for building the module and tasklist display. BuildModulesDataStruct takes the data previously read in from a modules.def file and populates an internal data structure by calling the "Set" and "New" commands (SetModuleProject, NewModule, NewModuleSeparator etc). The commands in browser_utils.tcl which actually build the display use the "Get" and "List" commands (ListFolderContents, GetTaskDesc etc) to acquire the information needed to make modules, folders and task buttons.<p>
+<p>The internal data structure assigns a unique internal identifier to each task and folder at the point of generation. These unique identifiers are then used within the commands to access the data about the tasks and folders. Note that the identifiers may not be the same between different instances of the data structure.<p>
+<a name="BuildModulesDataStruct" ><h4><font color="#CC3333">BuildModulesDataStruct</font> <em>Build a data structure for the modules and tasklists</em></h4> 
+<p><em>Argument list:  &lt;modulesVar&gt; &lt;arrayname&gt;</em></p>
+<p>The data in the modules.def file must previously have been loaded into the array specified by modulesVar (typically called moduledef).<p>
+<p>Based on this data, this command constructs an internal data structure that can later be easily queried and modified by calling a set of interface functions.<p>
+<p><strong>modulesVar</strong>  Name of the array containing previously loaded modules file<p>
+<p><strong>arrayname</strong>  Name of array to store the data structure in<p>
+<a name="SortProgramList" ><h4><font color="#CC3333">SortProgramList</font> <em>Sort the tasks in the program list module into alphabetical order</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt;</em></p>
+<p>Intended to be called after an internal data structure has been built. Uses the compare_task_titles function to perform the comparision of two tasks in the sorting.<p>
+<p><strong>arrayname</strong>  Name of array containing the data structure<p>
+<a name="compare_task_titles" ><h4><font color="#CC3333">compare_task_titles</font> <em>Internal - compare the titles of two tasks given their ids</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;taskid1&gt; &lt;taskid2&gt;</em></p>
+<p>Used by SortProgramList. Acquires titles of tasks given their ids and returns return of "string compare".<p>
+<p><strong>arrayname</strong>  Name of array containing the data structure<p>
+<p><strong>taskid1</strong>  Unique id for first task<p>
+<p><strong>taskid2</strong>  Unique id for second task<p>
+<a name="SetModuleProject" ><h4><font color="#CC3333">SetModuleProject</font> <em>Set the project name and title within the data structure</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;project&gt; &lt;title&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array containing the data structure<p>
+<p><strong>project</strong>  Project name (usually 'CCP4')<p>
+<p><strong>title</strong>  Title of application (usually 'CCP4 Program Interface')<p>
+<p><strong>arrayname</strong>  Name of array containing the data structure<p>
+<p><strong>name</strong>  Internal name of the module (e.g. 'datred')<p>
+<p><strong>description</strong>  Description seen by the user (e.g. 'Data Reduction')<p>
+<a name="NewModuleSeparator" ><h4><font color="#CC3333">NewModuleSeparator</font> <em>Add a "separator" into the module list</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array to contain data structure<p>
+<a name="NewFolder" ><h4><font color="#CC3333">NewFolder</font> <em>Add a new folder to the data structure</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;name&gt; &lt;title&gt; &lt;desc&gt; &lt;module&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array to contain data structure<p>
+<p><strong>name</strong>  Internal name of the folder<p>
+<p><strong>title</strong>  Text appearing on the folder title bar<p>
+<p><strong>desc</strong>  Extended description used e.g. for tooltip help message<p>
+<p><strong>module</strong>  Internal name of the module that holds the folder<p>
+<a name="NewTask" ><h4><font color="#CC3333">NewTask</font> <em>Add a new task to the data structure</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;taskname&gt; &lt;title&gt; &lt;description&gt; &lt;module&gt; &lt;folder&gt; &lt;&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array to contain data structure<p>
+<p><strong>taskname</strong>  Internal name of the task (e.g. root of Tcl task file)<p>
+<p><strong>title</strong>  Text to appear as task title on button<p>
+<p><strong>description</strong>  Extended description used e.g. for tooltip help message<p>
+<p><strong>module</strong>  Internal name of the module that the task is in<p>
+<p><strong>folder</strong>  (optional) Internal name of the folder that the task is in<p>
+<a name="SetFolderVisibility" ><h4><font color="#CC3333">SetFolderVisibility</font> <em>Set the visibility of the folder contents</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;module&gt; &lt;folder&gt; &lt;status&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array to contain data structure<p>
+<p><strong>module</strong>  Internal name of the module that the task is in<p>
+<p><strong>folder</strong>  Internal name of the folder<p>
+<p><strong>status</strong>  Can be set to either OPEN or CLOSED<p>
+<a name="GetFolderVisibility" ><h4><font color="#CC3333">GetFolderVisibility</font> <em>Return the visibility of the folder contents</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;module&gt; &lt;folder&gt;</em></p>
+<p>Returns either OPEN or CLOSED, or UNKNOWN if the folder isn't found<p>
+<p><strong>arrayname</strong>  Name of array to contain data structure<p>
+<p><strong>module</strong>  Internal name of the module that the task is in<p>
+<p><strong>folder</strong>  Internal name of the folder<p>
+<a name="ListModules" ><h4><font color="#CC3333">ListModules</font> <em>List the modules in the data structure</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array to contain data structure<p>
+<a name="GetModuleDesc" ><h4><font color="#CC3333">GetModuleDesc</font> <em>Return the description string for the module name</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;module&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array to contain data structure<p>
+<p><strong>module</strong>  Internal name of the module<p>
+<a name="ReverseLookupModuleName" ><h4><font color="#CC3333">ReverseLookupModuleName</font> <em>Given the module description, find the matching name</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;desc&gt;</em></p>
+<p>Attempts to locate the internal module name given the text description. Returns the name, or an empty string if no match is found.<p>
+<p><strong>arrayname</strong>  Name of array to contain data structure<p>
+<p><strong>desc</strong>  Description text to be matched<p>
+<a name="ListModuleContents" ><h4><font color="#CC3333">ListModuleContents</font> <em>Return a list of the module contents</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;module&gt;</em></p>
+<p>Returns a list of the unique internal ids for the tasks and folders in the module.<p>
+<p><strong>arrayname</strong>  Name of array containing the data structure<p>
+<p><strong>module</strong>  Internal module name<p>
+<a name="ListFolderContents" ><h4><font color="#CC3333">ListFolderContents</font> <em>Return a list of the module contents</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;module&gt; &lt;folder&gt;</em></p>
+<p>Returns a list of the unique internal ids for the tasks in the folder.<p>
+<p><strong>arrayname</strong>  Name of array containing the data structure<p>
+<p><strong>module</strong>  Internal module name<p>
+<p><strong>folder</strong>  Internal folder name (unique id)<p>
+<a name="GetContentType" ><h4><font color="#CC3333">GetContentType</font> <em>Return the type (FOLDER or TASK) for the module content</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;module&gt; &lt;name&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array to contain data structure<p>
+<p><strong>module</strong>  Internal module name<p>
+<p><strong>name</strong>  Task or folder name for which type is requested<p>
+<a name="GetFolderTitle" ><h4><font color="#CC3333">GetFolderTitle</font> <em>Return the title string for a folder in a module</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;folderid&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array containing the data structure<p>
+<p><strong>folderid</strong>  Internal unique folder id<p>
+<a name="GetFolderDesc" ><h4><font color="#CC3333">GetFolderDesc</font> <em>Return the description string for a folder in a module</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;folderid&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array containing the data structure<p>
+<p><strong>folderid</strong>  Internal unique folder id<p>
+<a name="GetTaskName" ><h4><font color="#CC3333">GetTaskName</font> <em>Return the taskname for a task id</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;taskid&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array to contain data structure<p>
+<p><strong>taskid</strong>  Internal taskname (unique id)<p>
+<a name="GetTaskTitle" ><h4><font color="#CC3333">GetTaskTitle</font> <em>Return the title string for a task</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;taskid&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array to contain data structure<p>
+<p><strong>taskid</strong>  Internal taskname (unique id)<p>
+<a name="GetTaskDesc" ><h4><font color="#CC3333">GetTaskDesc</font> <em>Return the description string for a task</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;taskid&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array to contain data structure<p>
+<p><strong>taskid</strong>  Internal taskname (unique id)<p>
+<h3>Utilities for manipulating CCP4i modules.def files (src/modules_utils.tcl)</h3>
+<p>Some utilities for adding and removing task and module references.<p>
+<a name="InitialiseModulesArray" ><h4><font color="#CC3333">InitialiseModulesArray</font> <em>Initialise an array with the data in a modules.def file</em></h4> 
+<p><em>Argument list:  &lt;modules_file&gt; &lt;arrayname&gt;</em></p>
+<p>This is a wrapper for InitialiseArray which first loads parameters from the template modules.def file, to ensure that all expected parameters are initialised. It then loads the actual data from the file specified by the calling subprogram.<p>
+<p><strong>modules_file</strong>  Full path for the module file to be loaded<p>
+<p><strong>arrayname</strong>  Name of the array to store the data in<p>
+<a name="GetModuleList" ><h4><font color="#CC3333">GetModuleList</font> <em>Return a list of the modules in the specified modules def file</em></h4> 
+<p><em>Argument list:  &lt;modules_file&gt;</em></p>
+<p>This procedure returns a list of modules found in the modules.def file. Each element of the list is itself a list of two elements, the first being the internal name of the module, and the second being the module title as seen by the user. Note that this procedure can read information from either a .def style modules file, or from the old-style flat ascii format modules file.<p>
+<p><strong>module_file</strong>  Full path for the module file to be examined<p>
+<a name="GetTaskList" ><h4><font color="#CC3333">GetTaskList</font> <em>Return a list of the tasks in the specified module of a modules def file</em></h4> 
+<p><em>Argument list:  &lt;modules_file&gt; &lt;module_name&gt;</em></p>
+<p>This procedure returns a list with each element representing a task in the specified module. Each element of the list is itself a list of three items, representing the task title (text seen on the task browser buttons), task name (corresponding to the task file), and the task description (text appearing in the task browser message line). Note that this procedure can read information from either a .def style modules file, or from the old-style flat ascii format modules file.<p>
+<p>Note that if the module also contains folders then the names of the folders will also be returned in the list of "tasks". Therefore GetTaskList is now deprecated in favour of GetModuleContentList, which returns the same data with an additional flag indicating whether the entry is a task or a folder.<p>
+<p><strong>module_file</strong>  Full path for the module file to be examined<p>
+<p><strong>module_name</strong>  The name or title of the module to be examined<p>
+<a name="GetModuleContentList" ><h4><font color="#CC3333">GetModuleContentList</font> <em>Return a list of the items (tasks and folders) in the specified module</em></h4> 
+<p><em>Argument list:  &lt;modules_file&gt; &lt;module_name&gt;</em></p>
+<p>This procedure returns a list with each element representing a task or folder in the specified module. Each element of the list is itself a list of four items, representing the task/folder title (text seen on the task browser buttons or in the folder title bar), task or folder name (corresponding to the task file, or to the internal id name of the folder), the task or folder description (text appearing in the task browser message line), and the word TASK or FOLDER (indicating whether the item is a task or folder). Note that this procedure can read information from either a .def style modules file, or from the old-style flat ascii format modules file.<p>
+<p>Note that only modules.def files can contain folders.<p>
+<p><strong>module_file</strong>  Full path for the module file to be examined<p>
+<p><strong>module_name</strong>  The name or title of the module to be examined<p>
+<a name="GetFolderContentList" ><h4><font color="#CC3333">GetFolderContentList</font> <em>Return a list of the tasks in the specified folder of a module</em></h4> 
+<p><em>Argument list:  &lt;modules_file&gt; &lt;module_name&gt; &lt;folder_name&gt;</em></p>
+<p>This procedure returns a list with each element representing a task in the specified folder and module. Each element of the list is itself a list of three items, representing the task title (text seen on the task browser buttons), task name (corresponding to the task file), and the task description (text appearing in the task browser message line). Note that this procedure can read information from either a .def style modules file, or from the old-style flat ascii format modules file.<p>
+<p>Note that only modules.def files can contain folders.<p>
+<p><strong>module_file</strong>  Full path for the module file to be examined<p>
+<p><strong>module_name</strong>  The name or title of the module to be examined<p>
+<p><strong>folder_name</strong>  The name or title of the folder to be examined<p>
+<a name="AddModule" ><h4><font color="#CC3333">AddModule</font> <em>Add a new module reference to the specified modules def file</em></h4> 
+<p><em>Argument list:  &lt;modules_file&gt; &lt;module_name&gt; &lt;module_title&gt; &lt;args&gt;</em></p>
+<p>Adds a new module reference to a modules def file, and overwrites with the new version. The new module will be empty when created, and by default is added to the end of the list of modules. Returns 1 on success, 0 on an error (e.g. modules file not found, module name or title already exists).<p>
+<p><strong>module_file</strong>  Full path for the module file to be edited<p>
+<p><strong>module_name</strong>  Name of the new module<p>
+<p><strong>module_title</strong>  Title of the module (text which appears in the list of modules as seen by the user)<p>
+<p><strong>-before</strong><em>  module_title</em><p>
+<p>Add the new module before the named module, if possible<p>
+<p><strong>-after</strong><em>  module_title</em><p>
+<p>Add the new module after the named module, if possible<p>
+<p><strong>-first</strong><p>
+<p>Add as the first module<p>
+<p><strong>-last</strong><p>
+<p>Add as the last module<p>
+<a name="GetModule" ><h4><font color="#CC3333">GetModule</font> <em>Fetch the attributes of a particular module reference</em></h4> 
+<p><em>Argument list:  &lt;modules_file&gt; &lt;module&gt;</em></p>
+<p>Get the details of a module from a modules.def file, specifically the name and title.<p>
+<p>On success this command returns a list of two elements: the module name, and the module title. On failure an empty list is returned.<p>
+<p><strong>modules_file</strong>  Full path for the module file to be queried<p>
+<p><strong>module</strong>  Name or title of the module reference to be queried<p>
+<a name="UpdateModule" ><h4><font color="#CC3333">UpdateModule</font> <em>Change the module title text</em></h4> 
+<p><em>Argument list:  &lt;modules_file&gt; &lt;module_name&gt; &lt;new_title&gt;</em></p>
+<p><strong>module_files</strong>  Full path for the module file to be edited<p>
+<p><strong>module_name</strong>  Name of the module to be updated<p>
+<p><strong>new_title</strong>  Text to be used as new module title<p>
+<a name="DeleteModule" ><h4><font color="#CC3333">DeleteModule</font> <em>Remove a module reference from the specified modules def file</em></h4> 
+<p><em>Argument list:  &lt;modules_file&gt; &lt;module_name&gt;</em></p>
+<p>Delete a module from the module def file. This will only work if there are no task references currently in the module.<p>
+<p><strong>module_files</strong>  Full path for the module file to be edited<p>
+<p><strong>module_name</strong>  Name of the module to be removed<p>
+<a name="AddTaskReference" ><h4><font color="#CC3333">AddTaskReference</font> <em>Add a new task reference to the specified modules file</em></h4> 
+<p><em>Argument list:  &lt;modules_file&gt; &lt;task_title&gt; &lt;task_name&gt; &lt;task_descript&gt; &lt;module_name&gt; &lt;args&gt;</em></p>
+<p>Creates a new task reference in a particular module, and optionally within a subfolder.<p>
+<p>Note that if a folder is specified but doesn't exist then the task reference will be added as a "top-level" task in the module. In all cases, if the module doesn't exist then the task reference will not be added at all.<p>
+<p><strong>module_file</strong>  Full path for the modules file to be edited<p>
+<p><strong>task_title</strong>  Title of the task (text which appears in the list of modules as seen by the user)<p>
+<p><strong>task_name</strong>  Name of the task (must correspond to a .tcl file in the tasks directory)<p>
+<p><strong>task_descript</strong>  Description of the task (text which appears in the message line of the main window)<p>
+<p><strong>module_name</strong>  Module to which the task should be added<p>
+<p><strong>-folder</strong><em>  folder_name</em><p>
+<p>Add the new task reference within the named folder, if possible<p>
+<p><strong>-before</strong><em>  task_title</em><p>
+<p>Add the new task reference before the named task, if possible<p>
+<p><strong>-after</strong><em>  task_title</em><p>
+<p>Add the new task reference after the named task, if possible<p>
+<p><strong>-first</strong><p>
+<p>Add as the first task reference in the specified module<p>
+<p><strong>-last</strong><p>
+<p>Add as the last task reference in the specified module<p>
+<a name="AddModuleFolder" ><h4><font color="#CC3333">AddModuleFolder</font> <em>Add a new folder to the specified modules file</em></h4> 
+<p><em>Argument list:  &lt;modules_file&gt; &lt;folder_title&gt; &lt;folder_name&gt; &lt;folder_descript&gt; &lt;module_name&gt; &lt;args&gt;</em></p>
+<p>Creates a new folder reference in a particular module.<p>
+<p><strong>module_file</strong>  Full path for the modules file to be edited<p>
+<p><strong>folder_title</strong>  Title of the folder (text which appears in the list of modules as seen by the user)<p>
+<p><strong>folder_name</strong>  Name of the folder (must be unique)<p>
+<p><strong>task_descript</strong>  Description of the folder (text which appears in the message line of the main window)<p>
+<p><strong>module_name</strong>  Module to which the folder should be added<p>
+<p><strong>-before</strong><em>  task_or_folder</em><p>
+<p>Add the new folder before the named task or folder, if possible<p>
+<p><strong>-after</strong><em>  task_or_folder</em><p>
+<p>Add the new folder after the named task or folder, if possible<p>
+<p><strong>-first</strong><p>
+<p>Add as the first entry in the specified module<p>
+<p><strong>-last</strong><p>
+<p>Add as the last entry in the specified module<p>
+<a name="GetFolderReference" ><h4><font color="#CC3333">GetFolderReference</font> <em>Fetch the attributes of a particular folder reference</em></h4> 
+<p><em>Argument list:  &lt;modules_file&gt; &lt;folder&gt; &lt;module_name&gt;</em></p>
+<p>Get the details of a folder reference from a modules.def file, specifically the name, title and description.<p>
+<p>On success this command returns a list of three elements: the folder name, the folder title and the folder description text. On failure an empty list is returned.<p>
+<p><strong>modules_file</strong>  Full path for the module file to be queried<p>
+<p><strong>folder</strong>  Name or title of the folder reference to be queried<p>
+<p><strong>module_name</strong>  Name of the module in which the folder reference resides<p>
+<a name="UpdateFolderReference" ><h4><font color="#CC3333">UpdateFolderReference</font> <em>Update the attributes of a particular task reference</em></h4> 
+<p><em>Argument list:  &lt;modules_file&gt; &lt;folder_title&gt; &lt;module_name&gt; &lt;args&gt;</em></p>
+<p><strong>modules_file</strong>  Full path for the module file to be edited<p>
+<p><strong>folder_title</strong>  Name of the folder reference to be updated<p>
+<p><strong>module_name</strong>  Name of the module in which the folder reference resides<p>
+<p><strong>-title</strong><em>  title_text</em><p>
+<p>New title text to replace the existing title<p>
+<p><strong>-descript</strong><em>  descript_text</em><p>
+<p>New description text to replace the existing description<p>
+<a name="DeleteModuleFolder" ><h4><font color="#CC3333">DeleteModuleFolder</font> <em>Remove a folder from the specified modules def file</em></h4> 
+<p><em>Argument list:  &lt;modules_file&gt; &lt;module_name&gt; &lt;folder_name&gt;</em></p>
+<p>Delete a folder from the specified module in a module def file. This will only work if there are no task references currently in the folder.<p>
+<p><strong>module_files</strong>  Full path for the module file to be edited<p>
+<p><strong>module_name</strong>  Name of the module to be removed<p>
+<p><strong>folder_name</strong>  Name of the folder to be removed<p>
+<a name="UpdateTaskReference" ><h4><font color="#CC3333">UpdateTaskReference</font> <em>Update the attributes of a particular task reference</em></h4> 
+<p><em>Argument list:  &lt;modules_file&gt; &lt;task_title&gt; &lt;module_name&gt; &lt;args&gt;</em></p>
+<p><strong>modules_file</strong>  Full path for the module file to be edited<p>
+<p><strong>task_title</strong>  Name of the task reference to be updated<p>
+<p><strong>module_name</strong>  Name of the module in which the task reference resides<p>
+<p><strong>-title</strong><em>  title_text</em><p>
+<p>New title text to replace the existing title<p>
+<p><strong>-descript</strong><em>  descript_text</em><p>
+<p>New description text to replace the existing description<p>
+<p><strong>-folder</strong><em>  folder_name</em><p>
+<p>Specify the folder that the task reference is currently in<p>
+<a name="DeleteTaskReference" ><h4><font color="#CC3333">DeleteTaskReference</font> <em>Remove a task reference from the specified modules def file</em></h4> 
+<p><em>Argument list:  &lt;modules_file&gt; &lt;task_title&gt; &lt;module_name&gt; &lt;folder_title&gt;</em></p>
+<p><strong>modules_file</strong>  Full path for the module file to be edited<p>
+<p><strong>task_title</strong>  Name of the task reference to be deleted<p>
+<p><strong>module_name</strong>  Name of the module from which the task is to be removed<p>
+<p><strong>folder_title</strong>  (Optional) Title of the folder within the module from which the task is to be removed<p>
+</body>
+</html>
+

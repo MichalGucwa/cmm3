@@ -1,0 +1,359 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4i Documentation for Programmers: The <strong>.def</strong> File</title>
+<link rel="stylesheet" type="text/css" href="../ccp4idocs.css" title="CCP4i" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="3" class="logopic"><img src="../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logoprog">Documentation for Programmers</td></tr>
+<tr><td class="logotitle">The <strong>.def</strong> File</td></tr>
+</table>
+<br />
+<table border="0">
+<tr><td>
+<a href="modules.html" target="_PROGMAIN">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="run_scripts.html" target="_PROGMAIN">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="intro.html" target="_PROGMAIN">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td></tr>
+</table>
+
+<p><a href="#files" target="_self">Files Required to
+Define a Task Window</a></p>
+<p><a href="#def_file" target="_self">The
+<strong>.def</strong> File Format</a></p>
+
+<dl>
+<dt><a href="#data_types" target="_self">Data Types</a></dt>
+<dd><a href="#data_type_intro"
+target="_self">Introduction</a></dd>
+<dd><a href="#list" target="_self">List of Data Types</a></dd>
+</dl>
+
+<p><a href="#file_types" target="_self">File Types</a></p>
+<p><a href="#mtz_column_types" target="_self">MTZ Column
+Types</a></p>
+<p><a href="#types_def" target="_self">The
+<em>types.def</em> File</a></p>
+
+<h3><a name="files"></a>Files Required to Define a Task Window</h3>
+
+<p>The files to define a task window are in the directory $CCP4I_top/tasks.
+Two files are required for each task. For a task called <em>foo</em>, the
+two files must be called <em>foo.def</em> and <em>foo.tcl</em>. The function
+of these files is:</p>
+
+<ul>
+<li>a <strong>.def file</strong> lists all the parameters controlled by the
+task window and specifies their data type and their initial value</li>
+
+<li>a <strong>.tcl file</strong> is a Tcl script which defines the appearance of
+the task window</li>
+</ul>
+
+<p>There are simple examples of each in the distributed CCP4i code
+called <em>demo.def</em> and <em>demo.tcl</em>.</p>
+
+<p>For the task to be accessible from the main window it must be specified
+in the <strong><em>$CCP4I_top/etc/modules</em></strong> file. In the standard
+CCP4i distribution there are two lines at the top of this file to give access
+to the <em>demo</em> task interface. These lines are usually commented out
+by a '#' character at the beginning of the lines. You can remove the '#'
+to make the <em>demo</em> task interface accessible.</p>
+
+<p>A
+<a href="modules.html" target="_self">more detailed description</a>
+of the format of the <em>modules</em> file can be found elsewhere.</p>
+
+<h3><a name="def_file"></a>The <strong>.def</strong> File Format</h3>
+
+<p>The initialisation .def file found in the tasks directory has the same
+format as the files used to save user-defined parameters. The
+first few lines of a .def file are some identifiers:</p>
+
+<pre>
+#CCP4I VERSION CCP4Interface 1.0
+#CCP4I SCRIPT DEF demo
+#CCP4I DATE 16/01/98 16:05:30
+#CCP4I USER lizp
+</pre>
+
+<p>These identifiers are most useful in the .def files which save user
+parameters but also appear in the initialisation .def files for consistency. It
+is important that:</p>
+
+<ul>
+<li>you set the program version in the first line:
+
+<pre>
+#CCP4I VERSION CCP4Interface 1.0
+</pre>
+
+<!--ask liz what this is supposed to mean:-->
+to the current program version as this may help sort out problems in
+version skews in the future</li>
+
+<li>and the task name in the line:
+
+<pre>
+#CCP4I SCRIPT DEF demo
+</pre>
+
+to the name of your task because when reading a .def file, the CCP4i program
+checks that the .def file is appropriate for the task it is setting up.</li>
+</ul>
+
+<p>You might also want to set the appropriate date and time for when you
+created the file, and give your name.</p>
+
+<p>The parameters are then defined with one parameter per line. There are
+three fields on each line:</p>
+
+<ol>
+<li><strong>parameter name</strong> - one word, commonly in upper case</li>
+
+<li><strong>data type</strong> - one word, beginning with an underscore</li>
+
+<li><strong>initial value</strong> - must be enclosed in double quotes, and
+may be one word or a string, or empty</li>
+</ol>
+
+<p>Parameters usually correspond to the input parameters for the CCP4 program
+and so could have a name similar to or the same as the program parameter
+name. The data type should either correspond to a generic data type defined
+in the file <em>$CCP4I_top/etc/types.def</em> (see
+<a href="#list" target="_self">generic data
+types</a> for a list of common types) or should be a task specific menu which
+is defined in the .tcl file through the <em>DefineMenu</em> command (see
+<a href="task_windows.html#menus" target="_self">specific data
+types</a>). It would be possible to add a new data type to the types.def file
+if necessary.</p>
+
+<p>The data type is important because the type of widget drawn by the Interface
+is determined by the data type. For example, if you define a parameter as
+having data type <em>_logical</em>, it will automatically be drawn as a button
+which can only have the values 0 or 1 corresponding to 'true' and 'false'.</p>
+
+<p>The data type also informs the Data Checking Facility of the sort of input
+that is expected for each parameter (see also
+<a href="#data_checking" target="_self">below</a>).</p>
+
+<h3><a name="data_types"></a>Data Types</h3>
+
+<h4><a name="data_type_intro"></a>Introduction</h4>
+
+<p>The data types are defined in <em>$CCP4I_top/etc/types.def</em>. This file
+is formatted such that when it is read by the CCP4i program, all of the
+data is loaded into an array called <em>typedef</em>. A
+<a href="#types_def" target="_self">more detailed
+description</a> can be found below.</p>
+
+<p>The data type of a parameter determines how it will be drawn on the
+interface (as button, entry field or menu). </p>
+
+<p>Note that there is a default width for entry fields (<em>i.e.</em> a maximum
+number of characters that can be entered) but this can be over-ridden
+by the <em>-width</em> keyword of the
+<em><a href="CreateLine.html" target="_self">CreateLine</a></em>
+command.</p>
+
+<p><a name="data_checking"></a>The data type also informs the input checking
+within the CCP4i program. The input checking is currently limited but may be
+extended in future so it is advisable to implement sensible data types now.
+If the user enters a value which fails the data checking, the entry field is
+highlighted in a contrasting colour but there is no block on the user continuing
+to run a program.</p>
+
+<p>There is one data type which is not defined in the <em>types.def</em>
+file <!--ask liz which one-->. Most menus are specific to one task interface
+and so the specification of menus is usually done in the .tcl file using the
+<a href="task_windows.html#menus" target="_self"><em>DefineMenu</em></a>
+command.</p>
+
+<h4><a name="list"></a>List of Data Types</h4>
+
+<dl>
+<dt><strong>_logical</strong></dt>
+<dd>Parameters of this type will be draw as a button and can have value
+1 (true) or 0 (false).</dd>
+
+<dt><strong>_real, _positivereal, _negativereal</strong></dt>
+<dd>Parameters of this type will be drawn as an entry widget 6 characters wide.
+The data checking expects numerical input, with values greater than or equal
+to 0.0 for <em>_positivereal</em>, and values less than or equal to 0.0 for
+<em>_negativereal</em>.</dd>
+
+<dt><strong>_int, _positiveint, _negativeint</strong></dt>
+<dd>Parameters of this type will be drawn as an entry widget 6 characters wide.
+The data checking expects integer numerical input, with values greater or equal
+to 0 for <em>_positiveint</em>, and values less than or equal to 0 for
+<em>_negativeint</em>.</dd>
+
+<dt><strong>_fraction</strong></dt>
+<dd>Parameters of this type will be drawn as an entry widget 5 characters wide.
+The data checking expects numerical input with values greater than or equal
+to 0.0 and less than or equal to 1.0. </dd>
+
+<dt><strong>_text</strong></dt>
+<dd>Parameters of this type will be drawn as an entry widget 10 characters wide.
+Data checking will remove leading or trailing spaces, but will preserve
+other spaces.</dd>
+
+<dt><strong>_title_text</strong></dt>
+<dd>Parameters of this type will be drawn as an entry widget which is the
+maximum width for task titles.</dd>
+
+<dt><strong>_default_dirs</strong></dt>
+<dd>Parameters of this type are drawn as a menu which lists the user-defined
+project directories (these parameters are usually the first input field
+in any file input line and provide a mechanism for the user to move about the
+file system quickly).</dd>
+
+<dt><strong>_space_group</strong></dt>
+<dd>An entry widget is drawn. Data checking requires the input to correspond
+to the space group number code or name in the <em>symop.lib</em> file.</dd>
+
+<dt><strong>_angle</strong></dt>
+<dd>An entry widget is drawn. Data checking requires numerical input with
+values in the range -360.0 to 360.0.</dd>
+
+<dt><strong>_resolution</strong></dt>
+<dd>An entry widget is drawn. Data checking requires numerical input with
+value greater than 0.0.</dd>
+
+<dt><strong>_cell_length</strong></dt>
+<dd>An entry widget is drawn. Data checking requires numerical input with
+values in the range 0.0 to 9999.0.</dd>
+
+<dt><strong>_cell_angle</strong></dt>
+<dd>An entry widget is drawn. Data checking requires numerical input with
+values in the range 0.0 to 180.0.</dd>
+
+<dt><strong>_b_value</strong></dt>
+<dd>An entry widget is drawn. Data checking requires numerical input with
+values in the range -100 to 1000.</dd>
+
+<dt><strong>_sort_order</strong></dt>
+<dd>A menu is drawn listing all possible sort orders for HKL indices.</dd>
+
+<dt><strong>_xyz_sort_order</strong></dt>
+<dd>A menu is drawn listing all possible sort orders of XYZ.</dd>
+
+<dt><strong>_chain_id</strong></dt>
+<dd>An entry widget is drawn.</dd>
+
+<dt><strong>_res_id</strong></dt>
+<dd>An entry widget is drawn.</dd>
+</dl>
+
+<h3><a name="file_types"></a>File Types</h3>
+
+<p>Look in the file for now - <font color="#FF0000">we need a table here</font>!</p>
+
+<h3><a name="mtz_column_types"></a>MTZ Column Types</h3>
+
+<p>It is important to give any parameters which define input MTZ columns
+the correct type, as the CCP4i program will automatically present the user
+with a list of the columns of the appropriate type in an input file. Where
+the user is required to give the name for a column in an output file, the
+parameter should have the type <em>_mtz_label_out</em>.</p>
+
+<dl>
+<dt><strong>_mtz_label_out</strong></dt>
+<dd>Parameters of this type will be drawn as an entry field for the user
+to enter a column name.</dd>
+</dl>
+
+<p>All other <em>_mtz_label</em> parameters will be drawn as a menu which lists
+the columns in the file of the appropriate type.</p>
+
+<table border="1">
+<tr><th>label type</th><th>column type</th><th>contents</th></tr>
+<tr><td>_mtz_label_h</td><td align="center">H</td><td>reflection index h,k,l</td></tr>
+<tr><td>_mtz_label_f</td><td align="center">F</td><td>structure amplitude</td></tr>
+<tr><td>_mtz_label_d</td><td align="center">D</td><td>anomalous difference</td></tr>
+<tr><td>_mtz_label_sig</td><td align="center">Q, W</td><td>standard deviation
+and weight</td></tr>
+<tr><td>_mtz_label_w</td><td align="center">W, Q</td><td>weight and
+standard deviation</td></tr>
+<tr><td>_mtz_label_dw</td><td align="center">W, Q</td><td>deviation of
+anomalous differences</td></tr>
+<tr><td>_mtz_label_phi</td><td align="center">P</td><td>phase angle in degrees</td></tr>
+<tr><td>_mtz_label_hl</td><td align="center">A</td><td>phase probability coefficient
+(Hendrickson/Lattman)</td></tr>
+<tr><td>_mtz_label_j</td><td align="center">J</td><td>intensity</td></tr>
+<tr><td>_mtz_label_y</td><td align="center">Y</td><td>M/ISYM</td></tr>
+<tr><td>_mtz_label_freer</td><td align="center">I</td><td>FreeRflag</td></tr>
+<tr><td>_mtz_label_r</td><td align="center">R</td><td>any other real parameter</td></tr>
+<tr><td>_mtz_label_i</td><td align="center">I</td><td>any other integer parameter</td></tr>
+<tr><td>_mtz_label</td><td align="center">*</td><td>anything</td></tr>
+</table>
+
+<h3><a name="types_def"></a>The <em>types.def</em> File</h3>
+
+<p>The data types are defined in <em>$CCP4I_top/etc/types.def</em>. This file
+is formatted such that when it is read by the CCP4i program, all of the
+data is loaded into an array called <em>typedef</em>.</p>
+
+<p>At the top of this file a small number of type classes are defined - these
+are currently:</p>
+
+<ul>
+<li>file</li>
+<li>int</li>
+<li>logical</li>
+<li>real</li>
+<li>mtz_label</li>
+<li>menu</li>
+<li>varmenu</li>
+<li>list</li>
+<li>datalist</li>
+<li>default_dir</li>
+</ul>
+
+<p>Associated with each class is a list of the properties that will be
+specified for each data type of that class. For example, the class
+<tt><strong>file</strong></tt> has the properties:</p>
+
+<pre>
+format ext description viewer viewercmd
+</pre>
+
+<p>In the main part of the file there is a statement for each data type
+of the form:</p>
+
+<pre>
+set typedef(_pdb_file) { file PDB &quot;.pdb&quot; &quot;pdb coordinates file&quot;
+{ &quot;List file&quot; &quot;View in RasMol&quot; } {TextViewer RunRasMol} }
+</pre>
+
+<p>This is a definition for the <strong><tt>_pdb_file</tt></strong> type. The Tcl
+<tt>set</tt> command is used to set the <tt>_pdb_file</tt> element of the
+<tt>typedef</tt> array to a list of the <tt>file</tt> properties.</p>
+
+<p>The first item of the property list is the word 'file' which is necessary
+to clarify that <tt>_pdb_file</tt> belongs to the <tt>file</tt> class and
+that the rest of the list will be <tt>file</tt> properties. So, for example,
+the second and third items on the file class list of properties are 'ext'
+(the default file extension) and 'description'. For the type <tt>_pdb_file</tt>,
+these properties have the values '<tt>.pdb</tt>' and
+'<tt>pdb coordinates file</tt>.</p>
+
+<!-- Not very useful comment - pjx
+<p><font color="#ff0000">More explanation needed but not a priority.</font></p>
+-->
+
+<p>Within the CCP4i program, the commands <tt>GetTypeInfo</tt> and <tt>GetViewerList</tt>
+can be used to access the information on data types stored in the <em>typedef</em>
+array (see
+<a href="indexframeset.html" target="_PROGRAMMERSDOCS">Library of CCP4i Commands</a>).</p>
+
+</body>
+</html>

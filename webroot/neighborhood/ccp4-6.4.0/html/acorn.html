@@ -1,0 +1,1726 @@
+<html>
+<head>
+   <title>CCP4 Program Suite : acorn</title>
+   <meta name="generator" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+</head>
+<body>
+
+<!-- ::INDEX_INFO::ACORN::Supported::Native protein data at atomic resolution:: Molecular Replacement, Sayre Equation and Dynamic Density Modification for the determination of a protein structure:::::::: -->
+
+<h1>ACORN (CCP4: Supported Program)</h1>
+<h2>NAME</h2>
+<p><b>acorn</b>
+- <i>ab initio</i> procedure for the determination of protein structure using atomic resolution data or artificially extended data to atomic resolution,
+and for finding sub-structures from anomalous or isomorphous differences.</p>
+
+<h2>SYNOPSIS</h2>
+
+<p><b>acorn hklin</b> <i>foo_in.mtz</i> <b>hklout</b> <i>foo_out.mtz</i>
+[<b>xyzin</b> <i>foo_in.pdb</i>]<br />
+[<a href="#keywords">Keyworded input</a>]</p>
+
+
+<h2>CONTENTS</h2>
+
+<ol>
+<li><a href="#descgeneral"><b>DESCRIPTION</b></a></li>
+<ul> 
+<li><a href="#descgeneral"><b>General Description</b></a></li>
+<li><a href="#desacorn-mr"><b>ACORN-MR</b></a></li>
+<li><a href="#desacorn-ph"><b>ACORN-PHASE</b></a></li>
+<li><a href="#scenarios"><b>SCENARIOS</b></a></li>
+</ul>
+<li><a href="#keywords"><b>KEYWORDED INPUT</b></a></li>
+<ul>
+<li><a href="#general"><b>General Keywords to select data, select model and preform miscellaneous functions</b></a></li>
+<li><a href="#ACORN-MR"><b>Keywords Specific for ACORN-MR</b></a></li>
+<li><a href="#ACORN-PHASE"><b>Keywords Specific for ACORN-PHASE</b></a></li>
+</ul>
+<li><a href="#files"><b>INPUT AND OUTPUT FILES</b></a></li>
+<li><a href="#print"><b>PRINT OUTPUT</b></a></li>
+<li><a href="#examples"><b>EXAMPLES</b></a></li>
+<ol type="a">
+<li><a name="#ex-known"></a><b>Examples starting from some known atomic coordinates.</b></li>
+
+<ul>
+<li><a href="#example1"><b>Example 1: Use a constellation of correctly placed atoms as the starting point.
+For example, a Zn atom placed from sharpened atomic resolution Patterson.</b></a></li>
+<li><a href="#example2"><b>Example 2: Use a constellation of correctly placed anomalous scatterers as the starting point.
+These may be sulphurs found from the anomalous diffraction data.</b></a></li>
+<li><a href="#example2"><b>Example 3: Use a fragment already positioned by some other MR procedure
+(<i>e.g.</i> AMoRe).</b></a></li>
+<li><a href="#example4"><b>Example 4: Test for the best result from 10 possible heavy atoms
+positioned from the Harker vectors alone, <i>i.e.</i> they are not necessarily on the same origin or hand.</b></a></li>
+</ul>
+</ol>
+
+<ol type="a" start="2">
+<li><a name="#ex-random"></a><b>Examples starting from a large set of randomly positioned atoms.</b></li>
+<ul>
+<li><a href="#example5"><b>Example 5: Use a randomly placed single atom as a starting
+point for a complete structure solution. This is usually successful for metallo-proteins,
+for finding substructures from 
+isomorphous or anomalous difference data and for solving small molecular structures.</b></a></li>
+<li><a href="#example6"><b>Example 6: Use a randomly placed single atom as a starting
+point to determine the position of heavy atoms in a protein structure from
+the anomalous differences only.</b></a></li>
+<li><a href="#example7"><b>Example 7: Use a randomly placed single atom as a starting
+point to determine the position of the sub-structure of anomalously scattering
+atoms in a protein structure from both the anomalous and isomorphous differences.</b></a></li>
+<li><a href="#example8"><b>Example 8: Use a randomly placed single atom as a starting
+point to solve a small molecular structure.</b></a></li>
+</ul>
+</ol>
+
+<ol type="a" start="3">
+<li><a name="#ex-molrep"></a><b>Examples starting from a molecular replacement search.</b></li>
+
+<ul>
+<li><a href="#example9"><b>Example 9: Use standard alpha helices as search models for a complete
+molecular replacement (MR) search.</b></a></li>
+<li><a href="#example10"><b>Example 10: Use standard alpha helices as search models for random MR search.</b></a></li>
+<li><a href="#example11"><b>Example 11: Use a fragment from a similar structure for MR search.</b></a></li>
+</ul>
+</ol>
+
+<ol type="a" start="4">
+<li><a name="#ex-restart"></a><b>Examples (re)starting using previously determined results.</b></li>
+
+<ul>
+<li><a href="#example12"><b>Example 12: Use externally determined phases and weights
+as a starting point.</b></a></li>
+<li><a href="#example13"><b>Example 13: Restart using results from previous run of ACORN.</b></a></li>
+<li><a href="#example14"><b>Example 14: Use the results from AMoRe given as Euler angles and translation
+components to position the model atoms correctly.</b></a></li>
+</ul>
+</ol>
+                                                                                
+<ol type="a" start="5">
+<li><a name="#ex-extension"></a><b>Examples extending data resolution to 1.0 &#197; and starting with positioned fragments or experimental phases.</b></li>
+                                                                                
+<ul>
+<li><a href="#example15"><b>Example 15: Use all extended reflections in the file and start from a heavy atom.</b></a></li>
+<li><a href="#example16"><b>Example 16: Use the extended reflections within 50.0 to 1.0 &#197; and start from Molecular Replacement model.</b></a></li>
+<li><a href="#example17"><b>Example 17: Use the extended reflections within 50.0 to 1.0 &#197; and start from experimental phases.</b></a></li>
+</ul>
+</ol>
+                                                                                
+
+<li><a href="#author"><b>AUTHOR</b></a></li>
+<li><a href="#references"><b>REFERENCES</b></a></li>
+<li><a href="#seealso"><b>SEE ALSO</b></a></li>
+</ol>
+
+<h2><a name="descgeneral"></a>DESCRIPTION</h2>
+
+<p>ACORN [<a href="#reference1">1</a>] [<a href="#reference2">2</a>] [<a href="#reference1">3</a>] [<a href="#reference2">4</a>] 
+is a flexible and fast <i>ab initio</i>
+procedure to solve a structure when the data are sufficient to separate atom sites in the 
+E maps. There are three catagories where this holds:
+<ol type="a">
+<li>proteins with diffraction data to 1.2&#197; or artificially extended data to 1.0&#197; with observed data as low as 1.7&#197;;</li>
+<li>small molecules where the data clearly reach to atomic resolution;</li>
+<li>well-separated sub-structures such as Se or S atoms, or other
+anomalous/isomorphous scatterers, where even low resolution data will suffice.</li>
+</ol>
+
+<p>The initial phase sets are generated from the atomic coordinates of a putative
+structural fragment. The fragment can be made up in various ways. Firstly, in simple cases,
+such as metalloproteins, small molecules or for finding
+sub-structures, it is sufficient to make many tests starting from a single randomly placed
+atom. Secondly, complete proteins can certainly be solved starting from their sub-set of correctly positioned
+heavier atoms, such as the sulphur sites which can be found from their anomalous contributions.
+Thirdly, a molecular replacement solution will provide a good starting set of phases for a protein
+which diffracts to high resolution. The starting model may consist of the
+whole contents of the asymmetric unit, a domain, or a smaller fragment such as a standard alpha helix.
+The size of the fragment can be less than 5% of the scattering matter of
+the unit cell. The fragments can in principle be positioned using MR searches with normalised data within ACORN.</p>
+
+<p>Alternatively phase information from other procedures, for instance low resolution phases
+previously determined for a protein for which there is now atomic resolution data available,
+can be used to initiate the procedure.</p>
+
+<p>The starting phase sets are refined primarily using Dynamic Density Modification (<a href="#formuladdm">DDM</a>),
+supplemented by Patterson superposition (<a href="#formulasupp">SUPP</a>), real space Sayre
+Equation Refinement (<a href="#formulaser">SER</a>) and weak density enhancement (ENHS). 
+</p>
+
+<p>The observed reflections are divided into three groups: strong, medium and weak
+reflections according to their normalized structure factors (E-values).
+Correlation coefficients (CCs) 
+between the observed and calculated E-values for
+each class are used in different ways throughout the procedures.
+All reflections are used to select likely trial sets; the strong and weak reflections
+are used in the phase refinement and the CC for the medium reflections
+acts as the figure of merit. This is a major strength of ACORN: this CC
+provides a simple and unequivocal criterion of correctness for a phase set.</p>
+
+<p>When the resolution for observed reflections is only between 1.2&#197; and 1.7&#197; the
+<a href="unique.html"><b>UNIQUE</b></a> procedure has to be run first to extend data 
+resolution to 1.0&#197;. Then in ACORN an expected value of E=1.0 will be given 
+to all extended reflections using keyword <a href="#exte"><b>EXTEND</b></a>.</p>
+
+<p>The program has two main parts: ACORN-MR and ACORN-PHASE.</p>
+
+<h3><a name="desacorn-mr"></a>ACORN-MR:</h3>
+<p>ACORN-MR allows the evaluation of multiple starting models.
+These are required</p>
+<ol type="a">
+<li>for the MR positioning of small fragments of a protein; such as an
+idealised alpha helix or a well characterised domain</li>
+<li>for the use of a single atom as a model, useful for a metalloprotein</li>
+<li>to position sub-substructures where starting from a single randomly placed atom
+is the essence of the application.</li>
+</ol>
+<p>In all applications where a previously positioned fragment is available, ACORN-MR is not 
+required.</p>
+
+<p>Furthermore, ACORN-MR provides an alternative molecular replacement search procedure
+using normalised structure factors generated from the observed data and the model.
+When the data are of a sufficiently high resolution and the fit between model
+and structure is very good, this works well. The best results have been obtained
+using idealised alpha helices which may make up only a small part of the new structure
+but which fit exactly.
+When searching for domains or whole molecules using ACORN-MR it is
+not necessary to use atomic resolution data. In fact the results from other MR programs
+using lower resolution data may be obtained more quickly, and be more reliable.</p>
+
+<p>If the &quot;model&quot; is a single atom, a rotation
+function search is not required, and the MR &quot;translational&quot; search
+allows the systematic trial of all starting points in the Cheshire Cell.
+This procedure can be used to find anomalous scatterers from anomalous
+data where the resolution can be as low as 3&#197; to 4&#197;.
+The grid needs to be about max_resln/3.0</p>
+
+<p>The results are scored using the highest CCs for all reflections, and typically
+the best 100 or so are tested as starting sets for phase refinement using ACORN-PHASE.</p>
+
+<p>The solutions from the rotation function are given in terms of the Eulerian
+angles: alpha, beta and gamma using the convention described by
+Tony Crowther as in all CCP4 programs, <i>e.g.</i> ALMN, LSQKAB,
+PDBSET, DM and AMoRe. The required ranges for the translational search are governed by the
+space group and will be chosen by the program.
+</p>
+
+<h3><a name="desacorn-ph"></a>ACORN-PHASE:</h3>
+<p>ACORN-PHASE refines a starting set of phases using DDM taking the CC for the medium E-values
+to indicate a likely solution. There are four phase refinement procedures in the suite, 
+of which DDM is the most important:</p>
+<ul>
+<li>Dynamic Density Modification (DDM) eliminates the negative
+densities, and truncates the highest density (for the first cycle this will be at the sites of 
+the starting coordinates).
+The rest of density is modified according to a formula based on the standard deviation of the 
+map and the cycle number. There are three kinds of map coefficients used in DDM and called DDM0, DDM1 and DDM2, see <a href="#ddmk"><b>DDMK</b></a>.</li>
+<li>Patterson superposition (SUPP) generates a semi-sharpened
+Patterson sum-function map from the starting fragment. </li>
+<li>Sayre Equation Refinement (SER) is carried out in real space using 
+Fast Fourier Transforms instead of working directly with the phase 
+relationships; the equations are identical but the real space formulation is much faster.</li>
+<li>Weak density enhancement (ENHS) is used to find an envelope and raise the weak densities within the envelope.</li>
+</ul>
+
+<p>ACORN-PHASE first uses DDM. If no solution can be found,
+a few cycles of Sayre Equation Refinement or one cycle of enhancement may modify the phase set sufficiently to
+allow the DDM algorithm to function more effectively. The number of trials
+can be set by the user. See <a href="#ntry"><b>NTRY</b></a>.</p>
+
+<p>ACORN will stop automatically if the value of CC for the medium E-values in DDM
+becomes greater than a preset value. The default value is determined by ACORN, but this
+value needs to be adjusted according to the data quality, particularly
+when determining anomalous scatterers from SAD or MAD data.
+Maps calculated from the refined phases are normally excellent; proteins can be built
+automatically and for sub-structures the highest peaks indicate the true sites.</p>
+
+<h4>Reflection input:</h4>
+<p>ACORN reads pre-calculated E-values and amplitudes. Within CCP4 E-values can be generated
+by <a href="ecalc.html"><b>ECALC</b></a>. 
+The data resoluton can be extended using CCP4 program <a href="unique.html"><b>UNIQUE</b></a> 
+and then ACORN uses keyword <a href="#exte"><b>EXTEND</b></a> to control how to use the extended reflections. 
+Known phases and weights can be input and refined by ACORN-PHASE directly.
+Only the best set of phases and weights, that with the highest CC for the medium reflections,
+is output to the <i>foo_out.mtz</i> file.</p>
+
+<h3><a name="scenarios"></a>SCENARIOS:</h3>
+
+<h4>Solving an atomic resolution protein structure with a known starting fragment:</h4>
+<p>Some known atom positions are available. These may be:</p>
+<ol type="a">
+<li>anomalous scatterers such as  a metal site found in a metallo-protein. <a href="#example1"><b>Example 1</b></a>.</li>
+<li>a sub-structure such as the sulphurs or seleniums. <a href="#example2"><b>Example 2</b></a>.</li>
+<li>a model obtained from some MR search. <a href="#example3"><b>Example 3</b></a>.</li>
+</ol>
+
+<p>ACORN-PHASE will refine the initial phases calculated from these known atom positions and produce an unbiased map.</p>
+
+<ol type="a" start="4">
+<li>If a set of possible atom sites is available which are not necessarily consistent,
+and which may not be on the same origin or hand, ACORN-PHASE can test each site in turn and select the best
+phase set.
+For instance they may be solutions to a Patterson superposition search of the Harker sections.
+<a href="#example4"><b>Example 4</b></a>.</li>
+</ol>
+
+<h4>Solving an atomic resolution metallo-protein structure or finding the 
+sub-structure or solving a small molecule structure by testing many randomly 
+placed atoms:</h4>
+
+<ol type="a" start="5">
+<li>It is expected that the structure contains a heavy atom:
+many randomly positioned single atom sites are checked, the best 100 or so sets refined,
+and the best phase set  of these output. 
+<a href="#example5"><b>Example 5</b></a>. <a href="#example6"><b>Example 6</b></a>. 
+<a href="#example7"><b>Example 7</b></a>. <a href="#example8"><b>Example 8</b></a>.</p></li> 
+<li>Solving a small molecule structure:<br />
+Again, many randomly positioned single atom starting sites are checked and refined, 
+and the best phase set output.
+The default parameters are set for the determination of
+a macromolecular structure, so it is best to set the resolution to the highest avalable,
+and to make sure the grid sampling is about 0.3&#197;.
+The <a href="#cont">CONTENTS</a> list should also be given
+if the Sayre Equation is to be used. <a href="#example8"><b>Example 8</b></a>.</li>
+
+<li>To determine a sub-structure:<br />
+Many randomly positioned single atom starting sites are checked and refined, and the best phase set
+output. Of course atomic resolution data is not required to find the sub-structure
+sites. <a href="#example6"><b>Example 6</b></a>. <a href="#example7"><b>Example 7</b></a>.</li>
+</ol>
+
+<h4>Carrying out a MR search as a preliminary to phase refinement:</h4>
+
+<ol type="a" start="8">
+<li>Most proteins contain some standard fragments such as Alpha helices or Beta sheets.
+There is a coordinate library for such standard fragments available in $CLIBD/fraglib/.
+Good results have been obtained searching for the correct position
+of idealised Alpha helices (main chain plus CB) which then provide the starting fragment
+for ACORN-PHASE. Other motifs or standard fragments can be used in the same way.
+<a href="#example9"><b>Example 9</b></a>. <a href="#example10"><b>Example 10</b></a>.
+<a href="#example11"><b>Example 11</b></a>.</li>
+</ol>
+
+<h4>Using some prior phase information:</h4>
+<ol type="a" start="9">
+<li>Some known phase information is available: use ACORN-PHASE to refine it. <a href="#example12"><b>Example 12</b></a>.</li>
+</ol>
+
+<h4>There is an option to restart the procedure:</h4>
+<ol type="a" start="10">
+<li>ACORN can be restarted using likely solutions from a previous run or using solutions from AMoRe.
+<a href="#example13"><b>Example 13</b></a>. <a href="#example14"><b>Example 14</b></a>.</li>
+</ol>
+
+<h4>Using extended reflections:</h4>
+<ol type="a" start="11">
+<li>Use a known heavy atom position with all extended reflections. <a href="#example15"><b>Example 15</b></a>.</li>
+<li>Use MR model from MOLREP with the extended reflections from 50.0 to 1.0 &#197;. <a href="#example16"><b>Example 16</b></a>.</li>
+<li>Use experimental phases from SAD with the extended reflections from 50.0 to 1.0 &#197;. <a href="#example17"><b>Example 17</b></a>.</li>
+</ol>
+                                                                                
+
+<h2><a name="keywords"></a>KEYWORDED INPUT</h2>
+
+<p>The data control is keyworded. Only the
+first 4 characters of a keyword are significant. They can be in
+any order, except END (if present) which must be last. Numbers and characters
+in &quot;[ ]&quot; are optional. Anything input on a line after an exclamation
+mark or hash (&quot;!&quot; or &quot;#&quot;) is ignored and lines can be continued
+by using a minus sign.</p>
+
+<p> It is essential to give LABIN to describe and define
+the input data, and one keyword to direct the mode of ACORN (either to phase, restart
+or do a MR search). Most other keywords are optional.</p>
+
+<p>The keywords can be subdivided into groups:
+<ul>
+<li><a href="#general"><b>General Keywords to select data and model</b></a></li>
+<li><a href="#miscell"><b>Keywords for miscellaneous functions</b></a></li>
+<li><a href="#ACORN-MR"><b>Keywords Specific for ACORN-MR</b></a></li>
+<li><a href="#ACORN-PHASE"><b>Keywords Specific for ACORN-PHASE</b></a></li>
+</ul></p>
+
+<h3><a name="general"></a>General keywords to select the data and model:</h3>
+
+<ul>
+<li><a href="#refsel"><b>Reflection Selection Keywords</b></a></li>
+<blockquote>
+<a href="#labi"><b>LABIN</b></a>,
+<a href="#ecut"><b>ECUT</b></a>,
+<a href="#estr"><b>ESTRONG</b></a> or
+<a href="#nstr"><b>NSTRONG</b></a>,
+<a href="#ewea"><b>EWEAK</b></a> or
+<a href="#nwea"><b>NWEAK</b></a>,
+<a href="#excl"><b>EXCLUDE</b></a>,
+<a href="#reso"><b>RESOLUTION</b></a>,
+<a href="#exte"><b>EXTEND</b></>
+<a href="#noexte"><b>NOEXTEND</b></>
+</blockquote>
+
+<li><a href="#atmsel"><b>Atom Selection Keywords</b></a></li>
+<blockquote>
+<a href="#nafr"><b>NAFRAG</b></a>,
+<a href="#nsta"><b>NSTART</b></a>,
+<a href="#ranstart"><b>POSI</b></a>,
+<a href="#ratm"><b>RATM</b></a>
+</blockquote>
+</ul>
+
+<h3><a name="miscell"></a>Keywords to restart the procedure, and for miscellaneous functions:</h3>
+
+<ul>
+<li><a href="#restart"><b>Restart the program using results from a previous run</b></a></li>
+<blockquote><a href="#init"><b>INITIAL</b></a></blockquote>
+
+<li><a href="#miscell"><b>Keywords for miscellaneous functions</b></a></li>
+<blockquote>
+<a href="#cont"><b>CONTENT</b></a>,
+<a href="#grid"><b>GRID</b></a>,
+<a href="#labo"><b>LABOUT</b></a>,
+<a href="#seed"><b>SEED</b></a>,
+<a href="#titl"><b>TITLE</b></a>,
+<a href="#end"><b>END</b></a>.
+</blockquote>
+</ul>
+
+<h3><a name="refsel"></a>Keywords to Select reflections, and organise input data:</h3>
+
+<h3><a name="labi"></a>LABIN &lt;program label&gt;=&lt;file label&gt;...</h3>
+
+<p>(COMPULSORY)</p>
+<p>This keyword defines which items are to be used in the calculation.
+The following program labels can be assigned, of which
+the first three are essential. E is the normalised amplitude used as the target for the
+structure solution. It may be based on the amplitude for a whole structure
+or on an anomalous or isomorphous difference, or an estimate of FH or FA derived from both
+disperive and anomalous differences. See <a href="ecalc.html"><b>ECALC</b></a>.</p>
+<pre>
+  E     FP     SIGFP   [PHIN]     [WTIN]    [FCIN]    [FT]   PHIFT]
+  E     Normalized structure factors.
+  FP    Observed structure factors.
+  SIGFP Sigma of FP.
+  PHIN  Known phases.
+  WTIN  Weights of known phases.
+  FCIN  Calculated magnitudes with the known phases.
+  FT    Amplitudes from final structure model.
+  PHIFT Phases from final structure model.
+</pre>
+<p>If PHIFT is assigned ACORN will calculate phase error with proper origin shifts
+for both enantiomorphs.</p>
+
+<p>Example: To calculat phase errors.</p>
+<pre>
+  LABI E=EO FP=FP SIFFP=SIGFP FT=FC PHIFT=PHIC
+</pre>
+
+<p>If PHIN and WTIN are assigned they are used as
+the set of initial phases with weights for ACORN-PHASE. If WTIN is not given, all weights
+default to 1.0. If FCIN is given ACORN will calculate the weights from the magnitudes.</p>
+
+<p>Example: Use the experimental phases PHIB and FOM as the initial phase set.</p>
+<pre>
+  LABI E=EO FP=FP SIFFP=SIGFP PHIN=PHIB WTIN=FOM
+  LABI E=EO FP=FP SIFFP=SIGFP PHIN=PHIB FCIN=FCcal
+</pre>
+
+<h3><a name="ecut"></a>ECUT &lt;ecut&gt;</h3>
+
+<p>(optional) - Default: &lt;ecut&gt; = 5.0</p>
+<p>The observed reflections with E-values greater than &lt;ecut&gt; will be rejected and treated as extended reflections.
+This can be used to exclude outliers.</p>
+
+<p>Example:  ECUT 4.5 </p>
+
+<h3><a name="estr"></a>ESTRONG &lt;estrong&gt;</h3>
+
+<p>(optional - alternative to <a href="#nstr"><b>NSTRONG</b></a>) - Default: &lt;estrong&gt; = value determined by ACORN.</p>
+<p>The lower limit of E-values for the &quot;strong&quot; class of observed reflections.
+These are used in the phase refinement,
+but ACORN will calculate final phases and weights for all reflections
+and output them to <i>foo_out.mtz</i>.</p>
+
+<p>Example:   ESTRONG 1.0 </p>
+
+<h3><a name="nstr"></a>NSTRONG &lt;nstrong&gt;</h3>
+
+<p>(optional - alternative to <a href="#estr"><b>ESTRONG</b></a>) - Default: use value of &lt;estrong&gt;
+and derive &lt;nstrong&gt; as the number of observed reflections this selects.</p>
+<p>The number of strong observed reflections to be used.
+The program will set &lt;estrong&gt; appropriately.</p>
+
+<p>Example: Use 25000 strong reflections.</p>
+<pre>
+  NSTRONG 25000
+</pre>
+
+<h3><a name="ewea"></a>EWEAK &lt;eweak&gt;</h3>
+
+<p>(optional - alternative to <a href="#nwea"><b>NWEAK</b></a>) - Default: &lt;eweak&gt; = 0.1</p>
+<p>The upper limit of E-values for the &quot;weak&quot; class of observed reflections.
+These are only used in the SER refinement of phases.</p>
+
+<p>Example: The reflections with E-values less than 0.2 make up
+the &quot;weak&quot; class of reflections.</p>
+<pre>
+  EWEAK 0.2
+</pre>
+
+<h3><a name="nwea"></a>NWEAK &lt;nweak&gt;</h3>
+
+<p>(optional - alternative to <a href="#ewea"><b>EWEAK</b></a>) - Default: use EWEAK 0.1
+and derive &lt;nweak&gt; as the number of observed reflections this selects.</p>
+<p>The number of weak reflections to be used.
+The program will set &lt;eweak&gt; appropriately.</p>
+
+<p>Example: Use 500 weak reflections.</p>
+<pre>
+  NWEAK 500
+</pre>
+
+<h3>The &quot;medium&quot; class of reflections</h3> 
+
+<p>The medium observed reflections are all those with E-values
+between &lt;eweak&gt; and &lt;estrong&gt;. These reflections are not used for 
+phase refinement and provide the cross validation set. If the CC for this class
+increases to a reasonable value, it indicates a solution.</p>
+
+<h3><a name="excl"></a>EXCLUDE  &lt;sigcut&gt;</h3>
+
+<p>(optional) - Default: &lt;sigcut&gt;=0.0. Use all the observed reflections.</p>
+<p>The reflections with FP less than &lt;sigcut&gt;*SIGFP will be rejected and treated as the extended reflections.</p>
+
+<p>Example: The reflections with FP less than 2.0*SIGFP will be rejected.</p>
+<pre>
+  EXCL 2.0
+</pre>
+
+<h3><a name="reso"></a>RESOLUTION &lt;res_low&gt; &lt;res_high&gt;</h3>
+
+<p>(optional) - Default: Use all observed reflections in the file.</p>
+<p>The resolution range of the observed reflections to be used - resolution limits are given
+in &#197; in either order.</p>
+
+<p>Example: Use observed reflections from 20.0 to 1.5 &#197;.</p>
+<pre>
+  RESO 20.0 1.5
+or
+  RESO 1.5 20.0
+</pre>
+                                                                                
+<h3><a name="exte"></a>EXTEND &lt;res_low&gt; &lt;res_high&gt;</h3>
+                                                                                
+<p>(optional) - Default: Use all extended reflections.</p>
+<p>Giving EXTE without other parameters: to use all extended reflections in the file that is pre-provided by CCP4 program <a href="unique.html"><b>UNIQUE</b></a>.</p>
+<p>&lt;res_low&gt; and &lt;res_hight&gt; give the resolution range of the extended reflections to be used - resolution limits are given
+in &#197; in either order.</p>
+                                                                                
+<p>Example: Use extended reflections from 50.0 to 1.0 &#197;.</p>
+<pre>
+  EXTE 50.0 1.0
+or
+  EXTE 1.0 50.0
+</pre>
+                                                                                
+<h3><a name="noexte"></a>NOEXTEND </h3>
+                                                                                
+<p>(optional) - Do not use any extended reflections.</p>
+                                                                                
+<p>Example: </p>
+<pre>
+  NOEXTE
+</pre>
+                                                                                
+
+<h3><a name="atmsel"></a>Keywords to Select atoms for initial fragment</h3>
+
+<p>The coordinates given in XYZIN can be used in various ways; the default option
+is to use them all as input for a MR search or for phase refinement.</p>
+<p>If no control keyword is given, the program defaults to doing phasing refinement
+with all atoms, equivalent to
+<a href="#nafr"><b>NAFRAG ALL</b></a> and <a href="#ranstart"><b>POSI 1</b></a>.</p>
+<p>It is also possible to use only some of them beginning from different starting points
+in the file. This is controlled by combinations of the keywords  
+<a href="#nafr"><b>NAFRAG</b></a>, <a href="#nsta"><b>NSTART</b></a> and
+<a href="#ranstart"><b>POSI</b></a>.</p>
+
+<h3><a name="nafr"></a>NAFRAG &lt;nafrag&gt; [ALL]</h3>
+
+<p>(optional) - Default: ALL <i>i.e.</i> use all atoms in XYZIN (assigned to <i>foo_in.pdb</i>)</p>
+<p>Pick up &lt;nafrag&gt; atoms from <i>foo_in.pdb</i>.</p>
+
+<p>Example: The fragment uses 50 atoms starting from the first from <i>foo_in.pdb</i> file.</p>
+<pre>
+  NAFRAG 50 
+</pre>
+
+<h3><a name="nsta"></a>NSTART &lt;nstart&gt;</h3>
+
+<p>(optional) - Default: &lt;nstart&gt; = 1</p>
+<p>The fragment runs from the &lt;nstart&gt;th atom in
+<i>foo_in.pdb</i> with a length of &lt;nafrag&gt;.</p>
+
+<p>Example: The fragment consists of atom 5 to 14 from <i>foo_in.pdb</i>.</p>
+<pre>
+  NAFRAG 10
+  NSTART  5
+</pre>
+
+<h3><a name="ranstart"></a>POSI [&lt;nrand&gt;]</h3>
+
+<p>(optional) - Default: &lt;nrand&gt; = 1</p>
+<p>&lt;nrand&gt; randomly selected starting points will be chosen from 
+<i>foo_in.pdb</i> file, each with length &lt;nafrag&gt;.
+For example if there are 10 possible heavy atom sites in <i>foo_in.pdb</i>, 
+you can use the following input to test all ten of the positions one by one.</p>
+
+<p>Example: Use 10 sets of one atom fragments.</p>
+<pre>
+  NAFRAG 1
+  POSI 10
+</pre>
+
+<h3><a name="ratm"></a>RATM [&lt;nratm&gt;] [&lt;percentage&gt;]</h3>
+
+<p>(optional) - Default: &lt;nratm&gt; = 50000. &lt;percentage&gt; = 20%. No XYZIN required.</p>
+<p>This keyword can be used without assigning XYZIN. ACORN generates 
+&lt;nratm&gt; sets of single random atoms as starting fragments.
+The CC will be calculated for [&lt;percentage&gt;]% of all reflections 
+and sorted. Then for the top 1000 sets the CC for all reflections is calculated and again sorted.
+The phases from the top sets are then generated and refined.
+For space group P1 two atoms are required; one at the origin and another randomly placed
+one.</p>
+
+<p>Example: Generate 5000 sets of single random atom fragments and test them against 10% of reflections.</p>
+<pre>
+  RATM 5000 10.0
+</pre>
+
+<h3><a name="init"></a>Restart the program using results from a previous run</h3>
+
+<h3><a name="init"></a>INITIAL &lt;mesg&gt; &lt;numb1&gt; [&lt;numb2&gt;]
+[&lt;numb3&gt;] [&lt;numb4&gt;] [&lt;numb5&gt;] [&lt;numb6&gt;]</h3>
+
+<p>(optional) - No Defaults</p>
+<p>The keyword allows the user to input some of the output from the log file generated by
+a previous run of ACORN.
+All useful information is flagged by the word INITIAL.</p>
+
+<dl>
+<dt>&lt;mesg&gt;</dt>
+<dd>indicates which method was used to provide the initial output.
+It must be one of POSI, RATM, RROT, ROTF, TRAN and RTRA.</dd>
+
+<dt>&lt;numb1&gt;</dt>
+<dd> For POSI &lt;numb1&gt; defines the starting atom number in the XYZIN file.
+The <i>foo_in.pdb</i> file should be the same as that in the previous run.</dd>
+
+<dt>&lt;numb1&gt; &lt;numb2&gt; &lt;numb3&gt;</dt>
+<dd> For RROT, ROTF, TRAN and RTRA these define the Eulerian angles ALPHA, BETA and GAMMA.</dd>
+<dd> For RATM these are the fractional coordinates X_f, Y_f and Z_f.</dd>
+
+<dt>&lt;numb1&gt; &lt;numb2&gt; &lt;numb3&gt; &lt;numb4&gt; &lt;numb5&gt; &lt;numb6&gt;</dt>
+<dd> FOR TRAN and RTRA these define the Eulerian angles and the fractional translation.
+ALPHA, BETA and GAMMA Tx Ty Tz .</dd>
+</dl>
+<p>Default: Do not use the results from previous run of ACORN.</p>
+
+<p>Examples:</p>
+<pre>
+  INITIAL TRAN 117.07  48.00 141.00  0.05  0.00  0.19  !! ALPHA BETA GAMMA Tx Ty Tz
+or
+  INITIAL RATM 0.27304   0.09822   0.62551             !! X_f   Y_f  Z_f
+
+</pre>
+
+<h3><a name="misc"></a>Miscellaneous Rarely used Keywords:</h3>
+
+<h3><a name="labo"></a>LABOUT &lt;program label&gt;=&lt;file label&gt;...</h3>
+
+<p>(optional)</p>
+<p>This keyword allows the user to assign their own labels for the final
+phase and weight written to the output file <i>foo_out.mtz</i>.
+It is useful if you want to restart ACORN to test a different starting model; the 
+output phases can be grouped in the same mtz file.
+All columns in the input file <i>foo_in.mtz</i> will be copied to the
+output file <i>foo_out.mtz</i>.
+The following &lt;program label&gt;s can be assigned:</p>
+<pre>
+  EOEXT PHIOUT WTOUT ECOUT
+  EOEXT  E value for observed reflections plus extended reflections.
+  PHIOUT The final phases from the last cycle of <a href="#ddmk"><b>DDMK</b></a>.
+  WTOUT  The final weights from the last cycle of <a href="#ddmk"><b>DDMK</b></a>.
+  ECOUT  Map coefficients from the last cycle of <a href="#ddmk"><b>DDMK</b></a>.
+</pre>
+<p>Example: Use labels PHIOUTse17 and WTOUTse17 instead of default PHIOUT and WTOUT
+in <i>foo_out.mtz</i>.</p>
+<pre>
+  LABO PHIOUT=PHIOUTse17 WTOUT=WTOUTse17
+</pre>
+
+<h3><a name="cont"></a>CONTENT  &lt;symbol1&gt; &lt;number&gt;  &lt;symbol2&gt; &lt;number&gt; ... </h3>
+
+<p>(optional) - Default: ACORN estimates the numbers for elements C, N, O and S assuming 
+the molecule is a protein and the solvent content is 50%.</p>
+<p>NB1: It is only used for the Sayre Refinement of phases.</p>
+<p>NB2: It takes no account of anomalous signal.</p>
+<p>For small molecules or if there is some unusual feature such as a Fe-S cluster in
+a small protein it might be sensible to specify the contents more precisely.</p>
+<dl compact="compact">
+<dt>&lt;symbol&gt;</dt><dd>element symbol.</dd>
+<dt>&lt;number&gt;</dt><dd>number of &lt;symbol&gt; in UNIT CELL.</dd>
+</dl>
+
+<p>Example: To use ACORN to solve rubredoxin.</p>
+<pre>
+  CONT C 256 N 61 O 88 S 5 FE 1 
+</pre>
+
+<h3><a name="titl"></a>TITLE &lt;title&gt;</h3>
+
+<p>(optional)</p>
+<p>80 character title to replace old title in MTZ file.</p>
+
+<h3><a name="grid"></a>GRID &lt;grid&gt;</h3>
+
+<p>(optional) - Default: &lt;grid&gt; = 0.3333 &#197;</p>
+<p>A factor in &#197; controlling the sampling along cell edge for FFT.</p>
+
+<p>Example: Use 0.5 &#197; grid for speed up ACORN process, but lose the accuracy.</p>
+<pre>
+  GRID  0.5
+</pre>
+
+<h3><a name="seed"></a>SEED &lt;iseed&gt;</h3>
+
+<p>(optional) - Default: &lt;iseed&gt; = 1</p>
+<p>Integer seed for random number generater. This keyword allows the
+user to obtain a different set of random numbers.</p>
+
+<p>Example: To obtain second set of random numbers.</p>
+<pre>
+  SEED 2
+</pre>
+
+<h3><a name="end"></a>END</h3>
+
+<p>of input. If present, this must be the last keyword.</p>
+
+<h3><a name="ACORN-MR"></a>Keywords for ACORN-MR to do
+fragment selection and molecular replacement searches:</h3>
+
+<p><b>For each case ACORN tests many solutions by first calculating the CC for a 
+given percentage of all reflections, to a limited resolution. These are sorted
+and for the top 1000 solutions, the CC is recalculated for all reflections for
+the full resolution range. The best 100 of these solutions are used as starting 
+points for further refinement.</b></p>
+
+<blockquote>
+<a href="#rotf"><b>ROTF</b></a>,
+<a href="#rrot"><b>RROT</b></a>,
+<a href="#rtra"><b>RTRA</b></a>,
+<a href="#tran"><b>TRAN</b></a>,
+<a href="#solu"><b>SOLUTION</b></a>.
+</blockquote>
+
+<h3><a name="rotf"></a>ROTF [&lt;step&gt;] [&lt;percentage&gt;] [&lt;resoR&gt;]</h3>
+
+<p>(optional) - Default: &lt;step&gt; = 3.0; &lt;percentage&gt; = 20%; &lt;resoR&gt; = &lt;res_high&gt;</p>
+<p>The rotation function.</p>
+<dl>
+<dt>&lt;step&gt;</dt>
+<dd>The step size of rotation in degrees for Eulerian angles ALPHA, BETA and GAMMA.</dd>
+<dt>&lt;percentage&gt;</dt>
+<dd>&lt;percentage&gt;% of reflections to be used in first stage of ROTF.</dd>
+<dt>&lt;resoR&gt;</dt>
+<dd>The resolution limit for the first stage of ROTF.</dd>
+</dl>
+
+<p>In the first stage of ROTF ACORN will rotate the model &lt;step&gt; degrees 
+at a time and calculate the CC for each step for &lt;percentage&gt;% of the reflections
+to a resolution of &lt;resoR&gt;. The CCs are then recalculated with all data to the
+full resolution range for the best 1000 solutions. These are again ranked according to CC
+and translation function searches done for a chosen rotation solution specified
+by &lt;nsrot&gt; (see <a href="#tran"><b>TRAN</b></a>). The default is to use the top solution only.</p>
+
+<p>Example: Use 2.0 degrees rotation step with 100% reflections in 2.0 &#197; resolution
+in first stage.</p>
+<pre>
+  ROTF 2.0 100.0 2.0
+</pre>
+
+<h3><a name="rrot"></a>RROT [&lt;nrot&gt;] [&lt;percentage&gt;] [&lt;resoR&gt;]</h3>
+
+<p>(optional) - Default: &lt;nrot&gt; = 50000; &lt;percentage&gt; = 20%; &lt;resor&gt; =
+&lt;res_high&gt;</p>
+<p>The random rotation function.</p>
+<dl>
+<dt>&lt;nrot&gt;</dt>
+<dd>The number of sets of random orientations.</dd>
+<dt>&lt;percentage&gt;</dt>
+<dd>&lt;percentage&gt;% of reflections to be used in first stage of RROT.</dd>
+<dt>&lt;resoR&gt;</dt>
+<dd>The resolution limit for the first stage of RROT.</dd>
+</dl>
+ 
+<p>ACORN will generate &lt;nrot&gt; sets of random orientations rather than doing a
+systematic search.</p>
+
+<p>Example: Generate 10000 random orientations and check the CC for 100% of
+reflections to 2.0 &#197; resolution in first stage.</p>
+<pre>
+  RROT 10000 100.0 2.0
+</pre>
+
+<h3><a name="tran"></a>TRAN [&lt;nsrot&gt;]</h3>
+
+<p>(optional) - Default: &lt;nsrot&gt; = 1</p>
+<p>The translation function.</p>
+<dl>
+<dt>&lt;nsrot&gt;</dt>
+<dd>The solution number from the results of rotation function (maximum 50).</dd>
+</dl>
+
+<p>ACORN will carry out translational searches for &lt;nsrot&gt; results of 
+rotation function using FFT techniques based on fitting between observed and
+calculated intensities. Then CCs for structure factors are calculated and the
+final solutions are sorted on CCs. The best 1000 solutions are saved and
+ACORN-PHASE will refine the phases according to this order.</p>
+
+<p>Example: Use 10 solutions from rotation function.</p>
+<pre>
+  TRAN 10
+</pre>
+
+<h3><a name="rtra"></a>RTRA [&lt;ntran&gt;] [&lt;percentage&gt;] [&lt;nsrot&gt;]</h3>
+
+<p>(optional) - Default: &lt;ntran&gt; = 50000; &lt;percentage&gt; = 20%; &lt;nsrot&gt; = 1</p>
+<p>The random translation function.</p>
+<dl>
+<dt>&lt;ntran&gt;</dt>
+<dd>The number of sets for random shifts on X, Y and Z.</dd>
+<dt>&lt;percentage&gt;</dt>
+<dd>&lt;percentage&gt;% of reflections to be used in first stage of RTRA.</dd>
+<dt>&lt;nsrot&gt;</dt>
+<dd>The solution No. from the results of rotation function.</dd>
+</dl>
+
+<p>ACORN will generate and rank &lt;ntran&gt; sets of random translation shifts 
+for &lt;nsrot&gt;th solution from the rotation function.
+ACORN-PHASE will refine the phases according to the final order.</p>
+
+<p>Example: Generate 5000 sets of random shifts using 10% reflections for solution 2
+from rotation function.</p>
+<pre>
+  RTRA 5000 10.0 2
+</pre>
+
+<h3><a name="solu"></a>SOLUTION &lt;nset&gt; &lt;alpha&gt; &lt;beta&gt;
+&lt;gamma&gt; [&lt;X_f&gt;] [&lt;Y_f&gt;] [&lt;Z_f&gt;]</h3>
+
+<p>(optional)</p>
+<p>The keyword allows the user to input the results of AMoRe to generate a starting fragment.
+The <i>foo_in.pdb</i>, to which the rotation and translations are applied must be the 
+XYZOUT produced by the AMoRe TABFUN.</p>
+
+<p><b>This is NOT recommended</b>. A better procedure is to generate the output model 
+from AMoRe or MOLREP, then input this as <i>foo_in.pdb</i>, using the ACORN-PHASE option NAFRAG ALL.</p>
+
+<p>The lines starting with the word SOLUTION in the .log or .mr files can be 
+included in the ACORN script.</p>
+<dl>
+<dt>&lt;nset&gt;</dt>
+<dd>set number.</dd>
+<dt>&lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt;</dt>
+<dd>Eulerian angles of rotation function.</dd>
+<dt>&lt;X_f&gt; &lt;Y_f&gt; &lt;Z_f&gt;</dt>
+<dd>shifts from translation function in fractions of the observed unit cell edges.</dd>
+</dl>
+<p>Default: Do not use AMoRe result.</p>
+
+<p>Example: Use one solution from AMoRe.</p>
+<pre>
+  SOLUTIONTF1_1   1  271.99   90.00   35.68  0.4500  0.0000  0.2794
+</pre>
+
+<h3><a name="ACORN-PHASE"></a>Keywords for ACORN-PHASE:</h3>
+
+<blockquote>
+<a href="#cutd"><b>CUTDDM</b></a>,
+<a href="#ccfi"><b>CCFINISH</b></a>,
+<a href="#psfi"><b>PSFINISH</b></a>,
+<a href="#maxs"><b>MAXSET</b></a>,
+<a href="#ntry"><b>NTRY</b></a>,
+<a href="#ncdd"><b>NCDDM</b></a>,
+<a href="#ncse"><b>NCSER</b></a>,
+<a href="#supp"><b>SUPP</b></a>,
+<a href="#enhs"><b>ENHS</b></a>,
+<a href="#radi"><b>RADIUS</b></a>,
+<a href="#solv"><b>SOLVENT</b></a>,
+<a href="#ddmk"><b>DDMK</b></a>,
+<a href="#ccdd"><b>CCDDM1</b></a>.
+</blockquote>
+
+<h3><a name="cutd"></a>CUTDDM &lt;cutd&gt;</h3>
+
+<p>(optional) - Default: &lt;cutd&gt; = 3.0</p>
+<p>The factor to select the upper cut off value for density during the DDM
+cycles.</p>
+<p>The upper cut off is set to &lt;ncycle&gt;*&lt;cutd&gt;*&lt;sigro&gt; for
+first 5 cycles, where</p>
+<dl compact="compact">
+<dt>&lt;ncycle&gt;</dt>
+<dd>is the cycle number of DDM.</dd>
+<dt>&lt;sigro&gt;</dt>
+<dd>is the standard deviation of the density map.</dd>
+</dl>
+<p>and for subsequent cycles is held as 5*&lt;cutd&gt;*&lt;sigro&gt;.
+The final upper cut off value will be not less than 0.1*&lt;nct&gt;*&lt;romax&gt; and not greater than 0.8*&lt;romax&gt;
+where &lt;romax&gt; is the maximum density in the map and &lt;nct&gt; is the cycle number in each try.</p>
+<p>When there are some atoms much heavier than others, and especially when searching
+for sub-structures with a variety of atom types, it may be necessary to increase 
+&lt;cutd&gt;. However for structures where the atom types are all more or less the 
+same, the default value is appropriate.</p>
+
+<p>Example: Set the upper cut off factor to 5.0.</p>
+<pre>
+  CUTD 5.0
+</pre>
+
+<h3><a name="ccfi"></a>CCFINISH &lt;ccfinish&gt;</h3>
+
+<p>(optional) - Default: &lt;ccfinish&gt; = value determined by the ACORN.</p>
+<p>If CC is greater than &lt;ccfinish&gt; at the end of refinement pass,
+ACORN will output the refined phases and weights for all the reflections, then stop.</p>
+
+<p>Example: ACORN will stop at CC greater than 0.25.</p>
+<pre>
+  CCFIN 0.25
+</pre>
+
+<h3><a name="psfi"></a>PSFINISH &lt;psfinish&gt;</h3>
+
+<p>(optional) - Default: &lt;psfinish&gt; = 0.5 degrees</p>
+<p>If the phase shift between two consecutive cycles of DDM is less than
+&lt;psfinish&gt; the DDM try will finish and ACORN-PHASE will go to the next step if any.</p>
+
+<p>Example: Set the phase shift between two cycles to 0.8 degrees.</p>
+<pre>
+  PSFIN 0.8
+</pre>
+
+<h3><a name="maxs"></a>MAXSET &lt;maxset&gt;</h3>
+
+<p>(optional) - Default: &lt;maxset&gt; = 100</p>
+<p>The number of sets of initial phases for ACORN-PHASE to refine.
+The maximum number is 1000.</p>
+
+<p>Example: Refine 500 sets of initial phases.</p>
+<pre>
+  MAXSET 500
+</pre>
+
+<h3><a name="ntry"></a>NTRY &lt;ntry&gt;</h3>
+
+<p>(optional) - Default: &lt;ntry&gt; = 10</p>
+<p>The number of tries to cycle through DDM, ENHS and SER phase refinement
+for each set of initial phases.
+The maximum number is 500. In each try ACORN-PHASE will combine the
+procedures <a href="#ddmk"><b>DDMK</b></a> and SER for the number of cycles specified in <a href="#ncdd"><b>NCDDM</b></a>
+and <a href="#ncse"><b>NCSER</b></a> or one cycle of enhancement <a href="#enhs"><b>ENHS</b></a>.</p>
+<p>If the average phase shift between two cycles is less than &lt;psfinish&gt;
+(see <a href="#psfi"><b>PSFINISH</b></a>)
+or if the CC is not increasing after 5 cycles the try will be terminated,
+and the procedure will go on to the next try.
+ACORN will stop if the CC is greater than &lt;ccfinish&gt; 
+(see <a href="#ccfi"><b>CCFINISH</b></a>).</p>
+
+<p>Example 1: Use 8 tries with default values for ENHS, NCSER and NCDDM.</p>
+<pre>
+  NTRY 8
+</pre>
+<p>which is the same as</p>
+<pre>
+  NTRY 8
+  ENHS    0   0   0   0   1   1   1   1
+  NCSER   0   2   2   2   0   0   0   0
+  NCDDM 500 500 500 500 500 500 500 500
+</pre>
+<p>Example 2: If user wants to do 2 cycles of SER and 200 cycles of DDM for the
+first try and one cycle of SER and 300 cycles of DDM for the other 9 tries. When SER is used in a try then ENHS will be set to 0 for this try.
+Then</p>
+<pre>
+  NTRY 10
+  NCSER   2   1   1   1   1   1   1   1   1   1
+  NCDDM 200 300 300 300 300 300 300 300 300 300
+</pre>
+
+<h3><a name="ncse"></a>NCSER &lt;nc01&gt; [&lt;nc02&gt;] ... [&lt;nc500&gt;]</h3>
+
+<p>(optional) - Default: &lt;nc01&gt; &lt;nc02&gt; ... &lt;nc500&gt; = 0 2 2 2 0 0 ... 0 if the number of atoms in the fragment
+less then 50. Otherwise Sayre Equation Refinement will not be used. </p>
+<p>The maximum number of cycles in each try for Sayre Equation Refinement. </p>
+<dl>
+<dt>&lt;nc01&gt; &lt;nc02&gt; ... &lt;nc500&gt;</dt>
+<dd>number of cycles.</dd>
+</dl>
+
+<p>Example: Use 2 cycles of SER in first try and one cycle of SER for the
+second and third try.</p>
+<pre>
+  NTRY 3
+  NCSER 2 1 1
+</pre>
+
+<h3><a name="ncdd"></a>NCDDM &lt;nc01&gt; [&lt;nc02&gt;] ... [&lt;nc500&gt;]</h3>
+
+<p>(optional) - Default: &lt;nc01&gt; &lt;nc02&gt; ... &lt;nc500&gt; = 500 500 ... 500</p>
+<p>The maximum number of cycles in each try for Dynamic Density
+Modification.</p>
+<dl>
+<dt>&lt;nc01&gt; &lt;nc02&gt; ... &lt;nc500&gt;</dt>
+<dd>number of cycles.</dd>
+</dl>
+
+<p>Example: Use 50 cycles of DDM for the first three tries and 500 cycles
+of DDM for the fourth try.</p>
+<pre>
+  NTRY 4
+  NCDDM 50 50 50 500
+</pre>
+
+<h3><a name="supp"></a>SUPP &lt;nsup&gt;</h3>
+
+<p>(optional) - Default: ACORN determines if the Patterson superposition function is used or not.</p>
+<p>Use the Patterson superposition function to improve the initial phases
+before phase refinement by SER and DDM.</p>
+<p>User can set &lt;nsup&gt; = 0 not to use SER or &lt;nsup&gt; = 1 to use SER.
+
+<p>Example: Use the Patterson superposition function.</p>
+<pre>
+  SUPP 1
+</pre>
+
+<h3><a name="ddmk"></a>DDMK &lt;nc01&gt; [&lt;nc02&gt;] ... [&lt;nc500&gt;]</h3>
+
+<p>(optional) - Default: ACORN will use DDM0 first in each try. When CC is greater than &lt;ccddm1&gt;
+ DDM1 will be used. When CC is greater than &lt;ccddm2&gt; DDM2 will be used. See <a href="#ccdd"><b>CCDDM</b></a>.</p>
+
+<p>There are three kinds of map coefficients used in DDM procedure:
+<li>&lt;nc01&gt;=0 --- DDM0: Wt*Eo for the observed reflections and Wt*Ex for the extended reflections.</li>
+<li>&lt;nc01&gt;=1 --- DDM1: Wt*(2*Eo-Ec) for the observed reflections and Wt*(2*Ex-Ec) for the extended reflections.</li>
+<li>&lt;nc01&gt;=2 --- DDM2: 2*M*Eo-SigmaA*Ec for the observed reflections and 2*M*Ex-SigmaA*Ec for the extended reflections.</li>
+where Eo - the observed normalized structure factors. 
+Ex - the extended normalized structure factors (Ex=1.0). 
+Ec - the calculated normalized structure factors from a fragment or a modified map.
+M - a figure of merit from SigmaA.</p>
+<p> Example: Use DDM0 for the first 5 tries and DDM1 for try 6 to 9. DDM2 for try 10.</p>
+<pre>
+  NTRY 10
+  DDMK 0 0 0 0 0 1 1 1 1 2
+</pre>                                                                                
+<h3><a name="ccdd"></a>CCDDM &lt;ccddm1&gt; &lt;ccddm2&gt; </h3>
+                                                                                
+<p>(optional) - Default: &lt;ccddm1&gt; = 0.12, &lt;ccddm2&gt; = 0.20.</p>
+<p>If CC is greater than &lt;ccddm1&gt; 
+ACORN will use DDM1 automatically with default <a href="#ddmk"><b>DDMK</b></a>.
+If CC is greater than &lt;ccddm2&gt; ACORN will use DDM2 automatically with default <a href="#ddmk"><b>DDMK</b></a>.</p>
+                                                                                
+<p>Example: ACORN will use DDM1 at CC greater than 0.10 and DDM2 at CC greater than 0.15 with default <a href="#ddmk"><b>DDMK</b></a>.</p>
+<pre>
+  CCDD 0.10 0.15
+</pre>
+                                                                                
+<h3><a name="enhs"></a>ENHS &lt;nc01&gt; [&lt;nc02&gt;] ... [&lt;nc500&gt;]</h3>
+                                                                                
+<p>(optional) - Default: &lt;nc01&gt; &lt;nc02&gt; ... &lt;nc500&gt; = 0 1 ... 1</p>
+<p>&lt;nc01&gt;=1 means using weak density enhancement in cycle 1 for each try. 
+The enhancement will not be used if the Sayre Equation Refinement is used.</p>
+                                                                                
+<p>Example: Use two cycles of SER for try 2 to 5 and ENHS for next 5 tries.</p>
+<pre>
+  NTRY 10
+  ENHS  0 0 0 0 0 1 1 1 1 1
+  NCSER 0 2 2 2 2 0 0 0 0 0
+</pre>
+                                                                                
+<h3><a name="radi"></a>RADIUS &lt;radius&gt;</h3>
+                                                                                
+<p>(optional) - Default: &lt;radius&gt; = 4.0 &#197;</p>
+<p>The radius value used to calculate envelop.</p>
+                                                                                
+<p>Example: ACORN will use 5.0 &#197; of radius to calculate envelope.</p>
+<pre>
+  RADI 5.0
+</pre>
+
+<h3><a name="solv"></a>SOLVENT &lt;solvent&gt;</h3>
+                                                                                
+<p>(optional) - Default: &lt;solvent&gt; = 0.5</p>
+<p>The ratio of solvent region.</p>
+                                                                                
+<p>Example: ACORN will set 45% as solvent region to calculate envelope.</p>
+<pre>
+  SOLV 0.45
+</pre>
+                                                                                
+
+<h2><a name="files"></a>INPUT AND OUTPUT FILES</h2>
+
+<p>The input files are the keyword file, a standard MTZ reflection data
+file and a PDB file containing a fragment if needed.</p>
+<p>Input:</p>
+<blockquote>
+<dl compact="compact">
+<dt>HKLIN</dt><dd>input data file(MTZ).</dd>
+<dt>XYZIN</dt><dd>input fragment file(PDB)</dd>
+</dl>
+</blockquote>
+<p>Output:</p>
+<blockquote>
+<dl compact="compact">
+<dt>HKLOUT</dt><dd>output data file(MTZ).</dd>
+</dl>
+</blockquote>
+
+<p>Here are the definitions for the labels:</p>
+
+<table border="0" width="500">
+<tr>
+<th align="left">Name</th><th align="left">Item</th>
+</tr>
+<tr>
+<td>H, K, L</td><td>Miller indices.</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+</tr>
+<tr>
+<td>E</td><td>E-values (normalized structure factors).</td>
+</tr>
+<td>FP</td><td>Observed structure factors.</td>
+</tr>
+<td>SIGFP</td><td>Sigma of FP.</td>
+</tr>
+<td>PHIN</td><td>Known phases.</td>
+</tr>
+<td>WTIN</td><td>Weights of known phases.</td>
+</tr>
+<td>FCIN</td><td>Calculated magnitudes with the known phases.</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+</tr>
+<td>EOEXT</td><td>E values for observed and extended reflections.</td>
+</tr>
+<td>PHIOUT</td><td>New phases from last cycle of the best set.</td>
+</tr>
+<td>WTOUT</td><td>Weights from last cycle of the best set.</td>
+</tr>
+<td>PHIOUT</td><td>Map coefficients from last cycle of DDM0, DDM1 or DDM2.</td>
+</tr>
+</table>
+
+<h2><a name="print"></a>PRINTER OUTPUT</h2>
+
+<p>The printed output starts with details from the input keyword data lines.
+Then information from the input MTZ file follows. An error message will
+be printed out if any illegal input in the keyword data lines has been
+found and the program will stop.</p>
+
+<h2><a name="examples"></a>EXAMPLES</h2>
+
+<ul>
+<li><a href="#example1"><b>Example 1: Use a constellation of correctly placed atoms as the starting point.</b></a></li>
+<li><a href="#example2"><b>Example 2: Use a constellation of correctly placed atoms as the starting point.</b></a></li>
+<li><a href="#example3"><b>Example 3: Use a fragment already positioned by some other MR procedure
+(<i>e.g.</i> AMoRe).</b></a></li>
+<li><a href="#example4"><b>Example 4: Test for the best result from 10 possible heavy atoms.</b></a></li>
+<li><a href="#example5"><b>Example 5: Use a randomly placed single atom as a starting
+point for a complete structure solution.</b></a></li>
+
+<li><a href="#example6"><b>Example 6: Determine the position of heavy atoms in a protein structure from
+the anomalous and isomorphous differences.</b></a></li>
+<li><a href="#example7"><b>Example 7: Use a randomly placed single atom as a starting
+point to determine the position of the sub-structure
+from both the anomalous differences.</b></a></li>
+<li><a href="#example8"><b>Example 8: Solve a small molecular structure.</b></a></li>
+<li><a href="#example9"><b>Example 9: Use standard alpha helices as search models for a complete
+molecular replacment (MR) search.</b></a></li>
+<li><a href="#example10"><b>Example 10: Use standard alpha helices as search models for random
+MR search.</b></a></li>
+<li><a href="#example11"><b>Example 11: Use a fragment from a similar structure for MR search.</b></a></li>
+
+<li><a href="#example12"><b>Example 12: Use externally determined phases and weights
+as a starting point.</b></a></li>
+<li><a href="#example13"><b>Example 13: Restart using results from previous run of ACORN.</b></a></li>
+<li><a href="#example14"><b>Example 14: Use the results from AMoRe given as Euler angles and translation
+components to position the model atoms correctly.</b></a></li>
+<li><a href="#example15"><b>Example 15: Use all extended reflections in the file and start from a heavy atom.</b></a></li>
+<li><a href="#example16"><b>Example 16: Use the extended reflections within 50.0 to 1.0 &#197; and start from molecular replacement model.</b></a></li>
+<li><a href="#example17"><b>Example 17: Use the extended reflections within 50.0 to 1.0 &#197; and start from experimental phases.</b></a></li>
+</ul>
+
+
+<h3><a name="example1"></a>Example 1:</h3>
+<p>This example uses the two known Zn atom positions which are in the file $HOME/test-zn.pdb
+to calculate the starting phases then refines them by 500 cycles of DDM (default
+for ACORN-PHASE): Since the Zn atoms are much heavier than the protein atoms,
+the density CUToff is set higher than the default.</p>
+
+<pre>
+#!/bin/csh -f
+#
+acorn \
+hklin $HOME/test.mtz \
+hklout $SCRATCH/test-acorn.mtz \
+xyzin $HOME/test-zn.pdb \
+&lt;&lt; eof
+
+!General keywords:
+TITLE   Start from input ZN position(s).
+LABI E=EO FP=FP SIGFP=SIGFP
+
+!Keywords for ACORN-MR:
+POSI 1
+CUTD 5.0
+
+END
+eof
+</pre>                                                                          
+
+<h3><a name="example2"></a>Example 2:</h3>
+<p>This example uses the two known S atom positions which are in the file $HOME/sulphurs.pdb
+to calculate the starting phases then refines them by 500 cycles of DDM (default
+for ACORN-PHASE):</p>
+
+<pre>
+#!/bin/csh -f
+#
+acorn \
+hklin $HOME/test.mtz \
+hklout $SCRATCH/test-acorn.mtz \
+xyzin $HOME/sulphurs.pdb \
+&lt;&lt; eof
+
+!General keywords:
+TITLE   Start from input ZN position(s).
+LABI E=EO FP=FP SIGFP=SIGFP
+
+!Keywords for ACORN-MR:
+POSI 1
+
+END
+eof
+</pre>                                                                          
+
+<h3><a name="example3"></a>Example 3:</h3>
+<p>This example uses a fragment in the correct orientation and position
+found by AMoRe  to calculate a set of initial phases.
+The phases are refined, first with Patterson superposition then with 3 tries
+each with 2 cycles of SER and 200 cycles of DDM:</p>
+
+<pre>
+#!/bin/csh -f
+#
+acorn \
+hklin $HOME/test.mtz \
+hklout $SCRATCH/test-acorn.mtz \
+xyzin $HOME/solution-amore-pdbset.pdb \
+&lt;&lt; eof
+
+!General keywords:
+TITLE   Start from a fragment positioned by AMoRe.
+LABI E=EO FP=FP SIGFP=SIGFP
+
+!Keywords for ACORN-MR:
+POSI 1
+!NAFRAG ALL
+
+!Keywords for ACORN-PHASE:
+SUPP 1
+NTRY 3
+NCSER 2 2 2
+NCDDM 200 200 200
+
+END
+eof
+</pre>
+
+
+<h3><a name="example4"></a>Example 4:</h3>
+<p>This example calculates the CC of each atom from 10 possible Selenium atoms
+and refines the best set of the phases, ie that with the largest CC, using only DDM 
+(default for ACORN-PHASE):</p>
+
+<pre>
+#!/bin/csh -f
+#
+acorn \
+hklin $HOME/test.mtz \
+hklout $SCRATCH/test-acorn.mtz \
+xyzin $HOME/test-10Se.pdb \
+&lt;&lt; eof
+
+!General keywords:
+TITLE   Start from the best Selenium atom from 10 positions.
+LABI E=EO FP=FP SIGFP=SIGFP
+
+!Keywords for ACORN-MR:
+NAFRAG 1
+POSI 10
+
+!Keywords for ACORN-PHASE:
+MAXSET 1
+
+END
+eof
+</pre>                                                                          
+
+<h3><a name="example5"></a>Example 5:</h3>
+<p>This example can be used to place a sub structure, or solve a macro-molecular structure
+which contains calculates the  CC for 5000 randomly positioned "single atom fragments"
+for 20% of reflections (the default) and sorts them on CC. The top 1000 sets are selected
+to re-calculate  the full CC for all reflections which are again sorted.
+Then the best MAXSET (default 100) phase sets are refined. </p>
+
+<pre>
+#!/bin/csh -f
+#
+acorn \
+hklin $HOME/test.mtz \
+hklout $SCRATCH/test-acorn.mtz \
+&lt;&lt; eof
+
+TITLE   ACORN willl use 5000 sets of one random atom.
+LABI E=EO FP=FP SIGFP=SIGFP
+
+RATM 5000
+
+END
+eof
+</pre>
+
+<h3><a name="example6"></a>Example 6:</h3>
+<p>This example is to find the Selenium atoms using the estimate of the 
+sub-structure amplitude generated from the MAD measurements
+by <a href="revise.html"> <b>REVISE</b></a>. The keyword
+CONTENT indicates that there are 80 Selenium atoms in the <B> unit cell</B>
+ and the resolution is cut to use only reflections from 10.0 to 3.5 &#197;.
+The keywords NSTR and NWEA are
+used to select 800 strong and 400 weak reflections. THE CC for 10000 sets of single 
+randomly placed atom fragments are checked with 20% of the reflections and 
+the initial phases for the top 100 sets  are refined.
+There are 20 tries with the default NCSER and NCDDM:</p>
+
+<pre>
+#!/bin/csh -f
+#  Use REVISE to generate FM
+#
+acorn \
+HKLIN $HOME/test-mad-revise.mtz \
+hklout $SCRATCH/test-acorn.mtz \
+&lt;&lt; eof
+
+!General keywords:
+TITLE   to determine Selenium atoms.
+LABI E=EM_RE FP=FM_RE SIGFP=SFM_RE 
+cont SE 80
+reso 10.0 3.5
+nstr 800
+nwea 400
+
+ratm 10000
+
+!  After the Random  atom search ACORN will refine the phases for the best 100 solutions 
+! the default value for MAXSET is 100.
+end
+eof
+</pre>
+
+<h3><a name="example7"></a>Example 7:</h3>
+<p>This example is to find the Selenium atoms using the estimate of the 
+sub-structure amplitude taken from the Peak anomalous difference.
+The keyword
+CONTENT indicates that there are 80 Selenium atoms in the <B> unit cell</B>
+ and the resolution is cut to use only reflections from 10.0 to 3.5 &#197;.
+Anomalous differences greater than 30 ( These are on an arbitrary scale
+and the cutoff value ischosen by looking at the loggraph analyses from SCALEIT)
+and weak F+ and F- are excluded.
+The keywords NSTR and NWEA are
+used to select 800 strong and 400 weak reflections. THE CC for 10000 sets of single 
+randomly placed atom fragments are checked with 20% of the reflections and 
+the initial phases for the top 100 sets  are refined.
+There are 20 tries with the default NCSER and NCDDM:</p>
+
+<pre>
+#!/bin/csh -f
+#
+ecalc \
+HKLIN $HOME/test-sad-data.mtz \
+HKLOUT $HOME/test-sad-E.mtz \
+&lt;&lt; eof
+LABI FPH=F_peak(+) SIGFPH=SIGF_peak(+) FP=F_peak(-) SIGFP=SIGF_peak(-)
+LABO E=Esad
+EXCL SIGPH 3.0 SIGP 3 DIFF 30
+END
+eof
+#
+acorn \
+HKLIN  $HOME/test-sad-E.mtz \
+hklout $SCRATCH/test-acornsadE.mtz \
+&lt;&lt; eof
+
+!General keywords:
+TITLE   to determine Selenium atoms.
+LABI E=Esad FP=F_peak SIGFP=SIGF_peak 
+cont SE 80
+reso 10.0 3.5
+nstr 800
+nwea 400
+
+!Keywords for ACORN-MR:
+ratm 10000
+
+!Keywords for ACORN-PHASE:
+!  The Random  atom search will refine the phases for the best 100 solutions 
+! the default value for MAXSET is 100.
+CCFIN 0.1 !  The final correlation coefficient will be lower for SAD terms.
+end
+eof
+</pre>
+
+<h3><a name="example8"></a>Example 8:</h3>
+<p>This example solves a small molecular structure. The keywords
+RESO and GRID are needed for small molecule determination. 
+The CC for 2000 sets of single randomly placed atom fragments are checked with all the data
+and the top 100 sets of the initial phases refined by 2 cycles of SER and 300
+cycles of DDM:</p>
+
+<pre>
+#!/bin/csh -f
+#
+acorn \
+HKLIN $HOME/test.mtz \
+hklout $SCRATCH/test-acorn.mtz \
+&lt;&lt; eof
+
+!General keywords:
+TITLE   to solve a small molecular structure.
+LABI E=EO FP=FP SIGFP=SIGFP
+RESO 50.0 0.8
+GRID 0.3
+
+!Keywords for ACORN-MR:
+RATM 2000 100.0
+
+!Keywords for ACORN-PHASE:
+NCSER 2
+NCDDM 300
+
+end
+eof
+</pre>
+
+<h3><a name="example9"></a>Example 9:</h3>
+<p>This example uses 50 atoms (10 residues) from the library idealised alpha helix 
+for a MR search with the default parameters.
+ACORN-PHASE will refine the phases from
+the top 100 sets of positioned alpha helices by DDM only:</p>
+
+<pre>
+#!/bin/csh -f
+#
+acorn \
+hklin $HOME/test.mtz \
+hklout $SCRATCH/test-acorn.mtz \
+xyzin $CLIBD/fraglib/theor-helix-70.pdb \
+&lt;&lt; eof
+
+!General keywords:
+TITLE   Start from standard alpha helices.
+LABI E=EO FP=FP SIGFP=SIGFP
+
+!Keywords for ACORN-MR:
+NAFRAG 50
+ROTF
+TRAN
+
+END
+eof
+</pre>
+
+<h3><a name="example10"></a>Example 10:</h3>
+<p>This example is the same as example 9, but uses random rotation and random
+translation starting values to select the 100 most likely positions for the alpha helix.
+</p>
+
+<pre>
+#!/bin/csh -f
+#
+acorn \
+hklin $HOME/test.mtz \
+hklout $SCRATCH/test-acorn.mtz \
+xyzin $CLIBD/fraglib/theor-helix-70.pdb \
+&lt;&lt; eof
+
+!General keywords:
+TITLE   Start from standard alpha helices.
+LABI E=EO FP=FP SIGFP=SIGFP
+
+!Keywords for ACORN-MR:
+NAFRAG 50
+RROT 
+RTRA 
+
+END
+eof
+</pre>
+
+<h3><a name="example11"></a>Example 11:</h3>
+<p>This example uses a suitable fragment for a MR search.
+The rotation function is first calculated with a
+step size of 3.0 degrees for 20% of the reflections to 2.0 &#197; resolution.
+The best orientation is selected, and 50000 trials of random translational
+shifts are evaluated, again for 20% of the reflections to 1.0 &#197; resolution.
+ACORN-PHASE will refine the top 100 solutions for the translation
+search by DDM(default for ACORN-PHASE): </p>
+
+<pre>
+#!/bin/csh -f
+#
+acorn \
+hklin $HOME/test.mtz \
+hklout $SCRATCH/test-acorn.mtz \
+xyzin $HOME/test-other-similar.pdb \
+&lt;&lt; eof
+
+!General keywords:
+TITLE   Start from other similar fragment.
+LABI E=EO FP=FP SIGFP=SIGFP
+
+!Keywords for ACORN-MR:
+ROTF 3 20.0 2.0
+RTRA 50000 20.0 1
+
+END
+eof
+</pre>
+
+<h3><a name="example12"></a>Example 12:</h3>
+<p>This example uses known phases with input magnitudes and assign new labels
+for the final output phases and weights. ACORN-PHASE will use 500 cycles 
+of DDM for the first try then one cycles of ENH and 500 cycles of DDM for 
+the second try (default ENHS and NCDDM):</p>
+
+<pre>
+#!/bin/csh -f
+#
+acorn \
+hklin $HOME/test.mtz \
+hklout $SCRATCH/test-acorn.mtz \
+&lt;&lt; eof
+
+!General keywords:
+TITLE   Start from input known phases and magnitudes.
+LABI E=EO FP=FP SIGFP=SIGFP PHIN=AC FCIN=FCcal
+LABO PHIOUT=NEWPHASE WTOUT=NEWT 
+
+!Keywords for ACORN-PHASE:
+NTRY 2
+ENHS 0 1 
+NCDDM 500 500
+END
+eof
+</pre>
+
+<h3><a name="example13"></a>Example 13:</h3>
+<p>This example takes 9 solutions from a previous run of ACORN-MR for 
+positoning standard alpha helices. The input rotation angles and translational shifts 
+are applied to the first 50 atoms of $CLIBD/fraglib/theor-helix-70.pdb
+the phases generated from these fragments are refined by DDM, the default:</p>
+
+<pre>
+#!/bin/csh -f
+#
+acorn \
+hklin $HOME/test.mtz \
+hklout $SCRATCH/test-acorn.mtz \
+xyzin $CLIBD/fraglib/theor-helix-70.pdb \
+&lt;&lt; eof
+
+!General keywords:
+TITLE   Use results from previous run of ACORN.
+LABI E=EO FP=FP SIGFP=SIGFP
+
+!Keywords for ACORN-MR:
+NAFRAG 50
+ INITIAL TRAN   117.07    48.00   141.00  0.04537  0.00000  0.19480
+ INITIAL TRAN   117.07    48.00   141.00  0.04331  0.00000  0.19480
+ INITIAL TRAN   117.07    48.00   141.00  0.04537  0.00000  0.19784
+ INITIAL TRAN   117.07    48.00   141.00  0.04331  0.00000  0.19784
+ INITIAL TRAN   117.07    48.00   141.00  0.11136  0.00000  0.09740
+ INITIAL TRAN   117.07    48.00   141.00  0.10311  0.00000  0.05174
+ INITIAL TRAN   117.07    48.00   141.00  0.15467  0.00000  0.40177
+ INITIAL TRAN   117.07    48.00   141.00  0.23716  0.00000  0.31959
+ INITIAL TRAN   117.07    48.00   141.00  0.08043  0.00000  0.49308
+
+END
+eof
+</pre>
+
+<h3><a name="example14"></a>Example 14:</h3>
+<p>This example tests 7 solutions from AMoRe. AMoRe has been used with input Es,
+and the TABLE structure factors have also been normalised (see
+<a href="amore.html">AMoRe documentation</a>). The 
+input rotation angles and translational shifts are applied 
+to the XYZOUT PDB file generated in the TABFUN stage by 
+AMoRe and  the resultant phases refined by DDM, the default:</p>
+<pre>
+#!/bin/csh -f
+#
+acorn \
+hklin $HOME/test.mtz \
+hklout $SCRATCH/test-acorn.mtz \
+xyzin $HOME/amore-TABFUN-trial.pdb \
+&lt;&lt; eof
+
+!General keywords:
+TITLE   Use the solutions from AMoRe.
+LABI E=EO FP=FP SIGFP=SIGFP
+
+!Keywords for ACORN-MR:
+SOLUTIONTF1_4   1  272.09   90.00   35.82  0.0312  0.0000  0.0268
+SOLUTIONTF1_5   1  269.00   90.00  214.85  0.4688  0.0000  0.4732
+SOLUTIONTF1_2   1  271.38   74.93   28.08  0.4125  0.0000  0.4911
+SOLUTIONTF1_18  1  346.95   45.50  205.48  0.2000  0.0000  0.4464
+SOLUTIONTF1_1   1   57.94   82.77  157.51  0.2250  0.0000  0.4464
+SOLUTIONTF1_19  1  241.70   39.54   77.96  0.1125  0.0000  0.0446
+SOLUTIONTF1_14  1   60.65   12.39  109.53  0.4000  0.0000  0.4286
+
+END
+eof
+</pre>
+
+<h3><a name="example15"></a>Example 15:</h3>
+<p>This example uses the observed reflections within 9.0 to 1.55 &#197; plus all the extended reflections in the file $HOME/test.mtz and the one known Zn atom position which is in the file $HOME/test-zn.pdb
+to calculate the starting phases then refines them by one cycle of SUPP and 10 tries with SER from try 2 to 4 and ENHS for rest of tries. DDM1 will be used for try 5 to 9 and DDM2 will be used for final try.  Since the Zn atoms are much heavier than the protein atoms,
+the density CUToff is set higher than the default.</p>
+                                                                                
+<pre>
+#!/bin/csh -f
+#
+acorn \
+hklin $HOME/test.mtz \
+hklout $SCRATCH/test-acorn.mtz \
+xyzin $HOME/test-zn.pdb \
+&lt;&lt; eof
+                                                                                
+!General keywords:
+TITLE   Start from input ZN position(s).
+LABI E=EO FP=FP SIGFP=SIGFP
+                        
+!Keywords for select reflections:
+RESO 9.0 1.55
+                           
+!Keywords for ACORN-MR:
+POSI 1
+
+!Keywords for ACORN-PHASE:
+CUTD 5.0
+SUPP 1
+NTRY 10
+NCSER 0 2 2 2
+DDMK 0 0 0 0 1 1 1 1 1 2
+                                                                                
+END
+eof
+</pre>
+                                                                                
+
+<h3><a name="example16"></a>Example 16:</h3>
+<p>This example uses the observed strong E&gt;0.8 within 20.0 to 1.65 &#197; plus the extended reflections wihtin 50.0 to 1.0 &#197; in the file $HOME/test.mtz and the MR model from MOLREP which is in the file $HOME/test-molrep.pdb
+to calculate the starting phases then refines them by 150 tries with default ENHS and DDMK values. Set 45% of the solvent region by SOLV 0.45. </p>
+                                                                                
+<pre>
+#!/bin/csh -f
+#
+acorn \
+hklin $HOME/test.mtz \
+hklout $SCRATCH/test-acorn.mtz \
+xyzin $HOME/test-molrep.pdb \
+&lt;&lt; eof
+                                                                                
+!General keywords:
+TITLE   Start from input MOLREP model.
+LABI E=EO FP=FP SIGFP=SIGFP
+                        
+!Keywords for select reflections:
+RESO 20.0 1.65
+EXTEND 50.0 1.0
+ESTRO 0.8 
+                           
+!Keywords for ACORN-MR:
+POSI 1
+
+!Keywords for ACORN-PHASE:
+SOLV 0.45
+NTRY 150
+                                                                                
+END
+eof
+</pre>
+
+<h3><a name="example17"></a>Example 17:</h3>
+<p>This example uses the observed strong E&gt;0.8 within 10.0 to 1.50 &#197; plus the extended reflections wihtin 50.0 to 1.0 &#197; and the experimental phases from SAD data in the file $HOME/test.mtz 
+and then refines them by default values. Set 45% of the solvent region by SOLV 0.45. </p>
+                                                                                
+<pre>
+#!/bin/csh -f
+#
+acorn \
+hklin $HOME/test.mtz \
+hklout $SCRATCH/test-acorn.mtz \
+&lt;&lt; eof
+                                                                                
+!General keywords:
+TITLE   Start from input experiment phases with weights.
+LABI E=EO FP=FP SIGFP=SIGFP PHIN=PHI_Se16 WTIN=WT_Se16
+                        
+!Keywords for select reflections:
+RESO 10.0 1.50
+EXTEND 50.0 1.0
+ESTRO 0.8 
+                           
+!Keywords for ACORN-PHASE:
+SOLV 0.45
+
+END
+eof
+</pre>
+
+<h2><a name="author"></a>AUTHOR</h2>
+
+<p>Yao Jia-xing<br />
+Email: <a href="mailto:yao@ysbl.york.ac.uk">yao@ysbl.york.ac.uk</a></p>
+
+<h2><a name="references"></a>REFERENCES</h2>
+
+<ol>
+<!-- KEEP startreferencelist -->
+
+<li><a name="reference1"></a>Foadi,J., Woolfson,M.M., Dodson,E.J., Wilson,K.S., Yao Jia-xing
+and Zheng Chao-de (2000) <i>Acta. Cryst.</i> <b>D56</b>, 1137-1147.</li>
+<li><a name="reference2"></a>Yao Jia-xing (2002) <i>Acta. Cryst.</i> <b>D58</b>, 1941-1947.</li>
+<li><a name="reference3"></a>Yao Jia-xing, Woolfson,M.M., Wilson,K.S. and Dodson,E.J. (2002) <i>Z. Kristallogr.</i> <b>217</b>, 636-643.</li>
+<li><a name="reference4"></a>Yao Jia-xing, Woolfson,M.M., Wilson,K.S. and Dodson,E.J. (2005) <i>Acta. Cryst.</i> <b>D61</b>, 1465-1475.</li>
+<!-- KEEP endreferencelist -->
+</ol>
+
+<h2><a name="seealso"></a>SEE ALSO</h2>
+<blockquote>
+<a href="amore.html"><b>AMoRe</b></a>
+<a href="dm.html"><b>DM</b></a>
+<a href="pdbset.html"><b>PDBSET</b></a>
+<a href="unique.html"><b>UNIQUE</b></a>
+</blockquote>
+
+</body>
+</html>

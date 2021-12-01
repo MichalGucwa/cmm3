@@ -1,0 +1,72 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#===========================================================================
+#
+# dictionary.script
+#
+#===========================================================================
+
+  if { $IFLIBCHECK } {
+
+    ChangeDirectory [GetDefaultDirPath TEMPORARY]
+
+    set FILE_OUT [file join [GetDefaultDirPath TEMPORARY] \
+	[subst $job_params(PROJECT)]_$job_params(JOB_ID)]
+
+    CreateComScript libcheck comfile -nocontinue
+    set TMP_COORDS [GetTmpFileName -ext cif]
+
+    Execute [BinPath libcheck ] $comfile status report
+
+#    if { ![file exists $FILE_OUT.lib] } { TerminateScript 0 "ERROR: Output file $FILE_OUT.lib not found\n Libcheck program has failed" }
+
+    MoveFile $FILE_OUT.lib $GEOM_FILE 
+    MoveFile [subst $FILE_OUT]_$CHEM_COMP_ID.cif $TMP_COORDS
+    if { !$IFREFMAC } {
+      puts "moving   [subst $FILE_OUT]_$CHEM_COMP_ID.pdb $COORDS_FILE"
+      MoveFile [subst $FILE_OUT]_$CHEM_COMP_ID.pdb $COORDS_FILE 
+    }
+    if { [MoveFile [subst $FILE_OUT]_$CHEM_COMP_ID.ps \
+      [file join [GetDefaultDirPath] [subst $CHEM_COMP_ID]_libcheck.ps ] ] } {
+    AddOutputFile [subst $CHEM_COMP_ID]_libcheck.ps PROJECT }
+  }
+
+  if { $IFREFMAC } {
+
+    WriteComFile refmac_script "MODE NEWENTRY\nEND\n"
+    set status [Execute \
+     "[BinPath  refmac5 ] LIB_IN \"$GEOM_FILE\" XYZIN \"$TMP_COORDS\" XYZOUT \"$COORDS_FILE\"" \
+		$refmac_script status report ]
+
+  } 
+    
+
+# Try moving molecule to superpose the original PDB coordinates 
+# input to sketcher
+  set SUPERPOSE 0
+  if { $SUPERPOSE && [file exists $SUPERPOSE_PDBIN ] } {
+    set lsq "FIT RESIDUE ALL 1 TO 1 CHAIN A
+MATCH $SUPERPOSE_RES TO $SUPERPOSE_RES"
+    if { $SUPERPOSE_CHAIN != "" } { append lsq " CHAIN $SUPERPOSE_CHAIN\n" }
+    append lsq "OUTPUT XYZ\nEND"
+    WriteComFile lsq_script $lsq
+
+    set TMP_COORDS [GetTmpFileName -ext pdb]
+
+    set status [Execute \
+     "[BinPath  lsqkab] XYZIN1 \"$SUPERPOSE_PDBIN\" XYZIN2 \"$COORDS_FILE\" XYZOUT \"$TMP_COORDS\"" \
+	$lsq_script status report ]
+
+    WriteToLog "Moving the temporary file $TMP_COORDS to $COORDS_FILE
+This contains the coordinates from Libcheck moved to superpose the input PDB file $SUPERPOSE_PDBIN"
+    MoveFile $TMP_COORDS $COORDS_FILE -overwrite
+  }
+
+  set status 1

@@ -1,0 +1,638 @@
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+<html>
+<head>
+<title></title>
+</head>
+<body>
+<! -- CVS_Id: $Id: Usage_of_python_dbClientAPI.html,v 1.9 2008/08/12 10:48:16 pjx Exp $ -->
+<h1>Usage of dbClientAPI.py</h1>
+<p><em>Wanjuan Yang   17th April 2007</em></p>
+
+<h2>Overview</h2>
+<p>dbClientAPI.py is python client API for dbhandler. It contains python classes that interact with dbhandler and thus access to database backend. Currently, database backend includes database.def and SQLite. </p>
+<h2><p>Usage
+</p></h2>
+
+<p>A connection to the handler then can be made by creating an instance of HandlerConnection. e.g.</p>
+   <p>              conn =  dbClientAPI.HandlerConnection("MrBump",broadcast=True)</p>
+<p><h3>Part 1:   Methods in handlerconnection class for interacting database.def backend are listed as follows:</p></h3>
+<ul>
+<li><a href="#CheckServerStatus">CheckServerStatus</a></li>
+<li><a href="#DbSupported">DbSupported</a></li>
+<li><a href="#OpenProject">OpenProject</a></li>
+<li><a href="#CreateProject">CreateProject</a></li>
+<li><a href="#CloseProject">CloseProject</a></li>
+<li><a href="#NewJob">NewJob</a></li>
+<li><a href="#DeleteJob">DeleteJob</a></li>
+<li><a href="#ItemExists">ItemExists</a></li>
+<li><a href="#SetData">SetData</a></li>
+<li><a href="#GetData">GetData</a></li>
+<li><a href="#SelectJobs">SelectJobs</a></li>
+<li><a href="#GetDescription">GetDescription</a></li>
+<li><a href="#ListProjects">ListProjects</a></li>
+<li><a href="#GetProjectDir">GetProjectDir</a></li>
+<li><a href="#ListDataDirs">ListDataDirs</a></li>
+<li><a href="#GetDataDir">GetDataDir</a></li>
+<li><a href="#GetNJOB">GetNJOB</a></li>
+<li><a href="#GetNProjects">GetNProjects</a></li>
+<li><a href="#Updatetime">Updatetime</a></li>
+<li><a href="#ListJobs">ListJobs</a></li>
+<li><a href="#ImportProject">ImportProject</a></li>
+<li><a href="#DeleteProject">DeleteProject</a></li>
+<li><a href="#AddDataDirRef">AddDataDirRef</a></li>
+<li><a href="#DeleteDataDirRef">DeleteDataDirRef</a></li>
+<li><a href="#GetNextJobList">GetNextJobList</a></li>
+<li><a href="#GetAllFileLinks">GetAllFileLinks</a></li>
+<li><a href="#GetFileLinks">GetFileLinks</a></li>
+<li><a href="#GetAllChildren">GetAllChildren</a></li>
+<li><a href="#GetAllParents">GetAllParents</a></li>
+<li><a href="#GetParents">GetParents</a></li>
+<li><a href="#GetChildren">GetChildren</a></li>
+<li><a href="#GetListofRecords">GetListofRecords</a></li>
+<li><a href="#AddInputFile">AddInputFile</a></li>
+<li><a href="#AddOutputFile">AddOutputFile</a></li>
+<li><a href="#SetLogfile">SetLogfile</a></li>
+<li><a href="#GetFileList">GetFileList</a></li>
+<li><a href="#HandlerDisconnect">HandlerDisconnect</a></li>
+<li><a href="#ShutDown">ShutDown</a></li>
+</ul>
+
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="CheckServerStatus"></a>
+<p><b>CheckServerStatus</b></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b> Get the status of the handler.</p>
+<p><b>Returns:</b>'Active' if the request is successful. Raise DbError otherwise. </p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>None</td>
+</tr>
+</table>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DbSupported"></a>
+<p><b>DbSupported</b> <em>dbtype</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b> Check if db handler supports the given db backend.</p>
+<p><b>Returns:</b>True if db handler supports the given db backend. False otherwise. Raise DbError if the request goes wrong.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>dbtype</td>    <td>database backend. e.g. def, SQLite</td>
+</tr>
+</tr>
+</table>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="OpenProject"></a>
+<p><b>OpenProject</b> <em>project</em> <em>grablock</em>  <em>readonly</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b> Ask the database handler to open a project database</p>
+<p><b>Returns:</b>1 if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>project</td>    <td>Alias for the project being opened</td></tr>
+<tr><td>grablock</td>  <td>(Optional) True or False. If it is true, the handler will over-ride any existing lock on the database
+                            file</td>
+</tr>
+<tr><td>readonly</td>  <td>(Optional) True or False. If it is true, the handler will open database in readonly mode.</td>
+</tr>
+</table>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="CreateProject"></a>
+<p><b>CreateProject</b> <em>project</em> <em>dir</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b> Ask the database handler to create a project database</p>
+<p><b>Returns:</b>1 if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>project</td>    <td>Alias for the project.</td></tr>
+<tr><td>dir</td>  <td> Directory of the project. </td>
+</tr>
+</tr>
+</table>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="CloseProject"></a>
+<p><b>CloseProject</b> <em>project</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b> Ask the database handler to close a project database</p>
+<p><b>Returns:</b>1 if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>project</td>    <td>Alias for the project.</td>
+</tr>
+</tr>
+</table>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="NewJob"></a>
+<p><b>NewJob</b> <em>project</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b>Create a job in database.</p>
+<p><b>Returns:</b> jobid if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>project</td>    <td>Alias for the project.</td>
+</tr>
+</tr>
+</table>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DeleteJob"></a>
+<p><b>DeleteJob</b> <em>project</em> <em>jobid</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b> Delete a job in database.</p>
+<p><b>Returns:</b>1 if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>project</td>    <td>Alias for the project.</td>  
+</tr>
+<tr><td>jobid</td><td>the id of the job to be deleted.</td></tr>
+</tr>
+</table>
+
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="ItemExists"></a>
+<p><b>ItemExists</b> <em>project</em> <em>jobid</em> <em>item</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b> Check if the given item for the given job exists or not.</p>
+<p><b>Returns:</b>1 if the item exists. Raise DbError if the item doesn't exist or anything goes wrong with the request.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>project</td>    <td>Alias for the project.</td>  
+</tr>
+<tr><td>jobid</td><td>the id of the job.</td></tr>
+<tr><td>item</td><td>item name.</td></tr>
+</tr>
+</table>
+
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="SetData"></a>
+<p><b>SetData</b> <em>project</em> <em>jobid</em> <em>item</em> <em>value</em> <em> [ item2 value2 [...] ]</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b> Set the value(s) of one or more data item(s) for a job in project.</p>
+<p><b>Returns:</b>1 if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>project</td>    <td>Alias for the project.</td>  
+</tr>
+<tr><td>jobid</td><td>the id of the job.</td></tr>
+<tr><td>item</td><td>item name.</td></tr>
+<tr><td>value</td><td>value of the item.</td></tr>
+</tr>
+</table>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetData"></a>
+<p><b>GetData</b> <em>project</em> <em>jobid</em> <em>item</em> <em> [ item2 ...]</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b> Get the value(s) of one or more data item(s) for a job in project.</p>
+<p><b>Returns:</b>value(s) if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>project</td>    <td>Alias for the project.</td>  
+</tr>
+<tr><td>jobid</td><td>the id of the job.</td></tr>
+<tr><td>item</td><td>item name.</td></tr>
+</tr>
+</table>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="SeleteJobs"></a>
+<p><b>SelectJobs</b> <em>project</em> <em>item</em> <em>pattern</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b> Retrieve a list of jobs based on some selection criterion.</p>
+<p><b>Returns:</b>a list of job ids if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>project</td>    <td>Alias for the project.</td>  
+</tr>
+<tr><td>item</td><td>the item name.</td></tr>
+<tr><td>pattern</td><td>regular expression pattern.</td></tr>
+</tr>
+</table>
+
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetDescription"></a>
+<p><b>GetDescription</b> <em>project</em> <em>joblist</em> <em>db_display</em> <em>db_display_format</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b> Return a formatted list of jobs in report format.</p>
+<p><b>Returns:</b>a list formatted string populated with job data if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>project</td>    <td>Alias for the project.</td>  
+</tr>
+<tr><td>joblist</td><td>a list of job ids tobe retrived description.</td></tr>
+<tr><td>db_display</td><td>A list of the database item to be displayed.</td></tr>
+<td>db_display_format</td>    <td>A list of the field widths (as integers) to use for displaying the items in the db_display list.</td>  
+</tr>
+</table>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="ListProjects"></a>
+<p><b>ListProjects</b></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b> List all the user's projects.</p>
+<p><b>Returns:</b>A list of projects if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>None</td>
+</tr>
+</table>
+
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetProjectDir"></a>
+<p><b>GetProjectDir</b> <em>project</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b>Get the directory name of the project.</p>
+<p><b>Returns:</b> the directory name if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>project</td>    <td>Alias for the project.</td>
+</tr>
+</tr>
+</table>
+
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="ListDataDirs"></a>
+<p><b>ListDataDirs</b></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b> Return a list of the user's default directories.</p>
+<p><b>Returns:</b>A list of the user's default directories if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>None</td>
+</tr>
+</table>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetDataDir"></a>
+<p><b>GetDatatDir</b> <em>def_dir</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b>Return the directory corresponding to a def dir name.</p>
+<p><b>Returns:</b> the directory name if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>def_dir</td>    <td>default directory name.</td>
+</tr>
+</tr>
+</table>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetNJOB"></a>
+<p><b>GetNJOB</b> <em>project</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b>Return the last number of job in project.</p>
+<p><b>Returns:</b> the last number of job in the project if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>project</td>    <td>Alias of the project.</td>
+</tr>
+</tr>
+</table>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetNProject"></a>
+<p><b>GetNProject</b></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b>Return the total number of projects.</p>
+<p><b>Returns:</b> the total number of projects if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>None</td>
+</tr>
+</tr>
+</table>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="Updatetime"></a>
+<p><b>Updatetime</b> <em>project</em> <em>jobid</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b> Update the time of job.</p>
+<p><b>Returns:</b>1 if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>project</td>    <td>Alias for the project.</td></tr>
+<tr><td>jobid</td>  <td> the id of the job. </td>
+</tr>
+</tr>
+</table>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="ListJobs"></a>
+<p><b>ListJobs</b> <em>project</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b>List all the job ids of a project.</p>
+<p><b>Returns:</b> A list of job ids if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>project</td>    <td>Alias of the project.</td>
+</tr>
+</tr>
+</table>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="ImportProject"></a>
+<p><b>ImportProject</b> <em>project</em> <em>dir</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b>Add a reference of a project(alias and path) in the directories.def file.</p>
+<p><b>Returns:</b>1 if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>project</td>    <td>Alias of the project.</td>
+</tr>
+<tr><td>dir</td>    <td>The directory of the project.</td></tr>
+</tr>
+</table>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DeleteProject"></a>
+<p><b>DeleteProject</b> <em>project</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b>Delete the reference of a project in directories.def.</p>
+<p><b>Returns:</b> 1 if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>project</td>    <td>Alias of the project.</td>
+</tr>
+</tr>
+</table>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="AddDataDirRef"></a>
+<p><b>AddDataDirRef</b> <em>dir_def</em> <em>path</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b>Add a reference of a default directory in the directories.def file.</p>
+<p><b>Returns:</b>1 if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>dir_def</td>    <td>The default directory name.</td>
+</tr>
+<tr><td>path</td>    <td>The path of the default directory.</td></tr>
+</tr>
+</table>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="DeleteDataDirRef"></a>
+<p><b>DeleteDataDirRef</b> <em>dir_def</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b>Delete the reference of a default directory in directories.def.</p>
+<p><b>Returns:</b> 1 if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>def_dir</td>    <td>The name of the default directory.</td>
+</tr>
+</tr>
+</table>
+
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetNextJobList"></a>
+<p><b>GetNextJobList</b> <em>project</em> <em>jobid</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b>Return a list of job ids which are related to the given job.</p>
+<p><b>Returns:</b>A list of job ids if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>project</td>    <td>The alias of a project.</td>
+</tr>
+<tr><td>jobid</td>    <td>The id of the job.</td></tr>
+</tr>
+</table>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetAllFileLinks"></a>
+<p><b>GetAllFileLinks</b> <em>project</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b>Return a list of job pairs. Each pair of jobs indicates these two jobs are related to each other.</p>
+<p><b>Returns:</b> a list of job pairs if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>project</td>    <td>The alias of a project.</td>
+</tr>
+</tr>
+</table>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetFileLinks"></a>
+<p><b>GetFileLinks</b> <em>project</em> <em>joblist</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b>Given the job list, for each job id in the job list, return a list of job pairs. Each pair of jobs indicates these two jobs are related to each other.</p>
+<p><b>Returns:</b>A list of job pairs if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>project</td>    <td>The alias of a project.</td>
+</tr>
+<tr><td>joblist</td>    <td>A list of job ids.</td></tr>
+</tr>
+</table>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetAllChildren"></a>
+<p><b>GetAllChildren</b> <em>project</em> <em>jobid</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b>For a particular project, given a job id, get all the jobs which are children(all levels) of this job.</p>
+<p><b>Returns:</b>A list of job ids if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>project</td>    <td>The alias of a project.</td>
+</tr>
+<tr><td>jobid</td>    <td>The job id.</td></tr>
+</tr>
+</table>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetAllParents"></a>
+<p><b>GetAllParents</b> <em>project</em> <em>jobid</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b>For a particular project, given a job id, get all the jobs which are parents(all levels) of this job.</p>
+<p><b>Returns:</b>A list of job ids if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>project</td>    <td>The alias of a project.</td>
+</tr>
+<tr><td>jobid</td>    <td>The job id.</td></tr>
+</tr>
+</table>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetChildren"></a>
+<p><b>GetChildren</b> <em>project</em> <em>jobid</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b>For a particular project, given a job id, get all the jobs which are immediate children of this job.</p>
+<p><b>Returns:</b>A list of job ids if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>project</td>    <td>The alias of a project.</td>
+</tr>
+<tr><td>jobid</td>    <td>The job id.</td></tr>
+</tr>
+</table>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetParents"></a>
+<p><b>GetParents</b> <em>project</em> <em>jobid</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b>For a particular project, given a job id, get all the jobs which are immediate parents of this job.</p>
+<p><b>Returns:</b>A list of job ids if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>project</td>    <td>The alias of a project.</td>
+</tr>
+<tr><td>jobid</td>    <td>The job id.</td></tr>
+</tr>
+</table>
+
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetListofRecords"></a>
+<p><b>GetListofRecords</b> <em>project</em> <em>joblist</em> <em>itemlist</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b>Get a list of job's item value.</p>
+<p><b>Returns:</b>A list of job item value if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>project</td>    <td>The alias of a project.</td>
+</tr>
+<tr><td>joblist</td>    <td>A list of job ids.</td></tr>
+<tr><td>itemlist</td>    <td>A list of item names.</td></tr>
+</tr>
+</table>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="AddInputFile"></a>
+<p><b>AddInputFile</b> <em>project</em> <em>jobid</em> <em>filen</em> <em>project_dir</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b>Add a file to the list of input files for a job.</p>
+<p><b>Returns:</b>1 if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>project</td>    <td>The alias of a project.</td>
+</tr>
+<tr><td>jobid</td>    <td>A job id.</td></tr>
+<tr><td>filen</td>    <td>The name of the input file.</td></tr>
+<tr><td>project_dir</td>    <td>Optional. project directory.</td></tr>
+</tr>
+</table>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="AddOutputFile"></a>
+<p><b>AddOutputFile</b> <em>project</em> <em>jobid</em> <em>filen</em> <em>project_dir</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b>Add a file to the list of output files for a job.</p>
+<p><b>Returns:</b>1 if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>project</td>    <td>The alias of a project.</td>
+</tr>
+<tr><td>jobid</td>    <td>A job id.</td></tr>
+<tr><td>filen</td>    <td>The name of the input file.</td></tr>
+<tr><td>project_dir</td>    <td>Optional. project directory.</td></tr>
+</tr>
+</table>
+
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="SetLogfile"></a>
+<p><b>SetLogfile</b> <em>project</em> <em>jobid</em> <em>logfile</em> </p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b>Set the filename for the logfile for a job.</p>
+<p><b>Returns:</b>1 if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>project</td>    <td>The alias of a project.</td>
+</tr>
+<tr><td>jobid</td>    <td>A job id.</td></tr>
+<tr><td>logfile</td>    <td>The name of the log file.</td></tr>
+</tr>
+</table>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="GetFileList"></a>
+<p><b>GetFileList</b> <em>project</em> <em>jobid</em> <em>type</em></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b>Return a list of files associated with a job.</p>
+<p><b>Returns:</b>A list of files with full path if the request is successful. Raise DbError otherwise.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>project</td>    <td>The alias of a project.</td>
+</tr>
+<tr><td>jobid</td>    <td>A job id.</td></tr>
+<tr><td>type</td>    <td>The type of the file: INPUT or OUTPUT.</td></tr>
+</tr>
+</table>
+
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="HandlerDisconnect"></a>
+<p><b>HandlerDisconnect</b></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b> Disconnect from handler.</p>
+<p><b>Returns:</b>None</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>None</td>
+</tr>
+</table>
+<table border=1>
+<tr><td colspan=3 bgcolor="#cccccc">
+<a name="ShutDown"></a>
+<p><b>ShutDown</b></p>
+</tr></td>
+<tr><td colspan=3>
+<p><b>Summary:</b> Shutdown the handler.</p>
+<p><b>Returns:</b>None.</p>
+</tr></td>
+<tr><td rowspan=4><p><b>Arguments:</b></td>
+    <td>None</td>
+</tr>
+</table>
+<p><h3>Part 2:   Methods for iteracting SQLite backend ( to be continued )</p></h3>
+
+<p>Last Update: $Date: 2008/08/12 10:48:16 $</p>
+</body>
+</html>

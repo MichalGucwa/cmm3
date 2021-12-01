@@ -1,0 +1,527 @@
+<html>
+<head>
+<title>Major Changes in dbCCP4i</title>
+</head>
+<body>
+<h1>Major Changes in dbCCP4i</h1>
+
+<h2>Changes in Version 0.4.11</h2>
+
+<h3>DBviewer and applications</h3>
+<ul>
+<li>dbviewer: the menu of available projects is now split into columns of
+    30 project names, to ensure that projects at the end of the menu are
+    still accessible and don't fall off the bottom of the screen.</li>
+<li>dbviewer: fix bug whereby zooming out too far caused the display to
+    begin zooming back in.</li>
+</ul>
+
+<h3>DB handler</h3>
+<ul>
+<li>Minor optimisation for reading def files for directories and project
+    database data.</li>
+<li>Bug fix: in certain situations the handler could erroneously discard
+    client requests, with the effect that the client might end up waiting
+    for the requests to timeout. This is now fixed.</li>
+</ul>
+
+<h3>Client API</h3>
+<ul>
+<li>dbClientAPI.tcl: the time interval for polling the handler lock file
+    has been made much shorter, which should hopefully lead to quicker
+    start up times for Tcl client applications.</li>
+</ul>
+
+<h2>Changes in Version 0.4.10</h2>
+
+<h3>DBviewer and applications</h3>
+<ul>
+<li>None.</li>
+</ul>
+
+<h3>DB handler</h3>
+<ul>
+<li>Bug fix: using Python 2.4.4 under Linux, backgrounding a client
+    application (e.g. CCP4i) using control-Z and the "bg" command was
+    causing dbccp4i to disconnect the client. This should now be
+    fixed.</li>
+</ul>
+
+<h3>Client API</h3>
+<ul>
+<li>None.</li>
+</ul>
+
+<h2>Changes in Version 0.4.9</h2>
+
+<h3>DBviewer and applications</h3>
+<ul>
+<li>None.</li>
+</ul>
+
+<h3>DB handler</h3>
+<ul>
+<li>OpenProject command could get confused if a request was made to
+    open a non-existent project; if a request was made subsequently
+    to create a real project then the attempt would fail even though
+    it was valid. This is now fixed.</li>
+</ul>
+
+<h3>Client API</h3>
+<ul>
+<li>None.</li>
+</ul>
+
+<h2>Changes in Version 0.4.8</h2>
+
+<h3>DBviewer and applications</h3>
+<ul>
+<li>Python unit tests now include basic tests for the history class
+    in ccp4i.py.</li>
+<li>test_dbsocket.py and test_addfiles.py now added to the
+    run_tests.tcl script</li>
+<li>test_ccp4i.py: fixed not to leave "test_directories.def.copy"
+    lying around in test directory after completing.</li>
+<li>New test script "test_directories_client.tcl" added to test
+    "GetDirectoriesData" command via the Tcl client API.</li>
+</ul>
+
+<h3>DB handler</h3>
+<ul>
+<li>ccp4i.py: all classes and methods should now have doc strings
+    for improved Python documentation.</li>
+<li>Fixed bugs which meant that the -debug and -shutdown options of
+    dbccp4i didn't work in earlier versions.</li>
+<li>dbccp4i returns a non-zero exit status in the event that one of
+    the modules that it needs fails to load.</li>
+<li>New handler API command "GetDirectoriesData" allows multiple
+    data items to be retrieved for project and data dir information
+    in a single request.</li>
+<li>Minor fix to GetDataDir command, which should be quicker as it
+    doesn't check whether the supplied alias is a project before
+    attempting to look it up as a data directory; the return
+    status should now correctly be ERROR if the alias is not
+    found.</li>
+</ul>
+
+<h3>Client API</h3>
+<ul>
+<li>Updated the "Communication Protocols" documentation
+    (communications.html) with more information about broadcast
+    messages from the handler.</li>
+<li>Added "GetDirectoriesData" commands to the Tcl and Python client
+    APIs, corresponding to the new handler API command with the same
+    name.</li>
+</ul>
+
+<h2>Changes in Version 0.4.7.2 / 0.4.7.1</h2>
+
+<h3>DBviewer and applications</h3>
+<ul>
+<li>Various updates to test scripts to improve robustness.</li>
+</ul>
+
+<h3>DB handler</h3>
+<ul>
+<li>Implemented changes to try and improve performance on systems where
+    file access operations become expensive if performed many times
+    (reported for some setups using NFS).</li>
+</ul>
+
+<h3>Client API</h3>
+<ul>
+<li>dbClientAPI.tcl,.py: fixed to function correctly for installations
+    of dbccp4i which have spaces in the pathname (for example, under
+    Windows).</li>
+</ul>
+
+<h2>Changes in Version 0.4.6</h2>
+
+<h3>DBviewer and applications</h3>
+<ul>
+<li>test_directories_mr.py: removed the dependence on PYTHONPATH to locate
+    the required Python modules.</li>
+<li>dbitem_client.tcl: new test script checks that the data items available
+    in the database are consistent with that in database.def.</li>
+<li>dbviewer: the "Output Tracking XML" option was broken under Windows if
+    the output XML filename contained spaces - should now be fixed.</li>
+<li>reaper: new client application that can be used to analyse a project
+    database to extract information for data harvesting. Reaper can be
+    run from the command line or by selecting the appropriate option in
+    dbviewer when right-clicking on a job.</li>
+<li>Demonstration SQLite crystallographic database: files for an example
+    CCP4i task interface are provided in the "tasks" subdirectory
+    (bioxhit_db.tcl and bioxhit_db.def) which allows interaction with an
+    existing SQLite database associated with a project. The files must be
+    copied to $CCP4/ccp4i/tasks and then the interface can be launched
+    using "ccp4i -t bioxhit_db", or via the option from the viewer (under
+    the "File" menu).</li>
+<li>Tests will only run if an existing handler instance isn't already
+    running for the user running the test suite.</li>
+</ul>
+
+<h3>DB handler</h3>
+<ul>
+<li>dbccp4i.setup-dist,-bash: no longer adds paths to the PYTHONPATH
+    environment variable - applications should explicitly specify the
+    location of the required modules.</li>
+<li>Fixed bug in handler which meant that dbccp4i ran forever under
+    Windows, and could only be stopped by killing the python process.</li>
+</ul>
+
+<h3>Client API</h3>
+<ul>
+<li>New data items added to the database: MACHINE and USER_AGENT; also,
+    USER_AGENT is now automatically stored by the handler for new jobs and
+    subjobs, and takes its value as the name supplied by the client
+    application when it first connected.</li>
+<li>It is now possible to extend the .def file database with new items
+    by adding definitions for those items in the template database.def
+    ($DBCCP4I_TOP/etc/database.def).</li>
+</ul>
+
+<h2>Changes in Version 0.4.5</h2>
+
+<h3>DBviewer and applications</h3>
+<ul>
+<li>test_directories_mr.py: new test script added which checks that it
+    possible to connect to a handler with non-standard directories.def
+    file from the Python client API.</li>
+<li>run_tests.tcl: fixed problem that Python unit test always reported
+    failure, even if all unit tests worked.</li>
+<li>dbccp4i_test_client.tcl: added a simple test for subjob addition.</li>
+<li>dbviewer: a number of changes:
+    <ul>
+    <li>Options to view the "annotated" logfile and to run "plugins"
+        such as Coot and CCP4mg have been added to the job options
+        menus.</li>
+    <li>A number of small bugs with selection and filtering have been
+        fixed as a result of refactoring the code. The viewer should now
+        also be a little more stable.</li>
+    </ul>
+</li>
+<li>starKey: fixed a number of issues:
+    <ul>
+    <li>Now possible to run starKey in an environment where PYTHONPATH
+        doesn't include the appropriate directories for the client
+        API and other modules (previously failed with an ImportError).</li>
+    <li>Previously would fail to generate XML file if it encountered a
+        logfile which contained unrecognised program output (e.g. from
+        programs that don't follow the CCP4 logfile conventions
+        recognised by smartie) - now fixed.</li>
+    <li>smartie: updated to version 0.0.14.</li>
+    </ul>
+</li>
+</ul>
+
+<h3>DB handler</h3>
+<ul>
+<li>Fixed bug where attempting start up of a handler with non standard
+    directories.def from the Python client API would always fail to
+    create a handler instance.</li>
+<li>Control-C to kill a client application that started the handler
+    in background should not now also kill the handler process. (In fact
+    it should not be possible to kill the handler process using
+    Control-C at all.)</li>
+<li>Fixed some bugs when running the handler with Python 2.5.2: on Linux,
+    suspending and backgrounding the client that started the handler
+    no longer results in the connection being dropped.</li>
+</ul>
+
+<h3>Client API</h3>
+<ul>
+<li>AddSubJob command (dbClientAPI.tcl, dbClientAPI.py): the "taskname"
+    and "title" arguments supplied to the AddSubJob commands have been
+    reversed (essentially correcting an old bug in the handler). Also,
+    a bug in the Tcl client API (whereby only the first word in the title
+    was actually used) has been corrected.</li>
+<li>HasJobs command (dbClientAPI.tcl): now returns zero if the handler
+    returns an error, rather than an empty string.</li>
+</ul>
+
+<h2>Changes in Version 0.4.4</h2>
+
+<h3>DBviewer and applications</h3>
+<ul>
+<li>dbccp4i_test_client.tcl: added tests for set/get of data for a single
+    job.</li>
+<li>dbccp4i_test_client.py and dbsocket_crash.py: now explicitly appends the
+    ClientAPI and dbccp4i directories to the module search path, so that the
+    tests will run in environments where these directories are not part of
+    the PYTHONPATH.</li>
+</ul>
+
+<h3>DB handler</h3>
+<ul>
+<li>Fixed DbGetData command which was broken in 0.4.3 (would always generate
+    a handler exception warning if multiple data items were requested in a
+    single request to the handler).</li>
+<li>Trap for existence of directories.def or database.def file before
+    attempting to check modification status, which should prevent errors if
+    .CCP4 area or project directory is removed while handler is running.</li>
+</ul>
+
+<h3>Client API</h3>
+<ul>
+<li>dbClientAPI.tcl: missing .CCP4 directory in user's home area no longer
+    crashes the client API due to being unable to make a logging file
+    there.</li>
+</ul>
+
+<h2>Changes in Version 0.4.3</h2>
+
+<h3>DBviewer and applications</h3>
+<ul>
+<li>No changes.</li>
+</ul>
+
+<h3>DB handler</h3>
+<ul>
+<li>The "operation" reported in broadcast messages has been updated for
+    NewProject, DeleteProject, ImportProject, AddDataDirRef and
+    DeleteDataDirRef.</li>
+<li>Warnings are now suppressed if a project is opened which has mismatching
+    header information for the project name or directories.</li>
+<li>DbGetData command: better handling of cases when requested job id
+    and/or data item(s) don't exist. Note that if several data items are
+    requested, if even one doesn't exist then the request as a whole will
+    fail and return an error.</li>
+<li>DbSetData command: better handling of cases when requested job id
+    and/or data item(s) don't exist. Note that if several data items are
+    requested, if one doesn't exist then the returned status will be
+    ambiguious.</li>
+<li>AddOutputFile command: better handling of case when requested job id
+    doesn't exist.</li>
+</ul>
+
+<h3>Client API</h3>
+<ul>
+<li>Tcl client API: the default timeout has been increased to 30 seconds.
+    This should be sufficient to deal with large projects.</li>
+</ul>
+
+<h2>Changes in Version 0.4.2</h2>
+
+<h3>DBviewer and applications</h3>
+<ul>
+<li>tests: new platform-independent script run_tests.tcl, which runs all
+    test scripts and reports outcomes (replaces run_tests.sh, which has been
+    withdrawn).</li>
+<li>tests: new diagnostic test script dbccp4i_diagnose.tcl has been added,
+    which attempts to characterise the interactions with the handler.</li>
+<li></li>
+</ul>
+
+<h3>DB handler</h3>
+<ul>
+<li>DbInfo: now includes information on the Python interpreter that the
+    handler is running under, as well as the handler version.</li>
+</ul>
+
+<h3>Client API</h3>
+<ul>
+<li>dbClientAPI.tcl: Fixed bug in "namespace exists" workaround which stopped
+    the API from working properly if sourced more than once.</li>
+</ul>
+
+<h2>Changes in Version 0.4.1</h2>
+
+<h3>DBviewer and applications</h3>
+<ul>
+<li>New command line option for DBviewer: -title allows custom text
+    to be added to the title bar, e.g.<br />
+    dbviewer -title "viewing MrBUMP"</li>
+<li>Python dbconsole: new -directories option allows the user to
+    specify a non-default directories.def file to user on start-up.</li>
+</ul>
+
+<h3>DB handler</h3>
+<ul>
+<li></li>
+</ul>
+
+<h3>Client API</h3>
+<ul>
+<li>dbClientAPI.py: Connect command supports -directories option,
+    to specify a non-default directories.def file to user on start-up.</li>
+</ul>
+
+<h2>Changes in Version 0.4</h2>
+
+
+<h3>DBviewer</h3>
+<ul>
+<li>New command line options:
+    <ul>
+    <li>-directories: allows an arbitrary non-default directories.def
+        file to be specified on start-up.</li>
+    <li>-remote: allows the specification of a remote handler that the
+        viewer should use instead of one on localhost (the default).</li>
+    </ul>
+</li>
+<li>Updated to work with CCP4 6.1 as well as CCP4 6.0.2.</li>
+</ul>
+
+<h3>DB handler</h3>
+<ul>
+<li>Implemented -directories option, to specify an arbitrary non-default
+    directories.def file to use on start-up.</li>
+<li>Fixed bug in the DeleteProject command: now it is not possible to
+    delete a reference to a project while it is open.</li>
+<li>Fixed bug in the ImportProject command: now it is not possible to
+    import a project unless it has a unique name and directory path. Also
+    the import will fail if the directory is not a valid project
+    directory.</li>
+<li>Fixed bug when adding projects, that project database directory path
+    would be left blank if not explicitly specified (caused problems if
+    CCP4i subsquently tried opening the project directly).</li>
+</ul>
+
+<h3>Client API</h3>
+<ul>
+<li>dbClientAPI.tcl: DbHandlerConnect command supports -directories option,
+    to specify a non-default directories.def file to user on start-up.</li>
+<li>dbClientAPI.tcl: Fixed bugs in db_client_error which meant that no
+    error messages were ever retrieved, and added a new command called
+    db_client_response_data which allows the status and result from the last
+    handler interaction to be returned</li>
+</ul>
+
+
+<h2>Changes in Version 0.3</h2>
+
+
+<h3>DBviewer</h3>
+<ul>
+<li>Add an icon on the job node. If a job has subjobs, in the upper left
+    side, a star '*' is shown. </li>
+<li>Add an up arrow, allow to go from subjob view to top lever job view.</li>
+<li>Replaced textual buttons on tool bar with a set of icons e.g. for zooming
+    in/zooming out etc.</li>
+<li>Uses colour scheme from CCP4i if user has specified custom colours in
+    CCP4i.</li>
+</ul>
+
+<h3>DB handler</h3>
+<ul>
+<li>Added support for subjobs: it is possible to create jobs within jobs, to
+    represent substeps of a larger process (for example, automated
+    pipeline).</li>
+<li>Added implementation of demonstration SQLite knowledge base.</li>
+<li>Large number of bugs addressed.</li>
+</ul>
+
+<h3>Client API</h3>
+<ul>
+<li>Added namespacing to Tcl client API: prepend ::dbClientAPI:: to commands
+    or use namespace import.</li>
+<li>Fixed bug where Tcl client API failed if sourced more than once.</li>
+<li>Tcl and Python client APIs updated with commands for interacting with
+    subjobs.</li>
+<li>Tcl client API has functions for interacting with generic SQLite tables,
+    plus additional functions for interacting with demonstration knowledge
+    base.</li>
+</ul>
+
+<h2>Changes in Version 0.2</h2>
+<p>
+
+<h3>General</h3>
+<ul>
+<li>Tested on Windows.</li>
+<li>Installation/setup: the GRAPHVIZ_BIN environment variable is no longer
+    required by dbviewer and has been removed.</li>
+</ul>
+</p>
+<h3>DBviewer</h3>
+<ul>
+<li>Added 'view Files' feature. Now files including log file,
+input files, output files and notebook can be viewed from the menu when
+right click over the job node.</li>
+<li>Added 'select related jobs'. Now any job node, you can select all jobs
+that directly or in-directly related to the job, including all children and
+parents.</li>
+<li>Added user's preferences. Now it is possible to save the changes in
+appearance menu. </li>
+<li>Added 'scale' menu. It is possible to enlarge or shrink the graph by
+selecting different scale. </li>
+
+<li>Added 'node' menu. It is allowed to choose to show 'title' or 'taskname'
+in the job node.</li>
+<li>Add an icon at lower right hand side on job node. If the 'JobQuality' is 1, the icon is a tick;
+if the 'JobQuality' is -1, the icon is a cross; if the 'JobQuality' is 0, the
+icon is a question mark.</li>
+<li>Add Zoom in(+)/Zoom out(-) button. </li>
+
+</ul>
+<h3>DB handler</h3>
+<ul>
+<li>Added 'AddInputFile', 'AddOutputFile', 'ListInputFiles','ListOutputFiles',
+'DbReadable', 'DbWriteable', 'DbReacquire' commands.</li>
+<li>Make major command name changes. (see also name changes in API.
+</li>
+<li>Add a SQLite backend for each project to store JobQuality data. </li>
+<li>Change the broadcast message. Now the xml tags for broadcast message is:
+<pre>
+&lt;db_broadcast&gt;
+&lt;message&gt;&lt;/message&gt;
+&lt;project&gt;&lt;/project&gt;
+&lt;jobid&gt;&lt;/jobid&gt;
+&lt;operation&gt;&lt;/operation&gt;
+&lt;agent&gt;&lt;/agent&gt;
+&lt;/db_broadcast&gt;
+</pre>
+</li>
+<li>Add 'GetDbItems' command.</li>
+<li>Replace 'database' class with 'ProjectDB' class.</li>
+<li>Add 'AddSubJob','SelectSubJobs','HasSubJobs' commands.</li>
+</ul>
+<h3>Client API</h3>
+<ul>
+<li>Major changes in python API. Now if handler response is 'OK', API returns
+the actural result. If handler response is 'ERROR', API raises 'DBError'
+exception. </li>
+<li>In python API,Change DbRegister, now it takes two arguments, user_agent and broadcast flag.</li>
+<li>In python API, changes in handler connection: 
+Remove 'DbStartHander' & 'DbRegister'. HandlerConnection initialisation takes
+two arguments: user agent and broadcast flag.  
+There are major changes in the name of the methods/procedures. The following
+table show the changes names in both python & tcl API.
+<table border=1>
+<tr><td><em><b>Old Name</b></em></td><td><em><b>New Name</b></em></td></tr>
+<tr><td>handlerconnection</td><td>HandlerConnection (only in python)</td></tr>
+<tr><td>OpenDatabase</td><td>OpenProject</td></tr>
+tr><td>CreateDatabase</td><td>CreateProject</td></tr>
+<tr><td>CloseDatabase</td><td>CloseProject</td></tr>
+<tr><td>NewRecord</td><td>NewJob</td></tr>
+<tr><td>DeleteRecord</td><td>DeleteJob</td></tr>
+<tr><td>DbReadable</td><td>ProjectReadable</td></tr>
+<tr><td>DbWriteable</td><td>ProjectWriteable</td></tr>
+<tr><td>DbReacquire</td><td>ReacquireProject</td></tr>
+<tr><td>GetAllLinks</td><td>GetAllFileLinks</td></tr>
+<tr><td>GetLinks</td><td>GetFileLinks</td></tr>
+<tr><td>ListDefDirs</td><td>ListDataDirs</td></tr>
+<tr><td>AddDefDirRef</td><td>AddDataDirRef</td></tr>
+<tr><td>DeleDefDirRef</td><td>DeleteDataDirRef</td></tr>
+<tr><td>GetDefDir</td><td>GetDataDir</td></tr>
+</table>
+</li>
+<li>In Tcl API, change DbHandlerConnect, add two arguments: userAgent and
+broadcastFlag. </li>
+<li>In Tcl API, add four procedures: 
+<ul>
+<li>cacheProject: This stores a project data in a database array for
+use. This can be called from client application when open a project. </li>
+<li>updateCachedJob: This updates a job in cache. This procedure is called within Client API when receives broadcast message.</li>
+<li>deleteCachedJob: This deletes a job from cache. This procedure is called within Client API when receives broadcast message.</li>
+<li>getCachedData: retrives data from the cached project. </li>
+<li>Add 'AddSubJob','SelectSubJobs','HasSubJobs' commands in both Tcl & python API..</li>
+</ul>
+</ul>
+</p>
+
+<hr />
+
+<p>Last Update: $Date: 2008/09/19 08:42:59 $</p>
+</body>
+</html>

@@ -1,0 +1,45 @@
+#!/bin/sh
+# acorn.exam
+# 
+# bug # 3279 - no acorn run-all example
+#
+
+set -e
+
+HARVESTHOME=$CCP4_SCR
+export HARVESTHOME
+
+# check that the input files - ${CEXAM}/data/deuterolysin_fe.pdb and 
+# deuterolysin_sad.mtz - exist
+
+if test ! -f ${CEXAM}/data/deuterolysin.mtz ; then
+  echo "example reflection data missing"
+  exit 1
+fi
+
+if test ! -f ${CEXAM}/data/deuterolysin_zn.pdb ; then
+  echo "example site data missing"
+  exit 1
+fi
+
+# first run ecalc
+
+ecalc \
+hklin ${CEXAM}/data/deuterolysin.mtz \
+hklout ${CCP4_SCR}/deuterolysin_e.mtz << eof
+labin FP=F SIGFP=SIGF
+eof
+
+# then acorn
+
+acorn \
+hklin ${CCP4_SCR}/deuterolysin_e.mtz \
+xyzin ${CEXAM}/data/deuterolysin_zn.pdb \
+hklout ${CCP4_SCR}/deuterolysin_a.mtz << eof
+labin E=E FP=F SIGFP=SIGF
+posi 1
+cutd 5.0
+end
+eof
+
+

@@ -1,0 +1,275 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#===========================================================================
+#
+# astex_viewer.script
+#
+#===========================================================================
+
+#----------------------------------------------------------------------
+proc AstexViewerWriteFileHeader { title } {
+#----------------------------------------------------------------------
+# Writes the header for the html page to display structures ligands and
+# maps, including Javascript codes for manipulating the display.
+  WriteToLog "
+<html> <!-- CCP4 HTML LOGFILE -->
+<head>
+<title>AstexViewer: $title</title>
+<SCRIPT LANGUAGE=\"JavaScript\">
+
+<!-- Hide script
+function sendCommand()\{
+	var s = document.dummy.command.value;
+        document.av.execute(s);
+\}
+
+function execute(s)\{
+	document.av.execute(s);
+	//window.status = s;
+\}
+
+function changecontour(obj, map, contour)\{
+  window.status = 'bob ' + obj\[0\].value + ' ' +obj.length;
+	for(var i = 0; i < obj.length; i++)\{
+		if(obj\[i\].selected)\{
+			var s = 'map ' + map + ' contour ' + contour + ' ' + obj\[i\].value + ';';
+			window.status = s;
+			execute(s);
+		\}
+	\}
+\}
+
+function togglecontour(map, contour)\{
+  var s = 'map ' + map + ' contour ' + contour + ' toggle;';
+  window.status = s;
+  execute(s);
+\}
+
+function togglestructure(name)\{
+  execute('molecule display ' + name + ' toggle;');
+\}
+// End script hiding -->
+
+</SCRIPT>
+</head>
+<body>
+<h2>AstexViewer: $title</h2>
+<form name=form>
+" -noheader -nofooter
+  return
+}
+
+#----------------------------------------------------------------------
+proc AstexViewerWriteMapControls { map_file n contour0 contour1 contour2 } {
+#----------------------------------------------------------------------
+# Write the controls for the map viewing in the AstexViewer applet
+
+  set name "map$n"
+
+  WriteToLog "<tr><td colspan=100>$map_file</td>" -noheader -nofooter
+
+  for { set i 0 } { $i < 3 } { incr i } {
+    # Set the colour for this contour control
+    switch $i {
+      0 { set bgcolor "red" }
+      1 { set bgcolor "orange" }
+      2 { set bgcolor "blue" }
+    }
+    # Write the opening table element for this contour control
+    WriteToLog "<td bgcolor=$bgcolor>" -noheader -nofooter
+    set select_name "c[subst $name]$i"
+    WriteToLog "<select name=$select_name onchange='changecontour(document.form.$select_name, \"$name\", $i)'>" -noheader -nofooter
+
+    # Generate a menu of contour levels
+    for { set j 5.0 } { $j > -5.01 } { set j [expr $j - 0.1] } {
+      set selected ""
+      set diff [expr $j - $[subst contour$i]]
+      if { $diff < 0.0 } { set diff [expr 0.0 - $diff] }
+      if { $diff < 0.01 } {
+	set selected "selected"
+      }
+      WriteToLog "<option $selected value='$j'>$j" -noheader -nofooter
+    }
+    WriteToLog "</select>\n" -noheader -nofooter
+
+    # Make sure checkbox is checked for first contour
+    set checked ""
+    if { $i == 0 } { set checked "checked" }
+    # Write the control
+    WriteToLog "<input type=checkbox $checked name=[subst $name]$i onclick='togglecontour(\"$name\", $i)'>" -noheader -nofooter
+    WriteToLog  "</td>" -noheader -nofooter
+  }
+  # End the table row
+  WriteToLog "</tr>" -noheader -nofooter
+  return
+}
+
+#----------------------------------------------------------------------
+proc AstexViewerOpenApplet { height width } {
+#----------------------------------------------------------------------
+# Write the applet code for creating the AstexViewer embedded in a
+# html page
+
+  WriteToLog "<p>
+<applet" -noheader -nofooter
+  if { $height != "" && $width != "" } {
+    WriteToLog "height=$height width=$width" -noheader -nofooter
+  }
+  WriteToLog "archive=\"[FileJoin [GetEnvPath CBIN] OpenAstexViewer.jar]\"
+code=\"MoleculeViewerApplet\"
+codebase=\"/\"
+name=\"av\">
+<param name=\"script\" value=\"" -noheader -nofooter
+  return
+}
+
+#----------------------------------------------------------------------
+proc AstexViewerCloseApplet { nligands first_protein first_ligand } {
+#----------------------------------------------------------------------
+# Write the applet code for creating the AstexViewer embedded in a
+# html page
+
+  # Write some general controls
+  # First switch off display of all objects
+  WriteToLog "molecule display * off;" -noheader -nofooter
+  # Display first protein in list
+  if {$first_protein != ""} {
+    WriteToLog "molecule display $first_protein on;" -noheader -nofooter
+  }
+  # Display first ligand
+  if {$first_ligand != ""} {
+    WriteToLog "molecule display $first_ligand on;" -noheader -nofooter
+  }
+  # Centre on ligands and display with wide bonds
+  if { $nligands > 0 } {
+    WriteToLog "center molecule ligand*;
+display wide molecule ligand*;
+colour purple (atom C* and molecule protein*) and not sphere 12 around molecule ligand*;"  -noheader -nofooter
+  }
+  # Write the end of the applet
+  WriteToLog "\">
+</applet>
+</p>
+" -noheader -nofooter
+  return
+}
+
+#=================================================================
+
+  # Initialise
+  set first_protein ""
+  set first_ligand  ""
+
+  # First the header which contains the Javascript commands for
+  # interacting with the viewer applet
+  AstexViewerWriteFileHeader $TITLE
+
+  # Write the table with the list of proteins to
+  # be displayed
+  if { $NPROTEINS > 0 } {
+    WriteToLog "
+<p><b>Proteins</b><br>
+<table border=1 cellpadding=0 cellspacing=0>
+" -noheader -nofooter
+    # Write a line for each structure
+    for { set n 1 } { $n <= $NPROTEINS } { incr n } {
+      set name "protein$n"
+      if { $n == 1 } {
+        set checked "checked"
+      } else {
+        set checked ""
+      }
+      set label [file tail $XYZIN($n)]
+      WriteToLog "<tr><td>
+<input $checked type=checkbox name=$name
+onclick=\"togglestructure('$name')\"></td><td>$label</td>
+</tr>" -noheader -nofooter
+    }
+    # End the table
+    WriteToLog "</table></p>" -noheader -nofooter
+  }
+
+  # Write the table with the list of ligands to
+  # be displayed
+  if { $NLIGANDS > 0 } {
+    WriteToLog "
+<p><b>Ligands</b><br>
+<table border=1 cellpadding=0 cellspacing=0>
+" -noheader -nofooter
+    # Write a line for each ligand
+    for { set n 1 } { $n <= $NLIGANDS } { incr n } {
+      set name "ligand$n"
+      if { $n == 1 } {
+        set checked "checked"
+      } else {
+        set checked ""
+      }
+      set label [file tail $LIGAND($n)]
+      WriteToLog "<tr><td>
+<input $checked type=checkbox name=$name
+onclick=\"togglestructure('$name')\"></td><td>$label</td>
+</tr>" -noheader -nofooter
+    }
+    # End the table
+    WriteToLog "</table></p>" -noheader -nofooter
+  }
+
+  # Write a table with the map controls
+  if { $NMAPS > 0 } {
+    WriteToLog "<p><b>Maps</b><br>
+<table border=1 cellpadding=2 cellspacing=0 name=contours>\n" -noheader -nofooter
+    # Write out a line for each map
+    for { set n 1 } { $n <= $NMAPS } { incr n } {
+      set map_file [file tail $MAPIN($n)]
+      AstexViewerWriteMapControls $map_file $n $CONTOUR_LEVEL(1) \
+	$CONTOUR_LEVEL(2) $CONTOUR_LEVEL(3)
+    }
+    # End the table
+    WriteToLog "</table></p>" -noheader -nofooter
+  }
+
+  # Write out the start of the applet code
+  AstexViewerOpenApplet $APPLET_HEIGHT $APPLET_WIDTH
+
+  # Proteins
+  for { set n 1 } { $n <= $NPROTEINS } { incr n } {
+    if { $first_protein == "" } { set first_protein "protein$n" }
+    WriteToLog "molecule load protein$n '$XYZIN($n)';" -noheader -nofooter
+  }
+  # Ligands
+  for { set n 1 } { $n <= $NLIGANDS } { incr n } {
+    if { $first_ligand == "" } { set first_ligand "ligand$n" }
+    WriteToLog "molecule load ligand$n '$LIGAND($n)';" -noheader -nofooter
+  }
+  # Maps
+  for { set n 1 } { $n <= $NMAPS } { incr n } {
+    set name "map$n"
+    WriteToLog "map load $name '$MAPIN($n)';
+map $name contour 0 off;
+map $name contour 1 off;
+map $name contour 2 off;
+map $name contour 0 $CONTOUR_LEVEL(1);
+map $name contour 1 $CONTOUR_LEVEL(2);
+map $name contour 2 $CONTOUR_LEVEL(3);
+map $name contour 0 on;" -noheader -nofooter
+  }
+
+  # Close the applet and end the file
+  AstexViewerCloseApplet $NLIGANDS $first_protein $first_ligand
+  WriteToLog "</form>
+
+<p>Documentation for the AstexViewer controls can be
+<a href=\"[FileJoin [GetEnvPath CHTML] AstexViewer_man AstexViewer.html]\">found here</a>.</p>
+
+<p>Please read and abide by the <a href=\"[FileJoin [GetEnvPath CHTML] AstexViewer_man AstexViewer.html]#conditions\">Conditions of Use</a>.</p>
+
+</body>
+</html>
+" -noheader -nofooter

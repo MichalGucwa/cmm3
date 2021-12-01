@@ -1,0 +1,25 @@
+#! /bin/sh
+
+set -e
+
+# This is a very simple example to test the running of the
+# programs fffear and ffjoin. It is probably not very educational!
+
+if test ! -f $CCP4_SCR/toxd_phase_mir.mtz; then
+  echo "! run the mlphare.exam procedure first" 1>&2
+  exit 1
+fi
+
+fffear hklin $CCP4_SCR/toxd_phase_mir.mtz \
+       xyzin $CLIBD/fraglib/emp-helix-9.pdb \
+       xyzout $CCP4_SCR/alpha9-rot.pdb << eof
+SOLC 0.48
+SEARCH STEP 10
+LABI FP=FTOXD3 SIGFP=SIGFTOXD3 PHIO=PHI_mir FOMO=W_mir
+END
+eof
+
+ffjoin xyzin $CCP4_SCR/alpha9-rot.pdb \
+       xyzout $CCP4_SCR/alpha9-rot-join.pdb <<EOF
+END
+EOF

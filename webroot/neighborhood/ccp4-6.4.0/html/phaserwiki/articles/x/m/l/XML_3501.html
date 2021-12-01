@@ -1,0 +1,495 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<!-- headlinks removed -->
+	<link rel="shortcut icon" href="../../../../misc/favicon.ico"/>
+    <title>XML - Phaserwiki</title>
+    <style type="text/css">/*<![CDATA[*/ @import "../../../../skins/offline/main.css"; /*]]>*/</style>
+    <link rel="stylesheet" type="text/css" media="print" href="../../../../skins/common/commonPrint.css" />
+    <!--[if lt IE 5.5000]><style type="text/css">@import "../../../../skins/monobook/IE50Fixes.css";</style><![endif]-->
+    <!--[if IE 5.5000]><style type="text/css">@import "../../../../skins/monobook/IE55Fixes.css";</style><![endif]-->
+    <!--[if IE 6]><style type="text/css">@import "../../../../skins/monobook/IE60Fixes.css";</style><![endif]-->
+    <!--[if IE]><script type="text/javascript" src="../../../../skins/common/IEFixes.js"></script>
+    <meta http-equiv="imagetoolbar" content="no" /><![endif]-->
+    <script type="text/javascript" src="../../../../skins/common/wikibits.js"></script>
+    <script type="text/javascript" src="../../../../skins/offline/md5.js"></script>
+    <script type="text/javascript" src="../../../../skins/offline/utf8.js"></script>
+    <script type="text/javascript" src="../../../../skins/offline/lookup.js"></script>
+    <script type="text/javascript" src="../../../../raw/gen.js"></script>                  </head>
+  <body
+    class="ns-0 ns-subject page-XML">
+    <div id="globalWrapper">
+      <div id="column-content">
+	<div id="content">
+	  <a name="top" id="contentTop"></a>
+	        <h1 class="firstHeading">XML</h1>
+	  <div id="bodyContent">
+	    <h3 id="siteSub">From Phaserwiki</h3>
+	    <div id="contentSub"></div>
+	    	    	    <!-- start content -->
+	    <div style="margin-left: 25px; float: right;"><table id="toc" class="toc" summary="Contents"><tr><td><div id="toctitle"><h2>Contents</h2></div>
+<ul>
+<li class="toclevel-1"><a href="#How_to_Use_XML_Output"><span class="tocnumber">1</span> <span class="toctext">How to Use XML Output</span></a>
+<ul>
+<li class="toclevel-2"><a href="#Generating_XML_Output"><span class="tocnumber">1.1</span> <span class="toctext">Generating XML Output</span></a></li>
+<li class="toclevel-2"><a href="#Tags"><span class="tocnumber">1.2</span> <span class="toctext">Tags</span></a></li>
+<li class="toclevel-2"><a href="#Error_Handling"><span class="tocnumber">1.3</span> <span class="toctext">Error Handling</span></a></li>
+<li class="toclevel-2"><a href="#Logfile_Handling"><span class="tocnumber">1.4</span> <span class="toctext">Logfile Handling</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1"><a href="#XML_Output_Examples"><span class="tocnumber">2</span> <span class="toctext">XML Output Examples</span></a>
+<ul>
+<li class="toclevel-2"><a href="#Anisotropy_Correction"><span class="tocnumber">2.1</span> <span class="toctext">Anisotropy Correction</span></a></li>
+<li class="toclevel-2"><a href="#Cell_Content_Analysis"><span class="tocnumber">2.2</span> <span class="toctext">Cell Content Analysis</span></a></li>
+<li class="toclevel-2"><a href="#Normal_Mode_Analysis"><span class="tocnumber">2.3</span> <span class="toctext">Normal Mode Analysis</span></a></li>
+<li class="toclevel-2"><a href="#Automated_Molecular_Replacement"><span class="tocnumber">2.4</span> <span class="toctext">Automated Molecular Replacement</span></a></li>
+<li class="toclevel-2"><a href="#Automated_Experimental_Phasing"><span class="tocnumber">2.5</span> <span class="toctext">Automated Experimental Phasing</span></a></li>
+</ul>
+</li>
+</ul>
+</td></tr></table><script type="text/javascript"> if (window.showTocToggle) { var tocShowText = "show"; var tocHideText = "hide"; showTocToggle(); } </script>
+</div>
+<p>Phaser can generate XML output from keyword input. XML output should be used in preference to grepping logfiles when incorporating Phaser into automation pipelines. Note that Phaser's python scripting ability is a more powerful way of calling Phaser for automation pipelines.
+</p><p>We would like to hear from developers who wish to incorporate Phaser into automation scripts using the XML functionality cimr-phaser@lists.cam.ac.uk
+</p>
+<a name="How_to_Use_XML_Output" id="How_to_Use_XML_Output"></a><h2> <span class="mw-headline">How to Use XML Output</span></h2>
+<a name="Generating_XML_Output" id="Generating_XML_Output"></a><h3> <span class="mw-headline">Generating XML Output</span></h3>
+<p>Phaser outputs an XML file when called with the command line argument -xml followed by the filename for output.
+</p>
+<pre>
+  phaser -xml &lt;filename&gt;
+</pre>
+<p>If no filename is given, Phaser exits immediately and writes an XML file with filename PHASER.XML describing the error (type="FILE OPENING", message="No XML filename").
+</p>
+<a name="Tags" id="Tags"></a><h3> <span class="mw-headline">Tags</span></h3>
+<p>All XML output is wrapped between "phaser" tags with the version number for the Phaser executable and the operating system on which the output was produced as attributes.
+</p>
+<pre>
+  &lt;phaser version=&quot;2.1&quot; ostype=&quot;linux&quot;&gt;
+    ---All Phaser XML output---
+  &lt;\phaser&gt; 
+</pre>
+<p>Names of files are output using the "file" tags with attributes "type" specifying reflections ("HKL") or coordinates ("XYZ") and attribute "format". Currently only "MTZ" and "PDB" formats are output.
+</p>
+<pre>
+  &lt;file type=&quot;HKL&quot; format=&quot;MTZ&quot;&gt;filename&lt;/file&gt;
+  &lt;file type=&quot;XYZ&quot; format=&quot;PDB&quot;&gt;filename&lt;/file&gt;
+</pre>
+<p>Other XML tags are a combination of those suggested by the SPINE consortium and Phaser specific tags. There is no schema. Please refer to the examples.
+</p>
+<a name="Error_Handling" id="Error_Handling"></a><h3> <span class="mw-headline">Error Handling</span></h3>
+<p>Successful Phaser execution (not necessarily structure solution!) is reported as
+</p>
+<pre>
+  &lt;status&gt;ok&lt;/status&gt; 
+</pre>
+<p>Failure during execution is reported as
+</p>
+<pre>
+  &lt;status&gt;error&lt;/status&gt; 
+</pre>
+<p>More information about the type of error is given with
+</p>
+<pre>
+  &lt;error&gt;
+    &lt;name&gt;ERROR_NAME&lt;/name&gt;
+    &lt;message&gt;ERROR_MESSAGE&lt;/message&gt;
+  &lt;/error&gt; 
+</pre>
+<p>Allowed values for ERROR_NAME are given in the table below, and specify the type of error. The ERROR_MESSAGE gives more information as to the specific cause of the error.
+</p>
+<pre>
+  ERROR_NAME 	Failure due to …
+  SYNTAX 	Syntax error in keyword input
+  INPUT 	Input error (e.g. invalid value for an input parameter)
+  FILE OPENING 	Unable to open file (given in ERROR_MESSAGE) for reading or writing.
+  OUT OF MEMORY 	Memory exhaustion
+  FATAL RUNTIME 	Fatal runtime error (e.g. bug in Phaser)
+  UNHANDLED 	Other unhandled fatal error (e.g. bug in libraries)
+  UNKNOWN 	Other error (e.g. bug in compiler)
+</pre>
+<a name="Logfile_Handling" id="Logfile_Handling"></a><h3> <span class="mw-headline">Logfile Handling</span></h3>
+<p>Use the keyword MUTE ON to prevent the writing of the logfile to standard output. Only the XML file and other results files (mtz,pdb) will be produced by Phaser.
+</p>
+<a name="XML_Output_Examples" id="XML_Output_Examples"></a><h2> <span class="mw-headline">XML Output Examples</span></h2>
+<p>Below are example XML output files produced by running the most popular modes of Phaser: anisotropy correction, automated molecular replacement, cell content analysis, normal mode analayis, and SAD phasing.
+</p>
+<a name="Anisotropy_Correction" id="Anisotropy_Correction"></a><h3> <span class="mw-headline">Anisotropy Correction</span></h3>
+<p>Output XML file for anisotropy correction of BETA-BLIP
+</p>
+<pre>
+  &lt;phaser version=&quot;2.1&quot; ostype=&quot;linux&quot;&gt;
+    &lt;status&gt;ok&lt;/status&gt;
+    &lt;anisotropy_info&gt;
+      &lt;file type=&quot;HKL&quot; format=&quot;MTZ&quot;&gt;beta_blip_ano.mtz&lt;/file&gt;
+      &lt;eigenB type=&quot;1&quot;&gt;10.88&lt;/eigenB&gt;
+      &lt;eigenB type=&quot;2&quot;&gt;10.88&lt;/eigenB&gt;
+      &lt;eigenB type=&quot;3&quot;&gt;-21.76&lt;/eigenB&gt;
+      &lt;eigenB type=&quot;delta&quot;&gt;32.64&lt;/eigenB&gt;
+      &lt;wilson type=&quot;K&quot;&gt;20.25&lt;/wilson&gt;
+      &lt;wilson type=&quot;B&quot;&gt;56.97&lt;/wilson&gt;
+    &lt;/anisotropy_info&gt;
+  &lt;/phaser&gt;
+</pre>
+<a name="Cell_Content_Analysis" id="Cell_Content_Analysis"></a><h3> <span class="mw-headline">Cell Content Analysis</span></h3>
+<p>Output XML file for Cell Content Analysis of BETA-BLIP
+</p>
+<pre>
+  &lt;phaser version=&quot;2.1&quot; ostype=&quot;linux&quot;&gt;
+    &lt;status&gt;ok&lt;/status&gt;
+    &lt;cell_content_analysis_info&gt;
+      &lt;mw&gt;46375.000000&lt;/mw&gt;
+      &lt;solution id=&quot;0&quot;&lt;/cca&gt;
+        &lt;Z&gt;1&lt;/Z&gt;
+        &lt;probVM&gt;0.995130&lt;/probVM&gt;
+        &lt;VM&gt;2.340743&lt;/VM&gt;
+      &lt;/solution&gt;
+    &lt;/cell_content_analysis_info&gt;
+  &lt;/phaser&gt;
+</pre>
+<a name="Normal_Mode_Analysis" id="Normal_Mode_Analysis"></a><h3> <span class="mw-headline">Normal Mode Analysis</span></h3>
+<p>Output XML file for Normal Mode Analysis of beta.pdb (modes 7 and 10, displacement forward only)
+</p>
+<pre>
+  &lt;phaser version=&quot;2.1&quot; ostype=&quot;linux&quot;&gt;
+    &lt;status&gt;ok&lt;/status&gt;
+    &lt;normal_modes id=&quot;1&quot;&gt;
+      &lt;file type=&quot;XYZ&quot; format=&quot;PDB&quot;&gt;beta_nma.1.pdb&lt;/file&gt;
+      &lt;displacement mode=&quot;7&quot;&gt;0.000000&lt;/displacement&gt;
+      &lt;displacement mode=&quot;10&quot;&gt;0.000000&lt;/displacement&gt;
+    &lt;/normal_modes&gt;
+    &lt;normal_modes id=&quot;2&quot;&gt;
+      &lt;file type=&quot;XYZ&quot; format=&quot;PDB&quot;&gt;beta_nma.2.pdb&lt;/file&gt;
+      &lt;displacement mode=&quot;7&quot;&gt;0.000000&lt;/displacement&gt;
+      &lt;displacement mode=&quot;10&quot;&gt;47.306646&lt;/displacement&gt;
+    &lt;/normal_modes&gt;
+    &lt;normal_modes id=&quot;3&quot;&gt;
+      &lt;file type=&quot;XYZ&quot; format=&quot;PDB&quot;&gt;beta_nma.3.pdb&lt;/file&gt;
+      &lt;displacement mode=&quot;7&quot;&gt;46.881456&lt;/displacement&gt;
+      &lt;displacement mode=&quot;10&quot;&gt;0.000000&lt;/displacement&gt;
+    &lt;/normal_modes&gt;
+    &lt;normal_modes id=&quot;4&quot;&gt;
+      &lt;file type=&quot;XYZ&quot; format=&quot;PDB&quot;&gt;beta_nma.4.pdb&lt;/file&gt;
+      &lt;displacement mode=&quot;7&quot;&gt;46.881456&lt;/displacement&gt;
+      &lt;displacement mode=&quot;10&quot;&gt;47.306646&lt;/displacement&gt;
+    &lt;/normal_modes&gt;
+    &lt;normal_modes id=&quot;5&quot;&gt;
+      &lt;file type=&quot;XYZ&quot; format=&quot;PDB&quot;&gt;beta_nma.5.pdb&lt;/file&gt;
+      &lt;displacement mode=&quot;7&quot;&gt;93.762912&lt;/displacement&gt;
+      &lt;displacement mode=&quot;10&quot;&gt;0.000000&lt;/displacement&gt;
+    &lt;/normal_modes&gt;
+    &lt;normal_modes id=&quot;6&quot;&gt;
+      &lt;file type=&quot;XYZ&quot; format=&quot;PDB&quot;&gt;beta_nma.6.pdb&lt;/file&gt;
+      &lt;displacement mode=&quot;7&quot;&gt;93.762912&lt;/displacement&gt;
+      &lt;displacement mode=&quot;10&quot;&gt;47.306646&lt;/displacement&gt;
+    &lt;/normal_modes&gt;
+  &lt;/phaser&gt;
+</pre>
+<a name="Automated_Molecular_Replacement" id="Automated_Molecular_Replacement"></a><h3> <span class="mw-headline">Automated Molecular Replacement</span></h3>
+<p>Output XML file for Automated Molecular Replacement of BETA-BLIP
+</p>
+<pre>
+  &lt;phaser version=&quot;2.1&quot; ostype=&quot;linux&quot;&gt;
+    &lt;status&gt;ok&lt;/status&gt;
+    &lt;dataset_info&gt;
+      &lt;cell&gt;
+        &lt;a&gt;75.11&lt;/a&gt;
+        &lt;b&gt;75.11&lt;/b&gt;
+        &lt;c&gt;133.31&lt;/c&gt;
+        &lt;alpha&gt;90&lt;/alpha&gt;
+        &lt;beta&gt;90&lt;/beta&gt;
+        &lt;gamma&gt;120&lt;/gamma&gt;
+      &lt;/cell&gt;
+      &lt;spacegroup&gt;
+        &lt;hall&gt; P 32 2&quot;&lt;/hall&gt;
+        &lt;number&gt;154&lt;/number&gt;
+        &lt;lattice&gt;P&lt;/lattice&gt;
+        &lt;operator id=&quot;0&quot;&gt;32&lt;/operator&gt;
+        &lt;operator id=&quot;1&quot;&gt;2&lt;/operator&gt;
+        &lt;operator id=&quot;2&quot;&gt;1&lt;/operator&gt;
+      &lt;/spacegroup&gt;
+      &lt;n_symops&gt;6&lt;/n_symops&gt;
+      &lt;symmetry_operator id=&quot;0&quot;&gt;
+        &lt;aa&gt;1&lt;/aa&gt; &lt;ab&gt;0&lt;/ab&gt; &lt;ac&gt;0&lt;/ac&gt; &lt;atrans&gt;0&lt;/atrans&gt;
+        &lt;ba&gt;0&lt;/ba&gt; &lt;bb&gt;1&lt;/bb&gt; &lt;bc&gt;0&lt;/bc&gt; &lt;btrans&gt;0&lt;/btrans&gt;
+        &lt;ca&gt;0&lt;/ca&gt; &lt;cb&gt;0&lt;/cb&gt; &lt;cc&gt;1&lt;/cc&gt; &lt;ctrans&gt;0&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+      &lt;symmetry_operator id=&quot;1&quot;&gt;
+        &lt;aa&gt;0&lt;/aa&gt; &lt;ab&gt;1&lt;/ab&gt; &lt;ac&gt;0&lt;/ac&gt; &lt;atrans&gt;0&lt;/atrans&gt;
+        &lt;ba&gt;-1&lt;/ba&gt; &lt;bb&gt;-1&lt;/bb&gt; &lt;bc&gt;0&lt;/bc&gt; &lt;btrans&gt;0&lt;/btrans&gt;
+        &lt;ca&gt;0&lt;/ca&gt; &lt;cb&gt;0&lt;/cb&gt; &lt;cc&gt;1&lt;/cc&gt; &lt;ctrans&gt;0.666667&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+      &lt;symmetry_operator id=&quot;2&quot;&gt;
+        &lt;aa&gt;-1&lt;/aa&gt; &lt;ab&gt;-1&lt;/ab&gt; &lt;ac&gt;0&lt;/ac&gt; &lt;atrans&gt;0&lt;/atrans&gt;
+        &lt;ba&gt;1&lt;/ba&gt; &lt;bb&gt;0&lt;/bb&gt; &lt;bc&gt;0&lt;/bc&gt; &lt;btrans&gt;0&lt;/btrans&gt;
+        &lt;ca&gt;0&lt;/ca&gt; &lt;cb&gt;0&lt;/cb&gt; &lt;cc&gt;1&lt;/cc&gt; &lt;ctrans&gt;0.333333&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+      &lt;symmetry_operator id=&quot;3&quot;&gt;
+        &lt;aa&gt;0&lt;/aa&gt; &lt;ab&gt;1&lt;/ab&gt; &lt;ac&gt;0&lt;/ac&gt; &lt;atrans&gt;0&lt;/atrans&gt;
+        &lt;ba&gt;1&lt;/ba&gt; &lt;bb&gt;0&lt;/bb&gt; &lt;bc&gt;0&lt;/bc&gt; &lt;btrans&gt;0&lt;/btrans&gt;
+        &lt;ca&gt;0&lt;/ca&gt; &lt;cb&gt;0&lt;/cb&gt; &lt;cc&gt;-1&lt;/cc&gt; &lt;ctrans&gt;0&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+      &lt;symmetry_operator id=&quot;4&quot;&gt;
+        &lt;aa&gt;-1&lt;/aa&gt; &lt;ab&gt;-1&lt;/ab&gt; &lt;ac&gt;0&lt;/ac&gt; &lt;atrans&gt;0&lt;/atrans&gt;
+        &lt;ba&gt;0&lt;/ba&gt; &lt;bb&gt;1&lt;/bb&gt; &lt;bc&gt;0&lt;/bc&gt; &lt;btrans&gt;0&lt;/btrans&gt;
+        &lt;ca&gt;0&lt;/ca&gt; &lt;cb&gt;0&lt;/cb&gt; &lt;cc&gt;-1&lt;/cc&gt; &lt;ctrans&gt;0.666667&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+      &lt;symmetry_operator id=&quot;5&quot;&gt;
+        &lt;aa&gt;1&lt;/aa&gt; &lt;ab&gt;0&lt;/ab&gt; &lt;ac&gt;0&lt;/ac&gt; &lt;atrans&gt;0&lt;/atrans&gt;
+        &lt;ba&gt;-1&lt;/ba&gt; &lt;bb&gt;-1&lt;/bb&gt; &lt;bc&gt;0&lt;/bc&gt; &lt;btrans&gt;0&lt;/btrans&gt;
+        &lt;ca&gt;0&lt;/ca&gt; &lt;cb&gt;0&lt;/cb&gt; &lt;cc&gt;-1&lt;/cc&gt; &lt;ctrans&gt;0.333333&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+    &lt;/dataset_info&gt;
+    &lt;solution id=&quot;1&quot;&gt;
+      &lt;file type=&quot;HKL&quot; format=&quot;MTZ&quot;&gt;beta_blip.1.mtz&lt;/file&gt;
+      &lt;file type=&quot;XYZ&quot; format=&quot;PDB&quot;&gt;beta_blip.1.pdb&lt;/file&gt;
+      &lt;llg&gt;996.141543&lt;/llg&gt;
+    &lt;/solution&gt;
+  &lt;/phaser&gt;
+</pre>
+<a name="Automated_Experimental_Phasing" id="Automated_Experimental_Phasing"></a><h3> <span class="mw-headline">Automated Experimental Phasing</span></h3>
+<p>Output XML file for SAD phasing of insulin
+</p>
+<pre>
+  &lt;phaser version=&quot;2.1&quot; ostype=&quot;linux&quot;&gt;
+    &lt;status&gt;ok&lt;/status&gt;
+    &lt;dataset_info&gt;
+      &lt;cell&gt;
+        &lt;a&gt;78.046&lt;/a&gt;
+        &lt;b&gt;78.046&lt;/b&gt;
+        &lt;c&gt;78.046&lt;/c&gt;
+        &lt;alpha&gt;90&lt;/alpha&gt;
+        &lt;beta&gt;90&lt;/beta&gt;
+        &lt;gamma&gt;90&lt;/gamma&gt;
+      &lt;/cell&gt;
+      &lt;spacegroup&gt;
+        &lt;hall&gt; I 2b 2c 3&lt;/hall&gt;
+        &lt;number&gt;199&lt;/number&gt;
+        &lt;lattice&gt;I&lt;/lattice&gt;
+        &lt;operator id=&quot;0&quot;&gt;21&lt;/operator&gt;
+        &lt;operator id=&quot;1&quot;&gt;3&lt;/operator&gt;
+        &lt;operator id=&quot;2&quot;&gt;3&lt;/operator&gt;
+      &lt;/spacegroup&gt;
+      &lt;n_symops&gt;24&lt;/n_symops&gt;
+      &lt;symmetry_operator id=&quot;0&quot;&gt;
+        &lt;aa&gt;1&lt;/aa&gt; &lt;ab&gt;0&lt;/ab&gt; &lt;ac&gt;0&lt;/ac&gt; &lt;atrans&gt;0&lt;/atrans&gt;
+        &lt;ba&gt;0&lt;/ba&gt; &lt;bb&gt;1&lt;/bb&gt; &lt;bc&gt;0&lt;/bc&gt; &lt;btrans&gt;0&lt;/btrans&gt;
+        &lt;ca&gt;0&lt;/ca&gt; &lt;cb&gt;0&lt;/cb&gt; &lt;cc&gt;1&lt;/cc&gt; &lt;ctrans&gt;0&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+      &lt;symmetry_operator id=&quot;1&quot;&gt;
+        &lt;aa&gt;-1&lt;/aa&gt; &lt;ab&gt;0&lt;/ab&gt; &lt;ac&gt;0&lt;/ac&gt; &lt;atrans&gt;0&lt;/atrans&gt;
+        &lt;ba&gt;0&lt;/ba&gt; &lt;bb&gt;-1&lt;/bb&gt; &lt;bc&gt;0&lt;/bc&gt; &lt;btrans&gt;0.5&lt;/btrans&gt;
+        &lt;ca&gt;0&lt;/ca&gt; &lt;cb&gt;0&lt;/cb&gt; &lt;cc&gt;1&lt;/cc&gt; &lt;ctrans&gt;0&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+      &lt;symmetry_operator id=&quot;2&quot;&gt;
+        &lt;aa&gt;1&lt;/aa&gt; &lt;ab&gt;0&lt;/ab&gt; &lt;ac&gt;0&lt;/ac&gt; &lt;atrans&gt;0&lt;/atrans&gt;
+        &lt;ba&gt;0&lt;/ba&gt; &lt;bb&gt;-1&lt;/bb&gt; &lt;bc&gt;0&lt;/bc&gt; &lt;btrans&gt;0&lt;/btrans&gt;
+        &lt;ca&gt;0&lt;/ca&gt; &lt;cb&gt;0&lt;/cb&gt; &lt;cc&gt;-1&lt;/cc&gt; &lt;ctrans&gt;0.5&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+      &lt;symmetry_operator id=&quot;3&quot;&gt;
+        &lt;aa&gt;-1&lt;/aa&gt; &lt;ab&gt;0&lt;/ab&gt; &lt;ac&gt;0&lt;/ac&gt; &lt;atrans&gt;0&lt;/atrans&gt;
+        &lt;ba&gt;0&lt;/ba&gt; &lt;bb&gt;1&lt;/bb&gt; &lt;bc&gt;0&lt;/bc&gt; &lt;btrans&gt;0.5&lt;/btrans&gt;
+        &lt;ca&gt;0&lt;/ca&gt; &lt;cb&gt;0&lt;/cb&gt; &lt;cc&gt;-1&lt;/cc&gt; &lt;ctrans&gt;0.5&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+      &lt;symmetry_operator id=&quot;4&quot;&gt;
+        &lt;aa&gt;0&lt;/aa&gt; &lt;ab&gt;1&lt;/ab&gt; &lt;ac&gt;0&lt;/ac&gt; &lt;atrans&gt;0&lt;/atrans&gt;
+        &lt;ba&gt;0&lt;/ba&gt; &lt;bb&gt;0&lt;/bb&gt; &lt;bc&gt;1&lt;/bc&gt; &lt;btrans&gt;0&lt;/btrans&gt;
+        &lt;ca&gt;1&lt;/ca&gt; &lt;cb&gt;0&lt;/cb&gt; &lt;cc&gt;0&lt;/cc&gt; &lt;ctrans&gt;0&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+      &lt;symmetry_operator id=&quot;5&quot;&gt;
+        &lt;aa&gt;0&lt;/aa&gt; &lt;ab&gt;-1&lt;/ab&gt; &lt;ac&gt;0&lt;/ac&gt; &lt;atrans&gt;0&lt;/atrans&gt;
+        &lt;ba&gt;0&lt;/ba&gt; &lt;bb&gt;0&lt;/bb&gt; &lt;bc&gt;1&lt;/bc&gt; &lt;btrans&gt;0.5&lt;/btrans&gt;
+        &lt;ca&gt;-1&lt;/ca&gt; &lt;cb&gt;0&lt;/cb&gt; &lt;cc&gt;0&lt;/cc&gt; &lt;ctrans&gt;0&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+      &lt;symmetry_operator id=&quot;6&quot;&gt;
+        &lt;aa&gt;0&lt;/aa&gt; &lt;ab&gt;-1&lt;/ab&gt; &lt;ac&gt;0&lt;/ac&gt; &lt;atrans&gt;0&lt;/atrans&gt;
+        &lt;ba&gt;0&lt;/ba&gt; &lt;bb&gt;0&lt;/bb&gt; &lt;bc&gt;-1&lt;/bc&gt; &lt;btrans&gt;0&lt;/btrans&gt;
+        &lt;ca&gt;1&lt;/ca&gt; &lt;cb&gt;0&lt;/cb&gt; &lt;cc&gt;0&lt;/cc&gt; &lt;ctrans&gt;0.5&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+      &lt;symmetry_operator id=&quot;7&quot;&gt;
+        &lt;aa&gt;0&lt;/aa&gt; &lt;ab&gt;1&lt;/ab&gt; &lt;ac&gt;0&lt;/ac&gt; &lt;atrans&gt;0&lt;/atrans&gt;
+        &lt;ba&gt;0&lt;/ba&gt; &lt;bb&gt;0&lt;/bb&gt; &lt;bc&gt;-1&lt;/bc&gt; &lt;btrans&gt;0.5&lt;/btrans&gt;
+        &lt;ca&gt;-1&lt;/ca&gt; &lt;cb&gt;0&lt;/cb&gt; &lt;cc&gt;0&lt;/cc&gt; &lt;ctrans&gt;0.5&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+      &lt;symmetry_operator id=&quot;8&quot;&gt;
+        &lt;aa&gt;0&lt;/aa&gt; &lt;ab&gt;0&lt;/ab&gt; &lt;ac&gt;1&lt;/ac&gt; &lt;atrans&gt;0&lt;/atrans&gt;
+        &lt;ba&gt;1&lt;/ba&gt; &lt;bb&gt;0&lt;/bb&gt; &lt;bc&gt;0&lt;/bc&gt; &lt;btrans&gt;0&lt;/btrans&gt;
+        &lt;ca&gt;0&lt;/ca&gt; &lt;cb&gt;1&lt;/cb&gt; &lt;cc&gt;0&lt;/cc&gt; &lt;ctrans&gt;0&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+      &lt;symmetry_operator id=&quot;9&quot;&gt;
+        &lt;aa&gt;0&lt;/aa&gt; &lt;ab&gt;0&lt;/ab&gt; &lt;ac&gt;-1&lt;/ac&gt; &lt;atrans&gt;0&lt;/atrans&gt;
+        &lt;ba&gt;1&lt;/ba&gt; &lt;bb&gt;0&lt;/bb&gt; &lt;bc&gt;0&lt;/bc&gt; &lt;btrans&gt;0&lt;/btrans&gt;
+        &lt;ca&gt;0&lt;/ca&gt; &lt;cb&gt;-1&lt;/cb&gt; &lt;cc&gt;0&lt;/cc&gt; &lt;ctrans&gt;0.5&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+      &lt;symmetry_operator id=&quot;10&quot;&gt;
+        &lt;aa&gt;0&lt;/aa&gt; &lt;ab&gt;0&lt;/ab&gt; &lt;ac&gt;-1&lt;/ac&gt; &lt;atrans&gt;0&lt;/atrans&gt;
+        &lt;ba&gt;-1&lt;/ba&gt; &lt;bb&gt;0&lt;/bb&gt; &lt;bc&gt;0&lt;/bc&gt; &lt;btrans&gt;0.5&lt;/btrans&gt;
+        &lt;ca&gt;0&lt;/ca&gt; &lt;cb&gt;1&lt;/cb&gt; &lt;cc&gt;0&lt;/cc&gt; &lt;ctrans&gt;0.5&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+      &lt;symmetry_operator id=&quot;11&quot;&gt;
+        &lt;aa&gt;0&lt;/aa&gt; &lt;ab&gt;0&lt;/ab&gt; &lt;ac&gt;1&lt;/ac&gt; &lt;atrans&gt;0.5&lt;/atrans&gt;
+        &lt;ba&gt;-1&lt;/ba&gt; &lt;bb&gt;0&lt;/bb&gt; &lt;bc&gt;0&lt;/bc&gt; &lt;btrans&gt;0&lt;/btrans&gt;
+        &lt;ca&gt;0&lt;/ca&gt; &lt;cb&gt;-1&lt;/cb&gt; &lt;cc&gt;0&lt;/cc&gt; &lt;ctrans&gt;0.5&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+      &lt;symmetry_operator id=&quot;12&quot;&gt;
+        &lt;aa&gt;1&lt;/aa&gt; &lt;ab&gt;0&lt;/ab&gt; &lt;ac&gt;0&lt;/ac&gt; &lt;atrans&gt;0.5&lt;/atrans&gt;
+        &lt;ba&gt;0&lt;/ba&gt; &lt;bb&gt;1&lt;/bb&gt; &lt;bc&gt;0&lt;/bc&gt; &lt;btrans&gt;0.5&lt;/btrans&gt;
+        &lt;ca&gt;0&lt;/ca&gt; &lt;cb&gt;0&lt;/cb&gt; &lt;cc&gt;1&lt;/cc&gt; &lt;ctrans&gt;0.5&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+      &lt;symmetry_operator id=&quot;13&quot;&gt;
+        &lt;aa&gt;-1&lt;/aa&gt; &lt;ab&gt;0&lt;/ab&gt; &lt;ac&gt;0&lt;/ac&gt; &lt;atrans&gt;0.5&lt;/atrans&gt;
+        &lt;ba&gt;0&lt;/ba&gt; &lt;bb&gt;-1&lt;/bb&gt; &lt;bc&gt;0&lt;/bc&gt; &lt;btrans&gt;1&lt;/btrans&gt;
+        &lt;ca&gt;0&lt;/ca&gt; &lt;cb&gt;0&lt;/cb&gt; &lt;cc&gt;1&lt;/cc&gt; &lt;ctrans&gt;0.5&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+      &lt;symmetry_operator id=&quot;14&quot;&gt;
+        &lt;aa&gt;1&lt;/aa&gt; &lt;ab&gt;0&lt;/ab&gt; &lt;ac&gt;0&lt;/ac&gt; &lt;atrans&gt;0.5&lt;/atrans&gt;
+        &lt;ba&gt;0&lt;/ba&gt; &lt;bb&gt;-1&lt;/bb&gt; &lt;bc&gt;0&lt;/bc&gt; &lt;btrans&gt;0.5&lt;/btrans&gt;
+        &lt;ca&gt;0&lt;/ca&gt; &lt;cb&gt;0&lt;/cb&gt; &lt;cc&gt;-1&lt;/cc&gt; &lt;ctrans&gt;1&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+      &lt;symmetry_operator id=&quot;15&quot;&gt;
+        &lt;aa&gt;-1&lt;/aa&gt; &lt;ab&gt;0&lt;/ab&gt; &lt;ac&gt;0&lt;/ac&gt; &lt;atrans&gt;0.5&lt;/atrans&gt;
+        &lt;ba&gt;0&lt;/ba&gt; &lt;bb&gt;1&lt;/bb&gt; &lt;bc&gt;0&lt;/bc&gt; &lt;btrans&gt;1&lt;/btrans&gt;
+        &lt;ca&gt;0&lt;/ca&gt; &lt;cb&gt;0&lt;/cb&gt; &lt;cc&gt;-1&lt;/cc&gt; &lt;ctrans&gt;1&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+      &lt;symmetry_operator id=&quot;16&quot;&gt;
+        &lt;aa&gt;0&lt;/aa&gt; &lt;ab&gt;1&lt;/ab&gt; &lt;ac&gt;0&lt;/ac&gt; &lt;atrans&gt;0.5&lt;/atrans&gt;
+        &lt;ba&gt;0&lt;/ba&gt; &lt;bb&gt;0&lt;/bb&gt; &lt;bc&gt;1&lt;/bc&gt; &lt;btrans&gt;0.5&lt;/btrans&gt;
+        &lt;ca&gt;1&lt;/ca&gt; &lt;cb&gt;0&lt;/cb&gt; &lt;cc&gt;0&lt;/cc&gt; &lt;ctrans&gt;0.5&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+      &lt;symmetry_operator id=&quot;17&quot;&gt;
+        &lt;aa&gt;0&lt;/aa&gt; &lt;ab&gt;-1&lt;/ab&gt; &lt;ac&gt;0&lt;/ac&gt; &lt;atrans&gt;0.5&lt;/atrans&gt;
+        &lt;ba&gt;0&lt;/ba&gt; &lt;bb&gt;0&lt;/bb&gt; &lt;bc&gt;1&lt;/bc&gt; &lt;btrans&gt;1&lt;/btrans&gt;
+        &lt;ca&gt;-1&lt;/ca&gt; &lt;cb&gt;0&lt;/cb&gt; &lt;cc&gt;0&lt;/cc&gt; &lt;ctrans&gt;0.5&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+      &lt;symmetry_operator id=&quot;18&quot;&gt;
+        &lt;aa&gt;0&lt;/aa&gt; &lt;ab&gt;-1&lt;/ab&gt; &lt;ac&gt;0&lt;/ac&gt; &lt;atrans&gt;0.5&lt;/atrans&gt;
+        &lt;ba&gt;0&lt;/ba&gt; &lt;bb&gt;0&lt;/bb&gt; &lt;bc&gt;-1&lt;/bc&gt; &lt;btrans&gt;0.5&lt;/btrans&gt;
+        &lt;ca&gt;1&lt;/ca&gt; &lt;cb&gt;0&lt;/cb&gt; &lt;cc&gt;0&lt;/cc&gt; &lt;ctrans&gt;1&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+      &lt;symmetry_operator id=&quot;19&quot;&gt;
+        &lt;aa&gt;0&lt;/aa&gt; &lt;ab&gt;1&lt;/ab&gt; &lt;ac&gt;0&lt;/ac&gt; &lt;atrans&gt;0.5&lt;/atrans&gt;
+        &lt;ba&gt;0&lt;/ba&gt; &lt;bb&gt;0&lt;/bb&gt; &lt;bc&gt;-1&lt;/bc&gt; &lt;btrans&gt;1&lt;/btrans&gt;
+        &lt;ca&gt;-1&lt;/ca&gt; &lt;cb&gt;0&lt;/cb&gt; &lt;cc&gt;0&lt;/cc&gt; &lt;ctrans&gt;1&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+      &lt;symmetry_operator id=&quot;20&quot;&gt;
+        &lt;aa&gt;0&lt;/aa&gt; &lt;ab&gt;0&lt;/ab&gt; &lt;ac&gt;1&lt;/ac&gt; &lt;atrans&gt;0.5&lt;/atrans&gt;
+        &lt;ba&gt;1&lt;/ba&gt; &lt;bb&gt;0&lt;/bb&gt; &lt;bc&gt;0&lt;/bc&gt; &lt;btrans&gt;0.5&lt;/btrans&gt;
+        &lt;ca&gt;0&lt;/ca&gt; &lt;cb&gt;1&lt;/cb&gt; &lt;cc&gt;0&lt;/cc&gt; &lt;ctrans&gt;0.5&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+      &lt;symmetry_operator id=&quot;21&quot;&gt;
+        &lt;aa&gt;0&lt;/aa&gt; &lt;ab&gt;0&lt;/ab&gt; &lt;ac&gt;-1&lt;/ac&gt; &lt;atrans&gt;0.5&lt;/atrans&gt;
+        &lt;ba&gt;1&lt;/ba&gt; &lt;bb&gt;0&lt;/bb&gt; &lt;bc&gt;0&lt;/bc&gt; &lt;btrans&gt;0.5&lt;/btrans&gt;
+        &lt;ca&gt;0&lt;/ca&gt; &lt;cb&gt;-1&lt;/cb&gt; &lt;cc&gt;0&lt;/cc&gt; &lt;ctrans&gt;1&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+      &lt;symmetry_operator id=&quot;22&quot;&gt;
+        &lt;aa&gt;0&lt;/aa&gt; &lt;ab&gt;0&lt;/ab&gt; &lt;ac&gt;-1&lt;/ac&gt; &lt;atrans&gt;0.5&lt;/atrans&gt;
+        &lt;ba&gt;-1&lt;/ba&gt; &lt;bb&gt;0&lt;/bb&gt; &lt;bc&gt;0&lt;/bc&gt; &lt;btrans&gt;1&lt;/btrans&gt;
+        &lt;ca&gt;0&lt;/ca&gt; &lt;cb&gt;1&lt;/cb&gt; &lt;cc&gt;0&lt;/cc&gt; &lt;ctrans&gt;1&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+      &lt;symmetry_operator id=&quot;23&quot;&gt;
+        &lt;aa&gt;0&lt;/aa&gt; &lt;ab&gt;0&lt;/ab&gt; &lt;ac&gt;1&lt;/ac&gt; &lt;atrans&gt;1&lt;/atrans&gt;
+        &lt;ba&gt;-1&lt;/ba&gt; &lt;bb&gt;0&lt;/bb&gt; &lt;bc&gt;0&lt;/bc&gt; &lt;btrans&gt;0.5&lt;/btrans&gt;
+        &lt;ca&gt;0&lt;/ca&gt; &lt;cb&gt;-1&lt;/cb&gt; &lt;cc&gt;0&lt;/cc&gt; &lt;ctrans&gt;1&lt;/ctrans&gt;
+      &lt;/symmetry_operator&gt;
+    &lt;/dataset_info&gt;
+    &lt;solution_info&gt;
+      &lt;file type=&quot;XYZ&quot; format=&quot;PDB&quot;&gt;insulin.pdb&lt;/file&gt;
+      &lt;file type=&quot;HKL&quot; format=&quot;MTZ&quot;&gt;insulin.mtz&lt;/file&gt;
+      &lt;llg&gt;81640.054723&lt;/llg&gt;
+    &lt;/solution_info&gt;
+  &lt;/phaser&gt;
+</pre>
+
+<!-- 
+NewPP limit report
+Preprocessor node count: 49/1000000
+Post-expand include size: 0/2097152 bytes
+Template argument size: 0/2097152 bytes
+Expensive parser function count: 0/100
+-->
+<div class="printfooter">
+</div>
+	    	    <!-- end content -->
+	    <div class="visualClear"></div>
+	  </div>
+	</div>
+      </div>
+      <div id="column-one">
+	<div class="portlet" id="p-logo">
+            <a style="background-image: url(../../../../misc/PhaserwikiLogo.png);"
+	    href="http://www.phaser.cimr.cam.ac.uk/index.php/Phaser_Crystallographic_Software"
+	    title="Phaser Crystallographic Software"></a>
+	</div>
+	<script type="text/javascript"> if (window.isMSIE55) fixalpha(); </script>
+		<div class='portlet' id='p-site'>
+	  <h5>site</h5>
+	  <div class='pBody'>
+	    <ul>
+	    	      <li id="n-Home"><a href="../../../../index.html">Home</a></li>
+	     	      <li id="n-News"><a href="../../../../articles/n/e/w/News.html">News</a></li>
+	     	      <li id="n-Events"><a href="../../../../articles/e/v/e/Events.html">Events</a></li>
+	     	      <li id="n-Downloads"><a href="../../../../articles/d/o/w/Downloads.html">Downloads</a></li>
+	     	    </ul>
+	  </div>
+	</div>
+		<div class='portlet' id='p-documentation'>
+	  <h5>documentation</h5>
+	  <div class='pBody'>
+	    <ul>
+	    	      <li id="n-Manuals"><a href="../../../../articles/m/a/n/Manuals.html">Manuals</a></li>
+	     	      <li id="n-MR-Phasing"><a href="../../../../articles/m/o/l/Molecular_Replacement_a23a.html">MR Phasing</a></li>
+	     	      <li id="n-SAD-Phasing"><a href="../../../../articles/e/x/p/Experimental_Phasing_5400.html">SAD Phasing</a></li>
+	     	      <li id="n-Keyword-Examples"><a href="../../../../articles/m/r/_/MR_using_keyword_input_9c88.html">Keyword Examples</a></li>
+	     	      <li id="n-Python-Examples"><a href="../../../../articles/p/y/t/Python_Example_Scripts_7723.html">Python Examples</a></li>
+	     	      <li id="n-Tutorials"><a href="../../../../articles/t/u/t/Tutorials.html">Tutorials</a></li>
+	     	      <li id="n-FAQ"><a href="../../../../articles/f/a/q/FAQ_1fe9.html">FAQ</a></li>
+	     	      <li id="n-Top-Ten-Tips"><a href="../../../../articles/t/o/p/Top_Ten_Tips_3fcd.html">Top Ten Tips</a></li>
+	     	      <li id="n-Bugs"><a href="../../../../articles/b/u/g/Bugs.html">Bugs</a></li>
+	     	      <li id="n-Publications"><a href="../../../../articles/p/u/b/Publications.html">Publications</a></li>
+	     	      <li id="n-View-SVN"><a href="../../../../articles/s/v/n/SVN_Repository_93a5.html">View SVN</a></li>
+	     	    </ul>
+	  </div>
+	</div>
+		<div class='portlet' id='p-other'>
+	  <h5>other</h5>
+	  <div class='pBody'>
+	    <ul>
+	    	      <li id="n-Contact"><a href="../../../../articles/c/o/n/Contact.html">Contact</a></li>
+	     	      <li id="n-Developers"><a href="../../../../articles/d/e/v/Developers.html">Developers</a></li>
+	     	      <li id="n-Licences"><a href="../../../../articles/l/i/c/Licences.html">Licences</a></li>
+	     	      <li id="n-External-Links"><a href="../../../../articles/e/x/t/External_Links_ff0e.html">External Links</a></li>
+	     	      <li id="n-Help"><a href="../../../../articles/c/o/n/Help%7EContents_22de.html">Help</a></li>
+	     	    </ul>
+	  </div>
+	</div>
+	<!--
+	<div id="p-search" class="portlet">
+	  <h5><label for="searchInput">Search</label></h5>
+	  <div id="searchBody" class="pBody">
+	    <form action="javascript:goToStatic(3)" id="searchform"><div>
+	      <input id="searchInput" name="search" type="text"
+	        accesskey="f" value="" />
+	      <input type='submit' name="go" class="searchButton" id="searchGoButton"
+	        value="Go" />
+	    </div></form>
+	  </div>
+	</div>
+-->
+	      </div><!-- end of the left (by default at least) column -->
+      <div class="visualClear"></div>
+      <div id="footer">
+<!--
+    <div id="f-poweredbyico"><a href="http://www.mediawiki.org/"><img src="../../../../skins/common/images/poweredby_mediawiki_88x31.png" alt="Powered by MediaWiki" /></a></div>	-->
+<!-- date DATE Date -->
+	<ul id="f-list">
+	   Static <a href="http://www.phaser.cimr.cam.ac.uk/index.php/Phaser_Crystallographic_Software">Phaserwiki</a> 
+Thu Jul 25 23:20:16 BST 2013
+<!--
+	            </li>
+	  	  <li id="f-credits">This page was last modified 15:55, 7 September 2009 by <a href="../../../../articles/w/i/k/User%7EWikiSysop_5eaf.html" title="User:WikiSysop">WikiSysop</a>. </li>	  	  <li id="f-about"><a href="../../../../articles/a/b/o/Phaserwiki%7EAbout_932f.html" title="Phaserwiki:About">About Phaserwiki</a></li>	  	  -->
+	</ul>
+      </div>
+    </div>
+  </body>
+</html>

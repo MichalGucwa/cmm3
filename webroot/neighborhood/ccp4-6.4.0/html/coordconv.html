@@ -1,0 +1,196 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>CCP4 Program Suite</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]">
+</HEAD>
+<BODY>
+
+<!-- ::INDEX_INFO::COORDCONV::Supported::Coordinate file manipulations::Interconvert various coordinate formats:::::::: -->
+
+<H1>COORDCONV (CCP4: Supported Program)</H1>
+<H2>NAME</H2>
+<B>coordconv </B>
+- Interconvert various coordinate formats 
+
+<H2>SYNOPSIS </H2>
+
+<P><B>coordconv xyzin</B> <I>foo_in.xyz</I> <B>xyzout</B> <I>foo_out.brk</I>
+<BR>
+[<A HREF="#keywords">Keyworded input</A>] </P>
+
+<H2><A NAME="description"></A>DESCRIPTION</H2>
+
+<P>This program converts various coordinate formats. It reads cell dimensions
+and orthogonalises the coordinates.  </P>
+
+<H2><A NAME="keywords"></A>KEYWORDED INPUT</H2>
+
+<P>The data control lines are identified by the following keywords. Only
+the first 4 letters of each keyword are necessary.</P>
+<blockquote>
+<A HREF="#cell"><B>CELL</B></A>, <A HREF="#end"><B>END</B></A>,
+<A HREF="#input"><B>INPUT</B></A>, <A HREF="#output"><B>OUTPUT</B></A>
+</blockquote>
+
+<H3><A NAME="input"></A>INPUT [ FRAC | HA  | PDB | SHELX-F | SHELX-S | CSD |
+XPLOR/CNS | SNB ] [ ORTH &lt;ncode&gt; ]</H3>
+
+<P>Defines the input coordinate format. The following options are supported:
+</P>
+
+<DL>
+<DT><A NAME="input_frac"></A>FRAC</DT>
+
+<DD> FRACTIONAL - York traditional fractional, a precursor to PDB format,
+<EM>e.g.</EM> </DD>
+
+<PRE>    1   0.46204   0.16203   0.02100   0.00000 0.49   16         1SE1  DER A1
+    7   0.22003   0.16304   0.10299   0.00000 0.49   16         2SE2  DER A1
+ Atno    Xfrac     Yfrac     Zfrac     Bfac   Occ    Atomno  IresAtnamResnm ChnnamIS
+</PRE>
+
+<P>in Fortran format (I5,4F10.5,F5.2,I5,I10,A4,1X,A4,A1,I2). Note that the trailing
+integer after Chnnam is only output in XPLOR/CNS format PDB files.</P>
+
+<DT><A NAME="input_ha"></A>HA</DT>
+
+<DD> HA - the format used for CCP4 Interface input and output from MLPHARE. There is no fixed format
+except that any CELL information must be on a line beginning CELL, and coordinates on
+lines beginning ATOM. If the CELL line is given, this is used for coordinate conversion.
+All other lines are ignored.
+<EM>e.g.</EM> </DD>
+
+<PRE>    
+DERIV     infl to rm
+DCYCLE PHASE ALL REFCYC ALL KBOV ALL
+RESO      14.76      1.56
+SCALE    FPH1    0.9898   -0.0708
+ISOE        5.59    5.97    7.28    6.86    6.81    7.59    8.07   11.11
+RESO ANO       14.76    1.56
+ANOE        2.49    3.72    4.49    4.92    5.77    7.16    8.42    8.73
+ATOM1   Ano  -0.762 -0.141 -0.861  6.571  1.905 BFAC   12.603
+ATREF X ALL Y ALL Z ALL OCC ALL AOCC ALL B ALL
+ATOM2   Ano  -0.750 -0.313 -0.636  6.239  1.954 BFAC   12.981
+ATREF X ALL Y ALL Z ALL OCC ALL AOCC ALL B ALL
+ATOM3   Ano  -0.207 -0.376 -0.649  6.147  1.854 BFAC   12.216
+Key    Atnam  Xfrac  Yfrac  Zfrac  Occ    ????          Bfac   
+
+Or: 
+
+GRID  44  50  64
+CELL   47.4870   49.4897   64.5144   94.6264  109.6226   90.9455
+ATOM    Ano   0.0000  0.0000  0.0000
+ATOM    Ano  .471143 .315582  .197912  
+ATOM    Ano  .323707 .308963  .152872  
+ATOM    Ano  .257966 .781764  .924197  
+ATOM    Ano   0.0145  0.3617  0.3200  
+ATOM    Ano   0.8716  0.2215  0.9305  
+ATOM    Ano  0.4021 0.7929   0.9775 
+ATOM    Ano  0.3686 0.42450  0.1205 
+
+</PRE>
+
+<DT><A NAME="input_pdb"></A>PDB</DT>
+
+<DD> BROOKHAVEN with or without CRYST1 and SCALEx cards </DD>
+
+<DT><A NAME="input_shelx_f"></A>SHELX-F</DT>
+
+<DD> SHELX `full' (2 lines per atom) </DD>
+
+<DT><A NAME="input_shelx_s"></A>SHELX-S</DT>
+
+<DD> SHELX `short' (1 line per atom) e.g. a shelx.res or shelx.ins file.
+The format used is <tt>FORMAT(A4,I3,3F8.4,F10.6,F6.2)</tt> which
+corresponds to SHELXS-90. This definitely won't work with SHELXD
+output, but you should be able to get PDB files directly in that
+case. </DD>
+
+<DT><A NAME="input_csd"></A>CSD</DT>
+
+<DD> Cambridge structural data base </DD>
+
+<DT><A NAME="input_xplor"></A>XPLOR</DT>
+
+<DD> Brookhaven - X-PLOR version. You will have to split chains later and
+correct some atom names. See also `OUTPUT XPLOR' option in PDBSET. </DD>
+
+<DT><A NAME="input_snb"></A>SNB</DT>
+
+<DD> ShakeNBake peaks file in Fortran format:
+<PRE>
+(3F10.0,F10.2,I5,I2)
+</PRE>
+The peak height is assigned to the B-factor column, and the flag indicating
+whether the peak should be used is converted to an occupancy.
+The choice of input format corresponds to the format written by BnP, `The
+Buffalo and Pittsburgh Interface combining SnB and Phases' - see
+<a href="http://www.hwi.buffalo.edu/BnP/">http://www.hwi.buffalo.edu/BnP/</a>
+for more information.</DD>
+</DL>
+
+<P><A NAME="input_orth"></A>The ORTH keyword must be followed by &lt;ncode&gt;
+- the orthogonalisation code. The default is orthogonalisation code 1. 
+If the INPUT is a PDB file with CRYST1 and SCALEx cards, then the SCALEx 
+matrices override the orthogonalisation code.  </P>
+
+<PRE>
+      ncode = 1 -  orthogonal axes are defined to have
+                   A parallel to XO   CSTAR parallel to ZO
+      ncode = 2 -  orthogonal axes are defined to have
+                      B parallel to XO   ASTAR parallel to ZO
+      ncode = 3 -  orthogonal axes are defined to have
+                      C parallel to XO   BSTAR parallel to ZO
+      ncode = 4 -  orthogonal axes are defined to have
+                    HEX A+B parallel to XO   CSTAR parallel to ZO
+      ncode = 5 -  orthogonal axes are defined to have
+                    ASTAR parallel to XO   C     parallel to ZO
+      ncode = 6 -  orthogonal axes are defined to have
+                      A parallel to XO   BSTAR parallel to YO
+
+</PRE>
+
+<H3><A NAME="output"></A>OUTPUT [ FRAC | HA | PDB | XPLOR ] [ ORTH &lt;ncode&gt;
+]</H3>
+
+<P>Defines output coordinate format as <A HREF="#input">above</A>. </P>
+
+<H3><A NAME="cell"></A>CELL &lt;a&gt; &lt;b&gt; &lt;c&gt; [ &lt;alpha&gt;
+&lt;beta&gt; &lt;gamma&gt; ]</H3>
+
+<P>Cell dimensions in Angstroms and degrees. Angles default to 90. Compulsory
+unless the input file is a PDB file with CRYST1 card or an HA file with CELL specified.</P>
+
+<H3><A NAME="end"></A>END</H3>
+
+<P>Ends input. </P>
+
+<H2><A NAME="files"></A>INPUT AND OUTPUT FILES</H2>
+
+<P>XYZIN Input coordinates </P>
+
+<P>XYZOUT Output coordinates </P>
+
+<H2>AUTHORS</H2>
+
+<P>Originator : Eleanor Dodson, University of York </P>
+
+<H2><A NAME="examples"></A>EXAMPLES</H2>
+
+<H3>Sample Unix input file: </H3>
+
+<LI><A HREF="../examples/unix/runnable/coordconv.exam">coordconv.exam</A>
+(This is a simple example which just converts the toxd.pdb file to different
+formats) </LI>
+
+<H2>SEE ALSO</H2>
+
+<P><A HREF="http://shelx.uni-ac.gwdg.de/SHELX">SHELXPRO</A> - can be
+used to produce a <tt>.ins</tt> file for input to SHELX from a PDB
+format file.</P>
+<P><A HREF="pdbset.html">pdbset</A> - various manipulations of a
+PDB coordinate file.</P>
+
+</BODY>
+</HTML>

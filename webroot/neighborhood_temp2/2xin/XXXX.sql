@@ -1,0 +1,1 @@
+INSERT INTO usages (sessionid,usagetype,test_data,crystal_contact,pdbfileid,filename,ip,browser_id) VALUES ('2xin',2,TRUE,FALSE,1,'','10.1.9.2',0);

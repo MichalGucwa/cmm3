@@ -1,0 +1,39 @@
+#!/bin/sh
+
+set -e
+
+# Example of SAD phasing and substructure refinement by Refmac.
+
+refmac5  \
+HKLIN $CEXAM/data/gere.mtz \
+XYZIN $CEXAM/data/gere_heavy.pdb \
+XYZOUT $CCP4_SCR/gere_heavy_out.pdb \
+HKLOUT $CCP4_SCR/gere_out.mtz << eor
+#
+# Input/output column assignments
+#
+LABIN   FREE=FreeR_flag  F+=F(+) SIGF+=SIGF(+) F-=F(-) SIGF-=SIGF(-)
+LABO FC=FC_ref PHIC=PHIC_ref   FOM=FOM_ref PHIB=PHIB_ref
+ANOM FORM SE -8.0 4.0
+SOLV NO
+NCYC 10
+END
+eor
+
+# Example of SAD refimenent of incomplete model.
+
+refmac5  \
+HKLIN $CEXAM/data/gere.mtz \
+XYZIN $CEXAM/data/gere_incompl.pdb \
+XYZOUT $CCP4_SCR/gere_incompl_out.pdb \
+HKLOUT $CCP4_SCR/gere_out.mtz << eor
+#
+# Input/output column assignments
+#
+LABIN   FREE=FreeR_flag  F+=F(+) SIGF+=SIGF(+) F-=F(-) SIGF-=SIGF(-)
+LABO FC=FC PHIC=PHIC
+ANOM FORM SE -8.0 4.0
+NCYC 10
+END
+eor
+

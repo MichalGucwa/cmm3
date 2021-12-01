@@ -1,0 +1,393 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4I Documentation for Programmers: Core Documentation</title>
+<link rel="stylesheet" type="text/css" href="../../ccp4idocs.css" title="CCP4i" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+</head>
+<body>
+<H2>CCP4i Documentation for Programmers: Core Documentation</H2>
+<H3>Contents</H3>
+<h3>Map Handling Utilities (utils/map_utils.tcl)</h3>
+<p>These procedures are usually used in run scripts but they could be used within the main ccp4i process.<p>
+<p>Many of the utilities require function from $CCP4I_TOP/src/CCP4_utils.tcl and that the data in $CCP4I_TOP/etc/crystal.lib and these are initiallised by commands at the top of map_utils.tcl which are run at the global level when the file is first sourced.<p>
+<a name="ExtendMap" ><h4><font color="#CC3333">ExtendMap</font> <em>Interface to mapmask program to extend map to cover molecule</em></h4> 
+<p><em>Argument list:  &lt;mapin&gt; &lt;mapout&gt; &lt;xyzin&gt; &lt;border&gt;</em></p>
+<p><strong>mapin</strong>  Full path name of input map<p>
+<p><strong>mapout</strong>  Full path name of output map<p>
+<p><strong>xyzin</strong>  Full path name of molecule coordinate file<p>
+<p><strong>border</strong>  Border in Angstrom around the molecule<p>
+<a name="ConvertMapAsu" ><h4><font color="#CC3333">ConvertMapAsu</font> <em>Run mapmask convert map to cover the standard CCP4 asymmetric unit</em></h4> 
+<p><em>Argument list:  &lt;mapin&gt; &lt;mapout&gt;</em></p>
+<p><strong>mapin</strong>  Full path name of input map<p>
+<p><strong>mapout</strong>  Full path name of output map<p>
+<a name="ConvertMapFormat" ><h4><font color="#CC3333">ConvertMapFormat</font> <em>Convert from CCP4 to alternative map formats</em></h4> 
+<p><em>Argument list:  &lt;format&gt; &lt;mapin&gt; &lt;mapout&gt; &lt;LOG_FILE&gt; &lt;args&gt;</em></p>
+<p>Beware that this uses non-CCP4 programs: mapman from Uppsala and mbkall from MSI. The CCP4i installer must have specified, in the CCP4i configure window, the command used to run these programs on their installation.<p>
+<p>NB There is not an XtalView map format - the SF file is imported to XtalView and it generates maps.<p>
+<p><strong>format</strong>  Required format: O, QUANTA<p>
+<p><strong>mapin</strong>  Full path name of input map<p>
+<p><strong>mapout</strong>  Full path name of output map<p>
+<p><strong>LOG_FILE</strong>  Optional name of a log file for log output<p>
+<p><strong>-nonorm</strong><p>
+<p>When outputting O format files do not normalise<p>
+<a name="CreateMap" ><h4><font color="#CC3333">CreateMap</font> <em>Create a map of optional type in various formats</em></h4> 
+<p><em>Argument list:  &lt;format&gt; &lt;HKLIN&gt; &lt;mapVar&gt; &lt;title&gt; &lt;prog_labin&gt; &lt;labin&gt; &lt;args&gt;</em></p>
+<p>The FFT program is run to create the map and, if necessary, a file<p>
+<p><strong>format</strong>  Required file format: CCP4, O, QUANTA, XtalView<p>
+<p><strong>HKLIN</strong>  Input MTZ file<p>
+<p><strong>mapVar</strong>  Output map file name, if necessary the file extension is reset.<p>
+<p><strong>title</strong>  A title for the FFT job and the map file<p>
+<p><strong>prog_labin</strong>  The input program labels for FFT (in TCL list format)<p>
+<p><strong>labin</strong>  The input MTZ labels for FFT (in TCL list format)<p>
+<p><strong>-cover</strong><em>  xyzin border</em><p>
+<p>Extend map to cover molecule in coordinate file xyzin with border (in Angstrom)<p>
+<p><strong>-xtal</strong><em>  xtal_labin</em><p>
+<p>If output format is XtalView then xtal_labin is list of XtalView 'column labels'<p>
+<p><strong>-fftargs</strong><em>  fftargs</em><p>
+<p>Additional command file arguments for running FFT. fftargs should be a text string which may include line breaks<p>
+<p><strong>-tmp</strong><p>
+<p>Make the output file a temporary file with extension .tmp<p>
+<p><strong>-saveccp4</strong><em>  ccp4map</em><p>
+<p>If the output format is not CCP4 then also save the CCP4 map as a file ccp4map.<p>
+<a name="MakeOMapMacro" ><h4><font color="#CC3333">MakeOMapMacro</font> <em>Create a macro for O to display map(s)</em></h4> 
+<p><em>Argument list:  &lt;macro_file&gt; &lt;map_list&gt; &lt;label_list&gt; &lt;sigma_list&gt; &lt;\&gt;</em></p>
+<p><strong>macro_file</strong>  Name of macro file<p>
+<p><strong>map_list</strong>  List of maps to be displayed (in TCL list format)<p>
+<p><strong>label_list</strong>  List of titles for maps (TCL list format same length as map_list)<p>
+<p><strong>sigma_list</strong>  List of contouring sigma levels (TCL list format same length as map_list)<p>
+<p><strong>colour_list</strong>  List of colours for maps ((TCL list format same length as map_list)<p>
+<p><strong>extent</strong>  ?Radius of map to display within O<p>
+<p><strong>-mtz</strong><em>  mtzfile</em><p>
+<p>Name of MTZ file from which to extract information on asymmetric unit so macro can be set up to display whole asymmetric unit<p>
+<p><strong>-mol</strong><em>  mollist mollabel</em><p>
+<p>Also display molecules from mollist (a list of PDB files) which will be assigned labels from mollabel.  mollist and mollabel are TCL lists of the same length.<p>
+<a name="MakeXtalMacro" ><h4><font color="#CC3333">MakeXtalMacro</font> <em>Create a macro and crystal file for xtalview to display map(s)</em></h4> 
+<p><em>Argument list:  &lt;hklin&gt; &lt;crystal_file&gt; &lt;macro_file&gt; &lt;\&gt;</em></p>
+<p><strong>hklin</strong>  MTZ file containing relevant crystal data<p>
+<p><strong>crystal_file</strong>  Name of the cystal file which will contain cell and symmetry info<p>
+<p><strong>macro_file</strong>  Name of macro file<p>
+<p><strong>xtalfiles</strong>  List of XtalView SF files (in TCL list format)<p>
+<p><strong>coefficients_list</strong>  List of contouring coefficients (TCL list same length as xtalfiles)<p>
+<p><strong>radius_list</strong>  List of map radii (TCL list same length as xtalfiles)<p>
+<a name="GetCellfromMtz" ><h4><font color="#CC3333">GetCellfromMtz</font> <em>Extract header information from an MTZ file</em></h4> 
+<p><em>Argument list:  &lt;mtzfile&gt; &lt;space_groupVar&gt; &lt;cellVar&gt; &lt;latticeVar&gt;</em></p>
+<p>Return spacegroup name, cell parameters and lattice type from named MTZ file.<p>
+<p>Note: the lattice type may be an empty string.<p>
+<p><strong>mtzfile</strong>  Input MTZ file<p>
+<p><strong>space_groupVar</strong>  Returned space group<p>
+<p><strong>cellVar</strong>  Returned cell dimensions (as Tcl list)<p>
+<p><strong>latticeVar</strong>  Returned cell lattice type<p>
+<a name="GetMapHeader" ><h4><font color="#CC3333">GetMapHeader</font> <em>Extract header information from a map file</em></h4> 
+<p><em>Argument list:  &lt;mapfile&gt; &lt;space_groupVar&gt; &lt;cellVar&gt; &lt;xyzlimVar&gt; &lt;gridVar&gt; &lt;\&gt;</em></p>
+<p>Runs the mapdmp script<p>
+<p><strong>mapfile</strong>  Input map file<p>
+<p><strong>space_groupVar</strong>  Returned space group<p>
+<p><strong>cellVar</strong>  Returned cell dimensions (as Tcl list)<p>
+<p><strong>xyzlimVar</strong>  Returned xyz limits of map (as Tcl list)<p>
+<p><strong>gridVar</strong>  Returned number of grid points in xyz (as Tcl list)<p>
+<p><strong>axesVar</strong>  Return order of axes in map (as Tcl list of X Y Z)<p>
+<a name="ConvertMapCell" ><h4><font color="#CC3333">ConvertMapCell</font> <em>Extend map to cover unit cell</em></h4> 
+<p><em>Argument list:  &lt;mapin&gt; &lt;mapout&gt;</em></p>
+<p><strong>mapin</strong>  Full path name of input map<p>
+<p><strong>mapout</strong>  Full path name of output map<p>
+<a name="WatPeak" ><h4><font color="#CC3333">WatPeak</font> <em>UNTESTED Search input differnce map for water peaks</em></h4> 
+<p><em>Argument list:  &lt;mapin&gt; &lt;xyzin&gt; &lt;peakout&gt; &lt;symmetry&gt; &lt;args&gt;</em></p>
+<p>Uses the mapmask program to extend map to cover (only) the volume of the protein and then uses peakmax to find peaks in map without atoms. Watpeak then trims the peaklist to around the protein.<p>
+<p><strong>mapin</strong>  Full path name of input map<p>
+<p><strong>xyzin</strong>  Full path name of input coordinate file<p>
+<p><strong>peakout</strong>  List of 'water' peaks in PDB format<p>
+<p><strong>symmetry</strong>  Space group namr input to watpeak<p>
+<p><strong>-title</strong><em>  title</em><p>
+<p>Input a title line for watpeak (as output to PDB peaks file)<p>
+<a name="AddXtalMapFom" ><h4><font color="#CC3333">AddXtalMapFom</font> <em>Add an extra column of dummy FOMS to an XtalView phases file</em></h4> 
+<p><em>Argument list:  &lt;hkl_file&gt;</em></p>
+<p>XtalView phases file must have three columns: F, FOM phase. This procedure insert a FOM column to any file created without one.<p>
+<p><strong>hkl_file</strong>  Input/output XtalView phases file - the file is overwritten<p>
+<a name="CalcCellVolume" ><h4><font color="#CC3333">CalcCellVolume</font> <em>Calculate the cell volume</em></h4> 
+<p><em>Argument list:  &lt;cell&gt; &lt;volumeVar&gt;</em></p>
+<p><strong>cell</strong>  Cell dimensions<p>
+<p><strong>volumeVar</strong>  Returned cell volume<p>
+<h3>Coordinate Handling Utilities (utils/pdb_utils.tcl)</h3>
+<a name="CalcCellVolume" ><h4><font color="#CC3333">CalcCellVolume</font> <em>Get the atomic contents of PDB file</em></h4> 
+<p><em>Argument list:  &lt;cell&gt; &lt;volumeVar&gt;</em></p>
+<p>Thi is based on rwcontents program<p>
+<p> Return the content in the format of a nest list   { { element_type_1 n_atoms_type_1 } ....   { element_type_n n_atoms_type_n } } #d_arg pdb_file Input PDB file<p>
+<p><strong>nresVar</strong>  Returned number of residues in the file<p>
+<p><strong>contentsVar</strong>  Returned the content of the PDB by element<p>
+<p><strong>total_heavyVar</strong>  Returned the total number of non-hydrogen atoms<p>
+<a name="AtomType" ><h4><font color="#CC3333">AtomType</font> <em>Return the Element name for a given atomic number</em></h4> 
+<p><em>Argument list:  &lt;atomic_number&gt;</em></p>
+<p><strong>atomic_number</strong>  Atomic numer<p>
+<a name="GetAminoInfo" ><h4><font color="#CC3333">GetAminoInfo</font> <em>Return some information for a given input amino acid type</em></h4> 
+<p><em>Argument list:  &lt;AA&gt; &lt;nhVar&gt;</em></p>
+<p>This currently will only return the number of non-hydrogen atoms in the residue, but could easily be extended with alternative information<p>
+<p><strong>AA</strong>  Input 3-letter amino acid code (upper case)<p>
+<p><strong>nhVar</strong>  Return the number of non-hydrogen atoms<p>
+<a name="ParsePDBId" ><h4><font color="#CC3333">ParsePDBId</font> <em>Extract the cards relevant to the atom id from a PDB ATOM line</em></h4> 
+<p><em>Argument list:  &lt;line&gt; &lt;atnamVar&gt; &lt;resnamVar&gt; &lt;residVar&gt; &lt;segidVar&gt;</em></p>
+<p><strong>line</strong>  Input line of PDB file (must be ATOM/HETATM card)<p>
+<p><strong>atnamVar</strong>  Returned atom name<p>
+<p><strong>resnamVar</strong>  Returned residue type<p>
+<p><strong>residVar</strong>  Returned residue id<p>
+<p><strong>segidVar</strong>  Returned segment id<p>
+<a name="ParsePDBIz" ><h4><font color="#CC3333">ParsePDBIz</font> <em>Extract atomic number from PDB atom card (or element type from name)</em></h4> 
+<p><em>Argument list:  &lt;line&gt; &lt;izVar&gt;</em></p>
+<p>If the atomic number is missing from columns 69-70 then guesstimate the element type from the atom name and return the atomic number<p>
+<p><strong>line</strong>  Input line of PDB file (must be ATOM/HETATM card)<p>
+<p><strong>izVar</strong>  Return the atomic number<p>
+<a name="PDBRemoveZeroOcc" ><h4><font color="#CC3333">PDBRemoveZeroOcc</font> <em>Remove atoms with zero occupancy from PDB file</em></h4> 
+<p><em>Argument list:  &lt;filein&gt; &lt;fileout&gt; &lt;nzerosVar&gt; &lt;args&gt;</em></p>
+<p><strong>filein</strong>  Input PDB file name<p>
+<p><strong>fileout</strong>  Output PDB file name<p>
+<p><strong>nzerosVar</strong>  Return the number of zero occupancy atoms<p>
+<p><strong>-chain</strong><em>  sel_chain</em><p>
+<p>Apply the edit only to the specified chain<p>
+<a name="ExtractPdbColumns" ><h4><font color="#CC3333">ExtractPdbColumns</font> <em>Extract columns from the ATOM records of a PDB file</em></h4> 
+<p><em>Argument list:  &lt;file&gt; &lt;column_list&gt; &lt;outputVar&gt; &lt;args&gt;</em></p>
+<p>Extract columns from the ATOM records of a PDB file beware this assumes a very consistent PDB file format with spaces between all columns.<p>
+<p><strong>file</strong>  - input file name<p>
+<p><strong>colum</strong>  n_list - Tcl list of number of the column(s) to return (NB 0=first column)<p>
+<p><strong>outputVar</strong>  - output as a Tcl list of lists<p>
+<a name="MergePdbFiles" ><h4><font color="#CC3333">MergePdbFiles</font> <em> Merge 2 or more PDB files </em></h4> 
+<p><em>Argument list:  &lt;fileout&gt; &lt;filesin&gt;</em></p>
+<p>This procedure removes the header info from the second and subsequent files. It does not check for unique chain names.<p>
+<p><strong>fileout</strong>  Output file name<p>
+<p><strong>filesin</strong>  A list of input files.<p>
+<a name="PdbGetChains" ><h4><font color="#CC3333">PdbGetChains</font> <em>Get a list of the chains and the first & last residue ids in a PDB file</em></h4> 
+<p><em>Argument list:  &lt;file&gt; &lt;chainVar&gt; &lt;chain_rangeVar&gt; &lt;args&gt;</em></p>
+<p><strong>file</strong>  Input PDB file<p>
+<p><strong>chainVar</strong>  Returned list of chain ids<p>
+<p><strong>chain_rangeVar</strong>  Returned nested list of first and last residues in chains<p>
+<p><strong>-nowat</strong><p>
+<p>Ignore atoms of type HOH|WAT|H2O|SOL<p>
+<p><strong>-atomid</strong><p>
+<p>Return the ids of the first and last atoms in a chain <p>
+<a name="HandleHarvestFile" ><h4><font color="#CC3333">HandleHarvestFile</font> <em>Add the output harvest file to the output file list for a job</em></h4> 
+<p><em>Argument list:  &lt;mode&gt; &lt;pname&gt; &lt;dname&gt; &lt;program&gt;</em></p>
+<p>Dependent on the mode add the name of a harvest file to the output file list for the job. This will make the harvest file visible to the user.  The file name is generated automatically by the program from the environment variables  - see $CCP4/html/harvesting.html. the same file name generation is reproduced here.<p>
+<p><strong>mode</strong>  Harvest mode - should be NOHARVEST, PROJECT or HARVEST -see<p>
+<a href=></a><p><strong>pname</strong>  project name<p>
+<p><strong>dname</strong>  dataset name<p>
+<p><strong>program</strong>  name of the program as understood by the harvest mechanism<p>
+<a name="FindNCSTransforms" ><h4><font color="#CC3333">FindNCSTransforms</font> <em>For multi-chain PDB find the inter-chain transformations using Lsqkab program</em></h4> 
+<p><em>Argument list:  &lt;xyzin&gt; &lt;chains&gt; &lt;chain_range&gt;</em></p>
+<p>The procedure useful in a job script - currently used for analysis in Molrep job.<p>
+<p>For all pairwise combinations of chains find the transformation to superpose the two chains and output in short table.  The full output of Lsqkab is not reported in the log file.<p>
+<p><strong>xyzin</strong>  Input PDB file<p>
+<p><strong>chains</strong>  A list of chain names<p>
+<p><strong>chain_range</strong>  A two element list of the first and last residue ids which will be superposed<p>
+<a name="Mol_Procedures_for_Handling_Coordinate_Data"><h3> Mol Procedures for Handling Coordinate Data </h3> 
+<p>The series of procedures Mol* are for handling coordinate data and are particularly used in the Sketcher module but could be helpful elsewhere.The coordinate data is loaded into a global array which is usually called Mol but the name is passed into the utility procedures so potentially different molecules could be loaded into different arrays.  NOTE: These utilities are fine for a small number of atoms but will become slow or frozen for anything like a real protein.  The procedures for reading the data can extract a specified residue from a large PDB file efficiently.<p>
+<p>The elements of the Mol array are indexed by the atom number na which  starts at 1 (not 0): <p>
+<p>  Name,$na	the atom name<p>
+<p>  Element,$na 	the atom element type<p>
+<p>  Type,$na 	the atom type (default is 'no_type')<p>
+<p>  Charge,$na	the formal, unit charge on the atom<p>
+<p>  Coor,$na	the coordinates as a tcl list [list $x $y $z]<p>
+<p>  frag,$na	an integer indicating which fragment of the molecule the atom belongs to - this is only set after calling MolFindFragments<p>
+<p>The elements indexed by the bond number nb:<p>
+<p>  Bonds,$nb	a list of two atom number for two connected atoms<p>
+<p>  Bondtype,$nb	the bondtype - an integer for the formal bond order<p>
+<p><p>
+<p>  nAtoms	number of atoms<p>
+<p>  nBonds	number of bonds<p>
+<p>  chem_comp_id the monomer id as used in CIF libraries<p>
+<p>  XY 		A list of coordinates - the coordinate of each atom is a 3 item list. <p>
+<p>  The first item of the list is 'NULL' so the atom numbers which start at 1 can index into the list.<p>
+<a name="MolReadPDB" ><h4><font color="#CC3333">MolReadPDB</font> <em>Read some or all atoms from a PDB file into the Mol array</em></h4> 
+<p><em>Argument list:  &lt;MolVar&gt; &lt;file&gt; &lt;args&gt;</em></p>
+<p>Reading the PDB file of a whole protein will be very slow. It is possible to read an individual residue using the select option. Note that the procedure sketch_open_file in sketch.tcl shows how to create a file selection window with extra options to select a residue.<p>
+<p><strong>MolVar</strong>  The name of the global array to be loaded<p>
+<p><strong>file</strong>  Name of PDB file name<p>
+<p><strong>-select</strong><em>  {[list} restype chain_id resid_id\]</em><p>
+<p>Read only the first residue which matches the input residue type (restype), chain id and residue id (resid_id).  One or two of the three elements in the input can be null - and there will be no requirement to match that identifier.<p>
+<p><strong>-noh</strong><p>
+<p>Do not read in hydrogen atoms.<p>
+<a name="MolReadCif" ><h4><font color="#CC3333">MolReadCif</font> <em>Read atoms from a CIF file into the Mol array</em></h4> 
+<p><em>Argument list:  &lt;MolVar&gt; &lt;file&gt; &lt;args&gt;</em></p>
+<p>Reading many atoms will be slow.<p>
+<p><strong>MolVar</strong>  The name of the global array to be loaded<p>
+<p><strong>file</strong>  Name of CIF file name<p>
+<p><strong>-noh</strong><p>
+<p>Do not read in hydrogen atoms.<p>
+<a name="read_cif_name" ><h4><font color="#CC3333">read_cif_name</font> <em>Strip the inverted commas (quotes) from a cif atom name</em></h4> 
+<p><em>Argument list:  &lt;name&gt;</em></p>
+<p>CIF definitions require quotes about any atom name containing a quote character.  This function returns the name stipped of surrounding quotes.<p>
+<p><strong>name</strong>  Atom name from CIF file<p>
+<a name="MolReadSybyl" ><h4><font color="#CC3333">MolReadSybyl</font> <em>Read some or all atoms from a Sybyl file into the Mol array</em></h4> 
+<p><em>Argument list:  &lt;MolVar&gt; &lt;file&gt; &lt;args&gt;</em></p>
+<p>Reading many atoms will be slow. This procedure has not been seriously used or tested.<p>
+<p><strong>MolVar</strong>  The name of the global array to be loaded<p>
+<p><strong>file</strong>  Name of Sybyl file name<p>
+<p><strong>-noh</strong><p>
+<p>Do not read in hydrogen atoms.<p>
+<a name="MolConvertSybylType" ><h4><font color="#CC3333">MolConvertSybylType</font> <em>placemarker for code to convert Sybyl atom types</em></h4> 
+<p><em>Argument list:  &lt;type&gt;</em></p>
+<a name="MolConvertSybylBond" ><h4><font color="#CC3333">MolConvertSybylBond</font> <em>placemarker for code to convert Sybyl bond types</em></h4> 
+<p><em>Argument list:  &lt;type&gt;</em></p>
+<a name="MolBoundingBox" ><h4><font color="#CC3333">MolBoundingBox</font> <em>Find centre of mass and bounding box for coordinates in Mol</em></h4> 
+<p><em>Argument list:  &lt;MolVar&gt; &lt;minboundVar&gt; &lt;maxboundVar&gt; &lt;aveVar&gt; &lt;args&gt;</em></p>
+<p>Useful for centering molecule in display<p>
+<p><strong>MolVar</strong>  Name of Mol array<p>
+<p><strong>minboundVar</strong>  Returned list of minimum values of x,y,z<p>
+<p><strong>maxboundVar</strong>  Returned list of maximum values of x,y,z<p>
+<p><strong>aveVar</strong>  Returned list of average coordinates, x,y,z (not weighted by mol wt.)<p>
+<a name="MolTranslate" ><h4><font color="#CC3333">MolTranslate</font> <em>Apply a translation to all coordinates in Mol array</em></h4> 
+<p><em>Argument list:  &lt;MolVar&gt; &lt;translate&gt; &lt;args&gt;</em></p>
+<p><strong>MolVar</strong>  Name of Mol array<p>
+<p><strong>translate</strong>  Input list of translation vector x,y,z<p>
+<p><strong>-first</strong><em>  first_atom</em><p>
+<p>Only apply translation to range of atoms starting at first_atom<p>
+<p><strong>-last</strong><em>  last_atom</em><p>
+<p>Only apply translation to range of atoms finishing at at last_atom<p>
+<a name="MolWriteCifCoords" ><h4><font color="#CC3333">MolWriteCifCoords</font> <em>Write out a CIF coordinate format file</em></h4> 
+<p><em>Argument list:  &lt;MolVar&gt; &lt;file&gt; &lt;args&gt;</em></p>
+<p>File will have  minimal pdb style info and crystal parameters set arbitarilly<p>
+<p><strong>MolVar</strong>  Name of Mol array<p>
+<p><strong>file</strong>  Output file name<p>
+<p><strong>-id</strong><em>  monomer_id</em><p>
+<p>Put the monomer id monomer_id in the CIF file<p>
+<p><strong>-tran</strong><em>  translation</em><p>
+<p>Apply a translation given by translation - a list of ztran,ytran,ztran This option is NOT implemented.<p>
+<a name="write_cif_name" ><h4><font color="#CC3333">write_cif_name</font> <em>Put quotes about name if it contains a quote character</em></h4> 
+<p><em>Argument list:  &lt;name&gt;</em></p>
+<p>Function returns an atom name suitable for output ot CIF file<p>
+<p><strong>name</strong>  Input atom name<p>
+<a name="MolReadPdbRestraints" ><h4><font color="#CC3333">MolReadPdbRestraints</font> <em>Read MODRES/SSBOND/LINK/CISPEP cards from pdb file </em></h4> 
+<p><em>Argument list:  &lt;MolVar&gt; &lt;file&gt; &lt;args&gt;</em></p>
+<p>The parameters of PDB restraints cards are read into a Mol array. The actual name of the array is defined externally so does not have to be, and should not be, the same array used for coordinates. <p>
+<p>The array will contain elements nModres, nSsbond, nLink and nCispep which are number of each restraint.  The other parameter names are best seen in the code.  The expected format of the PDB file is that slightly extended from PDB and defined in Libcheck documentationn.<p>
+<a name="MolCheckPdbRestraints" ><h4><font color="#CC3333">MolCheckPdbRestraints</font> <em>Not implemented - should check sensible restraints defined</em></h4> 
+<p><em>Argument list:  &lt;restrainstVar&gt;</em></p>
+<a name="MolCheckReadFile" ><h4><font color="#CC3333">MolCheckReadFile</font> <em>Not implemented - should check sensible atom name input etc.</em></h4> 
+<p><em>Argument list:  &lt;MolVar&gt; &lt;args&gt;</em></p>
+<a name="MolFindFragments" ><h4><font color="#CC3333">MolFindFragments</font> <em>Find all the separate non-bonded fragments in Mol array</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>If not all bonds are defined that molecule will appear to be more that one fragment.  This procedure returns the number of fragments (ideally this should be 1) and for each atom na assigns a value to Mol(frag,$na) which is an integer value - all atoms with the same value are in the same fragment.<p>
+<a name="MolChiralVolume" ><h4><font color="#CC3333">MolChiralVolume</font> <em>Find the chiral volume of four atoms in the Mol array</em></h4> 
+<p><em>Argument list:  &lt;MolVar&gt; &lt;at1&gt; &lt;at2&gt; &lt;at3&gt; &lt;at4&gt; &lt;volobsVar&gt;</em></p>
+<p>Find the chiral volume for atom at1 and its three neighbours<p>
+<p>This needs to give the sign of the chirality to conform with that used to Libcheck.  <p>
+<p><strong>MolVar</strong>  Name of global Mol array<p>
+<p><strong>at1</strong>  Atom number of chiral centre<p>
+<p><strong>at2,at3,at4</strong>  Three neighbouring atoms of chiral centre<p>
+<p><strong>volobsVar</strong>  returned value of chiral volume<p>
+<a name="MolSaveParam" ><h4><font color="#CC3333">MolSaveParam</font> <em>Make a backup of Mol array values</em></h4> 
+<p><em>Argument list:  &lt;MolVar&gt; &lt;store&gt; &lt;paramlist&gt;</em></p>
+<p>Save some of the current Mol params to the Mol element store<p>
+<p><strong>MolVar</strong>  the name of the global Mol array<p>
+<p><strong>store</strong>  the name of the element used to store the parameters<p>
+<p><strong>paramlist</strong>  the list parameters to be stored.<p>
+<h3>Utilities for Phasing Tasks (utils/phasing_utils.tcl)</h3>
+<p>Mostly used by run scripts for experimental phasing. Only Uniqueify may have some general use.<p>
+<a name="ExtractShelxLog" ><h4><font color="#CC3333">ExtractShelxLog</font> <em>UNTESTED - Extract info from the Shelx log file</em></h4> 
+<p><em>Argument list:  &lt;filename&gt; &lt;attype&gt;</em></p>
+<p> This is intended to be used to create a 'crossword table' of distances between heavy atom sites.  Need to discuss this with Eleanor.<p>
+<p><strong>filename</strong>  Name of shelx log file<p>
+<p><strong>attype</strong>  Name of heavy atom type expected in log file<p>
+<a name="MakeShelxDismat" ><h4><font color="#CC3333">MakeShelxDismat</font> <em>Convert the distance list from shelx log file into a neat distance matrix</em></h4> 
+<p><em>Argument list:  &lt;dist_list&gt; &lt;dismatVar&gt;</em></p>
+<a name="NpoMapScale" ><h4><font color="#CC3333">NpoMapScale</font> <em>Devise scale for NPO plots with orthogonal sections on same scale</em></h4> 
+<p><em>Argument list:  &lt;space_group&gt; &lt;cell&gt; &lt;N_SECTIONS&gt; &lt;axes_list&gt; &lt;NPO_MAX_SIZE&gt; &lt;\&gt;</em></p>
+<p><strong>space_group</strong>  space group<p>
+<p><strong>cell</strong>  Unit cell<p>
+<p><strong>N_SECTIONS</strong>  Not used<p>
+<p><strong>axes_list</strong>  List of axes along with sections are required (as X, Y or Z)<p>
+<p><strong>NPO_MAX_SIZE</strong>  Maximum acceptable size of plot<p>
+<p><strong>NPO_SCALEVar</strong>  Returned proposed scale<p>
+<a name="FindScaleitDiff" ><h4><font color="#CC3333">FindScaleitDiff</font> <em>Run scaleit to find optimal value for exclude cutoff for Patterson</em></h4> 
+<p><em>Argument list:  &lt;HKLIN&gt; &lt;F1&gt; &lt;SIG1&gt; &lt;F2&gt; &lt;SIG2&gt; &lt;diffVar&gt;</em></p>
+<p><strong>HKLIN</strong>  Input MTZ file<p>
+<p><strong>F1</strong>  Input MTZ FP column<p>
+<p><strong>SIG1</strong>  Input MTZ SIGFP column<p>
+<p><strong>F2</strong>  Input MTZ FPH column<p>
+<p><strong>SIG2</strong>  Input MTZ SIGFPH column<p>
+<p><strong>diffVar</strong>  Returned proposed exclude difference cutoff<p>
+<a name="scaleit_analysis" ><h4><font color="#CC3333">scaleit_analysis</font> <em>Extract date from scaleit log file for correlation analysis</em></h4> 
+<p><em>Argument list:  &lt;mode&gt; &lt;arrayname&gt; &lt;log&gt; &lt;n&gt; &lt;m&gt;</em></p>
+<p><strong>mode</strong>  Can be all, pair or disp<p>
+<p><strong>arrayname</strong>  Name of array used to carry output data<p>
+<p><strong>log</strong>  Name of input log file<p>
+<p><strong>n</strong>  Optional identifier for the first dataset in pairwise analysis<p>
+<p><strong>m</strong>  Optional identifier for the ssecond dataset in pairwise analysis<p>
+<a name="scaleit_write_tab" ><h4><font color="#CC3333">scaleit_write_tab</font> <em> Write the summary of the scaleit log file(s) to the table file</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;tab&gt; &lt;nsets&gt; &lt;disp_diff&gt;</em></p>
+<p><strong>arrayname</strong>  Name of array used to carry analysis data<p>
+<p><strong>tab</strong>  name of the table output file<p>
+<p><strong>nset</strong>  Number of sets of derivative data<p>
+<p><strong>disp_diff</strong>  Logical 1= output anomalous differences table<p>
+<a name="Uniqueify" ><h4><font color="#CC3333">Uniqueify</font> <em>Run the Tcl version of 'uniqueify' script to standardise MTZ and add FreeR column</em></h4> 
+<p><em>Argument list:  &lt;HKLIN&gt; &lt;HKLOUT&gt; &lt;args&gt;</em></p>
+<p><strong>HKLIN</strong>  Input MTZ file<p>
+<p><strong>HKLOUT</strong>  Output MTZ file<p>
+<p><strong>-extend</strong><em>  RESOLUTION_MAX</em><p>
+<p>Extend the resolution to RESOLUTION_MAX<p>
+<p><strong>-import</strong><em>  IMPORT_FREER_MTZ IMPORT_FREER_LABIN</em><p>
+<p>Import the FreeR column from another MTZ file<p>
+<p><strong>-keep</strong><em>  LABIN_FREER</em><p>
+<p>Keep the FreeR column in the input file<p>
+<p><strong>frac</strong><em>  -FREER_FRACTION</em><p>
+<p>Override the usual fraction for FreeR reflections (0.05)<p>
+<p><strong>-sysa</strong><p>
+<p>Keep the systematically absent reflections in the MTZ file<p>
+<h3>AMoRe Utilities (utils/amore_utils.tcl)</h3>
+<p>Used in the amore run script to handle the .mr files and to interact with the mr model database.<p>
+<a name="amore_get_tabling_data" ><h4><font color="#CC3333">amore_get_tabling_data</font> <em>Extract data from the amore tabling log file</em></h4> 
+<p><em>Argument list:  &lt;file&gt; &lt;boxVar&gt; &lt;rcomVar&gt; &lt;comVar&gt; &lt;eulerVar&gt;</em></p>
+<p>The position and extent of the model in the unit cell is extracted from the log file.  This procedure called from amore.scriptwhich then saves information in the amore database<p>
+<p><strong>file</strong>  Amore tabling log file<p>
+<p><strong>boxVar</strong>  Returned minimal box (a Tcl list of 3 elements)<p>
+<p><strong>rcomVar</strong>  Returned minimal Sphere (one value)<p>
+<p><strong>comVar</strong>  Returned centre of mass (a Tcl list of 3 elements)<p>
+<p><strong>eulerVar</strong>  Returned rotation applied to orient molecule (a Tcl list of 3 elements)<p>
+<a name="amore_calc_model_cell" ><h4><font color="#CC3333">amore_calc_model_cell</font> <em>Use the model extent and radius to calculate reasonable model cell</em></h4> 
+<p><em>Argument list:  &lt;xtl_cell&gt; &lt;box&gt; &lt;radius&gt; &lt;cellVar&gt; &lt;irmaxVar&gt;</em></p>
+<p>Use formula that irmax should be the minimum of ( 0.75 * smallest model box dimension) and ( 0.5 * smallest xtl cell dimension)<p>
+<p><strong>xtl_cell</strong>  The cystal cell lengths<p>
+<p><strong>box</strong>  The extent of the model<p>
+<p><strong>radius</strong>  The minimal sphere enclosing the model<p>
+<p><strong>cellVar</strong>  Returned estimated model cell<p>
+<p><strong>irmaxVar</strong>  Returned the proposed radius for the integration sphere<p>
+<a name="amore_get_log_solution" ><h4><font color="#CC3333">amore_get_log_solution</font> <em>Extract solutions from log file</em></h4> 
+<p><em>Argument list:  &lt;mode&gt; &lt;model_list&gt; &lt;log_file&gt; &lt;\&gt;</em></p>
+<p>Will find rotation/translation and fitting solutions and writes tothe CCP4i 'mr' file<p>
+<p><strong>mode</strong>  Should be rot, tra, fit, shift or self.<p>
+<p><strong>model_list</strong>  A list of the models used in this run of Amore - indicates the number of sollution lines make up one solution<p>
+<p><strong>log_file</strong>  name of input log file<p>
+<p><strong>solution_file</strong>  Name of output 'mr' solution file<p>
+<p><strong>-append</strong><p>
+<p>Append new solutions to an existing file<p>
+<p><strong>-symmetry</strong><em>  spacegroup</em><p>
+<p>Specify spacegroup to write into header<p>
+<p><strong>-resolution</strong><em>  res_max res_min</em><p>
+<p>Specify resolution limits to write into header<p>
+<p><strong>-cell</strong><em>  a b c alpha beta gamma</em><p>
+<p>Specify cell parameters to write into header<p>
+<a name="amore_update_database" ><h4><font color="#CC3333">amore_update_database</font> <em> Update the mr_database.def file</em></h4> 
+<p><em>Argument list:  &lt;def_file&gt; &lt;model_title&gt; &lt;update_list&gt; &lt;args&gt;</em></p>
+<p>Data extracted from log files is saved in the amore database. #d_arg def_file name of the amore mr database file<p>
+<p><strong>model_title</strong>  Name of the model in the mr database<p>
+<p><strong>update_list</strong>  List of paramters in name & value pairs<p>
+<p><strong>-noreport</strong><p>
+<p>Do not report  progress to log file<p>
+<a name="amore_get_solution" ><h4><font color="#CC3333">amore_get_solution</font> <em>Extract solutions from an 'mr' file and write in input format for Amore</em></h4> 
+<p><em>Argument list:  &lt;file&gt; &lt;fix&gt; &lt;model_listVar&gt; &lt;output_model_listVar&gt; &lt;\&gt;</em></p>
+<p>All lines beginning with # in the mr field are ignored. FIX keyword and mode lnumbers are inserted.  If this is the second solution file read then this is entered into this procedure as solution0.  All solutions in solution0 needed to be permed with all solutions input in file.<p>
+<p><strong>file</strong>  Input mr solution file<p>
+<p><strong>fix</strong>  Will be keyword 'FIX' or blank<p>
+<p><strong>model_listVar</strong>  Returned list of models (i.e. the names of models in the mr datase), for the current 'known' structure.<p>
+<p><strong>output_model_listVar</strong>  returned list models, for the structure to beoutput by the next run of Amore.<p>
+<p><strong>nsol</strong>  Number of solutions to be read (default is 'all')<p>
+<p><strong>solutionVar</strong>  Returned the text input for Amore listing 'known' solutions.<p>
+<p><strong>solution0</strong>  Optional input of list of 'known' solutions read from anothermr file<p>
+<a name="amore_block_mr_database" ><h4><font color="#CC3333">amore_block_mr_database</font> <em>send command to main ccp4i to block update of the mr database</em></h4> 
+<p><em>Argument list:  &lt;mode&gt;</em></p>
+<p><strong>mode</strong>  1= initialise block, 0= release the block<p>
+<a name="amore_extract_mr_header" ><h4><font color="#CC3333">amore_extract_mr_header</font> <em>Extract information from the header of an mr file</em></h4> 
+<p><em>Argument list:  &lt;file&gt; &lt;args&gt;</em></p>
+<p>Arguments are parameter names, and a list of the corresponding values extracted from the header are returned. If a parameter is not found then a blank value is returned in that position.<p>
+<p><strong>file</strong>  Input mr solution file<p>
+</body>
+</html>
+

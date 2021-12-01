@@ -1,0 +1,35 @@
+#!/bin/sh
+
+set -e
+
+# 1. Generate the contents of the unit cell using given symmetry.
+#    Symmetry-generated chains are then renamed.
+
+pdbcur xyzin $CEXAM/rnase/rnase.pdb xyzout $CCP4_SCR/ucell.pdb <<eof
+symm P 21 21 21
+genu
+renc A_1 C
+renc A_2 D
+renc A_3 E
+renc B_1 F
+renc B_2 G
+renc B_3 H
+eof
+
+# 2. Same again but using automatic chain naming.
+
+pdbcur xyzin $CEXAM/rnase/rnase.pdb xyzout $CCP4_SCR/ucell.pdb <<eof
+symm P 21 21 21
+genu
+mkch
+eof
+
+# 3. Declare and then apply two symmetry operators.
+
+pdbcur xyzin $CEXAM/rnase/rnase.pdb xyzout $CCP4_SCR/rnase1.pdb <<eof
+symop  X,Y,Z
+symop  Y+1/2,X-1/2,Z
+symcommit
+eof
+
+#

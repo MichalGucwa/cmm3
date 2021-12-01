@@ -1,0 +1,98 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>User Guide for Data Harvesting Manager</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]">
+</HEAD>
+<BODY>
+
+<!-- ::INDEX_INFO::DATA HARVESTING MANAGER::Supported::Validation and Deposition,Data Harvesting and Datasets::Tool for managing Data Harvesting Files:::::: -->
+
+
+<a name="top"></a><H1>DATA HARVESTING MANAGER</H1>
+<br />
+<H2>Contents</H2>
+<dl>
+<dt><a href="#description" target="_self">Description</a></dt>
+<dt><a href="#Selecting Files" target="_self">Selecting Files</a></dt>
+<dt><a href="#Programs" target="_self">Programs</a></dt>
+<dd><a href="#Validating Harvest Files" target="_self">Validating Harvest Files</a></dd>
+<dd><a href="#cif2xml" target="_self">Convert CIF files to XML</a></dd>
+<dd><a href="#pdbextract" target="_self">Extract additional information for deposition</a></dd>
+<dd><a href="#runningpdbextractwithCCP4programs" target="_self">Running PDB_EXTRACT with CCP4 Programs
+<dt><a href="#Output" target="_self">Output</a></dt>
+</dl>
+
+
+<H2><a name="description">Description</a></H2>
+<P>The Data Harvesting Manager is a tool to manage and maintain any harvest files produced by CCP4 programs. It will run tasks to validate the format and consistency of produced harvest files in the same dataset, convert the harvest files from CIF to XML and is also an interface to the PDB_EXTRACT package which extracts additional information from harvest files, output log files and output MTZ files for deposition.</P>
+
+
+<H2><a name="Selecting Files">Selecting Files</a></H2>
+In order to make it easier to manage and maintain harvest files in the Harvesting Manager, the user can select multiple harvest files they wish to work with and a list of all of these files will appear in a box in the "List of harvest files selected folder". Buttons underneath the list box enables the user to view a selected file, remove selected files from the list, clear the whole list or un-highlight any selected files. Multiple files can be selected by holding down the CTRL key and clicking with the mouse.
+<P><image src="images/dhmtool1.jpg"></img>
+<H2><a name="Programs">Programs</a></H2>
+
+<H2><a name="Validating Harvest Files">Validating Harvest Files</a></H2>
+This program will check any highlighted files that it is written in correct mmCIF syntax. It will also output only the common information that is found in all harvest files written by CCP4 programs. If more than one file is highlighted, and the "Cross Validate Files" button is checked, the program will check for differences between the 2 files of certain data. (See <a href="cross_validate.html">cross_validate</a> program documentation).
+<P><image src="images/dhmtool2.jpg" height=450></img>
+
+<H2><a name="cif2xml">Convert CIF files to XML</a></H2>
+<P>This program will convert a selected harvest file into XML. It requires one input harvest file from the list, and an output XML file (see <a href="cif2xml.html">CIF2XML</a> program documentation).</P>
+<P><image src="images/dhmtool3.jpg"></img>
+
+<H2><a name="pdbextract">Extract additional information for deposition</a></H2>
+<P>This is an interface to the PDB_EXTRACT program suite, which will extract additional relevant information from output files of certain structure solution programs into a CIF file for use during deposition. Under programs, choose "Run Program to Extract additional information for deposition".
+<p>There are three steps where information can be extracted:
+<pre>
+	1. Heavy atom phasing   -> Requires output from either CNS, Mlphare, Solve, Sharp, SnB, ShelxD/ShelxS
+	2. Density Modification -> Requires output from either CNS, DM, Solomon, Resolve, Sharp or ShelxE
+	3. Structure Refinement -> Requires output from either CNS, Refmac5, ShelxL, TNT or ARP/wARP
+</pre>
+For each phase, the name of the program from which the output files were generated needs to be specified from the menu as well as the required files. The resulting file is written in CIF format and organised so that it is ready for deposition. 
+<P>For detailed documentation, see <a href="pdb_extract-CCP4.html">PDB_EXTRACT.</a>
+
+<H2><a name="runningpdbextractwithCCP4programs"></a></H2>
+<H3>1. Heavy Atom Phasing</H3>
+<P><b>Example: MAD Phasing using the CCP4 Programs MLPHARE and REVISE.</b>
+<br><br>This ideally requires the harvest file from MLPHARE, and the log file from the program REVISE. This will extract phasing and wavelength information.
+
+<br>Select "Extract information from Heavy Atom Phasing step". A new folder will appear. Select method type and program. eg: "Using MAD and MLPHARE". Then, declare the name of the MLPHARE Harvest file as a CIF file, and the REVISE log file as the LOG file. It is not necessary to declare a PDB file for this example, since MLPHARE does not produce a final PDB file at this stage. Then choose a name for the output CIF file and run the task.
+<P><image src="images/dhmtool_phasing.jpg"></img>
+<P>This will also run on the command line with the following command:
+<P><pre>pdb_extract  -p MLPHARE  -iCIF [MLPHARE HARVEST FILE]  -iLOG [REVISE LOG FILE]  -o [OUTPUT CIF FILE]</pre>
+
+<H3>2. Density Modification</H3>
+<P><b>Example: Using the CCP4 Program DM.</b>
+<br><br>This requires only the log file from the DM program, and will create a CIF file containing some phasing statistics.
+<br><br>Select "Extract information from Density Modification step" and choose the DM program. Declare the DM log file as the LOG file and declare the name of the output CIF file. Run the task.
+<P><image src="images/dhmtool_denmod.jpg"></img>
+<P>This will also run on the command line with the following command:
+<P><pre>pdb_extract  -d DM  -iLOG [DM LOG FILE]  -o [OUTPUT CIF FILE]</pre>
+
+<H3>3. Structure Refinement</H3>
+<P><b>Example: Using the CCP4 Program REFMAC5.</b>
+<br>This ideally requires the REFMAC5 harvest file and the output PDB file. A file will be written which combines all relevant information from the harvest file and the PDB file into CIF format, including refinement and model statistics, and model coordinates.
+<br><br>Select "Extract information from Structure Refinement step". Then select method type and program. eg: "Using MAD and REFMAC5". Then, declare the name of the refined PDB file and the REFMAC5 harvest file. Then choose a name for the output CIF file and run the task.
+<P><image src="images/dhmtool_refine.jpg"></img>
+<P>This will also run on the command line with the following command:
+<P><pre>pdb_extract  -r REFMAC5  -iCIF  [REFMAC5 HARVEST FILE]  -iPDB [REFMAC5 PDB FILE]  -o [OUTPUT CIF FILE]</pre>
+
+<H2><a name="Output">Output</a></H2>
+The output of these programs can be checked at a glance by using the window in the "Output" folder at the bottom of the task window. This will highlight whether the program has completed successfully or not, and will highlight any potential problems in the running of the programs.
+</BODY>
+</HTML>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

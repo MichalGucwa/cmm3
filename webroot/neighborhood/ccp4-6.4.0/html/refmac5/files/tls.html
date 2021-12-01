@@ -1,0 +1,113 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4 Program Suite : refmac - Input and output files</title>
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX64 6.2 IP19) [Netscape]"></head>
+</head>
+<body>
+
+<!-- ::INDEX_INFO::REFMAC::Supported::Model Refinement::macromolecular refinement program:::::::: -->
+
+<h1>REFMAC (CCP4: Supported Program)</h1>
+<h2>User's manual for the program REFMAC, version 5.*</h2>
+
+<h1><a name="tlsfile" id="tlsfile"></a>Input and output files - TLS parameter files</h1>
+
+<p><a href="#tlsin">Input</a> and <a href="#tlsout">output</a>
+TLS files are ASCII files containing details of the TLS groups and the values
+of the corresponding T, L and S tensors. For more details of TLS parameters see
+Martyn Winn's page on
+<a href="http://www.ccp4.ac.uk/martyn/tls_research.html">TLS in REFMAC</a> (external
+link).</p>
+
+<h2><a name="tlsin" id="tlsin"></a>TLSIN</h2>
+
+<p>The input TLS file (logical name TLSIN) may contain only information about
+TLS groups without values of T, L and S tensors.The possible records are:</p>
+
+<dl>
+<dt>TLS &lt;title&gt;</dt>
+<dd>This must be the first record for each TLS group, and indicates
+the start of a new group. &lt;title&gt; is a short description of
+the group.</dd>
+
+<dt>RANGE &lt;from&gt; &lt;to&gt; [&lt;selection&gt;]</dt>
+<dd>This record describes which atoms are included in the TLS group.
+&lt;from&gt; and &lt;to&gt; consist of the chain identifier followed
+by the residue number in the format (A1,I4), for the beginning and end
+of a particular segment. Several segments can be included in a TLS group
+by including several RANGE records. The values of &lt;from&gt; and
+&lt;to&gt; should be enclosed in quotes, <em>e.g.</em> 'A 131'. The optional
+&lt;selection&gt; specifies an atom selection for a particular segment.
+The possibilities are &quot;ALL&quot; (all atoms - default), &quot;MNC&quot; (main chain
+atoms only), &quot;SDC&quot; (side chain atoms only) or a particular atom type
+up to 3 characters, <em>e.g.</em> &quot;CB&quot;.</dd>
+
+<dt>ORIGIN &lt;origin_x&gt; &lt;origin_y&gt; &lt;origin_z&gt;</dt>
+<dd>The origin used for the calculation of TLS parameters in the
+coordinate system of XYZIN. This defaults to the centroid of the
+group, and this record can normally be omitted.</dd>
+
+<dt>T &lt;T<sub>11</sub>&gt; &lt;T<sub>22</sub>&gt; &lt;T<sub>33</sub>&gt;
+&lt;T<sub>12</sub>&gt; &lt;T<sub>13</sub>&gt; &lt;T<sub>23</sub>&gt;</dt>
+<dd>Starting values for the translation tensor in &Aring;&#178;.
+Normally, this would be omitted, and the program will start with all values
+zero.</dd>
+
+<dt>L &lt;L<sub>11</sub>&gt; &lt;L<sub>22</sub>&gt; &lt;L<sub>33</sub>&gt;
+&lt;L<sub>12</sub>&gt; &lt;L<sub>13</sub>&gt; &lt;L<sub>23</sub>&gt;</dt>
+<dd>Starting values for the libration tensor in degree&#178;. Normally,
+this would be omitted, and the program will start with all values zero.</dd>
+
+<dt>S &lt;S<sub>22</sub> - S<sub>11</sub>&gt; &lt;S<sub>11</sub> - S<sub>33</sub>&gt;
+&lt;S<sub>12</sub>&gt; &lt;S<sub>13</sub>&gt; &lt;S<sub>23</sub>&gt; &lt;S<sub>21</sub>&gt;
+&lt;S<sub>31</sub>&gt; &lt;S<sub>32</sub>&gt;</dt>
+<dd>Starting values for the screw rotation tensor in &Aring; * degree.
+Normally, this would be omitted, and the program will start with all values
+zero.</dd>
+</dl>
+
+<h3><a name="tlsin_format" id="tlsin_format"></a>TLSIN - Format</h3>
+
+<p>The format is essentially the same as that used by the program RESTRAIN.
+A simple example with two TLS groups representing two domains
+of a single chain:</p>
+
+<blockquote><pre>TLS    Chain A   NAD binding domain
+RANGE  'A   1' 'A 137' ALL
+RANGE  'A 303' 'A 340' ALL
+
+TLS    Chain A   Catalytic domain
+RANGE  'A 138' 'A 302' ALL</pre></blockquote>
+
+<h2><a name="tlsout" id="tlsout"></a>TLSOUT</h2>
+
+<p>The output TLS file (logical name TLSOUT) contains
+refined TLS parameters (details of TLS group, origin of TLS group, T, L, S tensors).</p>
+
+<h3><a name="tlsout_format" id="tlsout_format"></a>TLSOUT - Format</h3>
+
+<p>The format is essentially the same as <a href="#tlsin_format">that for TLSIN</a>,
+with the T, L and S records holding the refined parameters,
+and the ORIGIN record holding the calculated origin, if not specified in TLSIN.
+In addition, the output file contains a record &quot;REFMAC&quot; denoting that
+the file has been output by REFMAC. Example of output TLS file:</p>
+
+<blockquote><pre>! Output from REFMAC
+
+TLS    Chain A
+RANGE  'A   1.' 'A 300.' ALL
+ORIGIN   -3.680   0.700  11.039
+T    -0.0161 -0.1041 -0.0362  0.0121  0.0497  0.0194
+L     1.9572  2.9920  2.5163  0.3999 -0.3219  0.1108
+S     0.0066 -0.0199  0.0299 -0.0444 -0.1246 -0.0684  0.0286  0.0062
+
+TLS    Chain B
+RANGE  'B   1.' 'B 175.' ALL
+ORIGIN    4.104  26.003  64.557
+T     0.0619  0.0104  0.0481 -0.0128  0.0051 -0.0226
+L     2.5549  4.4075  3.5760  0.5356  0.7041  0.2892
+S     0.1170 -0.1274 -0.0305  0.2005 -0.0652  0.1453 -0.1772  0.1566</pre></blockquote>
+
+</body>
+</html>

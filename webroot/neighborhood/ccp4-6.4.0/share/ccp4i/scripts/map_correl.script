@@ -1,0 +1,217 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#===========================================================================
+#
+# map_correl.script
+#
+#===========================================================================
+
+  source [SearchPath TOP utils map_utils.tcl]
+
+#---------------------------------------------------------------------------------
+# Create the first map from mtz if appropriate
+#---------------------------------------------------------------------------------
+
+  if { [regexp HKL $INPUT_MODE_1] } {
+
+    set MAPIN_1 [GetTmpFileName -ext map ]
+
+# user may have overridden default grid
+
+    set fftargs ""
+    if { [IfSet $GRID_1] && [IfSet $GRID_2] && [IfSet $GRID_3] } {
+         set fftargs "GRID $GRID_1 $GRID_2 $GRID_3"
+    }
+
+    CreateMap CCP4 $HKLIN MAPIN_1 \
+       "Map Correlation map 1" \
+       [list F1 SIG1 PHI W ] \
+       [list $F1 $SIGF1 $PHI1 $W1] \
+       -fftargs "$fftargs" -tmp
+  }
+
+#----------------------------------------------------------------------------------
+# Find out the grid and xyzlim for the first map
+# And make sure all subsequent maps are the same
+#----------------------------------------------------------------------------------
+
+  if { ![GetMapHeader $MAPIN_1 map_spgp map_cell map_xyzlim map_grid \
+        map_axes] } {
+    TerminateScript 0 -report "ERROR: Can not read header for map file $MAPIN_1"
+  }
+    
+  for { set n 1 } { $n <= 3 } { incr n } {
+    set GRID_[subst $n] [lindex $map_grid [expr $n - 1 ]]
+  }
+  set fftargs "GRID $GRID_1 $GRID_2 $GRID_3"
+
+#--------------------------------------------------------------------------------------
+# Generate the second map
+#--------------------------------------------------------------------------------------
+# Generate calculated map from coordinates
+
+## NB This is using sfall to go directly to the map so will produce a very ideal map
+# rather than a calc map for the resolution.  To do the latter would need to use sfall to
+# generate Fs and PHIs and then run FFT to generate map
+
+  if { [regexp COORDS $INPUT_MODE_2] } {
+
+    if { [regexp BRESET $CORRELATE_BFAC] } {
+
+       # Generate a temporary copy of the input coordinate file
+       # with the bfactors reset by pdbset
+       set tmpxyzin [GetTmpFileName -ext pdb]
+       set pdbset_script [GetTmpFileName -ext com]
+       WriteFile $pdbset_script "BFACTOR ALWAYS $PDBSET_BFACTOR"
+       set status [Execute "[BinPath pdbset] XYZIN \"$XYZIN\" XYZOUT \"$tmpxyzin\" " \
+                $pdbset_script program_status report ]
+    } else {
+
+       set tmpxyzin $XYZIN
+    }
+
+    set TMP_MAPIN_2 [GetTmpFileName -ext map ]
+    set MAPIN_2 [GetTmpFileName -ext map ]
+    set SFALL_MODE ATMMAP
+#    set SFALL_RESOLUTION 1
+    set GRID 1
+
+    CreateComScript sfall sfall_script
+
+    set status [Execute "[BinPath sfall] XYZIN \"$tmpxyzin\" MAPOUT \"$TMP_MAPIN_2\" "  \
+             $sfall_script program_status report ]
+
+# sfall maps often not same extent/axes order - run mapmask to reorder map
+
+    WriteComFile mapmask_script1 "XYZLIM $map_xyzlim\nAXIS $map_axes"
+
+    set status [Execute "[BinPath mapmask] MAPIN \"$TMP_MAPIN_2\" MAPOUT \"$MAPIN_2\"" \
+        $mapmask_script1 program_status report ]
+
+# Generate map from MTZ
+
+  } elseif { [regexp HKL $INPUT_MODE_2] } {
+
+    set MAPIN_2 [GetTmpFileName -ext map ]
+
+    CreateMap CCP4 $HKLIN MAPIN_2 \
+       "Map Correlation map 2" \
+       [list F1 SIG1 PHI W ] \
+       [list $F2 $SIGF2 $PHI2 $W2] \
+        -fftargs "$fftargs" -tmp
+
+# Check that existing map is same grid etc.
+  } else {  
+
+    if { ![GetMapHeader $MAPIN_2 map2_spgp map2_cell map2_xyzlim map2_grid \
+        map2_axes] } { 
+       TerminateScript 0 -report "ERROR: Can not read header for map file $MAPIN_2"
+    }
+    for { set n 1 } { $n <= 3 } { incr n } {
+      set GRID2_[subst $n] [lindex $map2_grid [expr $n - 1 ]]
+    }
+# Abort if its a different grid
+#    puts "GRID2 $GRID2_1 $GRID2_2 $GRID2_3"
+    if { $GRID2_1 != $GRID_1 || $GRID2_2 != $GRID_2 || $GRID2_3 != $GRID_3 } {
+      TerminateScript 0 -report "ERROR: the second map $MAPIN_2 
+does not have the same grid as the first map $MAPIN_1.
+Grid for first map $GRID_1 $GRID_2 $GRID_3
+Grid for second map $GRID2_1 $GRID2_2 $GRID2_3"
+    }
+
+
+# Run mapmask for different axis order or xyzlim
+    set ifsame 1
+    for { set i 0 } { $i < 6 } { incr i } {
+      if { [lindex $map_xyzlim $i] != [lindex $map2_xyzlim $i] } { set ifsame 0 }
+    }
+    for { set i 0 } { $i < 3 } { incr i } {
+      if { ![StringSame [lindex $map_axes $i] [lindex $map2_axes $i]] } { set ifsame 0 }
+    }
+    if { !$ifsame}  {
+
+      WriteToLog "Converting second map to same axis order and map limits as first map
+Creating temporary map $MAPIN_2"
+      
+      WriteComFile mapmask_script2 "XYZLIM $map_xyzlim\nAXIS $map_axes"
+
+      set TMP_MAPIN_2 $MAPIN_2
+      set MAPIN_2 [GetTmpFileName -ext map ]
+      set status [Execute "[BinPath mapmask] MAPIN \"$TMP_MAPIN_2\" MAPOUT \"$MAPIN_2\"" \
+        $mapmask_script2 program_status report ]
+    }
+
+  } 
+
+#--------------------------------------------------------------------------------------
+# For listing correlation by atom or residue need a 'map' of the protein structure
+# run sfall in ATMMAP mode
+#--------------------------------------------------------------------------------------
+
+  if { ![regexp section $CORRELATE_MODE ] } {
+
+    set TMP_ATM_MAP [GetTmpFileName -ext map ]
+    set SFALL_MODE ATMMAP
+    set GRID 1
+    if { [regexp atom $CORRELATE_MODE] } {
+      set SFALL_ATMMAP_MODE ATMMOD
+    } else {
+      set SFALL_ATMMAP_MODE  RESMOD
+    }
+
+    set sfall_script {}
+    CreateComScript sfall sfall_script
+
+    set status [Execute "[BinPath sfall] XYZIN \"$XYZIN\" MAPOUT \"$TMP_ATM_MAP\" "  \
+             $sfall_script program_status report ]
+
+# sfall maps often not same extent/axes order
+# run mapmask to reorder map
+
+    if { ![GetMapHeader $TMP_ATM_MAP map3_spgp map3_cell map3_xyzlim map3_grid \
+        map3_axes] } {
+       TerminateScript 0 -report "ERROR: Can not read header for map file $TMP_ATM_MAP"
+    }
+
+
+    set ifsame 1
+    for { set i 0 } { $i < 6 } { incr i } {
+      if { [lindex $map_xyzlim $i] != [lindex $map3_xyzlim $i] } { set ifsame 0 }
+    }
+    for { set i 0 } { $i < 3 } { incr i } {
+      if { ![StringSame [lindex $map_axes $i] [lindex $map3_axes $i]] } { set ifsame 0 }
+    }
+    if { $ifsame }  {
+
+      set ATM_MAP $TMP_ATM_MAP
+
+    } else {
+
+      set ATM_MAP [GetTmpFileName -ext map ]
+
+      WriteComFile mapmask_script3 "XYZLIM $map_xyzlim\nAXIS $map_axes"
+
+      set status [Execute "[BinPath mapmask] MAPIN \"$TMP_ATM_MAP\" MAPOUT \"$ATM_MAP\"" \
+	$mapmask_script3 program_status report ]
+    } 
+
+  }
+
+#--------------------------------------------------------------------------------------
+# Run overlapmap
+#--------------------------------------------------------------------------------------
+
+  CreateComScript overlapmap overlap_script
+
+  set cmd "[BinPath overlapmap] MAPIN1 \"$MAPIN_1\" MAPIN2 \"$MAPIN_2\""
+  if { ![regexp section $CORRELATE_MODE] } { append cmd " MAPIN3 \"$ATM_MAP\"" }
+
+  set status [Execute "$cmd" \
+             $overlap_script program_status report ]

@@ -1,0 +1,2486 @@
+<html>
+<head><title>CCP4 Program Suite: mtzlib</title></head>
+<body>
+
+<!-- ::INDEX_INFO::MTZLIB::Library::::Fortran Software Library for Reflection data file handling:::::::: -->
+
+<H1> MTZLIB (CCP4: Library)</H1>
+<H2> NAME</H2>
+<b>mtzlib </b>
+- Software Library for Reflection data file handling
+ 
+<H2> CONTENTS</H2>
+ 
+<ol>
+<li><a href="#description">DESCRIPTION</a>
+<li><a href="#subroutines">FORTRAN API</a>
+<li><a href="#orientation">ORIENTATION BLOCK DATA FOR MULTI-RECORD FILES</a>
+<li><a href="#example">EXAMPLE PROGRAM USING AN MTZ FILE</a>
+<li><a href="#authors">AUTHORS AND HISTORY</a>
+</ol>
+
+<H2><a name="description"> DESCRIPTION</H2>
+
+See <a href="mtzformat.html">separate document</a> for a description of
+the MTZ file format.
+<p>
+From CCP4 5.0, the core reading/writing/modifying of MTZ reflection
+data files is done by a set of C functions. Separate <a href="C_library/cmtz_page.html">
+documentation</a> describes the structures and functions used, and the
+API for C/C++ programs. 
+<p>
+For Fortran programs, the original set of subroutines (held in <tt>mtzlib.f</tt>)
+has been replaced by an <a href="C_library/cmtz_f_page.html">interface</a> to
+the C library. From the point of view of an application programmer,
+this interface should be identical to the original set of subroutines. This
+document originates from the original Fortran library, but should be
+applicable to the new library.
+<P> 
+The first argument to all the Fortran calls in MTZLIB is MINDX.
+This mechanism allows more than one pair of MTZ files to be open for
+read and write at the same time, without the need for separate 
+subroutines.  At present a maximum of 8 files can be opened simultaneously
+(4 for read and 4 for write), but this could be increased easily.
+<p>
+In the <a href="C_library/cmtz_f_page.html">interface</a> functions, 
+the MINDX parameter acts as an index to several static arrays, including
+one that contains pointers to MTZ data structures. This mimics the
+use of COMMON blocks in the original Fortran library, and means that when
+an input file has been opened the header information is available for writing to 
+an output file, without being explicitly copied by the calling program.  This
+information may be replaced or new  information may be  added depending on
+the requirements of the output file or it may be created  if no input file
+was read.
+
+<H2><a name="subroutines">FORTRAN API</H2>
+
+The following Fortran calls are available. <em>Note that this documentation
+originates from the original Fortran library, and may be out-of-date in
+some details.</em>
+
+<H3> The initialisation routine for the file handling system</H3>
+<dl>
+<dt> <a href="#mtzini">MTZINI</a><dd>
+This MUST be called first 
+</dl>
+<H3> Subroutines for reading an MTZ file</H3>
+<dl>
+<dt> <a href="#lropen">LROPEN</a><dd>
+Open MTZ file for read
+<dt> <a href="#lrassn">LRASSN</a><dd>
+Set up the input column assignments
+<dt> <a href="#lrbats">LRBATS</a><dd>
+Return the number of batches present and their serial
+numbers from the MTZ header (for multi-record files)
+<dt> <a href="#lrbres">LRBRES</a><dd>
+Reset batch header reading pointer
+<dt> <a href="#lrcell">LRCELL</a><dd>
+Deprecated - use specific dataset cell obtained from LRIDX
+<dt> <a href="#lrclab">LRCLAB</a><dd>
+Return the Column labels and types from the MTZ header
+<dt> <a href="#lrhist">LRHIST</a><dd>
+Returns history information from the MTZ header
+<dt> <a href="#lrinfo">LRINFO</a><dd>
+Return general info (number of columns etc.) from the MTZ header
+<dt> <a href="#lrncol">LRNCOL</a><dd>
+Returns number of columns from the MTZ header
+<dt> <a href="#lrrsol">LRRSOL</a><dd>
+Return the minimum and maximum resolution from the MTZ
+header (1/d**2)
+<dt> <a href="#lrsort">LRSORT</a><dd>
+Return the sort order from the MTZ header
+<dt> <a href="#lrsymi">LRSYMI</a><dd>
+Return symmetry information (if available)
+from the MTZ header
+<dt> <a href="#lrsymm">LRSYMM</a><dd>
+Return symmetry operations (if available)
+from the MTZ header
+<dt> <a href="#lrtitl">LRTITL</a><dd>
+Return the title from the MTZ header
+<dt> <a href="#lrrefl">LRREFL</a><dd>
+Read a reflection record in file order from the MTZ file
+<dt> <a href="#lrreff">LRREFF</a><dd>
+Read a reflection record in Lookup order from the MTZ file
+<dt> <a href="#lrnref">LRNREF</a><dd>
+Return the number of the reflection record last read
+(i.e. the current position in the file)
+<dt> <a href="#lrseek">LRSEEK</a><dd>
+Move to a specific reflection record number
+<dt> <a href="#lrrewd">LRREWD</a><dd>
+Rewind an MTZ file for re-read
+<dt> <a href="#lrclos">LRCLOS</a><dd>
+Close an MTZ file which has been opened for read
+</dl>
+<H3> Subroutines for writing an MTZ file</H3>
+<dl>
+<dt> <a href="#lwopen">LWOPEN</a><dd>
+Open MTZ file for write
+<dt> <a href="#lwassn">LWASSN</a><dd>
+Set up the output column assignments, new columns etc.
+<dt> <a href="#lwcell">LWCELL</a><dd>
+Update the Cell dimensions in the MTZ header
+<dt> <a href="#lwclab">LWCLAB</a><dd>
+Write Column labels and types to an output MTZ file
+<dt> <a href="#lwhist">LWHIST</a><dd>
+Append to the history information in the MTZ header
+<dt> <a href="#lwhstl">LWHSTL</a><dd>
+Simple way of appending standard history line
+<dt> <a href="#lwsort">LWSORT</a><dd>
+Update the Sort order in the MTZ header
+<dt> <a href="#lwsymm">LWSYMM</a><dd>
+Update the Symmetry operation in the MTZ header
+<dt> <a href="#lwtitl">LWTITL</a><dd>
+Append to or replace the title in the MTZ header
+<dt> <a href="#lwrefl">LWREFL</a><dd>
+Write a reflection record to the MTZ file
+<dt> <a href="#lwclos">LWCLOS</a><dd>
+Close an MTZ file which has been opened for write
+</dl>
+<H3> Subroutines for multi-record MTZ files</H3>
+<dl>
+<dt> <a href="#lrbat">LRBAT</a><dd>
+Return batch information from the header for one batch
+<dt> <a href="#lwbat">LWBAT</a><dd>
+Write updated batch header for one batch
+<dt> <a href="#lrbscl">LRBSCL</a><dd>
+Return selected values from the header for one batch
+<dt> <a href="#lrbtit">LRBTIT</a><dd>
+Return the batch title from the header for one batch
+<dt> <a href="#lwbtit">LWBTIT</a><dd>
+Write batch title and dummy orientation block for one batch
+<dt> <a href="#lwbscl">LWBSCL</a><dd>
+Update selected values in the header for one batch
+<dt> <a href="#lbprt">LBPRT</a><dd>
+Print batch information in pretty format -
+called by LRBAT - calls LBPRTH (does the actual print)
+</dl>
+<H3> Subroutines for handling Missing Number Flags</H3>
+<dl>
+<dt> <a href="#equalmagic">EQUAL_MAGIC </a><dd>
+Initialises an array so all elements are set to MNF
+<dt> <a href="#ismagic">IS_MAGIC </a><dd>
+Routine that checks any datum to see if datum=MNF
+<dt> <a href="#resetmagic">RESET_MAGIC </a><dd>
+Alters the MNF per reflection in the data itself 
+<dt> <a href="#setmagic">SET_MAGIC </a><dd>
+Either returns the value of MNF in the MTZ header or overwrites it.
+<dt> <a href="#lrrefm">LRREFM </a><dd>
+Returns a logical array identifying which data of a reflection=MNF
+</dl>
+
+<H3> Subroutines for handling Dataset Information</H3>
+<dl>
+<dt> <a href="#lridx">LRIDX </a><dd>
+Subroutine to return information for all datasets from the MTZ file header,
+including crystal names.
+<dt> <a href="#lridc">LRIDC </a><dd>
+Deprecated - use LRIDX.
+<dt> <a href="#lrid">LRID </a><dd>
+Deprecated - use LRIDX.
+<dt> <a href="#lwidx">LWIDX </a><dd>
+Subroutine to add dataset information to the output MTZ file header,
+including crystal names.
+<dt> <a href="#lwidc">LWIDC </a><dd>
+Deprecated - use LWIDX.
+<dt> <a href="#lwid">LWID </a><dd>
+Deprecated - use LWIDX.
+<dt> <a href="#lrclid">LRCLID </a><dd>
+Subroutine to return the ID of the related dataset for each 
+column of the input MTZ file, as obtained from the header.
+<dt> <a href="#lwidasx">LWIDASX </a><dd>
+Subroutine to associate dataset entry with each column for
+the output MTZ file. 
+<dt> <a href="#lwidas">LWIDAS </a><dd>
+Deprecated - use LWIDASX.
+<dt> <a href="#lrbsetid">LRBSETID </a><dd>
+Subroutine to read dataset ID for batch BATNO from
+batch headers for multi-record file open on index MINDX.
+<dt> <a href="#lwbsetidx">LWBSETIDX </a><dd>
+Subroutine to write dataset ID for batch BATNO to
+batch headers for multi-record file open on index MINDX.
+<dt> <a href="#lwbsetid">LWBSETID </a><dd>
+Deprecated - use LWBSETIDX.
+</dl>
+
+<H3> Utility subroutines</H3>
+<dl>
+<dt> <a href="#lkyin">LKYIN</a><dd>
+Used to parse any label assignments (input and output) made by the user
+<dt> <a href="#lkyset">LKYSET</a><dd>
+Similar to LKYIN except the lookup array is passed back
+to the program
+<dt> <a href="#lkyout">LKYOUT</a><dd>
+parse any label assignments (input and output)
+made by the user
+<dt> <a href="#lkyasn">LKYASN</a><dd>
+Jiffy to call LKYIN and LRASSN, no need for parser in main program
+<dt> <a href="#lhprt">LHPRT</a><dd>
+Subroutine to output data from an MTZ header 
+<dt> <a href="#lphist">LPHIST</a><dd>
+Prints history information from the MTZ header
+</dl>
+<H3> Internal routines</H3>
+There are 13 more subroutines which are internal to the package and are
+included here for completeness, but should not be called by the user program:
+<dl>
+<dt> <a href="#rbathd">RBATHD</a><dd>
+read the actual header from the file and return the data
+items packed into a REAL and a CHAR array - called by LROPEN
+<dt> <a href="#wbathd">WBATHD</a><dd>
+write the batch headers to the MTZ file open for write
+the batch headers are written at the end of the file - called by LWCLOS
+<dt> <a href="#lrhdrl">LRHDRL</a><dd>
+read one line from the header on the file (calls qread)
+<dt> <a href="#lbprth">LBPRTH</a><dd>
+does the actual printing for LBPRT
+<dt> <a href="#labprt">LABPRT</a><dd>
+Subroutine used to output character strings (e.g. column
+labels) nicely across 80 character page
+<dt> <a href="#sortup">SORTUP</a><dd>
+INTEGER version of indexed Singleton sort -
+copied from STILLS program.
+<dt> <a href="#addlin">ADDLIN</a><dd>
+Subroutine to add a new line to a character array
+<dt> <a href="#nextln">NEXTLN</a><dd>
+Function to find the next empty line in a character array
+<dt> <a href="#lstrsl">LSTRSL</a><dd>
+Routine to calculate coefficients for (sin(theta)/lambda)**2
+from h,k,l for general axes
+<dt> <a href="#lstlsq">LSTLSQ</a><dd>
+Function to calculate (sin(theta)/lambda)**2 from h,k,l
+coefficients set by call to LSTRSL, for the file open on index MINDX
+</dl>
+
+<H2><a name="mtzini"></a> Subroutine MTZINI</H2>
+This Subroutine initialises the MTZ file handling system.
+<P> 
+This subroutine must be called before any other mtzlib subroutine.
+Failure to do so may result in unpredictable behaviour.
+
+<H2><a name="lropen"></a> Subroutine LROPEN(MINDX,FILNAM,IPRINT,IFAIL)</H2>
+Subroutine to open an MTZ file for read. This should be the first MTZ
+subroutine called in a set of operations on a pair of files (i.e. one input
+and one output). The subroutine zeros all the Header COMMON block entries,
+opens the specified file and loads the header into the COMMONs, and positions
+the file ready to read the first data record.
+<P> 
+Arguments:
+<dl>
+<dt> MINDX  (I)   INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> FILNAM (I)   CHARACTER*(*)<dd>
+name of file to be opened
+<dt> IPRINT (I)   INTEGER<dd>
+print indicator:
+<blockquote>
+<dt> =0<dd>
+No MTZ info printed at all
+<dt> =1<dd>
+Brief header info printed (default)
+<dt> =2<dd>
+ as above plus history info
+<dt> =3<dd>
+Full header dump; symmetry
+<dt><dd>
+any other value; nothing happens
+</dl>
+</blockquote>
+<dl>
+<dt> IFAIL  (O)   INTEGER<dd>
+error indicator: meaning: on output
+<blockquote>
+<dt> =0<dd>
+OK
+<dt> =-1<dd>
+no such file
+<dt> all other errors cause stop<dd>
+</dl>
+</blockquote>
+LROPEN calls the following which are external to MTZLIB: 
+<p> 
+External Functions:  INTEGER LENSTR 
+<br> 
+External Subroutines: BLANK,GTPINT,GTPREA,LERROR,PARSER,PUTLIN,QOPEN, 
+<br> 
+                       QSEEK,QMODE,QREAD,SYMFR3
+<p> 
+Function: 
+<p> 
+Subroutine LROPEN checks that nothing is already open for required index 
+<br> 
+If it is continue, but print warning 
+<br> 
+If already open for read, then probably forgot to call LRCLOS from a previous 
+file 
+<br> 
+If already open for write, then programmer hasn't read manual - ie has called 
+LWOPEN on this index before LROPEN 
+<br> 
+If already open for read and write then the program stops 
+<br> 
+Then opens the file and record the stream 
+<br> 
+     CALL QOPEN(IUNIN,FILNAM,'READONLY') 
+<br> 
+     CALL QMODE(IUNIN,2,NITEM) 
+<br> 
+Then Zero the header arrays etc. 
+<br> 
+Read the 1st record of the file, check it's an MTZ file, and go to the start 
+of the header records - first record of file contains the offset in the file 
+of the start of the header records. Put this offset into a call to QSEEK 
+( CALL QSEEK(RLUN(INDEX),1,HDRST(INDEX),1)) to position file at start of 
+headers. 
+<br> 
+Then reads and parses the header, and load COMMON blocks 
+<br> 
+Passing header line to MRC parser: 
+<br> 
+       CALL PARSER(KEY,LINE,IBEG,IEND,ITYP,FVALUE,CVALUE, 
+<br> 
+     +             IDEC,NTOK,LEND,.FALSE.) 
+<br> 
+and loops over possible keywords 
+<pre> 
+ 
+VERS - version of routines which wrote the file 
+       could test versions here in the future 
+TITL - read file title 
+NCOL - no. of cols and refls in file and batches in file 
+       if no. of batches=0 then this is a standard file 
+CELL - read in the Cell parameters 
+SORT - read in sort order 
+SYMI - various symmetry stuff 
+SYMM - read in the symmetry cards and convert to matrices 
+       If present then calls SYMFR3 
+RESO - resolution limits for the file (1/d-squared) 
+COLU - column labels, types and ranges 
+BATC - batch serial numbers - hopefully only if nbatch &gt;0 
+END    of header card 
+ 
+</pre> 
+<br> 
+Ignores unrecognised lines. 
+<br> 
+If end of header reached, but no END card, print warning 
+<br> 
+Check no. of column cards input equals NCOLS from 1st line 
+<br> 
+Check correct number of symmetry cards 
+<br> 
+If NBATCH&gt;0 prepare to read the batch headers 
+<br> 
+Loop over the rest of the header lines looking for MTZHIST or 
+MTZBATS as keyword, and proceed accordingly. 
+<br> 
+Finally, hopefully hit the MTZENDOFHEADERS line. 
+<br> 
+Output information with CALL LHPRT(INDEX,IPRINT,IFAIL) (if IPRINT&gt;0) 
+<br> 
+Finally positions the file ready to read reflection records with 
+<br> 
+      CALL QSEEK(RLUN(INDEX),1,SIZE1+1,1), 
+<br> 
+where SIZE1 is the size of the first record in the file (which contained 
+the offset). 
+
+<H2><a name="lrassn"></a> Subroutine LRASSN(MINDX,LSPRGI,NLPRGI,LOOKUP,CTPRGI)</H2>
+Subroutine to apply the input column label assignments to the MTZ file which
+is open for read and setup the Lookup pointer array
+<P> 
+If the program is going to allow user input column assignments, then you MUST
+call subroutine LKYIN to parse these input label assignments, before LRASSN
+is called, as LKYIN sets up arrays which are then used by LRASSN.
+<P> 
+Note that user input labels and file labels are case sensitive - the input
+label must match the file label exactly.
+<P> 
+Also note that having an unassigned program label is a fatal error, but this
+subroutine uses LERROR to report this as a warning, so that all the program
+label assignments can be checked before stopping.
+<P> 
+Arguments:
+<dl>
+<dt> MINDX  (I)  INTEGER<dd>
+indicates which MTZ file - one index
+points to both input and output files
+<dt> LSPRGI (I)  CHARACTER*30<dd>
+array of dimension at least NLPRGI containing the program label strings
+<dt> NLPRGI (I)  INTEGER<dd>
+number of input program labels
+<dt> LOOKUP (I/O) INTEGER <dd>
+array of dimension at least NLPRGI containing index from program
+labels to file labels. On input these should be set to -1 for
+compulsory labels, 1 for soft compulsory labels and 0 for optional 
+labels, and on exit labels which are not present in the file have 
+their lookup entry set to 0. Both types of compulsory label will be 
+assigned automatically if the LSPRGI=MTZfile_label, so this status 
+should be used carefully. If they are assigned explicitly (typically 
+in the LABIN keyword) this overrides the above assignment. For compulsory
+labels (lookup=-1) it is an error if the labels are not assigned in
+the calling program. For soft compulsory and optional labels no error
+is given if they are not assigned to a column in the MTZ file.
+<dt> CTPRGI (I)  CHARACTER*1<dd>
+array of dimension at least NLPRGI containing the program label types
+</dl> 
+LRASSN calls the following which are external to MTZLIB: 
+<p> 
+External Functions: INTEGER LENSTR 
+<br> 
+External Subroutines: BLANK,LERROR,PUTLIN 
+<br> 
+<p> 
+Function: 
+<p> 
+This subroutine references the internal COMMON Blocks /MTZLBC/ 
+and /MTZLAB/ which are set up by LKYIN. 
+<br> 
+Rpoint is the same as lookup, but held in the MTZWRK COMMON work with this 
+and copy to LOOKUP at the end, so set to 0. 
+<br> 
+Also store the number of program labels in MTZWRK, and the program labels 
+in MTZWRC 
+<br> 
+First loop over user input labels (if any) and assign them to file labels. 
+<br> 
+Now loop over program labels for those not yet assigned 
+<br> 
+Copy RPOINT to LOOKUP 
+<br> 
+If we had some errors then return or stop now 
+<br> 
+Print out program labels, column labels and lookup 
+<br> 
+Check the column types if any given 
+
+<H2><a name="lrbats"></a> Subroutine LRBATS(MINDX,NBATX,BATCHX)</H2>
+Return the number of batches and their batch serial numbers from the header
+of a multi-record MTZ file
+<P> 
+Arguments:
+<dl>
+<dt> MINDX  (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> NBATX  (I/O)  INTEGER<dd>
+On input, dimension of BATCHX; on exit number of batches in the file.
+<dt> BATCHX (O)  INTEGER<dd>
+array of dimension at least NBATX containing the serial numbers of the
+batches in the file
+</dl>
+LRBATS calls the following which are external to MTZLIB: 
+<p> 
+External Subroutines: LERROR 
+
+<H2><a name="lrbres"></a> Subroutine LRBRES (MINDX,BATNO)</H2>
+Reset the batch header info pointer to the batch BATNO, for re-read by
+subroutine LRBAT, for an MTZ file which has been opened for read on index
+MINDX.
+<P> 
+Arguments:
+<dl>
+<dt> MINDX  (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> BATNO  (I)  INTEGER<dd>
+batch number to reset pointer to If BATNO = 0, reset to beginning of
+batch headers.
+</dl>
+LRBRES calls the following which are external to MTZLIB: 
+<p> 
+External Subroutines: LERROR 
+
+<H2><a name="lrcell"></a> Subroutine LRCELL(MINDX,CELLP)</H2>
+Return Cell Parameters from header of MTZ file open for read on index MINDX
+<P> 
+Arguments:
+<dl>
+<dt> MINDX  (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> CELLP  (O)  REAL(6)<dd>
+array of dimension (6) containing cell parameters from header on exit
+</dl>
+LRCELL calls the following which are external to MTZLIB: 
+<br> 
+External Subroutines: LERROR 
+
+<H2><a name="lrclab"></a> Subroutine LRCLAB(MINDX,CLABS,CTYPS,NCOL)</H2>
+Return the column labels, column types and number of columns from the header
+of an MTZ file.
+<P> 
+Arguments:
+<dl>
+<dt> MINDX  (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> CLABS  (O)  CHARACTER*30<dd>
+array of dimension at least NCOL containing the column labels on exit
+<dt> CTYPS  (O)   CHARACTER*1<dd>
+array of dimension at least NCOL containing the column types on exit
+<dt> NCOL   (I/O)   INTEGER<dd>
+On entry the dimension of CLABS and CTYPS; on exit the number of
+columns in the MTZ file
+</dl>
+LRCLAB calls the following which are external to MTZLIB: 
+<p> 
+External Functions  : INTEGER LENSTR 
+<br> 
+External Subroutines: LERROR 
+
+<H2><a name="lrhist"></a> Subroutine LRHIST(MINDX,HSTRNG,NLINES)</H2>
+Return the history information from the MTZ file header.
+<P> 
+Arguments:
+<dl>
+<dt> MINDX  (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> HSTRNG (O)  CHARACTER*(*)<dd>
+array of (NLINES) with the history lines
+<dt> NLINES (I/O) INTEGER<dd>
+On entry the dimension of HSTRNG; on exit the number of history lines
+being returned
+</dl>
+LRHIST calls the following which are external to MTZLIB: 
+<p> 
+External Functions: INTEGER LENSTR 
+<br> 
+External Subroutines: LERROR 
+
+<H2><a name="lrinfo"></a> Subroutine LRINFO(MINDX,VERSNX,NCOLX,NREFLX,RANGES)</H2>
+Return information about the MTZ file open for read on index MINDX.
+<P> 
+Arguments:
+<dl>
+<dt> MINDX  (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> VERSNX (O)  CHARACTER*10<dd>
+version stamp of MTZ subroutines used to write the file
+<dt> NCOLX  (I/O)  INTEGER<dd>
+On entry, the last dimension of RANGES; on exit the number of columns
+in the file
+<dt> NREFLX (O)  INTEGER<dd>
+number of reflection records in the file
+<dt> RANGES (O)  REAL<dd>
+array(2,NCOLX) containing the minimum and maximum values in each column
+</dl>
+LRINFO calls the following which are external to MTZLIB: 
+<br> 
+External Subroutines: LERROR 
+
+<H2><a name="lrncol"></a> Subroutine LRNCOL(MINDX,NCOLX)</H2>
+Return the number of columns in the MTZ file open for read on index MINDX.
+A simpler call than LRINFO.
+<P> 
+Arguments:
+<dl>
+<dt> MINDX  (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> NCOLX  (O)  INTEGER<dd>
+number of columns in MTZ file
+</dl>
+LRNCOL calls the following which are external to MTZLIB: 
+<br> 
+External Subroutines: LERROR 
+
+<H2><a name="lrnref"></a> Subroutine LRNREF(MINDX,REFNUM)</H2>
+Return the current reflection number from an MTZ file opened for read. Files
+are normally read sequentially.  The number returned is the number of the
+*NEXT* reflection record to be read. If you are going to jump about the file
+with LRSEEK then use this to record the current position before you start,
+so that it can be restored afterwards, if required.
+<P> 
+Arguments:
+<dl>
+<dt> MINDX  (I)  INTEGER<dd>
+indicates which MTZ file (up to MFILES possible open at once)
+<dt> REFNUM (O)  INTEGER<dd>
+the reflection record number of the next reflection to be read
+</dl>
+LRNREF calls the following which are external to MTZLIB: 
+<br> 
+External Subroutines: LERROR 
+
+<H2><a name="lrreff"></a> Subroutine LRREFF(MINDX,RESOL,ADATA,EOF)</H2>
+<P>Subroutine to read a reflection record from an MTZ file which has been opened
+for read. This returns the record in `lookup' order (as set by
+LRASSN). </P>
+<P>The subroutine also returns the resolution (1/d**2). The resolution is
+calculated from the indices H, K and L, and a set of cell dimensions. If the
+MTZ file contains columns from several crystals, then there is a choice
+of cell dimensions. The library uses the first crystal with non-zero cell dimensions.
+This will typically be the HKL_base crystal, which contains a copy of the 
+cell dimensions of the first real crystal. Clearly if there are several different
+crystals in the MTZ file, the quoted resolution is somewhat arbitrary.</P>
+<P> 
+There is a kluge to handle the absence flags defined by the Groningen
+BIOMOL system:  If the MINDX is larger then 1000, then it is assumed
+that the subroutine is called by a BIOMOL program or another program
+that is able to interpret the BIOMOL absence flags (e.g. a value of
+-1.0E+10 indicates absent data).  If MINDX is in the normal range of 1
+to 3, then the subroutine will convert values of -1.0E+10 to zero to
+allow normal processing by the CCP4 programs.</P>
+<P> 
+Arguments:
+<P> 
+MINDX   (I)  INTEGER
+indicates which MTZ file - one index points to both input and output files
+<dl>
+<dt> RESOL   (O)  REAL<dd>
+resolution (4 * sin**theta/lambda**2). 
+<dt> ADATA   (O)  REAL<dd>
+array of dimension at least NPLABS(MINDX) containing the reflection
+record on exit in lookup order
+<dt> EOF     (O)  LOGICAL<dd>
+End-of-File indicator
+</dl> 
+LRREFF calls the following which are external to MTZLIB: 
+<p> 
+External Subroutines: LERROR,QREAD 
+<p> 
+Function: 
+<p> 
+Check that there is a file open 
+<br> 
+Everything OK, update the number of records read 
+<br> 
+If not end of file read a record with 
+<br> 
+      CALL QREAD(RLUN(INDEX),BDATA,NCOLS(INDEX),IERR) 
+<br> 
+and rearrange it 
+<br> 
+Check first 3 columns are of type H and if so calculate the resolution. 
+Transfer data to ADATA in LOOKUP order, if LOOKUP(?) is 0 then presume it was 
+an optional column and set ADATA(?) to 0.0 
+
+<H2><a name="lrrefl"></a> Subroutine LRREFL(MINDX,RESOL,ADATA,EOF)</H2>
+Read a reflection record from an MTZ file which has been opened for
+read.  This returns the record in `file' order - the physical order
+of columns in the file rather than the `lookup' order, c.f. LRREFF.
+Otherwise the same as LRREFF.
+<P>The subroutine also returns the resolution (1/d**2). The resolution is
+calculated from the indices H, K and L, and a set of cell dimensions. If the
+MTZ file contains columns from several crystals, then there is a choice
+of cell dimensions. The library uses the first crystal with non-zero cell dimensions.
+This will typically be the HKL_base crystal, which contains a copy of the 
+cell dimensions of the first real crystal. Clearly if there are several different
+crystals in the MTZ file, the quoted resolution is somewhat arbitrary.</P>
+<p> 
+LRREFL calls the following which are external to MTZLIB: 
+<p> 
+External Subroutines: LERROR,QREAD 
+<p> 
+Function: 
+<p> 
+Check that there is a file open 
+<br> 
+Everything OK, update the number of records read 
+<br> 
+Check first 3 columns are of type H and if so calculate the resolution 
+<br> 
+If not end of file read a record with 
+<br> 
+     CALL QREAD(RLUN(INDEX),ADATA,NCOLS(INDEX),IERR) 
+<br> 
+NB: End of file is no. of refs read &gt; total no. of refs (from header) 
+
+<H2><a name="lrrsol"></a> Subroutine LRRSOL(MINDX,MINRES,MAXRES)</H2>
+
+<P>Return the resolution range for the reflections in the MTZ file open for read
+on index MINDX (resolution is 1/d-squared). For a given list of reflection
+indices, there will be different resolution limits for columns belonging to
+crystals with different cell dimensions. The subroutine returns the most extreme
+MINRES and MAXRES. The resolution limits are
+calculated when the file is written - no `S' column is required in MTZ files.
+(See also subroutines LRREFF, LRREFL).</P>
+<P> 
+Arguments: 
+<dl>
+<dt> MINDX   (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> MINRES  (O)  REAL<dd>
+minimum resolution for reflections in file (smallest number)
+<dt> MAXRES  (O)  REAL<dd>
+maximum resolution for reflections in file (largest number)
+</dl> 
+LRRSOL calls the following which are external to MTZLIB: </P>
+<p> 
+External Subroutines: LERROR </P>
+
+<H2><a name="lrsort"></a> Subroutine LRSORT(MINDX,SORTX)</H2>
+Return sort order from header of MTZ file
+<P> 
+Arguments: 
+<dl>
+<dt> MINDX  (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> SORTX  (O)  INTEGER<dd>
+array of dimension (5) containing sort order of 1st 5 columns in MTZ
+file, negative numbers for descending order, 0 for not sorted
+</dl>
+LRSORT calls the following which are external to MTZLIB: 
+<p> 
+External Subroutines: LERROR 
+
+<H2><a name="lrsymi"></a> Subroutine LRSYMI(MINDX,NSYMPX,LTYPEX,NSPGRX,SPGRNX,PGNAMX)</H2>
+Return available symmetry information (other than symmetry operations,
+for which see LRSYMM) from the MTZ header
+<P> 
+Arguments:
+<dl>
+<dt> MINDX   (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> NSYMPX  (O)  INTEGER<dd>
+number of primitive symmetry operations
+<dt> LTYPEX  (O)  CHARACTER*1<dd>
+single character denoting the lattice type (possible values are
+P,A,B,C,I,F,R).  Blank if not present in header.
+<dt> NSPGRX  (O)  INTEGER<dd>
+space group number, 0 if not present
+<dt> SPGRNX  (O)  CHARACTER*10<dd>
+space group name, blank if not present
+<dt> PGNAMX  (O)  CHARACTER*10<dd>
+point group name, blank if not present
+</dl> 
+LRSYMI calls the following which are external to MTZLIB: 
+<p> 
+External Subroutines: LERROR 
+
+<H2><a name="lrsymm"></a> Subroutine LRSYMM(MINDX,NSYMX,RSYMX)</H2>
+Return symmetry operations (if available) from the MTZ header
+<P> 
+Arguments:
+<dl>
+<dt> MINDX  (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> NSYMX  (I/O)  INTEGER<dd>
+On entry, the last dimension of RSYMX; on exit the
+total number of symmetry operations or 0 if no symmetry information is present
+<dt> RSYMX  (O)  REAL<dd>
+array of dimensions (4,4,NSYM) of symmetry operations on exit (max. NSYM is 192)
+</dl>
+LRSYMM calls the following which are external to MTZLIB: 
+<p> 
+External Subroutines : LERROR 
+
+<H2><a name="lrtitl"></a> Subroutine LRTITL(MINDX,FTITLE,LEN)</H2>
+Return the title and it's length from the header of an MTZ file.
+<P> 
+Arguments:
+<dl>
+<dt> MINDX  (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> FTITLE (O)  CHARACTER*(*)<dd>
+character string containing the title on output - maximum possible length 70
+<dt> LEN    (O)  INTEGER<dd>
+length of the title string - i.e. number of characters from start to last
+non-blank character
+</dl>
+LRTITL calls the following which are external to MTZLIB: 
+<p> 
+External Subroutines: LERROR 
+<br> 
+External Functions  : INTEGER LENSTR 
+
+<H2><a name="lrseek"></a> Subroutine LRSEEK(MINDX,REFNUM)</H2>
+Move to a specific reflection record in an MTZ file opened for read. Files are
+normally read sequentially, so this should be viewed as a special case. The
+file read pointer is positioned so that the next record read with a call to
+LRREFF or LRREFL will be the one requested.
+<P> 
+Arguments:
+<dl>
+<dt> MINDX  (I)  INTEGER<dd>
+indicates which MTZ file (up to MFILES possible open at once)
+<dt> REFNUM (I)  INTEGER<dd>
+the reflection record number to which to move in the file
+</dl> 
+LRSEEK calls the following which are external to MTZLIB: 
+<p> 
+External Subroutines: LERROR, QSEEK 
+
+<H2><a name="lrrewd"></a> Subroutine LRREWD(MINDX)</H2>
+Rewind an MTZ file for re-reading of reflections. The file must already have
+been opened for read with LROPEN. The file is positioned at the start of the
+reflection records.
+<P> 
+Arguments:
+<dl>
+<dt> MINDX   (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+</dl> 
+LRREWD calls the following which are external to MTZLIB: 
+<p> 
+External Subroutines: LERROR, QSEEK 
+
+<H2><a name="lrclos"></a> Subroutine LRCLOS(MINDX)</H2>
+Close an MTZ file which has been opened for read
+<P> 
+Arguments:
+<dl>
+<dt> MINDX  (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+</dl>
+LRCLOS calls the following which are external to MTZLIB: 
+<p> 
+External Subroutines: LERROR,QCLOSE 
+<p> 
+Function: 
+<p> 
+Close the file with CALL QCLOSE(RLUN(INDEX)) 
+<p> 
+Mark this index as unoccupied for read 
+
+<H2><a name="lwopen"></a> Subroutine LWOPEN(MINDX,FILNAM)</H2>
+Open MTZ file for write. This subroutine should be called after the
+corresponding input file has been opened (i.e. after LROPEN has been called).
+<P> 
+NB: Every time LROPEN is called it zeros all the header info for that MINDX,
+and then loads up the header storage with data from the file. Therefore if
+LWOPEN is called first, and if (e.g.) a title of a history line is added with
+LWTITL or LWHIST, this info will be lost if it is followed by a call to LROPEN
+(on the same MINDX). While this is unlikely to occur in most programs, care
+should be taken with programs which open a large number of input files in
+sequence and write one output file (and therefore have a sequence of calls
+like - LROPEN, LWOPEN, LRREFL, LWREFL, LRCLOS, LROPEN, LRREFL,
+LWREFL, LRCLOS ...
+LWCLOS) not to update items in the header until the last input file has been
+opened. Alternatively, if you want to retain the data from the first input
+header in the output header, you should open the first input file on index 1,
+and the output file on 1 also, and all subsequent input files on index 2.
+<P> 
+Arguments:
+<dl>
+<dt> MINDX   (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> FILNAM  (I)  CHARACTER*(*)<dd>
+name of file to be opened
+</dl>
+LWOPEN calls the following which are external to MTZLIB: 
+<p> 
+External Subroutines: LERROR,QOPEN,QMODE,QWRITE 
+<p> 
+Function: 
+<p> 
+Explicitly pull in the initialise block data here (EXTERNAL MTZINI) 
+Check for other open files on this index - first read files 
+If no read file open, then LROPEN has not been called - 
+initialise all the MTZ header common blocks here - some of these not nec. 
+if no read file, but do it for consistency 
+<br> 
+Then the write files - pretty serious if already open, so stop. 
+<br> 
+Everything OK, open the file and zero a few variables 
+<br> 
+CALL QOPEN(IUNIN,FILNAM,'NEW') 
+<br> 
+CALL QMODE(IUNIN,2,NITEM) 
+<br> 
+Write a dummy first record to the file (the one which will contain 
+the header offset and the machine stamp and mtz stamp) 
+
+<H2><a name="lwassn"></a> Subroutine LWASSN(MINDX,LSPRGO,NLPRGO,CTPRGO,IAPPND)</H2>
+Setup the column labels and column types for the output MTZ file. This allows
+for the user to have specified output column assignments.
+<P> 
+Note that this subroutine changes the values in the header common block, so
+all information about the input file's labels and types should already have
+been extracted.
+<P> 
+If the program is going to allow user output labels, then the subroutine
+LKYOUT *MUST* be called to parse the output label assignments
+from the input control data, before LWASSN is called.
+<P> 
+Also note that the case of the user and/or program output labels is preserved.
+<P> 
+Arguments:
+<dl>
+<dt> MINDX   (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> LSPRGO  (I)  CHARACTER*30<dd>
+array of dimension at least NLPRGO containing the program output labels
+<dt> NLPRGO  (I)  INTEGER<dd>
+number of output program labels
+<dt> CTPRGO  (I)  CHARACTER*1<dd>
+array of dimension at least NLPRGO containing the output column types
+<dt> IAPPND  (I)  INTEGER<dd>
+<blockquote>
+<dt> =0<dd>
+replace all existing labels and types
+<dt> =1<dd>
+append to the existing labels and types
+</dl>
+</blockquote>
+<p> 
+LWASSN calls the following which are external to MTZLIB: 
+<p> 
+External Functions  : INTEGER LENSTR 
+<br> 
+External Subroutines: BLANK,LABPRT,LERROR,PUTLIN 
+<p> 
+Function: 
+<p> 
+Work out starting column 
+<br> 
+Work out total number of columns to be written to output file. Loop over the 
+new labels, and check the user assignments - if an output program label is the 
+same as an input one, and there is no user output assignment then check the 
+input assignments and keep the original user label for that column. 
+<br> 
+Print out the output program labels and output column label, and an output 
+lookup. Then check the column types are valid. 
+
+<H2><a name="lwcell"></a> Subroutine LWCELL(MINDX,CELLP)</H2>
+Write Cell Parameters into the header common block (to be written to the output
+MTZ file). When this is called the calculation for the resolution is
+re-initialised for the new cell parameters, therefore this should be called
+before any reflections are written to the output file (ie before any calls to
+LWREFL).
+<P> 
+Arguments:
+<dl>
+<dt> MINDX  (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> CELLP  (I)   REAL<dd>
+array of dimension (6) containing cell parameters to write to header
+<p> 
+LWCELL calls the following which are external to MTZLIB: 
+<p> 
+External Subroutines: LERROR 
+</dl>
+<H2><a name="lwclab"></a> Subroutine LWCLAB(MINDX,LSPRGO,NLPRGO,CTPRGO,IAPPND)</H2>
+Write the column labels and column types to the header of an output MTZ file.
+This is simpler than LWASSN as it doesn't look for column assignments and
+doesn't check back to the input file at all - so the output column labels are
+exactly what come into this subroutine in CLABS, and the case of the labels 
+is preserved.
+<P> 
+Arguments:
+<dl>
+<dt> MINDX   (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> LSPRGO  (I)  CHARACTER*30<dd>
+array of dimension at least NLPRGO containing the column labels on entry
+<dt> NLPRGO  (I)  INTEGER<dd>
+number of columns input
+<dt> CTPRGO  (I)  CHARACTER*1<dd>
+array of dimension at least NLPRGO containing the column types on entry
+<dt> IAPPND  (I)  INTEGER<dd>
+<blockquote>
+<dt> =0<dd>
+replace all existing labels and types
+<dt> =1<dd>
+append to the existing labels and types
+</dl>
+</blockquote>
+LWCLAB calls the following which are external to MTZLIB: 
+<br> 
+External Functions  : INTEGER LENSTR 
+<br> 
+External Subroutines: LERROR 
+<H2><a name="lwhist"></a> Subroutine LWHIST(MINDX,HSTRNG,NLINES)</H2>
+Write new history lines to history header. History headers have a maximum of
+NHISTL lines. We write the new NLINES of history to the header and then fill
+up any free lines with the older lines.
+<P> 
+Arguments:
+<dl>
+<dt> MINDX   (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> HSTRNG  (I)  CHARACTER<dd>
+array of (NLINES) with the history lines
+<dt> NLINES  (I)  INTEGER<dd>
+number of history lines to be written
+</dl>
+<H2><a name="lwhstl"></a> Subroutine LWHSTL(MINDX,EXTRA)</H2>
+Write a single line of history information to an MTZ file with index
+MINDX indicating that it was output from the program whose name was
+previously set with CCPVRS (/CCPRCS) at the current date and time.
+EXTRA is more information to append to the record (or blank).  An
+example of the information produced might be:
+<pre>
+    From FREERFLAG, 21/ 6/94 18:38:48 with fraction 0.050
+         ^^^^^^^^^                    ^^^^^^^^^^^^^^^^^^^
+         CCPVRS arg                           EXTRA
+</pre>
+This is just a simplified interface to LWHIST.  The history line will
+be truncated to 80 characters.
+<P> 
+Arguments:
+<dl>
+<dt> MINDX   (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> EXTRA   (I)  CHARACTER*(*)<dd>
+Extra information to print
+</dl>
+LWHIST calls the following which are external to MTZLIB: 
+<br> 
+External Subroutines: LERROR 
+<p> 
+Function: 
+<p> 
+Check not too many lines input - if so take first NHISTL lines 
+<br> 
+Copy existing history lines to scratch array 
+<br> 
+Copy input lines to the history array in the header common blocks 
+<br> 
+Fill up any space left with lines already in history header 
+
+<H2><a name="lwsort"></a> Subroutine LWSORT(MINDX,SORTX)</H2>
+Write the sort order of the output file to the MTZ header.
+<P> 
+Arguments:
+<dl>
+<dt> MINDX  (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> SORTX  (I)  INTEGER<dd>
+array of dimension (5) containing sort order of 1st 5 columns in MTZ file
+negative numbers for descending order 0 for not sorted
+</dl> 
+LWSORT calls the following which are external to MTZLIB: 
+<p> 
+External Subroutines: LERROR 
+
+<H2><a name="lwsymm"></a> Subroutine LWSYMM(MINDX,NSYMX,NSYMPX,RSYMX,LTYPEX,NSPGRX,SPGRNX,PGNAMX)</H2>
+Update the symmetry operations and information in the MTZ header.
+<P> 
+Arguments:
+<dl>
+<dt> MINDX   (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> NSYMX   (I)  INTEGER<dd>
+total number of symmetry operations.  If this is 0 then the symmetry
+operation values are not changed
+<dt> NSYMPX  (I)  INTEGER<dd>
+number of primitive operations
+<dt> RSYMX   (I)  REAL<dd>
+array of dimensions (4,4,192) of
+symmetry operations on entry
+<dt> LTYPEX  (I)  CHARACTER*1<dd>
+single character denoting the lattice
+type (possible values are P,A,B,C,I,F,R)
+if blank then current value not changed
+<dt> NSPGRX  (I)  INTEGER<dd>
+space group number, if 0 not changed
+<dt> SPGRNX  (I)  CHARACTER*10<dd>
+space group name, if blank not changed
+<dt> PGNAMX  (I)  CHARACTER*10<dd>
+point group name, if blank not changed
+</dl>
+LWSYMM calls the following which are external to MTZLIB: 
+<p> 
+External Subroutines: LERROR,PUTLIN 
+<p> 
+Function: 
+<p> 
+First deal with symmetry operations - if NSYMX .gt. 0 ie there is already 
+symmetry info there, print warning with 
+<br> 
+     CALL SYMTR3(NSYM(INDEX),RSYM(1,1,1,INDEX),SYMCHS,IPRINT) and 
+<br> 
+     CALL SYMTR3(NSYMX,RSYMX(1,1,1),SYMCHS,IPRINT) 
+<br> 
+but copy the new ones into the header blocks anyway. Then deal with the other 
+arguments. 
+
+<H2><a name="lwtitl"></a> Subroutine LWTITL(MINDX,NTITLE,FLAG)</H2>
+Update the title of an MTZ file in the header common block.
+<P> 
+Arguments:
+<dl>
+<dt> MINDX  (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> NTITLE (I)  CHARACTER*(*)<dd>
+character string containing the title - maximum possible length 70
+<dt> FLAG   (I)  INTEGER<dd>
+<blockquote>
+<dt> =0<dd>
+replace old title with new one
+<dt> =1<dd>
+append new one to old, with one space
+</dl>
+</blockquote>
+<p> 
+LWTITL calls the following which are external to MTZLIB: 
+<p> 
+External  Functions : INTEGER LENSTR 
+<br> 
+External Subroutines: LERROR 
+<H2><a name="lwrefl"></a> Subroutine LWREFL(MINDX,ADATA)</H2>
+Write a reflection record to an MTZ file which has been opened for write.
+Also output column labels etc. should already have been setup using LWASSN.
+<P> 
+Arguments:
+<dl>
+<dt> MINDX  (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> ADATA  (I)  REAL<dd>
+array of dimension at least NCOLW(MINDX) containing the reflection record
+</dl> 
+LWREFL calls the following which are external to MTZLIB: 
+<p> 
+External Subroutines: LERROR,QWRITE 
+<br> 
+External Functions  : REAL LSTLSQ 
+<p> 
+Function: 
+<p> 
+Check that there is a file open. If everything OK, increment no. of reflection 
+records written. 
+<br> 
+Update the column ranges 
+<br> 
+Update the resolution limits 
+<br> 
+Write the reflection record to file with 
+<br> 
+      CALL QWRITE(WLUN(INDEX),ADATA,NCOLW(INDEX)) 
+
+<H2><a name="lwclos"></a> Subroutine LWCLOS(MINDX,IPRINT)</H2>
+Close an MTZ file which has been opened for write. The new header information
+should already have been supplied by calls to other LW* routines. This
+subroutine writes the MTZ header and its associated history header to the
+output file, writes a pointer to the headers in the first record of the file,
+and a machine stamp and closes the file. The headers are actually written at
+the end of the file.
+<P> 
+This is one of the most important subroutines in the library. If you do not
+call this subroutine your output file will be corrupted; it will have no
+header information and the file will be unreadable.
+<P> 
+Arguments:
+<dl>
+<dt> MINDX   (I)  INTEGER<dd>
+indicates which MTZ file (up to MFILES possible open at once)
+<dt> IPRINT  (I)  INTEGER<dd>
+print indicator: meaning:
+<blockquote>
+<dt> =0<dd>
+No MTZ info printed at all
+<dt> =1<dd>
+Brief header info printed (normal)
+<dt> =2<dd>
+Brief header plus history
+<dt> =3<dd>
+Full header dump
+</dl>
+</blockquote>
+<p> 
+LWCLOS calls the following which are external to MTZLIB: 
+<p> 
+External Functions  : INTEGER LENSTR 
+<br> 
+External Subroutines: BLANK,LERROR,PUTLIN,QCLOSE,QSEEK,QWRITE,QMODE,QTYPE 
+<p> 
+Function: 
+<p> 
+Calculate position of start of header records, and move to it - 
+<br> 
+   =no.refls*no.cols+size of 1st record + 1 
+<br> 
+Loop over the header lines and write them out (see LROPEN for a list of the 
+possible header lines) If it is a multi-record file, and if we found that when 
+we were writing the batches out to the file, the batches were out of order 
+(ie serial numbers not in ascending order), then do an indexed sort of the 
+array containing the batch serial numbers, so that they, and the batch 
+information (title and orientation data), can be output serially. (NB the 
+batch header info is never read at the same time as the corresponding 
+reflection records, as it was in the LCF files - all batch headers are read as 
+soon as the file is opened) 
+<br> 
+Then write the history lines and then the batch info if a multi-record file. 
+<br> 
+Write MTZENDOFHEADERS record (which is also end of file). 
+<br> 
+Go back to the beginning and fill up the first record with an identification 
+stamp and the offset of the headers. (ie the offset of the headers is the 
+second long-word in the file) 
+<br> 
+If IPRINT is gt 0 then call LHPRT to output header information. 
+<br> 
+Close the file - CALL QCLOSE(WLUN(INDEX)) and mark the index available for 
+write by setting WLUN(INDEX) to 0. 
+
+<H2><a name="lrbat"></a> Subroutine LRBAT(MINDX,BATNO,RBATCH,CBATCH,IPRINT)</H2>
+Return the header info for the next batch from the multi-record MTZ file (or
+pair of files) open on index MINDX, and the information in the two arrays
+RBATCH (for numbers) and CBATCH (for characters).
+<P> 
+This will also optionally print out all this information in a pretty format.
+<P> 
+Note that the maximum numbers of batches currently allowed is 1000.
+<P> 
+Arguments:
+<dl>
+<dt> MINDX  (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> BATNO  (O)  INTEGER<dd>
+serial number of this batch, returned as -1 if all batch headers have been read
+<dt> RBATCH (O)  REAL(*)<dd>
+array into which integer and real batch information is stored by
+subroutine rbathd this should be equivalenced onto the appropriate
+COMMON block in the calling program. The first item is Nwords, i.e. how
+many items in the array: Nwords = 0 if no orientation data are present
+in the batch header
+<dt> CBATCH (O)  CHARACTER(*)*1<dd>
+as RBATCH, but for character items - no nwords however
+<dt> IPRINT (I)  INTEGER<dd>
+print indicator
+<blockquote>
+<dt> =0<dd>
+no print
+<dt> =1<dd>
+print batch title only
+<dt> =2<dd>
+print orientation block as well
+<dt> &gt;30<dd>
+print orientation block as well BUT to IPRINT unit number
+</dl>
+</blockquote>
+<p> 
+LRBAT calls the following which are external to MTZLIB: 
+<p> 
+External Subroutines: LERROR 
+<H2><a name="lwbat"></a> Subroutine LWBAT(MINDX,BATNO,RBATCH,CBATCH)</H2>
+Write the header for batch with serial number BATNO to the MTZ file open for
+write  on index MINDX, batch info stored in the two arrays RBATCH (for numbers)
+and CBATCH (for characters).
+<P> 
+If this routine is called at all then it must be called for every batch which
+is to be output - these batch serial numbers are stored and used in LWCLOS.
+<P> 
+If it is called with BATNO = 0 this is a flag to say that the output MTZ file
+will be a standard file, and not a multi-record one, i.e. no batches. After this
+call no batch information is available to the calling program, so don't call
+it too soon !
+<P> 
+Note that the maximum numbers of batches currently allowed is 1000.
+<P> 
+Arguments:
+<dl>
+<dt> MINDX  (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> BATNO  (I)  INTEGER<dd>
+serial number of this batch if 0 wipe away all batch info for file
+<dt> RBATCH (I)  REAL(*)<dd>
+array from which integer and real batch info is decoded by subroutine
+WBATHD this should be equivalenced onto the appropriate COMMON block
+in the calling program. The first item is NWORDS, i.e. how many items
+in the array.  If NWORDS is 0 then only the title is written to header
+<dt> CBATCH (I)  CHARACTER(*)*1<dd>
+as RBATCH, but for character items - no nwords however; title is 1st
+70 chars of CBATCH.
+</dl>
+LWBAT calls the following which are external to MTZLIB: 
+<p> 
+External Subroutines: LERROR 
+<p> 
+Function: 
+<p> 
+This subroutine will check whether the number of the current batch which is 
+being written is (1) already present in the output file (ie LWBAT has already 
+been called with this batch number) and (2) less than the serial number of the 
+last batch written (ie the serial numbers are out of order). If 2 batches are 
+the same the program will stop, and if the serial numbers are out of order a 
+flag is set so that they will be sorted by LWCLOS before being written out to 
+the file. 
+
+<H2><a name="lrbscl"></a> Subroutine LRBSCL (MINDX,BATNO,BATSCL,NBATSC)</H2>
+Read batch scale, Bfactor and batch title for batch BATNO from batch headers
+from multi-record file open on index MINDX
+<dl>
+<dt> MINDX  (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> BATNO  (I)  INTEGER<dd>
+batch number
+<dt> NBATSC (I)  INTEGER<dd>
+maximum number of batch scales expected
+<dt> BATSCL (O)  REAL<dd>
+array of dimension at least NBATSC containing batch scale, relative
+Bfactor, SD(Bscale), SD(Bfactor) if NBATSC = 4 else NBATSC/2 scales or
+B-factors + Sd's on output
+<dt> NBATSC (I/O)  INTEGER<dd>
+On entry the dimension of BATSCL; on exit the number of batch scales found
+</dl>
+LRBSCL calls the following which are external to MTZLIB: 
+<br> 
+External Subroutines: LERROR 
+
+<H2><a name="lrbtit"></a> Subroutine LRBTIT (MINDX,BATNO,TBATCH,IPRINT)</H2>
+Read batch title for batch BATNO from batch headers from multi-record mtz file
+open on index MINDX
+<P> 
+Arguments:
+<dl>
+<dt> MINDX  (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> BATNO  (I)  INTEGER<dd>
+batch number
+<dt> TBATCH (O)  CHARACTER<dd>
+batch title
+<dt> IPRINT (I)  INTEGER<dd>
+print flag
+<blockquote>
+<dt> =0<dd>
+no print
+<dt> =1<dd>
+print title
+<dt> =2<dd>
+print title and orientation block
+</dl>
+</blockquote>
+<H2><a name="lwbtit"></a> Subroutine LWBTIT (MINDX,BATNO,TBATCH)</H2>
+Write batch title and dummy orientation block for batch BATNO to multi-record
+file open on index MINDX
+<P> 
+Arguments:
+<dl>
+<dt> MINDX  (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> BATNO  (I)  INTEGER<dd>
+batch number
+<dt> TBATCH (I)  CHARACTER<dd>
+batch title
+</dl>
+<H2><a name="lwbscl"></a> Subroutine LWBSCL(MINDX,BATNO,BATSCL,NBATSC)</H2>
+Write batch scale and Bfactor for batch BATNO to batch headers for multi-record
+file open on index MINDX
+<P> 
+Arguments:
+<dl>
+<dt> MINDX  (I)  INTEGER<dd>
+indicates which MTZ file - one index points to both input and output files
+<dt> BATNO  (I)  INTEGER<dd>
+batch number
+<dt> BATSCL (I)  REAL<dd>
+batch scale, relative Bfactor, SD(Bscale), SD(Bfactor) if NBATSC = 4
+else NBATSC/2 scales or B-factors + Sd's
+<dt> NBATSC (I)  INTEGER<dd>
+number of batch scales (=0 to clear)
+</dl>
+<H2><a name="lbprt"></a> Subroutine LBPRT(IBATCH,IPRINT,RBATCH,CBATCH)</H2>
+Internal MTZ subroutine which copies the batch header information
+as it is stored in raw form on the files, into the common blocks MBTHDR and
+CBTHDR, and then calls LBPRTH to make some sense of these numbers.
+<P> 
+Arguments:
+<dl>
+<dt> IBATCH  (I)  INTEGER<dd>
+batch number
+<dt> IPRINT  (I)  INTEGER<dd>
+print indicator: meaning:
+<blockquote>
+<dt> =0<dd>
+no print
+<dt> =1<dd>
+print batch title only
+<dt> =2<dd>
+also print orientation block
+<dt> &gt;30<dd>
+also print orientation block BUT to IPRINT unit number
+</dl>
+</blockquote>
+<dl>
+<dt> RBATCH  (I)  REAL(*)<dd>
+array from which integer and real batch info is decoded by subroutine
+WBATHD.  This should be equivalenced onto the appropriate COMMON block
+in the calling program. The first item is NWORDS, i.e. how
+many items in the array.  If NWORDS is 0 then only the title is
+written to header.
+<dt> CBATCH  (I)  CHARACTER(*)*1<dd>
+as RBATCH, but for character items - no nwords however; title is 1st
+70 chars of CBATCH.
+<p> 
+LBPRT is called by LRBAT, and it calls LBPRTH to do the actual printing. 
+</dl>
+
+<H2><a name="equalmagic"></a>SUBROUTINE EQUAL_MAGIC(MINDX,ADATA,NCOL)</h2>
+Sets an array of NCOL to VAL_MISS(2,MINDX), the appropriate value
+for the output file.
+<p>
+Arguments :
+<dl>
+<dt>MINDX     (I)     INTEGER<dd>         
+indicates which MTZ file - 1 index points to both input and output files
+<dt>ADATA      (I)     REAL<dd>            
+array of dimension at least NCOL containing the reflection record  with
+"missing" values set  to VAL_MAGICA
+<dt>NCOL       (I)	INTEGER<dd>         
+Array size of ADATA
+</dl>
+
+<H2><a name="ismagic"></a>SUBROUTINE IS_MAGIC (VAL_MAGIC,VALTST,LVALMS)</h2>
+Function  to test whether a number is  "magic".
+Returns LVALMS TRUE if it is - otherwise LVALMS FALSE.
+<p>
+Arguments :
+<dl>
+<dt>VAL_MAGIC (I)     REAL <dd>          
+Missing value flag as "magic" for this mtz file.
+<dt>VALTST    (I)     REAL <dd>           
+Number to test to see if it is defined as "magic" for this mtz file.
+<dt>LVALMS    (O)     LOGICAL <dd>       
+Returns LVALMS TRUE if VALTST is "magic", FALSE if it is not, or if
+there is no "missing" number set.
+</dl>
+
+<H2><a name="resetmagic"></a>SUBROUTINE RESET_MAGIC(MINDX,ADATA,BDATA,NCOL,VAL_MAGICA,VAL_MAGICB)</h2>
+Resets an array containing Missing value flags VAL_MAGICA  to
+one  containing Missing value flags VAL_MAGICB
+If MINDX > 0 then VAL_MAGICA is taken to be the value of the MNF
+                stored in the MTZ header, for MTZ file MINDX. Else the 
+                passed value is taken. The MNF pertaining to the data 
+                need not necessarily be the same as that stored in the
+                header.
+     This allows you to list arrays containing Nan entries.
+<p>
+Arguments :
+<dl>
+<dt>MINDX     (I)     INTEGER <dd>       
+indicates which MTZ file - 1 index points to both input and output files
+<dt>ADATA      (I)     REAL   <dd>       
+array of dimension at least NCOL containing the reflection record  with
+"missing" values set  to VAL_MAGICA
+<dt>BDATA      (O)	REAL   <dd>       
+Array of dimension at least NCOL containing the reflection record  with
+"missing" values reset  to VAL_MAGIC
+<dt>NCOL       (I)	INTEGER  <dd>       
+Array size of ADATA
+<dt>VAL_MAGICA (I)    REAL    <dd>       
+If MINDX = 0 then this value will be treated as the MNF pertaining to the
+data. Otherwise 
+<dt>VAL_MAGICB (I)	REAL  <dd>       
+"Missing value" flag to reset in BDATA to allow record to be printed.
+</dl>
+
+<H2><a name="setmagic"></a>SUBROUTINE SET_MAGIC(MINDX,VAL_MAGIC,SETVAL)</h2>
+Subroutine to pass the "magic" value for this mtz file 
+either into the file or back to the calling program
+<p>
+Arguments :
+<dl>
+<dt>MINDX     (I)	INTEGER <dd>        
+indicates which MTZ file - 1 index
+                          	points to both input and output files
+<dt>VAL_MAGIC (I)	REAL  <dd>          
+variable giving value assigned to 
+                                  "missing data"; it may be passed to 
+                                   an MTZ  file, or return a preset value.
+<dt>SETVAL    (I)	LOGICAL <dd>        
+if TRUE on entry, the mtz missing flag is 
+                                  set to VAL_MAGIC - ie the value in the mtz 
+                                  file is OVERWRITTEN!
+                                  if FALSE on entry and there is a 
+                                  "missing value" set in the input MTZ file 
+                                  that will be returned as VAL_MAGIC, and
+                                  SETVAL will be returned TRUE.
+                                  if FALSE on entry and there is NO 
+                                  "missing value" set in the input MTZ file 
+                                  VAL_MAGIC will be set to the default
+                                  for both input and output
+                                  SETVAL returned TRUE
+</dl>
+      
+<H2><a name="lrrefm"></a>SUBROUTINE LRREFM(MINDX,LOGMSS)</h2>
+Returns Logical array which flags missing data entries
+Array DATMSS set in LRREFF and LRREFL
+<p>
+Arguments :
+<dl>
+<dt>MINDX     (I)	INTEGER		<dd>        
+indicates which MTZ file - 1 index
+					points to both input and output files
+<dt>LOGMSS    (O)	LOGICAL   <dd>        
+      Array of dimension at least NPLABS(MINDX)
+                                  if LRREFF is being used, or NCOLS(MINDX)
+                                  if LRREFL is being used. In practice,
+                                  dimension MCOLS is safest.
+                                  Contains the logical array LOGMSS on exit
+                                  in order of LRREFF or LRREFL, whichever
+                                  was most recently called.
+                                  IF LOGMSS(..) is TRUE the entry is "missing".
+                                  Maps onto DATMSS.
+</dl>
+        
+<H2><a name="lridx"></a> SUBROUTINE LRIDX(MINDX,PNAME,XNAME,DNAME,ISETS,DATCELL,
+DATWAVE,NDATASETS)</H2>
+Subroutine to return information for all datasets from the MTZ file header,
+including crystal names. Datasets are identified by the XNAME / DNAME pair.
+There is also an integer ID in ISETS which is more useful for programming.
+Note that i'th dataset does not necessarily have ID=i.
+<P>
+Arguments :
+<dl>
+<dt> MINDX     (I)	INTEGER         
+<dd>indicates which MTZ file - 1 index points to both input and output files
+<dt> PNAME     (O)     CHARACTER       
+<dd>array of dimension at least NDATASETS containing the project names on exit
+<dt> XNAME     (O)     CHARACTER       
+<dd>array of dimension at least NDATASETS containing the crystal names on exit
+<dt> DNAME     (O)     CHARACTER       
+<dd>array of dimension at least NDATASETS containing the dataset names on exit
+<dt> ISETS     (O)     INTEGER         
+<dd>array of dimension at least NDATASETS containing the dataset IDs on exit
+<dt> DATCELL   (O)     REAL            
+<dd>a 2-dimensional array of dimension at least (6,NDATASETS) containing the cell 
+dimensions for all datasets on exit
+<dt> DATWAVE   (O)     REAL            
+<dd>array of dimension at least NDATASETS containing the dataset wavelengths
+<dt> NDATASETS (I/O)     INTEGER         
+<dd>On entry, it should be set to the dimension of the arrays used (PNAME, etc.).
+This should be large enough to hold the maximum number of expected datasets.
+On exit, NDATASETS contains the actual number of datasets in the MTZ header
+</dl>
+
+<H2><a name="lridc"></a> SUBROUTINE LRIDC(MINDX,PNAME,DNAME,ISETS,DATCELL,
+DATWAVE,NDATASETS)</H2>
+Subroutine to return information for all datasets from the MTZ file header.
+<P> 
+Arguments :
+<dl>
+<dt> MINDX     (I)	INTEGER         
+<dd>indicates which MTZ file - 1 index points to both input and output files
+<dt> PNAME     (O)     CHARACTER       
+<dd>array of dimension at least NDATASETS containing the protein name on exit
+<dt> DNAME     (O)     CHARACTER       
+<dd>array of dimension at least NDATASETS containing the dataset name on exit
+<dt> ISETS     (O)     INTEGER         
+<dd>array of dimension at least NDATASETS containing the dataset IDs on exit
+<dt> DATCELL   (O)     REAL            
+<dd>a 2-dimensional array of dimension at least (6,NDATASETS) containing the cell 
+dimensions for all datasets on exit
+<dt> DATWAVE   (O)     REAL            
+<dd>array of dimension at least NDATASETS containing the dataset wavelengths
+(returns zero if not set).
+<dt> NDATASETS (O)     INTEGER         
+<dd>number of datasets in MTZ header
+</dl>
+      
+<H2><a name="lrid"></a> SUBROUTINE LRID(MINDX,PNAME,DNAME,ISETS,NDATASETS)</H2>
+As LRIDC, but without cell and wavelength information (for backwards compatibility).
+<P> 
+Arguments :
+<dl>
+<dt> MINDX     (I)	INTEGER         
+<dd>indicates which MTZ file - 1 index points to both input and output files
+<dt> PNAME     (O)     CHARACTER       
+<dd>array of dimension at least NDATASETS containing the protein name on exit
+<dt> DNAME     (O)     CHARACTER       
+<dd>array of dimension at least NDATASETS containing the dataset name on exit
+<dt> ISETS     (O)     INTEGER         
+<dd>array of dimension at least NDATASETS containing the dataset IDs on exit
+<dt> NDATASETS (O)     INTEGER         
+<dd>number of datasets in MTZ header
+</dl>
+            
+<H2><a name="lwidx"></a> SUBROUTINE LWIDX(MINDX,PROJECT_NAME,CRYSTAL_NAME,DATASET_NAME,
+DATCELL,DATWAVE)</H2>
+Subroutine to add dataset information to the output MTZ file header, including
+crystal names.
+Datasets identified by the PROJECT_NAME/DATASET_NAME pair are 
+appended to the MTZ header one at a time.
+Checks to see if the PROJECT_NAME/DATASET_NAME pair is already
+included; if so, the dataset is updated with the cell and
+wavelength information.
+Redundant datasets are removed in LWCLOS.
+<P> 
+Arguments :
+<dl>
+<dt> MINDX         (I)	    INTEGER        
+<dd>indicates which MTZ file - 1 index points to both input and output files
+<dt> PROJECT_NAME  (I)     CHARACTER      
+<dd>project name of dataset to be added (strings longer than 64 will be truncated)
+<dt> CRYSTAL_NAME  (I)     CHARACTER      
+<dd>crystal name of dataset to be added (strings longer than 64 will be truncated)
+<dt> DATASET_NAME  (I)     CHARACTER      
+<dd>dataset name of dataset to be added (strings longer than 64 will be truncated)
+<dt> DATCELL       (I)     REAL           
+<dd>cell dimensions of dataset to be added
+<dt> DATWAVE       (I)     REAL           
+<dd>wavelength of dataset to be added
+</dl>
+
+<H2><a name="lwidc"></a> SUBROUTINE LWIDC(MINDX,PROTEIN_NAME,DATASET_NAME,
+DATCELL,DATWAVE)</H2>
+Subroutine to add dataset information to the output MTZ file header.
+Datasets identified by the PROJECT_NAME/DATASET_NAME pair are 
+appended to the MTZ header one at a time.
+Checks to see if the PROJECT_NAME/DATASET_NAME pair is already
+included; if so, the dataset is updated with the cell and
+wavelength information.
+Redundant datasets are removed in LWCLOS.
+<P> 
+Arguments :
+<dl>
+<dt> MINDX         (I)	    INTEGER        
+<dd>indicates which MTZ file - 1 index  points to both input and output files
+<dt> PROTEIN_NAME  (I)     CHARACTER      
+<dd>protein name of dataset to be added (strings longer than 64 will be truncated)
+<dt> DATASET_NAME  (I)     CHARACTER      
+<dd>dataset name of dataset to be added (strings longer than 64 will be truncated)
+<dt> DATCELL       (I)     REAL           
+<dd>cell dimensions of dataset to be added (if zero passed, no cell information
+is added, but when the output header is written by LWCLOS, DATCELL defaults to 
+overall cell).
+<dt> DATWAVE       (I)     REAL           
+<dd>wavelength of dataset to be added (if zero passed, no wavelength information
+is added).
+</dl>
+      
+<H2><a name="lwid"></a> SUBROUTINE LWID(MINDX,PROTEIN_NAME,DATASET_NAME)</H2>
+As LWIDC, but without cell and wavelength information (for backwards compatibility).
+<P> 
+Arguments :
+<dl>
+<dt> MINDX         (I)	    INTEGER        
+<dd>indicates which MTZ file - 1 index  points to both input and output files
+<dt> PROTEIN_NAME  (I)     CHARACTER      
+<dd>protein name of dataset to be added (strings longer than 64 will be truncated)
+<dt> DATASET_NAME  (I)     CHARACTER      
+<dd>dataset name of dataset to be added (strings longer than 64 will be truncated)
+</dl>
+           
+<H2><a name="lrclid"></a> SUBROUTINE LRCLID(MINDX,CSETID,NCOL)</H2>
+Subroutine to return the ID of the related dataset for each 
+column of the input MTZ file, as obtained from the header.
+Thus CSETID(4)=2 means that the 4th column belongs to the dataset with ID "2"
+(which is not necessarily the 2nd dataset). The dataset IDs are returned 
+by subroutine <a href="#lridx">LRIDX </a>.
+<P> 
+Arguments :
+<dl>
+<dt> MINDX     (I)	INTEGER         
+<dd>indicates which MTZ file - 1 index points to both input and output files
+<dt> CSETID    (O)	INTEGER         
+<dd>array of dimension at least NCOL containing the dataset IDs on exit
+<dt> NCOL      (O)	INTEGER         
+<dd>number of columns in the MTZ file
+</dl>
+      
+<H2><a name="lwidasx"></a> SUBROUTINE LWIDASX(MINDX,NLPRGO,XNAME,DNAME,IAPPND)</H2>
+Subroutine to associate dataset entry with each column for
+the output MTZ file. 
+<P> 
+Arguments :
+<dl>
+<dt> MINDX     (I)	INTEGER         
+<dd>indicates which MTZ file - 1 index points to both input and output files
+<dt> NLPRGO    (I)	INTEGER         
+<dd>number of output program labels
+<dt> XNAME     (I)	CHARACTER       
+<dd>array of dimension at least NLPRGO containing the output crystal name
+<dt> DNAME     (I)	CHARACTER       
+<dd>array of dimension at least NLPRGO containing the output dataset name
+<dt> IAPPND    (I)	INTEGER         
+<dd>=0 replace all existing column info <br>
+=1 append to the existing column info
+</dl>
+      
+<H2><a name="lwidas"></a> SUBROUTINE LWIDAS(MINDX,NLPRGO,PNAME,DNAME,IAPPND)</H2>
+Subroutine to associate dataset entry with each column for
+the output MTZ file. 
+<P> 
+Arguments :
+<dl>
+<dt> MINDX     (I)	INTEGER         
+<dd>indicates which MTZ file - 1 index points to both input and output files
+<dt> NLPRGO    (I)	INTEGER         
+<dd>number of output program labels
+<dt> PNAME     (I)	CHARACTER       
+<dd>array of dimension at least NLPRGO containing the output project name
+<dt> DNAME     (I)	CHARACTER       
+<dd>array of dimension at least NLPRGO containing the output dataset name
+<dt> IAPPND    (I)	INTEGER         
+<dd>=0 replace all existing column info <br>
+=1 append to the existing column info
+</dl>
+      
+<H2><a name="lrbsetid"></a> SUBROUTINE LRBSETID (MINDX,BATNO,BSETID)</H2>
+Subroutine to read dataset ID for batch BATNO from
+batch headers for multi-record file open on index MINDX.
+If LWBAT has been used, the batch headers in RBATW are used,
+else those in RBATR are used.
+<P> 
+Arguments :
+<dl>
+<dt> MINDX     (I)	INTEGER         
+<dd>indicates which MTZ file - 1 index points to both input and output files
+<dt> BATNO     (I)	INTEGER         
+<dd>batch number 
+<dt> BSETID    (O)	INTEGER         
+<dd>dataset ID for batch
+</dl>
+      
+<H2><a name="lwbsetidx"></a> SUBROUTINE LWBSETIDX (MINDX,BATNO,XNAME,DNAME)</H2>
+Subroutine to write dataset ID for batch BATNO to
+batch headers for multi-record file open on index MINDX.
+If LWBAT has been used, the batch headers in RBATW are used,
+else those in RBATR are used.
+<P> 
+Arguments :
+<dl>
+<dt> MINDX     (I)	INTEGER         
+<dd>indicates which MTZ file - 1 index points to both input and output files
+<dt> BATNO     (I)	INTEGER         
+<dd>batch number 
+<dt> XNAME     (I)	CHARACTER       
+<dd>crystal name of dataset
+<dt> DNAME     (I)	CHARACTER       
+<dd>dataset name of dataset
+</dl>
+      
+<H2><a name="lwbsetid"></a> SUBROUTINE LWBSETID (MINDX,BATNO,PNAME,DNAME)</H2>
+Subroutine to write dataset ID for batch BATNO to
+batch headers for multi-record file open on index MINDX.
+If LWBAT has been used, the batch headers in RBATW are used,
+else those in RBATR are used.
+<P> 
+Arguments :
+<dl>
+<dt> MINDX     (I)	INTEGER         
+<dd>indicates which MTZ file - 1 index points to both input and output files
+<dt> BATNO     (I)	INTEGER         
+<dd>batch number 
+<dt> PNAME     (I)	CHARACTER       
+<dd>project name of dataset
+<dt> DNAME     (I)	CHARACTER       
+<dd>dataset name of dataset
+</dl>
+
+<H2><a name="lkyin"></a> Subroutine LKYIN(MINDX,LSPRGI,NLPRGI,NTOK,LINE,IBEG,IEND)</H2>
+Read standard input lines of the form
+<br>
+      LABIN  &lt;program label&gt;=&lt;file label&gt; ...
+<br>
+Use this to read the inputs, and then LRASSN to setup the program label to file
+label assignments.
+<P> 
+LKYIN also checks that each assignment set actually contains an input program
+label on one side of the = sign. This comparison is not case sensitive.
+<P> 
+If there is no ambiguity, the order in which program and file labels
+are given may be swapped.
+<P> 
+Arguments:
+<dl>
+<dt> LSPRGI    (I) CHARACTER*30<dd>
+program label strings (array); L(abel) S(tring) PRG(rammme) I(nput)
+<dt> NLPRGI    (I) INTEGER<dd>
+number of program input labels: N(umber of) L(abels) PRG(ramme) I(nput)
+<dt> NTOK      (I) INTEGER<dd>
+from Parser, number of tokens on line
+<dt> LINE      (I) CHARACTER*(*)<dd>
+the input line
+<dt> IBEG,IEND (I) INTEGER<dd>
+arrays from the parser, delimiters for each token
+</dl>
+LKYIN calls the following which are external to MTZLIB: 
+<p> 
+External Subroutines: CCPUPC, PUTLIN 
+<br> 
+External Functions  : INTEGER LENSTR 
+
+<H2><a name="lkyset"></a> Subroutine LKYSET(LSPRGI,NLPRGI,LSUSRJ,KPOINT,ITOK,NTOK,LINE,IBEG,IEND)</H2>
+Parses standard input lines of the form 
+<br>
+ [LABIN]  item1=name1 item2=name2 ...
+<P> 
+This subroutine returns the user input labels to the calling program (LKYIN
+does not) and the array KPOINT which indicates which of the program labels
+were assigned user input file labels
+<P> 
+Note that although this Subroutine looks similar to LKYIN it cannot be called
+in its place, it simply adds extra functionality. There is no MINDX argument
+to this call - it is not tied to any particular file(s) and the header common
+blocks are not affected by this subroutine.
+<P> 
+See the notes above (LKYIN) about the order of the assignment statements.
+<P> 
+Arguments:
+<dl>
+<dt> LSPRGI    (I) CHARACTER*30   <dd>
+program label strings (array): L(abel) S(tring) PRG(rammme) I(nput)
+<dt> NLPRGI    (I) INTEGER<dd>
+number of program input labels: N(umber of) L(abels) PRG(ramme) I(nput)
+<dt> LSPRGJ    (O) CHARACTER*30<dd>
+user supplied  label strings (array): L(abel) S(tring) USR(rammme)
+I(nput).  Copy of user input labels to return to the calling program
+<dt> KPOINT    (O) INTEGER<dd>
+Indicator whether each program label is set: -1 if set, 0 if not
+<dt> ITOK      (I) INTEGER<dd>
+First token to search on line - allows you to skip the LABIN token
+<dt> NTOK      (I) INTEGER<dd>
+from Parser, number of tokens on line
+<dt> LINE      (I) CHARACTER*(*)<dd>
+the input line
+<dt> IBEG,IEND (I) INTEGER<dd>
+arrays from the parser, delimiters for each token
+</dl>
+LKSET calls the following which are external to MTZLIB: 
+<p> 
+External Subroutines: CCPUPC, PUTLIN 
+<br> 
+External Functions  : INTEGER LENSTR 
+
+<H2><a name="lkyout"></a> Subroutine LKYOUT(MINDX,LSPRGO,NLPRGO,NTOK,LINE,IBEG,IEND)</H2>
+Read standard input lines of the form
+<br>
+      LABOUT LabelFC=userFC   LabelPHCAL=userPHCAL ...
+<br>
+Use this to read the inputs, and then LWASSN to setup the program label to
+(new) file label assignments.
+<P> 
+LKYOUT also checks that each assignment set actually contains an output program
+label on one side of the = sign. This comparison is not case sensitive.
+<P> 
+If there is no ambiguity, the order in which program and file labels
+are given may be swapped.
+<P> 
+Note that the case of the user output labels is preserved.
+<P> 
+Arguments:
+<dl>
+<dt> LSPRGO    (I) CHARACTER*30<dd>
+program label strings (array): L(abel) S(tring) PRG(rammme) O(utput)
+<dt> NLPRGO    (I) INTEGER<dd>
+number of program output labels: N(umber of) L(abels) PRG(ramme) O(utput)
+<dt> NTOK      (I) INTEGER<dd>
+from Parser, number of tokens on line
+<dt> LINE      (I) CHARACTER*(*)<dd>
+the input line
+<dt> IBEG,IEND (I) INTEGER<dd>
+arrays from the parser, delimiters for each token
+</dl>
+LKYOUT calls the following which are external to MTZLIB: 
+<p> 
+External Subroutines: CCPUPC, PUTLIN 
+<br> 
+External Functions  : INTEGER LENSTR 
+
+<H2><a name="lkyasn"></a> Subroutine LKYASN(MINDX,NLPRGI,LSPRGI,CTPRGI,LOOKUP)</H2>
+Do column assignments, bypassing the need for keyworded input. This is useful
+in writing little mtz programs, without using Parser in the main program.
+<P> 
+Read column assignments and make them, for input MTZ file open for read on
+index MINDX
+<P> 
+It expects to read from stream 5 a line of the form
+<br>
+LABIN  program_label=file_label program_label=file_label . . .
+<br>
+This routine is useful for simple jiffy programs that don't want full
+keyworded input
+<P> 
+See the LKYIN section above for the notes on case, and order of input
+assignments.
+<P> 
+Arguments:
+<dl>
+<dt> MINDX    (I)  INTEGER<dd>
+file index number for opened MTZ input file
+<dt> NLPRGI   (I)  INTEGER<dd>
+number of input program labels
+<dt> LSPRGI   (I)  CHARACTER*30<dd>
+array of dimension at least NLPRGI containing the program label strings
+<dt> CTPRGI   (I)  CHARACTER*1<dd>
+array of column types for each column: these will be checked to see
+that they match the actual column types in the file.  If you don't
+want to check column types, provide blank types here (dimension at
+least NLPRGI)
+<dt> LOOKUP   (O)  INTEGER<dd>
+array of dimension at least NLPRGI containing column numbers for each
+assigned label
+</dl> 
+LKYASN calls the following which are external to MTZLIB: 
+<p> 
+External Subroutines: PARSER, LERROR 
+
+<H2><a name="lhprt"></a> Subroutine LHPRT(MINDX,IPRINT)</H2>
+Print out the header information from the MTZ COMMON blocks for the MTZ file
+open on index MINDX.
+<P> 
+Arguments:
+<dl>
+<dt> MINDX  (I)  INTEGER<dd>
+indicates which MTZ file - 1 index points to both input and output files
+<dt> IPRINT (I)  INTEGER<dd>
+print indicator: meaning:
+<blockquote>
+<dt> =1<dd>
+Brief header info printed (default)
+<dt> =2<dd>
+As above plus history info
+<dt> =3<dd>
+Full header dump, symmetry, alles!
+<dt> =4<dd>
+As 1 plus full symmetry
+<dt> any other value, nothing happens<dd>
+</dl>
+</blockquote>
+<p> 
+LHPRT calls the following which are external to MTZLIB: 
+<p> 
+External Functions  : INTEGER LENSTR 
+<br> 
+External Subroutines: BLANK,LERROR,PUTLIN,SYMTR3 
+
+<H2><a name="lphist"></a> Subroutine LPHIST(MINDX)</H2>
+Output the history information from the MTZ file header. This text can be
+anything the programmer chooses, (but probably program stamps at least).
+<P> 
+Arguments:
+<dl>
+<dt> MINDX  (I)  INTEGER<dd>
+indicates which MTZ file - 1 index points to both input and output files
+</dl> 
+LPHIST calls the following which are external to MTZLIB: 
+<br> 
+External Functions  : INTEGER LENSTR 
+<br> 
+External Subroutines: BLANK,LERROR,PUTLIN 
+
+<H2><a name="rbathd"></a>Subroutine RBATHD(ILUN,BATCH,RBATCH,CBATCH) </h2>
+MTZLIB internal subroutine to read next batch header from multi-record MTZ file 
+open on unit ILUN, and return it's batch number, plus real and character 
+arrays. 
+<pre> 
+ 
+Arguments: 
+ 
+ILUN    (I)  INTEGER         LUN on which the file is open 
+ 
+BATCH   (O)  INTEGER         serial number of this batch 
+ 
+RBATCH  (O)  REAL(*)         array into which integer and real batch 
+                             info is decoded by subroutine 
+                             this should be equivalenced onto the 
+                             appropriate COMMON block in the calling 
+                             program. The first item is nwords, ie how 
+                             many items in the array, if nword is 0 
+                             then only the title is present 
+ 
+CBATCH  (O)  CHARACTER(*)*1  as RBATCH, but for character items - no 
+                             nwords however; title is 1st 70 chars of 
+                             CBATCH. 
+ 
+</pre> 
+<p> 
+RBATHD is call by LROPEN. 
+<p> 
+RBATHD calls the following which are external to MTZLIB: 
+<p> 
+External Subroutines: LERROR,QMODE,QREAD 
+
+<H2><a name="wbathd"></a>Subroutine WBATHD(ILUN,BATCH,RBATCH,CBATCH)</h2> 
+MTZLIB internal subroutine to write batch header to Multi-record MTZ file open 
+for write on ILUN, with batch number BATCH, and data in RBATCH and CBATCH 
+<pre> 
+ 
+Arguments: 
+ 
+ILUN    (I)  INTEGER         LUN on which the file is open 
+ 
+BATCH   (I)  INTEGER         serial number of this batch 
+ 
+RBATCH  (I)  REAL(*)         array from which integer and real batch 
+                             info is encoded by subroutine 
+                             this should be equivalenced onto the 
+                             appropriate COMMON block in the calling 
+                             program. The first item is nwords, ie how 
+                             many items in the array, if nword is 0 
+                             then only the title is written 
+ 
+CBATCH  (I)  CHARACTER(*)*1  as RBATCH, but for character items - no 
+                             nwords however; title is 1st 70 chars of 
+                             CBATCH. 
+ 
+</pre> 
+<p> 
+WBATHD is called by LWCLOS. 
+<p> 
+WBATHD calls the following which are external to MTZLIB: 
+<p> 
+External Subroutines: QMODE,QWRITE 
+
+<H2><a name="lrhdrl"></a>Subroutine LRHDRL(ILUN,LINE) </h2>
+MTZLIB internal subroutine to read one header record from an MTZ file open for 
+read on unit ILUN, and place the result in the character string LINE. All the 
+header lines are 80 characters long and written to the file in 20A4 format, so 
+have to decode from integers to chars QMODE = 0 for the header record (ie 
+bytes) 
+<pre> 
+ 
+Arguments: 
+ 
+ILUN    (I)  INTEGER         LUN on which the file is open,  
+                             for each MTZ file open this is stored  
+                             in the RLUN array in MTZWRK  
+ 
+LINE    (O)  CHARACTER*(*)   character string containing one header 
+                             record from the MTZ file 
+                              
+</pre> 
+<p> 
+LRHDRL calls the following which are external to MTZLIB: 
+<br> 
+External Subroutines: QREAD,LERROR 
+
+<H2><a name="lbprth"></a>Subroutine LBPRTH(IBATCH,IPRINT) </h2>
+Internal subroutine to print out the batch header information from the MTZ 
+COMMON blocks /MBTHDR/ and /CBTHDR/ (info already there) 
+<pre> 
+ 
+Arguments: 
+ 
+IBATCH  (I)  INTEGER    batch number 
+ 
+IPRINT  (I)  INTEGER    print indicator: meaning: 
+                        =0 no print 
+                        =1 print batch title only 
+                        =2 also print orientation block 
+                        .GT. 30 also print orientation block 
+                        TO UNIT NUMBER IPRINT 
+ 
+</pre> 
+<p> 
+LBPRTH is called by LBPRT. 
+<p> 
+LBPRTH calls the following which are external to MTZLIB: 
+<p> 
+External Subroutines: BLANK,PUTLIN 
+
+<H2><a name="labprt"></a>Subroutine LABPRT(LABELS,NLABS) </h2>
+Internal subroutine for MTZ routines to output an array of character strings 
+across the page nicely eg labels or types. 
+<br> 
+Uses subroutine PUTLIN to output to window CURWIN. 
+<pre> 
+ 
+Arguments: 
+ 
+LABELS  (I)  CHARACTER*(*)   array of dimension (NLABS) containing 
+                             the character strings to be output 
+ 
+NLABS   (I)  INTEGER         number of labels to be output 
+ 
+ 
+</pre> 
+<p> 
+LABPRT calls the following which are external to MTZLIB: 
+<p> 
+External Functions  : INTEGER LENSTR 
+<br> 
+External Subroutines: PUTLIN 
+
+
+<H2><a name="sortup"></a>Subroutine SORTUP(N,A,IN) </h2>
+Internal subroutine to return order of A in IN - Index Sort, for integer array. 
+Lifted from STILLS program (MOSCO suite). 
+<br> 
+Ref:  Comm. ACM VOL.12 #3 MARCH 1969, R.C.SINGLETON 
+<pre> 
+ 
+Arguments: 
+ 
+N       (I)  INTEGER    dimension of arrays A and IN 
+ 
+A   (I)  INTEGER    array to be sorted 
+ 
+IN  (O)  INTEGER    index array for A 
+ 
+</pre> 
+<H2><a name="addlin"></a>Subroutine ADDLIN(NEWLIN,LINES,MAXLIN) </h2>
+Internal subroutine to add new lines from NEWLIN to array LINES 
+<pre> 
+ 
+Arguments: 
+ 
+NEWLIN(MAXLIN)  (I/O)   character array 
+   this is cleared on output 
+ 
+LINES(MAXLIN)  (O)   character array 
+ 
+</pre> 
+<H2><a name="nextln"></a>INTEGER Function NEXTLN(LINES,MAXLIN) </h2>
+Internal integer function to find the next empty line in a character array 
+<pre> 
+ 
+Arguments: 
+ 
+LINES(MAXLIN) (I)   character array 
+ 
+NEXTLN        (O)   INTEGER number of next blank line (= -1 if full) 
+     
+ 
+</pre> 
+<H2><a name="lstrsl"></a>Subroutine LSTRSL(MINDX,A,B,C,ALPHA,BETA,GAMMA) </h2>
+Internal subroutine to calculate coefficients for (sin(theta)/lambda)**2 from 
+h,k,l for general axes. 
+<p> 
+First calculate the components of input axes in an orthonormal basis, then 
+calculate components of reciprocal axes in same basis 
+<p> 
+Input angles are in degrees 
+<p> 
+This is exactly the same as the subroutine SETRSL in SYMLIB, except that it 
+stores its variables in the internal MTZ COMMON blocks, and will work if more 
+than one file is open at once. 
+<pre> 
+ 
+MINDX  (I)  INTEGER      indicates which MTZ file - one index 
+                         points to both input and output files 
+ 
+A,B,C,ALPHA,BETA,GAMMA 
+       (I)  REAL         cell parameters 
+ 
+</pre> 
+ 
+<H2><a name="lstlsq"></a>REAL FUNCTION LSTLSQ(MINDX,IH,IK,IL) </H2>
+Internal real function to calculate (sin(theta)/lambda)**2 from h,k,l; 
+coef's set by call to LSTRSL, for the file open on index MINDX 
+<p> 
+This is exactly the same as the function STHLSQ in SYMLIB, except that it 
+stores it's variables in the internal MTZ COMMON blocks, and will work if more 
+than one file is open at once. 
+<pre> 
+ 
+MINDX     (I)  INTEGER    indicates which MTZ file - one index 
+                          points to both input and output files 
+ 
+IH,IK,IL  (I)  INTEGER    Miller indices for the reflection 
+ 
+</pre> 
+</dl>
+
+<h2><a name="orientation"></a>ORIENTATION BLOCK DATA FOR MULTI-RECORD FILES</h2>
+<p> 
+This contains slots for all information that seems to be essential at present. 
+Each group of parameters is padded at the end for future expansion. 
+<p> 
+Data in the orientation block are referred to the Cambridge laboratory axis 
+frame: x along the (idealized) X-ray beam, z along usual rotation axis E1 
+(omega on 3-axis system). The matrix Q converts a vector in the Madnes frame 
+to the Cambridge frame. Note that the laboratory frame is essentially defined 
+by the vectors e1,e2,e3 and source. It doesn't really seem necessary to carry 
+through a whole lot of crystal and beam tensors, particularly as we have 
+integrated intensities at this stage, but maybe someone will want to, using 
+the allocated padding 
+<br> 
+The general orientation equation is 
+<pre> 
+ 
+x  =   R M U B h 
+ 
+where x    position in laboratory frame 
+R    goniostat matrix 
+M    missetting angle matrix (if relevant, see MISFLG) 
+            PhiZ PhiY PhiX (PHIXYZ) 
+U    crystal orientation matrix UMAT 
+B    cell orthogonalization matrix, derived from cell dimensions 
+h    reflection indices 
+ 
+ 
+Note that the description below is NOT is the same order as in the 
+common block, in which all the integers come before all the reals 
+(flagged as I or R in the description below) 
+ 
+I    NWORDS       number of words in orientation block 
+I    NINTGR       number of integers (first part of block includes 
+                  these counts) 
+I    NREALS       number of reals 
+I    IORTYP       type of orientation block (for possible future 
+                  use, now = 0) 
+I    INTPAD(8)    padding for future use (integers) 
+ 
+--- Information for this crystal 
+ 
+R    CELL(6)      cell dimensions  (A and degrees) 
+I    LBCELL(6)    refinement flags for cell dimensions 
+R    UMAT(3,3)    orientation matrix U. If MISFLG .gt. 0, U is the 
+                   standard setting when PhiXYZ ==0 
+I    MISFLG       status of missetting angles PHIXYZ 
+                   = 0  PHIXYZ not used, all orientation in UMAT 
+                   = 1  1 set of missetting angles (PHIXYZ(I,1)) 
+                   = 2  2 sets PHIXYZ(I,J), J=1,2 
+R    PHIXYZ(3,2)  missetting angles at beginning and end of rotation 
+I    JUMPAX       reciprocal axis closest to principle goniostat axis E1 
+                       (only used for printing) 
+I    NCRYST       crystal number: a crystal may contain several batches 
+I    LBSETID      dataset number (this indexes a list of datasets in the
+                  file header)
+I    LCRFLG       type of crystal mosaicity information 
+                  (=0 for isotropic, =1 anisotropic) 
+     *** CRYDAT(12) equivalenced to following *** 
+R    ETAD         reflection width (full width) (degrees) (if LCRFLG=0) 
+      or 
+R    ETADH,ETADV  horizontal and vertical reflection width  (if LCRFLG=1) 
+R    rest of CRYDAT: padding for crystal information 
+                     (eg more complicated mosaicity model) 
+ 
+--- Information for this batch 
+ 
+I    LDTYPE       type of data 
+                   = 1    oscillation data   (2D spots) 
+                   = 2    area detector data (3D spots) 
+                   = 3    Laue data 
+R    DATUM(3)     datum values of goniostat axes, from which 
+                  Phi is measured (degrees) 
+R    PHISTT,PHIEND start and stop values of Phi (degrees) 
+                   relative to datum 
+R    PHIRANGE     range of Phi values: typically this will be PHIEND-PHISTT,
+                    but storing this explicitly allows a distinction 
+                    eg between a rotation of +160 degrees from a rotation
+                    of -200 degrees
+I    JSCAXS       goniostat scan axis number (=1,2,3, or =0 
+                  for multiple axis scan 
+R    SCANAX(3)    rotation axis in laboratory frame 
+                  (not yet implemented: only relevant if JSCAXS=0) 
+R    TIME1, TIME2 start and stop times in minutes 
+I    NBSCAL       number of batch scales and Bfactors plus SD's 
+                   (4 at present, BSCALE, BBFAC and sd's) 
+                  set = 0 if batch scales unset 
+R    BSCALE       batch scale 
+R    BBFAC        batch temperature factor. 
+                   corresponding scale is 
+                   exp(-2 B (sin theta/lambda)**2) 
+R    SDBSCL       sd (Bscale) 
+R    SDBFAC       sd (BBfac) 
+R    BATPAD(11)   padding for batch information 
+ 
+--- Crystal goniostat information 
+ 
+I    NGONAX       number of goniostat axes (normally 1 or 3) 
+I    E1(3),E2(3),E3(3) vectors (in Cambridge laboratory frame, 
+                        see below) defining the NGONAX goniostat axes 
+C    GONLAB(3)  names of the three goniostat axes 
+R    GONPAD(12) padding for goniostat information 
+ 
+ 
+--- Beam information 
+ 
+R    SOURCE(3)    Idealized (ie excluding tilts) source vector 
+                   (antiparallel to beam), in Cambridge 
+                   laboratory frame 
+R    S0(3)        Source vector (antiparallel ! to beam), in 
+                   Cambridge laboratory frame, including tilts 
+I    LBMFLG       flag for type of beam information following 
+                   = 0 for ALAMBD, DELAMB only (laboratory source) 
+                   = 1     ALAMBD,DELAMB,DELCOR,DIVHD,DIVVD 
+                           (synchrotron) 
+                           (other options could include white beam) 
+*** BEMDAT(25) equivalenced to following *** 
+R    ALAMBD       Wavelength in Angstroms 
+R    DELAMB       dispersion Deltalambda / lambda. 
+R    DELCOR       Correlated component of wavelength dispersion. 
+R    DIVHD        Horizontal beam divergence in degrees. 
+R    DIVVD        Vertical beam divergence (may be 0.0 for 
+                   isotropic beam divergence. 
+R    rest of BEMDAT: padding for beam information 
+ 
+--- Detector information 
+ 
+I    NDET         number of detectors (current maximum 2) 
+     -- for each detector 
+R    DXn          crystal to detector distance (mm) 
+R    THETAn       detector tilt angle (=Madnes:tau2) (degrees) 
+R    DETLMn(2,2)  minimum and maximum values of detector 
+                  coordinates (pixels) 
+                     (i,j): i = 1 minimum, = 2 maximum 
+                            j = 1 Ydet,    = 2 Zdet 
+R    DETPAD(34)     padding for detector information 
+ 
+ 
+If you want to see an example of this, look at the subroutines 
+LBPRT and LBPRTH. 
+ 
+</pre>
+
+<H2><a name="example"> EXAMPLE PROGRAM USING AN MTZ FILE</H2>
+
+(See also the
+<a href="http://www.ccp4.ac.uk/dev/templates/templates.php">
+program templates</a> available on the CCP4 developer's pages.)
+
+<pre>
+
+      PROGRAM example_MTZ
+C     ===================
+C
+C---- An example of a program reading and writing MTZ files.C
+C
+C     .. Parameters ..
+      INTEGER MCOLS, NPAR, NLOC
+      PARAMETER (MCOLS=500, NPAR=200, NLOC=50)
+C     ..
+C     .. Scalars for Parser ..
+      INTEGER NTOK
+      LOGICAL LEND
+      CHARACTER KEY*4,LINE*400
+C     ..
+C     .. Arrays for Parser ..
+      REAL FVALUE(NPAR)
+      INTEGER IBEG(NPAR),IDEC(NPAR),IEND(NPAR),ITYP(NPAR)
+      CHARACTER CVALUE(NPAR)*4
+C     ..
+C     .. Local Scalars ..
+      REAL EPS,F1,F2,FLAGIP,FLAGOP,RSOL
+      INTEGER ALLSYM,I,IC,ICALL,ICEN,IERR,IFIL,II,ILEN,IPRINT,ISYSAB,
+     +        JDO10,JDO30,JDO40,JQ,NCEN,NCHK,NCOL,NEPS,NLPRGI,NLPRGO,
+     +        NREF,NSYM,NSYSAB,NLUSRI,NLURSO
+      CHARACTER DUMMY*10,TITNEW*70
+      LOGICAL EOF
+C     ..
+C     .. Local Arrays ..
+      REAL ADATA(MCOLS),DUM(2,MCOLS),RSYM(4,4,192)
+      INTEGER IH(3),JPOINT(NLOC),LOOKUP(NLOC)
+      CHARACTER OUTTYP(NLOC)*1,LSPRGI(NLOC)*30,LSPRGO(NLOC)*30,
+     +          HISNEW(20)*80,CTPRGI(NLOC)*1
+C     ..
+C     .. External Subroutines ..
+      EXTERNAL CCPUPC,CENTR,EPSLON,LRASSN,LRINFO,LROPEN,LRREFF,
+     +         LRSYMM,LRTITL,LWASSN,LWCLOS,LWHIST,LWOPEN,LWREFL,LWTITL,
+     +         PARSER,SYMTRN,LKYIN,LKYOUT
+C     ..
+C     .. Data statements ..
+C---- NLPRGI  =  number of input labels
+      DATA NLPRGI,LSPRGI/7,'H','K','L','F1','SIG1','DELF1',
+     +     'SIGDELF1',43*' '/
+C---- NLPRGO  =  number of output labels
+      DATA NLPRGO,LSPRGO/9,'H','K','L','FP','F1','SIG1','SIGFP',
+     +     'FN','SIGFN',41*' '/
+C---- This code signs which input columns are essential (LOOKUP)
+      DATA CTPRGI/'H','H','H','F','Q','F','Q',43*' '/
+      DATA OUTTYP/'H','H','H','F','Q','F','Q','F','Q',41*' '/
+      DATA LOOKUP/-1,-1,-1,-1,-1,-1,0,43*0/
+C---- Clear character arrays  TITNEW, HISNEW, JPOINT
+      DATA HISNEW/20*' '/, JPOINT/50*0/
+C     ..
+      CALL CCPFYP
+      CALL MTZINI
+      NTOK = NPAR
+      IFIL = 1
+      IPRINT = 3
+C---- Open input file for Read
+      CALL LROPEN(IFIL,'HKLIN',IPRINT,IERR)
+C---- Open output file
+      CALL LWOPEN(IFIL,'HKLOUT')
+C---- Default is to copy input title to output
+C---- Do you want to change title??
+      TITNEW = 'A test case for reading and writing MTZ files'
+      CALL LWTITL(IFIL,TITNEW,0)
+C---- Some history to append to output file
+C      Only last 30 lines will be kept
+      HISNEW(1) = ' Calculating F(+) F(-) - MTZRW_NEW'
+      HISNEW(2) = ' Some more info...'
+      CALL LWHIST(IFIL,HISNEW,2)
+C---- Find out how many columns and reflections in input file
+      CALL LRINFO(IFIL,DUMMY,NCOL,NREF,DUM)
+C---- We want to set up centric and epsilon tests
+      ALLSYM = 0
+      CALL LRSYMM(IFIL,NSYM,RSYM)
+      CALL SYMTRN(NSYM,RSYM)
+      CALL CENTRIC(NSYM,ISYM,0)
+C---- Read Program labels here if you like or
+C     use those assigned in data stt above...
+C
+C    Eg as in FFT  F1 SIG1 F2 SIG2 PHI ....
+C
+C    LKYIN will read string F1=FNAT89 PHI=Acalc  ...
+C    LRASSN  will set LOOKUP(i) (i=1-nlabs) equal
+C                column number in input file.
+C    LOOKUP(i)=0 if label not matched...
+      NLUSRI = 0
+      NLUSRO = 0
+   20 CONTINUE
+      LINE = ' '
+      KEY = ' '
+      NTOK = NPAR
+      CALL PARSER(KEY,LINE,IBEG,IEND,ITYP,FVALUE,CVALUE,IDEC,NTOK,LEND,
+     +            .FALSE.)
+      IF (.NOT.LEND) THEN
+        IF (KEY.EQ.'LABI') THEN
+          CALL LKYIN (IFIL,LSPRGI,NLPRGI,NTOK,LINE,IBEG,IEND)
+          CALL LRASSN(IFIL,LSPRGI,NLPRGI,LOOKUP,CTPRGI)
+        ELSE IF (KEY.EQ.'LABO') THEN
+          CALL LKYOUT(IFIL,LSPRGO,NLPRGO,NTOK,LINE,IBEG,IEND)
+          CALL LWASSN(IFIL,LSPRGO,NLPRGO,OUTTYP,0)
+        END IF
+        GO TO 20
+      END IF
+C---- Now read data (`lookup' order)
+      WRITE (6,FMT=*) '  NREF= ',NREF
+      DO 40 JDO40 = 1,NREF
+        CALL LRREFF(IFIL,RSOL,ADATA,EOF)
+        IH(1) = ADATA(1)
+        IH(2) = ADATA(2)
+        IH(3) = ADATA(3)
+C       centricity check
+        CALL CENTR(IH,ICEN)
+        IF (ICEN.EQ.1) THEN
+          NCEN = NCEN + 1
+          IF (NCEN.LT.21) WRITE (6,FMT='(A,3I4,F8.2)') ' CENTRIC ',IH
+        END IF
+C---- EPS = multiplicity of reflection. ISYSAB = 1 - systematic absence
+        CALL EPSLON(IH,EPS,ISYSAB)
+        IF (EPS.GT.1.0) THEN
+          NEPS = NEPS + 1
+          WRITE (6,FMT='(/,A,3I4,F8.2)') '  EPS GT 1 ',IH,EPS
+          IF (ISYSAB.EQ.1) THEN
+            NSYSAB = NSYSAB + 1
+            WRITE (6,FMT='(/,A,3I4,F8.2)') ' SYS ABS  ',IH
+          END IF
+        END IF
+        NCHK = MOD(JDO40,500)
+        IF (NCHK.EQ.1) THEN
+          IH(1) = ADATA(1)
+          IH(2) = ADATA(2)
+          IH(3) = ADATA(3)
+          WRITE (6,FMT=6004) JDO40,IERR,IH, (ADATA(II),II=4,NCOL)
+        END IF
+C---- Do something .....
+        F1 = (ADATA(4)+ADATA(6))/2
+        F2 = (ADATA(4)-ADATA(6))/2
+        ADATA(6) = F1
+        ADATA(7) = ADATA(5)
+        ADATA(8) = F2
+        ADATA(9) = ADATA(5)
+C---- New write routine
+        IF (NCHK.EQ.1) WRITE (6,FMT=6006) JDO40,
+     +      (ADATA(II),II=1,NLPRGO)
+        IERR = -1
+        ICALL = ICALL + 1
+        CALL LWREFL(IFIL,ADATA)
+   40 CONTINUE
+      WRITE (6,FMT=6008) NCEN,NEPS,NSYSAB
+C---- Close output file  - This call actually writes the header
+      CALL LWCLOS(IFIL,2)
+      CALL CCPERR(0, 'Normal termination')
+C---- Format statements
+ 6000 FORMAT (' No assignment using default of ',A)
+ 6002 FORMAT (' index for MLABSO = ',I4,' prog lab ',A,' user label ',A)
+ 6004 FORMAT (' NREF IEND - IP DATA ',I8,I3,/1X,3I4,10F8.1,
+     +       10 (/13X,10F8.1))
+ 6006 FORMAT (' NREF OP DATA ',I8,/1X,3F6.2,10F8.1,10 (/13X,10F8.1))
+ 6008 FORMAT (' END OF FILE - NUMBER OF CENTRIC REFLNS',I5,/' NUMBER O',
+     +       'F EPS GT 1 ',I5,/' NUMBER OF SYS ABS ',I5)
+      END
+</pre>
+
+<H2><a name="authors"> AUTHORS AND HISTORY</H2>
+Sandra McLaughlin and Howard Terry (EMBLHH)  November 1989
+<br>
+Header handling revised: SMM                November 1990
+<br>
+Multi-record routines:   SMM                Feb 1990
+<br>
+Symmetry handling routines: Eleanor Dodson (York)
+<br>
+First limited release to an unsuspecting public    May 1991
+
+<p>
+Missing Number Flag routines:      1996-ish
+<p>
+Dataset handling: Martyn Winn   1998-2002
+<p>
+Conversion to C functions: Martyn Winn   2001-2003
+<p>
+
+</body></html>

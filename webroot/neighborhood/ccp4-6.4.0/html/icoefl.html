@@ -1,0 +1,247 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::ICOEFL::Supported::Scaling data::vectorially combined scaling of Fobs (Iobs) with partial Fc's:::::::: -->
+
+<H1> ICOEFL (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>icoefl </b>
+- vectorially combined scaling of Fobs (Iobs) with partial Fc's
+<H2> SYNOPSIS</H2>
+<b>icoefl hklin</b>
+<i>foo_in.mtz </i>
+<b>hklout</b>
+<i>foo.mtz</i>
+<br>
+[<a href="#keywords">Keyworded input</a>]
+<H2><A NAME="description"></A> DESCRIPTION</H2>
+Icoefl - Coefficients for Jack-Levitt refinement on DEL(i) or DEL(f).
+<P> 
+This program can be used to scale together an Fobs (or Iobs)
+with a number of partial Fc's, vectorially combined. The partial
+structure factors might be <EM>e.g.</EM> from atoms and from back-transforming a
+solvent mask, to do a bulk solvent correction, or for scaling together
+contributions from a mixed structure.
+<P> 
+The function minimised is
+<pre>
+
+         Sum{ w * [ Aobs - Acalc ]**2 }
+ where
+            Aobs = k0*Fobs or k0*Fobs**2
+           Acalc = scaled Fcalc(total) or scaled Fcalc(total)**2
+  complex Fcalc  =  k1 * exp (-B1 s**2) * complex FC1 +
+                    k1 * exp (-B2 s**2) * complex FC2 +
+                           . . . . .
+
+for up to 4 partial Fc's (defined by the number assigned by LABIN)
+
+  w = weight = 1.0/(C1 * sigma(Fobs) + C2)   (see WEIGHT command)
+
+</pre>
+<P> 
+The output file contains Fobs and the total Fcalc, PhiCalc,
+scaled either to Fobs or to one of the Fc's (see <A HREF="#fix">FIX command</A>). Thus if
+FC1 is the contribution from atoms, scaling to FC1 will put the output
+on an absolute scale (FIX FC 1, this is the default)
+<a name="keywords"><H2> KEYWORDED INPUT</H2></a>
+The only compulsory command is LABIN.  Keywords:
+<blockquote>
+<a href="#analysis"><B>ANALYSIS</B></a>, <a href="#cycle"><B>CYCLE</B></a>,
+<a href="#debug"><B>DEBUG</B></a>, <a href="#end"><B>END</B></a>,
+<a href="#filter"><B>FILTER</B></a>, <a href="#fix"><B>FIX</B></a>,
+<a href="#intensities"><B>INTENSITIES</B></a>, <a href="#labin"><B>LABIN</B></a>,
+<a href="#labout"><B>LABOUT</B></a>, <a href="#output"><B>OUTPUT</B></a>,
+<a href="#print"><B>PRINT</B></a>, <a href="#refine"><B>REFINE</B></a>,
+<a href="#resolution"><B>RESOLUTION</B></a>, <a href="#run"><B>RUN</B></a>,
+<a href="#scale"><B>SCALE</B></a>, <a href="#sfall"><B>SFALL</B></a>,
+<a href="#title"><B>TITLE</B></a>, <a href="#weight"><B>WEIGHT</B></a>
+</blockquote>
+<H3><a name="title"> TITLE &lt;title&gt;</a></H3>
+If this is omitted, the title will be copied from HKLIN to HKLOUT
+<H3><a name="labin"> LABIN &lt;program_label&gt;=&lt;column_label&gt; ...</a></H3>
+(Compulsory) Column assignments for
+<pre>
+
+  FP,  SIGFP    native F, sigma(F)
+  FC1, PHIC1    1st Fcalc, PhiCalc
+  FC2, PHIC2    2nd Fcalc, PhiCalc
+  FC3, PHIC3    3rd Fcalc, PhiCalc
+  FC4, PHIC4    4th Fcalc, PhiCalc
+
+</pre>
+<P> 
+The number of Fc's used for scaling is defined by which ones
+are assigned here. ALL required columns MUST be assigned, INCLUDING FP
+and SIGFP. 
+<H3> <a name="labout">LABOUT &lt;program_label&gt;=&lt;column_label&gt; ...</a></H3>
+Column assignments to rename output columns from their default
+values
+<pre>
+
+  FP, SIGFP   native F, sigma(F)
+  FC, PHIC    combined Fcalc, PhiCalc
+  [W]         weight (only if OUTPUT W or OUTPUT WDEL)
+  [WDEL]      w*(Fobs-Fcalc) (only if OUTPUT WDEL)
+  [FCn,PHICn] partial Fcalcs, Phicalcs with n=1 to 4,
+              from the input file (only if OUTPUT FPART)
+</pre>
+If LABOUT is omitted then the labels from LABIN are used (with W and WDEL being
+the defaults for the weights). See also <a href="#labin">LABIN</a> and
+<a href="#output">OUTPUT</a>.
+<H3> <a name="cycle">CYCLE &lt;number_of_cycles&gt;</a></H3>
+Read number of cycles of refinement [default = 8].
+The refinement can converge quite slowly if starting a long
+way from correct values.
+<H3> <a name="output">OUTPUT [ NOHKL | NONE | FOFC | WEIGHT | WDEL | FPART ] [ BKR ]</a></H3>
+Controls what goes into the output file HKLOUT:
+<blockquote>
+<dl>
+<dt> NOHKL<dd>
+no output file
+<dt> NONE<dd>
+no o/p file and no final statistics
+<dt> FOFC<dd>
+output contains FP, SIGFP, FC, PHIC  (default)
+<dt> WEIGHT<dd>
+output also contains WEIGHT
+<dt> WDEL<dd>
+output also contains WEIGHT WDEL (= w(Fo-Fc))
+<dt> FPART<dd>
+output also contains scaled component FCn, PHIn
+</dl>
+</blockquote>
+<P> 
+The program can optionally output a file containing the
+refined scales and B-factors, to logical name RSTATSBKR: this is
+controlled by the keyword BKR:
+<blockquote>
+<dl>
+<dt> BKR<dd>
+write output file RSTATSBKR (NORST=0) [default no output]
+</dl>
+</blockquote>
+<H3> <a name="scale">SCALE &lt;label&gt; &lt;scale&gt; &lt;B&gt; ...</a></H3>
+Read starting scales and B-factors. &lt;label&gt; is one of FP, FC1,
+FC2 etc.
+<P> 
+It is a good idea to start the parameters at
+approximately the right values. B for FP (=Fobs) will ignored
+<br>
+[Default scales = 1.0, B's = 0.0]
+<pre>
+      <EM>e.g.</EM>    SCALE FP 0.8
+              SCALE FC2  1.2 80
+</pre>
+<H3> <a name="fix">FIX [ FOBS | FC &lt;n&gt; ]</a></H3>
+Define which F to set = 1.0 for output scaling:
+<blockquote>
+<dl>
+<dt> FOBS<dd>
+keep FOBS constant, apply scale to all Fc's (KEEP=0).
+<dt> FC &lt;n&gt;<dd>
+keep &lt;n&gt;-th Fcalc constant (KEEP = n).
+This is the default with &lt;n&gt; = 1.
+</dl>
+</blockquote>
+<P> 
+With the default value (= FIX FC 1) the output FP and FC are on
+the scale of FC1.
+<H3> <a name="sfall">SFALL</a></H3>
+The output Fobs are unscaled. Fc's are scaled relative to Fc(keep)
+(see keyword <A HREF="#fix">FIX</A>)
+<H3> <a name="refine">REFINE &lt;refine_subkey&gt; &lt;parameter&gt; &lt;n&gt; [ &lt;m&gt ] ...</a></H3>
+Set which parameters are fixed, variable or tied together during the refinement.
+<dl>
+<dt><b>&lt;refine_subkey&gt;</b><dd>
+ one of FREE, FIX or TIE.
+<dt><b>&lt;parameter&gt;</b><dd>
+ either FC (calculated structure factor) or BFC
+(temperature factor). 
+<dt><b>&lt;n&gt;</b>, <b>&lt;m&gt;</b><dd>
+In the case of FREE and FIX, a single numerical argument <b>&lt;n&gt;</b> is required
+after FC/BFC, to specify which set of calculated structure factors
+are used. For TIE, two arguments are required, <b>&lt;n&gt;</b> and <b>&lt;m&gt;</b>,
+which specify that the nth parameter is tied to the mth parameter (which must
+remain FREE).
+</dl>
+By default, all parameters are free.
+An example or two should clarify the situation:
+<pre>      REFINE FIX FC 1
+or
+      REFINE FIX BFC 1 FIX BFC 2
+or
+      REFINE TIE FC 1 2 FIX FC 3</pre>
+are all valid.
+Multiple <b>&lt;refine_subkey&gt;</b>s are allowed as long as they follow the
+correct syntax; alternatively, REFINE may be used multiple times (so not all
+the parameters need to be specified on a single line).
+<H3> <a name="resolution">RESOLUTION &lt;x1&gt; [ &lt;x2&gt; ]</a></H3>
+&lt;x1&gt;, &lt;x2&gt; are resolution limits in Angstroms, either order.
+<P> 
+Set resolution limits. By default, all data are used and
+the limits are taken from the HKLIN file
+<H3> <a name="weight">WEIGHT &lt;C1&gt; &lt;C2&gt;</a></H3>
+Read constants defining weight = 1/(&lt;C1&gt;*sigma(Fobs)+&lt;C2&gt;)**2
+<br>
+Default &lt;C1&gt;=0, &lt;C2&gt;=1, <EM>i.e.</EM> unit weights
+<H3> <a name="run">RUN</a></H3>
+Turn output off, and set flag to return to reading command
+input after refinement
+<P> 
+This command can be used to allow refinement of some
+parameters, then a return to reading new commands to change
+which parameters are refined, <EM>e.g.</EM>
+<pre>
+
+  REFINE FIX FC 2
+  RUN
+  REFINE FREE FC 2
+  OUTPUT FOFC
+  END
+</pre>
+<H3> <a name="analysis">ANALYSIS [F]</a></H3>
+The command ANALYSIS F produces additional analyses on F
+as well as the default analyses on resolution 
+<H3> <a name="intensities">INTENSITIES</a>   </H3>
+Set flag to refine on I rather than F [default = F]. Iobs is
+calculated from FP**2
+<H3> <a name="print">PRINT &lt;n&gt;</a></H3>
+Number of output lines to print [default = 0]
+<H3> <a name="debug">DEBUG &lt;n&gt;</a></H3>
+Set debug flag  [default = 0]
+<H3> <a name="filter">FILTER [ &lt;ifilt&gt; ] [ &lt;neigmx&gt; ]</a></H3>
+Set filter levels for least-squares.
+<blockquote>
+<dl>
+<dt> IFILT<dd>
+filter level = 10**(-IFILT)  [default = 8]
+<dt> NEIGMX<dd>
+maximum number of eigenvalues to use [default = 0 = all]
+</dl>
+</blockquote>
+<H3> <a name="end">END</a></H3>
+Finish input and let the program run to termination. End-of-file is equivalent
+to the END keyword.
+<H2><A NAME="examples"></A> EXAMPLES</H2>
+<pre>
+icoefl hklin u1afofcfslv  
+       hklout u1afofcfslv_sc  
+       &lt;&lt;eof-icoefl
+title Scale Fc(atom) and Fc(solvent) to Fobs
+labin FP=FP SIGFP=SIGFP FC1=FC PHIC1=PHIC FC2=FCSOLV PHIC2=PHICSOLV
+labout  FC=FCALL PHIC=PHICALL
+scale FP 1.4
+scale FC1 1.0 15
+scale FC2 0.3 80
+cycles  20
+eof-icoefl
+</pre>
+<H2> AUTHORS</H2>
+Author:   Judd Fermi, MRC LMB, Cambridge
+<P> 
+MTZ version:  Phil Evans, MRC LMB, Cambridge
+
+
+</body></html>

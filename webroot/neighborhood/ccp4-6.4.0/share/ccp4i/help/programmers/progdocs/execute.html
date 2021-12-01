@@ -1,0 +1,221 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4I Documentation for Programmers: Core Documentation</title>
+<link rel="stylesheet" type="text/css" href="../../ccp4idocs.css" title="CCP4i" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+</head>
+<body>
+<H2>CCP4i Documentation for Programmers: Core Documentation</H2>
+<H3>Contents</H3>
+<h3>Utilities called from Run Scripts (src/execute.tcl)</h3>
+<a name="Utilities_called_from_Run_Scripts"><h3> Utilities called from Run Scripts </h3> 
+<p>These utilities are mostly used in the run scripts which run the programs and are in the directory $CCP4I_TOP/scripts<p>
+<a name="ExecuteScript" ><h4><font color="#CC3333">ExecuteScript</font> <em>Read the def file and source the run script.</em></h4> 
+<p><em>Argument list:  &lt;deffilein&gt; &lt;args&gt;</em></p>
+<p>To run a job a ccp4ish process is started. This is tclsh (with no Tk so no graphics) and some of the basic utilities from src/system.tcl and src/utils.tcl.  The bin/ccp4ish.tcl script calls ExecuteScript which reads the def file for the job and then sources the appropriate script script/taskname.script.  Note that the script is sourced and is not called as a separate procedure.  Because the run script is effectively part of the ExecuteScript procedure it can see the same variables. There is a potential danger in this: that the variables in the procedure and those in the run script might get mixed up To avoid this some variables are unset before sourcing the run script.<p>
+<p>ExecuteScript reads the def file and sets the parameters listed in the file to the values given in the file. The parameters from the header section of the def file are loaded into a global array job_params which can be accessed by other utility procedures to get information such as the project name or  job id.<p>
+<p><strong>deffilein</strong>  Name of the def file<p>
+<a name="GetJobid" ><h4><font color="#CC3333">GetJobid</font> <em>Return the job id</em></h4> 
+<p><em>Argument list: None</em></p>
+<a name="SetOutputFileRoot" ><h4><font color="#CC3333">SetOutputFileRoot</font> <em>Return a root file name which identifies the job that created the file</em></h4> 
+<p><em>Argument list:  &lt;args&gt;</em></p>
+<p>The usual form of the returned file name is:<p>
+<p>project_dir/project_jobid<p>
+<p><strong>-tmp</strong><p>
+<p>Give file name for file in the temporary directory<p>
+<p><strong>-map</strong><p>
+<p>Give file name for file in the user's choice of output directory for maps this is either the temporary directory or the project directory<p>
+<a name="Execute" ><h4><font color="#CC3333">Execute</font> <em>Execute a command and handle editting of command script and program failure.</em></h4> 
+<p><em>Argument list:  &lt;command&gt; &lt;script&gt; &lt;statusout&gt; &lt;reportout&gt; &lt;args&gt;</em></p>
+<p><p>
+<p><strong>-success</strong><p>
+<p>Give exit code of command script that corresponds to success. This defaults to 0. There is a special value "999" which means don't trap for failure.<p>
+<a name="ResetDatabaseAccess" ><h4><font color="#CC3333">ResetDatabaseAccess</font> <em>Reset the database access mode for running jobs</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>This function should be invoked by a running job. It determines whether it is necessary to reset the database connection, and then attempts to do so if required. This should only be necessary for jobs that are being run on a different machine to that running the parent CCP4i process.<p>
+<a name="AppendCommand" ><h4><font color="#CC3333">AppendCommand</font> <em>Append the command line as a comment to input script</em></h4> 
+<p><em>Argument list:  &lt;command&gt; &lt;script&gt;</em></p>
+<p><strong>command</strong>  The command line to run the program<p>
+<p><strong>script</strong>  The name of the script file<p>
+<a name="TerminateScript" ><h4><font color="#CC3333">TerminateScript</font> <em>Cleanly terminate a run script process and notify the main CCP4i process</em></h4> 
+<p><em>Argument list:  &lt;status&gt; &lt;args&gt;</em></p>
+<p><p>
+<a name="InitialiseLog" ><h4><font color="#CC3333">InitialiseLog</font> <em>Write ccp4i header to the log file for the job</em></h4> 
+<p><em>Argument list: None</em></p>
+<a name="WriteTerminationToLog" ><h4><font color="#CC3333">WriteTerminationToLog</font> <em>Write ccp4i footer to the log file</em></h4> 
+<p><em>Argument list:  &lt;status&gt; &lt;report&gt; &lt;&gt;</em></p>
+<p><strong>status</strong>  Termination status: 1=finished, 0=failed<p>
+<p><strong>report</strong>  (Optional) Termination report - usually output from last run program<p>
+<a name="WriteToLog" ><h4><font color="#CC3333">WriteToLog</font> <em>Write comments to log file with wrappers to indicate that comments are from ccp4i script.</em></h4> 
+<p><em>Argument list:  &lt;textline&gt; &lt;args&gt;</em></p>
+<p><strong>textline</strong>  The text to write to the log file<p>
+<p><strong>-noheader</strong><p>
+<p>Do not write the header of the wrapper<p>
+<p><strong>-nofooter</strong><p>
+<p>Do not write the footer of the wrapper<p>
+<a name="WriteHtml" ><h4><font color="#CC3333">WriteHtml</font> <em>Write an html tag to log file</em></h4> 
+<p><em>Argument list:  &lt;mode&gt; &lt;name&gt; &lt;args&gt;</em></p>
+<p><strong>mode</strong>  beg/end Create the opening or closing tag<p>
+<p><strong>name</strong>  Name of tag<p>
+<a name="WriteTable" ><h4><font color="#CC3333">WriteTable</font> <em>Write a neatly formatted table to log file or other summary file</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;data&gt; &lt;ncol&gt; &lt;nrow&gt; &lt;title&gt; &lt;clabelin&gt; &lt;\&gt;</em></p>
+<p>This is used for the scaleit summary file which is more of a 'crossword' table and not suitable for the usual loggraph format.<p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>data</strong>  Root name of array elements containing the data e.g. array(data,i,j)<p>
+<p><strong>ncol</strong>  Number of columns<p>
+<p><strong>nrow</strong>  Number of rows<p>
+<p><strong>title</strong>  Title for table<p>
+<p><strong>clabelin</strong>  List of column labels<p>
+<p><strong>rlabelin</strong>  List of row labels<p>
+<p><strong>wrlabel</strong>  Maximum allowed length of row label (as number of characters)<p>
+<p><strong>wcol</strong>  Width of each column (as number of characters)<p>
+<p><strong>dformat</strong>  Data format (suitable for Tcl format command). This can either be one value which is applied to all columns or a list with one value per column.<p>
+<p><strong>textVar</strong>  Output. text string containing the table.<p>
+<a name="Creating_the_Program_Command_Script"><h3> Creating the Program Command Script </h3> 
+<p>The command scripts are written to a temporary file with a name $CCP4_SCR/project_jobid_n_com.tmp where n is incremented for each temporary file create for the job.  This file can be written using WriteComFile or created  from a template using CreateComScript.<p>
+<p>CreateComScript has several support procedures which handle stacks and which act as mediators between the different levels in the procedure stack.<p>
+<a name="CreateComScript" ><h4><font color="#CC3333">CreateComScript</font> <em>Create the program command script using a template.</em></h4> 
+<p><em>Argument list:  &lt;template&gt; &lt;fileVar&gt; &lt;args&gt;</em></p>
+<p>Beware - this is probably the most complex bit of code in ccp4i! It is not always robust when the input com file is misformatted.  To find the error in the com file use the -diag option to list the lines from the com file as they are processed.  <p>
+<p>The main problem here is to access the parameters which are defined in the context of the run script (which is the calling procedure for this procedure).  The parameters should not be visible in the context of this procedure unless they are explicitly passed to the procedure.  The trick here is to use the Tcl uplevel command which evaluates an expression at a different level in the procedure stack.  The next problem is then to return a status flag to this procedure so that it knows the outcome of any given function. his is achieved by using the the set_control_status procedure to set a global parameter and then using get_control_status to read that global parameter.<p>
+<p>The syntax of the com file (program command template) is defined<p>
+<a href=../../../help/programmers/command_template.html>Programmers Docs</a><p>The procedure interprets the com file on a line by line basis. If there is an error in interpreting any feature of a line then nothing from the line will be written to the output command script.  This interpreter will handle references to undefined variables but the entire line containing the undefined variable will be ignored.<p>
+<p>There are two types of syntax in the com file - the interpretable lines and the control structures.  On reading a new line the interpreter first tests to see if contains any recognised control statement - and it not then it attempts to interpret the line.<p>
+<p>Note that there is a problem with the AT command in certain circumstances, which is recorded in the Programmers Docs.<p>
+<p><strong>-diag</strong><p>
+<p>Diagnostic. Print out the lines of the com file as they are processed<p>
+<a name="UpsetVar" ><h4><font color="#CC3333">UpsetVar</font> <em>Set a variable at a higher level in the procedure calling stack</em></h4> 
+<p><em>Argument list:  &lt;level&gt; &lt;var&gt; &lt;value&gt;</em></p>
+<p><strong>level</strong>  Level in procedure calling stack<p>
+<p><strong>var</strong>  Variable name<p>
+<p><strong>value</strong>  Value to set variable<p>
+<a name="set_at_filename" ><h4><font color="#CC3333">set_at_filename</font> <em>Handle the AT command in a com file - save the name of a file to be sourced</em></h4> 
+<p><em>Argument list:  &lt;in&gt;</em></p>
+<p><strong>in</strong>  The name of the file<p>
+<a name="get_at_filename" ><h4><font color="#CC3333">get_at_filename</font> <em>Return the name of the 'AT' file</em></h4> 
+<p><em>Argument list: None</em></p>
+<a name="set_label_stack" ><h4><font color="#CC3333">set_label_stack</font> <em>Handling the LABELLINE keyword for MTZ LABIN/LABOUT</em></h4> 
+<p><em>Argument list:  &lt;command&gt; &lt;labellist&gt; &lt;args&gt;</em></p>
+<p><strong>command</strong>  'LABIN' or 'LABOUT' or continuation character ('-' or '&')<p>
+<p><strong>labellist</strong>  Program label list<p>
+<a name="getcomline" ><h4><font color="#CC3333">getcomline</font> <em>Read the next line from the 'com' template file</em></h4> 
+<p><em>Argument list:  &lt;input&gt; &lt;nlmax&gt; &lt;nlVar&gt; &lt;\&gt;</em></p>
+<p>The returned level is 0 for the control level and 1 for command line level and >1 for every nesting of continuation lines<p>
+<p><strong>input</strong>  the text of the com file<p>
+<p><strong>nlmax</strong>  Maximum number of lines in com file<p>
+<p><strong>nlVar</strong>  in/output The current line number<p>
+<p><strong>levelVar</strong>  output The nesting level of the current line<p>
+<p><strong>nelementsVar</strong>  output The number of words in the line<p>
+<p><strong>commandVar</strong>  output The control keyword if level=0<p>
+<a name="Automatic_Test_Mode"><h3> Automatic Test Mode </h3> 
+<p>In this mode ccp4ish will repeat a range of jobs in one project and put newly created files, and a new project database, in a sub-directory of the original project directory.<p>
+<a name="ExecuteAutoTest" ><h4><font color="#CC3333">ExecuteAutoTest</font> <em>Execute a script in autotest mode</em></h4> 
+<p><em>Argument list:  &lt;work_subdir&gt; &lt;project&gt;</em></p>
+<p><strong>work_subdir</strong>  The name of the sub-directory of project directory to contain test output<p>
+<p><strong>project</strong>  The name of the project<p>
+<a name="UpdateAutoTestDef" ><h4><font color="#CC3333">UpdateAutoTestDef</font> <em>Copy def file to working test directory and update the def file header and file names</em></h4> 
+<p><em>Argument list:  &lt;project&gt; &lt;work_subdir&gt; &lt;deffile&gt; &lt;taskname&gt; &lt;job_id&gt;</em></p>
+<p><strong>project</strong>  The name of the original master project<p>
+<p><strong>work_subdir</strong>  The name of the working test directory<p>
+<p><strong>deffile</strong>  The original def file<p>
+<p><strong>taskname</strong>  The name of the task<p>
+<p><strong>job_id</strong>  The job id<p>
+<a name="Procedures_for_Communications_to_the_Database"><h3> Procedures for Communications to the Database </h3> 
+<a name="NotifyDatabase" ><h4><font color="#CC3333">NotifyDatabase</font> <em>Communicate with the job database</em></h4> 
+<p><em>Argument list:  &lt;command&gt; &lt;args&gt;</em></p>
+<p>Send a communication to the process controlling access to the job database, to update the job status.<p>
+<p>Available commands are UpdateStatus and AddOutput file:<p>
+<p>UpdateStatus <new_status> -pid <script_pid><p>
+<p>AddOutputFile <filelist><p>
+<p>The communication is sent via a socket that is closed immediately afterwards i.e. the connection is not persistent.<p>
+<p><strong>command</strong>  The request to be executed (UpdateStatus or AddOutputFile)<p>
+<p><strong>args</strong>  Arguments specific to the command<p>
+<a name="dbccp4i_notify_database" ><h4><font color="#CC3333">dbccp4i_notify_database</font> <em>Communicate with the job database via the database handler</em></h4> 
+<p><em>Argument list:  &lt;command&gt; &lt;args&gt;</em></p>
+<p>Send a communication to the process controlling access to the job database, to update the job status.<p>
+<p>Available commands are UpdateStatus and AddOutput file:<p>
+<p>UpdateStatus <new_status> -pid <script_pid><p>
+<p>AddOutputFile <filelist><p>
+<p>The communication is sent via a socket that is closed immediately afterwards i.e. the connection is not persistent.<p>
+<p><strong>command</strong>  The request to be executed (UpdateStatus or AddOutputFile)<p>
+<p><strong>args</strong>  Arguments specific to the command<p>
+<a name="Procedures_for_Communications_with_the_Main_CCP4i_Process"><h3> Procedures for Communications with the Main CCP4i Process </h3> 
+<a name="NotifyEditComFile" ><h4><font color="#CC3333">NotifyEditComFile</font> <em>Send command script to main CCP4i process for user to inspect/edit</em></h4> 
+<p><em>Argument list:  &lt;command&gt; &lt;script&gt; &lt;edit_returnVar&gt;</em></p>
+<p>This opens a socket connection to the main CCP4i process and passes the command script to be inspected and edited by the user via CCP4i's EditComFile procedure.<p>
+<p>The procedure returns 1 if the request successfully returned a result from the main CCP4i process, and 0 otherwise. On success the variable in the calling procedure that is referenced by edit_returnVar will contain the result.<p>
+<p><strong>command</strong>  The command line to be executed<p>
+<p><strong>script</strong>  The script to be executed<p>
+<p><strong>edit_returnVar</strong>  Name of a variable to return the result in<p>
+<a name="NotifyRunAborted" ><h4><font color="#CC3333">NotifyRunAborted</font> <em>Notify main CCP4i process that the run has been aborted</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>This opens a socket connection to the main CCP4i process to trigger the RunAborted command, which performs clean up of the job.<p>
+<a name="NotifyRunCompleted" ><h4><font color="#CC3333">NotifyRunCompleted</font> <em>Notify main CCP4i process that the run has completed</em></h4> 
+<p><em>Argument list:  &lt;status&gt;</em></p>
+<p>This opens a socket connection to the main CCP4i process to trigger the RunCompleted command, which performs post-run operations such as running any review scripts.<p>
+<p><strong>status</strong>  The final status of the job on completion e.g. FINISHED<p>
+<a name="RunNotification" ><h4><font color="#CC3333">RunNotification</font> <em>Send message to main CCP4i process to say this process is running</em></h4> 
+<p><em>Argument list: None</em></p>
+<p><p>
+<a name="FailNotification" ><h4><font color="#CC3333">FailNotification</font> <em>Send message to main graphical CCP4i process to say this process has failed</em></h4> 
+<p><em>Argument list: None</em></p>
+<p><p>
+<a name="AddOutputDir" ><h4><font color="#CC3333">AddOutputDir</font> <em>Notify the main CCP4i process of additional output dirs</em></h4> 
+<p><em>Argument list:  &lt;args&gt;</em></p>
+<p>Silently register an output directory for a job - the directory will not appear in the list of output files seen by the user, but will be removed by any subsequent clean-up<p>
+<p>This is just a wrapper for AddOutputFile<p>
+<p>Note that PROJECT is not a valid argument to AddOutputDir, and will be ignored.<p>
+<p><strong>args</strong>  list of directories to register<p>
+<a name="AddOutputFile" ><h4><font color="#CC3333">AddOutputFile</font> <em>Notify the main CCP4i process of additional output files</em></h4> 
+<p><em>Argument list:  &lt;args&gt;</em></p>
+<p><p>
+<a name="Communication_between_Script_not_written_in_Tcl_and_CCP4i"><h3> Communication between Script not written in Tcl and CCP4i </h3> 
+<p> Most CCP4i scripts to run programs are written in Tcl - this information is for use with those scripts which are not Tcl. Normally the non-Tcl script will have been started from a standard Tcl script called taskname.script.  It would be possible to leave this process running and return the name of output files to this script when the main non-Tcl script completes.  Alternatively the Tcl process can be terminated and the necessary communication with the main CCP4i process done from the non-Tcl script.  Ideally the communication functionality would be provided by a library in the appropriate scripting language but, failing that, the non-Tcl script starts a Tcl/CCP4i process and passes it the appropriate parameters to do the communication. <p>
+<p>The command from the non-Tcl script must be a Unix shell type command:<p>
+<p>$CCP4I_TOP/bin/ccp4ish -socket $CCP4I_DEFFILE ccp4i_command<p>
+<p>where $CCP4I_TOP  is the standard CCP4i environment variable<p>
+<p>$CCP4I_DEFFILE is the name of the CCP4i def file for this job.  This file is read by the ccp4ish process and contains the necessary information about sockets and job ids for communication with the main CCP4i process.  This file is in the user's project database directory i.e.<p>
+<p>project_directory/CCP4_DATABASE/jobid_taskname.def<p>
+<p>it is easiest if the full path name for this file is passed into the non-Tcl script as an argument.  The path name can be defined in the Tcl script as<p>
+<p>set deffile [FileJoin [GetDbDirPath] $job_params(JOB_ID)_$job_params(TASKNAME).def ]<p>
+<p>ccp4i_command is the command which the ccp4ish process is required to execute.  The currently supported commands are AddOutputFile and TerminateScript which are described in the CCP4i Programmers Documentation.<p>
+<a name="ExecuteSocket" ><h4><font color="#CC3333">ExecuteSocket</font> <em> Use ccp4ish to communicate to CCP4i main process from a non-Tcl script</em></h4> 
+<p><em>Argument list:  &lt;args&gt;</em></p>
+<p> This procedure is called from ccp4ish.tcl and is used when the main work is been done by a non-Tcl script (eg arp/warp in csh) and this script needs to communicate status & output file info.<p>
+<p><strong>-deffile</strong><em>  deffile</em><p>
+<p>The name of the def file for the job - the header contains info on the server socket<p>
+<p><strong>-project</strong><em>  project_dir</em><p>
+<p>The name of the current project<p>
+<p><strong>-command</strong><em>  command</em><p>
+<p>Text string with the command to send to the main CCP4i - must begin with the name of an allowed command: RunNotification, FailNotification, AddOutputFile, AddOutputDir or TerminateScript<p>
+<p><strong>-silent</strong><p>
+<p>Suppress echoing of the commands and warnings to stdout<p>
+<a name="BufferSocketCommand" ><h4><font color="#CC3333">BufferSocketCommand</font> <em>Add a command to the buffer for execution later</em></h4> 
+<p><em>Argument list:  &lt;project&gt; &lt;command&gt; &lt;deffile&gt;</em></p>
+<p>Writes the command to a command buffer file for the appropriate project. BufferSocketCommand should be called if a socket cannot be opened to the process controlling access to the database to execute the command immediately. The contents of the buffer can be flushed by DbFlushCommandBuffer, which will execute the commands via ExecuteSocket at that point.<p>
+<p><strong>project</strong>  Project alias for the database to be communicated with<p>
+<p><strong>command</strong>  Socket command to be buffered<p>
+<p><strong>deffile</strong>  (optional) Def file name associated with the job sending the socket command<p>
+<a name="GetBufferFile" ><h4><font color="#CC3333">GetBufferFile</font> <em>Return the name of the database command buffer file</em></h4> 
+<p><em>Argument list:  &lt;project&gt;</em></p>
+<p>Clone of DbGetBufferFile in database.tcl<p>
+<p><strong>project</strong>  Project alias for the database to be communicated with<p>
+<a name="OpenSocket" ><h4><font color="#CC3333">OpenSocket</font> <em>Open a client side socket to connect to the server in the main CCP4i process</em></h4> 
+<p><em>Argument list:  &lt;args&gt;</em></p>
+<p>Return 1 if socket was successfully opened, 0 if not.<p>
+<p><strong>-silent</strong><p>
+<p>Do not report failure to open socket<p>
+<a name="GetServerPort" ><h4><font color="#CC3333">GetServerPort</font> <em>Return server port for CCP4i process associated with current project</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>The server port number is stored in the database lock file for the current project. If the port number cannot be extracted then the number stored in the job_params array will be returned. If this value cannot be extracted then an empty string is returned.<p>
+<h3>Helper commands for CCP4i jobs (utils/job_utils.tcl)</h3>
+<a name="Helper_commands_for_CCP4i_jobs"><h3> Helper commands for CCP4i jobs </h3> 
+<p>These commands are utilities which are associated with running jobs but which need to be shared between different parts of CCP4i that otherwise do not have much in common.<p>
+<a name="CreateAnnotatedLogfile" ><h4><font color="#CC3333">CreateAnnotatedLogfile</font> <em>Run the baubles program to generate an annotated logfile</em></h4> 
+<p><em>Argument list:  &lt;logfile&gt;</em></p>
+<p>Creates an annotated logfile with the same name as the source logfile, but with a .html extension.<p>
+<p><strong>logfile</strong>  Name of the source logfile<p>
+</body>
+</html>
+

@@ -1,0 +1,401 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4 Program Suite : REFMAC - Keywords - Xray General</title>
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX64 6.2 IP19) [Netscape]" />
+</head>
+<body>
+
+<!-- ::INDEX_INFO::REFMAC::Supported::Model Refinement::macromolecular refinement program:::::::: -->
+
+<h1>REFMAC (CCP4: Supported Program)</h1>
+
+<h2> User's manual for the program refmac_5.* </h2>
+
+<h2><a name="keywords" id="keywords"></a>Keyworded input - Other Xray keywords</h2>
+
+<p>Anything input on a line after &quot;!&quot; or
+&quot;#&quot; is ignored and lines can be continued by using a minus (-) sign.
+The program only checks the first 4 characters of each keyword. The order
+of the cards is not important except that an END card must be last. Some
+keywords have various subsidiary keywords. The available keywords in this section
+are:</p>
+<blockquote><dl>
+<dt><a href="#bins"><b>BINS/RANGE</b></a></dt><dd>Number of the resolution bins</dd>
+<dt><a href="#blim"><b>BLIM</b></a></dt><dd>Limits of allowed B value range</dd>
+<dt><a href="#cell"><b>CELL</b></a></dt><dd>Cell parameters</dd>
+<dt><a href="#damp"><b>DAMP</b></a></dt><dd>Factors to scale down shifts at every cycle</dd>
+<dt><a href="#end"><b>END/GO</b></a></dt><dd>End of keywords</dd>
+<dt><a href="#free"><b>FREE</b></a></dt><dd>Flag of the reflections excluded from the refinement</dd>
+<dt><a href="#labout"><b>LABO</b></a></dt><dd>Output MTZ labels. Useful for map calculation</dd>
+<dt><a href="#mode"><b>MODE</b></a></dt><dd>Refinement mode</dd>
+<dt><a href="#moni"><b>MONI</b></a></dt><dd>Level of monitoring statistics during refinement</dd>
+<dt><a href="#phas"><b>PHAS</b></a></dt><dd>Parameters for the phased refinement</dd>
+<dt><a href="#rigi"><b>RIGI</b></a></dt><dd>Parameters of the rigid body refinement</dd>
+<dt><a href="#scpa"><b>SCPA</b></a></dt><dd>For scaling of the external partial structure factors</dd>
+<dt><a href="#shan"><b>SHAN</b></a></dt><dd>Shannon factor to control grid spacings</dd>
+<dt><a href="#symm"><b>SYMM</b></a></dt><dd>Symmetry</dd>
+<dt><a href="#tlsc"><b>TLSC</b></a></dt><dd>Number of TLS cycles</dd>
+</dl></blockquote>
+
+<h3><a name="bins" id="bins"></a>BINS | RANGE &lt;nbins&gt; | &lt;range&gt;</h3>
+
+<p>Number of resolution bins &lt;nbins&gt;. Default 20, maximum allowed 100.
+For least-square refinements it is useful only for monitoring statistics on
+resolution ranges. For maximum likelhood it is used for normalisation to
+convert Fs to Es (<em>i.e.</em> normalisation coefficients are calculated in these
+resolution bins).</p>
+
+<p>Or &lt;range&gt;. If the value after BINS/RANGE is less than 1.0 this
+is assumed to define the bin width in units of 4*sin**2/Lambda**2.</p>
+
+<h3><a name="blim" id="blim"></a>BLIM &lt;Bmin&gt; &lt;Bmax&gt;</h3>
+
+<p>[Default 2.0 500.0]<br />
+Bmin and Bmax are minimum and maximum B-factors allowed. The lower limit is
+required by the program, but is set by default.</p>
+
+<h3><a name="cell" id="cell"></a>CELL &lt;a&gt; &lt;b&gt; &lt;c&gt; [ &lt;alpha&gt;
+&lt;beta&gt; &lt;gamma&gt; ]</h3>
+
+<p>Defines parameters of the cell. If this keyword is specified then
+cell parameters from MTZ and coordinate files will be overridden.
+This keyword could be important when cell dimensions are suspect and the
+user wants to change them. This keyword is generally not recommended.</p>
+
+<h3><a name="damp" id="damp"></a>DAMP  &lt;Pdamp&gt; &lt;Bdamp&gt;</h3>
+
+<p>[Default 1.0 1.0 for resolution &gt; 2.5&#197;, 0.5 0.5 for
+resolutions &lt; 2.5&#197;]<br />
+&lt;Pdamp&gt; &lt;Bdamp&gt; scales shifts after each cycle of refinement. If
+there is limited data, or you are using unrestrained refinement, it is
+sensible to scale down the shifts.</p>
+
+<h3><a name="free" id="free"></a>FREE &lt;nfree_exclud&gt;</h3>
+
+<p>[Default 0]<br />
+The default value for exclusion for the FreeR is zero. However there is
+an opportunity to reset this exclusion flag here. See the description of
+the program <a href="../../freerflag.html">FREERFLAG</a>.</p>
+
+<h3><a name="labout" id="labout"></a>LABOUT &lt;program label&gt;=&lt;file label&gt; ...</h3>
+<p>This keyword tells the program that in output MTZ file calculated structure
+factors, their phases, coefficients for map calculations should have given labels.</p>
+<p>For example:</p>
+<pre>
+      #  Output labels for calculated structure factors and
+      #  coefficients for weighted &quot;difference&quot; and &quot;2Fo-Fc&quot;
+      #  maps. Corresponding phases will have labels PHWT, DELFWT
+      #  figure of merit of phases will be FOM
+      #
+      LABOUT FC=FC PHIC=PHIC  FWT=2FOFCWT DELFWT=FOFCWT
+
+      #  Another example when all labels are given explicitly
+      #
+      LABOUT FC=FC PHIC=PHIC  FWT=2FOFCWT PHWT=PH2FOFCWT DELFWT=FOFCW -
+             PHDELWT=PH_fofc FOM=FOM_refmac
+</pre>
+
+<p>FP SIGFP (and FREE if available) plus the following additional columns
+are written to the output MTZ file. Labels can be assigned for:</p>
+<blockquote><tt><a href="#labout_fp_sigfp">FP SIGFP</a>
+<a href="#labout_free">FREE</a>&nbsp;&nbsp;
+<a href="#labout_fc_phic">FC  PHIC</a>&nbsp;&nbsp;
+<a href="#labout_fwt_phwt">FWT PHWT</a>&nbsp;&nbsp;
+<a href="#labout_delfwt_phdelwt">DELFWT PHDELWT</a>&nbsp;&nbsp;
+<a href="#labout_fom">FOM</a>&nbsp;&nbsp;
+[<a href="#labout_phcomb">PHCOMB</a>]</tt></blockquote>
+
+<dl>
+<dt><a name="labout_fp_sigfp" id="labout_fp_sigfp"></a>FP SIGFP</dt>
+<dd>By default, FP and SIGFP are scaled to match FC, <em>i.e.</em> in output file
+FP and SIGFP meant to be in the &quot;absolute&quot; scale. The overall
+isotropic B correction is applied to the FC terms. At the
+same time individual atomic B values are incremented by overall B value.
+Overall anisotropic B values are estimated in the first cycle and fixed for
+further refinement cycles.</dd>
+
+<dt><a name="labout_free" id="labout_free"></a>FREE (if available)</dt>
+<dd>Copied from input.</dd>
+
+<dt><a name="labout_fc_phic" id="labout_fc_phic"></a>FC PHIC</dt>
+<dd>FC PHIC are the structure factor contributions from the input atoms
+only, <i>without</i> any FPARTi terms added.</dd>
+
+<dt><a name="labout_fwt_phwt" id="labout_fwt_phwt"></a>FWT PHWT</dt>
+<dd>FWT and PHWT are amplitude and phase for weighted &quot;2Fo-Fc&quot; map
+(2mFo-DFcalc).</dd>
+
+<dt><a name="labout_delfwt_phdelwt" id="labout_delfwt_phdelwt"></a>DELFWT PHDELWT</dt>
+<dd>DELFWT and PHDELWT are amplitude and phase for weighted 'difference'
+map (mFo-DFCalc).</dd>
+
+<dt><a name="labout_phcomb" id="labout_phcomb"></a>PHCOMB</dt>
+<dd>PHCOMB is the combined phase to use with FP. It is output only if
+&quot;experimental &quot; or <em>prior</em> phase information were input.</dd>
+
+<dd>If prior phase probability distribution is available (either through
+Hendrickson and Lattman coefficients or through centroid phases and their
+figure of merit) then all output Fourier coefficients except PHIC correspond
+to the combined phases.</dd>
+
+<dt><a name="labout_fom" id="labout_fom"></a>FOM</dt>
+<dd>FOM = &lt;m&gt; - The &quot;figure of merit&quot; for this reflection.</dd>
+</dl>
+
+<p>For the FWT and DELFWT terms, FP is scaled to be at the same scale as Fcalc,<br />
+FCalc= vector sum of {Dc FC + D1 FPART1 + D2 FPART2 + .. },<br />
+Di = &lt;cos (2 pi s Delta x)&gt; are 
+the resolution dependent coefficient which reflects errors in the atomic
+parameters, and m is the figure of merit for this reflection. (PHDELWT
+and PHWT will be &quot;combined&quot; phases if HLA <em>etc.</em> or PHIB FOM have
+been assigned.) Otherwise they are equal to either PHIC or PHIC+180.</p>
+
+<p>Missing Data: For those reflections where the FP are missing, mFo is
+set equal to dFc. Hence the terms become FWT=dFC and DELFWT=0.0. The m and
+D are based on the program's estimate of SigmaA.</p>
+
+<p>Rebuilding into these 2mFo-DFcalc and mFo-DFcalc maps seems to be easier
+than using classic nFO-(n-1)FC and difference maps, consistent with the
+established technique for SigmaA style maps. One advantage here is that since
+the m and D values are based on the Free set of reflections they are less
+biased than the values obtained by the CCP4 version of SIGMAA after refinement.</p>
+
+<h3><a name="mode" id="mode"></a>MODE [HKRF | RIGID | TLSR]</h3>
+
+<p>[Default HKRF]</p>
+<p>Sub-keywords:</p>
+
+<dl>
+<dt><a name="mode_hkrf" id="mode_hkrf"></a>HKRF</dt>
+<dd>This invokes standard refinement of individual atomic parameters.</dd>
+
+<dt><a name="mode_rigi" id="mode_rigi"></a>RIGID</dt>
+<dd>This invokes RIGID body refinement. The description of domains is given
+under keyword <a href="#rigi">RIGID</a>.</dd>
+<dt>TLSR</dt>
+<dd>This invokes TLS refinement. Definition of rigid bodies is taken from 
+TLSIN input file (refer to input output files).</dd> 
+</dl>
+
+<h3><a name="moni" id="moni"></a>MONI &lt;subkeyword 1&gt; [&lt;subkeyword i&gt;
+&lt;value&gt;]</h3>
+<p>This keyword controls level of monitoring statistics during refinement.</p>
+<p>Default is:</p>
+<blockquote><pre>MONItor MEDIim
+MONItor DISTances 10.0
+MONItor TORSions  10.0
+MONItor ANGLes    10.0
+MONItor CHIRals   10.0
+MONItor PLANes    10.0
+MONItor BFACtors  10.0
+MONItor BSHPere   10.0
+MONItor VDWrest    3.0
+MONItor RBONd     10.0
+MONItor NCSR      10.0</pre></blockquote>
+<p>&lt;subkeyword 1&gt; can be one of:</p>
+
+<dl compact>
+<dt><a name="moni_none" id="moni_none"></a>NONE</dt>
+<dd>means no monitoring. Program will work with very little output info.</dd>
+
+<dt><a name="moni_few" id="moni_few"></a>FEW</dt>
+<dd>means only overall statistics will be monitored.</dd>
+
+<dt><a name="moni_medi" id="moni_medi"></a>MEDI</dt>
+<dd>means MEDIum number of statistics will be monitored, <em>i.e.</em> at the first and
+last cycles overall statistics and outliers will be output. In all other cycles
+only minimum information (R value, free R value, figure of merit and first
+two geometric statistics). The user can choose the quantity of outliers by choosing a
+number.</dd>
+
+<dt><a name="moni_many" id="moni_many"></a>MANY</dt>
+<dd>means overall statistics and outliers will be monitored at every cycle.</dd>
+</dl>
+
+<p>The subsequent &lt;subkeyword i&gt; are:</p>
+
+<dl compact>
+<dt><a name="moni_medi_tors" id="moni_medi_tors"></a>TORSION &lt;badtor&gt;</dt>
+<dd>Print restrained torsion angles differing by more than badtor * torsig
+from the ideal value. Default is 10.</dd>
+
+<dt><a name="moni_medi_dist" id="moni_medi_dist"></a>DISTance &lt;baddis&gt;</dt>
+<dd>Print restrained bond distances differing by more than baddis * dissig from
+the ideal value. Default is 10.</dd>
+
+<dt><a name="moni_medi_angl" id="moni_medi_angl"></a>ANGLe &lt;bad_angle&gt;</dt>
+<dd>Print restrained bond angles differing by more than bad_angle *angle_sigma.
+angle_sigma comes from dictionary file. Default is bad_angle = 10.0.</dd>
+
+<dt><a name="moni_medi_plan" id="moni_medi_plan"></a>PLANE &lt; badpln&gt;</dt>
+<dd>Print restrained planes differing by more than badpln * plnsig from
+the ideal value. Default is 10.</dd>
+
+<dt><a name="moni_medi_vdwr" id="moni_medi_vdwr"></a>VANderwaals (or VDWRestraint) &lt;badvdw&gt;</dt>
+<dd>Print vdw and ionic contact distances that are closer than badvdw*vdw_sigma. Default is 3.0.</dd>
+
+<dt><a name="moni_medi_chir" id="moni_medi_chir"></a>CHIRAL &lt;badchi&gt;</dt>
+<dd>Print restrained chiral volumes differing by more than BADCHI * chisig
+from the ideal value. Default is 10.0.</dd>
+
+<dt><a name="moni_medi_bfac" id="moni_medi_bfac"></a>BFACtor &lt;bad_b&gt;</dt>
+<dd>Print out bonded atoms if difference between B values is more than bad_b *B_sigma.
+Default is 10.0.</dd>
+
+<dt><a name="moni_medi_bsph" id="moni_medi_bsph"></a>BSPHere &lt;bad_sphere&gt;</dt>
+<dd>Print out atoms if their anisotropy deviate from a sphere by bad_sphere * sphere_sigma.
+Default is 10.0.</dd>
+
+<dt><a name="moni_medi_rbon" id="moni_medi_rbon"></a>RBONd &lt;bad_rbond&gt;</dt>
+<dd>Print out atoms if rigid body restraint deviates from ideal by bad_rbond*rbond_sigma.</dd>
+
+<dt><a name="moni_medi_ncsr" id="moni_medi_ncsr"></a>NCSR &lt;bad_ncsr&gt;</dt>
+<dd>Print out atoms if either poistional parameters or B values deviate from
+the average value over ncs related atoms is more than bad_ncs*sigma. Default 10.0.</dd>
+</dl>
+
+<h3><a name="ncyc" id="ncyc"></a>NCYC &lt;ncycref&gt;</h3>
+
+<p>[Default 5]<br />
+This keyword defines number of cycles of refinement.</p>
+
+<h3><a name="phas" id="phas"></a>PHASe SCBL &lt;scblur&gt; | BBLUr &lt;bblur&gt;</h3>
+<p>This keyword tells the program that probability distribution of given phase 
+information should be altered (this can also be done through
+<a href="xray-principal.html#refi_phas">REFI PHAS</a>). For example:</p>
+<blockquote><pre>PHASe SCBLur 0.7 BBLUr 20.0</pre></blockquote>
+
+<p>Program will apply blurring as follows:</p>
+
+<blockquote><pre>HLAnew = HLA*scblur*exp(-(sin(theta)/lambda)**2*bblur)
+HLBnew = HLB*scblur*exp(-(sin(theta)/lambda)**2*bblur)
+HLCnew = HLC*scblur*exp(-(sin(theta)/lambda)**2*bblur)
+HLDnew = HLD*scblur*exp(-(sin(theta)/lambda)**2*bblur)</pre></blockquote>
+
+<p>or if PHASE and FOM are given: the program first generates HLA and HLB 
+using the formula:</p>
+<blockquote><pre>HLA = Func(FOM)*COS(DEGTOR*PHASE),
+HLB = Func(FOM)*SIN(DEGTOR*PHASE),
+HLC = HLD = 0.</pre></blockquote>
+<p><em>i.e.</em> the Phase probability distribution is unimodal.</p>
+
+<h3><a name="rigi" id="rigi"></a>RIGIDbody GROUP | PRINT | NCYCLE</h3>
+
+<p>This keyword controls parameters of the rigid body refinement.</p>
+<p>For example:</p>
+<blockquote><pre>RIGIDbody NCYCle 10
+RIGIDbody GROUp 1 FROM 1   A TO 100 A
+RIGIDbody GROUp 1 FROM 200 A TO 300 A
+RIGIDbody GROUp 2 FROM 101 A TO 199 A
+RIGIDbody GROUp 3 FROM 1   B TO 500 B</pre></blockquote>
+
+<p>Subkeywords:</p>
+
+<dl>
+<dt><p><a name="rigi_grou" id="rigi_grou"></a>GROUp &lt;ngroup&gt; FROM &lt;resnum&gt;
+&lt;chnid&gt; TO &lt;resnum&gt; &lt;chnid&gt; | EXCLude | TRANS | EULErangles</p></dt>
+
+<dl>
+<dt>&lt;ngroup&gt;</dt>
+<dd><p>Domain number. Maximum number of domains in the current version of
+program is 100. Each domain can consist of 100 different pieces. For example:</p>
+
+<blockquote><pre>RIGIDbody GROUP 1 FROM 10  A TO 100 A  #  A domain containing most of the A chain, and 
+RIGIDbody GROUP 1 FROM 108 A TO 176 A  #  an embedded bit of a B chain, consisting of 
+RIGIDbody GROUP 1 FROM 200 B TO 220 B  #  residues 200-220. 
+..
+RIGIDbody GROUP 2 FROM 10  B TO 100 B  # for example the equivalent domain across a NCS axis
+RIGIDbody GROUP 2 FROM 108 B TO 176 B  
+RIGIDbody GROUP 2 FROM 200 A TO 220 A</pre></blockquote></dd>
+
+<dt><a name="rigi_grou_resn" id="rigi_grou_resn"></a>&lt;resnum&gt; &lt;chnid&gt;</dt>
+<dd>Spans are specified by the residue number, and the chain ID. See
+<a href="../usage/refmac-examples.html">examples</a>. Default is: all atoms belong to one domain.</dd>
+
+<dt><a name="rigi_grou_excl" id="rigi_grou_excl"></a>EXCLude SCHAin | MCHAin | NONE</dt>
+<dd>Exclude main chain, or side chain atoms from refinement. Rotation and
+translation are determined for the defined subset. Rotation and translation
+are applied for all atoms also. Default is NO EXCLUSION.</dd>
+
+<dt><a name="rigi_grou_tran" id="rigi_grou_tran"></a>TRANS &lt;Tx&gt; &lt;Ty&gt; &lt;Tz&gt;</dt>
+<dd>To add translation for this domain before starting refinement. Default
+is 0.0 0.0 0.0.</dd>
+
+<dt><a name="rigi_grou_eule" id="rigi_grou_eule"></a>EULErangles &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt;</dt>
+<dd>Rotate domain by these angles around its center of the mass (in degrees) before starting refinement
+Default is 0.0 0.0 0.0.</dd>
+
+<dt><a name="rigi_prin" id="rigi_prin"></a>PRINT EULEr MATRix POLAr</dt>
+<dd>Print rotation angles (EULErangles) and rotation MATRix. Default is
+EULErangles, Rotation matrix and polar angles.</dd>
+
+<dt><a name="rigi_ncyc" id="rigi_ncyc"></a>NCYCle &lt;ncycle&gt;</dt>
+<dd>Number of cycles for rigid body refinement. Default is 40 cycles.</dd>
+</dl>
+</dl>
+
+<h3><a name="scpa" id="scpa"></a>SCPArt &lt; nsc1&gt; &lt;nsc2&gt; &lt;nsc3&gt; ...</h3>
+
+<p>If NSCi are set, the FPARTnsci is scaled relative of the FC FC_tot =
+FC_calc(PHIcalc) + sc1*FPART1(PHIP1) + sc2*FPART2(PHI2) + ....</p>
+
+<p>If NSCi set - that partial structure factor will be scaled</p>
+<p>For example:</p>
+<blockquote><pre>#
+#   Scale only partial 1st, 3rd and 4th structure factors.
+#   All others should be added to Fcalc without scaling
+#
+SCPArt 1 3 4</pre></blockquote>
+
+<h3><a name="symm" id="symm"></a>SYMM &lt;symmetry&gt;</h3>
+
+<p>Defines space group symmetry name or number. If MTZ or coordinate files have
+symmetry then they will be used. It  is good idea to have symmetry in the MTZ
+and coordinate files. This keyword is not recommended.</p>
+
+<h3><a name="tlsc" id="tlsc"></a>TLSC &lt;ncycle&gt;</h3>
+<p>It defines number of TLS refinement  cycles. If this keyword is specified 
+then program will do TLS refinement only. It is useful if one is interested in
+TLS parameters only. If TLS refinement is considered as precursor of individual
+atomic refinement then</p>
+<blockquote><pre><a href="xray-principal.html#refi_tlsc">REFI TLSC</a></pre></blockquote>
+<p>should be used. In any case it seems to be better if B values of all atoms
+are set to some predefined value before tls refinement using</p>
+<blockquote><pre><a href="restraints.html#bfac">BFACtor SET &lt;value&gt;</a></pre></blockquote>
+
+<h3><a name="ncyc" id="ncyc"></a>NCYCle &lt;ncycle&gt;</h3>
+<p>Default:</p>
+<blockquote><pre>NCYCle 5</pre></blockquote>
+
+<p>Number of cycles for idealisation or restrained or unrestrained refinement.</p>
+
+<h3><a name="shan" id="shan"></a>SHANnon_factor &lt;shannon_factor&gt;</h3>
+
+<p>This keywords tells the program to change grid spacing by a given factor.</p>
+<p>Default:</p>
+<blockquote><pre>SHANnon_factor 1.5</pre></blockquote>
+
+<p>If this keyword is given then grid spacing for structure factor, gradient
+and second derivative calculation will change accordingly. According to Niquist
+for a given resolution if grid spacing is equal to grid_spacing_min=0.5 d_max,
+where d_max is maximum resolution in angstroms, then a discrete Fourier
+transform will not lose any information. It is true when structure factors are
+calculated from the
+map and vice versa. When maps are calculated from atomic model (or gradients
+and second derivatives are calculated using convolution of derivatives of atom
+with difference and &quot;Hessian&quot; maps), then finer grid might be needed.
+The reason is for example if grid spacing is coarse and atoms have small B values,
+then values of electron density at the grid points may not approximate atoms
+correctly. Default (1.5) is good compromise. But if desired it could be changed.
+Shannon factor tells the program that actual grid spacing should be equal to
+grid_spacing_min/shannon_factor. If &lt;shannon_factor&gt; is increased then
+calculation will require larger memory and more time. If it is too small then
+approximation will not be correct and the program might become unstable.</p>
+
+<h3><a name="end" id="end"></a>END | GO | QUIT | STOP </h3>
+
+<p>End of keywords. Time to do work. </p>
+
+</body>
+</html>

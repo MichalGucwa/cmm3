@@ -1,0 +1,374 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::R500::Supported::Validation and Deposition,Data Harvesting and Datasets::Checks PDB files for any problems before submission:::::::: -->
+
+<H1> R500 (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>r500 </b>
+- writes all REMARK 500 PDB records
+<H2> SYNOPSIS</H2>
+<b>r500</b>
+<i>IDCODE</i>
+[<A HREF="#keywords">Keyworded input</A>]
+<H2><A NAME="description"></A> DESCRIPTION</H2>
+<p> This program performs the same geometric checks that are carried out at the PDBe when a structure is submitted. Geometry is checked against a dictionary standard_geometry.cif which has values based on the references given below. The atom names must match the dictionary which uses the naming conventions of pdb version 3.0. (These are NOT the same as pdb version 2.0 for the nucleic acids.) There is a program checknames.f which converts old names to new names</p>
+
+<p>It returns a list of bad contacts and unexpected geometric features.</p>
+
+<H2><A NAME="files"></A> INPUT FILES</H2>
+<p>e.g pdb4tst.ent is the input coordinate file.</p>
+<p>If you dont have a file with this name use</p>
+<pre>     ln -s your_coordinate_file pdb4tst.ent</p>
+     r500 4tst
+</pre>
+<p>or</p>
+<p>if using a PDB entry, run as</p>
+<pre>     r500 IDCODE(lowercase)
+</pre>
+
+
+<H2><A NAME="outfiles"></A> OUTPUT FILES</H2>
+<dl>
+<dt><A NAME="rmsd"></A> RMSD<dd>
+an overall guide to quality, e.g.
+<pre>     1.608 all_angle_rmsd
+     0.016 all_bond_rmsd
+   The following bond classes show an overall poor  rmsd -check your dictionary
+     Total  Observed   Expected    E&H99     Example    Example 
+     Class    RMSD       RMSD      Value     Bond       Residue
+      80   0.137      0.007      1.339     C5 - C6      T
+      80   0.081      0.007      1.378     N1 - C6      T
+      80   0.056      0.009      1.445     C4 - C5      T
+<pre>
+
+<dt><A NAME="rem500"></A> rem500.<i>IDCODE</i><dd>
+PDB formatted remark 500 record.  Possible classes are:
+<pre> REMARK 500 GEOMETRY AND STEREOCHEMISTRY 
+       SUBTOPIC: CLOSE CONTACTS IN SAME ASYMMETRIC UNIT 
+       SUBTOPIC: CLOSE CONTACTS 
+       SUBTOPIC: COVALENT BOND LENGTHS
+       SUBTOPIC: COVALENT BOND ANGLES
+       SUBTOPIC: TORSION ANGLES 
+       SUBTOPIC: NON-CIS, NON-TRANS
+       SUBTOPIC: PLANAR GROUPS
+       SUBTOPIC: MAIN CHAIN PLANARITY
+       SUBTOPIC: CHIRAL CENTERS
+</pre>
+
+<dt><A NAME="cif"></A> rem500_cif.<i>IDCODE</i><dd>
+Full details in mmcif format, in each geometry call; only the 1st 50 outliers are given in the PDB formatted file . Possible Categories are
+<pre>        _pdbx_validate_close_contact
+        _pdbx_validate_symm_contact
+        _pdbx_validate_rmsd_bond
+        _pdbx_validate_rmsd_angle
+        _pdbx_validate_torsion
+        _pdbx_validate_peptide_omega
+        _pdbx_validate_planes
+        _pdbx_validate_main_chain_plane
+        _pdbx_validate_planes_atom
+        _pdbx_validate_chiral
+        _struct_mon_nucl
+        _struct_mon_prot_cis
+</pre>
+
+<dt><A NAME="cispep"></A> cispep.<i>IDCODE</i><dd>
+output if CISPEP card is found, e.g. for 2j0k
+<pre> CISPEP   1 THR A  284    ASP A  285          0        15.64
+ CISPEP   2 ASP A  285    LYS A  286          0       -17.48
+ CISPEP   3 ASN A  493    PRO A  494          0        -6.46
+ CISPEP   4 ASP B  285    LYS B  286          0       -14.41
+ CISPEP   5 LYS B  286    GLY B  287          0         8.65
+ CISPEP   6 GLY B  383    VAL B  384          0        -5.75
+ CISPEP   7 ASN B  493    PRO B  494          0         4.93
+</pre>
+<dt><A NAME="caveat"></A> caveat.<i>IDCODE</i><dd>
+output if severe error CAVEAT written:-  examples
+<pre>CAVEAT     3KWH               ARG A   40  C-ALPHA IS PLANAR
+
+CAVEAT     3I3L   MODEL    0  VAL A  483  C-ALPHA IS PLANAR
+CAVEAT     3I3L   MODEL    0  GLU A  510  C-ALPHA IS PLANAR
+CAVEAT     3I3L   MODEL    0  LEU A  543  C-ALPHA IS PLANAR
+
+CAVEAT     3JYV               ILE H   34  CBETA WRONG HAND
+</pre>
+
+<dt><A NAME="entrmsd"</A> rem375_occupancy.<i>IDcode</i><dd> 
+suggests occupancy is wrong for atom on special position, example for 1a7g
+<pre>REMARK 375
+REMARK 375 SPECIAL POSITION
+REMARK 375 THE FOLLOWING ATOMS ARE FOUND TO BE WITHIN 0.15 ANGSTROMS
+REMARK 375 OF A SYMMETRY RELATED ATOM AND ARE ASSUMED TO BE ON SPECIAL
+REMARK 375 POSITIONS.
+REMARK 375
+REMARK 375 ATOM RES CSSEQI
+REMARK 375  S   SO4 E   2   LIES ON A SPECIAL POSITION. suggested occupancy =  0.50
+</pre>
+<p>the above is a warning that the occupancy in the atoms is wrong
+<pre>HETATM  660  S   SO4 E   1       8.082  21.623  75.689  1.00 38.66           S
+HETATM  661  O1  SO4 E   1       7.927  20.196  75.427  1.00 36.18           O
+HETATM  662  O2  SO4 E   1       7.675  22.436  74.562  1.00 41.62           O
+HETATM  663  O3  SO4 E   1       9.476  21.880  75.938  1.00 46.97           O
+HETATM  664  O4  SO4 E   1       7.269  22.000  76.841  1.00 49.11           O
+HETATM  665  S   SO4 E   2      19.803  15.042  81.509  1.00 73.42           S
+HETATM  666  O1  SO4 E   2      20.434  14.490  80.305  1.00 73.42           O
+HETATM  667  O2  SO4 E   2      20.691  14.754  82.647  1.00 73.42           O
+HETATM  668  O3  SO4 E   2      18.507  14.438  81.719  1.00 73.42           O
+HETATM  669  O4  SO4 E   2      19.709  16.492  81.352  1.00 73.42           O
+</pre>
+
+<dt><A NAME="feature"</A> feature.<i>IDcode</i><dd> 
+program checks UniProt via running
+</pre>
+      /usr/bin/elinks --source 'HTTP://ebi.uniprot.org/uniprot/
+</pre>
+<p>on a DBREF if non-standard residue found as a check, and there is a mismatch in chirality of a residue and the uniprot entry has either a FT or KW that mentions any type of modified residue. If this happens then the uniprot file is written in current directory .e.g. as P43683.txt,  e.g. for 1mqx\
+<pre>
+D-/L-aa mismatch look in Uniprot
+  1  ABA A    2  UNIPROT has D-aa in Chain A for P43683 ** check stereo
+  1  ABA A    4  UNIPROT has D-aa in Chain A for P43683 ** check stereo
+  1  ABA A   13  UNIPROT has D-aa in Chain A for P43683 ** check stereo
+  1  ABA A   15  UNIPROT has D-aa in Chain A for P43683 ** check stereo
+  <...>
+ 12  ABA A   15  UNIPROT has D-aa in Chain A for P43683 ** check stereo
+</pre>
+<dt><A NAME="debug"></A> <i>IDCODE</i>.scratch<dd>
+Kept with -d for debug
+</dl>
+
+<H2><A NAME="keywords"></A> COMMAND LINE OPTIONS</H2>
+<P>Available keywords are:
+<dl>
+<dt>-d<dd> sets debug true and keps scratch file
+<dt>-td<dd> sets extra debug for phi/psi angles
+<dt>-v<dd> prints version
+<dt>-u<dd> sets dump true and writes E&H values used
+<dt>-m<dd> uses SCALE records to get matrices
+<dt>-n "RES1 RES2"<dd> ignore contacts between residue paris
+<dt>-l<dd> value us given value as limit in distances
+<dt>-a<dd> do non-standard nucleic acids, now default
+<dt>-o<dd> check symmetry atoms for occupancy less than 1.0, dfault no atoms with occupancy less than one are used in validation
+<dt>-r<dd> force output of class RMSD even if less than 6.0 sigma
+<dd><i> no input prints help message</i>
+</dl>
+
+<H2><A NAME="deps"></A> DEPENDENCIES</H2>
+<p>Environment variable STANDDATA must point to standard_geometry.cif<br>
+uses <pre>/usr/bin/elinks --source HTTP://ebi.uniprot.org/uniprot/</pre>
+<p>    To run correctly input file should have 
+          SEQRES, DBREF, LINK, REMARK 465, SEQADV
+     i.e. after DOHLC run and all atom names should be standard PDB names if not run checknames first
+</p>
+
+<H2><A NAME="procs"</A> PROCEDURES</H2>
+<p>If input file has LINK records these distances are removed from close contacts<br>
+If REMARK 465 given - extra check is done on chain break<br>
+If not Xray then EXPDTA should give method, i.e. to turn off symmetry in NMR<br>
+Microhet requires a PDB SEQADV to process only one residue in Linkages<br>
+Only the 1st of an alt_atom set is done<br>
+DBREF is used as check on UniProt features to see if a non-standard amino acid is present<br>
+Linking angles in the PDB format are given with the residue name of the central atom
+
+<p>For Chirality Cbeta is done for ILE and THR derivatives, i.e.
+<pre>
+L-THR             2S,3R
+D-THR             2R,3S
+L-allo-THR       2S,3S
+D-allo-THR       2R,3R
+L-ILE                2S,3S
+L-alloILE          2S,3R
+D-ILE               2R,3R
+D-allo-ILE        2R,3S
+</pre>
+<p>these include
+<pre>
+       4TP 4-hydroxy-L-Threonine-5-monophosphate  (2S,3S)
+       ALO L-allothreonine                        (2S,3S)
+       B2I Isoleucine boronic acid                (1R,2R)
+       BIU 5-bromo-L-Isoleucine                   (2S,3S)
+       BMT 4-methyl-4-[(E)-2-butenyl]-4,N-methyl-threonine (E,2S,3R,4R)
+       CTH 4-chloro-L-threonine                   (2S,3S) 
+       D11 O-phosphono-D-threonine                (2R,3S)
+       DIL D-Isoleucine                           (2R,3R)
+       DTH D-threonine                            (2R,3S)
+       IIL L-alloIsoleucine                       (2S,3R)
+       ILE L-Isoleucine                           (2S,3S)
+       ILP N-[O-phosphono-pyridoxyl]-Isoleucine   (2R,3S)
+       ILX 4,5-dihydroxyIsoleucine                (2S,3R,4R)
+       IML N-methyl-Isoleucine                    (2S,3S)
+       LNT N-[(2S)-2-amino-1,1-dihydroxy-4-methylpentyl]-L-threonine (2S,3R)
+       OLT O-methyl-L-threonine                   (2S,3R)
+       TH5 O-acetyl-L-threonine                   (2S,3R)
+       THC N-acetyl-L-threonine                   (2S,3R) 
+       THO reduced threonine [diol]               (2R,3R)
+       THR L-threonine                            (2S,3R)
+       TPO O-phosphono-L-threonine                (2S,3R)
+       VLL (2S,3R)-2,3-diaminobutanoic acid
+       VDL (2R,3R)-2,3-diaminobutanoic acid
+<pre>
+<p>Calpha is done for standard and non-standard amino acids. The PDB has a range of atom names for the equivalent to Calpha for non-standard amino acids, these are given in $STANDATA and possible Calpha types are:
+<pre>Standard         use  CA  C   CB  N   and Type = D or L or .  or P
+B3E B3K B3X B3Y  use  CB  CA  CG  N   and L  Type = 1
+B3A              use  CE  CA  CG  N   and L  Type = 2
+CAV              use  CA  CH  CB  N   and L  Type = 3
+                 use  CA  C   CB  OHN and L  Type = 4
+B2I              use  CA  B   CB  N   and L  Type = 6
+                 use  CA  C   C1  N   and L  Type = 7
+                 use  CA  C   C1  N   and D  Type = 8
+LOV              use  CA  C   CB  CT  and L  Type = 5
+PRQ              use  CAM CAJ CAK NAA and L  Type = 0
+PRV              use  CA  C   CG  N   and L  Type = 9
+X2W              use  CA  C   CB  N1  and L  Type = a
+</pre>
+<p>If type is blank - no C-alpha chirality e.g. GLY and SAR<br>
+If type is P then C-alpha is sp2 no chirality but extra check that the Calpha is planar example 23F
+
+<p>Nucleic acid chirality of C1' of ribiose is checked<br>
+e.g. 1asy
+<pre>
+REMARK 500  M RES CSSEQI    IMPROPER   EXPECTED   FOUND DETAILS
+REMARK 500    PSU R 632       -21.4      D          D   OUTSIDE RANGE
+REMARK 500    PSU R 655       -19.0      D          D   OUTSIDE RANGE
+REMARK 500    PSU S 613       -23.4      D          D   OUTSIDE RANGE
+REMARK 500    PSU S 655       -20.0      D          D   OUTSIDE RANGE
+REMARK 500    ILE A 206        24.5      L          L   OUTSIDE RANGE
+REMARK 500    PHE A 389        24.4      L          L   OUTSIDE RANGE
+REMARK 500    LEU A 547        19.8      L          L   OUTSIDE RANGE
+REMARK 500    ASP B 313        23.8      L          L   OUTSIDE RANGE
+REMARK 500    ASP B 446        24.9      L          L   OUTSIDE RANGE
+</pre>
+
+<p>Nucleic Acid C1' chirality types are
+<dl>
+ <dt>C1-ribose   <dd>order of atoms to get -35 as D-sugar
+ <dt>Type   <dd>atoms define chirality at C1'
+</dl>
+<pre>       N1    C1'   O4'   N1    C2'
+       N9    C1'   O4'   N9    C2'
+       N5    C5    O4    N1    C4
+       NA    C1'   O5'   N9A   C2'
+       NC    C1'   C'    N1    C2'
+       NM    C1'   O4'   N1M   C2'
+       NS    C1'   S4'   N1    C2'
+       NX    C1'   CX'   N9    C2'
+       C1    C1'   O4'   C1    C2'
+       C5    C1'   O4'   C5    C2'
+       F5    C1'   O4'   C5    C2'
+       NP    C1D   O4D   N9    C2D 
+       N7    C1'   O4'   N7    C2' 
+       NR    CR1   OR1   N1    CR2 
+       C1    C1'   C     N1    C2' 
+       S1    C1'   S     N1    C2' 
+       NT    C1T   O4T   N1    C2T 
+       NH    C1'   O5'   N1    C2'
+</pre>
+
+<p>Output may have for Found Expected
+<pre>            D/L or R/S with description
+                'EXPECTING PLANAR'
+                'WRONG HAND'
+                'OUTSIDE RANGE'
+                'EXPECTING SP3'
+                'CBETA WRONG HAND'
+</pre>
+
+<H2><A NAME="warn"></A>WARNING MESSAGES</H2>
+<pre>  **WARNING CAVEAT WRITTEN  (see 1a70)
+  **WARNING SEE FEATURE FILE (see 1mqx)
+  **WARNING CHECK REM375 FILE OCCUPANCY ERROR (see 1a7g)
+</pre>
+
+<H2><A NAME="error"></A>ERROR MESSAGES</H2>
+<p>Potential error messages are:
+<pre>
+     STOP 'File name not found'
+     STOP 'PDB File not found'
+     STOP 'Only 4 pairs allowed in -n'
+     STOP 'MaxMicrohet exceeded'
+     STOP 'MaxDBREF exceeded'
+     STOP 'max links exceeded'
+     STOP 'Max atoms exceeded'
+     STOP 'Too many boxes'
+     STOP 'STANDATA not found'
+     STOP 'QQstan gt MaxStandard'
+     STOP 'residue name not found _chem_comp_atom.'
+     STOP 'MaxAtoms exceeded 2'
+     STOP 'residue name not found in plane definition'
+     STOP 'resid not found in bonds '
+     STOP 'Too many Non-standard AA from STANDATA'
+     STOP 'Too many Non-standard NA from STANDATA'
+     STOP 'SYMMETRY OPERATOR ERROR'
+     STOP 'error in symmetry'
+     STOP 'identity error'
+     STOP 'no SYMMETRY '
+     STOP ' no symmop set'
+     STOP 'error in SYMOP'
+     STOP 'max atoms exceeded'
+     STOP 'Max CYS exceeded'
+     STOP 'Too many atoms on special positions'
+</pre>
+
+<H2><A NAME="examples"></A> EXAMPLES</H2>
+<p>   At run time chain breaks are printed, e.g.
+<pre>  r500 2j0k
+bond break: 0 PRO A 362  THR A 394 Ca(-1)--Ca = 25.996 C(-1)--N = 26.701
+bond break: 0 GLU A 403  THR A 412 Ca(-1)--Ca = 16.095 C(-1)--N = 13.564
+bond break: 0 LEU A 567  LYS A 583 Ca(-1)--Ca = 13.546 C(-1)--N = 13.078
+bond break: 0 PRO B 362  GLY B 383 Ca(-1)--Ca = 21.518 C(-1)--N = 19.418
+bond break: 0 THR B 388  ASP B 395 Ca(-1)--Ca = 16.654 C(-1)--N = 17.263
+bond break: 0 ARG B 569  LEU B 584 Ca(-1)--Ca = 11.745 C(-1)--N = 12.929
+
+  Bond distances > 20xRMS are also written at run time e.g. 3fin
+NOTE the P--O3' of 2.052 this may be not a chain break but is outside expected limits of a P--O bond
+
+bond break:    0  HIS 6  46   THR 6  47   Ca(-1)--Ca =    4.114   
+          C(-1)--N =    4.894
+bond break:    0    G A1051     C A1052   P--O3' =    2.052
+bond break:    0    G A1107     U A1108   P--O3' =    2.612
+bond break:    0    A A2126     G A2127   P--O3' =    4.818
+bond break:    0    C A2161     G A2162   P--O3' =    2.541
+bond break:    0  ARG C  27   THR C  34   Ca(-1)--Ca =    7.430   
+          C(-1)--N =    5.015
+bond break:    0  PHE C 110   VAL C 119   Ca(-1)--Ca =   12.729   
+          C(-1)--N =   11.810
+bond break:    0  LEU C 136   ASN C 139   Ca(-1)--Ca =    6.345   
+          C(-1)--N =    4.988
+bond break:    0  GLN V  80   TYR V  81   Ca(-1)--Ca =    4.140   
+          C(-1)--N =    3.010
+**ERROR expected Bond Dist >20x RMSD in Model   0 
+        for atom pair   G A2190   O3'  and   G A2191   P    
+        with distance    1.254
+**ERROR expected Bond Dist >20x RMSD in Model   0 
+        for atom pair   U A2653   O3'  and   A A2654   P    
+        with distance    1.278
+**ERROR expected Bond Dist >20x RMSD in Model   0 
+        for atom pair PRO G 112   C    and ARG G 113   N    
+        with distance    4.013
+</pre>
+
+<H2><a name="authors"></a>AUTHORS</H2>
+
+<p>Kim Henrick.</p>
+
+<H2><a name="references"></a>REFERENCES</H2>
+
+<ol>
+<!-- KEEP startreferencelist -->
+<li><a name="reference1"></a>Clowney et al., <i>J. Am. Chem. Soc.</i> <b>118</b>, 509-518 (1996) <br />
+(Geometric Parameters in Nucleic Acids: Nitrogenous Bases.) </li>
+
+<li><a name="reference2"></a>Engh, R.A. & Huber, R. <i>International Tables for Crystallography (Vol. F).</i> <b>18.3</b>, 382-392 (2006) <br />
+(Structure quality and target parameters.) </li>
+
+<li><a name="reference3"></a>M. Jaskolski, M. Gilski, Z. Dauter & A. Wlodawer
+ <i>Acta Cryst.</i> <b>D63</b> 611-620 (2007) <br />
+(Stereochemical restraints revisited: how accurate are refinement targets and how much should protein structures be allowed to deviate
+from them?) </li>
+
+<li> Kleywegt, G.G. & Jones, T.A.
+<i>Structure </i><b>4</b>, 1395-1400 (1996)<br>
+ (Phi/Psi-chology: Ramachandran revisited. )</li>
+</ol>
+<!-- KEEP endreferencelist -->
+</html>

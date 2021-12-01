@@ -1,0 +1,216 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#===========================================================================
+#
+# runfft.script
+#
+#===========================================================================
+
+# Three stages 
+# after running fft have file fft_map
+# after extend -> ccp_map
+# after export MAPOUT
+
+  if [regexp MAP $FFTPROGRAM  ] {
+    set fft_map $MAPIN
+  }  else {
+
+# This was broken - but why is it needed at all??
+# Commented out for now - pjx
+# If required range within limits then FFT will do it - otherwise run extend
+    #if { [regexp USER $MAP_LIMITS_MODE] && [regexp fftbig $FFTPROGRAM]  } {
+    #  set IFXYZLIM 1
+    #  set MAP_LIMITS_MODE ""
+    #}
+
+# Explicitly check if user requested asymmetric unit - FFT cannot be
+# relied upon to default to the correct limits
+    if { [regexp INPUT $MAP_LIMITS_MODE] } {
+      set IFXYZLIMASU 1
+    }
+
+    set IFTRANSLATION [string match "*PHI2*" $LABIN ]
+    set fft_map [GetTmpFileName -ext map]
+
+    CreateComScript fft runfft_script
+
+    set status [Execute "[BinPath $FFTPROGRAM] HKLIN \"$HKLIN\" MAPOUT \"$fft_map\""  \
+                         $runfft_script program_status report ]
+  }
+    
+
+#=====================================================Mapmask to extend map
+
+  if [regexp INPUT $MAP_LIMITS_MODE ] {
+
+    set ccp_map $fft_map
+  } else {
+
+    set ccp_map [GetTmpFileName -ext map]
+
+    if { $MAP_LIMITS_MODE == "PDB" } {
+      set IFBORDER 1
+    } else {
+      set IFBORDER 0
+    }
+    set IFXYZLIM [StringSame $MAP_LIMITS_MODE USER ]
+    CreateComScript mapmask extend_script
+
+    set cmd "[BinPath mapmask] MAPIN \"$fft_map\" MAPOUT \"$ccp_map\""
+    if { $MAP_LIMITS_MODE == "PDB" } { 
+      append cmd " XYZIN \"$EXTEND_XYZIN\""
+    }
+ 
+    set status [Execute "$cmd" $extend_script program_status report ]
+  }
+
+#==EXPORT+MAP============================================================
+
+   if { [regexp MAP $FFTPROGRAM  ] && [regexp INPUT $MAP_LIMITS_MODE ] &&
+	[regexp CCP4 $FFT_MAP_FORMAT] } {
+# The user has input a map & does not want to extend it or change format 
+# so do nothing here
+   } elseif { [regexp CCP4 $FFT_MAP_FORMAT] } {
+# rename the file but make sure we have new file name still in ccp_map
+# which is used by peakmax and plotting
+     MoveFile $ccp_map $MAPOUT
+     set ccp_map $MAPOUT
+   } else {
+     if [regexp O $FFT_MAP_FORMAT] {
+       set mapout $O_MAPOUT
+     } else {
+       set mapout $Q_MAPOUT
+     }
+     source [SearchPath TOP utils map_utils.tcl]
+     set status [ConvertMapFormat $FFT_MAP_FORMAT $ccp_map $mapout $LOG_FILE]
+   }
+
+#===============================================================permuted maps for NPO
+
+  if { $RUN_NPO } {
+
+# Find out what axis order is in existing map  - run mapdump
+# Could get this info from FFT log but this could have been deleted if
+# user has specified an old map file
+
+  source [SearchPath TOP utils map_utils.tcl]
+  source [SearchPath TOP utils phasing_utils.tcl]
+
+  if { ![GetMapHeader $ccp_map space_group cell xyzlim grid section_axis] } {
+    WriteToLog "ERROR reading header for file $ccp_map"
+
+  }
+
+#==create maps with alternative axis order =====================MAPMASK
+
+# Do we need to run Mapmask
+  
+  set MAXIS(X) 0
+  set MAXIS(Y) 0
+  set MAXIS(Z) 0
+  if { $N_SECTIONS > 0 } {
+    for { set n 1 } { $n <= $N_SECTIONS } { incr n } {
+      set axis  $SECTION_AXIS($n)
+      set MAXIS($axis) 1
+    }
+  }
+
+  set mapmask_order(X) "Y Z X" 
+  set mapmask_order(Y) "Z X Y" 
+  set mapmask_order(Z) "X Y Z" 
+
+  foreach axis { X Y Z } {
+    if { $MAXIS($axis) }  {
+
+      if { $axis == $section_axis } { 
+        set PERMUT_MAP_FILE($axis) $ccp_map 
+      } else {
+        set PERMUT_MAP_FILE($axis) [GetTmpFileName -ext "_map_$axis" ]
+        WriteComFile mapmask_script "AXIS  $mapmask_order($axis)\nEND"
+
+        set cmd "mapmask  MAPIN \"$ccp_map\" MAPOUT \"$PERMUT_MAP_FILE($axis)\""
+
+        set status [Execute $cmd $mapmask_script program_status report ]
+      }
+    }
+  }
+
+  }
+
+#============================================coordinates from peakmax or vectors
+
+  if { $IFPEAKSEARCH || $RUN_NPO && [regexp PEAKS $COORDS_MODE ] } {
+
+    set XYZFRC [SetOutputFileRoot]_peaks.ha
+
+    CreateComScript  peakmax peaks_script
+    set cmd "[BinPath peakmax] MAPIN \"$ccp_map\" XYZOUT \"$XYZPEAKS\" XYZFRC \"$XYZFRC\""
+    set status [Execute $cmd $peaks_script program_status report ]
+    if [regexp PEAKS $COORDS_MODE] { set XYZ_FILE $XYZPEAKS }
+
+    AddOutputFile $XYZFRC PROJECT
+  }
+
+
+#===Create 2D plot ===========================================NPO
+
+  if { $RUN_NPO } {
+
+    if { $NPO_SCALE == ""  } {
+      if { $NPO_MAX_SIZE == "" } { set NPO_MAX_SIZE 15.0 }
+      for { set i 1 } { $i <= $N_SECTIONS } { incr i } {
+        lappend axes_list $SECTION_AXIS($i) }
+      NpoMapScale $space_group $cell $N_SECTIONS axes_list $NPO_MAX_SIZE \
+        NPO_SCALE
+    }
+
+# extract atom names from PDB file
+    if { [StringSame $COORDS_MODE PEAKS FILE ] \
+		&& $NPO_LABELS == "NUMBER" && \
+		[OpenFile $XYZ_FILE fxyz r ] } {
+      set NATOMS 0
+      set continue 1
+      while { $continue } {
+        set atomname [ExtractFromFile $fxyz "*ATOM*" 0 [list 3 5 4] ]
+        if { [lindex $atomname 0 ] != "" }  {
+          incr NATOMS
+          set ATOM($NATOMS) [lindex $atomname 0]
+          append ATOM($NATOMS) [lindex $atomname 1 ] [lindex $atomname 2 ]
+        } else { set continue 0 }
+      }
+      if { $NATOMS > 100 } { set NATOMS 100 }
+      CloseFile $fxyz
+    }
+
+    set PLOT_FILE_ROOT [SetOutputFileRoot]
+
+    for { set n 1 } { $n <= $N_SECTIONS } { incr n } {
+
+    set AXIS $SECTION_AXIS($n)
+    set FIRST_SECTION $F_SECTION($n)
+    set LAST_SECTION $L_SECTION($n)
+    set SKIP_SECTIONS $SKIP_SECTION($n)
+
+    CreateComScript  npo npo_script($n)
+
+    set cmd "[BinPath npo] MAPIN \"$PERMUT_MAP_FILE($AXIS)\""
+
+    if {$COORDS_MODE != "NO" } { append cmd " XYZIN1 $XYZ_FILE" }
+
+    set NPO_PLOT_FILE $PLOT_FILE_ROOT 
+    append NPO_PLOT_FILE "_" $n ".plt"
+    append cmd " PLOT $NPO_PLOT_FILE"
+
+    set status [Execute $cmd $npo_script($n) program_status report ]
+
+    AddOutputFile $NPO_PLOT_FILE PROJECT
+    
+  }
+  }

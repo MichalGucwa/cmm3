@@ -1,0 +1,515 @@
+<html>
+<head><title>CCP4 Program Suite: xdldataman</title></head>
+<body>
+
+<!-- ::INDEX_INFO::XDLDATAMAN::Deprecated::MTZ manipulations / conversions::manipulation, analysis and reformatting of reflection files::X-windows tool:::::: -->
+
+<H1> XDLDATAMAN (CCP4: Deprecated Program)</H1>
+<H2> NAME</H2>
+<b>xdldataman </b>
+- X-windows tool; manipulation, analysis and reformatting of reflection files.
+<H2> SYNOPSIS</H2>
+<b>xdldataman</b> 
+[-font1 | font2 | font3 | font4 | font5]
+<br>
+  [menu-driven command selection; interactive parameter input]
+
+<H2><a name="description">DESCRIPTION</a></H2>
+
+  xdldataman can be used to read, write, analyse and manipulate ASCII
+  reflection files from most biomacromolecular refinement packages
+  packages.  No binary reflection file types are supported (i.e.:
+  MTZ files can *not* be read).
+<p>
+  The program runs in interactive mode only.  It uses the XDL_VIEW
+  toolkit of J.W. Campbell to provide an easy-to-use interface.
+  Commands are selected by clicking on the desired menu option;
+  some menu options give a pop-up sub-menu with further options
+  (indicated by "--&gt;" in the menu name).
+<p>
+  File formats are selected with pop-up menus; all other parameters
+  are set in pop-up dialogue boxes (cut-and-paste is supported).
+  In most cases, default values are given in [square brackets].
+  To accept these defaults, hit the RETURN key.  If multiple numbers
+  are to be input (e.g., cell constants), and if only the first one
+  needs to be changed, for instance, typing the new value for this
+  first number followed by the RETURN key will preserve the values
+  for the other five numbers.
+<p>
+  There is a command line option (-font?) which will determine the 
+  size of the menu font. These fonts refer to the xdl fonts which are
+  defined from 1 to 5. This can be useful if the window size is too
+  large for the screen. The default font size is 2. The font definitions
+  can be changed in the .Xdefaults file or xrdb, however all xdl 
+  programs will be then be effected.
+<p>
+  Output from the program is written to a separate area of the main
+  window.  Output can be scrolled and cut and pasted into other
+  documents.
+<p>
+  For lengthy operations a progress bar shows how much of the
+  operation has been completed.
+
+<H2> HISTORY</H2> 
+  xdldataman is a CCP4 special version of DATAMAN (part of the Uppsala
+  RAVE averaging package).  This version is entirely interactive and
+  has a user-friendly interface.  However, this version can only handle
+  one dataset at a time, and some of the functionality of the parent
+  program is absent.
+<p>
+  DATAMAN was originally written as a simple format-exchange program,
+  to convert <a href="mtzdump.html">MTZDUMP</a> files to X-PLOR 
+  reflection files.  It has grown
+  quite a bit since then to include other formats and to carry out
+  several everyday manipulations on datasets.  It also includes
+  several programs that were previously stand-alone jiffies (such as
+  the Gemini twin analysis command).
+<p>
+  Some of the operations are implementations of Gerard Bricogne's
+  algorithms as described in Volume B of the International Tables.
+
+<H2> MENU OPTIONS</H2> 
+  Commands are issued by moving the pointer over the desired menu
+  option and clicking with the left mouse button.
+
+<H3>  READ A DATASET</H3>
+
+  Provide the filename and then select the appropriate file type
+  from the pop-up menu.  See <a href="#formats">FORMATS</a>.
+
+<H3>  LIST DATASET INFORMATION</H3>
+
+  This prints some information regarding the dataset that is currently
+  in memory.
+
+<H3>  STATISTICS OF THE DATASET</H3>
+
+  This lists the mean, standard deviation, minimum and maximum values
+  of all properties of the dataset that are known.
+
+<H3>  EFFECTIVE RESOLUTION</H3>
+
+  This calculates an estimate of the effective resolution of the
+  dataset, defined as "the resolution at which the actual number of
+  reflections in the current dataset would constitute a 100% complete
+  dataset" (B. Hazes, personal communication).  This number is listed
+  for all reflections, and for all reflections with F &gt; n * sigma(F),
+  with n=1,...,5.
+  The lattice type and the number of asymmetric units need to be
+  provided (they are used to estimate the volume of reciprocal space
+  covered by the data).
+
+<H3>  RSYM HKL/KHL REFLECTIONS</H3>
+
+  This calculates Rsym (on Fs and on Is, assuming that I=F*F) for
+  all reflection pairs HKL and KHL.  If the spacegroup is, for instance,
+  P3x or I4x and this Rsym is low, there may be a spacegroup error
+  (e.g., the spacegroup is P41212 instead of P41).
+
+<H3>  CELL CONSTANTS</H3>
+
+  Enter the cell constants (needed to calculate the resolution of the
+  reflections).
+
+<H3>  SYMMETRY OPERATORS</H3>
+
+  Provide the name of a symmetry-operator file in O format.
+
+<H3>  CALCULATE/DEDUCE/CONVERT</H3>
+
+  This command has several sub-options:
+<dl>
+<dt>    RESOLUTION
+<dd>    Calculate the resolution of all reflections.
+
+<dt>    CENTRICS/ACENTRICS
+<dd>    Assign centric/acentric flag to each reflection.
+
+<dt>    ORBITAL MULTIPLICITY
+<dd>    Calculate the orbital multiplicity of each reflection.
+
+<dt>    F -&gt; I CONVERSION
+<dd>    Convert Fs to Is by using: I ~ F*F.
+
+<dt>    I -&gt; F CONVERSION
+<dd>    Convert Is to Fs by using: F ~ sqrt(I) (I&gt;=0).
+</dl>
+
+<H3>  TYPE SOME REFLECTIONS</H3>
+
+  Use this command to list some reflections.  Provide the number of the
+  first and last reflection and the step size (e.g., step size 10 will
+  list every 10-th reflection).  Providing a negative number for the last
+  reflection is taken to mean the actual last reflection.  Providing a
+  value of zero for the step size will print only the first and the last
+  reflection.  Providing a negative step size means "show N reflections
+  equally spread between the first and the last", with N being -1 * the
+  step size.
+
+<H3>  SHOW SOME REFLECTIONS</H3>
+
+  This command has several sub-options:
+<dl>
+<dt>    FOBS &gt;
+<dd>    Provide a number; all reflections with F greater than this number
+    will be listed.
+
+<dt>    FOBS &lt;
+<dd>    Provide a number; all reflections with F smaller than this number
+    will be listed.
+
+<dt>    SIGMA &gt;
+<dd>    Provide a number; all reflections with sigma(F) greater than this
+    number will be listed.
+
+<dt>    SIGMA &lt;
+<dd>    Provide a number; all reflections with sigma(F) smaller than this
+    number will be listed.
+
+<dt>    F/SIGMA &gt;
+<dd>    Provide a number; all reflections with F/sigma(F) greater than this
+    number will be listed.
+
+<dt>    F/SIGMA &lt;
+<dd>    Provide a number; all reflections with F/sigma(F) smaller than this
+    number will be listed.
+
+<dt>    RESOLUTION &gt;
+<dd>    Provide a number; all reflections with a resolution greater than this
+    number will be listed (note: greater means "lower resolution" !).
+
+<dt>    RESOLUTION &lt;
+<dd>    Provide a number; all reflections with a resolution smaller than this
+    number will be listed (note: smaller means "higher resolution" !).
+</dl>
+
+<H3>  SPECIAL REFLECTIONS</H3>
+
+  List all reflections of a certain type.  Provide a template of the type
+  of reflections to be shown (containing the characters H, K, L and/or 0).
+  For example: HHH, 0K0, KK0, etc.
+
+<H3>  ABSENCES LIST</H3>
+
+  List reflections that are systematically absent according to the
+  current spacegroup symmetry operators.  This can sometimes be used
+  to make educated guesses concerning the nature of certain screw
+  axes (e.g., in P4x, if only 00L, with L=4N, are strong reflections
+  x is probably 1 or 3).
+
+<H3>  TWIN STATISTICS</H3>
+
+  Print some intensity statistics that may or may not be able to
+  provide information with respect to possible twinning.
+
+<H3>  GEMINI TWIN ANALYSIS</H3>
+
+  This implements intensity analysis options as described by Stanley
+  (1972) and Rees (1980), that may be of help in investigating
+  possible merohedral twinning.  The output consists of statistics
+  and an estimate of the most likely twin fraction ("0.0" means no
+  merohedral twinning).  In addition, two PostScript files are
+  produced showing 1N(z,alpha) as a function of z for centro- and
+  non-centrosymmetric reflections.  See the original papers for more
+  information.
+
+<H3>  TEMPERATURE FACTOR APPLY</H3>
+
+  Apply a temperature factor to the Fs.
+
+<H3>  CHANGE INDEX</H3>
+
+  Re-index data.  This may be necessary when the data-processing
+  program yields a cell with beta &lt; 90 in a monoclinic spacegroup,
+  or when two datasets cannot be merged due to indexing along
+  equivalent, but different axes (e.g., in P3x, P4x, etc.).
+  Provide expressions for the new H, K and L.
+
+<H3>  PROD/PLUS</H3>
+
+  This command has several sub-options:
+<dl>
+<dt>    FOBS
+<dd>    Provide two numbers X and Y; all Fs will be replaced by X*F+Y.
+
+<dt>    SIGMA(FOBS)
+<dd>    Provide two numbers X and Y; all sigmas will be replaced by
+    X*sigma+Y.
+
+<dt>    BOTH
+<dd>    Provide two numbers X and Y; all Fs and sigmas will be replaced by
+    X*F+Y and X*sigma+Y, respectively.
+</dl>
+
+<H3>  LAUE GROUP APPLY</H3>
+
+  Move the reflections into the asymmetric unit appropriate for the
+  Laue group of the dataset.  This is sometimes necessary when the
+  data-processing program outputs a non-standard asymmetric unit
+  (for instance, R-AXIS processing software in P4x gives an asymmetric
+  unit which is incompatible with the CCP4 standard).
+  The Laue group is selected from a pop-up menu.
+<p>
+  Implemented Laue groups and their asymmetric units are:
+<pre>
+
+  1bar,   hkl:h&gt;=0  0kl:k&gt;=0   00l:l&gt;=0
+  1bar,   hkl:k&gt;=0  h0l:l&gt;=0   h00:h&gt;=0
+  1bar,   hkl:l&gt;=0  hk0:h&gt;=0   0k0:k&gt;=0
+  2/m,    hkl:k&gt;=0, l&gt;=0     hk0:h&gt;=0, k&gt;=0
+  2/m,    hkl:h&gt;=0, l&gt;=0     0kl:k&gt;=0, l&gt;=0 (2-nd sett)
+  mmm,    hkl:h&gt;=0, k&gt;=0, l&gt;=0
+  4/m,    hkl:h&gt;=0, k&gt;0, l&gt;=0 with  k&gt;=0 for h=0
+  4/mmm,  hkl:h&gt;=0, h&gt;=k&gt;=0, l&gt;=0
+  3bar,   hkl:h&gt;=0, k&lt;0, l&gt;=0 including 00l
+  3bar,   hkl:h&gt;=0, k&gt;0  including  00l:l&gt;0
+  3barm,  hkl:h&gt;=0, k&gt;=0 with k&lt;=h; if h=k l&gt;=0
+  6/m,    hkl:h&gt;=0, k&gt;0, l&gt;=0  with  k&gt;=0 for h=0
+  6/mmm,  hkl:h&gt;=0, h&gt;=k&gt;=0, l&gt;=0
+  m3,     hkl:h&gt;=0, k&gt;=0, l&gt;=0 with l&gt;=h, k&gt;=h for l=h, k&gt;h if l&gt;h
+  m3m,    hkl:k&gt;=l&gt;=h&gt;=0
+
+</pre>
+
+<H3>  SORT REFLECTIONS</H3>
+
+  Sort the reflections by their indices H, K and L.  The sort order
+  is determined by the user.
+
+<H3>  KILL SOME REFLECTIONS</H3>
+
+  This command has the same sub-options as SHOW SOME REFLECTIONS:
+<dl>
+<dt>    FOBS &gt;
+<dd>    Provide a number; all reflections with F greater than this number
+    will be deleted.
+
+<dt>    FOBS &lt;
+<dd>    Provide a number; all reflections with F smaller than this number
+    will be deleted.
+
+<dt>    SIGMA &gt;
+<dd>    Provide a number; all reflections with sigma(F) greater than this
+    number will be deleted.
+
+<dt>    SIGMA &lt;
+<dd>    Provide a number; all reflections with sigma(F) smaller than this
+    number will be deleted.
+
+<dt>    F/SIGMA &gt;
+<dd>    Provide a number; all reflections with F/sigma(F) greater than this
+    number will be deleted.
+
+<dt>    F/SIGMA &lt;
+<dd>    Provide a number; all reflections with F/sigma(F) smaller than this
+    number will be deleted.
+
+<dt>    RESOLUTION &gt;
+<dd>    Provide a number; all reflections with a resolution greater than this
+    number will be deleted (note: greater means "lower resolution" !).
+
+<dt>    RESOLUTION &lt;
+<dd>    Provide a number; all reflections with a resolution smaller than this
+    number will be deleted (note: smaller means "higher resolution" !).
+</dl>
+
+<H3>  ERASE OPTIONS</H3>
+
+  This command has the several sub-options:
+<dl>
+<dt>    ROGUES
+<dd>    Delete "rogue" reflections simply by providing their HKL indices.
+    This can be used to remove individual reflections which are suspect
+    for some reason or other.
+
+<dt>    ODD H/K/L
+<dd>     Delete all reflections for which either H, K or L is odd.
+
+<dt>    EVEN H/K/L
+<dd>     Delete all reflections for which either H, K or L is even.
+</dl>
+
+<H3>  RFREE OPTIONS</H3>
+
+  This command has the several sub-options:
+<dl>
+
+<dt>    INITIALISE
+<dd>    Set the seed for the random-number generator.  Providing a negative
+    seed will use the current machine clock value as the seed; a positive
+    number will be used itself as the seed.
+
+<dt>    LIST CURRENT STATUS
+<dd>    This lists the current partitioning of the dataset in WORK and TEST
+    reflections.  If there are very few or very many TEST reflections,
+    a warning message will be printed.  In general, 10% of the data with
+    a minimum of ~500 and a maximum of ~2000 TEST reflections is
+    considered to be reasonable.  Note that the error in Rfree is roughly
+    equal to 1/SQRT(number of TEST reflections), so that for 500 TEST
+    reflections the error is ~4.5% and for 2000 TEST reflections ~2.2%.
+
+<dt>    RESET ALL RFREE FLAGS
+<dd>    This sets all Rfree flags to zero, i.e. all reflections are flagged
+    as WORK reflections.  See RFREE FLAGS.
+
+<dt>    GENERATE RANDOM RFREE FLAGS
+<dd>    Provide either the *percentage* or (roughly) the *number* of TEST
+    reflections.  Randomly chosen reflections will be assigned as TEST
+    reflections (the same way X-PLOR does this).  This is actually the
+    worst possible way to select TEST reflections, since (through the
+    G-function) every reflection will be related to its neighbours
+    (in reciprocal space) and, in the case of NCS, to its "NCS mates"
+    and their neighbours.
+
+<dt>    SHELLS OF RFREE REFLECTIONS
+<dd>    Provide the *percentage* or (roughly) the *number* of TEST reflections
+    and the number of resolution bins.  The data will be sorted by
+    resolution and divided into bins.  From every bins the appropriate
+    fraction of reflections from its centre will be flagged as being TEST
+    reflections.  This is to counter couplings in the case of NCS.
+
+<dt>    SPHERES OF RFREE REFLECTIONS
+<dd>    Provide the *percentage* or (roughly) the *number* of TEST reflections
+    and the radius of reciprocal-space spheres.  Reflections are picked
+    at random, and they and their neighbours inside a small sphere (in
+    reciprocal space) are all assigned as TEST reflections.  This is to
+    counter couplings due to bulk solvent in the absence of NCS.
+
+<dt>    GSHELDRICKS METHOD
+<dd>    This simply assigns every N-th reflection to be a TEST reflection,
+    where the value of N is provided by the user (in SHELX, N=10).
+
+<dt>    COMPLETE CROSS-VALIDATION SETS
+<dd>    The number N of datasets to be generated is provided.  Every reflection
+    will be assigned to be a TEST reflection in exactly one of the N
+    datasets.  The N datasets are written in X-PLOR format (but can, of
+    course, be converted into other formats with this program).
+</dl>
+
+<H3>  WRITE DATASET TO FILE</H3>
+
+  Provide the filename and select the desired file type from the pop-up
+  menu.
+
+<H3>  DELETE CURRENT DATASET</H3>
+
+  Remove the current dataset from memory.
+
+<H3>  HELP</H3>
+
+  This prints some brief information.  Subsequently, click on *any*
+  menu command to get a brief explanation of what that command does.
+
+<H3>  QUIT</H3>
+
+  Stop working with the program.
+
+<H2><a name="formats">FORMATS</a></H2> 
+  Supported input formats :
+<dl><dt>
+<dd>    *       (free format)
+<dd>    MTZDUMP (user or free format)
+<dd>    XPLOR   (no format required)
+<dd>    SHELXS  (fixed format)
+<dd>    TNT     (free format)
+<dd>    PROTEIN (user or free format)
+<dd>    MKLCF   (user or free format)
+<dd>    HKLFS   (user or free format)
+<dd>    RFREE   (user or free format)
+<dd>    ELEANOR (user or free format)
+</dl>
+<p> 
+  Supported output formats :
+<dl><dt>
+<dd>    *       (fixed format)
+<dd>    RXPLOR  (no format required)
+<dd>    SHELXS  (fixed format)
+<dd>    TNT     (fixed format)
+<dd>    PROTEIN (user or fixed format)
+<dd>    CIF     (user or fixed format)
+<dd>    MKLCF   (user or fixed format)
+<dd>    HKLFS   (user or fixed format)
+<dd>    RFREE   (user or fixed format)
+<dd>    ELEANOR (user or fixed format)
+<dd>    XPLOR   (no format required)
+</dl>
+<p>  
+  Notes on formats :
+<dl><dt>
+<dd>    */HKLFS - reads/writes HKL F Sigma
+<dd>    RXPLOR - X-PLOR format with Rfree flags
+<dd>    SHELXS - fixed format, no Rfree flags
+<dd>    TNT - no FOMs, phases or Rfree flags
+<dd>    PROTEIN - no Sigmas
+<dd>    MKLCF - integer F and Sigma
+<dd>    RFREE - HKL F Sigma and integer Rfree flags
+<dd>    ELEANOR - ditto, but real (1.0-Rfree) flags
+<dd>    MTZDUMP - reads unedited MTZDUMP log file
+<dd>    CIF - output only; Rfree flags UNofficial
+<dd>    Use the Calculate option to convert I&lt;-&gt;F if needed.
+</dl>
+
+<H2> RFREE FLAGS</H2> 
+  xdldataman uses the X-PLOR convention, i.e. the Rfree flag is an
+  integer number (0 or 1), and a value of "1" means that the reflection
+  belongs to the TEST set which is *not* used in refinement.
+  CCP4 has a different convention: reflections are divided into a number
+  of equal-sized sets, one of which (usually flagged "0") represents
+  the TEST set, see program <a href="freerflag.html">FREERFLAG</a>.
+  The CCP4 convention is supported (and converted) through the "ELEANOR" format.
+
+<H2><a name="references">REFERENCES</a></H2>
+
+<ol>
+<!-- KEEP startreferencelist -->
+<li>  XDLDATAMAN:
+<br>  G.J. Kleywegt & T.A. Jones (1996), <i>Acta Cryst.</i> <b>D52</b>, 826-828.
+
+<li>  XDL_VIEW:
+<br>  J.W. Campbell (1995).  "XDL_VIEW, an X-windows-based toolkit for
+  crystallographic and other applications", <i>J. Appl. Cryst.</i> <b>28</b>, 236-242.
+
+<li>  RAVE:
+<br>  G.J. Kleywegt & T.A. Jones (1994).  "Halloween ... Masks and Bones",
+  in "From First Map to Final Model" (S. Bailey, R. Hubbard & D. Waller,
+  Eds.), SERC Daresbury Laboratory, pp. 59-66.
+
+<li>  O:
+<br>  T.A. Jones, J.Y. Zou, S.W. Cowan, & M. Kjeldgaard (1991).  "Improved
+  methods for building protein models in electron density maps and the
+  location of errors in these models", <i>Acta Cryst.</i> <b>A47</b>, 110-119.
+
+<li>  GEMINI:
+<br>  E. Stanley (1972).  "The identification of twins from intensity
+  statistics", <i>J. Appl. Cryst.</i> <b>5</b>, 191-194.
+
+<li>  GEMINI:
+<br>  D.C. Rees (1980).  "The influence of twinning by merohedry on
+  intensity statistics", <i>Acta Cryst.</i> <b>A36</b>, 578-581.
+
+<li>  RFREE:
+<br>  A.T. Brunger (1992).  "Free R value: a novel statistical quantity for
+  assessing the accuracy of crystal structures", <i>Nature</i> <b>355</b>, 472-475.
+
+<li>  CCP4:
+<br>  Collaborative Computational Project Number 4 (1994).  "The CCP4 suite:
+  programs for protein crystallography", <i>Acta Cryst.</i> <b>D50</b>, 760-763.
+<!-- KEEP endreferencelist -->
+</ol>
+
+<H2> KNOWN BUGS</H2>
+  None (at the time of writing).<br>
+  If you improve the program, please notify GJK of your changes so that
+  they can be implemented in future versions and the entire community
+  may benefit from them (E-mail a brief description and the relevant
+  pieces of code to "gerard@xray.bmc.uu.se").
+
+<H2> AUTHORS</H2>
+  Originators: G.J. Kleywegt & T.A. Jones, Uppsala
+
+<H2> SEE ALSO</H2>
+ <A HREF=xdlmapman.html>xdlmapman</A>,
+ <A HREF=mtzdump.html>mtzdump</A>
+
+</BODY>
+</HTML>

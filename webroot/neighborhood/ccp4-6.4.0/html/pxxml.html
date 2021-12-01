@@ -1,0 +1,357 @@
+<html>
+<head><title>CCP4 Program Suite: pxxml</title></head>
+<body>
+
+<!-- ::INDEX_INFO::PXXML::Library::::Subroutine Library for writing XML:::::::: -->
+
+<H1> PXXML (CCP4: Library)</H1>
+<H2> NAME</H2>
+<b>pxxml </b>
+- Subroutine Library for writing XML
+ 
+<H2> CONTENTS</H2>
+ 
+<ol>
+<li><a href="#description">DESCRIPTION</a>
+<li><a href="#fileformat">THE XML FILE FORMAT</a>
+<li><a href="#subroutines">SUBROUTINES IN PXXML</a>
+<li><a href="#commons">PXXML INTERNAL COMMON BLOCKS</a>
+<li><a href="#example">EXAMPLE PROGRAM USING PXXML</a>
+<li><a href="#authors">AUTHORS AND HISTORY</a>
+</ol>
+
+<H2><a name="description"> DESCRIPTION</H2>
+The library pxxml contains subroutines for writing XML files or data islands.
+<P> 
+All the routines contained in this library are written in ANSI standard
+FORTRAN 77.  
+<P> 
+The strange library name is to avoid conflicts with existing freeware software 
+namely libxml.
+<P> 
+The first argument to all the subroutine calls in PXXML is XMLFileUnit which is the unit 
+of the opened or to be opened XML file. If the XMLFileUnit is 6 then the XML
+will go to 
+STDOUT. 
+<P> 
+PXXML can be used to write standard HTML by use of the root html element.
+
+<H2><a name="fileformat"> THE XML FILE FORMAT</H2>
+<! --   Keep this consistent with the Formats chapter of the manual -- >
+General description
+<P> <pre>
+&lt;?xml version="1.0"?>
+ &lt;run>
+  &lt;MATTHEWS_COEF
+    ccp4_version="4.1" 
+    date="17/ 9/01" 
+   />
+  &lt;keyword
+  >
+  
+  &lt;/keyword>
+  &lt;cell
+    volume="  66089.8438" 
+   />
+  &lt;result
+    nmol_in_asu=" 1" 
+    matth_coeff="  2.47929788" 
+    percent_solvent="  50." 
+   />
+  &lt;result
+    nmol_in_asu=" 2" 
+    matth_coeff="  1.23964894" 
+    percent_solvent="  1.58794796E-06" 
+   />
+ &lt;/run>
+</pre>
+<P> 
+<a name="subroutines"></a>
+<H3> Subroutines for writing XML files</H3>
+<dl>
+<dt> <a href="#xmlopen">XMLOpen</a><dd>
+Open the XML file and write header info.
+<dt> <a href="#xmlopenelement">XMLOpenElement</a><dd>
+Open an element and leave incomplete (e.g. &lt;run without a &gt;)
+<dt> <a href="#xmlwriteattribute">XMLWriteAttribute</a><dd>
+Write an attribute to an element (form attribute="value")
+<dt> <a href="#xmlwriteelement">XMLWriteElement</a><dd>
+Write the value of an element (and element if not already opened)
+<dt> <a href="#xmlcloseelement">XMLCloseElement</a><dd>
+Close an element and file if element is the root element
+</dl>
+<H2><a name="xmlopen"></a> Subroutine XMLOpen</H2>
+Open the XML file and write header info.
+<P> 
+Arguments:
+<dl>
+<dt> XMLFileUnit  (I/O)   INTEGER<dd>
+file unit for XML file to be opened. If set to 6 STDOUT will be used.
+<dt> ROOTVALUE (I)   CHARACTER*(*)<dd>
+Name of the root element. If set to HTML then standard PI for XML is not 
+outputed.
+<dt> IFAIL  (O)   INTEGER<dd>
+error indicator: meaning: on output
+<blockquote>
+<dt> =0<dd>
+OK
+<dt> =-1<dd>
+no such file
+<dt> all other errors cause stop<dd>
+</blockquote>
+</dl>
+<p>
+When called the subroutine will firstly open a file if appropriate. If 
+the XMLFileUnit has already been set to 6 then STDOUT will be used and a 
+data island is written. Otherwise an xml file is opened with the name 
+CALLINGPROGRAM.xml. This filename can be overwritten with the environment 
+variable or command line option XMLFILE.</p>
+<p>
+The subroutine will write the following XML to XMLFileUnit (as long as the 
+root element is not html). The root element specified here was run.</p>
+<pre>
+&lt;?xml version="1.0"?>
+ &lt;run>
+  &lt;MATTHEWS_COEF
+    ccp4_version="4.1" 
+    date="17/ 9/01" 
+   />
+</pre>
+<H2><a name="xmlopenelement"></a> Subroutine XMLOpenElement(XMLFileUnit, ElementName, ifail)</H2>
+Subroutine to open an XML element.
+<P> 
+Arguments:
+<dl>
+<dt> XMLFileUnit  (I/O)   INTEGER<dd>
+file unit for XML file to be opened. If set to 6 STDOUT will be used.
+<dt> ElementName (I)   CHARACTER*(*)<dd>
+Name of the element. 
+<dt> IFAIL  (O)   INTEGER<dd>
+error indicator: meaning: on output
+<blockquote>
+<dt> =0<dd>
+OK
+<dt> =-1<dd>
+no such file
+<dt> all other errors cause stop<dd>
+</blockquote>
+</dl>
+
+<p>If the subroutine is called and XMLOpen had not been previously called then 
+XMLOpen will be called and the ElementName is assumed to be the root element. </p>
+If XMLOpenElement is called after XMLOpen then an element of the following style is 
+opened:<pre>
+  &lt;elementname
+</pre>
+<p>The element name is not closed with a &gt; as this will allow attributes to be added.</p>
+
+<H2><a name="xmlwriteattribute"></a>Subroutine XMLWriteAttribute(XMLFileUnit, ElementName, AttributeName, AttributeValue, ifail)
+</H2>
+<p>
+Write an attribute to an element (form attribute="value")
+
+</p>
+Arguments:
+<dl>
+<dt> XMLFileUnit  (I/O)   INTEGER<dd>
+file unit for XML file to be opened. If set to 6 STDOUT will be used.
+<dt> ElementName (I)   CHARACTER*(*)<dd>
+Name of the element. 
+<dt> AttributeName (I)   CHARACTER*(*)<dd>
+Name of the attribute. 
+<dt> AttributeValue (I)   CHARACTER*(*)<dd>
+Value of the attribute. 
+<dt> IFAIL  (O)   INTEGER<dd>
+error indicator: meaning: on output
+<blockquote>
+<dt> =0<dd>
+OK
+<dt> =-1<dd>
+no such file
+<dt> all other errors cause stop<dd>
+</blockquote>
+</dl>
+
+<p>The XML file unit must be opened when XMLWriteAttribute is called or the results 
+will be unexpected! </p>
+<p>The actions of the subroutine are shown below</p>
+
+The subroutine call is:
+<pre> XMLWriteAttribute(XMLFileUnit, "cell", "x", "90", ifail)</pre>
+
+1) <b>Example 1:</b> XML before the above call:
+<ul>
+<pre>&lt;?xml version="1.0"?>
+ &lt;run>
+  &lt;MATTHEWS_COEF
+    ccp4_version="4.1" 
+    date="17/ 9/01" 
+   /></pre>
+After:
+<pre>&lt;?xml version="1.0"?>
+ &lt;run>
+  &lt;MATTHEWS_COEF
+    ccp4_version="4.1" 
+    date="17/ 9/01" 
+   />
+   &lt;cell 
+    x="90"</pre>
+
+1) <b>Example 2:</b> XML before the above call:
+<ul>
+<pre>&lt;?xml version="1.0"?>
+ &lt;run>
+  &lt;MATTHEWS_COEF
+    ccp4_version="4.1" 
+    date="17/ 9/01" 
+   />
+   &lt;cell</pre>
+After:
+<pre>&lt;?xml version="1.0"?>
+ &lt;run>
+  &lt;MATTHEWS_COEF
+    ccp4_version="4.1" 
+    date="17/ 9/01" 
+   />
+   &lt;cell 
+    x="90"</pre>
+
+</ul>
+</ul>
+
+<H2><a name="xmlwriteelement"></a>Subroutine XMLWriteElement(XMLFileUnit, ElementName, ElementValue, ifail)
+</H2>
+<p>
+Write the value of an element (and element if not already opened)</p>
+
+Arguments:
+<dl>
+<dt> XMLFileUnit  (I/O)   INTEGER<dd>
+file unit for XML file to be opened. If set to 6 STDOUT will be used.
+<dt> ElementName (I)   CHARACTER*(*)<dd>
+Name of the element. 
+<dt> ElementValue (I)   CHARACTER*(*)<dd>
+Value of the element. 
+<dt> IFAIL  (O)   INTEGER<dd>
+error indicator: meaning: on output
+<blockquote>
+<dt> =0<dd>
+OK
+<dt> =-1<dd>
+no such file
+<dt> all other errors cause stop<dd>
+</blockquote>
+</dl>
+
+<p>The XML file does not have to be opened when XMLWriteElement is called. This routine can simply be called to write a file/island with the root element and value and then close itself.</p>
+<p>The actions of the subroutine are shown below</p>
+
+The subroutine call is:
+<pre> XMLWriteElement(XMLFileUnit, "cell", "73.5820   38.7330   23.1890 90 90 90 ", ifail)</pre>
+
+1) <b>Example 1:</b> XML before the above call:
+<ul>
+<pre>&lt;?xml version="1.0"?>
+ &lt;run>
+  &lt;MATTHEWS_COEF
+    ccp4_version="4.1" 
+    date="17/ 9/01" 
+   /></pre>
+After:
+<pre>&lt;?xml version="1.0"?>
+ &lt;run>
+  &lt;MATTHEWS_COEF
+    ccp4_version="4.1" 
+    date="17/ 9/01" 
+   />
+   &lt;cell>
+    73.5820   38.7330   23.1890 90 90 90
+   &lt;/cell></pre>
+
+1) <b>Example 2:</b> XML before the above call:
+<ul>
+<pre>&lt;?xml version="1.0"?>
+ &lt;run>
+  &lt;MATTHEWS_COEF
+    ccp4_version="4.1" 
+    date="17/ 9/01" 
+   />
+   &lt;cell</pre>
+After:
+<pre>&lt;?xml version="1.0"?>
+ &lt;run>
+  &lt;MATTHEWS_COEF
+    ccp4_version="4.1" 
+    date="17/ 9/01" 
+   />
+   &lt;cell
+    >
+    73.5820   38.7330   23.1890 90 90 90
+   &lt;/cell></pre>
+</pre>
+</ul>
+
+
+</ul>
+</ul>
+
+<H2><a name="xmlcloseelement"></a>Subroutine XMLCloseElement(XMLFileUnit, ElementName, ifail)
+</H2>
+<p>
+Close an element and the file if its the root element</p>
+
+Arguments:
+<dl>
+<dt> XMLFileUnit  (I/O)   INTEGER<dd>
+file unit for XML file to be opened. If set to 6 STDOUT will be used.
+<dt> ElementName (I)   CHARACTER*(*)<dd>
+Name of the element. 
+<dt> IFAIL  (O)   INTEGER<dd>
+error indicator: meaning: on output
+<blockquote>
+<dt> =0<dd>
+OK
+<dt> =-1<dd>
+no such file
+<dt> all other errors cause stop<dd>
+</blockquote>
+</dl>
+<p>This subroutine will close an element. If the element specified is not the current open element 
+the subroutine will close the current element then check if the next element is the specified 
+element. The subroutine will continue to do this until it either finds a match or reaches the root 
+element. When the subroutine reaches the root element it will close it and the file. </p>
+
+
+
+<H2><a name="commons"> PXXML INTERNAL COMMON BLOCKS</H2>
+The following common block is used by PXXML and is listed here for
+completeness: ccp4xmld
+<pre> 
+      integer elementstatus(80), elementnumber 
+      character*80 openelements(80), XMLFileName
+      
+      external lenstr
+
+      common /ccp4xmld/ elementnumber, elementstatus, openelements,
+     $     XMLFileName
+</pre>
+
+<p>the element number records the depth of the element i.e. root element = 1, next one down is 
+2 and so on.</p>
+<p>The purpose of the array elementstatus is to store the status of the element - i.e. 0=closed, 
+1=open (not complete), 2=open (complete with &gt;).</p>
+<p>The purpose of the openelements is to remember the name of all the open elements (with or 
+without the trailing >). The name of closed elements is not remembered.
+<p>XMLFileName.... speaks for itself!
+
+<H2><a name="example"> EXAMPLE PROGRAM USING AN XML FILE</H2>
+
+See 
+<a href="/ccp4/src/matthews_coef.f">
+matthews_coef</a> available in version 4.2+ of ccp4.
+
+
+<H2><a name="authors"> AUTHORS AND HISTORY</H2>
+Alun Ashton Version 1.0 2001
+
+</body></html>

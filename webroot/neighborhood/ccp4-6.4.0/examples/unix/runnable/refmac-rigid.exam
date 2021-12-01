@@ -1,0 +1,47 @@
+#!/bin/sh
+# refmac-rigid.exam
+# 
+# A run-all script to run refmac rigid body refinement with the cubic insulin
+# structure 2bn3 (Nanao & Ravelli) and the results of the run-all script
+# scala-complete which will scale, merge and massage the measurements of 
+# same.
+#
+
+set -e
+
+# bug # 3192 - run-all examples produce harvest files - well to counteract
+# this here set HARVESTHOME to somewhere in $CCP4_SCR
+
+HARVESTHOME=$CCP4_SCR
+export HARVESTHOME
+
+# check that the input file - ${CCP4_SCR}/sc-exam-free.mtz - exists
+
+if test ! -f ${CCP4_SCR}/sc-exam-free.mtz ; then
+  echo "run scala-complete.exam first"
+  exit 1
+fi
+
+# FIXME - residual mlkf is the default so this should probably be removed
+#
+# FIXME - cubic spacegroups cannot have anisotropic b factors for the 
+#         bulk solvent model etc:
+#         "lssc anisotropic fixbulk bbulk 200.0"
+# 
+
+# run refmac5
+
+refmac5 \
+  hklin ${CCP4_SCR}/sc-exam-free.mtz \
+  hklout ${CCP4_SCR}/sc-exam-refmac5.mtz \
+  xyzin ${CEXAM}/data/insulin_2bn3.pdb \
+  xyzout ${CCP4_SCR}/rb-exam-refined.pdb << eof
+labin FP=F SIGFP=SIGF FREE=FreeR_flag
+refine type rigid 
+rigidbody ncycle 10
+rigidbody group 1 from 1 A to 21 A
+rigidbody group 2 from 1 B to 30 B
+monitor medium
+eof
+
+

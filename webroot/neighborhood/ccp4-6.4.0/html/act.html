@@ -1,0 +1,206 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::ACT::Supported::Model Analysis::analyse coordinates:::::::: -->
+
+<H1> ACT (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>act </b>
+- analyse coordinates.
+<H2> SYNOPSIS</H2>
+<b>act xyzin </b>
+<i>xyz_in.pdb</i>
+<br>
+ [<A HREF="#keywords">Keyworded input</A>]
+<H2><a name="description">DESCRIPTION</a></H2>
+The program does some useful coordinate analyses.
+For example it quickly finds ALL the crystal contacts,
+no matter where the molecule is placed with respect to the origin
+(otherwise the fast algorithm for finding contacts is the same
+as in Tadeusz Skarzynski's program CONTACT).
+<P> 
+The program always gives statistics for the temperature factors
+averaged by residue, for the main chain and side chains.
+<P> 
+Lists atoms with B-values .gt. bmoni (default = 50).
+<P> 
+Lists B-values for Ox1 and Nx2 atoms for each ASN and GLN
+- if the difference is large the atoms could be wrong way round.
+<P> 
+Prints a histogram of solvent molecules in ranges of B-values.
+<P> 
+Calculates F000 (the number of electrons in the unit cell).
+<P> 
+The optional output includes various contact analyses.
+<H2> <A NAME="keywords"></A>KEYWORDED INPUT</H2>
+The various data control lines are identified by keywords.
+Only the first 4 letters of each keyword are necessary.
+<P>
+<blockquote>
+<A HREF="#bdump"><B>BDUMP</B></A>, <A HREF="#bmonitor"><B>BMONITOR</B></A>,
+<A HREF="#contact"><B>CONTACT</B></A>, <A HREF="#end"><B>END</B></A> (compulsory),
+<A HREF="#hbond"><B>HBOND</B></A>, <A HREF="#sequ"><B>SEQU</B></A>,
+<A HREF="#short"><B>SHORT</B></A>, <A HREF="#symmetry"><B>SYMM</B></A> (compulsory)
+</blockquote>
+<P>
+<H3> <A NAME="symmetry"></A>SYMM  &lt;space_group name or number&gt;</H3>
+[COMPULSORY INPUT]
+<H3> <A NAME="contact"></A>CONTACT &lt;keyword&gt; [&lt;dmin&gt;] &lt;dmax&gt;</H3>
+[OPTIONAL INPUT]
+<pre>
+
+Listing of contacts
+
+   Keywords:
+            ALL (default)
+            INTERmolecular
+            INTRAmolecular
+
+            dmin dmax - distance limits for listing contacts,
+                        in any order (default = 0.0, 5.0).
+                        If only one value given it is assumed 
+                        to be dmax.
+
+</pre>
+<H3> <A NAME="short"></A>SHORT &lt;dmoni&gt;</H3>
+[OPTIONAL INPUT]
+<P> 
+Listing of short contacts
+<P> 
+dmoni (default = 2.5) short contacts, up to dmoni, are listed.
+
+<H3> <A NAME="hbond"></A>HBOND &lt;keyword&gt; &lt;hdmin&gt; &lt;hdmax&gt;</H3>
+[OPTIONAL INPUT]
+<p>
+Listing of possible hydrogen bonds (by distance criterion). 
+&lt;keyword&gt; is one of:
+<pre>
+            ALL (default)
+            INTERmolecular
+            INTRAmolecular
+</pre>
+&lt;hdmin&gt; &lt;hdmax&gt; (in any order) are the distance limits for 
+listing contacts (default = 2.7, 3.3). A list of unpaired hydrogen bonding 
+atoms is given with HBOND ALL option.
+<p>
+HBOND looks for contacts between oxygen and nitrogen atoms. An earlier
+version of <tt>act</tt> excluded various N/O and O/O combinations, but
+this was causing genuine hydrogen bonds to be missed. The current version
+makes no such exclusions, and therefore will list many false positives.
+<p>
+In any case, <tt>act</tt> uses a simple distance criterion. From the list
+generated, you should check:
+<ol>
+<li>protonation: does one atom act as donor and one as acceptor? This may
+depend on a wider hydrogen-bonding network
+<li>angles: are the bonded-donor-acceptor and donor-acceptor-bonded angles
+acceptable?
+</ol>
+
+<H3> <A NAME="bmonitor"></A>BMONITOR &lt;bmoni&gt;</H3>
+[OPTIONAL INPUT]
+<P> 
+Monitor B-values greater than bmoni (default = 50.0).
+<H3> <A NAME="bdump"></A>BDUMP</H3>
+[OPTIONAL INPUT]
+<P> 
+Dump ascii plot files (BRES.PLT) for the B-factors to disk
+<H3> <A NAME="sequ"></A>SEQU</H3>
+[OPTIONAL INPUT]
+<P> 
+Extract sequence and analyse the amino acid composition.
+<H3><a name="end">END</a></H3>
+[COMPULSORY INPUT]
+<P> 
+last card, ends input.
+<H2> <A NAME="note"></A>NOTE</H2>
+PLOTTING:
+<P> 
+If NAG graphics library is available:
+Uncomment the call to plotit and the ACTPLOT code and link with
+the library.  You can then plot B-values by residue with 
+keyword:
+<H3> <A NAME="bplt"></A>BPLT</H3>
+[OPTIONAL INPUT]
+<P> 
+Plot B-values by residue with NAG graphics library
+<H2> <A NAME="files"></A>INPUT AND OUTPUT FILES</H2>
+The input files are:
+<ol>
+ <li>Control data file
+ <li>Input coordinate file in PDB format
+</ol>
+The output files are:
+<ol>
+ <li>Listing of program output to the printer.
+ <li>BRES.PLT ascii plot file for the B-factors, if BDUMP keyword was read.
+</ol>
+<H2> <A NAME="printer_output"></A>PRINTER OUTPUT</H2>
+The printer output starts with F000 (the number of electrons in the unit cell),
+the number of amino acid residues, solvent molecules, metal and other atoms
+in the input file.
+<P> 
+The program then outputs analysis of the temperature factors by residue
+for main chain and side chains. For each chain a table is printed for
+the distribution of residues in ranges of standard deviation of the B-values.
+The residues with temperature factor greater than three standard deviations
+from the average value are listed. This analysis is done for main chain
+and side chain atoms for each chain separately.
+<P> 
+A list is given of atoms with B-values greater than bmoni, if input,
+or 50 by default.
+<P> 
+Next follows a list of B-values for the oxygens and nitrogens of the amide
+groups of glutamines and asparagines. This can be used as a check if those
+atoms are placed the wrong way round - the difference would then be large.
+<P> 
+At the end of the 'compulsory' output a histogram of the solvent molecules
+is given in ranges of temperature factors
+<P> 
+For the contact searching options pairs of atoms are listed and the distance
+between then. If the contact is with a symmetry related atom the number
+of NSYM symmetry operation is given for that atom followed by the number
+of translations of whole unit cell along x, y and z.
+<P> 
+For the HBOND ALL option a list of unpaired hydrogen bonding atoms is given.
+For well refined structures the atoms with hydrogen bonding potential
+should normally make a bond, perhaps with the exception of main chain
+nitrogens of prolines.
+<P> 
+For SEQU option the sequence is extracted from the input file and listed
+for each chain in both the three-letter and one letter notations.
+Next the amino acid composition is listed followed by a histogram.
+
+<H2> <A NAME="examples"></A>EXAMPLES</H2>
+
+<H3>UNIX example script </H3>
+
+<a href="../examples/unix/runnable/act.exam">$CEXAM/unix/runnable/act.exam</a><br>
+Example using toxd data.
+
+<H2> AUTHORS</H2>
+Originators   :  Wojtek Rypniewski and Howard Terry
+
+<H2> SEE ALSO</H2>
+
+Alternative B factor analysis:
+<ul>
+<li> <A HREF=baverage.html>baverage</A>
+</ul>
+
+Alternative distance analysis:
+<ul>
+<li> <A HREF="ncont.html">ncont</A>
+<li> <A HREF="contact.html">contact</A>
+<li> <A HREF="distang.html">distang</A>
+</ul>
+
+General references:
+<ol>
+<li>W.Kabsch and C.Sander (1983) <i>Biopolymers</i>  <b>22</b>, 2577-2637<br>
+Dictionary of Protein Secondary Structure - Pattern-recognition of
+hydrogen-bonded and geometrical features.
+</ol>
+
+</body></html>

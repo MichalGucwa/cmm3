@@ -1,0 +1,57 @@
+#!/bin/sh
+#  Standard program for reading ASCII files to MTZ.
+#  Number of columns is derived from LABOUT line.
+#  Remember all input data must be separated by space unless you
+#  specify a FORMAT (as below).
+#
+# You will need to run cad too - your data will need to be sorted and
+# may not be in the conventional CCP4 asymmetric unit.
+#
+
+if test ! -f $CCP4_SCR/toxd.hkl; then
+  echo '! run mtz2various.exam first' 1>&2
+  exit 1
+fi
+
+# this was changed from Xplor format - hope its ok
+# Convert CNS formatted file from mtz2various back to mtz.
+
+f2mtz HKLIN $CCP4_SCR/toxd.hkl HKLOUT $CCP4_SCR/junk_hkl <<+
+SKIP 5 # Miss out 5 lines of header
+TITLE CNS to MTZ
+NAME PROJECT TOXD CRYSTAL DERIV_AU DATASET DERIV_AU
+CELL 73.58   38.73   23.19 # angles default to 90
+LABOUT H   K  L   FAU20  PHIB  SIGFAU20 FreeRflag 
+CTYPE  H   H  H   F      P     Q        X  # X is special free R type
+# remove the leading "1x" in the format iff your fortran system obeys
+# carriage-control (thus there isn't a leading space in the mtz2various 
+# output).  (This may not be canonical X-PLOR format -- your mileage may
+# vary with the input FORMAT and column specifications.)
+FORMAT '(1X,5X,3F5.0,6X,F10.1,F10.1,7X,F10.2,6X,F6.0)'
+# An example input line starts immediately after the #:
+#  INDE     0    6    2 FOBS=    4661.0       0.0 SIGMA=     94.00 TEST=    11
+SYMM 19
++
+
+# Convert file from mtz2various with OUTPUT USER.
+
+f2mtz HKLIN $CCP4_SCR/toxd.user HKLOUT $CCP4_SCR/junk_user <<+
+TITLE USER to MTZ
+NAME PROJECT TOXD CRYSTAL NATIVE DATASET NATIVE
+CELL 73.58   38.73   23.19 # angles default to 90
+LABOUT H  K  L  FAU20 SIGFAU20 FTOXD3 SIGFTOXD3
+CTYPE  H  H  H  F     Q        F      Q
+FORMAT '(3F4.0,4F10.1)'
+SYMM 19
++
+
+# We now need to correct the dataset information, since we have
+# read in two datasets simultaneously - it would have been better
+# to convert them separately!
+
+cad HKLIN1 $CCP4_SCR/junk_user HKLOUT $CCP4_SCR/junk_user_1 <<EOF
+LABIN FILE 1 E1=FTOXD3 E2=SIGFTOXD3 E3=FAU20 E4=SIGFAU20
+XNAME FILE 1 E3=DERIV_AU E4=DERIV_AU
+DNAME FILE 1 E3=DERIV_AU E4=DERIV_AU
+END
+EOF

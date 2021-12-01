@@ -1,0 +1,121 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::REBATCH::Supported::Data Processing and Reduction::alter batch numbers in an unmerged MTZ file:::::::: -->
+
+<H1> REBATCH (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>rebatch </b>
+- alter batch numbers and other batch information in an unmerged MTZ file (saves re-running
+Mosflm).
+<H2> SYNOPSIS</H2>
+<b>rebatch HKLIN</b>
+<i>foo_in.mtz </i>
+<b>HKLOUT</b>
+<i>foo_out.mtz </i>
+<br>
+[<A HREF="#keywords">Keyworded input</A>]
+
+<H2><A NAME="description"></A>DESCRIPTION</H2>
+
+A program to alter batch numbers in an unmerged MTZ file. This may be
+necessary to give different batches number to all your MTZ files
+(saves running <tt>Mosflm</tt> again). 
+<p>
+If datasets are defined in the header, or if BATCH PNAME &amp; XNAME &amp; DNAME
+commands are given, then the dataset cell dimension and wavelength
+properties will be checked and reset if necessary. This allows the
+file to be fixed up if these properties have not been properly set by
+e.g. <tt>Mosflm</tt>. Priority for setting the dataset cell & wavelength is:-
+<ol>
+<li>Values set explicitly with CELL or WAVELENGTH commands</li>
+<li>Values present in input file as dataset properties</li>
+<li>Values from the batch headers: these are checked for consistency
+within batches belonging to each dataset, and warnings are printed if
+inconsistency is found.</li>
+</ol>
+<p>
+The program will also patch the detector limits in the batch headers. These are 
+needed for the detector scaling options in <a href="scala.html">Scala</a>.
+
+<H2><A NAME="keywords"></A>KEYWORDED INPUT</H2>
+
+<P>The various data control lines are identified by keywords. Only the first
+4 letters of each keyword are necessary. Most keywords are optional. </P>
+
+<A HREF="#batch"><B>BATCH</B></A>, <A HREF="#title"><B>TITLE</B></A>,
+<A HREF="#history"><B>HISTORY</B></A>, <A HREF="#detector"><B>DETECTOR</B></A>,
+<A HREF="#cell"><B>CELL</B></A>, <A HREF="#wavelength"><B>WAVELENGTH</B></A>,
+<A HREF="#end"><B>END</B></A>
+
+<H3><A NAME="batch"></A> BATCH  &lt;batch_range | batch_list | ALL&gt;  
+ADD &lt;nadd&gt; | START &lt;nstart&gt; | REJECT | INCLUDE | MAXWIDTH | 
+PNAME &lt;projectname&gt; XNAME &lt;crystalname&gt; DNAME &lt;datasetname&gt;</H3>
+
+Define batch number editing for either a range of batches (b1 TO b2),
+a list of batches ( b1 b2 b3 ...), or ALL [default]. 
+<p>
+Editing options are:
+<blockquote>
+<dl>
+<dt> ADD &lt;nadd&gt;   <dd>
+Add &lt;nadd&gt; to the batch number for all batches specified.
+Note that &lt;nadd&gt; may be negative, but the resulting
+batch numbers must all be .gt. 0
+<dt> START &lt;nstart&gt;<dd>
+Renumber all batches matching the specification serially from &lt;nstart&gt;,
+e.g. if the file contains batches 100,  101,  102,  110,  111, then the command
+BATCH 1 TO 200 START 1000 will renumber them to 1000, 1001, 1002, 1003, 1004
+<dt> REJECT<dd>
+Reject these batches.
+<dt> INCLUDE<dd>
+Include these batches: the first INCLUDE
+command will reject all other batches.
+<dt> MAXWIDTH<dd>
+Rejects reflections having width larger than that 
+specified for each input batch
+<dt> PNAME &lt;projectname&gt; XNAME &lt;crystalname&gt; DNAME &lt;datasetname&gt; <dd>
+Set or reset project/crystal/dataset names for these batches. PROJECT, CRYSTAL
+and DATASET can be used as alternatives to PNAME, XNAME and DNAME.
+</dl>
+</blockquote>
+Only one editing option can be given for each BATCH command (apart
+from PNAME, XNAME and DNAME, which should be given together), but a series of
+BATCH commands may be given, and have a cumulative effect.
+
+<p>
+<H3><A NAME="title"></A> TITLE &lt;title&gt;</H3>
+New title for file HKLIN, to be put in main MTZ header.
+
+<p>
+<H3><A NAME="history"></A> HISTORY &lt;history&gt;</H3>
+New history record for file HKLIN.
+
+<p>
+<H3><A NAME="detector"></A> DETECTOR &lt;xmin&gt; &lt;xmax&gt; &lt;ymin&gt; &lt;ymax&gt;</H3>
+Reset limits of detector coordinates XDET, YDET for all batches. These are
+needed for the detector scaling options in <a href="scala.html">Scala</a>.
+
+<p>
+<H3><A NAME="cell"></A> CELL &lt;a&gt; &lt;b&gt; &lt;c&gt; &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt;</H3>
+Reset cell dimensions for the file header and all datasets. Batch cell
+dimensions are not altered.
+
+<p>
+<H3><A NAME="wavelength"></A> WAVELENGTH &lt;lambda&gt; </H3>
+Reset wavelength for all datasets. Batch wavelengths are not altered.
+
+<p>
+<H3><A NAME="end"></A> END </H3>
+End keyworded input. EOF will also work.
+
+<H2>SEE ALSO</H2>
+
+<A HREF="scala.html">scala</A>
+
+<H2> EXAMPLES</H2>
+<H3> A unix example file is available on $CEXAM/unix/runnable/<H3>
+<p><A HREF="../examples/unix/runnable/rebatch.exam">rebatch</A></p>
+</body></html>
+

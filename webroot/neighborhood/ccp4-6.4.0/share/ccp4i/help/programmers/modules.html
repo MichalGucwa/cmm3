@@ -1,0 +1,222 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4i Documentation for Programmers: The <em>modules.def</em> File</title>
+<link rel="stylesheet" type="text/css" href="../ccp4idocs.css" title="CCP4i" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="3" class="logopic"><img src="../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logoprog">Documentation for Programmers</td></tr>
+<tr><td class="logotitle">The <em>modules.def</em> File</td></tr>
+</table>
+<br />
+<table border="0">
+<tr><td>
+<a href="task_windows.html" target="_PROGMAIN">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="def_files.html" target="_PROGMAIN">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="intro.html" target="_PROGMAIN">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td></tr>
+</table>
+
+<p><a href="#modules_file">The <em>modules.def</em> File</a></p>
+<p><a href="#editing_modules_file">Editing the <em>modules.def</em> File</a></p>
+<p><a href="#adding_utilities">Adding ``utilities'' to the <em>modules.def</em> File</a></p>
+<p><a href="#main_and_user_modules_file">Main and User <em>modules.def</em> Files</a></p>
+<p><a href="#old_modules_file">Old-style <em>modules</em> File</a></p>
+
+<h3><a name="modules_file"></a>The <em>modules.def</em> File</h3>
+
+<p>The <em>modules.def</em> file defines which items appear in the task menu list
+on the left hand side of the CCP4i main window. The file has the full path name
+<strong><em>$CCP4I_top/etc/modules.def</em></strong>.</p>
+
+<p>The CCP4i convention is to organise the functionality into tasks (where
+one task usually corresponds to one major program) and then to group the
+tasks into modules (where each module is a stage in the crystallographic
+refinement procedure). There is also a 'Program List' module which is just
+a list of the interfaced programs in alphabetical order. There is a menubutton
+in contrast colour near the top left of the main window which is used to
+select a module. The tasks in the module are listed beneath the module
+menubutton. By convention the tasks are listed in the order that you would
+expect them to be used in a refinement procedure.</p>
+
+<p>As of CCP4i 1.5, it is possible to further group tasks within the
+modules into "folders". This is useful to group together subsets of tasks
+which are conceptually related to each other.</p>
+
+<p>The <em>modules.def</em> file contains the following entries:</p>
+<dl>
+<dt>PROJECT</dt>
+<dd>The name of the project - usually CCP4</dd>
+<dt>TITLE</dt>
+<dd>The title of the project which will be the title given to the main
+window</dd>
+<dt>MODULE_LIST</dt>
+<dd>A list of the module names in the order they should appear in the
+menu of modules. If a module name doesn't appear in this list then it
+will not be displayed in the menu - even if it is defined elsewhere in
+the <em>modules.def</em> file. It is also possible to have "blank" entries
+in this list, which are interpreted as separator lines in the menu of
+modules shown to the user.</dd>
+<dt>N_MODULES</dt>
+<dd>The number of modules which are defined in the file (see below).</dd>
+<dt>N_TASKS</dt>
+<dd>The number of task references which are defined in the file (see
+below).</dt>
+<dt>N_FOLDERS</dt>
+<dd>The number of folders which are defined in the file (see below).</dt>
+</dl>
+
+<p>Each module is defined by a group of three entries:</p>
+
+<dl>
+<dt>MODULE_NAME,<em>n</em></dt>
+<dd>A single word name for the module. This name is only used internally, and
+should appear in the MODULE_LIST in order that the module is displayed in
+the menu. The module name is used to specify the name of the help file
+which contains an overview of the tasks in the module:
+$CCP4I_TOP/help/modules/<em>modulename</em>.html.
+By default the Help button on the top right of a task window will link
+to this help file</dd>
+<dt>MODULE_TITLE,<em>n</em></dt>
+<dd>The text which will appear in the main window <em>module_title</em>.</dd>
+<dt>MODULE_TASK_LIST,<em>n</em></dt>
+<dd>A list of task and/or folder titles corresponding to the tasks and folders
+which are to be included in this module, in the order in which they will appear
+in the list of tasks as seen by the user in the main interface.</dd>
+</dl>
+
+<p>Each task reference is defined by a group of four entries:</p>
+
+<dl>
+<dt>TASK_TITLE,<em>n</em></dt>
+<dd>The text which appears in the button for launching the task as seen on
+the main window.</dd>
+<dt>TASK_NAME,<em>n</em></dt>
+<dd>A single word which specifies the root name of the files which define
+the task window. These are the .def file $CCP4I_top/tasks/<em>taskname</em>.def
+and the .tcl file $CCP4I_top/tasks/<em>taskname</em>.tcl. If these files do
+not exist, the task will not be listed in the task menu (an exception is in
+the case of ``utilities'', see below).</dd>
+<dt>TASK_MODULE,<em>n</em></dt>
+<dd>The MODULE_NAME corresponding to one of the modules defined elsewhere in
+the file.</dd>
+<dt>TASK_DESCRIPT,<em>n</em></dt>
+<dd>A brief description of the task which will be used for the message line help
+(<em>i.e.</em> the information which appears when the cursor is over the button for
+the task).</dd>
+</dl>
+
+<p>Note that the same TASK_NAME can appear a multiple number of times with
+different titles, different descriptions, or in different modules.</p>
+
+<p>Each folder is defined by a group of five entries:</p>
+
+<dl>
+<dt>FOLDER_NAME,<em>n</em></dt>
+<dd>An internal name for the folder which is analogous to the MODULE_NAME
+above. This should be unique between all folders within each module.</dd>
+<dt>FOLDER_TITLE,<em>n</em></dt>
+<dd>The text that appears on the folder title bar when displayed in the main
+CCP4i window. This is the text that the user sees.</dd>
+<dt>FOLDER_DESCRIPT,<em>n</em></dt>
+<dd>A brief description of the task which will be used for the message line help
+(<em>i.e.</em> the information which appears when the cursor is over the button for
+the folder).</dd>
+<dt>FOLDER_MODULE,<em>n</em></dt>
+<dd>The MODULE_NAME corresponding to one of the modules defined elsewhere in
+the file, it indicates which module the folder will appear in.</dd>
+<dt>FOLDER_TASK_LIST,<em>n</em></dt>
+<dd>A list of task titles corresponding to the tasks which are to be included
+in this folder, in the order in which they will appear in the list of tasks as
+seen by the user in the main interface.</dd>
+</dl>
+
+<h3><a name="editing_modules_file"></a>Editing the <em>modules.def</em> File</h3>
+
+<p>Due to the size and relative complexity of the <em>modules.def</em> file,
+it is recommended that it is not edited by hand but instead using the Edit
+Modules utility accessed from the Systems Administration menu on the right hand
+side of the main window. This provides options to add, remove and modify
+existing modules and task references.</p>
+
+<p>Within CCP4i a set of procedures has been provided to directly
+manipulate the <em>modules.def</em> file. These procedures are in the
+<strong><em>$CCP4I_TOP/src/modules_utils.tcl</em></strong> file.</p>
+
+<h4><a name="adding_utilities"></a>Adding ``utilities'' to the <em>modules.def</em> File</h4>
+
+<p>A utility in this context is an application which is not a CCP4i task.
+Generally these are viewing programs such as Loggraph, rather than interfaces
+to crystallographic programs.</p>
+
+<p>Some utilities can already be launched from the task list. New utilities can
+also be added by making a new ``task'' in the <em>modules.def</em> file, see the
+section on <a href="editing_modules_file">Editing the <em>modules.def</em> File</a>.
+In this case the ``task'' name must be the name of the command to start the
+utility program prepended with <em>run_</em>, for example:</p>
+
+<p>To add a new utility which is started using the command <em>myutility</em>,
+the taskname will be <em>run_myutility</em>.</p>
+
+<h3><a name="main_and_user_modules_file"></a>Main and User <em>modules.def</em> Files</h3>
+
+<p>In addition to the main CCP4i <em>modules.def</em> file, each user can
+have their own ``private'' <em>modules.def</em>. This file will have the full
+path <strong><em>$USER/.CCP4/OPSYS/modules.def</em></strong>. Entries in this
+file are appended to those read from the main <em>modules.def</em> and any
+additional modules or task references will be displayed in the main CCP4i
+window.</p>
+
+<h3><a name="old_modules_file"></a>Old-style <em>modules</em> File</h3>
+
+<p>In CCP4i 1.2.7 and earlier, a flat-text <em>modules</em> file was used
+instead of a CCP4i <em>.def</em> file. This had the advantage of being easy
+to edit by hand, but was difficult for CCP4i to update itself. The old-style
+<em>modules</em> files are no longer used, however the information below
+is retained for historical reasons.</p>
+
+<p>If you look at the first few lines of the <em>modules</em> file, you will
+see the following keywords followed by some text:</p>
+
+<dl>
+<dt>PROJECT</dt>
+<dd>The name of the project - usually CCP4</dd>
+<dt>TITLE</dt>
+<dd>The title of the project which will be the title given to the main
+window</dd>
+<dt>MODULE</dt>
+<dd>This is followed by a single word name for a module <em>modulename</em>
+and then the text which will appear in the main window <em>module_title</em>.<br />
+Following the MODULE line are pairs of lines which define the
+tasks within the module. The first task line has a single word <em>taskname</em>
+followed by the <em>task_title</em> which is the text which will appear in
+the main interface. The second line is a brief <em>task_description</em>, a
+description of the task which will be used for the message line help (<em>i.e.</em>
+the information which appears when the cursor is over the button for the task).</dd>
+</dl>
+
+<p>The <em>module_title</em> and <em>task_title</em> will appear in the main
+window but the other information is used to find the files needed for the
+task interface.</p>
+
+<p>The <strong><em>taskname</em></strong> specifies the names of the files which define
+the task window. These are the .def file $CCP4I_top/tasks/<em>taskname</em>.def
+and the .tcl file $CCP4I_top/tasks/<em>taskname</em>.tcl. If these files do
+not exist, the task will not be list in the task menu.</p>
+
+<p>The <strong><em>modulename</em></strong> is used to specify the name of the help file
+which contains an overview of the tasks in the module:
+$CCP4I_TOP/help/modules/<em>modulename</em>.html.
+By default the Help button on the top right of a task window will link
+to this help file.</p>
+
+</body>
+</html>

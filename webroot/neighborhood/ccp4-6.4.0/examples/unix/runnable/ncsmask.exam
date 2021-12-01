@@ -1,0 +1,25 @@
+#!/bin/sh
+
+# awa
+# changes made on 98/06/30 to accomodate new formatt in toxd.pdb 
+
+# Make an averaging mask from toxd coordinates
+# (to illustrate program - no obvious use!)
+
+# select protein and sulphates only - don't want waters
+# contributing to mask
+
+pdbset XYZIN $CEXAM/toxd/toxd.pdb XYZOUT $CCP4_SCR/toxd_protein.pdb << eof
+SELECT CHAIN A S # using the select keyword to choose chain A and S
+eof
+#
+
+# Now make mask.
+# Mask will be in P1 unless keyword SYMM given.
+
+ncsmask xyzin $CCP4_SCR/toxd_protein.pdb mskout $CCP4_SCR/junk.msk << eof
+SYMM P212121
+EXPAND 1.0
+OVERLAP 3
+eof
+#

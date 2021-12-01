@@ -1,0 +1,316 @@
+<html>
+<head><title>CCP4 Program Suite: diskio</title></head>
+<body>
+
+<!-- ::INDEX_INFO::DISKIO::Library::::low-level input/output subroutine library:::::::: -->
+
+<H1> DISKIO (CCP4: Library)</H1>
+
+<H2> NAME</H2>
+
+<b>diskio </b> - CCP4 subroutine library for input/output
+
+<H2>DESCRIPTION</H2>
+
+<p>Since CCP4 version 5.0, <tt>diskio.f</tt> has been replaced by
+a set of C functions. These functions are wrapped by a
+<a href="C_library/diskio_f_page.html">Fortran API</a> which
+reproduces the behaviour of the old library.
+<p>
+This document describes the library as seen from a Fortran programmer's 
+perspective. There are routines for opening and closing files,
+reading and writing a variety of data items, seeking within a file, etc.
+
+<H2>Contents</H2>
+
+<ul>
+    <li><a href="#list_of_routines">List of subroutines</a>
+    <li><a href="#list_of_arguments">List of arguments</a>
+    <li><a href="#descriptions">Descriptions of the subroutines</a>
+</ul>
+
+<a name="list_of_routines"></a><H2>List of subroutines</H2>
+
+<p>The calls provided in <tt>diskio</tt> are given below. The type and
+meaning of the arguments is given in the next section.
+
+<p><table border=1>
+<tr><th>Call <i>routine<i> (<i>argument list</i>) <th>Purpose
+<tr><td> CALL <a href="#qopen">QOPEN</a>   (IUNIT,LOGNAM,ATBUTE)    <td> Open file
+<tr><td> <i>CALL <a href="#qqopen">QQOPEN</a>  (IUNIT,LOGNAM,ISTAT)</i>     <td> <i>Open file: use QOPEN</i>
+<tr><td> CALL <a href="#qreadi">QREADI</a>  (IUNIT,BUFFER,NITEMS,IER) <td> Read nitems into integer array
+<tr><td> CALL <a href="#qreadr">QREADR</a>  (IUNIT,BUFFER,NITEMS,IER) <td> Read nitems into real array
+<tr><td> CALL <a href="#qreadq">QREADQ</a>  (IUNIT,BUFFER,NITEMS,IER) <td> Read nitems into complex array
+<tr><td> CALL <a href="#qwriti">QWRITI</a>  (IUNIT,BUFFER,NITEMS)     <td> Write nitems from integer array
+<tr><td> CALL <a href="#qwritr">QWRITR</a>  (IUNIT,BUFFER,NITEMS)     <td> Write nitems from real array
+<tr><td> CALL <a href="#qwritq">QWRITQ</a>  (IUNIT,BUFFER,NITEMS)     <td> Write nitems from complex array
+<tr><td> CALL <a href="#qqinq">QQINQ</a>   (IUNIT,LOGNAM,FILNAM,LENGTH) <td> Get filename and length
+<tr><td> VAR = <a href="#qisnan">QISNAN</a> (VALUE) <td> check for magic number
+<tr><td>Transfered to <a href="./library.html">library.c</a>
+<tr><td> call qclose (int *iunit)                  <td> Close file
+<tr><td> call qmode (int *iunit,int *mode,int *nmcitm)      <td> Change mode
+<tr><td> call qread (int *iunit, *buffer,init *nitems, int *ier) <td> Read nitems
+<tr><td> call qreadc (int *iunit,char *buffer, int *ier (,int *nitems)) 
+   <td> Read bytes into character var.
+<tr><td> call qwrite (int *iunit, *buffer, int *nitems)     <td> Write nitems
+<tr><td> call qwritc (int *iunit, char * buffer (,int *nitems)) <td> Write character
+<tr><td> call qseek (int *iunit,int * irec, int *iel, int *lrecl) <td> Move to irec,iel
+<tr><td> call qskip (int *iunit, int *lrecl)            <td> Skip 1 record
+<tr><td> call qback (int *iunit, int *lrecl)            <td> Backspace 1 record
+<tr><td> call qlocate (int *iunit,int *locate)           <td> Get position in file
+<tr><td> call qrarch (int *iunit, int *ioffset, int *ier)  <td> set up number conversion
+<tr><td> call qwarch (int *iunit, int *ioffset)          <td> write conversion info
+<tr><td> call qnan (union float_uint_uchar *value)  <td> return canonical magic number
+</table>
+
+
+<p><b>Notes</b>
+
+<p>The use of QREAD / QWRITE is deprecated - use QREAD<i>a</i> / QWRITE<i>a</i>
+(<i>a</i>=I,R,Q) with a buffer of the correct type.
+
+<a name="list_of_arguments"></a><H2>List of arguments</H2>
+
+<p>In the subroutines listed above the arguments have the following meanings:
+
+<dl>
+<dt><b>IUNIT</b>  <dd> Variable returned by (Q)QOPEN to identify a file stream<br>
+               Note: <i>IUNIT is NOT a Fortran Unit number, but an internal
+               identifier</i>
+<p>
+<dt><b>LOGNAM</b> <dd>logical name (or file name) for the stream 
+<p>
+<dt><b>ATBUTE</b> <dd>File status for opening file<br>
+               = 'UNKNOWN', 'SCRATCH', 'OLD', 'NEW', or 'READONLY'
+<p>
+<dt><b>ISTAT</b>  <dd>File status on opening the file:<br>
+               1, 'UNKNOWN'   open as 'OLD'/'NEW' check existence<br>
+               2, 'SCRATCH'   open as 'OLD' and delete on closing<br>
+               3, 'OLD'       file MUST exist or program halts<br>
+               4, 'NEW'       create (overwrite) new file<br>
+               5, 'READONLY'  self explanatory
+               <p>
+               NOTE: When using QQOPEN or QOPEN with ATBUTE = 'NEW' [ISTAT = 4],
+               a check is made on the environment variable CCP4_OPEN - 
+               if this is set to UNKNOWN then the file is opened with 
+               attribute UNKNOWN rather than NEW to allow overwriting files
+               that already exist.
+<p>
+<dt><b>MODE</b>   <dd><table noborder>
+                      <tr valign="TOP"><td>Access mode <td>= 0, BYTES<br>
+                           = 1, SHORT INT<br>
+                           = 2, (REAL) WORD<br>
+                           = 3, SHORT COMPLEX<br>
+                           = 4, COMPLEX<br>
+                           = 6, INTEGER
+                      </table>
+<p>
+<dt><b>NMCITM</b> <dd>No. of machine items (eg bytes) per element
+<p>
+<dt><b>BUFFER</b>  <dd>Starting location for data storage in core
+               <p>
+               NOTE: This should normally be an array of full-word fortran items
+               (REAL or INTEGER) or double-word (COMPLEX) in the case that you
+               want to transfer complex numbers (mode 4).  If necessary, unpack
+               bytes using the routines provided in the library (or new ones).
+               In particular, DON'T try to use BYTE or INTEGER*2 arrays, as these
+               will likely cause alignment errors on RISC architectures.
+<p>
+<dt><b>CHAR</b>   <dd>CHARACTER*n buffer for transfer
+<p>
+<dt><b>NITEMS</b> <dd>Number of elements to transfer
+<p>
+<dt><b>IER</b>    <dd>Error flag (0 = no error) else number of words transferred
+<p>
+<dt><b>IREC</b>   <dd>Desired record number (starts at 1)
+<p>
+<dt><b>IEL</b>    <dd>Desired element number within record (word) (starts at 1)
+<p>
+<dt><b>LRECL</b>  <dd>Record length in elements
+</dl>
+<p>
+<i>Note:</i> the number of channels and buffer length in words are set in
+<b>#DEFINE</b> statements.
+
+<a name="descriptions"></a><H2>Description of the Subroutines</H2>
+
+<dl>
+<p>
+<dt><a name="qopen"></a><b>QOPEN</b> <dd>Open a file unit
+   <p>
+   <table noborder>
+    <tr valign="TOP"><td>Usage: <td>CALL QOPEN <td>(IUNIT, LOGNAME, ATBUTE)
+    <tr valign="TOP"><td> <td>INTEGER <td>IUNIT
+    <tr valign="TOP"><td> <td>CHARACTER*(*) <td>LOGNAME, ATBUTE
+    <tr valign="TOP"> <td>
+    <tr valign="TOP"><td>Input: <td>IUNIT <td>unit number to assign to file
+    <tr valign="TOP"><td> <td>LOGNAME <td>Logical name of file to open
+    <tr valign="TOP"><td> <td>ATBUTE <td>File status = 'UNKNOWN', 'SCRATCH', 'OLD',
+                                      'NEW', or 'READONLY'
+    <tr valign="TOP"><td>
+    <tr valign="TOP"><td>Output: <td>None.
+   </table>
+   <p>
+   Calls QQOPEN
+
+<p>
+<dt><a name="qqopen"></a><b>QQOPEN</b>
+     <dd>Open a file unit
+      <p>
+       NOTE: the routine QOPEN (which calls QQOPEN) is to be preferred
+           to calling QQOPEN directly
+      <p>
+       <table noborder>
+        <tr valign="TOP"><td>Usage: <td>CALL QQOPEN <td>(IUNIT, LOGNAME, ISTAT)
+        <tr valign="TOP"><td> <td>INTEGER <td>IUNIT, ISTAT
+        <tr valign="TOP"><td> <td>CHARACTER*(*) <td>LOGNAME
+	<tr valign="TOP"><td>
+	<tr valign="TOP"><td>Input: <td>LOGNAME <td>Logical name of file to open
+        <tr valign="TOP"><td> <td> ISTAT <td> File status: 1 (UNKNOWN), 2 (SCRATCH), 
+                                     3 (OLD), 4 (NEW) or 5 (READONLY)
+        <tr valign="TOP"><td>
+	<tr valign="TOP"><td>Output: <td>IUNIT <td>Integer handle assigned to file.<br> 
+                                                  If negative the following error 
+						  conditions occurred: <br>
+                        -1 No more streams left <br>
+                        -2 Could not open the file
+       </table>
+      <p> Calls COPEN in <a href="./library.html">library.c</a>
+<p>
+<dt><a name="qreadi"></a><b>QREADI</b> <dd>Read from IUNIT into BUFFER, NITEMS items
+  <p>
+  <table noborder>
+   <tr valign="TOP"><td>Usage: <td>CALL QREADI <td>(IUNIT,BUFFER,NITEMS,IER)
+   <tr valign="TOP"><td> <td>INTEGER <td>IUNIT, NITEMS, IER
+   <tr valign="TOP"><td> <td>INTEGER <td>BUFFER
+   <tr valign="TOP"><td> 
+   <tr valign="TOP"><td>Input: <td>IUNIT <td>unit number assigned to file
+   <tr valign="TOP"><td> <td>NITEMS <td>number of items (item size set by QMODE)
+   <tr valign="TOP"><td>
+   <tr valign="TOP"><td>Output: <td>IER <td>0 (no error) <br> -1 (EOF) <br>
+                                               or number of items read
+   <tr valign="TOP"><td> <td>BUFFER <td>holds the items read
+  </table>
+  <p> Calls QREAD in <a href="./library.html">library.c</a>
+<p>
+<dt><a name="qreadr"></a><b>QREADR</b> <dd>Read from IUNIT into BUFFER, NITEMS items
+  <p>
+   <table noborder>
+    <tr valign="TOP"><td>Usage: <td>CALL QREADR <td>(IUNIT,BUFFER,NITEMS,IER)
+    <tr valign="TOP"><td> <td>INTEGER <td>IUNIT, NITEMS, IER
+    <tr valign="TOP"><td> <td>REAL <td>BUFFER
+    <tr valign="TOP"><td>
+    <tr valign="TOP"><td>Input: <td>IUNIT <td>unit number assigned to file
+    <tr valign="TOP"><td> <td>NITEMS <td>number of items (item size set by QMODE) 
+    <tr valign="TOP"><td>
+    <tr valign="TOP"><td>Output: <td>IER <td>0 (no error)<br> -1 (EOF)<br>
+                                                or number of items read
+    <tr valign="TOP"><td> <td>BUFFER <td>holds the items read
+  </table>
+  <p> Calls QREAD in <a href="./library.html">library.c</a>
+<p>
+<dt><a name="qreadq"></a><b>QREADQ</b> <dd>Read from IUNIT into BUFFER, NITEMS items
+  <p>
+   <table noborder>
+    <tr valign="TOP"><td>Usage: <td>CALL QREADQ <td>(IUNIT,BUFFER,NITEMS,IER)
+    <tr valign="TOP"><td> <td>INTEGER <td>IUNIT, NITEMS, IER
+    <tr valign="TOP"><td> <td>COMPLEX <td>BUFFER
+    <tr valign="TOP"><td>
+    <tr valign="TOP"><td>Input: <td>IUNIT <td>unit number assigned to file
+    <tr valign="TOP"><td> <td>NITEMS <td>number of items (item size set by QMODE)
+    <tr valign="TOP"><td>
+    <tr valign="TOP"><td>Output: <td>IER <td>0 (no error)<br> -1 (EOF) <br>
+                                                or number of items read
+    <tr valign="TOP"><td> <td>BUFFER <td>holds the items read
+  </table>
+  <p> Calls QREAD in <a href="./library.html">library.c</a>
+<p>
+<dt><a name="qwriti"></a><b>QWRITI</b> <dd>Write to IUNIT from BUFFER, NITEMS items
+  <p>
+   <table noborder>
+    <tr valign="TOP"><td>Usage: <td>CALL QWRITI <td>(IUNIT,BUFFER,NITEMS)
+    <tr valign="TOP"><td> <td>INTEGER <td>IUNIT, NITEMS
+    <tr valign="TOP"><td> <td>INTEGER <td>BUFFER
+    <tr valign="TOP"><td>
+    <tr valign="TOP"><td>Input: <td>IUNIT <td>unit number assigned to file
+    <tr valign="TOP"><td> <td>NITEMS <td>number of items (item size set by QMODE)
+    <tr valign="TOP"><td> <td>BUFFER <td>holds the items to write
+    <tr valign="TOP"><td>
+    <tr valign="TOP"><td>Output: <td>None. <td>
+  </table>
+  <p> Calls QWRITE in <a href="./library.html">library.c</a>
+<p>
+<dt><a name="qwritr"></a><b>QWRITR</b> <dd>Write to IUNIT from BUFFER, NITEMS items
+  <p>
+   <table noborder>
+    <tr valign="TOP"><td>Usage: <td>CALL QWRITR <td>(IUNIT,BUFFER,NITEMS)
+    <tr valign="TOP"><td> <td>INTEGER <td>IUNIT, NITEMS
+    <tr valign="TOP"><td> <td>REAL <td>BUFFER
+    <tr valign="TOP"><td>
+    <tr valign="TOP"><td>Input: <td>IUNIT <td>unit number assigned to file
+    <tr valign="TOP"><td> <td>NITEMS <td>number of items (item size set by QMODE)
+    <tr valign="TOP"><td> <td>BUFFER <td>holds the items to write
+    <tr valign="TOP"><td>
+    <tr valign="TOP"><td>Output: <td>None.
+  </table>
+  <p> Calls QWRITE in <a href="./library.html">library.c</a>
+<p>
+<dt><a name="qwritq"></a><b>QWRITQ</b> <dd>Write to IUNIT from BUFFER, NITEMS items
+  <p>
+   <table noborder>
+    <tr valign="TOP"><td>Usage: <td>CALL QWRITQ <td>(IUNIT,BUFFER,NITEMS)
+    <tr valign="TOP"><td> <td>INTEGER <td>IUNIT, NITEMS
+    <tr valign="TOP"><td> <td>COMPLEX <td>BUFFER
+    <tr valign="TOP"><td> 
+    <tr valign="TOP"><td>Input: <td>IUNIT <td>unit number assigned to file
+    <tr valign="TOP"><td> <td>NITEMS <td>number of items (item size set by QMODE)
+    <tr valign="TOP"><td> <td>BUFFER <td>holds the items to write
+    <tr valign="TOP"><td>
+    <tr valign="TOP"><td>Output: <td>None.
+  </table>
+  <p> Calls QWRITE in <a href="./library.html">library.c</a>
+<p>
+<dt><a name="qqinq"></a><b>QQINQ</b> <dd>check file name and size. <br>
+                               Check IUNIT first, if no success
+                               then try LOGNAM, if this fails use LOGNAM as filename.
+  <p>
+   <table noborder>
+    <tr valign="TOP"><td>Usage: <td>CALL QQINQ <td>(IUNIT,LOGNAM,FILNAM,LENGTH)
+    <tr valign="TOP"><td> <td>INTEGER <td>IUNIT,LENGTH
+    <tr valign="TOP"><td> <td>CHARACTER*(*) <td>LOGNAM,FILNAM
+    <tr valign="TOP"><td>
+    <tr valign="TOP"><td>Input: <td>IUNIT <td>handle to check (as returned by QOPEN)
+    <tr valign="TOP"><td> <td>LOGNAM <td>Logical name
+    <tr valign="TOP"><td>
+    <tr valign="TOP"><td>Output: <td>FILNAM <td>the full file name or "" if no file
+    <tr valign="TOP"><td> <td>LENGTH <td>file size or -1 if no file
+  </table>
+  <p> Calls CQINQ in <a href="./library.html">library.c</a>
+<p>
+<dt><a name="qisnan"></a><b>QISNAN</b> <dd>Logical Function, check for `magic number'
+  <p>
+   <table noborder>
+    <tr valign="TOP"><td>Usage: <td>RESULT = QISNAN <td>(VALUE)
+    <tr valign="TOP"><td>
+    <tr valign="TOP"><td>Input:  <td>VALUE <td>REAL value to test
+    <tr valign="TOP"><td>
+    <tr valign="TOP"><td>Returns: <td>.TRUE. <td>if VALUE is a `magic number' 
+      indicating the absence of data.
+    <tr valign="TOP"><td> <td>.FALSE. <td> if value is a number.
+   </table>
+  <p>
+   In the current implementation, this is a NaN in IEEE or Rop on a VAX or 
+   Convex native.  Any NaN (or Infinity) will return .true.
+  <p> Uses CISNAN in <a href="./library.html">library.c</a>
+</dl>
+
+
+<H2>Authors of original routines</H2>
+
+David Agard (Phil Evans and John Campbell)<br>
+Modified: For Unix/F77 using words (and bytes if available) (John Campbell)<br>
+Modified: For ccp ascii header system implemented (Jan Zelinka)
+
+<hr>
+</body>
+</html>

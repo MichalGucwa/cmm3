@@ -1,0 +1,178 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::OVERLAPMAP::Supported::Map calculation and manipulation::calculates the average of two maps:::::::: -->
+
+<H1> OVERLAPMAP (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>overlapmap </b>
+- calculates the average of two maps
+<H2> SYNOPSIS</H2>
+<b>overlapmap mapin1</b>
+<i>foo.map</i>
+<b>mapin2</b>
+<i>bar.map</i>
+[
+<b>mapin3</b>
+<i>baz.map</i>
+]
+<b>mapout</b>
+<i>quux.map</i>
+<br>
+ [<A HREF="#keywords">Keyworded input</A>]
+<H2> <A NAME="description"></A>DESCRIPTION</H2>
+<b>overlapmap has basically three modes of operation, combining two maps </b>
+to produce an output map, correlating two maps or generating a real-space 
+R-factor between two maps. Here are the modes in more detail:
+<ol>
+<li>
+Average MAPIN1 and MAPIN2 with output to MAPOUT (<A HREF="#map_average">MAP AVERAGE</A>).
+<li>
+Sum the density from MAPIN1 and MAPIN2, output to MAPOUT (<A HREF="#map_add">MAP ADD</A>).
+<li>
+Set density to zero in MAPOUT if present in MAPIN1 (<EM>i.e.</EM> non zero MAPIN1 density).
+Otherwise grid points in MAPOUT are set to MAPIN2 (<A HREF="#map_exclude">MAP EXCLUDE</A>). This 
+requires MAPIN1 has some grid points which are EXACTLY zero; you are unlikely 
+to have this unless you have generated a map from coordinates.
+<li>
+Set density in MAPOUT to MAPIN2 if the grid point in MAPIN1 &gt; 0. Otherwise set
+to zero (<A HREF="#map_include">MAP INCLUDE</A>).
+<li>
+Correlate the density between MAPIN1 and MAPIN2 over a given volume,
+which may be either the whole map, the volume occupied by a given residue or atom,
+or section by section (there is no MAPOUT in this mode). There are
+three correlation modes (<A HREF="#correlate">CORRELATE ...</A>), two of which 
+require a third map array (see <A HREF="#notes_mapin3">MAPIN3</A>).
+This is used to flag which grid points are associated with each residue or atom
+and are therefore to be included in their correlation coefficient calculation.
+<p>
+Remember the correlation transcends any need to scale the 2 maps. Below is the
+definition of the correlation coefficient:
+<pre>
+
+corr. coeff.  =    (&lt;x y&gt; - &lt;x&gt;&lt;y&gt;) / 
+              ( sqrt(&lt;x^2&gt; - &lt;x&gt;^2)  *  sqrt(&lt;y^2&gt; - &lt;y&gt;^2) )
+
+
+</pre>
+where x represents the density values from one map and y the 
+values from the other. 
+<br>
+&lt; &gt;  represents the mean value of the quantities inside the 
+bracket.
+
+<li>
+Calculates a Real Space R factor &#224; la Branden/Jones (<A HREF="#reference1">reference [1]</A>).
+<pre>
+
+Real space R factor =
+          Sum(RHO_obs - RHO_calc)/Sum(RHO_obs + RHO_calc)
+
+</pre>
+summed over all points within a residue.
+This requires that RHO_obs and RHO_calc are ON THE SAME SCALE.
+It is also sensitive to the atom radius you chose in <A HREF="sfall.html">SFALL</A>. 
+Eleanor Dodson believes it is not as useful as the correlation coefficient.
+MAPIN3 will be needed for this mode of operation calculated from SFALL in the
+RESMOD mode - see <A HREF="#notes_mapin3">below</A>.
+</ol>
+<H2> <A NAME="keywords"></A>KEYWORDED INPUT</H2>
+
+<P>The available keywords are:
+<blockquote>
+<A HREF="#chain"><B>CHAIN</B></A>, <A HREF="#correlate"><B>CORRELATE</B></A>,
+<A HREF="#map"><B>MAP</B></A>, <A HREF="#patterson"><B>PATTERSON</B></A>,
+<A HREF="#real_space_r"><B>REAL SPACE R</B></A>
+</blockquote>
+<H3> <A NAME="map"></A>MAP [ ADD | AVERAGE | EXCLUDE | INCLUDE ]</H3>
+<dl>
+<dt> <A NAME="map_add"></A>ADD  &lt;scale1&gt; &lt;scale2&gt;<dd>
+add &lt;scale1&gt;*map1 + &lt;scale2&gt;*map2 and output new map.  (Default
+&lt;scale1&gt; = &lt;scale2&gt; =1.)
+<dt> <A NAME="map_average"></A>AVERAGE<dd>
+average two maps and output new map.
+<dt> <A NAME="map_exclude"></A>EXCLUDE<dd>
+exclude points from output map if they exist in MAP1. Any grid point that is
+is not zero in MAP1 will be set to zero in MAPOUT. Grid points in MAPOUT will
+be set to the value in MAP2 if the grid point in MAP1 is zero.
+<dt> <A NAME="map_include"></A>INCLUDE<dd>
+include points in output map from MAP2 if they exist in MAP1. The value of the
+grid point in MAPOUT will be that of MAP2 if the grid point in MAP1 &gt; 0. 
+Otherwise the point in MAPOUT will be set to zero.
+</dl>
+<H3> <A NAME="correlate"></A>CORRELATE [ SECTION | RESIDUE | ATOM ]</H3>
+<dl>
+<dt>  <A NAME="correlate_section"></A>SECTION<dd>
+correlation is section by section.
+<dt> <A NAME="correlate_residue"></A>RESIDUE<dd>
+correlation is residue by residue.
+<dt> <A NAME="correlate_atom"></A>ATOM<dd>
+correlation is atom by atom.
+</dl>
+<H3> <A NAME="real_space_r"></A>REAL SPACE R</H3>
+tabulated residue by residue.
+<H3> <A NAME="chain"></A>CHAIN &lt;chain_ID&gt; &lt;1st_residue_number&gt; &lt;last_residue_number&gt;</H3>
+Repeat residue numbering by chain, as in <A HREF="sfall.html">SFALL</A>.
+<H3> <A NAME="patterson"></A>PATTERSON &lt;sigmin&gt; sigmax&gt;</H3>
+Calculate a correlation coefficient as in GROPAT (<A HREF="#reference2">[2]</A>).  &lt;sigmin&gt; and
+&lt;sigmax&gt; are the minimum and maximum grid value/sigma ratio, typically
+3. and 10.  It is recommended that origin removed difference Pattersons
+should be calculated.
+<H2> <A NAME="notes"></A>NOTES</H2>
+<A NAME="notes_mapin3"></A>MAPIN3 may be assigned  to the modified map output of SFALL.
+This map flags each grid point according to certain criteria;
+the most useful is the residue flag created by MODE ATMMAP RESMOD.
+This flags each point in the map space to indicate which atom of a residue 
+it is near (using the Atom Radii specified in SFALL), and whether the 
+atom involved is main chain, or side chain.
+This is required if you want to use CORRELATE RESIDUE or REALSPACE Rfactor.
+<P> 
+<A NAME="notes_map_calculation"></A>The program must have both maps calculated in exactly the
+same way.  Since any Fc map generated from coordinates has
+a fixed asymmetric unit and AXIS ORDER do them first and make 
+sure your FFT calculation matches that.
+<P> 
+<A NAME="notes_exclude"></A>EXCLUDE is useful for flattening the protein density 
+when you want to inspect the residual density only.
+Used in solvent searches and also in
+the <A HREF="fft.html#phtranslation">PHASED TRANSLATION</A> function (part of the FFT package).
+Generate the protein density in SFALL outputting an Fc map.
+<P> 
+<A NAME="notes_correlate"></A>CORRELATE can be done section by section or by RESIDUE or ATOM.
+CORRELATE RESIDUE is only possible if MAPIN3 is generated in SFALL 
+outputting an Fc map  with mode = <A HREF="sfall.html#mode_atmmap_resmod">mode atmmap resmod</A>).
+<P> 
+<A NAME="notes_correlate_atom"></A>CORRELATE ATOM is only possible if MAPIN3 is generated in SFALL 
+outputting an Fc map  with mode = <A HREF="sfall.html#mode_atmmap_atmmod">mode atmmap atmmod</A>).
+<H2> SEE ALSO</H2>
+<A HREF="fft.html"><B>fft</B></A>(CCP4),<br>
+<A HREF="sfall.html"><B>sfall</B></A>(CCP4),<br>
+<A HREF="maprot.html"><B>maprot</B></A>(CCP4)<br>
+<H2> <A NAME="references"></A>REFERENCES</H2>
+<ol>
+<!-- KEEP startreferencelist -->
+<li><A NAME="reference1"></A>
+Branden C. and Jones A., Nature 343 687-689 (1990)
+<li><A NAME="reference2"></A>
+Jones Y. and Stuart D, Proc. of CCP4 Study Weekend on
+Isomorphous Replacement And Anomalous Scattering, 1991 39-48.
+<!-- KEEP endreferencelist -->
+</ol>
+<H2> <A NAME="examples"></A>EXAMPLES</H2>
+
+<H3>Correlation by residue</H3>
+
+<LI><A HREF="../examples/unix/runnable/overlapmap.exam">overlapmap.exam</A></LI>
+
+<H3> <A NAME="averaging_2_maps"></A>Averaging 2 maps</H3>
+<pre>
+overlapmap  MAPIN1 chmi_phase_extend.ext  MAPIN2 wang_cycle3.ext 
+  MAPOUT chmi_wang_av.map &lt;&lt; END 
+MAP AVERAGE
+END
+</pre>
+<P> 
+See also $CEXAM/unix/runnable/mapcorrelation_procedures and
+$CEXAM/unix/non-runnable/mapcorrelation.exam.
+</body></html>

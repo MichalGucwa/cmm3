@@ -1,0 +1,188 @@
+#!/bin/sh
+# \
+exec $CCP4I_TCLTK/tclsh "$0" -- ${1+"$@"}
+
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id: create_docs,v 1.9 2008/08/12 10:48:37 pjx Exp $
+
+# This is a copy of the "create_docs" script from $CCP4/ccp4i/bin
+# which has been modified to generate the documentation for the Tcl
+# files in the dbccp4i distribution
+
+# Source startup.tcl appropriate for operating system
+  set system(OPSYS) [string toupper $tcl_platform(platform)]
+  source [file join $env(CCP4I_TOP) bin $system(OPSYS) startup.tcl]
+
+# Source the useful utils
+source [file join $env(CCP4I_TOP) src system.tcl]
+source [file join $env(CCP4I_TOP) src utils.tcl]
+
+#----------------------------------------------------------------------
+#  The following declarations are liable to change
+#----------------------------------------------------------------------
+
+# list of files to be processed - the inner loop is.
+#   - a name for the output html file
+#   - the ccp4i subdirectory containing files to be processed
+#   - list of files
+
+  set doclist [list [list dbClientAPI_tcl ClientAPI dbClientAPI dbxml ccp4ilite] ]
+
+  set htmlHeader "<!doctype html public \"-//w3c//dtd html 3.2//en\">
+<html>
+<head>
+<title>dbCCP4i Tcl Client API Documentation</title>
+<link rel=\"stylesheet\" type=\"text/css\" href=\"../../ccp4idocs.css\" title=\"dbCCP4i\" />
+<meta name=\"GENERATOR\" content=\"Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) \[Netscape\]\" />
+</head>
+<body>
+<H2>dbCCP4i  Tcl Client API Documentation</H2>
+<H3>Contents</H3>\n"
+
+  set htmlFooter "</body>
+</html>\n"
+
+#----------------------------------------------------------------------
+#----------------------------------------------------------------------
+
+# By default create docs for the current $CCP4I_TOP and place the 
+# docs in $CCP4I_HELP/programmers/progdocs.  Beware that if you change
+# these the default paths for html links defined below may need changing.
+  set srcPath [GetEnvPath DBCCP4I_TOP]
+  set docPath [file join [GetEnvPath DBCCP4I_TOP] doc]
+  set indexFile dbClientAPI_tcl.html
+
+# Parse any command line input
+  set nargs [llength $argv]; set n 0
+  while { $n < $nargs } {
+    set cmd [string tolower [lindex $argv $n]]
+    switch -regexp -- $cmd \
+    src {
+      incr n; set srcPath [lindex $argv $n]
+    } doc {
+      incr n; set docPath [lindex $argv $n]
+    } index {
+      incr n; set indexFile [lindex $argv $n]
+    }
+    incr n
+  }
+
+# Set up an index html file
+  set contentsText $htmlHeader
+  set htmlText "\n<hr />\n"
+
+# Loop through every document on the doclist and create text for a new
+# html  file
+  foreach doc $doclist {
+    set htmlFile $indexFile
+    set modulePath [file join $srcPath [lindex $doc 1]]
+    puts "Reading source file.."
+#
+# Loop over all specified source files - read the contents with 
+# lines split into a list
+    foreach file [lrange $doc 2 end] {
+      set filePath [file join $modulePath $file.tcl]
+      puts "..$filePath"
+      if { ![ReadFile $filePath srctext  -split] } {
+	puts "ABORTING: Can not read file $filePath"
+        exit
+      }
+#
+# Loop over every line looking for the #d_ at start of line which indicates
+# a documentation tag.  If a documentation line ends in continuation character
+# then you need to append the next line from the file (and get rid of the 
+# continuation character.
+      set l 0;
+      set lmax [llength $srctext]
+      while { $l < $lmax } {
+      set line0 [lindex $srctext $l]
+      if [regexp {^#d_} $line0] {
+        set ll [string wordend $line0 1]
+        set cmd [string range $line0 3 [expr $ll -1]]
+        set line [string range $line0 [expr $ll + 1] end]
+        while { [ regexp {\\$} $line] } { 
+          set line [string trimright $line \\ ]
+          incr l; append line [lindex $srctext $l]
+        }
+#
+# Handle the documentation line according to the tag
+#
+        switch $cmd \
+        intro_title { 
+          set target [RemoveMetaChars $line]
+          append htmlText "<a name=\"$target\"><h3> $line </h3> \n"
+          append indexText "<dt><a href=\"./[subst $htmlFile]#$target\">$line</a></dt>\n"
+        } intro {
+          append htmlText <p>$line<p>\n
+        } index_title {
+          set target [RemoveMetaChars $line]
+          append contentsText "<dd><a href=#$target>$line</a></dd>"
+          append indexText "</dl><dl><dt><strong>$line</strong></dt>\n"
+          append htmlText "<h3>$line</h3>\n"
+        } sum {
+          append indexText "<dd><a href=\"./[subst $htmlFile]#$procName\"><strong>$procName</a></strong>    $line</dd>\n"
+          append htmlText "<a name=\"$procName\" ><h4><font color=\"#CC3333\">$procName</font> <em>$line</em></h4> \n"
+	  append htmlText "<p><em>Argument list: $argList</em></p>\n"
+        } desc {
+          append htmlText <p>$line<p>\n
+        } arg { 
+          append htmlText "<p><strong>[lindex $line 0]</strong>  [lrange $line 1   end]<p>\n"
+        } opt0 { 
+           if { [llength $line] > 1 } {
+             append htmlText "<p><strong>[lindex $line 0]</strong><em>  [lrange $line 1 end]</em><p>\n"
+           } else {
+             append htmlText "<p><strong>$line</strong><p>\n"
+           }
+        } opt1 {
+          append htmlText "<p>$line<p>\n"
+        } ref {
+          set mode file
+          set path {}
+          switch [lindex $line 0] \
+          PROGRAMS {
+            set path [file join "../../../../html/" [lindex $line 1]]
+          } CCP4I {
+            set path [file join "../../../help/" [lindex $line 1]]
+          } PROGDOCS {
+            set path [file join "./" [lindex $line 1]]
+          } REMOTE {
+            set path "http://[lindex $line 1]"
+            set mode http
+          } CURRENT {
+            set path "#[lindex $line 1]"
+          }
+          append htmlText "<a href=$path>[lrange $line 2 end]</a>"
+        } doc {
+          append htmlText \
+         "<a href=../help/programmers/$procName.html>See Programmers Documentation</a>"
+        }
+#
+# If find a procedure declaration in file then save the procedure name 
+      } elseif { [regexp {^proc } $line0] } {
+# remove the open/close brace from the line or it might be mishandled by lindex
+        regsub -all {\{|\}} $line0 {} procLine
+        set procName [lindex $procLine 1]
+# Create a formatted argument list for writing out later
+	set argList ""
+	for {set i 2} {$i<[llength $procLine]} {incr i} {
+	  append argList " &lt;[lindex $procLine $i]&gt;"
+	}
+	if {$argList == ""} { set argList "None" }
+      } 
+      incr  l }
+      append htmlText "\n<hr />\n"
+    }
+  }
+  puts "Writing list of procedures to [file join $docPath $indexFile]"
+  append contentsText \n $indexText $htmlFooter
+  WriteFile [file join $docPath $indexFile] $htmlHeader -overwrite
+  WriteFile [file join $docPath $indexFile] $indexText
+  WriteFile [file join $docPath $indexFile] $htmlText
+  WriteFile [file join $docPath $indexFile] $htmlFooter
+  exit

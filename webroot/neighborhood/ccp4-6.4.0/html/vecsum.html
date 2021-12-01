@@ -1,0 +1,318 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::VECSUM::Unsupported::Multiple Isomorphous Replacement::program to deconvolute a Patterson function and solve the structure::unsupported:::::: -->
+
+<H1> VECSUM (CCP4: Unsupported Program)</H1>
+<H2> NAME</H2>
+<b>vecsum </b>
+- program to deconvolute a Patterson function and solve the structure.
+
+<H2> SYNOPSIS</H2>
+<b>vecsum MAPIN</b>
+<i>foo_in.map</i>
+<b>MAPOUT</b>
+<i>foo_out.map</i> <br>
+[control data in fixed order]
+
+<H2> DESCRIPTION</H2>
+The purpose of this program is to deconvolute a Patterson function and
+solve the structure.  Although it was designed for heavy-atom difference 
+Pattersons (isomorphous and FHLE) there is no reason why it could not be 
+used to solve structures of small molecules.
+<p>
+The main features of the program are as follows :
+<p>
+1. It is completely space-group general.
+<p>
+2. It takes as input a Patterson function produced by the Fast Fourier 
+Transform <a href="fft.html">FFT</a> 
+program in the standard format.  Like the FFT program it 
+works with a user specified array to optimise use of memory.
+<p>
+3. The Patterson function must comprise at least one asymmetric unit of 
+the appropriate point group.  However, for high symmetry cases it is 
+advisable to compute as many asymmetric units as the available memory 
+and disk space will allow in order to minimise searching for equivalent 
+positions, although there is probably no advantage in computing more 
+than one half of the cell.  This will mean generating equivalents for 
+and computing the Patterson in P1 bar.  This incidentally simplifies the 
+problem of unique axis orientation as no permutation of axes is 
+required. It is recommended that the sampling interval in the Patterson be 
+about dmin/4, i.e. in FFT  NX = 4*hmax etc.
+<p>
+4. The program requires an estimate of the expected number of major
+sites.  This is could be 1 to start with, and increased as more sites
+are found.  The value is used to calculate an upper thresholding level :
+<pre>
+
+	Pmax = ( P(0,0,0) + Pooo ) / (Ngep * Nexp)
+
+</pre>
+where
+<pre>
+
+	P(0,0,0) = origin value e.g. 1000
+
+	Pooo = Fooo contribution, typically 5 to 10 for P(0,0,0) = 1000
+
+	Ngep = Number of general equivalent positions (not counting 
+	       centring)
+
+	Nexp = Number of major sites expected
+
+</pre>
+Then if P(u,v,w) + Pooo &gt; Pmax , the value is truncated to Pmax.
+Also if P(u,v,w) + Pooo &lt; 0 , the value is truncated to 0.
+<p>
+5. The program can calculate a "symmetry function" or a "superposition 
+function" or a combination of the two (see Stout & Jensen, X-ray 
+structure determination, chapter 14).  The user can control which Harker 
+vectors, if any, are combined with the superposition function.
+<p>
+6. The program produces a map of the possible sites in the structure 
+very much like an electron density map.  The symmetry function, which is 
+normally calculated first, uses only Harker vectors and therefore has 
+higher symmetry than the true space group.
+<pre>
+
+e.g. : P21 has asymmetric unit : x = 0 to 1, y = 0 to 1/2, z = 0 to 1
+            equivalent origins : x = 0 or 1/2, y = any, z = 0 or 1/2
+             symmetry function : x = 0 to 1/2, y = 0, z = 0 to 1/2
+                                 (i.e. only 1 section.)
+
+    P41212 has asymmetric unit : x = 0 to 1, y = 0 to 1, z = 0 to 1/8
+            equivalent origins : (x,y) = (0,0) or (1/2,1/2), z = 0 or 1/2
+             symmetry function : x = 0 to 1/4, y = 0 to 1, z = 0 to 1/8
+
+</pre>
+7. Each point in the map produced is a combination of the values found 
+for the calculated vectors in the Patterson function.  At present there 
+are 3 modes of combination :
+<dl compact>
+<dt>a) <dd>Minimum
+<dt>b) <dd>Arithmetic mean (equivalent to sum)
+<dt>c) <dd>Harmonic mean (reciprocal of mean of reciprocals)
+</dl>
+The harmonic mean is strongly biased towards the minimum, yet takes 
+some account of the higher values, and is a reasonable compromise 
+between the Minimum and Sum functions.
+<p>
+8. The user is recommended to proceed in a stepwise fashion by first 
+choosing a site in the symmetry function.  Experience suggests that 
+apparent sites lying on true rotation (as opposed to screw) axes are 
+more likely than not to be wrong; these can be eliminated by opting to 
+ignore Harker vectors falling on the Patterson origin; however the 
+possibility that one or more sites do lie on rotation axes should be 
+borne in mind.  Having chosen a site with high density, the coordinates 
+are added to the input data, and a second site chosen.  This process is 
+repeated until the site densities fall off significantly compared with 
+the rms noise level printed at the end of the output.
+<p>
+9. The option to print a list of the vectors between the input sites 
+should be used to monitor the fit with the Patterson; it is important 
+to realise that it is not enough just to find sites which have vectors 
+falling on peaks in the Patterson; unexplained peaks of high density 
+almost certainly indicate a wrong or at best incomplete solution.
+<p>
+10. The user supplies a "discrimination" which simply truncates the 
+lower values in the output map.  A value of 0.2 will cause map values &lt; 
+0.2*Pmax not to be printed.  Use a higher value to get more 
+discrimination, but run the risk of missing weak sites.
+<p>
+11. The user supplies a "tolerance" (in grid units).  The effect of this 
+is to search the local area of each vector in the Patterson function 
+within a sphere of the specified radius and return the maximum value to 
+the combination function.  The program will stop if no grid points are 
+found, e.g., if you give a site with coordinates (1.5, 10.5, 0) (in grid 
+units) and a tolerance of 0.5, there will be no points on the Patterson 
+grid within this distance of the site, the closest being 0.707 grid 
+units away.  Also beware of giving too large a value for the tolerance 
+(i.e. &gt; 1.5), as this will require a large amount of searching and hence 
+an inordinate amount of cpu time.
+<p>
+12. The user supplies a REAL array to the FFT program and an INTEGER*2 
+array to the VECSUM program e.g. :
+<pre>
+
+	INTEGER*2 MAP
+	COMMON MAP(70000)
+	CALL VECSUM(70000)
+	END
+
+</pre>
+The size of this array must be greater than the number of grid points
+in the Patterson function calculated by FFT.  The VECSUM program reports 
+the size actually used.  Note size of array required =
+(Number of Patterson sections +2) * Number of points per section.
+
+
+<h2>Control data for the VECSUM program.</h2>
+
+<pre>
+
+Record 1.	Title
+
+
+Record 2.	JU  JV  JW
+
+		Sort order for output map.
+		JU = fastest (across page) axis on output	with 1 for x
+		JV = medium (down page)		.	.	     2 for y
+		JW = slowest (section)		.	.	     3 for z
+
+		For map output in standard orientation (2nd setting 
+		monoclinic, y sections), JU JV JW = 1 3 2
+
+		For map output with z sections (1st setting monoclinic),
+		JU JV JW = 2 1 3
+
+
+Record 3.	LX  MX  LY  MY  LZ  MZ   limits in x, y, z for output.
+
+
+Record 4.	Pooo  DISC  TOL  COSA  COSB  COSG
+
+		Pooo = Fooo contribution ( 5 to 10 for Patterson origin 
+		of 1000).
+
+		DISC = discrimination (e.g. 0.2)
+
+		TOL = tolerance (e.g. 1.1)
+
+		COSA, COSB, COSG are cosines of unit cell angles, used 
+		to calculate distances in the local search, but the 
+		values are not critical.
+
+
+Record 5.	NLINE  LATT  NGEP  NHAR  NUSE  NEXP  NSIT  IFUN
+
+		NLINE = Maximum number of columns per line in printed map.
+			If 0 defaults to normal width (64).
+			If &lt; 0 suppresses printing and produces a map
+			on disk in standard format.
+
+		LATT = lattice type, 1 = P, 2 = I, 3 = R, 4 = F,
+				     5 = A, 6 = B, 7 = C.
+
+		NGEP = number of general equivalent positions (g.e.p.'s)
+		in space group counting any centrosymmetrically related, but
+		not related by centring translations (minus 1 if identity
+		omitted).
+
+		NHAR = number of different Harker vectors to use.
+
+		NUSE = number of g.e.p.'s to use to generate half a primitive
+		cell from the Patterson input (0 if the input Patterson is
+		already half a cell).
+
+		NEXP = number of major sites expected.  If negative, the
+		Patterson origin peak will be removed.  This effectively
+		eliminates spurious sites that fall on pure rotation axes
+		(if the space group has any), but of course should not be
+		used if it is suspected that there are 1 or more sites that
+		really do lie on a rotation axis.
+
+		NSIT = number of sites input, or 0 to produce a symmetry
+		function.  If both NHAR and NSIT are zero, the program outputs
+		the truncated Patterson function.  If NSIT is negative, the
+		program only produces a list of all vectors between the input
+		sites and their equivalent positions, with the corresponding
+		value in the Patterson.
+
+		IFUN = type of combination function, 1 = Minimum, 2 = Arithmetic
+		mean (equivalent to Sum), 3 = Harmonic mean.  If IFUN is
+		positive, the combination value for all Harker and cross-vectors
+		is calculated;  if IFUN is negative, the combination values are
+		calculated for the two types of vectors are calculated
+		separately and then combined as a Minimum function (makes no
+		difference if IFUN = 1).  The latter option may give improved
+		discrimination.
+
+
+		Omit record 6 if NGEP = 0.
+
+Record 6.	General equivalent positions as in International Tables, Vol 1.
+		The identity may be omitted.  This record to be given NGEP
+		times.
+
+
+		Omit records 7 and 8 if NHAR = 0.
+
+Record 7.	Serial numbers of g.e.p.'s to use for Harker vectors (NHAR
+		numbers).  If all Harker vectors are to be used this will be
+		just the integers from 1 to NGEP (omitting the identity if
+		present).  In some space groups some Harker vectors are
+		equivalent and in such cases some time will be saved if only
+		the unique ones are given, and the appropriate multiplicities
+		are given on the next record.  If in doubt give all g.e.p.
+		numbers except the identity and give the multiplicities all 1.
+
+
+Record 8.	Multiplicities of Harker vectors (NHAR numbers).
+
+
+		Omit record 9 if NUSE = 0.
+
+Record 9.	Serial numbers of g.e.p.'s to be used to generate Patterson
+		symmetry (NUSE numbers).  The translation components are not
+		used.
+
+
+		Omit record 10 if NSIT = 0.
+
+Record 10.	Site coordinates in grid units.  This record to be given NSIT
+		times.
+
+
+</pre>
+
+<H2><a name="files">INPUT AND OUTPUT FILES</a></H2>
+
+<H3> Input</H3>
+<dl compact>
+<dt> MAPIN<dd>
+Patterson map prepared by <A HREF="fft.html">FFT</a>.
+</dl>
+<H3> Output</H3>
+<dl compact>
+<dt> MAPOUT<dd>
+Map of the "symmetry function" or "superposition function".
+</dl>
+
+<H2>SEE ALSO</H2>
+
+<P>
+<A HREF="rsps.html">RSPS</a> - alternative program <br>
+<A HREF="fft.html">FFT</a> - prepare Patterson function for MAPIN <br>
+<A HREF="peakmax.html">PEAKMAX</a> - look for sites in MAPOUT
+</p>
+
+<h2>Example of control data.</h2>		
+
+<pre>
+
+GC2 ETHGCL ANOMALOUS/LOCAL SCALED 5.5A FHLE, GRID = 40 40 72.  P41212
+2 1 3
+0 39 0 39 0 9
+10 .2 1.1 0 0 0
+0 0 7 6 0 3 5 3
+-X,-Y,1/2+Z
+1/2-Y,1/2+X,1/4+Z
+1/2+Y,1/2-X,3/4+Z
+Y,X,-Z
+-Y,-X,1/2-Z
+1/2-X,1/2+Y,1/4-Z
+1/2+X,1/2-Y,3/4-Z
+1 2 4 5 6 7
+1 2 1 1 1 1
+.5 29.5 0
+24.1 15.6 2.5
+.8 9.7 5
+4 26.5 6.7
+33 20 7
+
+</pre>
+
+</body></html>

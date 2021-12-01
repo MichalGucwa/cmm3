@@ -1,0 +1,34 @@
+#!/usr/bin/env tclsh
+# copies all atoms from input PDB (second argument) to the end of the output PDB (first argument)
+
+set output_pdb   [lindex $argv 0]
+set input_pdb    [lindex $argv 1]
+set temp_pdb     temp.pdb
+
+set input  [open $input_pdb r]
+set input0 [open $output_pdb r]
+set output [open $temp_pdb w]
+set indata  [split [read $input]  "\n"]
+set indata0 [split [read $input0] "\n"]
+
+foreach line  $indata0 {
+    if { (![regexp {END*} $line junk]) && (![regexp {^$} $line junk]) } {
+	    puts $output $line
+    } 
+}
+foreach line  $indata {
+    if { [regexp {HETATM.*} $line junk] || [regexp {ATOM.*} $line junk] } {
+	scan $line "%6s%5d%*c%4s%*c%*c%*c%*c%2s%*c%*c%*c%*c%*c%*c%*c%*c%*c%*c%8f%8f%8f%6f%6f" label number atom residue x y z occ b 
+	if { $atom != "" } {
+	    puts $output $line
+	}
+    } 
+}
+
+close $output
+close $input
+close $input0
+
+file copy -force $temp_pdb $output_pdb
+file delete -force $temp_pdb
+

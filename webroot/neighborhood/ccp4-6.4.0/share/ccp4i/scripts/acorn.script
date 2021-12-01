@@ -1,0 +1,253 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#===========================================================================
+#
+# acorn.script
+#
+#===========================================================================
+
+# Set root name for solution files
+  set SOLOUT [SetOutputFileRoot]
+# Use a temporary log file which can be search for solutions
+  set tmp_log_file [GetTmpFileName -ext log]
+
+# Source the file with utility procedures for running acorn script
+#  source [SearchPath TOP utils acorn_utils.tcl ]
+
+  source [SearchPath TOP src CCP4_utils.tcl]
+
+#---------------------------------------------------------------Run ECALC
+
+# Needed if no E already available; default Protocol option
+  
+  if { $ACORN_ECALC } {
+
+    set acorn_labout $LABOUT
+    unset LABOUT
+
+    if { $ACORN_EXTEND } {
+
+      set status 1
+      if { [GetMtzDatasetFromLabel $HKLIN $FP xtal dataset] } {
+        for { set i 1 } { $i <= 6 } { incr i } {
+          if { ![GetMtzParamFromDataset $HKLIN $xtal $dataset DCELL_$i CELL_$i] } {
+            set status 0
+          }
+        }
+      } else {
+        for { set i 1 } { $i <= 6 } { incr i } {
+          if { ![GetMtzParam $HKLIN CELL_$i CELL_$i] } {
+            set status 0
+          }
+        }
+      }
+      if { ! $status } {
+        TerminateScript 0 -report \
+	  "Failure in Acorn extend data option: cannot extract CELL from MTZ file $HKLIN"
+
+      }
+
+      set EXTEND_RESOLUTION 1
+      set RESOLUTION_MAX 1.0
+      set LABOUT "F SIGF"
+      set F "F_unique"
+      set SIGF "SIGF_unique"
+
+      set MTZUNIQUE [GetTmpFileName -ext mtz]
+
+      CreateComScript unique unique_script
+      set cmd "[BinPath unique] HKLOUT \"$MTZUNIQUE\""
+      set status [Execute "$cmd" $unique_script program_status report ]
+
+      unset EXTEND_RESOLUTION
+      unset RESOLUTION_MAX
+      unset LABOUT
+
+      # add unique file to actual file, thus extending resolution
+      set script ""
+      append script "LABIN FILE 1 ALL\n" 
+      append script "LABIN FILE 2 ALL\n" 
+      append script "END\n"
+      WriteFile [set cad_script [GetTmpFileName -ext com]] $script
+      set MTZCAD1 [GetTmpFileName -ext mtz]
+
+      set cmd "[BinPath cad] HKLIN1 \"$HKLIN\" HKLIN2 \"$MTZUNIQUE\" HKLOUT \"$MTZCAD1\""
+      set status [Execute "$cmd" $cad_script program_status report ]
+
+      # remove dummy labels
+      set script ""
+      append script "EXCL $F $SIGF\n" 
+      append script "END\n"
+      WriteFile [set mtzutils_script [GetTmpFileName -ext com]] $script
+      set MTZCAD [GetTmpFileName -ext mtz]
+
+      set cmd "[BinPath mtzutils] HKLIN \"$MTZCAD1\" HKLOUT \"$MTZCAD\""
+      set status [Execute "$cmd" $mtzutils_script program_status report ]
+
+      unset F
+      unset SIGF
+
+    } else {
+
+      set MTZCAD $HKLIN
+
+    }
+
+    if { $ACORN_ANIS } {
+
+      set OUTPUT_FILE_ROOT "[SetOutputFileRoot]"
+
+      set script ""
+      append script "MODE MR_ANO\n"
+      append script "HKLIN \"$MTZCAD\"\n"
+      append script "LABIN FP=$FP SIGFP=$SIGFP\n" 
+      append script "ROOT \"$OUTPUT_FILE_ROOT\"\n"
+      WriteFile [set phaser_script [GetTmpFileName -ext com]] $script
+
+      set cmd "[BinPath phaser]"
+      set status [Execute "$cmd" $phaser_script program_status report ]
+
+      set MTZPHASER "$OUTPUT_FILE_ROOT.mtz"
+      set FP [subst $FP]_ISO
+      set SIGFP [subst $SIGFP]_ISO
+      set E E_ISO
+      set SIGE SIGE_ISO
+
+    } else {
+
+      set MTZPHASER $MTZCAD
+      set FP $FP
+      set SIGFP $SIGFP
+      set E E
+      set SIGE SIGE
+
+    }
+
+    set LABIN "FP SIGFP"
+    set LABOUT "FECALC E SIGE"
+    set FECALC F_ECALC
+
+    CreateComScript ecalc ecalc_script
+    set cmd "[BinPath ecalc] HKLIN \"$MTZPHASER\" HKLOUT \"$MTZECALC\""
+    set status [Execute "$cmd" $ecalc_script program_status report ]
+
+    set LABOUT $acorn_labout
+    set ACORN_HKLIN $MTZECALC
+
+  } else {
+    set ACORN_HKLIN $HKLIN
+  }
+
+#---------------------------------------------------------------Run ACORN
+
+  if { $ACORN_PROTOCOL == "SOMEPHASE" } {
+    set LABIN "FP SIGFP E PHIN WTIN"
+    set FP $FP
+    set SIGFP $SIGFP
+    set E $E
+    set PHIN $PHIN
+    set WTIN $WTIN
+  } else {
+    set LABIN "FP SIGFP E"
+    set FP $FP
+    set SIGFP $SIGFP
+    set E $E
+  }
+  if { $USE_PHIFT } {
+    append LABIN " PHIFT"
+  }
+
+# Acorn script expects the root name of the output labels and will build
+# labout statement from them
+    set LABOUT ""
+        append LABOUT "PHIOUT WTOUT"
+#    if { $ACORN_PEAKSEARCH } {
+#        append LABOUT "PHIOUT WTOUT"
+#    }
+
+  CreateComScript acorn acorn_script
+
+  if { $ACORN_PROTOCOL == "SOMECOORD" || $ACORN_PROTOCOL == "KNOWNCOORD" } {
+    set status [Execute "[ BinPath acorn] HKLIN \"$ACORN_HKLIN\" \
+                 XYZIN \"$XYZIN\" HKLOUT \"$HKLOUT\""  \
+                 $acorn_script program_status report ]
+  } else {
+    set status [Execute "[ BinPath acorn] HKLIN \"$ACORN_HKLIN\" \
+                 HKLOUT \"$HKLOUT\""  \
+                 $acorn_script program_status report ]
+  }
+
+
+####mgwt:following 10 lines or so need revising. Are from amore.script
+# Extract the solution from the log file and save to a solution file
+# Save the name of the solution file to the database
+
+#  set ROT_SOLUTION_FILE $SOLOUT
+#  append ROT_SOLUTION_FILE  _rot_ $MODEL_TITLE .mr
+#  switch $ROTFUN_ROTATE_MODE CROSS { set logmode rot } \
+#    SELF  { set logmode self }
+#
+#  set nsol [amore_get_log_solution $logmode $MODEL_TITLE \
+#          $tmp_log_file $ROT_SOLUTION_FILE ]
+#  if { $nsol <= 0 } { TerminateScript 0  -report \
+#    "No solutions extracted from log file. Can not continue with Amore" }
+
+
+#--------------------------------------------------------Run FFT & Peakmax
+
+  if { $ACORN_PEAKSEARCH } {
+
+  set LABIN "F1 SIG1 PHI W"
+  set F1 $E
+  set SIG1 $SIGE
+  set IFFRACOUT 1
+
+  set MAPTMP [GetTmpFileName -ext _map]
+  set IFASU 1
+
+    set MAPOUT "[SetOutputFileRoot -tmp].map"
+    set XYZOUT "[SetOutputFileRoot].pdb"
+    set XYZFRC "[SetOutputFileRoot].ha"
+
+    set PHI $PHIOUT
+    set W $WTOUT
+
+
+    CreateComScript fft runfft_script
+
+    set status [Execute "[BinPath fft] HKLIN \"$HKLOUT\" MAPOUT \"$MAPTMP\""  \
+            $runfft_script program_status report ]
+
+
+# Run mapmask to be sure we just search the asymmetric unit
+
+  CreateComScript mapmask mapmask_script
+
+  set status [Execute "[BinPath mapmask] MAPIN \"$MAPTMP\" MAPOUT \"$MAPOUT\""  \
+                $mapmask_script program_status report ]
+
+  DeleteFile $MAPTMP
+
+# Do the peak search
+
+    CreateComScript peakmax peakmax_script
+
+    set status [Execute "[BinPath peakmax] MAPIN \"$MAPOUT\" XYZOUT \"$XYZOUT\" XYZFRC \"$XYZFRC\""  \
+            $peakmax_script program_status report ]
+
+    set runfft_script ""
+    set mapmask_script ""
+    set peakmax_script ""
+
+    AddOutputFile $MAPOUT TEMPORARY $XYZOUT PROJECT $XYZFRC PROJECT
+
+  }
+
+   TerminateScript 1

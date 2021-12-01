@@ -1,0 +1,56 @@
+#! /bin/sh
+
+# Wrap-around script for $CETC/uniqueify
+# Completes the dataset by merging output of unique with
+# datafile (using cad). Also adds free-R flag column.
+
+set -e
+set -a
+
+#########################################################
+#  make 1.8A data file
+#########################################################
+#
+# Replace missing data with NaNs.
+#
+mtzmnf hklin $CEXAM/rnase/rnase18_old.mtz hklout $CEXAM/rnase/rnase18_nan \
+<<EOF
+LABIN F1=FNAT        SIGF1=SIGFNAT       -
+      F2=FGMP18      SIGF2=SIGFGMP18     -
+      F3=FRNASA2GMP  SIGF3=SIGFRNASA2GMP 
+END
+EOF
+
+#
+# Add free-R flag column and complete dataset.
+#
+uniqueify $CEXAM/rnase/rnase18_nan.mtz $CEXAM/rnase/rnase18.mtz
+
+rm -f $CEXAM/rnase/rnase18_nan.mtz
+
+#########################################################
+#  make 2.5A data file
+#########################################################
+#
+# Replace missing data with NaNs.
+#
+mtzmnf hklin $CEXAM/rnase/rnase25_old.mtz hklout $CEXAM/rnase/rnase25_nan \
+<<EOF
+LABIN F1=FNAT        SIGF1=SIGFNAT         -
+      F2=FHG2        SIGF2=SDFHG2          -
+      D2=FHG2DEL     SIGD2=SDFHG2DEL       -
+      F3=FPTNCD25    SIGF3=SIGFPTNCD25     -
+      D3=DELFPTNCD25 SIGD3=SIGDELFPTNCD25  -
+      F4=FIOD25      SIGF4=SIGFIOD25       -
+      D4=DELFIOD25   SIGD4=SIGDELFIOD25    
+END
+EOF
+
+#
+# Add free-R flag column and complete dataset.
+#
+uniqueify $CEXAM/rnase/rnase25_nan.mtz $CEXAM/rnase/rnase25.mtz
+
+rm -f rnase25_nan.mtz
+
+

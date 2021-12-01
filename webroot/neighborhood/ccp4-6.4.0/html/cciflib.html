@@ -1,0 +1,856 @@
+<html>
+<head><title>CCP4 Program Suite: cciflib</title></head>
+<body>
+
+<!-- ::INDEX_INFO::CCIFLIB::Library::::Subroutine Library for handling CCIF files:::::::: -->
+
+<H1> CCIFLIB (CCP4: Library)</H1>
+<H2> NAME</H2>
+<b>cciflib </b>
+- Subroutine Library for handling CCIF files
+
+<H2>Overview</H2>
+
+CCIF is a subset of the mmCIF format, proposed as a replacement
+for the PDB format for holding coordinate data, see
+<a href="mmcifformat.html">separate page</a> for details. 
+<tt>cciflib.f</tt> is a subroutine library providing an application
+interface for programs wishing to use this format. In turn,
+<tt>cciflib.f</tt> uses Peter Keller's library of C routines for low
+level operations, see below. 
+<p>
+<i>Note that this subroutine library is not yet used in the suite.</i>
+
+<h2>Low level file handling</h2>
+
+The low level reading and writing of CCIF files is handled by Peter Keller's
+library of C routines, held in $CCP4/lib/ccif  
+The documentation for these routines is distributed in
+<a href="../doc/ccifdoc.ps">$CCP4/doc/ccifdoc.ps</a>.
+
+<H2>Description of subroutines</H2>
+
+The library cciflib contains subroutines used for reading, writing
+and handling the CCP4 ccif coordinate data.
+
+<h3>CCP4CCIF_CELL2MAT(CELL,NCODE,RO,RF)</h3>
+<pre>
+
+  Given cell and orthogonalisation code, calculate
+  orthogonalising and fractionalising matrices
+
+  Arguments :
+
+  cell(6)         (I)     REAL            cell dimensions
+
+  NCODE           (I)     INTEGER         orthogonalisation code
+
+  RO(4,4)         (O)     REAL            orthogonalising matrix
+
+  RF(4,4)         (O)     REAL            fractionalising matrix
+
+</pre>
+
+<h3>CCP4CCIF_CELLINVERT(CELL,VOL,RCELL,RVOL)</h3>
+<pre>
+
+  Get reciprocal cell from real cell
+
+  Arguments :
+
+  cell(6)         (I)     REAL            cell dimensions
+
+  vol             (I)     REAL            cell volume
+
+  rcell(6)        (O)     REAL            reciprocal cell dimensions
+
+  rvol            (O)     REAL            reciprocal cell volume
+
+</pre>
+
+<h3>CCP4CCIF_CHECK_TYPE(ITMNAM, BTYPE_EXP, SLINE_EXP)</h3>
+<pre>
+
+  Check requested item type against dictionary
+
+  Arguments :
+
+  ITMNAM          (I)     CHARACTER       Item name
+
+  BTYPE_EXP       (I)     INTEGER         Expected btype
+
+  SLINE_EXP       (I)     INTEGER         Expected sline
+
+</pre>
+
+<h3>CCP4CCIF_CVFRAC_BLOCK(BLK_ID,X,Y,Z,XX,YY,ZZ,NPACK,IFLAG)</h3>
+<pre>
+
+  Given a block_id, convert NPACK sets of coordinates
+  from orthogonal to fractional, or vice versa.
+
+  Arguments :
+
+  BLK_ID          (I)     INTEGER         block ID of data
+
+  X               (I)     REAL            input X coordinates with array 
+                                          dimension of at least NPACK
+
+  Y               (I)     REAL            input Y coordinates with array 
+                                          dimension of at least NPACK
+
+  Z               (I)     REAL            input Z coordinates with array 
+                                          dimension of at least NPACK
+
+  XX              (O)     REAL            output X coordinates with array 
+                                          dimension of at least NPACK
+
+  YY              (O)     REAL            output Y coordinates with array 
+                                          dimension of at least NPACK
+
+  ZZ              (O)     REAL            output Z coordinates with array 
+                                          dimension of at least NPACK
+
+  NPACK           (I/O)   INTEGER         Number of coordinate sets to convert.
+                                          On output, number actually converted.
+
+  IFLAG           (I)     INTEGER         Flag =0, Convert coordinates from 
+                                                   fractional to orthogonal
+                                               =1, Convert coordinates from 
+                                                   orthogonal to fractional
+
+</pre>
+
+<h3>CCP4CCIF_CVFRAC_MAT(X,Y,Z,XX,YY,ZZ,NPACK,RR)</h3>
+<pre>
+
+  Use a supplied matrix to convert NPACK sets of coordinates
+  from orthogonal to fractional, or vice versa.
+
+  Arguments :
+
+  X               (I)     REAL            input X coordinates with array 
+                                          dimension of at least NPACK
+
+  Y               (I)     REAL            input Y coordinates with array 
+                                          dimension of at least NPACK
+
+  Z               (I)     REAL            input Z coordinates with array 
+                                          dimension of at least NPACK
+
+  XX              (O)     REAL            output X coordinates with array 
+                                          dimension of at least NPACK
+
+  YY              (O)     REAL            output Y coordinates with array 
+                                          dimension of at least NPACK
+
+  ZZ              (O)     REAL            output Z coordinates with array 
+                                          dimension of at least NPACK
+
+  NPACK           (I/O)   INTEGER         Number of coordinate sets to convert.
+                                          On output, number actually converted.
+
+  RR(4,4)         (I)     REAL            fractionalising/orthogonalising  
+                                          matrix as appropriate
+
+</pre>
+
+<h3>CCP4CCIF_GETALLCOORD(BLK_ID,X,Y,Z,NPACK,IFAIL,LEND)</h3>
+<pre>
+
+  Given a block_id, get the next npack sets of atom coords.
+  Reading of atomic coordinates will abort if the end of the loop
+  is encountered, or if the coordinates are missing from a row.
+  On exit, NPACK gives the number of coordinate sets actually read.
+
+  Arguments :
+
+  BLK_ID          (I)     INTEGER         block ID of data
+
+  X               (O)     REAL            X coordinates with array 
+                                          dimension of at least NPACK
+
+  Y               (O)     REAL            Y coordinates with array 
+                                          dimension of at least NPACK
+
+  Z               (O)     REAL            Z coordinates with array 
+                                          dimension of at least NPACK
+
+  NPACK           (I/O)   INTEGER         Number of coordinates to read.
+                                          On output, number actually read.
+
+  IFAIL           (O)     INTEGER         =  0 value specified in CIF returned
+                                          =  1 dictionary default returned
+                                          = -1 '.' returned
+                                          = -2 nothing or '?' returned
+
+  LEND            (O)     LOGICAL         .TRUE. if end of loop
+
+</pre>
+
+<h3>CCP4CCIF_GETANISOU(BLK_ID,U_ANISO,IFAIL,LEND)</h3>
+<pre>
+
+  Given a block_id, get the next set of ADPs.
+  Search several possible sets of data items.
+
+  Arguments :
+
+  BLK_ID          (I)     INTEGER         block ID of data
+
+  U_ANISO(6)      (O)     REAL            anisotropic U factor
+
+  IFAIL           (O)     INTEGER         =  0 value specified in CIF returned
+                                          =  1 dictionary default returned
+                                          = -1 '.' returned
+                                          = -2 nothing or '?' returned
+
+  LEND            (O)     LOGICAL         .TRUE. if end of loop
+
+</pre>
+
+<h3>CCP4CCIF_GETATOMINFO(BLK_ID,ATOMNO,ATOMID,ALTID,RESID,CHAINID,RESNO,SYMBOL,IRES,X,BISO,U_ANISO,OCCUP,IFAIL,LEND)</h3>
+<pre>
+
+  Given a block_id, get the next set of atom info.
+
+  Arguments :
+
+  BLK_ID          (I)     INTEGER         block ID of data
+
+  ATOMNO          (O)     CHARACTER       '_atom_site.id'
+
+  ATOMID          (O)     CHARACTER       '_atom_site.label_atom_id'
+
+  ALTID           (O)     CHARACTER       '_atom_site.label_alt_id'
+
+  RESID           (O)     CHARACTER       '_atom_site.label_comp_id'
+
+  CHAINID         (O)     CHARACTER       '_atom_site.label_asym_id'
+
+  RESNO           (O)     CHARACTER       '_atom_site.auth_seq_id'
+
+  SYMBOL          (O)     CHARACTER       '_atom_site.type_symbol'
+
+  IRES            (O)     INTEGER         '_atom_site.label_seq_id'
+
+  X               (O)     REAL            array dimension 3 with x,y,z
+
+  BISO            (O)     REAL            isotropic B factor
+
+  U_aniso(6)      (O)     REAL            anisotropic U factor
+
+  OCCUP           (O)     REAL            occupancy
+
+  IFAIL(12)       (O)     INTEGER         array of IFAILs for arguments
+                                          =  0 value specified in CIF returned
+                                          =  1 dictionary default returned
+                                          = -1 '.' returned
+                                          = -2 nothing or '?' returned
+
+  LEND            (O)     LOGICAL         .TRUE. if end of loop
+
+</pre>
+
+<h3>CCP4CCIF_GETATOMLABELS(BLK_ID,ATOMNO,ATOMID,ALTID,RESID,CHAINID,RESNO,SYMBOL,IRES,IFAIL,LEND)</h3>
+<pre>
+
+  Given a block_id, get the next set of atom labels.
+
+  Arguments :
+
+  BLK_ID          (I)     INTEGER         block ID of data
+
+  ATOMNO          (O)     CHARACTER       '_atom_site.id'
+
+  ATOMID          (O)     CHARACTER       '_atom_site.label_atom_id'
+
+  ALTID           (O)     CHARACTER       '_atom_site.label_alt_id'
+
+  RESID           (O)     CHARACTER       '_atom_site.label_comp_id'
+
+  CHAINID         (O)     CHARACTER       '_atom_site.label_asym_id'
+
+  RESNO           (O)     CHARACTER       '_atom_site.auth_seq_id'
+
+  SYMBOL          (O)     CHARACTER       '_atom_site.type_symbol'
+
+  IRES            (O)     INTEGER         '_atom_site.label_seq_id'
+
+  IFAIL(8)        (O)     INTEGER         array of IFAILs for arguments
+                                          =  0 value specified in CIF returned
+                                          =  1 dictionary default returned
+                                          = -1 '.' returned
+                                          = -2 nothing or '?' returned
+
+  LEND            (O)     LOGICAL         .TRUE. if end of loop
+
+</pre>
+
+<h3>CCP4CCIF_GETBISO(BLK_ID,BISO,IFAIL,LEND)</h3>
+<pre>
+
+  Given a block_id, get the next isotropic B factor.
+
+  Arguments :
+
+  BLK_ID          (I)     INTEGER         block ID of data
+
+  BISO            (O)     REAL            isotropic B factor
+
+  IFAIL           (O)     INTEGER         =  0 value specified in CIF returned
+                                          =  1 dictionary default returned
+                                          = -1 '.' returned
+                                          = -2 nothing or '?' returned
+
+  LEND            (O)     LOGICAL         .TRUE. if end of loop
+
+</pre>
+
+<h3>CCP4CCIF_GETCELL(BLK_ID,CELL,VOL,IFAIL)</h3>
+<pre>
+
+  Get cell information for given data block.
+
+  Arguments :
+
+  BLK_ID          (I)     INTEGER         block ID of data
+
+  cell(6)         (O)     REAL            cell dimensions
+
+  vol             (O)     REAL            cell volume
+
+  IFAIL           (O)     INTEGER         =0 OK
+
+</pre>
+
+<h3>CCP4CCIF_GETCOORD(BLK_ID,X,IFAIL,LEND)</h3>
+<pre>
+
+  Given a block_id, get the next set of x, y, z coords.
+
+  Arguments :
+
+  BLK_ID          (I)     INTEGER         block ID of data
+
+  X(3)            (O)     REAL            X,Y,Z coordinates
+
+  IFAIL           (O)     INTEGER         =  0 value specified in CIF returned
+                                          =  1 dictionary default returned
+                                          = -1 '.' returned
+                                          = -2 nothing or '?' returned
+
+  LEND            (O)     LOGICAL         .TRUE. if end of loop
+
+</pre>
+
+<h3>CCP4CCIF_GETENTITY(BLK_ID,ENTITYID,ENTITYTYPE,IFAIL)</h3>
+<pre>
+
+  Get entity information for given data block.
+
+  Arguments :
+
+  BLK_ID          (I)     INTEGER         block ID of data
+
+  entityid        (O)     CHARACTER       entity identifier
+
+  entitytype      (O)     CHARACTER       entity type: 'polymer',
+                                          'non-polymer' or 'water'
+
+  IFAIL           (O)     INTEGER         =0 OK
+
+</pre>
+
+<h3>CCP4CCIF_GETFRACMAT(BLK_ID,RF,IFAIL)</h3>
+<pre>
+
+  Get fractionalising matrix for given data block.
+
+  Arguments :
+
+  BLK_ID          (I)     INTEGER         block ID of data
+
+  RF(4,4)         (O)     REAL            fractionalising matrix
+
+  IFAIL           (O)     INTEGER         =0 OK
+                                          =1 not found in file
+
+</pre>
+
+<h3>CCP4CCIF_GETINTDATAITEM(BLK_ID,CATNAM,ITMNAM,IITEM,CITEM,IFAIL)</h3>
+<pre>
+
+  Given a block_id, read specified integer data item
+
+  Arguments :
+
+  BLK_ID          (I)     INTEGER         block ID of data
+
+  CATNAM          (I)     CHARACTER       category name
+
+  ITMNAM          (I)     CHARACTER       item name
+
+  IITEM           (I)     INTEGER         item integer value
+
+  CITEM           (I)     CHARACTER       item character value
+
+  IFAIL           (I)     INTEGER         =  0 value specified in CIF returned
+                                          =  1 dictionary default returned
+                                          = -1 '.' returned
+                                          = -2 nothing or '?' returned
+
+</pre>
+
+<h3>CCP4CCIF_GETMATRICES(BLK_ID,RO,RF)</h3>
+<pre>
+
+  Get orthogonalising and fractionalising matrices for given data block.
+
+  Arguments :
+
+  BLK_ID          (I)     INTEGER         block ID of data
+
+  RO(4,4)         (O)     REAL            orthogonalising matrix
+
+  RF(4,4)         (O)     REAL            fractionalising matrix
+
+  If file has only one, this is used to derive other.
+  If file has neither, both are derived from cell assuming NCODE = 1.
+
+</pre>
+
+<h3>CCP4CCIF_GETOCC(BLK_ID,OCCUP,IFAIL,LEND)</h3>
+<pre>
+
+  Given a block_id, get the next occupancy.
+
+  Arguments :
+
+  BLK_ID          (I)     INTEGER         block ID of data
+
+  OCCUP           (O)     REAL            occupancy
+
+  IFAIL           (O)     INTEGER         =  0 value specified in CIF returned
+                                          =  1 dictionary default returned
+                                          = -1 '.' returned
+                                          = -2 nothing or '?' returned
+
+  LEND            (O)     LOGICAL         .TRUE. if end of loop
+
+</pre>
+
+<h3>CCP4CCIF_GETORTHOMAT(BLK_ID,RO,IFAIL)</h3>
+<pre>
+
+  Get orthogonalising matrix for given data block.
+
+  Arguments :
+
+  BLK_ID          (I)     INTEGER         block ID of data
+
+  RO(4,4)         (O)     REAL            orthogonalising matrix
+
+  IFAIL           (O)     INTEGER         =0 OK
+                                          =1 not found in file
+
+</pre>
+
+<h3>CCP4CCIF_GETRCELL(BLK_ID,RCELL,RVOL,IFAIL)</h3>
+<pre>
+
+  Get reciprocal cell information for given data block.
+
+  Arguments :
+
+  BLK_ID          (I)     INTEGER         block ID of data
+
+  rcell(6)        (O)     REAL            reciprocal cell dimensions
+
+  rvol            (O)     REAL            reciprocal cell volume
+
+  IFAIL           (O)     INTEGER         =0 OK
+
+</pre>
+
+<h3>CCP4CCIF_GETSTRUCTASYM(BLK_ID,ASYMID,ASYMENTITYID,ENTITYTYPE,IFAIL)</h3>
+<pre>
+
+  Get information about the contents of the a.s.u. for 
+  given data block.
+
+  Arguments :
+
+  BLK_ID          (I)     INTEGER         block ID of data
+
+  asymid          (O)     CHARACTER       _struct_asym.id
+                                          parent of _atom_site.label_asym_id 
+
+  asymentityid    (O)     CHARACTER       _struct_asym.entity_id
+                                          child of _entity.id
+
+  entitytype      (O)     CHARACTER       _entity.type
+                                          entity type: 'polymer',
+                                          'non-polymer' or 'water'
+
+  IFAIL           (O)     INTEGER         =0 OK
+
+</pre>
+
+<h3>CCP4CCIF_GETSYMMETRY(BLK_ID,NUMSPACEGROUP,SPACEGROUPNAME,IFAIL)</h3>
+<pre>
+
+  Get symmetry information for given data block.
+
+  Arguments :
+
+  BLK_ID          (I)     INTEGER         block ID of data
+
+  NumSpaceGroup   (O)     INTEGER         spacegroup number
+
+  SpaceGroupName  (O)     CHARACTER       spacegroup name
+
+  IFAIL           (O)     INTEGER         =0 OK
+
+</pre>
+
+<h3>CCP4CCIF_INIT</h3>
+<pre>
+
+  This subroutine initialises things and loads the CIF dictionary.
+  This subroutine must be called before any other in cciflib.f !!
+
+</pre>
+
+<h3>CCP4CCIF_MAT4INV(A,AI)</h3>
+<pre>
+
+  Subroutine to invert 4*4 matrices for conversion between
+  fractional and orthogonal axes.
+
+  Arguments :
+
+  A(4,4)          (I)     REAL            MATRIX TO BE INVERTED
+
+  AI(4,4)         (O)     REAL            INVERSE MATRIX
+
+</pre>
+
+<h3>CCP4CCIF_PUTATOMINFO(BLK_ID,ATOMNO,ATOMID,ALTID,RESID,CHAINID,RESNO,SYMBOL,IRES,X,BISO,OCCUP,NEWROW,IFAIL)</h3>
+<pre>
+
+  Given a block_id, put the next set of atom info.
+
+  Arguments :
+
+  BLK_ID          (I)     INTEGER         block ID of data
+
+  ATOMNO          (I)     CHARACTER       '_atom_site.id'
+
+  ATOMID          (I)     CHARACTER       '_atom_site.label_atom_id'
+
+  ALTID           (I)     CHARACTER       '_atom_site.label_alt_id'
+
+  RESID           (I)     CHARACTER       '_atom_site.label_comp_id'
+
+  CHAINID         (I)     CHARACTER       '_atom_site.label_asym_id'
+
+  RESNO           (I)     CHARACTER       '_atom_site.auth_seq_id'
+
+  SYMBOL          (I)     CHARACTER       '_atom_site.type_symbol'
+
+  IRES            (I)     INTEGER         '_atom_site.label_seq_id'
+
+  X               (I)     REAL            array dimension 3 with x,y,z
+
+  BISO            (I)     REAL            isotropic B factor
+
+  OCCUP           (I)     REAL            occupancy
+
+  NEWROW          (I)     LOGICAL         .TRUE. if data for new row
+                                          .FALSE. if for existing row
+
+  IFAIL(13)       (I)     INTEGER         =  0 OK
+                                          = -1 write out '?'
+                                          = -2 write out '.'
+
+</pre>
+
+<h3>CCP4CCIF_PUTATOMLABELS(BLK_ID,ATOMNO,ATOMID,ALTID,RESID,CHAINID,RESNO,SYMBOL,IRES,NEWROW,IFAIL)</h3>
+<pre>
+
+  Given a block_id, put a set of atom labels.
+
+  Arguments :
+
+  BLK_ID          (I)     INTEGER         block ID of data
+
+  ATOMNO          (I)     CHARACTER       '_atom_site.id'
+
+  ATOMID          (I)     CHARACTER       '_atom_site.label_atom_id'
+
+  ALTID           (I)     CHARACTER       '_atom_site.label_alt_id'
+
+  RESID           (I)     CHARACTER       '_atom_site.label_comp_id'
+
+  CHAINID         (I)     CHARACTER       '_atom_site.label_asym_id'
+
+  RESNO           (I)     CHARACTER       '_atom_site.auth_seq_id'
+
+  SYMBOL          (I)     CHARACTER       '_atom_site.type_symbol'
+
+  IRES            (I)     INTEGER         '_atom_site.label_seq_id'
+
+  NEWROW          (I)     LOGICAL         .TRUE. if data for new row
+                                          .FALSE. if for existing row
+
+  IFAIL(8)        (I)     INTEGER         =  0 OK
+                                          = -1 write out '?'
+                                          = -2 write out '.'
+
+</pre>
+
+<h3>CCP4CCIF_PUTAUDIT(BLK_ID,UPDATE_RECORD)</h3>
+<pre>
+
+  Put audit information for given data block.
+  If there is not yet an audit category for the data block, a new
+  one will be written. This includes simple strings for _audit.revision_id
+  and _audit.creation_method, the current date for _audit.creation_date,
+  and the subroutine argument as _audit.update_record  
+  If an audit category does exist, then the subroutine argument is
+  appended to _audit.update_record while other data items are left alone.
+
+  Arguments :
+
+  BLK_ID          (I)     INTEGER         block ID of data
+
+  update_record   (I)     CHARACTER       line of text to be included
+                                          in _audit.update_record
+
+</pre>
+
+<h3>CCP4CCIF_PUTBISO(BLK_ID,BISO,NEWROW,IFAIL)</h3>
+<pre>
+
+  Given a block_id, put an isotropic B factor.
+
+  Arguments :
+
+  BLK_ID          (I)     INTEGER         block ID of data
+
+  BISO            (I)     REAL            isotropic B factor
+
+  NEWROW          (I)     LOGICAL         .TRUE. if data for new row
+                                          .FALSE. if for existing row
+
+  IFAIL           (I)     INTEGER         =  0 OK
+                                          = -1 write out '?'
+                                          = -2 write out '.'
+
+</pre>
+
+<h3>CCP4CCIF_PUTCELL(BLK_ID,CELL)</h3>
+<pre>
+
+  Put cell information for given data block.
+
+  Arguments :
+
+  BLK_ID          (I)     INTEGER         Block ID of data
+
+  cell(6)         (I)     REAL            Cell dimensions.
+                                          Cell volume is derived
+                                          from these.
+
+</pre>
+
+<h3>CCP4CCIF_PUTCOORD(BLK_ID,X,NEWROW,IFAIL)</h3>
+<pre>
+
+  Given a block_id, put a set of x, y, z coords.
+
+  Arguments :
+
+  BLK_ID          (I)     INTEGER         block ID of data
+
+  X(3)            (I)     REAL            x,y,z coordinates
+
+  NEWROW          (I)     LOGICAL         .TRUE. if data for new row
+                                          .FALSE. if for existing row
+
+  IFAIL(3)        (I)     INTEGER         =  0 OK
+                                          = -1 write out '?'
+                                          = -2 write out '.'
+
+</pre>
+
+<h3>CCP4CCIF_PUTENTITY(BLK_ID,ENTITYID,ENTITYTYPE,NENTITY)</h3>
+<pre>
+
+  Put entity information for given data block.
+
+  Arguments :
+
+  BLK_ID          (I)     INTEGER         block ID of data
+
+  entityid        (I)     CHARACTER       entity identifier
+
+  entitytype      (I)     CHARACTER       entity type: 'polymer',
+                                          'non-polymer' or 'water'
+
+  NENTITY         (I)     INTEGER         number of entities
+
+</pre>
+
+<h3>CCP4CCIF_PUTFRACMAT(BLK_ID,RF)</h3>
+<pre>
+
+  Put fractionalising matrix for given data block.
+
+  Arguments :
+
+  BLK_ID          (I)     INTEGER         block ID of data
+
+  RF(4,4)         (I)     REAL            fractionalising matrix
+
+</pre>
+
+<h3>CCP4CCIF_PUTOCC(BLK_ID,OCCUP,NEWROW,IFAIL)</h3>
+<pre>
+
+  Given a block_id, put an occupancy.
+
+  Arguments :
+
+  BLK_ID          (I)     INTEGER         block ID of data
+
+  OCCUP           (I)     REAL            occupancy
+
+  NEWROW          (I)     LOGICAL         .TRUE. if data for new row
+                                          .FALSE. if for existing row
+
+  IFAIL           (I)     INTEGER         =  0 OK
+                                          = -1 write out '?'
+                                          = -2 write out '.'
+
+</pre>
+
+<h3>CCP4CCIF_PUTSYMMETRY(BLK_ID,NUMSPACEGROUP,SPACEGROUPNAME)</h3>
+<pre>
+
+  Get symmetry information for given data block.
+
+  Arguments :
+
+  BLK_ID          (I)     INTEGER         block ID of data
+
+  NumSpaceGroup   (I)     INTEGER         spacegroup name
+
+  SpaceGroupName  (I)     CHARACTER       spacegroup number
+
+  Only one of NumSpaceGroup,SpaceGroupName need be given.
+  If either is unknown, set it to 0 or ' ' respectively
+  and it will be inferred from the other.
+
+</pre>
+
+<h3>CCP4CCIF_RCLOSE(LOGNAM)</h3>
+<pre>
+
+  Close a CIF file opened for reading.
+
+  Arguments :
+
+  LOGNAM          (I)     CHARACTER       logical name of file to be 
+                                          closed
+
+</pre>
+
+<h3>CCP4CCIF_ROPEN(LOGNAM,REQUESTED_BLOCK,BLK_ID)</h3>
+<pre>
+
+  Open a CIF file for reading.
+
+  Arguments :
+
+  LOGNAM          (I)     CHARACTER       logical name of file to be 
+                                          opened
+
+  REQUESTED_BLOCK (I)     CHARACTER       name of data block to be
+                                          opened. If blank, then first
+                                          one in file is opened.
+
+  BLK_ID          (O)     INTEGER         block ID of data for future
+                                          reference
+
+</pre>
+
+<h3>CCP4CCIF_SETUP_CONTEXT(CATNAM_IN,BLK_ID,NCNTXT, ISTAT_EXP,DISPOSITION)</h3>
+<pre>
+
+  Wrap-around for ccif_setup_context
+
+  catnam_in       (i)     CHARACTER     name of category or item
+
+  blk_id          (i)     INTEGER       block id of data
+
+  ncntxt          (o)     INTEGER       number of assigned context
+
+  istat_exp       (i/o)   INTEGER       On input:
+                                          0 = category not necessarily 
+                                              expected to be present
+                                          1 = loop expected
+                                          2 = item expected
+                                          3 = loop or item expected
+                                        On output:
+                                          0 = category not found
+                                          1 = loop found
+                                          2 = item found
+
+  disposition     (i)     CHARACTER     'RO' or 'LOOP'
+
+</pre>
+
+<h3>CCP4CCIF_WCLOSE(LOGNAM)</h3>
+<pre>
+
+  Close a CIF file opened for writing.
+
+  Arguments :
+
+  LOGNAM          (I)     CHARACTER       logical name of file to be 
+                                          closed
+
+</pre>
+
+<h3>CCP4CCIF_WOPEN(LOGNAM,LOGNAMIN,REQUESTED_BLOCK,BLK_ID)</h3>
+<pre>
+
+  Open a CIF file for writing.
+
+  Arguments :
+
+  LOGNAM          (I)     CHARACTER       logical name of file to be 
+                                          opened for writing.
+
+  LOGNAMIN        (I)     CHARACTER       logical name of corresponding
+                                          file opened for reading. If this
+                                          is given, output file is initialised
+                                          with contents of input file.
+
+  REQUESTED_BLOCK (I)     CHARACTER       name of data block to be
+                                          written. 
+
+  BLK_ID          (O)     INTEGER         block ID of data for future
+                                          reference
+
+</pre>
+
+<h2>Authors</h2>
+
+cciflib.f : Martyn Winn (m.d.winn@dl.ac.uk)
+<p>
+libccif.a : Peter Keller (keller@ebi.ac.uk)
+
+</html>

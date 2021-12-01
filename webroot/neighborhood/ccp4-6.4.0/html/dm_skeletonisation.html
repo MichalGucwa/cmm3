@@ -1,0 +1,136 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::DM_skeletonisation::General::Density Modification - Molecular Averaging::iterative skeletonisation using dm::see DM program:::::: -->
+
+<H1> DM for skeletonisation (CCP4: General) </H1>
+<H2> NAME</H2>
+<b>dm_skeletonisation</b> 
+- iterative skeletonisation using dm
+
+<P> 
+This document describes the iterative skeletonisation process as
+implemented in 'dm', and in particular the things you need to know in
+order to use the process.
+
+<H2> THE SKELETONISATION PROCESS</H2>
+The process of skeletonisation involves two stages:
+<ol>
+<li>
+The construction of a 'skeleton' representing the connectivity of the
+map.
+<li>
+The creation of a new map from the skeleton.
+</ol>
+<P> 
+These stages are conducted as follows:
+
+<H3> 1. Construction of the Skeleton</H3>
+First, the map is searched to locate the important features. These
+fall into two classes: Peaks, and Join points.
+<P> 
+Peaks are local maxima in the density. A ridge is the highest path
+joining two peaks. A join point is the lowest point on a ridge,
+i.e. the lowest point on the highest path joining two peaks.
+<P> 
+In constructing the skeleton, there are two important parameters to
+consider:
+<ol>
+<li>
+The join point cutoff. Any ridge whose join point falls above this
+level will be included in the skeleton. Ridges whose join points fall
+beneath this level will not be included in full, but a part of the
+ridge may be included as an end.
+<li>
+The end point cutoff. If a join point is below the join point cutoff,
+a portion of the ridge may still be added to the skeleton if the peak
+is above the end point cutoff. That portion of the ridge which is
+above this level is added to the skeleton.
+</ol>
+<P> 
+Obviously, ridges included under (1) will contribute to the
+connectivity of the map, whereas ridges included under (2) will not
+because they are always dead-ends. Thus it is normal to set the end
+point cutoff somewhat higher than the join point cutoff in order to
+enhance connectivity in the map.
+<P> 
+To simplify the setting of these parameters, 'dm' determines the
+cutoff levels by examining the map in order to produce a skeleton with
+particular features. These features are specified as the length of
+skeleton (per residue) which should be generated from join point
+ridges, and the length of skeleton (per residue) which should be
+generated from dead-end ridges. It is my hope that these optimum
+values of these parameters should be fairly constant, and so that for
+most cases the default values should suffice. If new values are
+required, they can be set using the SKEL LENGTH card.
+<P> 
+One other parameter affects the skeletonisation process: the
+temperature factor applied to the initial map. Skeletonisation based
+on the sharpened map used by 'dm' is fairly poor, a much better
+skeleton is obtained if the map is smoothed with an overall temperature
+factor first. Again this parameter is not very sensitive and can be
+left at the default value, you may possibly want to increase it if the
+initial map is particularly poor or decrease it if the initial map is
+very good.
+
+<H3> 2. Map Generation</H3>
+Map generation is carried out by building up a cylindrically symmetric
+density distribution about the skeleton. The distribution is taken
+from an atom averaged over a cylinder whose length is the average
+protein atomic bond length.
+<P> 
+Density outside the solvent mask is set to the mean solvent value.
+
+<H2> USING SKELETONISATION</H2>
+In skeletonisation calculations I have found the best scheme is to
+perform a conventional density modification first, and then use the
+modified map as a starting point for a dm/skeletonisation calculation.
+The phase extension scheme 'SCHEME AUTO FRAC 0.5' is a good option for
+this second calculation, as reflections with high figures-of-merit are
+more likely to be included in the starting set.
+<P> 
+Note also that it is wise to make sure the final cycle of the
+skeletonisation run is a conventional density modification cycle rather
+than a skeletonisation cycle otherwise your building may become
+excessively biased towards the 'dm' skeleton. Thus for 'SKEL EVERY 2'
+you would set 'NCYC' to be odd, for 'SKEL EVERY 3' (the default) you
+would set 'NCYC' to be (3n-1) where n is an integer.
+<P> 
+A typical command file is given below:
+<pre>
+
+dm     
+    hklin ~/hkl/gmtomir.mtz    
+    hklout $SCRATCH/gmt_dm.mtz 
+  &lt;&lt; 'MY-DATA'
+SOLC 0.35
+MODE SOLV HIST
+NCYC 10
+SCHEME RES FROM 3.7
+LABI FP=FP SIGFP=SIGFP PHIO=PHIB FOMO=FOM
+LABO PHIDM=PHIdm FOMDM=FOMdm
+END
+'MY-DATA'
+#
+dm     
+    hklin $SCRATCH/gmt_dm.mtz  
+    hklout $SCRATCH/gmt_sk.mtz 
+  &lt;&lt; 'MY-DATA'
+SOLC 0.35
+MODE SOLV HIST SKEL
+SKEL EVERY 2
+NCYC 9
+SCHEME AUTO FRAC 0.5
+LABI FP=FP SIGFP=SIGFP PHIO=PHIB FOMO=FOM  PHIDM=PHIdm FOMDM=FOMdm
+LABO PHIDM=PHIsk FOMDM=FOMsk
+END
+'MY-DATA'
+
+</pre>
+
+<H2> AUTHOR</H2>
+Dr. Kevin Cowtan, Protein Structure Group, University of York, England
+
+</body></html>
+

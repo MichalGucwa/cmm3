@@ -1,0 +1,1193 @@
+<HTML>
+<HEAD>
+<TITLE>CCP4 Program Suite : arp_waters</TITLE>
+</HEAD>
+<BODY>
+
+<!-- ::INDEX_INFO::ARP_WATERS::Deprecated::Model Refinement,Density Fitting and Model Building::Automated Refinement Procedure for refining protein structures:::::::: -->
+
+<H1> ARP_WATERS (CCP4: Deprecated Program)</H1>
+<H2> NAME</H2>
+<b>ARP_WATERS (ARP/wARP v5.0) </b>
+- Automated Refinement Procedure for refining protein structures.
+<H2> SYNOPSIS</H2>
+<b>arp_waters</b> <b>XYZIN</b>
+<i>foo_in.brk</i>
+<b>MAPIN1</b>
+<i>foo_2fofc.map</i>
+<b>MAPIN2 </b>
+<i>foo_fofc.map</i>
+<b>XYZOUT</b>
+<i>foo_out.brk</i><br>
+[<A HREF="#keywords">Keyworded input</A>]<H2><A NAME="identification"></A>IDENTIFICATION</H2>
+
+<Center>
+<Strong><BIG><H1>Automated Refinement Procedure</H1>
+<H2>Version 5.0</H2>
+<H2>User Guide</H2>
+
+</BIG></Strong><HR width="30%">
+</center>
+
+<H2><a name="description">DESCRIPTION</a></H2>
+
+<P>This CCP4 distribution is not the full distribution of the ARP/wARP suite, and
+includes only the programs <B>arp_waters</B> (which is actually version 5.0 of the
+<i>arp_warp</i> program), <B>prepform</B>, <B>prepshel</B> and
+<B>t_shift</B>, and the script <B>arp_waters_plots.sh</B> (renamed from
+<i>arp_warp_plots.sh</i>).
+
+<P>The complete ARP/wARP package contains additional automated scripts and alpha
+versions of new programs (for automated building of protein structures in electron
+density maps; see "Automated protein model building combined with iterative structure
+refinement" Perrakis, A., Morris, R.J.H. and Lamzin, V.S., <i>Nature Struct. Biol.</i>
+<b>6</b> (1999) 458-463), and is freely available to academic users from the ARP/wARP
+homepage, <a href="http://www.arp-warp.org/">http://www.arp-warp.org</a>.
+Industrial users are asked to contact the
+<a href="#author_information">authors</a> for a license agreement.
+
+<P>The version of ARP distributed by CCP4 also contains minor
+changes which enable the writing of "summary tags" into the program output -
+see the <a href="libhtml.html">libhtml</a> documentation for details of these
+tags (and how to suppress them!). Please note that these changes do not in
+any way affect the running of the program, and are purely cosmetic.
+
+<P>In addition this version of ARP is substantially older than the current
+version distributed by EMBL, and is retained only for the purposes of adding
+waters (hence the change of name). Details of the current ARP/wARP suite
+(including how to get it) can be found at the ARP/wARP homepage,
+<a href="http://www.arp-warp.org">http://www.arp-warp.org/</a>.
+
+<!-- special characters - "alpha" - + -   -->
+
+<H3>Contents</H3>
+<UL>
+ <LI><a href="#introduction">Introduction</a>
+ <UL>
+   <LI><a href="#author_information">Author information</a>
+   <LI><a href="#references">References</a>
+   <LI><a href="#acknowledgements">Acknowledgements</a>
+ </UL>
+ <LI><a href="#using_arp_waters">Using ARP_WATERS</a>
+ <UL>
+   <LI><a href="#applications">Applications</a>
+   <LI><a href="#model_and_data">Model and data requirements</a>
+   <UL>
+     <LI><a href="#quality_of_initial_model">Quality of the initial model</a>
+     <LI><a href="#quality_of_data">Quality of the X-ray data</a>
+   </UL>
+   <LI><a href="#limitations">Limitations</a>
+   <LI><a href="#automated_scripts">Automated Scripts</a>
+   <LI><a href="#supplementary_use">Supplementary use of ARP_WATERS</a>
+   <LI><a href="#updating_command_files">Updating old command files</a>
+ </UL>
+ <LI><a href="#keywords">Keyworded input to ARP_WATERS</a>
+ <LI><a href="#on_line_help">On-line help</a>
+ <LI><a href="#monitoring">Monitoring and Troubleshooting</a>
+ <UL>
+   <LI><a href="#input_processing">Input processing</a>
+   <LI><a href="#output">Output</a>
+   <LI><a href="#viewing_log_files">Viewing ARP_WATERS log files</a>
+   <LI><a href="#checking_convergence">Checking convergence</a>
+   <LI><a href="#crashing_scripts">Crashing scripts</a>
+ </UL>
+ <LI><a href="#examples">Examples</a>
+ <UL>
+   <LI><a href="#arp_waters_and_shelx">ARP_WATERS and SHELXL</a>
+   <LI><a href="#ccp4_scripts">CCP4 scripts</a>
+ </UL>
+</UL>
+
+<H2><a name="introduction"></a>Introduction</H2>
+
+<P>
+The Automated Refinement Procedure, ARP_WATERS, is a program package for 
+protein structure refinement. 
+It combines in an iterative manner the reciprocal space structure factor 
+refinement with updating of the model in real space. The latter attempts to 
+mimic and automate a typically time extensive model rebuilding 
+session at the graphics. 
+The real space update is based on identifying and removing poorly defined 
+atoms and the addition of potential new sites. 
+This utilises some general shape properties of the electron density syntheses 
+as well as stereo-chemical criteria.
+<BR>
+
+<P>
+The ARP)WATERS (actually ARP/wARP version 5.0) can be used in the following ways:
+
+<P>
+<DL COMPACT>
+<DT>1.
+<DD>Refinement of MR solutions
+<DT>2.
+<DD>Improvement of MAD and M(S)IR(AS) phases
+<DT>3.
+<DD>Averaging of multiple refinements
+<DT>4.
+<DD>Automatic tracing of the density map and model building <I>(not available in CCP4
+    version)</I>
+<DT>5.
+<DD>Building of the solvent structure
+<DT>6.
+<DD><I>Ab initio</I> structure determination for metalloproteins at very high resolution
+</DL>
+<P>
+For a more detailed description of the ARP see the <a href="#references">references</a> 
+given below.
+<P>
+The ARP/wARP procedure requires the use of reciprocal space refinement, density map 
+calculation and the 
+ARP/wARP software itself. The least-squares minimisation can be done with the CCP4
+programs <a href="protin.html">PROTIN</a> / <a href="refmac.html">REFMAC</a> with an
+optional additional scaling (e.g. using <a href="rstats.html">RSTATS</a>). Use of
+other programs for least-squares minimisation, e.g. SHELXL, requires additional
+conversion to the CCP4 format which is provided within the ARP_WATERS package. Density
+map calculations are carried out with the CCP4 programs <a href="fft.html">FFT</a>
+and <a href="mapmask.html">MAPMASK</a>.
+<BR>
+
+<hr width="50%">
+
+<H2><a name="author_information"></a>Author information</H2>
+<table noborder>
+
+<P>Users are requested to report any bugs or suggested changes to the authors.
+<tr>
+<td>
+<B>Victor S. Lamzin</B> <br>
+EMBL Hamburg Outstation, <br>
+c/o DESY, Notkestrasse 85, <br>
+22603 Hamburg, Germany <br>
+Tel. +49-40-89902-121, Fax +49-40-89902-149, <br>
+E-mail <a href="mailto:victor@embl-hamburg.de">victor@embl-hamburg.de</a>
+<td>
+<B>Anastassis Perrakis</B> <br>
+EMBL Grenoble Outstation, <br>
+c/o ILL, Avenue des Martyrs, B.P. 156, <br>
+38042 Grenoble CEDEX 9, France <br>
+Tel. +33-476-207632, Fax +33-476-207199, <br>
+E-mail <a href="mailto:a.perrakis@nki.nl">perrakis@embl-grenoble.fr</a>
+</table>
+
+<HR width="50%">
+
+<H2><A NAME="references"></A>References</H2>
+
+<P>
+Any application of ARP_WATERS should actually refer to <B>ARP/wARP version5.0</B>,
+and should cite a relevant publication (see the reference):
+<UL>
+<LI><A
+ HREF="#ARP93">ARP93</A> The original paper describing ARP
+<LI><A
+ HREF="#ARP97">ARP97</A> Elaborated analysis of the power and limitations of ARP
+<LI><A
+ HREF="#wARP97">wARP97</A> The original paper describing wARP
+<LI><A
+ HREF="#ApARP96">ApARP96</A> An application of ARP to crystal structure refinement
+<LI><A
+ HREF="#wARP98">wARP98</A> Elaborated analysis of wARP and its application
+<BR>
+</UL>
+<P>
+
+<DL COMPACT><DD><P></P><DT><A NAME="ARP93"><STRONG>1</STRONG></A>
+<DD>
+V. S. Lamzin and K. S. Wilson.
+<BR>Automated refinement of protein models.
+<BR><EM>Acta Cryst.</EM>, <B>D49</B>:129-149, 1993.
+
+<P></P><DT><A NAME="ARP97"><STRONG>2</STRONG></A>
+<DD>
+V. S. Lamzin and K. S. Wilson.
+<BR>Automated refinement for protein crystallography.
+<BR><EM>Methods in Enzymology</EM>, <B>277</B>:269-305, 1997.
+
+<P></P><DT><A NAME="wARP97"><STRONG>3</STRONG></A>
+<DD>
+A. Perrakis, T. K. Sixma, K.S. Wilson, and V. S. Lamzin.
+<BR>wARP: improvement and extension of crystallographic phases by
+  weighted averaging of multiple refined dummy atomic models.
+<BR><EM>Acta Cryst.</EM>, <B>D53</B>:448-455, 1997.
+
+<P></P><DT><A NAME="ApARP96"><STRONG>4</STRONG></A>
+<DD>
+D. Pignol, C. Gaboriaud, J. C. Fontecilla-Camps, V. S. Lamzin, and K. S.
+  Wilson.
+<BR>How to escape from model bias with a high resolution native data set
+  - structure determination of the PcpA-S6 subunit III.
+<BR><EM>Acta Cryst.</EM>, <B>D52</B>:345-355, 1996.
+
+<P></P><DT><A NAME="wARP98"><STRONG>5</STRONG></A>
+<DD>
+E. J. Asselt van, A. Perrakis, K. H. Kalk, and V. S. Lamzin.
+<BR>Accelerated X-ray structure elucidation of a 36 kDa
+  muramidase/transglycosylase using wARP.
+<BR><EM>Acta Cryst.</EM>, <B>D54</B>:58-735, 1998.
+
+</DL>
+
+<hr width="50%">
+
+<H2><a name="acknowledgements"></a>Acknowledgements</H2>
+<P>
+The authors are especially grateful to:
+<UL>
+<LI>Keith S. Wilson (York, UK) one of the originators of the software;
+
+<P>
+<LI>Zbyszek Dauter (Brookhaven, USA) and Richard Morris (EMBL Hamburg, Germany) for
+significant contributions to the software development;
+
+<P>
+<LI>Eleanor Dodson (York, UK), Jozef Sevcik (Bratislava, SLO), Phil Evans
+(Cambridge, UK), Susanna Butterworth (York, UK), Titia Sixma (NKI Amsterdam, 
+The Netherlands) and Erik van Asselt (Univ. Groningen, The Netherlands)
+for valuable suggestions.
+</UL>
+<P>
+
+<HR>
+
+<A NAME="using_arp_waters"></A><H2>Using ARP_WATERS</H2>
+
+<A NAME="applications"></A><H3>Applications</H3>
+
+The areas of application of ARP_WATERS (actually ARP/wARP Version 5.0) include:
+
+<P>
+<DL COMPACT>
+<DT>1.
+<DD><B>Refinement of MR solutions
+<BR></B>
+If the initial model (a Molecular Replacement solution) needs to be substantially
+improved then unrestrained xyzB reciprocal space refinement may be carried out with
+ARP/wARP performing updating of the whole model. Resolution of the data should be
+2.0 &#197;&nbsp;or higher. The output is a set of ARP atoms (the ARP model). 
+The (3F_o-2F_c / 2mF_o-DF_c, \alpha_c) map should be calculated from the ARP model
+and analysed carefully (yes, it's graphics time). The initial or the ARP model is then 
+rebuilt to fit this map. Very often, if the X-ray resolution is high enough and the
+initial model is not completely wrong, the ARP atoms are located at approximately 
+the <I>true</I> protein atom positions even in the case of unrestrained refinement.
+So they can be quite happily used as guides for rebuilding. 
+<P>
+Please note, that for difficult cases approaches such as described for application
+#4 might work better even when starting from a molecular replacement solution.
+
+<P>
+<DT>2.
+<DD><B>Improvement of MIR(AS) phases
+<BR></B>
+ARP/wARP can be used to build a <I>protein-like</I> model consisting of a set of 
+non-connected atoms (<I>free atoms model</I>) into a MIR map. 
+This model is then refined as described above for #1.
+
+<P>
+<DT>3.
+<DD><B>Averaging of multiple refinements
+<BR></B>
+ ARP/wARP can be used to prepare models and command scripts for several independent
+refinement runs as described for #1 and #2. The results are then processed in such
+a way that each reflection is given a weighted average phase, 
+alpha<sub>wARP</sub>, and a figure of merit, FOM<sub>wARP</sub>.
+The results, especially for modest resolution, are better compared to a single
+ARP/wARP refinement. The (F_o, alpha<sub>wARP</sub>, FOM<sub>wARP</sub>)
+ map is then calculated and should be inspected. Resolution of the data should be
+2.3 &#197;&nbsp;or higher.
+
+<P>
+<DT>4.
+<DD><B>Automatic tracing of the density map and model building
+<BR></B>
+<I>This is not available as part of the CCP4 distribution of ARP/wARP. Please
+visit the ARP/wARP homepage at
+<a href="http://www.arp-warp.org">http://www.arp-warp.org</a> to obtain
+the full distribution from the authors.</I>
+
+<P>
+<DT>5.
+<DD><B>Building of the solvent structure
+<BR></B>
+ If the initial model is more or less correct, i.e. an R factor of about 30 % or less,
+and essentially only the solvent needs to be improved, restrained (standard) reciprocal
+space refinement is carried out with ARP/wARP performing automatic adjustment of the
+solvent structure. Resolution of the data should be 2.5 &#197;&nbsp;or higher.
+ The output is the protein model with the solvent molecules transformed with symmetry
+operations to lie close around the protein. The (3F_o-2F_c / 2mF_o-DF_c, alpha_c)
+and (F_o-F_c / 2mF_o-DF_c, alpha_c) maps should be inspected.
+
+<P>
+<DT>6.
+<DD><B>Ab initio structure determination for metalloproteins
+<BR></B>
+ARP/wARP was successfully applied to the small, 52 amino acid protein rubredoxin.
+This structure could be solved <I>ab initio</I>. 
+The success was clearly due to the the presence of the FeS<SUB>4</SUB> cluster in the
+protein. 
+The positions as derived from the Patterson synthesis were used as a starting model. 
+This initial model gave an R factor of 53% at 0.92 &#197;&nbsp;resolution. The
+resulting ARP model gave an R factor of 16% and map correlation to the final model
+map of 90%. Subsequently the successful solution was obtained with 
+X-ray data truncated to 1.6 &#197;.
+</DL>
+<P>
+
+<A NAME="model_and_data"></A><h3>Model and Data Requirements</h3>
+
+<A NAME="quality_of_initial_model"></A><Strong>Quality of initial model</Strong>
+<P>
+As the ARP/wARP real space update of the model is carried out on the basis of
+electron density maps calculated with model phases, the starting model for the
+refinement should be <I>reasonable</I>. The higher the resolution of the native
+dataset the less reasonable the starting model can be: if you have 1
+&#197;&nbsp;data for a metalloprotein, a reasonable model is the metal itself.
+
+<P>
+<A NAME="quality_of_data"></A><Strong>Quality of X-ray data</Strong>
+<P>
+The data normally should be of high resolution. Unrestrained xyzB refinement 
+with ARP/wARP at lower resolution can potentially lead to a poorer quality density map.
+The X-ray data should be complete, especially in the low resolution range 
+(5 &#197;&nbsp;and lower).
+If the low resolution strong data are systematically incomplete (e.g. missing or 
+overloaded reflections), the density map, even in the case of a good model, is 
+usually discontinuous and is inconsistent with the model. 
+Because ARP/wARP involves updating on the basis of density maps, such discontinuity
+can lead to incorrect interpretation of the density and as a result to slow
+convergence or even non-interpretable maps.
+<P>
+In general, the number of X-ray reflections should be at least 6 times higher
+than the number of atoms in the model. 
+<BR>
+
+
+<H3><A NAME="limitations"></A>Limitations</H3>
+
+<P>As ARP/wARP runs in conjunction with programs of the CCP4 suite all limitations 
+of the latter remain. 
+ARP/wARP itself is limited to:
+<DL COMPACT>
+<DT>1.
+<DD>The CCP4 conventions should be set up before running ARP/wARP 
+<P>
+<DT>2.
+<DD>Density maps and reflection MTZ files in the CCP4 format
+
+<P>
+<DT>3.
+<DD>Maximum map section size is 400,000 points. The maximum number of map sections is
+1,000. The maximum number of atoms in extended real space asymmetric unit is 250,000
+
+<P>
+<DT>4.
+<DD>Only acentric space groups (typical for proteins) and P1  are supported
+
+<P>
+<DT>5.
+<DD>ARP/wARP operates with coordinate files in the standard PDB format
+</DL>
+<P>
+
+<A NAME="automated_scripts"></A><H3>Automated Scripts</H3>
+
+The full distribution of ARP/wARP contains a number of automated
+scripts which are designed to help avoid mistakes and generally improve
+the user-friendliness of the programs. These scripts are not provided
+with the CCP4 distribution of ARP/wARP (which is any case substantially older
+than the current release of ARP/wARP) and so if you want to use them
+you will need to obtain the full distribution from the ARP/wARP homepage
+at <a href="http://www.arp-warp.org/">http://www.arp-warp.org/</a>.
+
+<P>
+
+<a name="supplementary_use"></a><H3>Supplementary Use of ARP_WATERS</H3>
+After restrained refinement is complete and before using the graphics it is worth knowing
+which parts of the model should be corrected. <BR>
+ARP_WATERS can be used for this purpose.
+<BR>
+ <BR>
+<TT>arp_waters XYZIN <I>input.BRK</I> MAPIN1 <I>3Fo-2Fc.MAP</I> XYZOUT <I>temp</I> &lt;&lt; eof
+<BR>
+MODE UPDATE ALLATOMS
+<BR>
+CELL <I>number number number number number number</I>
+<BR>
+SYMMETRY <I>number/string</I>
+<BR>
+RESOLUTION <I>number number</I>
+<BR>
+REMOVE ATOMS 50 CUTSIGMA 1.0
+<BR>
+END
+<BR>
+eof
+<BR>
+</TT>
+ <BR>
+The output of this job will contain a list of the 50 worst (from ARP/wARP 's point of view) atoms which do not agree with the electron density. These atoms should be inspected first. The input MAPIN1 should be the (3F_o-2F_c / 2mF_o-D_Fc,alpha_c) map.
+
+<a name="updating_command_files"></a><H3>Updating Old Command Files</H3>
+
+ If you have a working command file from a previous 
+release just change the ARP part to look like this:
+<BR>
+ <BR>
+<TT>arp_waters XYZIN input_coordinates MAPIN1 3Fo-2Fc_map_file \ <BR>
+MAPIN2 Fo-Fc_map_file_name XYZOUT output_coordinates &lt;&lt; eof <BR>
+<B>MODE UPDATE ALLATOMS/WATERS</B>
+<BR>
+[CELL         cell parameters] <BR>
+[REFINE       waters/allatoms] <BR>
+SYMM         spacegroup
+<BR>
+RESOLUTION   resmin resmax
+<BR>
+FIND ATOMS   number CHAIN string CUTSIGMA number/AUTO
+<BR>
+REMOVE ATOMS number CUTSIGMA number [MERGE number] [KEEP ZEROOCC]
+<BR>
+END
+<BR>
+eof
+</TT>
+
+
+<HR>
+
+<A NAME="keywords"></A><H2>Keyworded input to ARP_WATERS</H2>
+<P>
+The ARP_WATERS input is keyworded. For example to  give the cell parameters to 
+the program we use the keyword <I>CELL</I> followed by the actual numbers, for 
+instance <I>CELL</I> 40.86 52.34 87.69 90 90 90 <BR>
+<P>
+An input card may also be followed by a number of subkeywords (this should become 
+clear on further reading). The first keyword in a file  <SMALL>MUST BE</SMALL>
+<I>MODE</I> and the last one <SMALL>MUST BE</SMALL> <I>END</I>. Other keywords
+may appear in any desired order. The order of the subkeywords has no restrictions.
+<P>
+Different ARP/wARP modes,
+require different input files and different keywords.  Examples are given below. 
+The slash symbol (/) separates alternative subkeywords. 
+Only the first four characters of each keyword or subkeyword (except <I>END</I>)
+are needed to actually identify it.
+
+<P>
+The available keywords are:
+<P><Center>
+<a href="#mode">MODE</a>, <a href="#cell">CELL</a>,
+<a href="#symmetry">SYMMETRY</a>, <a href="#resolution">RESOLUTION</a>,
+<a href="#find">FIND</a>, <a href="#remove">REMOVE</a>,
+<a href="#refine">REFINE</a>, <a href="#mirbuild">MIRBUILD</a>,
+<a href="#shakemodel">SHAKEMODEL</a>, <a href="#labin">LABIN</a>,
+<a href="#labout">LABOUT</a>, <a href="#end">END</a>
+</Center>
+
+<H3>The Keywords</H3>
+
+<P>
+<table border=0 cellpadding=10>
+<tr>
+<td valign=top><A NAME="mode"></A><I>MODE</I></td>
+   <td>Must be the first keyword.
+<P>
+<B>update</B> <B>allatoms/waters</B> initialises the <B>update</B> 
+mode. <B>allatoms</B> indicates that both protein and water atoms from the model 
+will be considered for update. <B>waters</B> indicates that only water atoms 
+(residue name HOH or WAT) will be updated. Metals will be treated as non-water atoms.
+The distance constraints for the addition of new atoms are: the shortest distance
+between new atom and any of the existing atom is 1.0 &#197;&nbsp;(<B>allatoms</B>)
+and any of the O or N of the existing atoms (<B>waters</B>) is 2.3 &#197;; the
+longest distance is 3.3 &#197;&nbsp;in both cases. 
+The distance constraint for removal is 3.5 &#197;&nbsp;or longer to any of the existing
+atoms.
+Partially occupied atoms will not be used for <B>merge</B>, their occupancy is
+accounted for in removal. These atoms are used anyway as seeds (parent atoms) for the
+new atom search.
+<BR>
+<P>
+<B>mirbuild</B> initialises the <B>mirbuild</B> mode. The <I>pseudo protein</I> set of 
+atoms will be placed into the input density map. The distance constraints are 1.1 to 1.8
+&#197; &nbsp;between the atoms.
+<BR> 
+<P>
+<B>shakemodel</B> <B>light/allatoms</B> initialises the shaking mode for 
+a shock-like modification of the current model. <B>light</B> indicates that only atoms
+with atomic number 8 (oxygen) or lower will be treated. <B>allatoms</B> indicates
+application to any atom in the model regardless of their type.
+<BR>
+<P>
+<B>reflaver</B> initialises the mode of weighted averaging 
+of structure factors obtained from multiple refinements of several slightly different
+models.</td></tr>
+
+<tr>
+<td valign=top><A NAME="cell"></A><I>CELL</I></td>
+      <td>  Cell parameters a, b, c, alpha, beta, gamma in &#197;&nbsp;and degrees.
+This keyword is optional for <I>MODE</I> <B>update allatoms/waters</B> and <B>shakemodel
+light/all atoms</B> and is obligatory for <I>MODE</I> <B>mirbuild</B>.
+      </td></tr>
+
+<tr>
+<td valign=top><A NAME="symmetry"></A><I>SYMMetry</I></td>
+      <td> The crystal symmetry. Can be given either as a space group name or number
+(e.g. P212121 or 19). Obligatory for <I>MODE</I> <B>update allatoms/waters</B>,
+<B>mirbuild</B> and <B>shakemodel light/all atoms</B>.
+      </td></tr>
+
+<tr>
+<td valign=top><A NAME="resolution"></A><I>RESOlution</I></td>
+       <td> Resolution of the X-ray data (R<sub>min</sub>, R<sub>max</sub>). 
+Obligatory for <I>MODE</I> <B>update allatoms/waters</B>,  <B>mirbuild</B> and
+<B>reflaver</B>.
+
+<tr>
+<td valign=top><A NAME="find"></A><I>FIND</I></td>
+       <td> The addition of new sites in <I>MODE</I> <B>update allatoms/waters</B>.
+<P>
+After <B>atoms</B> you should give the number of atoms to add.  
+At the end of refinement (it may take 20 to 50 cycles) the model should contain all
+atoms. The target number of atoms in the final 
+model can be estimated by multiplying the number of protein atoms by 1.2, the 20% extra 
+corresponds both to ordered water molecules and weaker, slightly disordered, ones which 
+are important for the pseudo 
+solvent continuum. The number of atoms allowed to be added in each cycle
+depends on the resolution.  A simple empirical guide is that the maximum number to add 
+is <I>N</I> X 0.08/<I>d</I><sup>3</sup>,
+where <I>N</I> is the current number of atoms and <I>d</I> is the highest resolution
+in &#197;. 
+Thus at a resolution of 1.8 &#197;&nbsp;and a coordinate file of 2,000 atoms the
+maximum number  to be added is 27. New atoms will be automatically assigned a temperature
+factor on the basis of the density height.
+<BR>
+<P>
+The string after <B>chain</B> is the chain identifier for new atoms. 
+All new atoms will have this chain identifier and be numbered sequentially.
+<BR>
+<P>
+The subkeyword after <B>cutsigma</B> can be either the number or <B>auto</B>. The number
+is a MAPIN2 density cutoff. Atoms will be looked for in density above <B>cutsigma</B>
+times r.m.s. density. 
+A value of 3 to 4 is typical. The statistically significant density threshold can be 
+defined automatically if <B>auto</B> is used. This can be used for <I>MODE</I>
+<B>update waters</B> as 
+it prevents too many extra atoms being added. However it may not work satisfactorily 
+if the resolution is lower than 1.5 &#197;&nbsp;or the model is too far from being
+finally refined.
+      </td></tr>
+
+<tr>
+<td valign=top><A NAME="remove"></A><I>REMOve</I></td>
+       <td> Removal of atoms in <I>MODE</I> <B>update allatoms/waters</B>. The removal
+of atoms influences the success of refinement to a much greater extent than addition 
+of new atoms and should certainly be used. <BR>
+<P>
+The number after <B>atoms</B> is the maximum number of atoms to reject at each cycle.
+A value of about 25 to 100% of the number of atoms to be added 
+is recommended. The actual number will be defined by the program.
+<BR>
+<P>
+The number after <B>cutsigma</B> gives the  MAPIN1 density cutoff. Atoms will be
+considered for rejection only if they are located in density below <B>cutsigma</B>
+times r.m.s. density. A value around 1 is recommended.
+<BR>
+<P>
+The number following the <B>merge</B>  keyword is the shortest distance 
+between two atoms if they are to be merged. 
+Partially occupied atoms are not used for merging.
+The keyword is optional. 
+Any pair closer than this will be inspected.
+In a case of a water-water pair the atom with the higher temperature factor
+will be rejected and the second assigned to the weighted average xyz
+and 1/B parameters. If any water appears to be at the merging distance
+to a non-water (protein or metal) atom, it will be removed.
+A merging distance value of 0.6 &#197;&nbsp;is default for <I>mode</I> 
+<B>update atoms</B> 
+and the value of 2.2 is recommended for <I>mode</I> <B>update waters</B> where the
+default is no merging.
+<BR>
+<P>
+<B>keep zeroocc</B> is an optional keyword. 
+Default is to remove atoms with zero occupancy from the PDB file.
+      </td></tr>
+
+<tr>
+<td valign=top><A NAME="refine"></A><I>REFIne</I></td>
+      <td>This initialises the sphericity based real space refinement of individual
+atoms. The keyword is optional in <I>MODE</I> <B>update allatoms/waters</B>.
+<BR>
+<P>
+The subkeyword can be either <B>allatoms</B> (all atoms will be refined - not
+recommended unless the resolution is about 1.0 &#197;)  or <B>waters</B> (strongly
+recommended for <B>analyse waters</B> 
+mode, especially if the resolution is higher than 2.0 &#197;).
+      </td></tr>
+
+<tr>
+<td valign=top><A NAME="mirbuild"></A><I>MIRBuild</I></td>
+      <td>Obligatory keyword for <I>MODE</I> <B>mirbuild</B>.
+<BR>
+<P>
+The number after <B>atoms</B> indicates the approximate number of atoms to be placed
+into the MIR(AS) MAPIN2 map. It should correspond to the total number of atoms expected
+to be in the model. The number after <B>models</B> specifies how many different models
+can be output. It may be 1, 2 or 3.
+These different models are subsequently used for multiple refinement and weighted
+averaging.
+      </td></tr>
+
+<tr>
+<td valign=top><A NAME="shakemodel"></A><I>SHAKemodel</I></td>
+   <td> Obligatory keyword for  <I>MODE</I> <B>shakemodel</B>.
+There are four optional subkeywords.
+<BR>
+<P>
+The number after <B>bexcl</B> is the highest temperature factor cutoff. Atoms with
+higher temperature factors will be excluded from the PDB file. <BR>
+<P>
+The two numbers after <B>breset</B> define the low and high limits for truncation of 
+atomic temperature factors.
+<BR>
+<P>
+The number after <B>randomise</B> defines the r.m.s. uniform random shift in
+&#197;&nbsp;to be applied to the coordinate set.
+<BR>
+<P>
+The three numbers after <B>shift</B> define the systematic shift along in
+&#197;&nbsp;the crystallographic axes to be applied to the coordinate set.
+      </td></tr>
+
+<tr>
+<td valign=top><A NAME="labin"></A><I>LABIn</I></td>
+      <td> Obligatory keyword for <I>MODE</I> <B>reflaver</B>. Input MTZ file 
+labels for structure factors from multiple refinements have to be given, e.g. 
+FP=FP SIGFP=SIGFP FC1=FC1 PHIC1=PHIC1 etc. 
+The maximum number of FCx/PHICx is 8. <B>free</B> is optional. <BR>
+      </td></tr>
+
+<tr>
+<td valign=top><A NAME="labout"></A><I>LABOut</I></td>
+      <td> Obligatory keyword for <I>MODE</I> <B>reflaver</B>.
+Output MTZ file labels for weighted average structure factors, phases and figures
+of merit should be provided.
+      </td></tr>
+
+<tr>
+<td valign=top><A NAME="end"></A><I>END</I></td>
+      <td>Must be the last data card terminating input to ARP/wARP.
+</td>
+</tr>
+</table>
+
+<HR>
+
+<A NAME="on_line_help"></A><H2>On-line help</H2>
+
+<P>
+The ARP/wARP input pre-processor gives warnings or error messages if something is wrong. 
+These should be carefully checked. It is also advisable to check ARP/wARP 
+ input prior to submitting a long refinement job.
+<BR>
+
+<P>
+Here are a  few examples of how the on-line commands can be used. To start just 
+type '<TT>arp_waters</TT>' and then the keyword you are interested in.
+<BR>
+
+<P>
+<TT> arp_waters
+<BR>
+END
+<BR>
+Input must start with the keyword MODE
+<BR>
+</TT>
+<P>
+<TT>arp_waters
+<BR>
+MODE
+<BR>
+Keyword MODE must be followed by  1 field(s)
+<BR>
+ <BR>
+Expected format:
+<BR>
+ <BR>
+MODE update waters/allatoms
+<BR>
+MODE mirbuild
+<BR>
+MODE shakemodel light/allatoms
+<BR>
+MODE reflaver
+<BR>
+</TT>
+<P>
+<TT>arp_waters
+<BR>
+MODE UPDATE WATERS
+<BR>
+Optional keywords:
+<BR>
+CELL         cell parameters
+<BR>
+REFINE       waters/allatoms
+<BR>
+ <BR>
+Required keywords:
+<BR>
+SYMM         spacegroup
+<BR>
+RESOLUTION   resmin resmax
+<BR>
+FIND ATOMS   number CHAIN string CUTSIGMA number/AUTO
+<BR>
+and/or REMOVE ATOMS number CUTSIGMA number [MERGE number] [KEEP ZEROOCC]
+<BR>
+END (must be the last keyword)
+<BR>
+</TT>
+<P>
+<TT>arp_waters
+<BR>
+MODE UPDATE WATERS
+<BR>
+CELL
+<BR>
+An error message:
+<BR>
+ <BR>
+This Data Card in not understood
+<BR>
+Keyword CELL must be followed by  6 field(s)
+<BR>
+ <BR>
+Expected format:
+<BR>
+ <BR>
+CELL a b c alpha beta gamma
+<BR>
+</TT>
+<P>
+<TT>arp_waters
+<BR>
+MODE UPDATE WATERS
+<BR>
+CELL 30 45 37 90 90 90 A
+<BR>
+This Data Card in not understood
+<BR>
+CELL 30 45 37 90 90 90 A
+<BR>
+Cannot accept field shown by arrows:
+<BR>
+CELL 30 45 37 90 90 90 ==&gt;A&lt;==
+<BR>
+</TT>
+<P>
+<TT>arp_waters
+<BR>
+MODE UPDATE WATERS
+<BR>
+CELL 30 45 37 90 90 90
+<BR>
+SYMM 4
+<BR>
+RESOLUTION 20 1.5
+<BR>
+FIND ATOMS 10 CHAIN W CUTSIGMA 3.0
+<BR>
+REMOVE ATOMS 10 CUTSIGMA 1.0
+<BR>
+END
+<BR>
+Asymmetric unit limits      1/1&nbsp;&nbsp;      1/2&nbsp;&nbsp;      1/1
+<BR>
+ <BR>
+Comments:  Space group    4  P21
+<BR>
+Comments:  Cell parameters  30.000  45.000  47.000  90.000  90.000  90.000
+<BR>
+Comments:  Remove  10 old atoms if below 1.0 sigma in MAPIN1
+<BR>
+Comments:  Analyse waters only for removal
+<BR>
+        - WARNING - This is not a standard use of ARP
+<BR>
+        - use of MERGE data card is advisable
+<BR>
+ <BR>
+Comments:  Look for  10 new atoms in MAPIN2
+<BR>
+Above threshold of 3.0 sigma
+<BR>
+        - WARNING - This is not a standard use of ARP
+<BR>
+        - use of CUTSIGMA AUTO option is recommended
+<BR>
+        - assuming that MAPIN2 is Fo-Fc map
+<BR>
+ <BR>
+Comments:  New atoms will not be put closer than  2.30 to existing atoms
+<BR>
+Comments:  New atoms will be selected if there is N or O exists within  3.30
+<BR>
+Comments:  New atoms will not be put closer than  2.30 to each other
+<BR>
+Comments:  New atoms will have B-factors assigned on the basis of MAPIN2
+<BR>
+        - density hight as expected for resolution range  1.50 20.00
+<BR>
+        - MAPIN2 is assumed to be Fo-Fc map in absolute scale
+<BR>
+Comments:  New atoms will have chain name W
+<BR>
+ <BR>
+        - No real space refinement will be made
+<BR>
+        - WARNING - This is not a standard use of ARP
+<BR>
+        - real space refinement of waters is advisable
+<BR>
+</TT>
+
+<P>
+So ARP/wARP actually accepts the command file input and the program only gives 
+comments and warnings (if everything else  is formally correct). It will also 
+make additional checks during the run.
+<BR>
+
+<P>
+
+<HR>
+
+<A NAME="monitoring"></A><H2>Monitoring and Troubleshooting</H2>
+
+<P>
+<A NAME="input_processing"></A><H3>Input Processing</H3>
+<P>
+<P>
+ARP/wARP checks identity in the input cell parameters and those from the coordinate and 
+map file headers. ARP/wARP does not check whether the cell parameters are meaningful 
+at all, i.e. it will accept CELL 67.1 82.2 79.9 102.2 98.9 100.3 together with SYMM P212121.
+<BR>
+
+<P>
+ARP/wARP checks whether the orthogonalisation matrix derived from CELL is consistent with 
+the matrix written at the top of the coordinate file.
+<BR>
+
+<P>
+ARP/wARP will refuse to accept a negative value of the number of atoms to update but 
+does not check whether these numbers are not too high, i.e. are consistent with the formula given above.
+<BR>
+
+<P>
+ARP/wARP does not check whether the input MAPIN1 is indeed a  
+(3F_o-2F_c / 2mF_o-DF_c, alpha_c) map or if MAPIN2 is really a 
+(F_o-F_c / mF_o-DF_c, alpha_c) map. <BR>
+
+<P>
+ARP/wARP does not check the input coordinate file in terms of proper connectivity, 
+residue and atom names, etc.
+
+
+<a name="output"></a><H3>Output</H3>
+
+ARP/wARP outputs several useful quantities. These are: the number of atoms merged, 
+the number of atoms removed, the sphericity functions indicating whether atoms are
+well shaped - a value of about 0.05 to 0.10 (the lower the better) is reasonable, the
+result of improvement of the sphericity function if sphere-based real space
+refinement is used, the statistically significant threshold in difference density
+(if <I>FIND</I> <B>cutsigma auto</B> is provided) for addition of new atoms, 
+the number of atoms added.
+<BR>
+
+<P>
+The <B>auto</B> option provides an attempt to be objective in adding atoms. 
+The actual number of atoms to remove depends both on <I>REMOVE</I> <B>cutsigma</B>
+value and <B>atoms</B> number). If the user during reshuffling the structure asked
+for not enough removal, the result would be that not enough new atoms are found.
+If the requested number for removal is too high (but assumed to satisfy the formula
+given above) - more new atoms will be found. 
+A situation where each cycle ARP/wARP removes less than about 2-3 atoms (for
+typical structure of 1,000 to 3,000 atoms) and finds the same number of new ones and
+the R factor does not change indicates that convergence has been achieved.
+There is no reason to run millions of cycles. Usually refinement essentially
+converges after 10 to 20 cycles. However if the density is still getting better the
+number of cycles can be increased to 50 or even 100.
+<BR>
+
+
+<H3><A NAME="viewing_log_files"></A>Viewing ARP_WATERS Log Files</H3>
+
+It is important to monitor the ARP/wARP output. In general look at log files.
+All ARP log files can be formatted for viewing all kinds of interesting graphs with
+CCP4 program <B>xloggraph</B> by running '<B>arp_waters_plots.sh</B> <I>log_file_name</I>'.
+<BR>
+
+<H3><A NAME="checking_convergence"></A>Checking Convergence</H3>
+
+Several parameters can be used as convergence criteria. The first criterion is
+map quality. A map with coefficients (3F_o-2F_c/2mF_o-DF_c, alpha_c)
+is calculated from the last ARP model. 
+The crystallographic R factor is a reasonable quantity to monitor. <BR>
+
+<P>
+What to do if the R factor stays at the values around 30%: <BR>
+(Check with something like <TT>grep 'all_R' logs/1_arp_1.log</TT>)
+ If for example after 5 or 10 cycles, R dropped to 28-34% and stayed there for the
+next 10 cycles without any tendency to drop further, you may be in trouble. 
+Try to change from <B>F</B>ast to <B>S</B>low protocol or opposite, try to
+introduce phase restraints, change advanced parameters, panic, cry, etc.! We are
+working on more sensible suggestions all the time, so as a last resort contact us!
+Your feedback is needed and appreciated!
+<BR>
+
+
+
+<H3><A NAME="crashing_scripts"></A>Crashing Scripts</H3>
+
+Usually CCP4 defines environment MANPATH as complementary to the existing MANPATH. 
+During execution of remote shells MANPATH does not exist, and this crashes remote
+scripts! Copy the ccp4.setup file to your local directory, and simply remove the line
+setenv MANPATH, and then set ccp4init to that file.
+<BR>
+
+<P>
+Please also check (and change if necessary) the line setenv CCP4_OPEN NEW to setenv CCP4_OPEN  UNKNOWN.
+<BR>
+
+<HR>
+
+<P>
+
+<a name="examples"></a><H2>Examples</H2>
+
+A typical set of ARP/wARP commands for applications #1, 2, 5 and 6 
+(unrestrained or restrained refinement for MR, MIR, ab initio solutions or building of solvent structure)
+could look something 
+like this: <BR>
+<BR>
+<TT>arp_waters XYZIN <I>input_coordinates</I> MAPIN1 <I>3Fo-2Fc_map_file</I> \  <BR>
+MAPIN2 <I>Fo-Fc_map_file</I> XYZOUT <I>output_coordinates</I> <TT>&lt;&lt;</TT> eof <BR>
+<I>MODE</I> <B>update allatoms/waters</B>
+<BR>
+[<I>CELL</I>         <I>cell parameters</I>] <BR>
+[<I>REFINE</I>       <B>waters/allatoms</B>] <BR>
+<I>SYMM</I>         <I>spacegroup</I>
+<BR>
+<I>RESOLUTION</I>   <I>resmin resmax</I>
+<BR>
+<I>FIND</I> <B>atoms</B>   <I>number</I> <B>chain</B> <I>string</I> <B>cutsigma</B> <I>number</I>/<B>auto</B>
+<BR>
+<I>REMOVE</I> <B>atoms</B> <I>number</I> <B>cutsigma</B> <I>number</I> [<B>merge</B> <I>number</I>] [<B>keep zeroocc</B>]
+<BR>
+<I>END</I>
+<BR>
+eof
+<BR>
+</TT>
+ <BR>
+Keywords <I>FIND</I> and <I>REMOVE</I> are <I>half optional</I>, by that we mean that 
+at least one of them must be given. Both MAPIN1
+(3<I>F</I><SUB><I>o</I></SUB>-2<I>F</I><SUB><I>c</I></SUB> / 2<I>mF</I><SUB><I>o</I></SUB>-<I>DF</I><SUB><I>c</I></SUB>, alpha_c)
+and MAPIN2 (Fo-Fc / mFo-DFc, ac) maps must be provided.
+<BR>
+
+<P>
+Another typical set of ARP/wARP commands, this time for 
+application #2 (filling the MIR(AS) map with a set of 
+<I>pseudo protein</I> atoms  for further unrestrained refinement or multiple refinements):
+<BR>
+ <BR>
+<TT>arp_waters MAPIN2 <I>Fo-Fc_map_file</I> XYZOUT1/2/3 <I>output_coordinates</I> <TT>&lt;&lt;</TT> eof
+<BR>
+<I>MODE</I> <B>mirbuild</B>
+<BR>
+<I>CELL</I>          <I>cell parameters</I>
+<BR>
+<I>SYMM</I>         <I>spacegroup</I>
+<BR>
+<I>RESOLUTION</I>   <I>resmin resmax</I>
+<BR>
+<I>MIRBUILD</I>     <B>atoms</B>  <I>number</I> <B>models</B>  <I>number</I>
+<BR>
+<I>END</I>
+<BR>
+eof
+<BR>
+</TT>
+ <BR>
+Input MAPIN2 is the available starting map. Several models for multiple refinements are 
+output to XYZOUT1/XYZOUT2/XYZOUT3.
+<BR>
+
+<P>
+Yet another typical set of ARP/wARP commands, now for application #3 (obtaining different 
+independent models for multiple refinement):
+<BR>
+ <BR>
+<TT>arp_waters XYZIN <I>input_file</I> XYZOUT <I>output_file</I> <TT>&lt;&lt;</TT> eof
+<BR>
+<I>MODE</I> <B>shakemodel light/allatoms</B>
+<BR>
+[<I>CELL</I>         <I>cell parameters</I>]
+<BR>
+<I>SYMM</I>         <I>spacegroup</I>
+<BR>
+<I>SHAKEMODEL</I>   [ <B>bexcl</B> <I>n1</I> ] [ <B>breset</B> <I>n1 n2 </I>] [ <B>randomise</B> 
+<I>x</I> ] [ <B>shift</B> <I>x y z</I> ]
+<BR>
+<I>END</I>
+<BR>
+eof
+<BR>
+</TT>
+
+<P>
+And another typical set of ARP/wARP commands, again for application #3 (averaging of multiple 
+refinements of different independent models):
+<BR>
+ <BR>
+<TT>arp_waters HKLIN <I>mul_ref_Fs</I> 
+HKLOUT <I>nice_output</I> <TT>&lt;&lt;</TT> eof
+<BR>
+<I>MODE</I> <B>reflaver</B>
+<BR>
+<I>RESOLUTION</I>  <I>resmin resmax</I>
+<BR>
+<I>LABIN</I>       <I>input labels for</I> </TT>
+<I>FP</I> &nbsp;<I>SIGFP</I> &nbsp;[<I>FREE</I>] &nbsp;<I>FCx</I> &nbsp;<I>PHICx</I><TT>
+<BR>
+<I>LABOUT</I>      <I>output labels for</I> </TT>
+<I>FC</I><SUB><I>AVER</I></SUB> &nbsp;<I>PH</I><SUB><I>AVER</I></SUB> &nbsp;<I>FOM</I><SUB><I>AVER</I></SUB><TT>
+<BR>
+<I>END</I>
+<BR>
+eof
+</TT>
+
+<P>
+<P>
+<BR><HR>
+
+<A NAME="arp_waters_and_shelx"></A><H3>ARP_WATERS and SHELXL</H3>
+
+<P>
+SHELXL is part of the SHELX-97 program package and should 
+be obtained directly from the author, George M. Sheldrick, G&#246;ttingen University 
+<A HREF="http://linux.uni-ac.gwdg.de/SHELX/">SHELX homepage</A>.  <BR>
+
+<P>
+The most common use of ARP/wARP with SHELXL shelx97 is for restrained
+refinement with individual atomic anisotropic displacement parameters
+(as provided by SHELXL) combined with updating of the solvent 
+structure by ARP/wARP . This application is limited to the fact that
+individual atomic anisotropic displacement parameters can be refined 
+only if the resolution of the X-ray data is higher than 1.5 &#197;, 
+ideally approaching atomic resolution (1.2 &#197;).
+<BR>
+
+<P>
+There are currently no automated scripts for this application. An old-style 
+command shell script is given in the $CEXAM/unix/non-runnable directory
+(arp_waters_shelx.com). The script includes iterative runs of the following programs:
+<DL COMPACT>
+<DT>1.
+<DD><B>SHELXL</B> (SHELX-97) for restrained anisotropic refinement
+<BR>
+Some recommendations for the shelx.ins file:
+<BR>
+CGLS 2. Use of more cycles within SHELXL 
+                  lowers the ARP_WATERS contribution
+<BR>
+CELL, LATT/SYMM and SHEL should be consistent with 
+                  cell, symm and resol in the script
+<BR>
+WPDB -1
+<BR>
+LIST 3
+<BR>
+ISOR and CONN should include O1 &gt; last - as the number 
+                  of waters changes with each cycle
+<BR>
+See the SHELX-97 Manual for further details.
+
+<P>
+<DT>2.
+<DD><B>PREPFORM</B> (ARP/wARP Suite) for conversion of SHELXL files
+
+<P>
+<DT>3.
+<DD><B>F2MTZ</B> (CCP4)   for conversion to the CCP4 MTZ format
+<BR>
+Column label assignments should be edited if necessary
+
+<P>
+<DT>4.
+<DD><B>CAD</B> (CCP4)    for  sorting the MTZ file
+<BR>
+Column label assignments should be edited if necessary
+
+<P>
+<DT>5.
+<DD><B>FFT</B> (CCP4)   for map calculation
+<BR>
+One map is calculated with coefficients 3Fo-2Fc,
+                another with Fo-Fc
+                Column label assignments should be edited if necessary
+
+<P>
+<DT>6.
+<DD><B>EXTEND</B> (CCP4)  for map extension
+<BR>
+
+<P>
+<DT>7.
+<DD><B>ARP_WATERS</B> (ARP/wARP Suite) for solvent update
+<BR>
+The maximum number of atoms to add and to remove
+                should not exceed the value of 0.08 X N/d<sub>max</sub><sup>3</sup>,
+                where <I>N</I> is the current number of atoms in the model and
+                <I>d</I><SUB><I>max</I></SUB>
+                is the high resolution limit.
+
+<P>
+<DT>8.
+<DD><B>PREPSHEL</B> (ARP/wARP Suite) for back conversion to SHELXL format
+</DL>
+<P>
+When writing a shell script take care to define the following variables 
+at the top of the file:
+<TT>name</TT> (root file name), <TT>last</TT> (starting file number),
+<TT>cycles</TT> (number of refinement cycles), <TT>count</TT>, <TT>title</TT>, <TT>resol</TT>
+(resolution limits), <TT>cell</TT> (cell parameters), <TT>grid</TT> (grid for
+map calculation), <TT>xyzlim</TT> (boundaries for real space 
+asymmetric unit for ARP_WATERS), <TT>symm</TT> (space group number) and
+<TT>sfsg</TT> (space group for map calculation)
+
+<P>
+
+<HR width="50%">
+
+<A NAME="ccp4_scripts"></A>
+
+<H3>Simple toxd example script found in $CEXAM/unix/runnable/</H3>
+        <li><a href="../examples/unix/runnable/arp_waters.exam">arp_waters.exam</a> 
+(Example of finding waters.) 
+<P>
+
+<H3>Comprehensive example scripts found in $CEXAM/unix/non-runnable/</H3>
+        <li><a href="../examples/unix/non-runnable/arp_waters_refmac.com">arp_waters_refmac.com</a> 
+        <li><a href="../examples/unix/non-runnable/arp_waters_sfall.com">arp_waters_sfall.com</a> 
+        <li><a href="../examples/unix/non-runnable/arp_waters_shelx.com">arp_waters_shelx.com</a> 
+
+<h2>SEE ALSO</h2>
+<a href="protin.html">protin</a>
+<a href="refmac.html">refmac</a>
+<a href="fft.html">fft</a>
+<a href="mapmask.html">mapmask</a>
+
+</BODY>
+</HTML>

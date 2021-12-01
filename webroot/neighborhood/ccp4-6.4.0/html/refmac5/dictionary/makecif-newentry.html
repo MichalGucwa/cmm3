@@ -1,0 +1,275 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4 Program Suite : refmac - contents</title>
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX64 6.2 IP19) [Netscape]" />
+</head>
+<body>
+
+<!-- ::INDEX_INFO::REFMAC::Supported::Model Refinement::macromolecular refinement program:::::::: -->
+
+<h1>REFMAC (CCP4: Supported Program)</h1>
+<h2> User's manual for the program refmac version 5.0.*</h2>
+
+
+<h2>How to make new ligand dictionary?</h2>
+
+<h3 align="center"> Contents</h3>
+
+<ol>
+<li>
+<dl>
+<dt><a href="http://www.ysbl.york.ac.uk/~alexei/dictionary.html"><b>Description of the dictionary files</b></a><dt>
+<dd>  Description of organisation of the ligand dictionary used by the
+program REFMAC</dd>
+</dl>
+</li>
+
+<li><dl>
+<dt><a href="#coord_dict"><b>Dictionary entry from coordinate file(s)</b></a></dt>
+<dd>How to make dictionary entry if there is coordinate file. Coordinate file
+formats recognised are pdb, small molecular cif (for example when coordinates
+are form Cambridge small molecular database - CSD) or mmCIF</dd>
+</dl>
+</li>
+
+<li>
+<dl>
+<dt><a href="#connect_dict"><b>Dictionary entry from connectivity list</b></a></dt>
+<dd>If ligand under investigation is available in the pdb list of ligands as
+connectivity list. </dd>
+</dl>
+</li>
+
+<li>
+<dl>
+<dt><a href="#minimum_dict"> <b>Dictionary entry from minimum description</b></a></dt>
+<dd> How to make dictionary entry by describing only connectivity list and element names?</dd>
+</dl>
+</li>
+
+<li>
+<dl>
+<dt><a href="http://www.ysbl.york.ac.uk/~lizp/sketcher.html"><b>Interactive sketcher to make dictionary entry </b></a></dt>
+<dd>Using interactive sketcher which is part of CCP4 graphical user interface to
+make dictionary entry.</dd>
+</dl>
+</li>
+
+<li>
+<dl>
+<dt><a href="../files/coordinates.html#pdb_modres"><b> How to avoid three letter residue name problem</b></a>
+<dd> PDB residue names are restricted to three letter. This section describes
+how to avoid this problem and not to break pdb rule</dd>
+</dl>
+</li>
+
+<li>
+<dl>
+<dt><a href="retrieve.html"><b>Retrieve coordinates from dictionary</b></a></dt>
+<dd>If ligand is in the dictionary file supplied by us how retrieve coordinates
+to start to build using graphics</dd>
+</dl>
+
+<li>
+<dl>
+<dt><a href="list-of-ligands.html"><b>List of standard monomer descriptions</b></a>
+<dd> List of the ligand description distributed with the program REFMAC</dd>
+</dl>
+</li>
+
+<li>
+<dl>
+<dt><a href="#link_to_getcoords"><b>Links to non-commercial edtitors to derive coordinates from chemical desctiption</b></a></dt>
+<dd>Links to various non-commercial web sites which could help to derive 
+coordinates from chemical descriptions. And these coordinates could be used to
+derive dictionary entry as well as model (re)building.</dd></dl></li>
+</ol>
+
+<h2><a name="coord_dict">How to make a dictionary entry from the coordinate file? </a></h2>
+<p> Coordinate file formats recognised are pdb, small molecular cif and mmCIF.</p>
+
+<p> If there is a pdb coordinate file then REFMAC can be used to create a dictionary entry. In this case following script should be used:</p>
+
+
+<pre>
+refmac XYZIN &ltnew_ligand.pdb&gt; XYZOUT &lt;new_ligand1.pdb&gt; \
+LIB_IN &lt;my_lib_if_there_is_any.lib&lt; LIB_OUT &lt;my_new_lib.lib&gt; 
+&lt;&lt; eor
+#
+#
+MODE NEWEntry
+MAKE EXIT Yes
+#
+END
+eor
+</pre>
+<p> If ligand contained in the coordinate file is not in the list of <a href="list-of-ligands.html">the standard entries</a> then the program will create 
+a description for it and add them to the user supplied entry 
+lists specified by LIB_IN. Output file will be written to the file specified by 
+LIB_OUT (default is new.lib) in the command line. If there is no user supplied 
+entry list (i.e. LIB_IN has not been specified) then created file will contain 
+new entry only. Then this file if desired could be merged with old entry lists 
+using conventional editors (not reccommended). </p>
+
+<p>It is recommended that new entry description to be checked prior to using 
+in refinement. Especially atom types should be checked. If there are hydrogens
+the program creates dictionary files usually correctly. If there is no 
+hydrogens in many cases program creates dictionary entries correctly. If 
+coordinates are not good then atom types may not be correct. In this case atom 
+types in new entry list could be corrected and program should be rerun with 
+minimum description.</p>
+
+<p> If description of the ligand is not as desired by the user then he could 
+use sketcher to correct the coordinates and the description for it.</p>
+
+<p> After having new entries and checking them carefully then normal refmac 
+could be run with new ligand supplied like:
+<pre>
+refmac ... LIB_IN &lt;my_new_ligands&gt; ... &lt;&lt; eor
+
+Command lines to use refmac
+
+eor
+</pre>
+Another way of making new entries from coordinates is using 
+<a href="http://www.ysbl.york.ac.uk/~alexei/libcheck.html">libcheck</a>.
+</p>
+
+<h2><a name="connect_dict">Dictioanary entries from the pdb style connectivity 
+list</a></h2>
+<p> One way of deriving dictionary entry is using pdb style connectivity list
+as shown in Text 1. Extreme care should be taken when using pdb style 
+connectivity list as it is formatted file and all atoms including hydrogens
+must be present with all their connectivity. If at least one atom (for example
+hydrogen) is absent
+then whole geometry of the ligand may become incorrect as the program will
+interpret bonds incorrectly. When connectivity list is ready <a href="http://www.ysbl.york.ac.uk/~alexei/libcheck.html">libcheck</a> 
+could be used to derive <a href="#minimum_dict">minimum description</a>:
+<pre>
+libcheck &lt;&lt; rol
+
+_file_dic my_pdb_connectivity.dic
+eol 
+eol
+</pre>
+The the program libcheck will create minimum description as in Text 2 and it will
+be written in new_mon_lib.cif. Then this file should be copied to another
+file and checked carefully. After checking and editing technique described
+in <a href="#minimum_dict">the next section</a> should be used to derive 
+dictionary entry and coordinates to use by the graphics program</p>
+
+<p> After editting minimum description to user's satisfaction it could be used 
+to derive new entry list and coordinates using <a href="http://www.ysbl.york.ac.uk/~alexei/libcheck.html">libcheck</a>.
+
+<h2><a name="minimum_dict">Dictionary enrries from minimum description of the ligand</a></h2>
+<p> When information  about connectivity is available i.e. which atom 
+is bond to what and contents of ligand i.e. which element occupies which 
+position then minimum description could be used to derive dictionary entry for
+the ligand. It is good idea first to draw ligand on a piece of paper like:
+<pre>
+
+
+                       
+          OH            
+          |           
+    HO    C2     O1-P1(O3)
+      \   /\   /
+       \ /  \ /
+        C3   C1
+        |    |
+        |    |
+        C4   C6
+       : \  / :
+      :   \/   :
+     O4    C5    OH
+     |     |
+   P4(O3)  O5
+           |
+           P5(O3)
+
+     Figure 1
+</pre>
+Where dotted lines show that atom is below the picture and dashed lines show
+above the picture.</p>
+
+
+
+<p>If this pictire is converted to the minimum description it will have the 
+form as in <a href="Text1.html">Text 1</a></p>
+
+<p>When making minimum description one should be careful with the chiral 
+volumes present in the ligand.
+
+<p>Then <a href="http://www.ysbl.york.ac.uk/~alexei/libcheck.html">libcheck</a> could be run like:</p>
+
+<pre>
+libcheck &lt;&lt; eol
+N
+_file_l &lt;minimum_description&gt;
+_mon MON
+eol
+</pre>
+
+<p> Where &lt;minimum_description&gt; is the file containing a minimim 
+description and MON is the name of the ligand.</p>  
+
+<p> After libcheck there will be complete dictionary description and coordinate
+files in mmCIF and pdb format with all hydrogens present.</p>
+
+<a name="link_to_getcoords"><h1>Links to non-commercial edtitors to derive coordinates from chemical desctiption</h1></a>
+
+<ol>
+<li>
+<dl>
+<dt><a href="http://www2.ccc.uni-erlangen.de/services/3d.html">Corina</a></dt>
+  <dd>This site gives very good coordinates if you supply smile strings. It
+can recognise simple or stereo smile strings. Best way of accessing to this 
+site is to draw molecule using <a href="http://www2.ccc.uni-erlangen.de/software/cactvs/tools.html">CACTVS</a> and using smile derived from cactvs to 
+send to CORINA to derive coordinates. </dd>
+</dl>
+</li>
+
+<li>
+<dl>
+<dt>
+<a href="http://www.cermav.cnrs.fr/databank/mono/index2.html">Monosachiride data base</a></dt>
+<dd>It contains various monosacharides. They could be taken in 
+a pdb format and used as a building block for ligands containing sugars. PDB
+file may hahe to be edited to replace charges with B-values.
+</dd>
+</dl>
+</li>
+
+<li>
+<dl>
+<dt>
+<a href="http://www.cermav.cnrs.fr/databank/disacch/index.html">Disaccharide data base</a></dt>
+<dd>It contains various discharides. Various conformation could be chosen 
+using picture provided by them. Output will be pdb file. This pdb file could
+be used to create ligand description or for building blocks for ligand 
+under investigation</dd>
+</dl> 
+</li>
+
+<li>
+<dl>
+<dt><a href="http://www2.ccc.uni-erlangen.de/ncidb/frame.html">Enhanced NCI database browser</a></dt>
+<dd> Using this site one can search for structure with a given substructure.</dd>
+</dl>
+
+<li>
+<dl>
+<dt><a href="http://www.dkfz-heidelberg.de/spec/sweet2/doc/index.html">sweet2</a></dt>
+<dd>This sites can give you polysacharides.</dd>
+</dl>
+</li>
+
+
+<p><b>NOTE:</b> In some cases atom names may not be as you wish them to be. 
+Before running refmac or libcheck to create dictionary it is better to rename 
+atoms to your or IUPAC or somebody's satisfaction.</p>
+</ol>
+
+</body>
+</html>

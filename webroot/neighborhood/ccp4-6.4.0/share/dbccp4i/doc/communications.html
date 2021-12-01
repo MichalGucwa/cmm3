@@ -1,0 +1,425 @@
+<html>
+<head>
+<title>dbCCP4i: Communication Protocols</title>
+</head>
+
+<body>
+
+<!-- CVS_Id: $Id: communications.html,v 1.9 2008/08/12 10:48:16 pjx Exp $ -->
+
+<h1>dbCCP4i: Communication Protocols</h1>
+
+<h2>Introduction</h2>
+
+<p>This document outlines the general principles for the communications
+between the handler and the client applications.</p>
+
+<h2>Basics</h2>
+
+<p>The communications between the handler and the clients are via sockets
+and are marked up in a form of pseudo-XML.</p>
+
+<p>Communications from the client to the handler are <b>requests</b>;
+communications from the handler to the client are either <b>responses</b>
+to specific requests, or unsolicited <b>broadcasts</b> which do not
+correspond to any specific request.</p>
+
+<p>The following sections describe the markup for each type of
+communication.</p>
+
+<h2>General principles</h2>
+
+<p>Each communication is wrapped in a tag that expresses the overall type
+of communication (request, response or broadcast). The following
+implementation details are generally applicable to all types of
+communication:</p>
+
+<ul>
+<li><b>Communications are newline delimited</b> This means that none of
+the tags or data can cannot unescaped newline characters. Note that
+although the examples below are shown with newlines between many of the
+tags, this is for clarity of presentation only.</li>
+<li><b>Data items may contain non-newline whitespace characters</b></li>
+<li><b>The special characters "&lt;" and "&gt;" within data should be
+escaped</b> "&lt;" should be translated to "&amp;lt;" and "&gt;" should be
+translated to "&amp;gt;".</li>
+</ul>
+
+<h2>Requests</h2>
+
+<p>Requests are wrapped in the following markup:</p>
+
+<pre>
+&lt;db_request&gt;
+&lt;command&gt;DbRequest&lt;/command&gt;
+&lt;argument&gt;arg1&lt;/argument&gt;
+&lt;argument&gt;arg2&lt;/argument&gt;
+...
+&lt;request_id&gt;id&lt;/request_id&gt;
+&lt;/db_request&gt;
+</pre>
+
+<ul>
+<li><em>DbRequest</em> is the name of a command recognised by the handler
+    (see separate documentation on the handler API). There should only
+    be one command per request.</li>
+<li><em>arg1</em>, <em>arg2</em> etc are the values of the arguments that
+    are appropriate to the specific command. There is no limit to the
+    number of arguments that can be specified. The argument values can
+    either be single values, or lists of values (see
+    <a href="#lists">Markup of the argument and result content</a>).</li>
+<li><em>id</em> is an arbitrary string that can optionally be
+    specified by the client; if it is then it will be included in the
+    response from the handler.</li>
+</ul>
+
+<p>Requests fall into one of two broad categories: either a <b>request for
+data</b> or a <b>request for action</b>. An example of a request for data
+is asking for the value of a particular database item; an example of a
+request for action is asking to modify the value of a database item.</p>
+
+<h2>Responses</h2>
+
+<p>Responses to requests are wrapped in the following general markup:</p>
+
+<pre>
+&lt;db_response&gt;
+&lt;status&gt;Status&lt;/status&gt;
+&lt;result&gt;result&lt;/result&gt;
+&lt;response_id&gt;&lt;/response_id&gt;
+&lt;/db_response&gt;
+</pre>
+
+<ul>
+<li><em>Status</em> indicates whether the handler was able to fufill the
+    request from the client; it can take one of two possible values:
+    <ul>
+    <li><b>OK</b>: indicates that the handler was able to fufill the
+        request</li>
+    <li><b>ERROR</b>: indicates that the handler was unable to fufill
+        the request.</li>
+    </ul>
+</li>
+<li><em>result</em> is the result of the request returned by the handler.
+    The result can either be a single value, or a list of values (see
+    <a href="#lists">Markup of the argument and result content</a>).</li>
+<li><em>id</em> is the identifying string supplied by the calling
+    application with the original request.</li>
+</ul>
+
+<p>The content of the <em>result</em> depends on the type of request and
+on the <em>status</em> returned by the handler:</p>
+
+<table border=2>
+<tr>
+<th>Request type</th>
+<th>Example request</th>
+<th>Response status</th>
+<th>Result content</th>
+</tr>
+<tr>
+<td rowspan=2>Action</td>
+<td rowspan=2>DbOpen</td>
+<td>OK</td>
+<td>Message describing the outcome</td>
+</tr>
+<tr>
+<!--placeholder for previous row-->
+<!--placeholder for previous row-->
+<td>ERROR</td>
+<td>Message describing the error, with a suggestion for how to
+    recover if appropriate</td>
+</tr>
+<tr>
+<td rowspan=2>Data</td>
+<td rowspan=2>DbGetData</td>
+<td>OK</td>
+<td>The requested data</td>
+</tr>
+<tr>
+<!--placeholder for previous row-->
+<!--placeholder for previous row-->
+<td>ERROR</td>
+<td>Message describing the error, with a suggestion for how to
+    recover if appropriate</td>
+</tr>
+</table>
+
+<a name="lists"></a>
+<h3>Markup of the <em>argument</em> and <em>result</em> content</h3>
+
+<p>Within the <em>arg</em> and <em>result</em> tags, the structure
+of the content may be enforced by additional markup. The following
+structures are available:</p>
+
+<ul>
+<li>Single value</li>
+<li>List of values</li>
+</ul>
+
+<p><b>Single value</b> is appropriate when one item is being sent or
+returned, for example:</p>
+
+<table noborder cellspacing=20>
+<tr>
+<td>
+<pre>
+&lt;db_request&gt;
+&lt;command&gt;DbRequest&lt;/command&gt;
+&lt;argument&gt;arg1&lt;/argument&gt;
+&lt;request_id&gt;id&lt;/request_id&gt;
+&lt;/db_request&gt;
+</pre>
+</td>
+<td>
+<em>or</em>
+</td>
+<td>
+<pre>
+&lt;db_response&gt;
+&lt;status&gt;Status&lt;/status&gt;
+&lt;result&gt;result string&lt;/result&gt;
+&lt;response_id&gt;&lt;/response_id&gt;
+&lt;/db_response&gt;
+</pre>
+</td>
+</tr>
+</table>
+
+<p><b>Lists of values</b> are appropriate when a single argument of a
+request consists of several discrete items, or when multiple items are
+returned from a single request. Lists are used to provide a programming
+language-independent description of the data being passed:</p>
+
+<table noborder cellspacing=20>
+<tr>
+<td>
+<pre>
+&lt;db_request&gt;
+&lt;command&gt;DbRequest&lt;/command&gt;
+&lt;argument&gt;
+&lt;list&gt;
+&lt;item&gt;item1&lt;/item&gt;
+&lt;item&gt;item2&lt;/item&gt;
+...
+&lt;/list&gt;
+&lt;/argument&gt;
+&lt;request_id&gt;id&lt;/request_id&gt;
+&lt;/db_request&gt;
+</pre>
+</td>
+<td>
+<em>or</em>
+</td>
+<td>
+<pre>
+&lt;db_response&gt;
+&lt;status&gt;Status&lt;/status&gt;
+&lt;result&gt;
+&lt;list&gt;
+&lt;item&gt;item1&lt;/item&gt;
+&lt;item&gt;item2&lt;/item&gt;
+...
+&lt;/list&gt;
+&lt;/result&gt;
+&lt;response_id&gt;&lt;/response_id&gt;
+&lt;/db_response&gt;
+</pre>
+</td>
+</tr>
+</table>
+
+<p>For responses, lists can also be nested within other lists:</p>
+
+<pre>
+&lt;list&gt;
+&lt;item&gt;
+&lt;list&gt;&lt;item&gt;item1&lt;/item&gt;&lt;item&gt;item2&lt;/item&gt; ...&lt;/list&gt;
+&lt;/item&gt;
+...
+&lt;/list&gt;
+</pre>
+
+<p>There is no limit on the level of nesting within responses, so it is
+possible to have lists inside lists inside lists and so on.</p>
+
+<p>Note however that no nesting is currently permitted in the arguments
+of requests.</p>
+
+<h2>Broadcasts</h2>
+
+<p>Unsolicited broadcast messages from the handler to the client are
+wrapped in the following general markup:</p>
+
+<pre>
+&lt;db_broadcast&gt;
+&lt;message&gt;Message text&lt;/message&gt;
+&lt;operation&gt;operation&lt;/operation&gt;
+&lt;project&gt;projectname&lt;/project&gt;
+&lt;jobid&gt;jobid&lt;/jobid&gt;
+&lt;agent&gt;agent&lt;/agent&gt;
+&lt;/db_broadcast&gt;
+</pre>
+
+<p>Note that none of these items are considered compulsory and ordering
+is arbitrary. The general meanings of each element are as follows:</p>
+
+<table border=2>
+<tr><th>Element</th>   <th>Content</th></tr>
+<tr><td>message</td>   <td>A free-text message describing the broadcast,
+                           which is intended to be human-readable e.g.
+                           for debugging purposes. The message text can
+                           change arbitrarily so it should not be used
+                           as the basis to trigger client responses to
+	                   the broadcast.</td></tr>
+<tr><td>operation</td> <td>The name of the operation that triggered the
+                           broadcast (see below for the list of possible
+                           operation names that can appear here).</td></tr>
+<tr><td>project</td>   <td>The name of the project that the operation
+                           relates to. This can be blank.</td></tr>
+<tr><td>jobid</td>     <td>The job number in the project that the operation
+                           relates to. This can be blank.</td></tr>
+<tr><td>agent</td>     <td>The name of the user agent that triggered the
+                           broadcast.</td></tr>
+</table>
+
+<p>The possible operations are:</p>
+
+<table border=2>
+<tr><th>Operation</th>   <th>Description</th></tr>
+<tr><td>Shutdown</td>    <td>Issued to all clients when the Shutdown
+                             request is received and executed by the
+                             handler.</td></tr>
+<tr><td>DirectoriesReadonly</td> <td>Issued to all clients when the
+                             project reference data in directories.def
+                             has been reloaded into the handler as
+                             readonly.</td></tr>
+<tr><td>NewProject</td>  <td>Issued to all clients when a new project
+                             is created and a reference is added to
+                             directories.def. The project element
+                             contains the name of the new project.</td></tr>
+<tr><td>DeleteProject</td> <td>Issued to all clients when a project
+                             reference is removed from
+                             directories.def. The project element
+                             contains the name of the deleted
+                             project.</td></tr>
+<tr><td>ImportProject</td> <td>Issued to all clients when an existing
+                             project directory is (re)added to
+                             directories.def. The project element
+                             contains the name of the imported
+                             project.</td></tr>
+<tr><td>AddDataDirRef</td> <td>Issued to all clients when a default
+                             (data) directory reference is added to
+                             directories.def. The project element
+                             contains the name of the new data
+                             directory.</td></tr>
+<tr><td>DeleteDataDirRef</td> <td>Issued to all clients when a default
+                             (data) directory reference is removed from
+                             directories.def. The project element
+                             contains the name of the data directory
+                             that was removed.</td></tr>
+<tr><td>DbReadonly</td>  <td>Issued to clients connected to a specific
+                             project, indicating that the project is
+                             now only accessible in read-only mode.
+                             The project element indicates which project
+                             is now read-only.</td></tr>
+<tr><td>DbNewJob</td>    <td>Issued to clients connected to a specific
+                             project, indicating that a new job has been
+                             addded to the project.
+                             The project and jobid elements indicate
+                             the project and new job number.</td></tr>
+<tr><td>DbDeleteJob</td> <td>Issued to clients connected to a specific
+                             project, indicating that a job has been
+                             deleted from the project.
+                             The project and jobid elements indicate
+                             the project and the job number which was
+                             removed.</td></tr>
+<tr><td>DbSetData</td>   <td>Issued to clients connected to a specific
+                             project, indicating that data associated
+                             with a job has been updated.
+                             The project and jobid elements indicate
+                             the project and job number that have been
+                             modified.</td></tr>
+<tr><td>AddInputFile</td> <td>Issued to clients connected to a specific
+                             project, indicating that a new input file
+                             has been associated with a job.
+                             The project and jobid elements indicate
+                             the project and job number that have been
+                             modified.</td></tr>
+<tr><td>AddOuputFile</td> <td>Issued to clients connected to a specific
+                             project, indicating that a new input file
+                             has been associated with a job.
+                             The project and jobid elements indicate
+                             the project and job number that have been
+                             modified.</td></tr>
+<tr><td>AddSubJob</td>   <td>Issued to clients connected to a specific
+                             project, indicating that a new subjob has
+                             been created.
+                             The project and jobid elements indicate
+                             the project and new subjob number.</td></tr>
+</table>
+
+<p>Note that some requests which should trigger broadcasts currently do
+not (specifically, many of those associated with modifying the SQLite
+database components).</p>
+
+<h2>Examples of requests, responses and broadcasts</h2>
+
+<p>Example requests and matching responses:</p>
+
+<p>Request for status of the handler:</p>
+
+<pre>
+&lt;db_request&gt;&lt;command&gt;DbRequestStatus&lt;/command&gt;&lt;request_id&gt;0&lt;/request_id&gt;&lt;/db_request&gt;
+</pre>
+
+<p>Response:</p>
+
+<pre>
+&lt;db_response&gt;&lt;status&gt;OK&lt;/status&gt;&lt;result&gt;Active&lt;/result&gt;&lt;response_id&gt;0&lt;/response_id&gt;&lt;/db_response&gt;
+</pre>
+
+<p>Request for user to register with the handler:</p>
+
+<pre>
+&lt;db_request&gt;&lt;command&gt;DbRegister&lt;/command&gt;&lt;argument&gt;wy45&lt;/argument&gt;&lt;argument&gt;15376&lt;/argument&gt;&lt;argument&gt;False&lt;/argument&gt;&lt;request_id&gt;request#1&lt;/request_id&gt;&lt;/db_request&gt;
+</pre>
+
+<p>Response:</p>
+
+<pre>
+&lt;db_response&gt;&lt;status&gt;OK&lt;/status&gt;&lt;result&gt;True&lt;/result&gt;&lt;response_id&gt;request#1&lt;/response_id&gt;&lt;/db_response&gt;
+</pre>
+
+<p>Example of a broadcast message:</p>
+
+<pre>
+&lt;db_broadcast&gt;&lt;message&gt;Update TEST 40&lt;/message&gt;&lt;project&gt;TEST&lt;/project&gt;&lt;jobid&gt;40&lt/jobid&gt;&lt;operation&gt;data
+changed&lt;/operation&gt;&lt;agent&gt;MrBump&lt;/agent&gt;&lt;/db_broadcast&gt;
+</pre>
+
+<h2>Limitations and issues</h2>
+
+<p>The following comments suggest future possibilities that are not
+currently implemented:</p>
+
+<ul>
+<li>The possible status values for responses should probably be expanded
+to OK, FAILED and ERROR. FAILED would indicate where the handler rejected
+the request (for example not opening a project because it is locked);
+ERROR would indicate where the handler was unable to fufil the request
+(for example in the instance of runtime error in the database code).
+In the case of errors or failures the handler should return an error
+code, which can be defined in the handler API documentation.</li>
+</ul>
+
+<h2>Authors</h2>
+
+<p>Peter Briggs and Wanjuan Yang</p>
+
+<hr />
+
+<p>Last commit: $Date: 2008/08/12 10:48:16 $</p>
+
+</body>
+</html>

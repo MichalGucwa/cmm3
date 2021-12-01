@@ -1,0 +1,467 @@
+<html>
+<head>
+<title>CCP4 Program Suite</title>
+<link rev="made" href="mailto:mgwt@ysbl.york.ac.uk (Maria Turkenburg)">
+</head>
+<body>
+
+<!-- ::INDEX_INFO::FreeRUnique::General::MTZ manipulations / conversions::convert FreeRflags between CCP4 and other formats::see freerflag,uniqueify,mtz2various,f2mtz:::::: -->
+
+
+<h1>FreeR Information (CCP4: General)</h1>
+<h2>NAME</h2>
+<p>freerunique - Convert FreeRflags Between CCP4 and Other Formats (XPLOR/CNS/TNT/SHELX)</p>
+
+
+<h3>Contents</h3>
+<ul>
+  <li><a href="#creating_full_set">Creating a full unique set of reflections with the correct FreeRflags</a></li>
+  <li><a href="#how_to_convert">How to convert files</a></li>
+</ul>
+
+<a name="creating_full_set"></a>
+<h3>Creating a full unique set of reflections with the correct FreeRflags</h3>
+
+<p>For successful cross validation:</p>
+<ol>
+<li>It is important to select the <strong>same</strong> FreeR reflections for all 
+related data sets (<em>e.g.</em> mutants, higher resolution data collected
+half-way through refinement, etc.).</li>
+<li>It is important to preserve the same FreeR set as you move from 
+program to program.</li>
+<li>The FreeR set should itself be unbiased by prior refinement.</li>
+<li>The FreeR set should be representative of the full data set with
+respect to the distribution of structure factor amplitudes and
+the distribution of reflection resolution.</li>
+</ol>
+
+<p>Different programs have different philosophies for dealing with FreeR
+reflections:</p>
+
+<table border="0">
+<tr><td valign="top">CCP4</td>
+<td>first expands the data set to include all possible HKLs to the
+resolution given, marking those which are unmeasured. 
+It then divides the data set into <tt>n</tt> partitions randomly, 
+assigning a FreeRflag with values <tt>(0 1 2 ... (n-1))</tt> to each set.
+These cross validation sets are used during density modification, and 
+for refinement. The default FreeR set used within refinement is flagged as
+<tt>0</tt>, but this can be changed by setting a <tt>KEYWORD FREE x</tt>.</td></tr>
+
+<tr><td valign="top">XPLOR</td>
+<td>assigns the flag <tt>TEST=x</tt>. The only acceptable values are:<br />
+<dd><tt>x=1</tt> for the free set</dd>
+<dd><tt>x=0</tt> for the working set</dd></td></tr>
+
+<tr><td valign="top">CNS</td>
+<td>assigns the flag <tt>TEST=x</tt>. The acceptable values range from
+<tt>x=0,1,...,n-1</tt>. The defaults are:<br />
+<dd><tt>x=1</tt> for the free set</dd>
+<dd><tt>x=0,2,...,n-1</tt> for the working set</dd></td></tr>
+
+<tr><td valign="top">SHELX</td>
+<td>has a flag, following the format (3I4,2F8.2,I2). The values are:<br />
+<dd><tt>-1</tt> for the free set</dd>
+<dd><tt>1</tt> for the working set</dd></td></tr>
+
+<tr><td valign="top">TNT</td>
+<td>separates the data into different files; one for the free set,
+and one for the working set. Old versions of SHELX also separated the data
+into different files.</td></tr>
+</table>
+
+<h4><a name="choose_frac"></a>Choosing a FreeR fraction</h4>
+
+<p>It is important to choose a fraction that is large enough so that the
+statistics are sensible (at least 500 reflections seems to be the consensus
+at the moment), but small enough so that as many reflections as possible
+are still used for the refinement. This is of course always true, whichever
+philosophy is chosen for the selection of the FreeR reflections!</p>
+
+<h3><a name="how_to_convert"></a>How to Convert Files?</h3>
+
+<dl>
+<dt><a href="#starting_from_ccp4" target="_self">Starting from CCP4</a></dt>
+<dd><a href="#from_ccp4_to_other" target="_self">Convert to other formats from CCP4</a></dd>
+<dl><dt><a href="#examples_ccp4_to_other" target="_self">Examples</a></dt>
+<dd><a href="#to_cns_xplor" target="_self">MTZ to CNS/XPLOR</a></dd>
+<dd><a href="#to_shelx" target="_self">MTZ to SHELX Intensities</a></dd>
+<dd><a href="#to_tnt_working_set" target="_self">MTZ to TNT - working set</a></dd>
+<dd><a href="#to_tnt_free_set" target="_self">MTZ to TNT - free set</a></dd>
+</dl>
+</dl>
+<dl>
+<dt><a href="#starting_from_other_formats" target="_self">Starting from other formats</a><dt>
+<dl><dt><a href="#examples_other_to_ccp4" target="_self">Examples</a></dt>
+<dd><a href="#from_xplor" target="_self">Starting from CNS/XPLOR</a></dd>
+<dd><a href="#from_shelx_intensities" target="_self">Starting from SHELX Intensities</a></dd>
+<dd><a href="#from_tnt" target="_self">Starting from TNT or old SHELX</a></dd>
+<dd><a href="#from_shelx_other" target="_self">Starting from SHELX I and FC</a></dd>
+</dl>
+</dl>
+
+<h3><a name="starting_from_ccp4"></a>Starting from CCP4</h3>
+
+<p>When you are ready to start the first refinement, or preferably
+as soon as you collect the native data:</p>
+
+<dl>
+<dt><a name="new_data"></a><strong>If this is a new data set</strong></dt>
+<dd>
+<p>Run <strong><tt>uniqueify mydata.mtz</tt></strong>.</p>
+
+<p>This script generates an output file <tt>mydata-unique.mtz</tt> which contains<br />
+<tt>(H K L F SIGF ( I SIGI ) .. FreeR_flag)</tt>
+for all observed reflections to the resolution limit available,
+plus entries for any unobserved reflection, all with FreeR_flags assigned.</p>
+
+<p>The percentage flagged defaults to 5%, but this can be reset using<br />
+<strong><tt>uniqueify {-p fraction} mydata.mtz</tt></strong>.</p>
+
+<p>The default label is <tt>FreeR_flag</tt> but this can be reset using<br />
+<strong><tt>uniqueify {-f FreeLABel} mydata.mtz</tt></strong>.</p>
+</dd>
+
+<dt><a name="isomorphous_data"></a><strong>If this is an isomorphous data set
+which should preserve the same FreeR_flags</strong></dt>
+<dd>
+<p>A complete set of FreeR_flags (similar to that produced for a new data set, see
+<a href="#new_data" target="_self">above</a>) can be added to any other related 
+data set using CAD:</p>
+
+<pre>
+cad hklin1 new.mtz hklin2 olddata-unique.mtz hklout new-unique.mtz
+LABI FILE 1 ALLIn 
+LABI FILE 2 E1=FreeR_flag
+END
+</pre>
+
+<p>If the new data is to higher resolution, you will now need to run
+<strong><tt>uniqueify</tt></strong> again to pad out the FreeR_flags:<br />
+<strong><tt>uniqueify {-f FreeLABel}  new-unique.mtz new-uniquer.mtz</tt></strong><br />
+(the default label for the free set is FreeR_flag, but you can use
+whatever you like).</p> 
+
+<p>The script will estimate the percentage of data you have used as a test set.</p>
+
+<p>This assigns FreeR_flags to any reflections in the higher resolution shell
+where the previous set of FreeR_flags are missing.</p>
+</dd>
+</dl>
+
+<h3><a name="from_ccp4_to_other"></a>Convert to Other Formats from CCP4</h3>
+
+<p>You can use the jiffy MTZ2VARIOUS to convert from MTZ to 
+XPLOR/CNS TNT or SHELX formats quite simply.
+They all have different conventions, but MTZ2VARIOUS attempts to 
+reproduce them (see program documentation:
+<a href="mtz2various.html" target="_self">MTZ2VARIOUS</a>).</p>
+
+<table border="0">
+<tr><td>XPLOR</td>
+<td>output will have <tt>TEST=0</tt> for working set; <tt>TEST=1</tt> for free set</td></tr>
+<tr><td>CNS</td>
+<td>output will have <tt>TEST=1</tt> for free set; <tt>TEST=0,2,...,(n-1)</tt> for
+working set</td></tr>
+<tr><td>SHELX</td>
+<td>output will have <tt>1</tt> as the flag for the working set, and <tt>-1</tt>
+for free set</td></tr>
+<tr><td>TNT</td>
+<td>output may be split into two files</td></tr>
+</table>
+
+<h3><a name="examples_ccp4_to_other"></a>Examples</h3>
+
+<h4><a name="to_cns_xplor"></a>MTZ to CNS/XPLOR</h4>
+<pre>
+#  test set flagged with TEST=1, working set with TEST=0
+#
+mtz2various     \
+hklin pc553_19f-unique.mtz \
+HKLOUT xplor.hkl \
+&lt;&lt;eof
+#  All these labels can be set and will be handled appropriately:
+#
+LABIN  FP=F SIGFP=SIGF [FPART PHIPART  PA PB PC PD  PHIB WEIGHT ] FREE=FreeR_flag
+OUTPUT CNS/XPLOR
+#
+END
+eof
+exit
+</pre>
+
+<h4><a name="to_shelx"></a>MTZ to SHELX Intensities</h4>
+
+<pre>
+mtz2various     \
+ hklin lmw.mtz \
+HKLOUT shelxout.hkl \
+&lt;&lt;eof
+OUTPUT SHELX
+LABIN  FP=FRBP SIGFP=SIGFRBP [IP SIGIP FP(+) FP(-) IP(+) IP(-) ] FREE=FreeR_flag
+#  This will always output Is; and will rescale the data to fit the format.
+#  You can override the default by setting SCAL yourself.
+SCALE 0.01
+#
+END
+eof
+</pre>
+
+<h4><a name="to_tnt_working_set"></a>MTZ to TNT - working set</h4>
+
+<pre>
+# TNT uses a different asymmetric unit of reciprocal space to CCP4. Dale has
+# programs to convert the data if necessary.
+# The data is seperated into a free set and a working set.
+#
+mtz2various     \
+ hklin lisa.wright/lmw.mtz \
+HKLOUT lisa.wright/tnt_work.hkl \
+&lt;&lt;eof
+LABIN  FP=FP SIGFP=SIGFP FREE=FreeR_flag
+OUTPUT TNT
+EXCLUDE FREER  0
+#
+END
+eof
+#
+</pre>
+
+<h4><a name="to_tnt_free_set"></a>MTZ to TNT - free set</h4>
+
+<pre>
+mtz2various     \
+ hklin lisa.wright/lmw.mtz \
+HKLOUT lisa.wright/tnt_free.hkl \
+&lt;&lt;eof
+LABIN  FP=FP SIGFP=SIGFP FREE=FreeR_flag
+OUTPUT TNT
+INCLUDE FREER  0
+#
+END
+eof
+exit
+</pre>
+
+<h3><a name="starting_from_other_formats"></a>Convert to CCP4 from Other Formats</h3>
+
+<p>These are all ASCII formats, so F2MTZ can be used in a straightforward
+way. After all these conversions you need to <strong><tt>uniqueify</tt></strong> the MTZ file.</p>
+
+<p>Run <strong><tt>uniqueify {-f FreeLABel} mydata.mtz</tt></strong><br />
+This will
+<dd>- fill out the missing data slots</dd>
+<dd>- sort out the variety of FreeR_flags</dd>
+<dd>- resort the data into CCP4 standard order</dd>
+
+<p>The script guesses what style of file is being imported, by looking at the
+distribution of FreeR_flags:<br />
+
+<dl>
+<dt>XPLOR or TNT</dt><dd>a few <tt>1</tt>s, many <tt>0</tt>s</dd>
+<dt>CNS</dt><dd>either <tt>(0,1,..,(n-1))</tt> or a few <tt>1</tt>s, many <tt>0</tt>s</dd>
+<dt>SHELX</dt><dd>a few <tt>-1</tt>s, many <tt>1</tt>s</dd>
+</dl>
+
+<p>It estimates the percentage of reflections flagged as the FreeR set, and 
+then pads out the missing reflections and converts the flags to
+the CCP4 style of <tt>(0, 1,...,(n-1))</tt>.</p>
+
+<p>SHELX &quot;input&quot;<br />
+Use F2MTZ and TRUNCATE to convert <tt>(H K L I SIGI FreeR_flag)</tt> to an MTZ file.
+See <a href="#from_shelx_intensities" target="_self">example</a>.</p>
+
+<p>SHELX &quot;output&quot;<br />
+Use F2MTZ (and TRUNCATE) to convert <tt>(H K L I SIGI FC PHIC FreeR_flag)</tt> to
+an MTZ file. See <a href="#from_shelx_other" target="_self">example</a>.</p>
+
+<p>TNT<br />
+The easiest way is to insert a final column of <tt>1</tt> into the working and
+<tt>0</tt> into the free set, 'cat' the two files together and use F2MTZ.
+See <a href="#from_tnt" target="_self">example</a>.</p>
+
+<p>CNS/XPLOR<br />
+See <a href="#from_xplor" target="_self">example</a>.</p>
+
+<h3><a name="examples_other_to_ccp4"></a>Examples</h3>
+
+<h4><a name="from_xplor"></a>Starting from CNS/XPLOR
+(complicated CNS/XPLOR to MTZ)</h4>
+<pre>
+#
+# NREFlection=     10208
+# ANOMalous=FALSe { equiv. to HERMitian=TRUE}
+# DECLare name=FOBS         DOMAin=RECIprocal   type=COMP END
+# DECLare name=SIGMA        DOMAin=RECIprocal   type=REAL END
+# DECLare name=FPART        DOMAin=RECIprocal   type=COMP END
+# DECLare name=WEIGHT       DOMAin=RECIprocal   type=REAL END
+# DECLare name=TEST         DOMAin=RECIprocal   type=INTE END
+# INDE     6    0    0 FOBS=  1259.884     0.000 SIGMA=    38.561
+#                   FPART=     0.000     0.000 WEIGHT=     1.000 TEST=         0
+# INDE     8    0    0 FOBS=   827.600     0.000 SIGMA=    30.983
+#                   FPART=     0.000     0.000 WEIGHT=     1.000 TEST=         0
+#!/bin/csh -f 
+#
+f2mtz \
+hklin suying/b-over.hkl \
+hklout  suying/b-over.mtz \
+hklout  suying/b-over.mtz \
+&lt;&lt;eof
+# skip the NREF and DECLARE lines
+SKIP 7
+#  For XPLOR you would probably need: SKIP 0
+CELL     55.19   79.73   66.68   90.00   90.00   90.00
+SYMM C2221
+#
+# f2mtz assumes a free format without any character data
+#  So you must either remove these from the file, or design
+# a format statement to skip the labels.
+#
+# You have to get this format right! nX ignores n characters.
+# Count characters
+FORMT '(6x,3F5.0,6X,2f10.0,7X,f10.0,/,25X,2f10.0,8X,F10.0,6x,F10.0)'
+#
+#1234561234512345123451234561234567890123456789012345671234567890
+# INDE     6    0    0 FOBS=  1259.884     0.000 SIGMA=    38.561
+#1234567890123456789012345123456789012345678901234567812345678901234561234567890
+#                   FPART=     0.000     0.000 WEIGHT=     1.000 TEST=         0
+#
+#
+LABO H K L FRBP PHIB SIGFRBP FPART PHIPART WEIGHT FreeR_flag
+#
+CTYPO H H H F P Q F F W I
+END
+eof
+#
+uniqueify suying/b-over.mtz
+exit
+</pre>
+<h4><a name="from_shelx_intensities"></a>Starting from SHELX Intensities</h4>
+<pre>
+f2mtz \
+hklin pc553_19.hkl \
+hklout  pc553_19i.mtz \
+&lt;&lt;eof
+CELL    37.144   39.422   44.021  90.00  90.00  90.00
+SYMM P212121
+LABO H K L I SIGI [ FreeR_flag ]
+CTYPO H H H J Q   [    I       ]
+END
+eof
+#
+#      To reduce Is to Fs - use truncate
+#
+truncate \
+hklin pc553_19i.mtz \
+hklout pc553_19f.mtz \
+&lt;&lt;eof
+LABI IMEAN=I SIGIMEAN=SIGI
+END
+eof
+#
+#  If you read a FreeR_flag, you will now have to rescue it -
+#  TRUNCATE ignores it.
+#
+cad hklin1 pc553_19f.mtz \
+    hklin2 pc553_19i.mtz \
+    hklout pc553_19f-free.mtz \
+&lt;&lt;eof
+LABI FILE 1 ALLIN
+LABI FILE 2 E1=FreeR_flag
+END
+eof
+#
+# Modify FreeR_flags
+uniqueify pc553_19f.mtz
+#
+</pre>
+<h4><a name="from_tnt"></a>Starting from TNT or old SHELX
+(FreeR assigned to 10%)</h4>
+<pre>
+#   First edit the TNT to assign flag 1 to working set and 0 to free set;
+#   then cat both TNT files together:
+#
+#    sed 's/$/   1/' $SCRATCH/tnt-work.hkl
+#    sed 's/$/   1/' $SCRATCH/tnt-work.hkl
+#    cat $SCRATCH/tnt-work.hkl $SCRATCH/tnt-work.hkl > $SCRATCH/tnt-all.hkl
+#
+#  Example piece:
+HKL  -22   0   4  2010.9   134.7  1000.0  0.0000   1
+HKL  -22   0   5  4005.2    83.1  1000.0  0.0000   1
+HKL  -22   0   6  3661.5    91.1  1000.0  0.0000   1
+HKL  -22   0   7  2321.9    59.7  1000.0  0.0000   1
+....
+HKL  -21   1   9   488.4   143.9  1000.0  0.0000   0
+HKL  -20   0   6   329.5   202.9  1000.0  0.0000   0
+HKL  -20   0  11  1009.2   146.7  1000.0  0.0000   0
+HKL  -20   4  10  1989.1    46.5  1000.0  0.0000   0
+....
+#
+f2mtz \
+hklin tnt_all.hkl \
+hklout  tnt_all.mtz \
+&lt;&lt;eof
+CELL    37.144   39.422   44.021  90.00  90.00  90.00
+SYMM P212121
+LABO  H K L F SIGF  FreeRflag
+CTYPO H H H F Q    I
+#
+#  See above comments about formats.. You need to skip the HKL label.
+
+#
+FORMT '(4x,3F4.0,2F8.0,16X,F4.0)'
+#
+or, if PHI and FOM given
+#
+LABO  H K L F SIGF PHIB FOM  FreeRflag
+CTYPO H H H F Q    P    W    I
+FORMT '(4x,3F4.0,4F8.0,F4.0)'
+END
+eof
+#
+#    uniqueify will now complete hkl list and add FreeRflags
+#
+uniqueify -f FreeRflag  pc553_19f.mtz
+#!/bin/csh -f
+#
+</pre>
+<h4><a name="from_shelx_other"></a>Starting from SHELX I and FC</h4>
+<pre>
+f2mtz HKLIN ./1bxo*-sf.hkl \
+hklout  $CCP4_SCR/junk.mtz \
+&lt;&lt;eof
+TITLE X-PLOR to MTZ
+CELL  96.980   46.650   65.710  90.00 115.57  90.00
+LABOUT H   K  L   I   SIGI   FC PHIC 
+CTYPE  H   H  H   I     Q    F P
+SKIP 2
+SYMM C2
+eof
+if($status) exit
+truncate \
+hklin   $CCP4_SCR/junk.mtz \
+hklout  $CCP4_SCR/junk1.mtz \
+&lt;&lt;eof
+LABI IMEAN=I SIGIMEAN=SIGI
+TRUNCATE YES
+END
+eof
+#
+if($status) exit
+cad \
+hklin1  $CCP4_SCR/junk1.mtz \
+hklin2  $CCP4_SCR/junk.mtz \
+hklout ./ibxo-sf.mtz \
+&lt;&lt;eof
+LABI FILE 1 ALLIN
+LABI FILE 2 E1=FC E2=PHIC 
+END
+eof
+</pre>
+
+<h2> AUTHORS</h2>
+<p>Eleanor Dodson, University of York, England<br />
+Maria Turkenburg, University of York, England</p>
+
+</body>
+</html>

@@ -1,0 +1,412 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html> <head>
+<title><!--GETAX-->CCP4 Program Suite: GETAX</title>
+</head>
+
+<body>
+<!-- ::INDEX_INFO::GETAX::Supported::Molecular Replacement::real space correlation search:::::::: -->
+<H1> GETAX (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>GETAX</b> - real space correlation search
+<hr>
+<h2>PURPOSE</h2>
+Real space searching for rotation axis of a D&lt;n&gt; or C&lt;n&gt; multimer (
+&lt;n&gt; = 2,3,4,5,6,... ).<br>
+<br>
+If you have:
+<menu>
+  <li>a multimer in the asymmetric unit
+  <li>some initial phases
+  <li>a peak in a selfrotation function
+</menu>
+you can start using this program to find the translational part of
+your NCS operators.<br>
+<br>
+It has worked in several cases with even very poor phases ( 20
+molecules/au, &lt;fom&gt;=0.25 to about 6&#197; resolution).
+<hr>
+<h2>VERSION</h2>
+Version 2.5 (14. April 1998)
+<hr>
+<h2>SYNOPSIS</h2>
+<!--
+getax MAPIN foo.map [ XYZIN foo1.pdb ] [ XYZOUT foo2.pdb ]
+[ MAPOUT bar.map ]-->
+<b>getax MAPIN</b> <i>foo.map</i> 
+ [ <b>XYZIN</b> <i>foo1.pdb</i> ] [ <b>XYZOUT</b> <i>foo2.pdb</i> ]
+ [ <b>MAPOUT</b> <i>bar.map</i> ]
+ <br>
+[<A HREF="#keywords">Keyworded input</A>]
+<hr>
+<h2><A NAME="description"></A>DESCRIPTION</h2>
+
+<b>GETAX</b> is a program to search for your non-crystallographic
+symmetry if a first map is available. The only knowledge you
+need is a selfrotation solution (from <EM>e.g.</EM> <a href="polarrfn.html">POLARRFN</a>) and a crude
+knowledge of the size/shape of your molecule(s).
+
+<hr>
+<hr>
+<h2><A NAME="files"></A>INPUT/OUTPUT FILES</h2>
+
+<hr>
+<h4>MAPIN</h4>
+
+map covering a whole unit cell with axis order X=fast,
+Y=medium, Z=slow changing index.<br>
+<br>
+This map can be a 6 Angstroem MIR map on a 2 Angstroem grid.
+So if you use <a href="fft.html">fft</a> you don't have to worry about getting the
+grid right, since <a href="fft.html">fft</a> takes 1/3rd of the high resolution
+anyway. Sometimes it can be helpful to try finer grid spacings
+(this slows down the calculation, though).<br>
+<br>
+Depending on your spacegroup, you will have to change the
+extent and/or axis order with <A HREF="mapmask.html">MAPMASK</A>.
+
+<hr>
+<h4>XYZIN</h4>
+
+a PDB file with an initial model for the correlation search.<br>
+<br>
+see: <a href="#input">INPUT XYZ</a>
+<hr>
+<h4><a name="xyzout">XYZOUT</a></h4>
+a PDB file with the initial search sphere/slice as build and
+used by GETAX.<br>
+<br>
+This can be a PDB file with orthogonal coordinates either before (<a
+href="#outputxyz">OUTPUT XYZ</a>) or after initial
+interpolation (<a href="#outputgxyz">OUTPUT GXYZ</a>).<br>
+<br>
+To be sure that everything works fine: have a look at this
+output file with your favourite graphics program (O or RASMOL or
+whatever ...): there should be no overlap between the segments
+and the rotation axis should be properly oriented.
+<hr>
+<h4>MAPOUT</h4>
+is an output map with correlation coefficients at each grid
+point. There are two possible correlation coefficients:
+<center><table>
+<TR><TD>1.</TD><TD>CC</TD><TD>[<a href="#outputmap">OUTPUT MAP</a>]</TD></TR>
+<TR><TD>2.</TD><TD>CC * ( 1.0 - sd(CC)/CC )</TD><TD>[<a href="#outputsmap">OUTPUT SMAP</a>]</TD></TR>
+</table></center>
+This is the most important output: you can read it into PEAKMAX to
+extract peak positions which correspond to centers of your
+rotation axis. Or even better: use your favourite
+graphics program (<EM>e.g.</EM> O) and look for high peaks and/or long
+stretches of &quot;density&quot;.
+<hr>
+<hr>
+<h2><A NAME="keywords"></A>KEYWORDED INPUT</h2>
+
+<P>Available keywords are:
+<blockquote>
+<A HREF="#check"><B>CHECK</B></A>, <A HREF="#end"><B>END</B></A>,
+<A HREF="#input"><B>INPUT</B></A>, <A HREF="#minden"><B>MINDEN</B></A>,
+<A HREF="#ortho"><B>ORTHO</B></A>, <A HREF="#output"><B>OUTPUT</B></A>,
+<A HREF="#polar"><B>POLAR</B></A>, <A HREF="#report"><B>REPORT</B></A>,
+<A HREF="#skip"><B>SKIP</B></A>, <A HREF="#slice"><B>SLICE</B></A>,
+<A HREF="#sphere"><B>SPHERE</B></A>, <A HREF="#step"><B>STEP</B></A>,
+<A HREF="#xyzlimit"><B>XYZLIMIT</B></A>
+</blockquote>
+<hr>
+<h3><A NAME="keywords_compulsory"></A>COMPULSORY KEYWORDS:</h3>
+<h4><a name="polar">POLAR</a> &lt;omega&gt; &lt;phi&gt; &lt;kappa&gt; [&lt;omega-2&gt; &lt;phi-2&gt; [&lt;kappa-2&gt;] ]</h4>
+Polar angles of a selfrotation solution (definition as in
+<a href="polarrfn.html">POLARRFN</a>).<br>
+<br>
+Combining two selfrotation solutions:<br>
+If you have a twofold perpendicular to your rotation axis
+(<EM>e.g.</EM> D4 symmetry) you can give the polar angles as &lt;omega-2&gt;
+and &lt;phi-2&gt; (&lt;kappa-2&gt; defaults to 180.0). A corresponding
+sphere/disk will be built. The program stops if the two
+rotations aren't perpendicular. If they are perpendicular within
+an error of 5 degrees, the program calclulates a new 2-fold which
+now is exactly perpendicular, thus correcting possible rounding
+errors of <EM>e.g.</EM> <a href="polarrfn.html">POLARRFN</a>.
+
+<hr>
+<h3><A NAME="keywords_additional"></A>ADDITIONAL KEYWORDS:</h3>
+<hr>
+<h4><A NAME="ortho"></A>ORTHO &lt;ncode&gt;</h4>
+Polar angles given on POLAR card are for orthogonalization code
+&lt;ncode&gt;.<br>
+<br>
+       ncode = orthogonalization code:
+<menu>
+  <li>&lt;ncode&gt; =1:  axes along a, c* x a, c*  (Brookhaven standard, default)
+  <li>&lt;ncode&gt; =2:  axes along b, a* x b, a*
+  <li>&lt;ncode&gt; =3:  axes along c, b* x c, b*
+  <li>&lt;ncode&gt; =4:  axes along a+b, c* x (a+b), c*
+  <li>&lt;ncode&gt; =5:  axes along a*, c x a*, c       ( Rollett )
+  <li>&lt;ncode&gt; =6:  axes along a, b*, a x b*
+  <li>&lt;ncode&gt; =7:  axes along a*, b, a* x b   (TNT convention)
+</menu>
+<hr>
+
+<h4><A NAME="sphere"></A>SPHERE &lt;outer-radius&gt; [&lt;inner-radius&gt;]</h4>
+defines a spherical shape of your multimer.<br>
+<br>
+Builds a sphere with radius &lt;outer-radius&gt;. You can omit a
+smaller inner sphere by giving &lt;inner-radius&gt;.<br>
+<br>
+The sphere will be divided into &lt;ifold&gt; segments (where 
+&lt;ifold&gt; is determined by &lt;kappa&gt;) and rotated so that its
+rotation axis is parallel with the selfrotation axis and its center
+is at (0 0 0). You can write this sphere out to logical <a href="#xyzout">XYZOUT</a>.<br>
+<br>
+To get a rough idea what your protein looks like: use the molecular
+weight Mr to get radius of assumed spherical protein:
+<pre>
+
+                           1.23 * Mr * 0.75
+               radius =  ( ---------------- ) ^ 0.333
+                                  pi
+
+</pre>
+       default: &lt;outer-radius&gt;=25. &lt;inner-radius&gt;=0.
+
+<hr>
+<h4><A NAME="slice"></A>SLICE &lt;outer-radius&gt; &lt;height&gt; [&lt;inner-radius&gt;]</h4>
+defines a different shape of your multimer.<br>
+<br>
+Builds a disk with outer radius &lt;outer-radius&gt; and height
+&lt;height&gt;. You can omit a smaller inner circle by giving 
+&lt;inner-radius&gt;.<br>
+<br>
+The disk will be divided into &lt;ifold&gt; segments (where
+&lt;ifold&gt; is determined by &lt;kappa&gt;) and rotated so that its
+rotation axis is parallel with the selfrotation axis and its
+center is at (0 0 0). You can write this disk out to logical
+<a href="#xyzout">XYZOUT</a>.<br>
+<br>
+default: &lt;outer-radius&gt;=25. &lt;height&gt;=15. &lt;inner-radius&gt;=0.
+
+<hr>
+<h4><A NAME="check"></A>CHECK [[NO]CORR] [[NO]PACK] [[N]AX1/[N]AX2/[N]AX3/[N]AX4]</h4>
+which checks to perform:<br>
+<br>
+<menu>
+  <li><b>[NO]CORR</b><br>
+      [do not] calculate correlation coefficient at each search
+      position<br>
+      <br>
+  <li><b>[NO]PACK</b><br>
+      [do not] calculate amount of overlapping of all segments
+      after applying all symmetry operators.<br>
+      <br>
+      This didn't help a lot in my cases, but it's perhaps worth
+      trying if your multimer covers a whole asymmetric unit.<br>
+      <br>
+  <li><b>[[N]AX1/[N]AX2/[N]AX3/[N]AX4]</b><br>
+      after getting the correlation at 
+      each grid point, this correlation map is [not] searched for
+      long stretches of high correlation by using points
+      on the rotation axis (defined with keyword <a href="#polar">POLAR</a>).<br>
+      <br>
+      different weighting schemes are available:
+      <menu>
+	<li>AX1: CC = &lt;CC&gt;_axis(i)
+	<li>AX2: CC = CC * &lt;CC&gt;_axis(i)
+	<li>AX3: CC = CC * ( &lt;CC&gt;_axis(i) / CCmax )
+	<li>AX4: CC = CC * ( &lt;CC&gt;_axis(j) / CCmax )
+      </menu>
+      where:
+      <center><table WIDTH=350>
+      <TR><TD>CC</TD><TD>=</TD><TD>correlation at position i</TD></TR>
+      <TR><TD>CCmax</TD><TD>=</TD><TD>maximum correlation found</TD></TR>
+      <TR><TD VALIGN=TOP>&lt;CC&gt;_axis(i)</TD><TD VALIGN=TOP>=</TD><TD>average correlation for all
+                           points on rotation axis when
+                           centred at position i</TD></TR>
+      <TR><TD VALIGN=TOP>&lt;CC&gt;_axis(j)</TD><TD VALIGN=TOP>=</TD><TD>average correlation for all
+                           points i on rotation axis when
+                           centred at position j and
+                           weighted by 1/distance to
+                           position i</TD></TR>
+      </table></center>
+</menu>
+AX2 and AX3 don't make any difference in the result
+(but AX3 keeps the absolute values of the output
+correlation map at a reasonable height).<br>
+<br>
+defaults: CORR NOPACK AX4
+<hr>
+<h4><A NAME="skip"></A>SKIP [AUTO &lt;askip&gt;]/[&lt;iskip&gt;]</h4>
+Saves CPU time by using only a limit number of the points
+describing a sphere/slice.<br>
+<br>
+Takes only every &lt;iskip&gt;th point of each segment in your
+sphere/disk to compute correlation coefficients. This is a 
+good idea if your sphere/disk is rather big. It can save a lot
+of CPU. But take care that you keep at least ~500 points in
+each segment.<br>
+<br>
+If keyword AUTO is present, the actual value of iskip is set
+so that approximately &lt;askip&gt; points per segment are used.<br>
+<br>
+default: AUTO 500
+
+<hr>
+<h4><A NAME="step"></A>STEP &lt;istep&gt;</h4>
+Step along each cell axis (in grid units).<br>
+<br>
+Unless you have calculated your map on a very fine grid,
+it does make things worse. And perhaps you'll miss the right
+solution !! It doesn't save a lot of CPU, since we have to
+interpolate the values at the end anyway.<br>
+<br>
+default: &lt;istep&gt;=1
+
+<hr>
+<h4><A NAME="minden"></A>MINDEN &lt;minden&gt;</h4>
+Correlation coefficients will only be calculated if the density
+for all segments in the sphere/disk is .gt. &lt;minden&gt;*sigma.<br>
+<br>
+The default is also a very reasonable value.<br>
+<br>
+default: &lt;minden&gt;=-999.
+
+<hr>
+<h4><A NAME="xyzlimit"></A>XYZLIMIT &lt;xmin&gt; &lt;xmax&gt; &lt;ymin&gt; &lt;ymax&gt; &lt;zmin&gt; &lt;zmax&gt;</h4>
+Limits (in grid points) for search.<br>
+<br>
+Unless you know already where to look for your multimer, I would always search
+the whole unit cell.<br>
+<br>
+default: whole unit cell
+
+<hr>
+<h4><A NAME="output"></A>OUTPUT [XYZ/GXYZ] [MAP/NOMAP] [SMAP]</h4>
+<menu>
+  <li>MAP/SMAP   = output MAPOUT
+      <menu>
+	<li>  <a name="outputmap">MAP</a> = map with CC                at each grid point
+	<li> <a name="outputsmap">SMAP</a> = map with CC*(1.-sd(CC)/CC) at each grid point (probably
+	    only useful with high symmetries: 4-fold,6-fold,D4,...)
+      </menu>
+  <li>NOMAP      = no MAPOUT
+  <li>XYZ/GXYZ   = output XYZOUT
+      <menu>
+	<li><a name="outputxyz">XYZ</a>        = orthogonal
+	    coordinates before interpolation
+	<li><a name="outputgxyz">GXYZ</a>       = orthogonal
+	    coordinates after interpolation
+      </menu>
+</menu>
+default: MAP
+
+<hr>
+<h4><A NAME="input"></A>INPUT XYZ</a></h4>
+read in PDB file to define the shape of your molecules.<br>
+<br>
+If you have a pretty good idea what your molecule looks like
+and how it is oriented (but not positioned) this could be quite
+helpful. But some restrictions:
+<menu>
+  <li>different molecules/segments have to have different chain-ids
+  <li>for each chain id there should be EXACTLY the same amount
+      of atoms in exactly the same order
+  <li>the multimer should be centred at the origin
+</menu>
+
+   <hr>
+<h4><A NAME="report"></A>REPORT &lt;report&gt; &lt;top&gt;</h4>
+Not only reports the maximum correlation found so far, but also
+every correlation .gt. &lt;report&gt;.<br>
+<br>
+At the end of the search the found correlations are sorted
+according to height and the &lt;top&gt; number is reported.<br>
+<br>
+default: &lt;report&gt;=1. &lt;top&gt;=20
+
+<hr>
+<h4><A NAME="end"></A>END</h4>
+Terminates input.
+<hr>
+       
+<h2><A NAME="examples"></A>EXAMPLES</h2>
+
+A unix example script for performing a simple NCS search can be
+found in $CEXAM/unix/non-runnable/
+
+<ul>
+          <li><a href="../examples/unix/non-runnable/getax-ncs-search">getax-ncs-search</a>
+</ul>
+
+though it will need to be edited before use.
+<p>
+
+<h3>Other examples:</h3>
+
+<menu>
+  <li>1. simple 2-fold<br>
+      <pre>
+      getax mapin mlphare_6.0.map \
+            mapout getax_sphere.map \
+            &lt;&lt;end_ip &gt;getax_sphere.log
+      POLAR 51.7 90 180
+      SPHERE 25.0
+      END
+      end_ip
+
+      peakmax mapin getax_sphere.map \
+              &lt;&lt;end_ip &gt;getax_sphere.peakmax
+      THRE RMS 4
+      NUMP 100
+      OUTP NONE
+      end_ip
+      </pre>
+
+  <li>2. D4 symmetry
+      <pre>
+      getax mapin mlphare_6.0.map \
+            mapout getax_slice.map \
+            &lt;&lt;end_ip &gt;getax_slice.log
+      POLAR 48.7 116.7 90.0 90.0 28.4 180.0
+      SKIP AUTO 1000
+      SLICE 25.0 15.0 5.0
+      REPORT 0.100
+      CHECK NAX4
+      END
+      end_ip
+
+      peakmax mapin getax_sphere.map \
+              &lt;&lt;end_ip &gt;getax_sphere.peakmax
+      THRE RMS 4
+      NUMP 100
+      OUTP NONE
+      end_ip
+      </pre>
+</menu>
+
+<hr>
+<h2>AUTHOR</h2>
+
+      Clemens Vonrhein<br>
+      vonrhein@bio5.chemie.uni-freiburg.de
+
+<H2><A NAME="references"></A>REFERENCES</H2>
+
+<OL>
+<P><!-- KEEP startreferencelist --></P>
+
+<LI>C. Vonrhein and G. E. Schulz, <I>Acta Cryst.</I>, <B>D55</B>, 225 - 229 (1999)<br>
+Locating proper non-crystallographic symmetry in low-resolution
+electron-density maps with the program GETAX. </LI>
+
+<!-- KEEP endreferencelist -->
+</OL>
+
+<hr>
+<h2>SEE ALSO</h2>
+<a href="fft.html">fft</a>(1), <a href="mapmask.html">mapmask</a>(1),
+<a href="peakmax.html">peakmax</a>(1), <a href="dm.html">dm</a>(1), <a
+href="ncsmask.html">ncsmask</a>(1).
+
+<hr>
+<address><a href="http://bio5.chemie.uni-freiburg.de/~vonrhein/">Clemens Vonrhein</a> <a href="mailto:vonrhein@globalphasing.com">&lt;vonrhein@bio5.chemie.uni-freiburg.de&gt;</a></address>
+<!-- hhmts start -->
+Last modified: Tue Apr 14 18:42:11 CEST 1998
+<!-- hhmts end -->
+</body> </html>

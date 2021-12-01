@@ -1,0 +1,1 @@
+INSERT INTO usages (sessionid,usagetype,test_data,crystal_contact,pdbfileid,filename,ip,browser_id) VALUES ('2cua',2,FALSE,FALSE,1857,'/var/www/html/csgid/app/webroot/neighborhood_temp/2cua/pdb2cua.ent','84.75.178.124',0);

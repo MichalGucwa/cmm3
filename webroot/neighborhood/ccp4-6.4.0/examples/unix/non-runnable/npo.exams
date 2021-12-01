@@ -1,0 +1,561 @@
+C-alpha example
+
+#!/bin/csh -f
+#
+npo xyzin /ccpe0/kxh/tms/brk/b18_apo_Final.brk \
+                          plot ca.plt << eof
+CELL   72.030   85.780   37.420   90.00  90.00  90.00            
+SYMM X,Y,Z                
+INPUT  CA
+LABEL FIX CA 20
+
+!RESIDUE RED  BOND  1 1  SELECT 1A TO 120A   ! always worked re colour
+!RESIDUE BLUE BOND  1 1  SELECT 202B TO 309B
+
+!RESIDUE RED  BOND  1 1  SELECT ALL ! now works
+
+RESIDUE RED   BOND  1 1  SELECT CHAIN A ALL  ! now works
+RESIDUE BLUE  BOND  2 2  SELECT CHAIN B ALL  
+
+BOND 1 .06 8
+BOND 2 .04 4
+BOND 3 .04 2
+BOND 4 DASHED 1 .5 0
+LINK CA CA 4.1
+JOIN RADII RESIDU CA 0.9 C 0.9 O 0.9 N 0.9 S 1.0 P 1.2
+MATRIX -.30771 .64400 .70042 .71384  -.33045  .61744  .62908 .68998 -.35803
+VIEW MATRIX
+SOLID 
+MONO NOBOX NOTICKS
+RADII ATOMS CA 0.225 C 0.225 O 0.275 N 0.255 S 0.275 P 0.3 OW -0.24
+SIZE 250 CHAR 3.5
+PLOT 
+eof
+#
+
+
+
+
+map/atoms example
+================
+#!/bin/csh -f
+#
+# Number of columns, rows, sections ...............   89   88   81
+# Start and stop points on columns, rows, sections   
+#                                     -15   73  -39   48  -21   59
+# Grid sampling on x, y, z ........................  104  128   56
+# Fast, medium, slow axes .........................    Y    X    Z
+# Minimum density .................................    -0.61070
+# Maximum density .................................     1.08253
+# Mean density ....................................     0.00000
+# Rms deviation from mean density .................     0.12646
+# Space-group .....................................   19
+#
+#
+# File ../brk/b18_apo_Final.brk 
+#    
+#  1880 Atoms read          Border =     5.00
+#
+#    Limits on x :   -0.3765    0.4627   ( -39 48 )
+#    Limits on y :   -0.1182    0.5732   ( -15 73 )
+#    Limits on z :   -0.3682    1.0611   ( -21 59 )
+#
+# look around trp 33
+#
+# ATOM    238  CB  TRP A  33  0   -1.235  13.379   0.636  0.50 26.76   6
+#                    fractional   -0.01715   0.15596   0.01700 
+#                    map          -1.78      19.96     0.952
+#                    grid pts     -2         20        1
+#         start stop positions    -12 8     10 30    -2  4
+#                    numbers      28 to 48  26 to 46  20 to 26  
+#
+npo mapin $SCRATCH/b18_apo_3fo2fc.xmap \
+    xyzin /ccpe0/kxh/tms/brk/b18_apo_Final.brk \
+    plot  apo.plt		\
+    << eof
+SYMM X,Y,Z
+VIEW Z
+MAP Y 128 X 104 Z 56 !  nobox
+!
+CONTOURS 0.12 TO 0.24 BY .12
+!
+!   LIMITS    xmin, xmax, ymin, ymax, zmin, zmax
+!     Limit the part of the map to be plotted to the given volume,
+!     in  grid  points.   A  SECTNS  card must also be given:  the
+!     limits given here on the section axis are not used.
+!
+LIMITS -16 12 6 34 -4 6
+!
+MODE BLACK 
+!
+!     SECTNS   NFirst_Section,       NLast_Section,
+!              Nsections_in_Group,   NstpMapGrpSect
+!
+SECTNS 19 27 9 9 1
+!
+!  set sections limits for selection of atoms .
+!  atoms will be stored on file
+!  if they lie between the sections specified + 1
+!  section thickness at each end
+!
+SLAB 19 27
+!
+INPUT BROOK
+RESIDUE  BOND 1 1 SELECT ALL
+BOND 1 .06 8
+JOIN RADII RESIDU CA 0.9 C 0.9 O 0.9 N 0.9 S 1.0 P 1.2
+VIEW Z
+SOLID !nohid
+RADII ATOMS CA 0.225 C 0.225 O 0.275 N 0.255 S 0.275 P 0.3 OW -0.24
+MONO !nobox
+SIZE 130 CHAR 3.5
+COLOUR GREEN
+PLOT 
+eof
+
+
+=============================================================
+
+
+
+
+
+#!/bin/csh -f
+#
+npo xyzin ../brk/205.brk plot 205.plt << eof
+CELL    90.245   90.245   56.235  90.0   90.0  90.00
+SYMM X,Y,Z                
+INPUT  BROOK
+LABEL TEXT Tyr32L  CB32L 4 4.
+LABEL TEXT Ser93L  OG93L  -3.  7. 
+LABEL TEXT Pro95L  CD95L  -3.5 8.
+LABEL TEXT Gln205H CG205H -4.5 -11.
+LABEL TEXT Tyr301H CB301H  2 -10.
+RESIDUE BLACK BOND  1 1  SELECT 32L 
+RESIDUE BLACK BOND  1 1  SELECT 91L TO 95L
+RESIDUE RED   BOND  2 2  SELECT 205H TO 205H
+RESIDUE BLACK BOND  1 1  SELECT 301H TO 301H
+BOND 1 .06 8
+BOND 2 .06 2
+BOND 3 DASHED 1 .5 0
+JOIN BOND 3 N93L OE1205H
+JOIN BOND 3 O91L NE2205H
+JOIN RADII RESIDU CA 0.9 C 0.9 O 0.9 N 0.9 S 1.0 P 1.2
+MATRIX -.45576 -.34487 .82057 -.85567 -.08416 -.51063 .24517 -.93487 -.25674
+VIEW MATRIX   X 45
+SOLID !SHADE 45 -45
+!STEREO NOBOX NOTICKS
+MONO NOBOX NOTICKS
+RADII ATOMS CA 0.225 C 0.225 O 0.275 N 0.255 S 0.275 P 0.3 OW -0.24
+!SIZE 65 CHAR 1.5
+SIZE 250 CHAR 3.5
+!PLOT Y
+PLOT 
+eof
+#
+
+=============== stereo ===============
+#!/bin/csh -f
+#
+# example to plot together part of wt with mutant
+npo xyzin ../brk/205.brk plot 205s.plt << eof
+CELL    90.245   90.245   56.235  90.0   90.0  90.00
+SYMM X,Y,Z                
+INPUT  BROOK
+LABEL TEXT Tyr32L  CB32L 2 2 
+LABEL TEXT Ser93L  OG93L -1.5 3.5
+LABEL TEXT Pro95L  CD95L  -1.75 4
+LABEL TEXT Gln205H CG205H -2.25 -5.5
+LABEL TEXT Tyr301H CB301H  1 -5
+RESIDUE BLACK BOND  1 1  SELECT 32L 
+RESIDUE BLACK BOND  1 1  SELECT 91L TO 95L
+RESIDUE RED   BOND  2 2  SELECT 205H TO 205H
+RESIDUE BLACK BOND  1 1  SELECT 301H TO 301H
+BOND 1 .06 8
+BOND 2 .06 2
+BOND 3 DASHED 1 .5 0
+JOIN BOND 3 N93L OE1205H
+JOIN BOND 3 O91L NE2205H
+JOIN RADII RESIDU CA 0.9 C 0.9 O 0.9 N 0.9 S 1.0 P 1.2
+MATRIX -.45576 -.34487 .82057 -.85567 -.08416 -.51063 .24517 -.93487 -.25674
+VIEW MATRIX   X 45
+SOLID SHADE 45 -45
+!stereo     colour sep S D
+STEREO  NOBOX NOTICKS
+RADII ATOMS CA 0.225 C 0.225 O 0.275 N 0.255 S 0.275 P 0.3 OW -0.24
+SIZE 65 CHAR 1.5
+!PLOT Y
+PLOT 
+eof
+#
+========================== 3dmap.exam ===============
+#!/bin/csh -f
+#
+#	Plot Barnase Y78F coordinates with electron density
+#	note order of keyworded input
+#
+#
+# this now plots a map !!!
+#
+npo XYZIN  /ccpe0/ywc/y78f/pluto/brk/y78f_4npo.brk \
+    MAPIN  /ccpe0/ywc/y78f/pluto/map/y78f_3fo2fc.skmap \
+    PLOT   density.plt \
+    << 'END-npo'
+CELL    58.809  58.809  81.902  90.00  90.00  120.00  1
+SYMM    X,Y,Z
+MATRIX 1 0 0   0 1 0  0  0 1
+VIEW MATRIX
+MAP     Y 90 X 90 Z 120  3D !SCALE 1.0
+CONTRS  0.25			
+SECTNS 23 32 10 10 1
+LIMITS  51 62 93 106 23 32
+MATRIX 1 0 0   0 1 0  0  0 1
+VIEW MATRIX
+SIZE    105 CHAR 1.2
+STEREO
+PLOT    
+'END-npo'
+#
+exit
+but you may be better off using (???? as in the pluto doc)
+or you may not be
+
+1. the original map
+2. use the MATRIX from o/frodo
+3. VIEW MATRIX
+4. MAP 3D .....
+CONTRS
+SECTNS ....
+LIMITS ...
+then atom input lines
+INPUT
+SKEW matrix from o/frodo
+VIEW MATRIX
+
+SIZE
+STEREO
+PLOT   (try not to  use PLOT Y for maps)
+==================== to add atoms =============
+CELL 
+SYMM X,Y,Z * -X,-Y,Z
+MATRIX  
+MAP 3D NOBOX SCALE 6
+CONTRS 
+LIMITS 
+SECTNS  
+MODE DASHED 4 1 0
+INPUT 
+LABEL TEXT 
+LABEL TEXT 
+BOND 2 0.03 4
+BOND 3 0.09 2
+BOND 4 0.04 2
+BOND 5 DASHED 3 1 0
+BOND 6 0.08 10
+BOND 7 DASHED 1.5 0.2 0
+RESIDU BOND 1 1 ALL
+RESIDU BOND 6 6 323 324
+RESIDU SELECT 323 324
+RESIDU SIDE SELECT  103  129
+RESIDU SELECT 560 576 592
+JOIN RADII RESIDU CA 0.9 C 0.9 N 0.9 O 0.9 S 1.1 P 1.1
+SOLID
+VIEW MATRIX
+RADII ATOMS C 0.15 CA .15 N .2 O .25 S .3 P .4 OW -0.25 MG -0.5
+STEREO  SEP 120
+SIZE 0 CHAR 4
+NOTITLE
+PLOT  
+
+
+==========================================================
+#!/bin/csh -f
+#
+# example to plot together part of wt with mutant
+npo xyzin ../brk/H1.brk plot h1.plt << eof
+CELL    90.245   90.245   56.235  90.0   90.0  90.00
+SYMM X,Y,Z                
+INPUT  BROOK
+label text Ser225H N225H 7 -2
+label text Ser228H OG228H 4 8
+label text Leu229H CB229H 6 -6
+label text Tyr232H TYR232H 3 6 
+RESIDUE BLACK BOND  1 1  SELECT 225H TO 233H
+BOND 1 .06 8
+BOND 2 .04 4
+BOND 3 .04 2
+BOND 4 DASHED 1 .5 0
+JOIN BOND 4 N231H O228H
+JOIN RADII RESIDU CA 0.9 C 0.9 O 0.9 N 0.9 S 1.0 P 1.2
+!VIEW PERP  N229H CB229H C225H
+MATRIX               0.38816  -0.48758  -0.78206 -
+             0.55418   0.80151  -0.22465 -
+             0.73635  -0.34620   0.58132
+view matrix y -20
+SOLID SHADE 45 -45
+MONO NOBOX NOTICKS
+RADII ATOMS CA 0.225 C 0.225 O 0.275 N 0.255 S 0.275 P 0.3 OW -0.24
+SIZE 250 CHAR 3.5
+PLOT 
+eof
+#
+
+====================== disorder view ======================
+#!/bin/csh -f
+#
+npo xyzin ../brk/disorder_arg.brk plot argdis.plt << eof
+CELL    90.245   90.245   56.235  90.0   90.0  90.00
+SYMM X,Y,Z                
+INPUT  BROOK
+LABEL TEXT Arg297H NH1297H 6 4
+label text Asp304H CB304H -8 10
+label text Arg302H CG302H 8 -6
+label text Arg299H NE299H 3 -12
+label text Tyr49L  OH49L  6 6 
+RESIDUE BLACK BOND  1 1  SELECT 49L
+RESIDUE RED   BOND  3 3  SELECT 298H
+RESIDUE RED   BOND  2 2  SELECT 299H
+RESIDUE BLACK BOND  1 1  SELECT 297H
+!RESIDUE BLACK BOND  1 1  SELECT 301H
+RESIDUE BLACK BOND  1 1  SELECT 302H 
+RESIDUE  SIDE BLUE  BOND  1 1  SELECT   304H
+BOND 1 .06 8
+BOND 2 .04 4
+BOND 3 .04 2
+BOND 4 DASHED 1 .5 0
+JOIN BOND 4 NE297H OD1304H
+JOIN BOND 4 NH2297H OD2304H
+JOIN RADII RESIDU CA 0.9 C 0.9 O 0.9 N 0.9 S 1.0 P 1.2
+!VIEW PERP  NE297H NH2297H NH1297H 
+MATRIX             -0.74012  -0.14706  -0.65620 -
+            -0.15675   0.98664  -0.04432 -
+             0.65395   0.07005  -0.75329 
+VIEW MATRIX  y 165
+VIEW MATRIX  z -180
+SOLID SHADE 45 -45
+MONO NOBOX NOTICKS
+RADII ATOMS CA 0.225 C 0.225 O 0.275 N 0.255 S 0.275 P 0.3 OW -0.24
+SIZE 250 CHAR 3.5
+PLOT 
+eof
+#
+================= map plot ==============================
+#!/bin/csh -f
+npo mapin  m.map \
+      plot m.plt\
+      << eof
+TITL skewing test
+CELL  59.13770  59.13770  81.79250  90.00000  90.00000 120.00000
+MAP 
+CONTRS  .5 TO 4 BY .5
+SECTNS 20 22 3
+COLOUR BLACK
+PLOT Y
+eof
+#
+#
+exit
+#
+=============================================================
+
+========================= do vdw cut slice ========================
+#!/bin/csh -f
+#
+#
+#
+# special case want some symmetry related atoms
+#
+grep " 205 " ../brk/205.brk > ../brk/205sym.brk
+grep -v " H 205 " ../brk/d13w_final.brk > ../brk/wrk.brk
+cat ../brk/wrk.brk ../brk/205sym.brk > ../brk/tmp.brk
+#
+#
+#
+#
+#   Apply VIEW MATRIX for pluto
+# 
+skewbrk xyzin ../brk/tmp.brk \
+        xyzout ../brk/cut.brk\
+        << eof
+ -.45576 -.34487 .82057 
+ -.85567 -.08416 -.51063 
+  .24517 -.93487 -.25674
+   0.0 0.0 0.0
+eof
+#
+#  get sphere around suitable atom after matrix applied
+#   with radii required
+# take ATOM    NE2 GLN H 205  1    6.523 -21.783 -30.113  
+# after matrix transform and zcut as centre of sphere
+# using radius 15 A
+#
+zsphere xyzin ../brk/cut.brk \
+        xyzout ../brk/zsphere.brk \
+        << eof
+ 6.523, -21.783, -30.113
+    15
+eof
+#
+# get mean Z value for selected atoms
+#  may bypass this step by making file zmean.value
+#  with a more suitable Z value to delete all atoms
+#   above this point
+#
+zmean xyzin ../brk/zsphere.brk \
+      xyzout ../brk/zmean.value 
+#
+# get just those atoms below the z value
+#
+zcut xyzin ../brk/zsphere.brk \
+     xyzout ../brk/zcut.brk \
+     zmean  ../brk/zmean.value
+#
+#
+/bin/rm ../brk/wrk.brk
+/bin/rm ../brk/205sym.brk
+/bin/rm ../brk/tmp.brk
+/bin/rm ../brk/cut.brk
+/bin/rm ../brk/zsphere.brk
+#
+exit
+#
+Pluto:
+#
+npo xyzin ../brk/zcut.brk plot zcut.plt << eof
+CELL    90.245   90.245   56.235  90.0   90.0  90.00
+SYMM X,Y,Z                
+INPUT  BROOK
+!
+! you can label as well - check atoms are actually in file
+!
+LABEL TEXT Gln205H CG205H 
+!
+! if you inspect the file you can select either
+!  RESIDUE BLACK BOND 1 1 SELECT ALL
+! or pick some residues with diff colour
+!
+RESIDUE BLACK BOND  1 1  SELECT 31L TO 98L
+! 
+! in /public/.Xresources for x84
+!   colours 6,7 are dash/dot 
+!    in RESIDUE colours YELLOw MAGN CYAN are 5 6 7
+!   colours 1 to 5 are increasing boldness
+!
+!RESIDUE MAGN   BOND  2 2  SELECT 205H TO 205H
+RESIDUE  YELLOW   BOND  2 2  SELECT 205H TO 205H
+RESIDUE BLACK BOND  1 1  SELECT 232H TO 303H
+RESIDUE CYAN BOND  1 1  SELECT 420W
+RESIDUE CYAN BOND  1 1  SELECT 440W
+! pluto colurs are  Allowed_Cols
+! 'BLAC','RED ','GREE','BLUE','YELL','MAGN', 'CYAN','WHIT'
+!   1     2       3      4      5      6       7      8
+!
+BOND 1 .06 8
+BOND 2 .06 2
+BOND 3 DASHED 1 .5 0
+JOIN RADII RESIDU ALL 1.0
+MATRIX 1.0 0.0 0.0  0.0 1.0 0.0   0.0 0.0 1.0
+VIEW MATRIX 
+!  VDWSEC  6.523 -21.783 -30.113  imperial code only ????
+SOLID 
+STEREO NOBOX NOTICKS
+RADII ATOMS CA 1.7 C 1.7 O 1.4 N 1.5 S 1.9 MG 2.0 OW -1.6
+SIZE 130 CHAR 2.
+PLOT
+!
+! you can now draw with stick bonds over the vdw spheres
+!
+eof
+#
+
+================OVERPLOT =========================================
+#!/bin/csh -f
+#
+npo xyzin ../brk/76.brk plot 76.plt << eof
+CELL   59.530   59.530   81.670  90.00  90.00 120.00    
+SYMM X,Y,Z                
+PRINT NO
+INPUT  BROOK
+BOND 1 .06 2
+BOND 2 .06 8
+BOND 3 DASHED 1 .5 0
+!RESIDUE EXCLUDE 3D TO 110D
+RESIDUE BLACK BOND  1 1  SELECT 7C
+RESIDUE BLACK BOND  1 1  SELECT 10C 
+RESIDUE BLACK BOND  1 1  SELECT 14C
+RESIDUE BLACK BOND  1 1  SELECT 76C 
+RESIDUE BLACK BOND  1 1  SELECT 88C
+RESIDUE BLACK BOND  1 1  SELECT 96C 
+JOIN RADII RESIDU CA 0.9 C 0.9 O 0.9 N 0.9 S 1.0 P 1.2
+MATRIX  -0.9299 -0.2326 -0.2847 -0.1955 -0.3430  0.9185 -0.3111  0.9100  0.2735
+VIEW MATRIX X +10
+SOLID !SHADE 45 -45
+STEREO NOBOX NOTICKS
+RADII ATOMS CA 0.225 C 0.225 O 0.275 N 0.255 S 0.275 P 0.3 OW -0.24
+SIZE 65 CHAR 1.5
+PLOT 
+DATA
+PRINT NO
+CELL   59.530   59.530   81.670  90.00  90.00 120.00    
+SYMM X,Y,Z                
+INPUT  BROOK OVERPLOT
+FILE /ccpe1/ab/pluto/9C-76C_comp.pdb
+BOND 1 .06 2
+BOND 2 .06 8
+BOND 3 DASHED 1 .5 0
+RESIDUE CYAN   BOND  2 2  SELECT 76D
+RESIDUE CYAN    BOND  2 2  SELECT 88D
+RESIDUE CYAN    BOND  2 2  SELECT 96D
+RESIDUE CYAN    BOND  2 2  SELECT 7D
+RESIDUE CYAN    BOND  2 2  SELECT 10D
+RESIDUE CYAN    BOND  2 2  SELECT 14D
+JOIN RADII RESIDU CA 0.9 C 0.9 O 0.9 N 0.9 S 1.0 P 1.2
+MATRIX  -0.9299 -0.2326 -0.2847 -0.1955 -0.3430  0.9185 -0.3111  0.9100  0.2735
+VIEW MATRIX X +10
+SOLID !STICK 
+STEREO NOBOX NOTICKS
+RADII ATOMS CA 0.125 C 0.125 O 0.175 N 0.155 S 0.275 P 0.3 OW -0.24
+!RADII ATOMS CA 0.225 C 0.225 O 0.275 N 0.255 S 0.275 P 0.3 OW -0.24
+!THICK 3
+SIZE 65 CHAR 1.5
+PLOT 
+eof
+#
+=================== label bonds ====================
+#!/bin/csh -f
+#
+npo xyzin ../brk/npo.brk plot npo.plt << eof
+CELL    90.245   90.245   56.235  90.0   90.0  90.00
+PRINT NO
+SYMM X,Y,Z                
+INPUT  BROOK
+BTYPE 0
+LABEL TEXT Arg96L NE96L  8 1
+LABEL TEXT Glu298 OE2298H -30 2
+LABEL TEXT Asp300 CB300H  6 1 
+RESIDUE RED BOND 2 2 SELECT 96L   
+RESIDUE BLACK BOND 1 1  SELECT 298H TO 302H
+RESIDUE SELECT 404W
+BOND 1 .06 8
+BOND 2 .06 2
+BOND 3 DASHED 1 .5 0
+JOIN BOND 3 WAT404W N301H
+JOIN BOND 3 OE1298H NH296L
+JOIN BOND 3 OE2298H NH196L
+JOIN BOND 3 OE1298H WAT404W
+JOIN BOND 3 O302H  N299H
+JOIN RADII RESIDU CA 0.9 C 0.9 O 0.9 N 0.9 S 1.0 P 1.2
+!ELLIPSOID TYPE 701 OE1298H OE2298H
+MATRIX 0.97241 .09670 -.21231 .09231 -.99526 -.03052 -.21425 .01008 -.97673
+VIEW MATRIX Y 15 X 
+!      501  1355501  0455501  0555501  1355501  0255501   1.0
+!ORIGIN OE1298H NH196L NH296L OE1298H NE96L ONTOPLANE
+SOLID!   SHADE 45 -45 !PLOT 0.1
+MONO NOBOX NOTICKS
+RADII ATOMS CA 0.225 C 0.225 O 0.275 N 0.255 S 0.275 P 0.3 OW -0.24
+SIZE 250 CHAR 3.5
+BNLA OE1298H NH296L 2.0 -3.5 
+BNLA OE2298H NH196L 2.0 -3.5
+PLOT 
+eof
+#

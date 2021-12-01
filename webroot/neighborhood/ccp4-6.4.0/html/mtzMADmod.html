@@ -1,0 +1,137 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::MTZMADMOD::Supported::MTZ manipulations / conversions::Generate F+/F- or F/D from other for anomalous data:::::::: -->
+
+<H1> MTZMADMOD (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>mtzMADmod </b>
+- Generate F+/F- or F/D from other for anomalous data.
+<H2> SYNOPSIS</H2>
+<b>mtzMADmod  hklin</b>
+<i>foo_in.mtz </i>
+<b> hklout </b>
+<i>foo_out.mtz</i>
+<br>
+ [<A HREF="#keywords">Keyworded input</A>]
+
+<H2> <A NAME="description"></A>DESCRIPTION</H2>
+
+When anomalous data is present, the program 
+<A HREF="truncate.html">TRUNCATE</a> outputs both the columns
+F+/F- (structure factor amplitudes for hkl and its Friedel mate -h-k-l)
+and the columns F/D (mean structure factor amplitude and anomalous
+difference), amongst others. However, in some cases, an MTZ file may
+only contain one, and it may be necessary to derive the other. That
+is the purpose of mtzMADmod.
+<p>
+If the input file contains F+/F- (as specified on the 
+<A HREF="#labin">LABIN</A> line; up to 20 column pairs can be given),
+then F/D are derived as:
+<pre>
+
+    F = 0.5*( F(+) + F(-) )
+    D = F(+) - F(-)
+
+</pre>
+The corresponding standard deviations are:
+<pre>
+
+    SIGF = 0.5*SIGD
+    SIGD = sqrt( SIGF(+)**2 + SIGF(-)**2 )
+
+</pre>
+Alternatively, if the input file contains F/D (as specified on the 
+<A HREF="#labin">LABIN</A> line; up to 20 column pairs can be given),
+then F+/F- are derived as:
+<pre>
+
+    F(+) = F + 0.5*D
+    F(-) = F - 0.5*D
+
+</pre>
+The corresponding standard deviations are:
+<pre>
+
+    SIGF(+) = sqrt( SIGF**2 + 0.25*SIGD**2 )
+    SIGF(-) = SIGF(+)
+
+</pre>
+
+
+
+<H2> <A NAME="keywords"></A>KEYWORDED INPUT</H2>
+The various data control lines are identified by keywords,
+those available being:
+<blockquote>
+<A HREF="#end"><B>END</B></A>, <A HREF="#labin"><B>LABIN</B></A>(compulsory),
+<A HREF="#labout"><B>LABOUT</B></A>, <A HREF="#title"><B>TITLE</B></A>
+</blockquote>
+
+<H3><A NAME="labin"></A> LABIN &lt;program label&gt;=&lt;file label&gt;</H3>
+(Compulsory.)
+A line giving the labels of the input columns from HKLIN
+to be converted. Only the columns specified will be
+converted. The allowed program labels 
+are Fi SIGFi Di SIGDi (i=1,20) or Fi(+) SIGFi(+) Fi(-) SIGFi(-) (i=1,20).
+<p>
+Note that the column types of Fi SIGFi Di SIGDi Fi(+) SIGFi(+) Fi(-) SIGFi(-) should
+be 'F','Q','D','Q','G','L','G','L' respectively.
+
+<H3><A NAME="labout"></A> LABOUT &lt;program label&gt;=&lt;file label&gt;</H3>
+A line giving the labels of the output columns for HKLOUT.
+The program labels are Fi SIGFi Di SIGDi Fi(+) SIGFi(+) Fi(-) SIGFi(-) (i=1,20).
+
+<H3><A NAME="title"></A> TITLE &lt;title&gt;</H3>
+Title to be used in output log file and in output hkl file.
+
+<H3><A NAME="end"></A> END</H3>
+Terminate input.
+
+<H2><A NAME="files"></A> INPUT AND OUTPUT FILES</H2>
+
+The input files are 
+<dl>
+<dt> Control data<dd>
+Keyworded input.
+<dt> HKLIN<dd>
+The input reflection data file in standard MTZ format.
+</dl>
+
+The output files are 
+<dl>
+<dt> HKLOUT<dd>
+The output reflection data file in standard MTZ format.
+</dl>
+
+<H2> <A NAME="examples"></A>EXAMPLES</H2>
+
+Deriving F+/F- columns from F/D columns for 4 wavelength MAD dataset:
+<pre>
+
+mtzMADmod \
+hklin yb_l1234.mtz \
+hklout yb_l1234_pm.mtz &lt;&lt;eof
+LABI -
+     F1=FYBL1 SIGF1=SFYBL1 D1=DYBL1 SIGD1=SDYBL1  -
+     F2=FYBL2 SIGF2=SFYBL2 D2=DYBL2 SIGD2=SDYBL2  -
+     F3=FYBL3 SIGF3=SFYBL3 D3=DYBL3 SIGD3=SDYBL3  -
+     F4=FYBL4 SIGF4=SFYBL4 D4=DYBL4 SIGD4=SDYBL4 
+LABO -
+     F1(+)=F_YBL+1 SIGF1(+)=SIGF_YBL+1 F1(-)=F_YBL-1 SIGF1(-)=SIGF_YBL-1   -
+     F2(+)=F_YBL+2 SIGF2(+)=SIGF_YBL+2 F2(-)=F_YBL-2 SIGF2(-)=SIGF_YBL-2   -
+     F3(+)=F_YBL+3 SIGF3(+)=SIGF_YBL+3 F3(-)=F_YBL-3 SIGF3(-)=SIGF_YBL-3   -
+     F4(+)=F_YBL+4 SIGF4(+)=SIGF_YBL+4 F4(-)=F_YBL-4 SIGF4(-)=SIGF_YBL-4  
+END
+eof
+</pre>
+
+<H3>Simple unix example script found in $CEXAM/unix/runnable/</H3>
+
+<LI><A HREF="../examples/unix/runnable/mtzMADmod.exam">mtzMADmod.exam</A>
+
+<H2> AUTHOR</H2>
+Eleanor Dodson, York University
+
+</body></html>

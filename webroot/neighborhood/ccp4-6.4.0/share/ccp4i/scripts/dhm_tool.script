@@ -1,0 +1,196 @@
+#===============================================================
+# dhm_tool script
+#===============================================================
+
+set cmd "[BinPath $RUN_PROGRAM] $INFILES "
+
+if { $XML == 1 } {
+   append cmd $XMLOUT
+}
+
+if { $PDB_EXTRACT == 1 && $XML != 1 } {
+
+        if { $EXTRACT_STEP == "scaling" && $SCALING != "" && 
+             ($SCALING_LOGIN != "" || $SCALING1_LOGIN != "" || $SCALING_CIFIN != "") } {
+               append cmd " -s " $SCALING
+	       if { $SCALING_LOGIN != "" } {
+		        append cmd " -iLOG " $SCALING_LOGIN
+	       }
+	       if { $SCALING1_LOGIN != "" } {
+		        append cmd " -iLOG " $SCALING1_LOGIN
+	       }
+               if { $SCALING_CIFIN != "" } {
+                        append cmd " -iCIF " $SCALING_CIFIN
+	       }
+	       append cmd  " -o " $SCALING_CIFOUT
+        }
+
+
+	if { $EXTRACT_STEP == "phasing" && $EXP_MENU != "" && $PHASING != ""
+		&& ($PHASING_LOGIN != "" || $PHASING1_LOGIN != "" ||
+                   $PHASING_PDBIN != "" || $PHASING_CIFIN != "") } {
+		append cmd " -e " $EXP_MENU
+		append cmd " -p " $PHASING
+		if { $PHASING_LOGIN != "" } {
+			append cmd " -iLOG " $PHASING_LOGIN
+		}
+		if { $PHASING1_LOGIN != "" } {
+			append cmd " -iLOG " $PHASING1_LOGIN
+		}
+		if { $PHASING_PDBIN != "" } {
+			append cmd " -iPDB " $PHASING_PDBIN
+		}
+		if { $PHASING_CIFIN != "" } {
+			append cmd " -iCIF " $PHASING_CIFIN
+		}
+		append cmd " -o " $PHASING_CIFOUT
+	}
+
+
+	if { $EXTRACT_STEP == "replacement" &&  $REPLACEMENT != "" &&
+           ( $REPLACEMENT_LOGIN != "" || $REPLACEMENT1_LOGIN != "" || 
+             $REPLACEMENT_CIFIN != "") } {
+		append cmd " -m " $REPLACEMENT
+		if { $REPLACEMENT_LOGIN != "" } {
+			append cmd " -iLOG " $REPLACEMENT_LOGIN
+		}
+		if { $REPLACEMENT1_LOGIN != "" } {
+			append cmd " -iLOG " $REPLACEMENT1_LOGIN
+		}
+		if { $REPLACEMENT_CIFIN != "" } {
+			append cmd " -iCIF " $REPLACEMENT_CIFIN
+		}
+                append cmd " -o " $REPLACEMENT_CIFOUT
+	}
+
+
+	if { $EXTRACT_STEP == "den_mod" && $DEN_MOD != "" &&
+             ( $DM_LOGIN != "" || $DM_CIFIN != "") } {
+		append cmd " -d " $DEN_MOD  
+		if { $DM_LOGIN != "" } {
+			append cmd " -iLOG " $DM_LOGIN
+		}
+		if { $DM_CIFIN != "" } {
+			append cmd " -iCIF " $DM_CIFIN
+		}
+                append cmd " -o " $DM_CIFOUT
+	}
+
+
+	if { $EXTRACT_STEP == "refinement" && $REFINEMENT != "" &&
+             ($REFINE_CIFIN != "" || $REFINE_PDBIN != "" ||  $REFINE_LOGIN != "")} {
+		append cmd " -r " $REFINEMENT
+		if { $REFINE_CIFIN != "" } {
+			append cmd " -iCIF " $REFINE_CIFIN
+			}
+		if { $REFINE_PDBIN != "" } {
+			append cmd " -iPDB " $REFINE_PDBIN
+		}
+		if { $REFINE_LOGIN != "" } {
+			append cmd " -iLOG " $REFINE_LOGIN
+		}
+		append cmd  " -o " $REFINE_CIFOUT
+	}
+
+
+	if { $EXTRACT_STEP == "data_template" } {
+                if { $TEMPLATE_PDBIN != "" } {
+                      append cmd " -pdb "  $TEMPLATE_PDBIN " -o " $TEMPLATE_CIFOUT
+                } elseif { $TEMPLATE_LOGIN != ""} {
+                      append cmd " -cif "  $TEMPLATE_LOGIN " -o " $TEMPLATE_CIFOUT
+                }
+	}
+
+
+	if { $EXTRACT_STEP == "merge" } {
+
+            if { $SCALING != "" && 
+             ($SCALING_LOGIN != "" || $SCALING1_LOGIN != "" || $SCALING_CIFIN != "")} {
+               append cmd " -s " $SCALING
+	       if { $SCALING_LOGIN != "" } {
+		        append cmd " -iLOG " $SCALING_LOGIN
+	       }
+	       if { $SCALING1_LOGIN != "" } {
+		        append cmd " -iLOG " $SCALING1_LOGIN
+	       }
+               if { $SCALING_CIFIN != "" } {
+                        append cmd " -iCIF " $SCALING_CIFIN
+	       }
+            }
+
+
+	    if { $EXP_MENU != "" && $PHASING != "" &&
+            ($PHASING_LOGIN != "" || $PHASING1_LOGIN != "" || 
+             $PHASING_PDBIN != "" || $PHASING_CIFIN != "" )} {
+		append cmd " -e " $EXP_MENU
+		append cmd " -p " $PHASING
+		if { $PHASING_LOGIN != "" } {
+			append cmd " -iLOG " $PHASING_LOGIN
+		}
+		if { $PHASING1_LOGIN != "" } {
+			append cmd " -iLOG " $PHASING1_LOGIN
+		}
+		if { $PHASING_PDBIN != "" } {
+			append cmd " -iPDB " $PHASING_PDBIN
+		}
+		if { $PHASING_CIFIN != "" } {
+			append cmd " -iCIF " $PHASING_CIFIN
+		}
+	    }
+
+
+	    if { $REPLACEMENT != "" && 
+            ($REPLACEMENT_LOGIN != "" || $REPLACEMENT1_LOGIN != ""||
+             $REPLACEMENT_CIFIN != "") } {
+		append cmd " -m " $REPLACEMENT
+		if { $REPLACEMENT_LOGIN != "" } {
+			append cmd " -iLOG " $REPLACEMENT_LOGIN
+		}
+		if { $REPLACEMENT1_LOGIN != "" } {
+			append cmd " -iLOG " $REPLACEMENT1_LOGIN
+		}
+		if { $REPLACEMENT_CIFIN != "" } {
+			append cmd " -iCIF " $REPLACEMENT_CIFIN
+		}
+	    }
+
+
+	    if { $DEN_MOD != "" &&
+            ($DM_LOGIN != "" || $DM_CIFIN != "")} {
+		append cmd " -d " $DEN_MOD  
+		if { $DM_LOGIN != "" } {
+			append cmd " -iLOG " $DM_LOGIN
+		}
+		if { $DM_CIFIN != "" } {
+			append cmd " -iCIF " $DM_CIFIN
+		}
+	    }
+
+
+	    if {  $REFINEMENT != "" && 
+            ($REFINE_CIFIN != "" ||  $REFINE_PDBIN != "" || $REFINE_LOGIN != "")} {
+		append cmd " -r " $REFINEMENT
+		if { $REFINE_CIFIN != "" } {
+			append cmd " -iCIF " $REFINE_CIFIN
+			}
+		if { $REFINE_PDBIN != "" } {
+			append cmd " -iPDB " $REFINE_PDBIN
+		}
+		if { $REFINE_LOGIN != "" } {
+			append cmd " -iLOG " $REFINE_LOGIN
+		}
+	    }
+
+
+	    if { $TEMPLATE_LOGIN != "" } {
+		append cmd " -ient "  $TEMPLATE_LOGIN 
+	    }
+
+            append cmd  " -o " $MERGE_CIFOUT
+        }
+
+}
+
+CreateComScript dhm_tool dhm_tool_script
+
+set status [Execute $cmd $dhm_tool_script program_status report ]

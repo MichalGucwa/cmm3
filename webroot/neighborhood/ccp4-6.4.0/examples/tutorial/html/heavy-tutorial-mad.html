@@ -1,0 +1,1364 @@
+<!DOCTYPE html
+                     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                     "DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+   <meta name="Author" content="Martyn Winn" />
+   <meta name="Changedby" content="Eleanor and Maria" />
+   <meta name="Description" content="A step-by-step structure solution using CCP4i" />
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+   <title>CCP4 Tutorial - Session 4</title>
+<link rel="stylesheet" type="text/css" href="../tut.css" title="CCP4i tutorial" />
+</head>
+<body>
+
+<h1 align="center">CCP4 Tutorial: Session 4 - Heavy Atom Search and Phasing by MAD</h1>
+
+<p><em>See also the <a href="heavy-doc.html">accompanying document</a> 
+giving background information.</em></p>
+
+<p>In the following instructions, when you need to type something, or
+click on something, it will be shown <font color="#ff0000">in red</font>.
+Output from the programs or text from the interface is given
+<font color="#009900">in green</font>.</p>
+
+<h2>Outline of the method</h2>
+<ol type="a">
+<li><a href="#step_4a">Scaling and analysing datasets</a></li>
+<li><a href="#step_4b">Preparing datasets for finding heavy atoms</a></li>
+<li><a href="#step_4c">Find heavy atoms</a></li>
+<li><a href="#step_4d">Heavy atom refinement</a></li>
+<li><a href="#step_4e">Final Refinement and Phasing</a></li>
+<li><a href="#step_4f">Density Modification</a></li>
+<li><a href="#step_4g">Testing the hand</a></li>
+</ol>
+
+<h2>The Data Files</h2>
+<p>Files in directory <font color="#009900">DATA</font>:</p>
+<table>
+<tr>
+<td><font color="#ff0000">gere_MAD_nat.mtz</font></td><td>reflection file containing all wavelength data prepared for experimental phasing
+by MAD</td>
+</tr>
+<tr>
+<td><font color="#ff0000">session4a.def</font></td><td>CCP4i .def file containing all parameters for running SCALEIT session 4a</td>
+</tr>
+<tr>
+<td><font color="#ff0000">gere_MAD_nat_scaleit1.mtz</font></td><td>reflection file as output by SCALEIT</td>
+</tr>
+<tr>
+<td><font color="#ff0000">rantan_set1.ha</font></td><td>.ha file output from RANTAN, input to initial refinement with MLPHARE</td>
+</tr>
+<tr>
+<td><font color="#ff0000">nat_sul_ref.ha</font></td><td>.ha file containing fractional coordinates of heavy atom sites, for final
+refinement with MLPHARE</td>
+</tr>
+<tr>
+<td><font color="#ff0000">nat_sul_ref_opp.ha</font></td><td>.ha file containing fractional coordinates of heavy atom sites on the
+opposite hand, for final refinement with MLPHARE</td>
+</tr>
+</table>
+
+<p>Files in directory <font color="#009900">RESULTS</font>:</p>
+<table>
+<tr>
+<td><font color="#ff0000">dm_gere_firsthand.log</font></td><td>.log of density modification for GerE - first hand</td>
+</tr>
+<tr>
+<td><font color="#ff0000">dm_gere_opphand.log</font></td><td>.log of density modification for GerE - opposite hand</td>
+</tr>
+</table>
+
+<h2><a name="step_4a"></a>4a) Scaling and analysing datasets</h2>
+
+<h4>The Problem</h4>
+
+<p>You now have a file containing native data for GerE, and MAD data
+for a selenomethionine derivative. First, we scale each wavelength
+of the MAD data to the native dataset, so that all data is on the
+same scale. At the same time, we analyse the MAD data to estimate
+the strength of the dispersive and anomalous signals.</p>
+
+<h4>Exercise</h4>
+
+<ol>
+<li><p>Select the <font color="#ff0000">Experimental Phasing</font> module,
+and open the <font color="#ff0000">Scale and Analyse Datasets</font>
+task window.</p></li>
+
+<li><p>On the first line, enter a suitable job title such as</p>
+<dl>
+<dd><font color="#009900">Job title</font>
+<font color="#ff0000">Scaling GerE datasets (mad tutorial step 1)</font>.</dd>
+</dl><br /></li>
+
+<li><p>On the second line, select</p>
+<dl>
+<dd><font color="#009900">Do</font>
+<font color="#ff0000">scale refinement using Scaleit</font>.</dd>
+</dl>
+
+<p>On the next 2 lines, select</p>
+<dl>
+<dd><font color="#009900">Use anomalous difference data</font></dd>
+</dl>
+
+<p>and</p>
+<dl>
+<dd><font color="#009900">Do cross-comparison of data sets
+and analyse dispersive differences</font></dd>
+</dl>
+
+<p>using the radiobuttons.</p></li>
+
+<li><p>Select the input MTZ file</p>
+<dl>
+<dd><font color="#009900">MTZ in</font>
+<font color="#ff0000">TEST</font>
+<font color="#ff0000">gere_MAD_nat.mtz</font></dd>
+</dl>
+
+<p>(If you do not have this file from the data processing/reduction session, take the
+file from the DATA directory.)</p>
+
+<p>Now select the columns from the MTZ file. The first line has the native 
+<font color="#ff0000">F_nat</font> and <font color="#ff0000">SIGF_nat</font>.
+Then select columns for the 4 wavelengths, using the button 
+<font color="#ff0000">Add Derivative Data</font> to add more columns.
+(<em>It might be easier here to load the file DATA/session4a.def which
+already has these parameters set.</em>)
+You should end up with:</p>
+
+<dl><dd>
+<table class="thleft">
+<tr>
+<th><font color="#009900">FP</font></th><th><font color="#ff0000">F_nat</font></th>
+<th><font color="#009900">SigmaFP</font></th><th><font color="#ff0000">SIGF_nat</font></th>
+</tr>
+<tr>
+<th><font color="#009900">FPH1</font></th><th><font color="#ff0000">F_infl</font></th>
+<th><font color="#009900">SigFPH1</font></th><th><font color="#ff0000">SIGF_infl</font></th>
+</tr>
+<tr>
+<th><font color="#009900">DPH1</font></th><th><font color="#ff0000">DANO_infl</font></th>
+<th><font color="#009900">SigDPH1</font></th><th><font color="#ff0000">SIGDANO_infl</font></th>
+</tr>
+<tr>
+<th><font color="#009900">FPH+1</font></th><th><font color="#ff0000">F_infl(+)</font></th>
+<th><font color="#009900">SigFPH+1</font></th><th><font color="#ff0000">SIGF_infl(+)</font></th>
+</tr>
+<tr>
+<th><font color="#009900">FPH-1</font></th><th><font color="#ff0000">F_infl(-)</font></th>
+<th><font color="#009900">SigFPH-1</font></th><th><font color="#ff0000">SIGF_infl(-)</font></th>
+</tr>
+<tr>
+<th><font color="#009900">FPH2</font></th><th><font color="#ff0000">F_lrm</font></th>
+<th><font color="#009900">SigFPH2</font></th><th><font color="#ff0000">SIGF_lrm</font></th>
+</tr>
+<tr>
+<th><font color="#009900">DPH2</font></th><th><font color="#ff0000">DANO_lrm</font></th>
+<th><font color="#009900">SigDPH2</font></th><th><font color="#ff0000">SIGDANO_lrm</font></th>
+</tr>
+<tr>
+<th><font color="#009900">FPH+2</font></th><th><font color="#ff0000">F_lrm(+)</font></th>
+<th><font color="#009900">SigFPH+2</font></th><th><font color="#ff0000">SIGF_lrm(+)</font></th>
+</tr>
+<tr>
+<th><font color="#009900">FPH-2</font></th><th><font color="#ff0000">F_lrm(-)</font></th>
+<th><font color="#009900">SigFPH-2</font></th><th><font color="#ff0000">SIGF_lrm(-)</font></th>
+</tr>
+<tr>
+<th><font color="#009900">FPH3</font></th><th><font color="#ff0000">F_peak</font></th>
+<th><font color="#009900">SigFPH3</font></th><th><font color="#ff0000">SIGF_peak</font></th>
+</tr>
+<tr>
+<th><font color="#009900">DPH3</font></th><th><font color="#ff0000">DANO_peak</font></th>
+<th><font color="#009900">SigDPH3</font></th><th><font color="#ff0000">SIGDANO_peak</font></th>
+</tr>
+<tr>
+<th><font color="#009900">FPH+3</font></th><th><font color="#ff0000">F_peak(+)</font></th>
+<th><font color="#009900">SigFPH+3</font></th><th><font color="#ff0000">SIGF_peak(+)</font></th>
+</tr>
+<tr>
+<th><font color="#009900">FPH-3</font></th><th><font color="#ff0000">F_peak(-)</font></th>
+<th><font color="#009900">SigFPH-3</font></th><th><font color="#ff0000">SIGF_peak(-)</font></th>
+</tr>
+<tr>
+<th><font color="#009900">FPH4</font></th><th><font color="#ff0000">F_hrm</font></th>
+<th><font color="#009900">SigFPH4</font></th><th><font color="#ff0000">SIGF_hrm</font></th>
+</tr>
+<tr>
+<th><font color="#009900">DPH4</font></th><th><font color="#ff0000">DANO_hrm</font></th>
+<th><font color="#009900">SigDPH4</font></th><th><font color="#ff0000">SIGDANO_hrm</font></th>
+</tr>
+<tr>
+<th><font color="#009900">FPH+4</font></th><th><font color="#ff0000">F_hrm(+)</font></th>
+<th><font color="#009900">SigFPH+4</font></th><th><font color="#ff0000">SIGF_hrm(+)</font></th>
+</tr>
+<tr>
+<th><font color="#009900">FPH-4</font></th><th><font color="#ff0000">F_hrm(-)</font></th>
+<th><font color="#009900">SigFPH-4</font></th><th><font color="#ff0000">SIGF_hrm(-)</font></th>
+</tr>
+</table>
+</dd></dl>
+
+<p>Check that the output MTZ file is given as</p>
+
+<dl>
+<dd><font color="#009900">MTZ out</font>
+<font color="#ff0000">TEST</font>
+<font color="#ff0000">gere_MAD_nat_scaleit1.mtz</font></dd>
+</dl><br /></li>
+
+<li><p>You should not need to change anything else. Select 
+<font color="#ff0000">Run -&gt; Run Now</font>.</p></li>
+
+<li><p>When the job has finished, return to the main window,
+highlight the job in the <b>Job List</b>, and select
+<font color="#ff0000">View Files from Job -&gt; View Log Graphs</font>.
+This task outputs a large number of graphs for analysing the data, and
+we will just look at some of them.</p></li>
+
+<li><p>We can gauge the strength of the <b>dispersive differences</b> by
+looking at the graphs <font color="#009900">Centric Normal probability 
+v resolution</font> and  <font color="#009900">Acentric Normal 
+probability v resolution ...</font> for each pair of wavelengths, <i>e.g.</i>
+<font color="#009900"> ... FP = F_lrm FPH = F_infl SIGF_infl 
+DANO_infl SIGDANO_infl</font>. For each graph, look at the line
+<font color="#009900">Gradient_on_reflection_prob.lt.0.9</font>.
+Use the crosswires to estimate a rough value, <i>e.g.</i> for the low-remote 
+against the inflection, the value is about 1.128 for centric data
+and 1.254 for acentric data.</p>
+
+<p><a name="scaleit_summary"></a>The values can be summarised as (these values are contained
+in the file <font color="#ff0000">View Files from Job -&gt; ...scaleit.summary</font>):</p>
+<pre>
+
+ Table: Normal Probability for acentric data
+
+Normal Prob.   |  F_lrm       F_peak      F_hrm       
+ ----------------------------------------------------------------------------
+ F_infl        | 1.257        1.075       1.514       
+
+
+ Table: Normal Probability for Centric data
+
+ Normal Prob.   | F_lrm       F_peak      F_hrm       
+ ----------------------------------------------------------------------------
+ F_infl         | 1.111       0.921       1.453       
+</pre>
+
+<p>This shows that the <b>Dispersive difference</b> (<i>i.e.</i> difference in f' values
+between wavelengths) is smallest from the inflection to the peak, and largest from the
+inflection to the high-wavelength remote (the inflection point has the smallest
+f').</p></li>
+
+<li><p>We can gauge the strength of the <b>anomalous differences</b> by
+looking at the graph <font color="#009900">Acentric Normal probability v resolution ...</font>
+for F(+) and F(-) of each wavelength, 
+<i>e.g.</i> <font color="#009900"> ... FP = F(+)_infl FPH = F(-)_infl SIGF(-)_infl</font>.
+For each graph, look at the line
+<font color="#009900">Gradient_on_reflection_prob.lt.0.9</font>, and
+use the crosswires to estimate a rough value.</p>
+
+<p>The values are summarised as:</p>
+<pre>
+ Table: Anomalous Differences ( FPHi+ v. FPHi-)
+
+
+ Anom difference          | Prob_acent  Rfactor     
+ --------------------------------------------------------------------------------------
+ F_infl(+) v F_infl(-)    |   1.166       0.090       
+ F_lrm(+)  v F_lrm(-)     |   1.340       0.088       
+ F_peak(+) v F_peak(-)    |   1.430       0.112       
+ F_hrm(+)  v F_hrm(-)     |   1.010       0.089       
+</pre>
+
+<p>This shows that the high-wavelength remote has the least anomalous
+signal, <i>i.e.</i> a low value of f&quot;. The peak wavelength
+has the largest f&quot;, while the other 2 wavelengths have intermediate values.</p></li>
+
+<li><font color="#ff0000">Close</font> the Scaleit Task Window.</li>
+</ol>
+
+<h2><a name="step_4b"></a>4b) Preparing datasets for finding heavy atoms</h2>
+
+<h4>The Problem</h4>
+
+<p>Before carrying any experimental phasing it is necessary to know
+the atomic coordinates of the anomalous scatterers or heavy atoms.
+For Gere there are 12 Se atoms to be positioned.
+These can be found by a Patterson search or by direct methods.
+For 12 sites, a Patterson search is complicated. However it is always
+good practice to calculate Pattersons using both the anomalous
+difference of the peak wavelength and the largest dispersive difference.
+They should both show a similar pattern of peaks.</p>
+
+<h4>Exercise</h4>
+
+<ol start="100">
+<li><p>Select the <font color="#ff0000">Experimental Phasing</font> module,
+and open the <font color="#ff0000">Generate Patterson Map</font>
+task window.</p></li>
+
+<li><p>On the first line, enter a suitable job title such as</p>
+<dl>
+<dd><font color="#009900">Job title</font>
+<font color="#ff0000">Anomalous Peak Patterson 10-3.5&#197; (mad tutorial step 100)</font>.</dd>
+</dl><br /></li>
+
+<li><p>On the next line, select</p>
+<dl>
+<dd><font color="#009900">Run FFT to generate</font>
+<font color="#ff0000">anomalous difference Patterson</font> (data as F+ F-, not as D)</dd>
+</dl>
+
+<p>then select with the radio button</p>
+<dl>
+<dd><font color="#009900">Plot</font>
+<font color="#ff0000">default Harker</font>
+<font color="#009900">map sections with</font>
+<font color="#ff0000">no coordinates</font></dd>
+</dl>
+
+<p>Later, when we have some sites, we will check it by repeating the Patterson and plotting sections with 
+<font color="#ff0000">vectors between atom coordinates</font>.</p></li>
+
+<li><p>Select the input MTZ file</p>
+<dl>
+<dd><font color="#009900">MTZ in</font>
+<font color="#ff0000">TEST</font>
+<font color="#ff0000">gere_MAD_nat_scaleit1.mtz</font></dd>
+</dl>
+
+<p>(If you do not have this file from the previous session, take the
+file from the DATA directory.)</p>
+
+<p>Now select the columns from the MTZ file:</p>
+<dl><dd>
+<table class="thleft">
+<tr>
+<th><font color="#009900">F1</font></th><th><font color="#ff0000">F_peak(+)</font></th>
+<th><font color="#009900">SigmaF1</font></th><th><font color="#ff0000">SIGF_peak(+)</font></th>
+</tr>
+<tr>
+<th><font color="#009900">F2</font></th><th><font color="#ff0000">F_peak(-)</font></th>
+<th><font color="#009900">SigmaF2</font></th><th><font color="#ff0000">SIGF_peak(-)</font></th>
+</tr>
+</table>
+</dd></dl>
+
+<p>Check that the output MAP file is given as</p>
+<dl>
+<dd><font color="#009900">Map</font>
+<font color="#ff0000">TEST</font>
+<font color="#ff0000">gere_MAD_nat_patterson1.map</font></dd>
+</dl><br /></li>
+
+<li><p>Now fill in the folder <font color="#009900">Exclude Reflections</font>
+as follows:<br />
+The <font color="#009900">Exclude Reflections with differences between F1 and F2 &gt;</font>
+<font color="#ff0000">?</font> will be estimated from a scaleit analysis, or you can enter your own value.
+It is important to exclude outliers which are often due to measurement errors.<br />
+It is sensible to always exclude reflections with 
+<font color="#009900">F less than n * sigmaF where n is</font> <font color="#ff0000">3</font>
+(for all data concerned).<br />
+You also need to select a suitable resolution limit. Use plots of the 
+'Analysis of data vs. resolution' to select sensible limits found in the <tt>scaleit</tt> run
+(<font color="#ff0000">View Files from Job -&gt; View Log Graphs</font>);
+here enter
+<font color="#009900">Resolution less than</font> <font color="#ff0000">10</font>
+<font color="#009900">&#197; or greater than</font> <font color="#ff0000">3.5</font>
+<font color="#009900">&#197;</font>.</p></li>
+
+<li><p>You should not need to change anything else, so select 
+<font color="#ff0000">Run -&gt; Run Now</font>.</p></li>
+</ol>
+
+<p>The Harker sections will be plotted -  click on
+<font color="#ff0000">View Files from Job -&gt; jobid...plt</font>.
+It is a good idea to compare these plots for the dispersive and anomalous Pattersons.
+They should have a similar pattern of peaks.</p>
+
+<p>You are now going to use a direct methods approach for locating the
+Se sites. In this section, you will prepare the MAD data for use
+in the direct methods program <tt>RANTAN</tt>. This task runs <tt>REVISE</tt> for
+generating the normalised anomalous scattering magnitude FM, and
+then the program <tt>ECALC</tt> for calculating the corresponding normalised 
+structure factor E.</p>
+
+<h4>Exercise</h4>
+
+<ol start="120">
+<li><p>Select the <font color="#ff0000">Experimental Phasing</font> module,
+and open the <font color="#ff0000">Prepare Data for HA Search</font>
+task window.</p></li>
+
+<li><p>On the first line, enter a suitable job title such as</p>
+<dl>
+<dd><font color="#009900">Job title</font>
+<font color="#ff0000">Run revise for GerE data (mad tutorial step 120)</font>.</dd>
+</dl><br /></li>
+
+<li><p>On the next line, select</p>
+<dl>
+<dd><font color="#009900">Input</font>
+<font color="#ff0000">MAD data as F+ F-</font>
+<font color="#009900">and prepare data for</font>
+<font color="#ff0000">Es (Rantan/Acorn)</font></dd>
+</dl><br /></li>
+
+<li><p>Select the input MTZ file</p>
+<dl>
+<dd><font color="#009900">MTZ in</font>
+<font color="#ff0000">TEST</font>
+<font color="#ff0000">gere_MAD_nat_scaleit1.mtz</font></dd>
+</dl>
+
+<p>Now select the columns from the MTZ file:</p>
+
+<dl><dd>
+<table class="thleft">
+<tr>
+<th><font color="#009900">FPH+1</font></th><th><font color="#ff0000">F_infl(+)</font></th>
+<th><font color="#009900">SigFPH+1</font></th><th><font color="#ff0000">SIGF_infl(+)</font></th>
+</tr>
+<tr>
+<th><font color="#009900">FPH-1</font></th><th><font color="#ff0000">F_infl(-)</font></th>
+<th><font color="#009900">SigFPH-1</font></th><th><font color="#ff0000">SIGF_infl(-)</font></th>
+</tr>
+<tr>
+<th><font color="#009900">FPH+2</font></th><th><font color="#ff0000">F_lrm(+)</font></th>
+<th><font color="#009900">SigFPH+2</font></th><th><font color="#ff0000">SIGF_lrm(+)</font></th>
+</tr>
+<tr>
+<th><font color="#009900">FPH-2</font></th><th><font color="#ff0000">F_lrm(-)</font></th>
+<th><font color="#009900">SigFPH-2</font></th><th><font color="#ff0000">SIGF_lrm(-)</font></th>
+</tr>
+<tr>
+<th><font color="#009900">FPH+3</font></th><th><font color="#ff0000">F_peak(+)</font></th>
+<th><font color="#009900">SigFPH+3</font></th><th><font color="#ff0000">SIGF_peak(+)</font></th>
+</tr>
+<tr>
+<th><font color="#009900">FPH-3</font></th><th><font color="#ff0000">F_peak(-)</font></th>
+<th><font color="#009900">SigFPH-3</font></th><th><font color="#ff0000">SIGF_peak(-)</font></th>
+</tr>
+<tr>
+<th><font color="#009900">FPH+4</font></th><th><font color="#ff0000">F_hrm(+)</font></th>
+<th><font color="#009900">SigFPH+4</font></th><th><font color="#ff0000">SIGF_hrm(+)</font></th>
+</tr>
+<tr>
+<th><font color="#009900">FPH-4</font></th><th><font color="#ff0000">F_hrm(-)</font></th>
+<th><font color="#009900">SigFPH-4</font></th><th><font color="#ff0000">SIGF_hrm(-)</font></th>
+</tr>
+</table>
+</dd></dl>
+
+<p>Check that the output MTZ file is given as</p>
+<dl>
+<dd><font color="#009900">Output MTZ</font>
+<font color="#ff0000">TEST</font>
+<font color="#ff0000">gere_MAD_nat_prephadata1.mtz</font></dd>
+</dl><br /></li>
+
+<li><p>Now fill in the folder <font color="#009900">Anomalous Data</font>
+as follows:</p>
+<dl><dd>
+<table>
+<tr>
+<th><font color="#009900">Data set 1 collected at wavelength</font></th>
+<th><font color="#ff0000">0.981</font></th>
+<th><font color="#009900">with estimated F'</font></th><th><font color="#ff0000">-6.0</font></th>
+<th><font color="#009900">and F"</font></th><th><font color="#ff0000">2.0</font></th>
+</tr>
+<tr>
+<th><font color="#009900">Data set 2 collected at wavelength</font></th>
+<th><font color="#ff0000">1.1</font></th>
+<th><font color="#009900">with estimated F'</font></th><th><font color="#ff0000">-3.0</font></th>
+<th><font color="#009900">and F"</font></th><th><font color="#ff0000">3.0</font></th>
+</tr>
+<tr>
+<th><font color="#009900">Data set 3 collected at wavelength</font></th>
+<th><font color="#ff0000">0.98</font></th>
+<th><font color="#009900">with estimated F'</font></th><th><font color="#ff0000">-4.0</font></th>
+<th><font color="#009900">and F"</font></th><th><font color="#ff0000">4.0</font></th>
+</tr>
+<tr>
+<th><font color="#009900">Data set 4 collected at wavelength</font></th>
+<th><font color="#ff0000">0.9</font></th>
+<th><font color="#009900">with estimated F'</font></th><th><font color="#ff0000">-3.0</font></th>
+<th><font color="#009900">and F"</font></th><th><font color="#ff0000">1.0</font></th>
+</tr>
+</table>
+</dd></dl>
+
+<p>In fact, the wavelengths are only used as labels by the program.
+The important values are f' and f&quot; although the results are not
+very sensitive to the exact value. These values have been estimated
+from the known range of values of f' and f&quot; for Se, and the relative
+dispersive and anomalous differences estimated in the previous section.
+You can plot an approximate distribution of f&quot; and f' with wavelength
+for the different elements using
+<a href="../../../html/crossec.html" target="_PROGDOC">CROSSEC</a>.</p></li>
+
+<li><p>You should not need to change anything else, so select 
+<font color="#ff0000">Run -&gt; Run Now</font>.</p></li>
+</ol>
+
+<h2><a name="step_4c"></a>4c) Find heavy atoms</h2>
+
+<h4>The Problem</h4>
+
+<p>You have generated a column of E values which give a wavelength-independent
+measure of the anomalous scattering due to the Se sites. The Se sites
+can be found from the E values by Patterson methods, but here you will
+use a direct methods approach.</p>
+
+<h4>Exercise</h4>
+
+<ol start="200">
+<li><p>Select the <font color="#ff0000">Experimental Phasing</font> module,
+and open the <font color="#ff0000">Rantan - Direct Methods</font>
+task window.</p></li>
+
+<li><p>On the first line, enter a suitable job title such as</p>
+<dl>
+<dd><font color="#009900">Job title</font>
+<font color="#ff0000">Find Se sites for GerE (mad tutorial step 200)</font>.</dd>
+</dl><br /></li>
+
+<li><p>On the second line, select</p>
+<dl>
+<dd><font color="#009900">Set optimal Rantan parameters for</font>
+<font color="#ff0000">estimates of FH or FA</font>
+<font color="#009900">data</font> (default)</dd>
+</dl>
+
+<p>and on the next line, select</p>
+<dl>
+<dd><font color="#009900">generate map(s) and coordinate file listing peaks</font> (default)</dd>
+</dl><br /></li>
+
+<li><p>Select the input MTZ file</p>
+<dl>
+<dd><font color="#009900">MTZ in</font>
+<font color="#ff0000">TEST</font>
+<font color="#ff0000">gere_MAD_nat_prephadata1.mtz</font></dd>
+</dl>
+
+<p>The rest of the necessary information (in the 'Files' folder and the 'Running Rantan' folder)
+should be filled in automatically.</p></li>
+
+<li><p>You should not need to change anything else, so select 
+<font color="#ff0000">Run -&gt; Run Now</font>.</p></li>
+
+<li><p>When the job has finished, view the output MTZ file by selecting
+in the main window <font color="#ff0000">View Files from Job -&gt; 
+gere_MAD_nat_rantan1.mtz</font>. The output file has 48 columns:</p>
+
+<pre class="green"> * Column Labels :
+
+ H K L F_infl(+) SIGF_infl(+) F_infl(-) SIGF_infl(-) mod_F_infl(+)
+ mod_SIGF_infl(+) mod_F_infl(-) mod_SIGF_infl(-) F_lrm(+) SIGF_lrm(+) F_lrm(-)
+ SIGF_lrm(-) mod_F_lrm(+) mod_SIGF_lrm(+) mod_F_lrm(-) mod_SIGF_lrm(-) F_peak(+)
+ SIGF_peak(+) F_peak(-) SIGF_peak(-) mod_F_peak(+) mod_SIGF_peak(+) mod_F_peak(-)
+ mod_SIGF_peak(-) F_hrm(+) SIGF_hrm(+) F_hrm(-) SIGF_hrm(-) mod_F_hrm(+)
+ mod_SIGF_hrm(+) mod_F_hrm(-) mod_SIGF_hrm(-) FM SIGFM F E SIGE F2OR E2OR PHASE1
+ WT1 PHASE2 WT2 PHASE3 WT3</pre>
+
+<!--mgwt hereiwas-->
+
+<p>RANTAN generates and refines a large number of possible phase 
+sets (default 500), but only outputs the best ones (default 3) to the 
+output MTZ file. These phases and the corresponding weights are
+held in the last 6 columns.</p></li>
+
+<li><p>From each of these phase sets, the task calculates a map and
+locates peaks, which may correspond to Se sites. These peaks are
+output in both orthogonal and fractional coordinates. Click on <font
+color="#ff0000">View Files from Job</font> to reveal a list of output
+files. For each phase set, there will be a .pdb (orthogonal coordinates)
+and a .ha (fractional coordinates) file, for
+example TEST_<em>jobnumber</em>_1.pdb and TEST_<em>jobnumber</em>_1.ha for phase set 1.
+The default peak search produces approximately 15 peaks - we expect there to
+be 12 Se sites for this protein (2 each for 6 chains).
+(<em>Note that RANTAN starts from random phase sets, so the results
+are not always the same.</em>)</p></li>
+</ol>
+
+<h2><a name="step_4d"></a>4d) Heavy atom refinement</h2>
+
+<h4>The Problem</h4>
+
+<p>You now have 3 sets of possible Se sites. Heavy atom refinement and
+phasing is done using the program MLPHARE. The stages are:</p>
+
+<ol type="i">
+<li>Refine heavy atom ( = Se) parameters (XYZ coordinates, B factor, real
+occupancy, anomalous occupancy), or a subset of these.</li>
+
+<li>Remove incorrect sites. Their occupancy will refine to a small or 
+negative value. These will be obvious
+after refining against the centric data only; there are enough centric 
+observations to refine the Se parameters, and  the occupancies. If you have 
+no centric data use the &quot;Use every XXX-th reflection for refinement&quot; option to 
+use a subset of the reflections for refinement.</li>
+
+<li>Look for new atom sites using Fourier difference (or double difference) maps.
+These can be calculated after the preliminary centric refinement. The
+output MTZ file has phases for all the data to the requested resolution limit.
+A difference Fourier will contain all the present sites plus potential new sites; a
+double difference Fourier will only show potential new sites (and may therefore be
+more difficult to interpret). The peak height for a new site will be
+positive, but probably only 20-30% of the height of sites included in the refinement.</li>
+
+<li>MLPHARE provides useful graphs to monitor your progress.
+The most useful are those labelled: &quot;Lack of Closure analysis v resln&quot; and
+&quot;Anomalous lack of closure v resln&quot;.
+The Cullis Rfactor and the Anomolous Cullis Rfactor should be less than 1,
+and any &quot;improvement&quot; to the sub-structure should reduce them.
+The Phasing power should increase as the solution improves.</li>
+
+<li>When you are satisfied that you have the complete solution, complete the refinement
+for the other wavelengths, and for the anomalous contributions,
+and generate the final phases.</li>
+</ol>
+
+<p>To do this, you need to run MLPHARE several times. The steps using
+centric data or a subset of the full data set will be very fast. The Se parameters are held in a <tt>.ha</tt> 
+file, which is updated after each pass. The output MTZ file will be used 
+as input for the difference Fouriers.</p>
+
+<p>For the tutorial, we just do the 1st stage (<a href="#step_4d">exercise 4d</a>) and the last
+stage (<a href="#step_4e">exercise 4e</a>). The intermediate stages are described at the end of
+exercise 4d.</p>
+
+<h4>Exercise</h4>
+
+<ol start="300">
+<li><p>Select the <font color="#ff0000">Experimental Phasing</font> module,
+and open the <font color="#ff0000">Run Mlphare</font> task window.</p></li>
+
+<li><p>On the first line, enter a suitable job title such as</p>
+<dl>
+<dd><font color="#009900">Job title</font>
+<font color="#ff0000">Refining Se sites for GerE - set 1 (mad tutorial step 300)</font>.</dd>
+</dl><br /></li>
+
+<li><p>In the first folder, select:</p>
+<dl>
+<dd><font color="#009900">Use centric data only</font>.</dd>
+</dl>
+
+<p>There are enough centric observations to refine the Se parameters, and 
+to indicate which sites are real, and which solution is best.</p>
+
+<p>Leave everything else unselected.</p></li>
+
+<li><p>Select the input MTZ file:</p>
+<dl>
+<dd><font color="#009900">MTZ in</font>
+<font color="#ff0000">TEST</font>
+<font color="#ff0000">gere_MAD_nat_scaleit1.mtz</font></dd>
+</dl>
+
+<p>Now select the columns from the MTZ file. First we will refine the sites against
+the <b>largest</b> dispersive difference (See <a href="#scaleit_summary">your SCALEIT summary</a>
+for this).</p>
+
+<dl><dd>
+<table class="thleft">
+<tr>
+<th><font color="#009900">FP</font></th><th><font color="#ff0000">F_infl</font></th>
+<th><font color="#009900">SigmaFP</font></th><th><font color="#ff0000">SIGF_infl</font></th>
+</tr>
+<tr>
+<th><font color="#009900">FPH1</font></th><th><font color="#ff0000">F_hrm</font></th>
+<th><font color="#009900">SigFPH1</font></th><th><font color="#ff0000">SIGF_hrm</font></th>
+</tr>
+</table>
+</dd></dl>
+
+<p>Check that the output MTZ file is given as</p>
+
+<dl>
+<dd><font color="#009900">Output MTZ</font>
+<font color="#ff0000">TEST</font>
+<font color="#ff0000">gere_MAD_nat_mlphare1.mtz</font></dd>
+</dl><br /></li>
+
+<li><p>In the folder <font color="#009900">Data Harvesting</font>,
+leave as:</p>
+<dl>
+<dd><font color="#ff0000">Do not create harvest file</font></dd>
+</dl><br /></li>
+
+<li><p>In the folder <font color="#009900">Key parameters</font>,
+enter resolution limits (we do not use the less reliable data for preliminary
+refinement).</p>
+<dl>
+<dd><font color="#009900">Resolution limit from</font>
+<font color="#ff0000">15.0</font> 
+<font color="#009900">to</font>
+<font color="#ff0000">2.8</font>.</dd>
+</dl><br /></li>
+
+<li><p>In the folder <font color="#009900">Describe Derivatives
+&amp; Refinement</font>, enter a name for the derivative:</p>
+<dl>
+<dd><font color="#ff0000">Phase with&amp;refine</font> 
+<font color="#009900">derivative</font>
+<font color="#ff0000">infl to hrm</font>.</dd>
+</dl>
+
+<p>On the next line, check you are refining (real) occupancy only.
+There is no anomalous signal for the centric data and in this polar space
+group the Y coordinate cannot be refined. The form factor is
+set to Ano which means the atomic form factor is given as a single electron
+and the final occupancy will represent the number of electrons of the
+dispersive difference for this pair of measurements.</p>
+<dl>
+<dd><font color="#009900">Use</font>
+<font color="#ff0000">isomorphous</font>
+<font color="#009900">data to</font>
+<font color="#ff0000">refine occupancy</font> (de-select 'refine XYZ' at this stage)</dd>
+</dl>
+
+<p>Then select the file of heavy atom coordinates output by RANTAN. You can
+use your own file if you want, but it is recommended to use the prepared
+file in DATA:</p>
+<dl>
+<dd><font color="#009900">HA in</font>
+<font color="#ff0000">DATA</font>
+<font color="#ff0000">rantan_set1.ha</font></dd>
+</dl><br /></li>
+
+<li><p>Select <font color="#ff0000">Run -&gt; Run Now</font>.</p></li>
+
+<li><p>Click on <font color="#ff0000">View Files from Job -&gt; 
+TEST_<em>jobnumber</em>_1.ha</font> and look at the list of refined sites. The occupancy
+of sites 7 and 12 are now negative (actual values may vary a little):</p>
+
+<pre class="green">
+ATOM7   Ano   0.244  0.156  0.961 -0.590 BFAC   20.000
+ATREF X ALL Y ALL Z ALL OCC ALL AOCC ALL B ALL
+ATOM12  Ano   0.216  0.274  0.077 -4.304 BFAC   20.000
+ATREF X ALL Y ALL Z ALL OCC ALL AOCC ALL B ALL
+</pre>
+
+<p>and these sites should be deleted from the list. The easiest way to
+delete them is to click on these lines in the viewer window,
+which turns them into comment lines. Then click <font color="#ff0000">
+Save&amp;Exit</font>.</p></li>
+
+<li><p>Return to the <font color="#ff0000">Run Mlphare</font>
+task window and rerun the refinement again without these sites.
+This will only take a few seconds. Also, select</p>
+<dl>
+<dd><font color="#009900">Generate</font>
+<font color="#ff0000">difference</font>
+<font color="#009900">maps and do peak search for more heavy atoms</font></dd>
+</dl><br /></li>
+
+<li><p>In the folder <font color="#009900">Describe Derivatives &amp; Refinement</font>,
+add in XYZ refinement:</p>
+<dl>
+<dd><font color="#009900">Use</font>
+<font color="#ff0000">isomorphous</font>
+<font color="#009900">data to</font>
+<font color="#ff0000">refine XYZ and refine occupancy</font></dd>
+</dl><br /></li>
+
+<li><p>Update the heavy atom file:</p>
+<dl>
+<dd><font color="#009900">HA in</font>
+<font color="#ff0000">TEST</font>
+<font color="#ff0000">TEST_<em>jobnumber</em>_1.ha</font></dd>
+</dl><br /></li>
+
+<li><p>Select <font color="#ff0000">Run -&gt; Run Now</font>. The interface
+will ask you whether you want to overwrite gere_MAD_nat_mlphare1.mtz.
+This is OK, so click <font color="#ff0000">Delete File</font>.</p></li>
+
+<li><p>When the job has finished, you can check the refined Se sites
+as before. Now you need to inspect the difference Fourier map to see if there
+are extra sites. The job will have output a file: TEST_<em>jobnumber</em>_F_hrm.ha,
+which looks something like this:</p>
+<pre class="green">GRID 114  68  76
+CELL  108.7420   61.6790   71.6520   90.0000   97.1510   90.0000
+ATOM    Ano   0.0792  0.1477  0.9868       28.76  0.0 BFAC  20.0
+ATOM    Ano   0.2051  0.3929  0.8592       27.99  0.0 BFAC  20.0
+ATOM    Ano   0.2597  0.0000  0.2456       27.02  0.0 BFAC  20.0
+ATOM    Ano   0.1827  0.0717  0.5238       26.64  0.0 BFAC  20.0
+ATOM    Ano   0.4297  0.1824  0.8797       26.55  0.0 BFAC  20.0
+ATOM    Ano   0.2825  0.2330  0.9221       25.53  0.0 BFAC  20.0
+ATOM    Ano   0.4660  0.2451  0.2418       24.44  0.0 BFAC  20.0
+ATOM    Ano   0.3405  0.1578  0.3168       22.12  0.0 BFAC  20.0
+ATOM    Ano   0.1336  0.1659  0.2071       13.98  0.0 BFAC  20.0
+ATOM    Ano   0.3213  0.3957  0.6309       11.62  0.0 BFAC  20.0
+ATOM    Ano   0.4934  0.1771  0.4131        6.57  0.0 BFAC  20.0
+ATOM    Ano   0.0722  0.2257  0.8064        6.18  0.0 BFAC  20.0
+ATOM    Ano   0.3587  0.0257  0.7882        5.93  0.0 BFAC  20.0
+ATOM    Ano   0.4096  0.1526  0.8472        5.61  0.0 BFAC  20.0
+ATOM    Ano   0.3738  0.1999  0.4861        5.19  0.0 BFAC  20.0
+ATOM    Ano   0.4491  0.2259  0.1904        4.08  0.0 BFAC  20.0
+ATOM    Ano   0.2776  0.0139  0.1304       -3.77  0.0 BFAC  20.0
+ATOM    Ano   0.3254  0.1712  0.4312       -3.55  0.0 BFAC  20.0
+ATOM    Ano   0.4751  0.2411  0.1694       -3.49  0.0 BFAC  20.0
+ATOM    Ano   0.3252  0.2054  0.4343       -3.47  0.0 BFAC  20.0
+ATOM    Ano   0.0179  0.1776  0.4259        3.42  0.0 BFAC  20.0
+ATOM    Ano   0.2697  0.2017  0.8671        3.35  0.0 BFAC  20.0
+ATOM    Ano   0.1271  0.4697  0.2386       -3.31  0.0 BFAC  20.0
+ATOM    Ano   0.2554  0.3257  0.2372        3.30  0.0 BFAC  20.0
+ATOM    Ano   0.2387  0.3913  0.9004        3.29  0.0 BFAC  20.0
+ATOM    Ano   0.4382  0.2585  0.3811       -3.28  0.0 BFAC  20.0
+ATOM    Ano   0.2398  0.1814  0.7578        3.25  0.0 BFAC  20.0
+ATOM    Ano   0.2036  0.0740  0.4036       -3.24  0.0 BFAC  20.0
+ATOM    Ano   0.2215  0.3875  0.0788        3.22  0.0 BFAC  20.0
+ATOM    Ano   0.3055  0.1610  0.4985       -3.13  0.0 BFAC  20.0
+ATOM    Ano   0.4253  0.2392  0.0122        3.06  0.0 BFAC  20.0
+ATOM    Ano   0.0751  0.1712  0.0262       -3.05  0.0 BFAC  20.0
+ATOM    Ano   0.2715  0.0100  0.1736       -3.02  0.0 BFAC  20.0
+</pre>
+<p>Add these extra sites to the original output .ha file (or use this one,
+which was output by the difference Fourier calculations). You can edit
+the file to set all occupancies to a constant value.
+If the first 16 of these difference Fourier peaks are used,
+after refining XYZ and Occ, 3 peaks can quickly be eliminated
+again. In fact, the first (correct) 12 keep coming up as the strongest peaks.</p></li>
+
+<li><p>Once you are satisfied you have the complete solution, you need to
+do a refinement to the limit of the resolution to correct the B values.
+In the folder <font color="#009900">Describe Derivatives
+&amp; Refinement</font>, use XYZ refinement, and change the occupancy
+refinement to alternate occupancy and B factor:</p>
+<dl>
+<dd><font color="#009900">Use</font>
+<font color="#ff0000">isomorphous</font>
+<font color="#009900">data to</font>
+<font color="#ff0000">refine XYZ and alternate Occ &amp; B</font></dd>
+</dl><br /></li>
+
+<li><p>Select <font color="#ff0000">Run -&gt; Run Now</font>. The interface
+will ask you whether you want to overwrite gere_MAD_nat_mlphare1.mtz.
+This is OK, so click <font color="#ff0000">Delete File</font>.</p></li>
+</ol>
+
+<p>If you do not have time to do all the intermediate stages, you may
+<a href="#step_4e">skip to the final stage</a>.... If you want to know what
+happens, read on:</p>
+
+<p>There are several ways the refinement of the Se sites can be optimised:</p>
+<ul>
+<li>Inspect difference Fourier maps for extra sites.</li>
+<li><a name="copyhafiles"></a>Repeat using the <em>centric</em> data, keeping F_infl as FP, and setting 
+F_peak and F_lrm as FPH1 to get the
+relative occupancy of the dispersive difference between these wavelengths.
+You do not need to refine XYZ or B - keep the values from your final refinement
+for the largest differences, and just refine the <em>real</em> occupancy. Make copies of your
+final Finfl_v_F_hrm.ha file to use as input for the other refinements.
+If the Cullis R is less than 0.5 for some resolution shell, you probably have the correct solution.</li>
+<li>You can repeat all this with a different set of sites from RANTAN.</li>
+</ul>
+
+<p><em>Please note that these sites are not necessarily in the same asymmetric
+unit as the ones you have refined yourself, and most likely not in the same
+order. Keeping in mind that the spacegroup is C2, you can work out whether
+your set is 'correct'.</em></p>
+
+<a name="step_4e"></a><h2>4e) Final Refinement and Phasing</h2>
+
+<h4>The Problem</h4>
+
+<p>To get the best phases, we now include <em>all wavelengths</em> together, <em>and use
+the anomalous signal</em> as well. You need to do a final refinement and phasing
+run to first refine the <em>anomalous</em> occupancies (<i>i.e.</i> the relative number of
+electrons contributed by the different f&quot;), then to output phases.</p>
+
+<p><a name="four_ha_files"></a>You will need four .ha files (variations of the four mentioned
+<a href="#copyhafiles">above</a>).
+The first three you have refined using the F_infl with F_hrm, F_peak, and F_lrm. All these should have the
+same values for XYZ and B but different <em>real</em> occupancies. The <em>anomalous</em> occupancy value is 0.0.
+You now need to edit these to set the anom_Occ to 1.0, as a preliminary to refinement.
+You also need to copy one of these to provide a F_infl_v_F_infl.ha. Edit this to
+have <em>real</em> occupancies of 0.0 (anomalous occupancies of 1.0).</p>
+
+<h4>Exercise</h4>
+
+<ol start="400">
+<li><p>In the <font color="#ff0000">Run Mlphare</font> task window,
+enter a suitable job title such as:</p>
+
+<dl>
+<dd><font color="#009900">Job title</font>
+<font color="#ff0000">Refinement against all data (mad tutorial step 400)</font>.</dd>
+</dl><br /></li>
+
+<li><p>In the first folder:</p>
+
+<dl>
+<dd>First <strong>de-select</strong> <font color="#009900">Use centric data only</font></dd>
+</dl>
+
+<dl>
+<dd>Then <strong>select</strong> <font color="#009900">Use anomalous difference data</font></dd>
+</dl>
+
+<dl>
+<dd>Then <strong>select</strong> <font color="#009900">Use every</font>
+<font color="#ff0000">10</font><font color="#009900">-th reflection for refinement</font></dd>
+</dl>
+
+<p>and</p>
+
+<dl>
+<dd><font color="#009900">Apply calculated scale to output Sfs</font></dd>
+</dl>
+
+<dl>
+<dd><font color="#009900">Output Hendrickson-Lattman coefficients</font></dd>
+</dl>
+
+<p>Leave everything else unselected.</p></li>
+
+<li><p>Select the input MTZ file:</p>
+
+<dl>
+<dd><font color="#009900">MTZ in</font>
+<font color="#ff0000">TEST</font>
+<font color="#ff0000">gere_MAD_nat_scaleit1.mtz</font></dd>
+</dl>
+
+<p>Now select the columns from the MTZ file.</p>
+
+<dl><dd>
+<table class="thleft">
+<tr>
+<th><font color="#009900">FP</font></th><th><font color="#ff0000">F_infl</font></th>
+<th><font color="#009900">SigmaFP</font></th><th><font color="#ff0000">SIGF_infl</font></th>
+</tr>
+<tr>
+<th><font color="#009900">FPH1</font></th><th><font color="#ff0000">F_infl</font></th>
+<th><font color="#009900">SigFPH1</font></th><th><font color="#ff0000">SIGF_infl</font></th>
+</tr>
+<tr>
+<th><font color="#009900">DPH1</font></th><th><font color="#ff0000">DANO_infl</font></th>
+<th><font color="#009900">SigDPH1</font></th><th><font color="#ff0000">SIGDANO_infl</font></th>
+</tr>
+<tr>
+<th><font color="#009900">FPH2</font></th><th><font color="#ff0000">F_lrm</font></th>
+<th><font color="#009900">SigFPH2</font></th><th><font color="#ff0000">SIGF_lrm</font></th>
+</tr>
+<tr>
+<th><font color="#009900">DPH2</font></th><th><font color="#ff0000">DANO_lrm</font></th>
+<th><font color="#009900">SigDPH2</font></th><th><font color="#ff0000">SIGDANO_lrm</font></th>
+</tr>
+<tr>
+<th><font color="#009900">FPH3</font></th><th><font color="#ff0000">F_peak</font></th>
+<th><font color="#009900">SigFPH3</font></th><th><font color="#ff0000">SIGF_peak</font></th>
+</tr>
+<tr>
+<th><font color="#009900">DPH3</font></th><th><font color="#ff0000">DANO_peak</font></th>
+<th><font color="#009900">SigDPH3</font></th><th><font color="#ff0000">SIGDANO_peak</font></th>
+</tr>
+<tr>
+<th><font color="#009900">FPH4</font></th><th><font color="#ff0000">F_hrm</font></th>
+<th><font color="#009900">SigFPH4</font></th><th><font color="#ff0000">SIGF_hrm</font></th>
+</tr>
+<tr>
+<th><font color="#009900">DPH4</font></th><th><font color="#ff0000">DANO_hrm</font></th>
+<th><font color="#009900">SigDPH4</font></th><th><font color="#ff0000">SIGDANO_hrm</font></th>
+</tr>
+</table>
+</dd></dl>
+
+<p>Check that the output MTZ file is given as</p>
+<dl>
+<dd><font color="#009900">Output MTZ</font>
+<font color="#ff0000">TEST</font>
+<font color="#ff0000">gere_MAD_nat_mlphare2.mtz</font></dd>
+</dl><br /></li>
+
+<li><p>In the folder <font color="#009900">Key parameters</font>,
+enter resolution limits to include all the data:</p>
+
+<dl>
+<dd><font color="#009900">Resolution limit from</font>
+<font color="#ff0000">15.0</font> 
+<font color="#009900">to</font>
+<font color="#ff0000">2.6</font>.</dd>
+</dl><br /></li>
+
+<li><p>In the folder <font color="#009900">Describe Derivatives
+&amp; Refinement</font>, sub-folder <font color="#009900">Derivative Number 1</font>,
+enter a name for the derivative:</p>
+<dl>
+<dd><font color="#ff0000">Phase with&amp;refine</font> 
+<font color="#009900">derivative</font>
+<font color="#ff0000">infl to infl</font>.</dd>
+</dl>
+
+<p>On the next line, refine (anomalous) occupancy only, against anomalous
+data:</p>
+<dl>
+<dd><font color="#009900">Use</font>
+<font color="#ff0000">anomalous</font>
+<font color="#009900">data to</font>
+<font color="#ff0000">refine occupancy</font></dd>
+</dl>
+
+<p>Then:</p>
+
+<table class="thtop" width="100%">
+<tr>
+<th width="50%"><em>either</em> select the file of correct sites that has been provided:</th>
+<th width="50%"><em>or</em> select the file:</th>
+</tr>
+<tr>
+<th>
+<font color="#009900">HA in</font>
+<font color="#ff0000">DATA</font>
+<font color="#ff0000">nat_sul_ref.ha</font>
+</th>
+<th>
+<font color="#009900">HA in</font>
+<font color="#ff0000">TEST</font>
+<font color="#ff0000">F_infl_v_F_infl.ha</font>
+</th>
+</tr>
+<tr>
+<th>and (through the 'View' and 'Edit Columns' buttons)<br />
+<font color="#009900">set occupancies</font> <font color="#ff0000">0.0</font> and
+<font color="#009900">set anomalous occupancies</font> <font color="#ff0000">1.0</font><br />
+then 'Save As..' <font color="#ff0000">F_infl_v_F_infl.ha</font> on TEST, then 'Quit';<br />
+then 'Browse' for the new filename</th>
+<th>as made according to the instructions <a href="#four_ha_files">above</a></th>
+</tr>
+</table><br /></li>
+
+<li><p><a name="derivativeinput"></a>In the sub-folder <font color="#009900">Derivative number 2</font> select:</p>
+<dl>
+<dd><font color="#ff0000">Phase with&amp;refine</font> 
+<font color="#009900">derivative</font>
+<font color="#ff0000">infl to lrm</font>.</dd>
+</dl>
+<dl>
+<dd><font color="#009900">Use</font>
+<font color="#ff0000">anomalous</font>
+<font color="#009900">data to</font>
+<font color="#ff0000">refine occupancy</font></dd>
+</dl>
+<p>Then:</p>
+<table class="thtop" width="100%">
+<tr>
+<th width="50%"><em>either</em> select the file of correct sites that has been provided:</th>
+<th width="50%"><em>or</em> select the file:</th>
+</tr>
+<tr>
+<th>
+<font color="#009900">HA in</font>
+<font color="#ff0000">DATA</font>
+<font color="#ff0000">nat_sul_ref.ha</font>
+</th>
+<th>
+<font color="#009900">HA in</font>
+<font color="#ff0000">TEST</font>
+<font color="#ff0000">F_infl_v_F_lrm.ha</font>
+</th>
+</tr>
+<tr>
+<th>and (through the 'View' and 'Edit Columns' buttons)<br />
+<font color="#009900">set anomalous occupancies</font> <font color="#ff0000">1.0</font><br />
+then 'Save As..' <font color="#ff0000">F_infl_v_F_lrm.ha</font> on TEST, then 'Quit';<br />
+then 'Browse' for the new filename</th>
+<th>as made according to the instructions <a href="#four_ha_files">above</a></th>
+</tr>
+</table><br /></li>
+
+<li><p>Repeat 405 for the other 2 wavelengths
+(Derivative number 3 and 4, 'infl to peak' and 'infl to hrm', respectively).</p></li>
+
+<li><p>Select <font color="#ff0000">Run -&gt; Run Now</font>.</p></li>
+
+<li><p>When the job has finished, return to the main window,
+highlight the job in the <b>Job List</b>, and select
+<font color="#ff0000">View Files from Job -&gt; View Log Graphs</font>.
+Graphs are given for each wavelength, for both the last refinement
+cycle and the final phasing cycle. Look in particular at:</p>
+<dl>
+<dt><font color="#009900">Lack of closure analysis ....</font> /
+<font color="#009900">Phasing power ....</font>,
+<font color="#009900">Lack of closure analysis ....</font> /
+<font color="#009900">Cullis Rfactor ....</font></dt>
+<dd>For good data, the phasing power should be greater than 1, and the Cullis Rfactor
+should be significantly less than one. The values for the different
+wavelengths (&quot;derivatives&quot;) should correlate with the f' value (compared
+to that for F_infl).</dd>
+<dt><font color="#009900">Anomalous lack of closure analysis ....</font> /
+<font color="#009900">Ano Cullis Rfactor ....</font>.</dt>
+<dd>The anomalous Cullis Rfactor should be significantly less than one.
+The values for the different
+wavelengths (&quot;derivatives&quot;) should correlate with the f&quot; value</dd>
+</dl></li>
+</ol>
+
+<p>In fact, the example data do not give very good statistics.
+However, the structure <em>was</em> solved by this method!</p>
+
+<h2><a name="step_4f"></a>4f) Density Modification</h2>
+
+<h4>The Problem</h4>
+
+<p>The phase statistics output by MLPHARE will be the same, whether the sites
+are on the correct or the wrong hand (see
+<a href="http://www.ysbl.york.ac.uk/~mgwt/CCP4/EJD/bmg/bmg9.html">Maths notes</a>).
+However if anomalous data has been used, one set of phases will give
+an interpretable map whilst the other will generate a random one. It is
+essential to select the correct hand before attempting interpretation of the map.
+This is done by using Density Modification procedures. For the correct
+hand it should be possible to see a boundary between the protein part of the asymmetric unit
+and the solvent, while for the wrong hand there will be no clear distinction.
+In fact, MLPHARE gives realistic Figures of Merit and therefore
+you need to generate phases on both hands
+(see <a href="../../../html/mlphare.html#notes_on_usage">Notes on usage</a>).
+Density modification (also known as Density Improvement) can be done
+using the program <tt>'dm'</tt>.</p>
+
+<h4>Exercise</h4>
+
+<ol start="500">
+<li><p>Select the <font color="#ff0000">Density Improvement</font> module,
+and open the <font color="#ff0000">Run DM</font>
+task window.</p></li>
+
+<li><p>On the first line, enter a suitable job title such as</p>
+<dl>
+<dd><font color="#009900">Job title</font>
+<font color="#ff0000">DM on MAD phases - first hand (mad tutorial step 500)</font>.</dd>
+</dl><br /></li>
+
+<li><p>Select the input MTZ file:</p>
+
+<dl>
+<dd><font color="#009900">MTZ in</font>
+<font color="#ff0000">TEST</font>
+<font color="#ff0000">gere_MAD_nat_mlphare2.mtz</font></dd>
+</dl>
+
+<p>Now select the columns from the MTZ file.</p>
+
+<dl><dd>
+<table class="thleft">
+<tr>
+<th><font color="#009900">FP</font></th><th><font color="#ff0000">F_native</font></th>
+<th><font color="#009900">SIGFP</font></th><th><font color="#ff0000">SIGF_native</font></th>
+</tr>
+<tr>
+<th><font color="#009900">PHIO</font></th><th><font color="#ff0000">PHIB_mlphare1</font></th>
+<th><font color="#009900">Weight</font></th><th><font color="#ff0000">FOM_mlphare1</font></th>
+</tr>
+</table>
+<br /></dd></dl></li>
+
+<li><p>Enter the solvent content as</p>
+<dl>
+<dd><font color="#009900">Fraction solvent content</font>
+<font color="#ff0000">0.538</font>.</dd>
+</dl><br /></li>
+
+<li><p>Everything else can be left as default, so <font color="#ff0000">
+Run -&gt; Run Now</font>.</p></li>
+</ol>
+
+<h2><a name="step_4g"></a>4g) Testing the hand</h2>
+
+<h4>The Problem</h4>
+
+<p>The procedure for locating the Se sites cannot distinguish between
+a particular set of sites and the same set of sites transformed through
+a point of inversion, <i>i.e.</i> it cannot distinguish the <b>hand</b> of
+the solution. Therefore, the previous phasing run should be repeated
+using the opposite hand. (The program 
+<a href="../../../html/abs.html" target="_PROGDOC">ABS</a> in CCP4 can also 
+be used to determine the hand for the case of anomalous scattering.)</p>
+
+<p>Then we look at two things:</p>
+<ol type="i">
+<li>look at maps - one map should have
+a clearer solvent boundary than the other.</li>
+<li>run DM - one hand should give marginally better statistics than
+the other.</li>
+</ol>
+
+<p>But the main difference is whether or not you can build a model ....</p>
+
+<h4>Exercise</h4>
+
+<p>Re-run the previous 2 exercises (4e and 4f), but using different files of sites.</p>
+
+<ol start="600">
+<li><p>Select the job as run for exercise 4e (Final Refinement and Phasing) from the Job List and
+select <font color="#ff0000">ReRun Job..</font> from the menu on the right of the Main Window.</p></li>
+
+<li><p>Adapt the <font color="#009900">Job title</font> line appropriately.</p>
+<dl>
+<dd><font color="#009900">Job title</font>
+<font color="#ff0000">Refinement against all data opposite hand (mad tutorial step 600)</font></dd>
+</dl>
+<p>Leave all input in the Protocol and Files folders as before.</p></li>
+
+<li><p>Check that the output MTZ file is given as</p>
+<dl>
+<dd><font color="#009900">Output MTZ</font>
+<font color="#ff0000">TEST</font>
+<font color="#ff0000">gere_MAD_nat_mlphare3.mtz</font></dd>
+</dl>
+<p>(or change accordingly).</p></li>
+
+<li><p>In the folder <font color="#009900">Describe Derivatives
+&amp; Refinement</font>, sub-folder <font color="#009900">Derivative Number 1</font>,
+adapt the <font color="#009900">HA in</font> as follows:</p>
+
+<table class="thtop" width="100%">
+<tr>
+<th width="50%"><em>either</em> select the file of correct (opposite hand) sites that has been provided:</th>
+<th width="50%"><em>or</em> select the file:</th>
+</tr>
+<tr>
+<th>
+<font color="#009900">HA in</font>
+<font color="#ff0000">DATA</font>
+<font color="#ff0000">nat_sul_opp_ref.ha</font>
+</th>
+<th>
+<font color="#009900">HA in</font>
+<font color="#ff0000">TEST</font>
+<font color="#ff0000">F_infl_v_F_infl.ha</font>
+</th>
+</tr>
+<tr>
+<th>and (through the 'View' and 'Edit Columns' buttons)<br />
+<font color="#009900">set occupancies</font> <font color="#ff0000">0.0</font> and
+<font color="#009900">set anomalous occupancies</font> <font color="#ff0000">1.0</font><br />
+then 'Save As..' <font color="#ff0000">F_infl_v_F_infl_opp.ha</font> on TEST, then 'Quit';<br />
+then 'Browse' for the new filename</th>
+<th>and (after the 'View' button)<br />
+select <font color="#ff0000">Reverse hand</font>, then <font color="#ff0000">OK</font> (in Change Hand window),<br />
+then 'Save As..' <font color="#ff0000">F_infl_v_F_infl_opp.ha</font>
+on TEST, then 'Quit';<br />
+then 'Browse' for the new filename (or add <font color="#ff0000">_opp</font>)</th>
+</tr>
+</table><br /></li>
+
+<li><p>Similarly repeat steps <a href="#derivativeinput">405 - 408</a>.</p></li>
+
+<li><p>Select the job as run for exercise 4f from the Job List and
+select <font color="#ff0000">ReRun Job..</font> from the menu on the right of the Main Window.</p></li>
+
+<li><p>Adapt the <font color="#009900">Job title</font> line appropriately.</p>
+<dl>
+<dd><font color="#009900">Job title</font>
+<font color="#ff0000">DM on MAD phases opposite hand (mad tutorial step 606)</font></dd>
+</dl><br /></li>
+
+<li><p>Select the input MTZ file:</p>
+
+<dl>
+<dd><font color="#009900">MTZ in</font>
+<font color="#ff0000">TEST</font>
+<font color="#ff0000">gere_MAD_nat_mlphare3.mtz</font></dd>
+</dl><br /></li>
+
+<li><p>Everything else can be left as before, so <font color="#ff0000">
+Run -&gt; Run Now</font>.</p></li>
+
+<li><p>To check the maps, select the <font color="#ff0000">Map &amp; Mask Utilities</font> module,
+and open the <font color="#ff0000">Run FFT - Create Map</font> task window.</p></li>
+
+<li><p>On the first line, enter a suitable job title such as</p>
+<dl>
+<dd><font color="#009900">Job title</font>
+<font color="#ff0000">mlphare dm hand 1 (mad tutorial step 610)</font></dd>
+</dl>
+<p>Then select (using the radiobutton)</p>
+<dl>
+<dd><font color="#009900">Plot map sections with</font>
+<font color="#ff0000">no coordinates</font></dd>
+</dl><br /></li>
+
+<li><p>Select the MTZ file:</p>
+<dl>
+<dd><font color="#009900">MTZ in</font>
+<font color="#ff0000">TEST gere_MAD_nat_dm1.mtz</font></dd>
+</dl>
+<p>and select the columns from the MTZ file</p>
+<dl>
+<dd><font color="#009900">F1</font>
+<font color="#ff0000">F_infl</font>
+<font color="#009900">Sigma</font>
+<font color="#ff0000">SIGF_infl</font> (FDM does not have a Sigma)</dd>
+<dd><font color="#009900">PHI</font>
+<font color="#ff0000">PHIDM</font>
+<font color="#009900">Weight</font>
+<font color="#ff0000">FOMDM</font></dd>
+</dl><br /></li>
+
+<li><p>In the folder Select Plot Selections:</p>
+<dl>
+<dd><font color="#009900">Plot sections on</font>
+<font color="#ff0000">Y</font>
+<font color="#009900">axis from</font>
+<font color="#ff0000">0.0</font>
+<font color="#009900">to</font>
+<font color="#ff0000">0.5</font>
+<font color="#009900">in steps of</font>
+<font color="#ff0000">5.0</font></dd>
+<dd><font color="#009900">Map contour levels entered as a</font>
+<font color="#ff0000">range</font>
+<font color="#009900">of</font>
+<font color="#ff0000">*sigma</font></dd>
+<dd><font color="#009900">Contour levels from</font>
+<font color="#ff0000">1.5</font>
+<font color="#009900">to</font>
+<font color="#ff0000">2.5</font>
+<font color="#009900">by intervals of</font>
+<font color="#ff0000">0.5</font></dd>
+</dl><br /></li>
+
+<li><p>Select <font color="#ff0000">Run -&gt; Run Now</font>.</p></li>
+
+<li><p>Repeat with MTZ file <font color="#ff0000">gere_MAD_nat_dm2.mtz</font> (the opposite hand).</p></li>
+
+<li><p>When the jobs have finished, select the first '<tt>dm</tt>' job from the Job List and
+<font color="#ff0000">View Files from Job -&gt; View Log Graphs</font>. Try to get
+it side by side with the Log Graphs from the second dm job and compare. Have a look at
+<font color="#ff0000">Phase and weight statistics</font> (both <font color="#ff0000">Mean change in phase</font>
+and <font color="#ff0000">Mean figures of merit</font>), and
+<font color="#ff0000">Density Modification-Free-R factors</font>. All in all, the statistics for the
+first hand are slightly better. Also, from the Log File it can be seen that the solvent boundary
+looks better for the first hand.</p>
+<p>Select the first FFT job from the Job List and
+<font color="#ff0000">View Files from Job -&gt; TEST_&lt;jobnumber&gt;_1.plt</font> and bring up
+<font color="#ff0000">Picture 1</font>. Try to get it side by side with Picture 1 from the
+.plt of the second FFT job. The solvent area looks a lot 'cleaner' for the first hand, whereas
+the contrast is less for the second hand.</p>
+</li>
+</ol>
+
+<hr />
+<p>On to the next tutorial - <a href="mr-tutorial.html">Molecular Replacement</a>.</p>
+<p>Back to the previous tutorial - <a href="heavy-tutorial-mir.html">Experimental Phasing (by MIR)</a>.</p>
+<p>Back to the <a href="index.html">index</a>.</p>
+
+<hr />
+<p>Prepared by Liz Potterton and Martyn Winn, 2000</p>
+<p>Adapted by Eleanor Dodson and Maria Turkenburg, 2002-2003</p>
+<p>
+<a href="http://jigsaw.w3.org/css-validator/"><img width="88" height="31"
+src="images/vcss" alt="Valid CSS!" /></a>
+<a href="http://validator.w3.org/"><img src="images/valid-xhtml10"
+alt="Valid XHTML 1.0!" height="31" width="88" /></a>
+</p>
+
+</body>
+</html>

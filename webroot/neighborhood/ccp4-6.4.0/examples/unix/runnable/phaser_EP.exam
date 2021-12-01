@@ -1,0 +1,27 @@
+#!/bin/sh
+
+# Sulfur-SAD dataset for bovine cubic insulin, collected by Paul Adams' group at ALS
+# Sites are from Hyss if you tell it to look for the six S atoms
+# Sites 1-3 are in fact supersites for the 3 disulphide bonds
+# Sites 4-6 are wrong
+
+# With COMPLETE OFF occupancy goes up for supersites, and down for wrong sites
+# With COMPLETE ON it loses 2 of the 3 wrong sites, splits each of the
+# 3 supersites, and adds 1 spurious site next to the 2nd supersite
+# Obviously your mileage may vary, but this is what I get.
+
+phaser << eof
+TITLE insulin SSAD
+MODE EP_AUTO
+HKLIN $CEXAM/data/SSADinsulin.mtz
+ATOM CRYSTAL insulin PDB $CEXAM/data/hyss_6site.pdb
+CRYSTAL insulin DATASET CuKa &
+    LABIN F+ = F_CuKa(+) SIGF(+) = SIGF_CuKa(+) F- = F_CuKa(-) SIGF(-) = SIGF_CuKa(-)
+WAVELENGTH 1.54000
+COMPOSITION BY COMPONENT
+COMPOSITION PROTEIN SEQ $CEXAM/data/insulin.seq NUMBER 1
+ROOT $CCP4_SCR/EP_insulin
+LLGCOMPLETE COMPLETE ON
+LLGCOMPLETE SCATTERER S
+eof
+

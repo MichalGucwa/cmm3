@@ -1,0 +1,579 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>CCP4 Program Suite : scaleit</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]">
+</HEAD>
+<BODY>
+
+<!-- ::INDEX_INFO::SCALEIT::Supported::Scaling data::derivative to native scaling::see also FHSCAL:::::: -->
+
+<H1>SCALEIT (CCP4: Supported Program)</H1>
+<H2>NAME</H2>
+<B>scaleit </B>
+- derivative to native scaling and analysis
+
+<H2>SYNOPSIS</H2>
+
+<P><B>scaleit hklin</B> <I>foo_in.mtz</I> <B>hklout</B> <I>foo.mtz</I>
+<BR>
+[<A HREF="#keywords">Keyworded input</A>] </P>
+
+<H2><A NAME="purpose"></A>PURPOSE</H2>
+
+<P>The program SCALEIT calculates and applies a derivative to native scaling
+function using either (a) an overall scale factor, (b) a scale and isotropic
+temperature factor or (c) a scale and anisotropic temperature factors.
+SCALEIT would normally be run after the merged datasets for native and derivatives
+had been combined into one file with <a href="cad.html">CAD</a>, and before 
+beginning to search for heavy atom sites. See also 
+<a href="fhscal.html">FHSCAL</a> for an alternative to SCALEIT.</p>
+
+<p>In addition, SCALEIT performs several useful analyses of the scaled
+data, which may be useful even if <a href="fhscal.html">FHSCAL</a> is
+used for the final scaling (see <A href="#output">PROGRAM OUTPUT</A>).
+These analyses include a <A href="#normal_probability">Normal
+probability analysis</A> using the ideas of Dave Smith and Lynne
+Howell (J. Appl. Cryst. (1992) 25 81-86), which is done if there is
+only one derivative being scaled.  SCALEIT also estimates the Kraut
+Scale using the formula of Ian Tickle Daresbury booklet 1991
+p.91. </P>
+
+<H2><A NAME="description"></A>DESCRIPTION</H2>
+
+<P>The program has options to refine scale factors, to apply input scale
+factors, or just to analyse the agreement between derivative and native
+amplitudes. Several derivatives may be scaled and analysed in one run of
+the program, but the same type of scaling must be used for all of them.
+It is important to look at the final analysis which compares &lt;FP **2&gt;
+and &lt;FPH**2&gt; after scaling. If their ratio is not near to unity,
+something has gone wrong! See below for some possible reasons for the problem.
+Maybe the range you are scaling over is inappropriate; it is often best
+to exclude the lowest resolution data. Maybe there are a few reflections
+obscured by the backstop in one data set; this can distort scales badly.
+Maybe the sigmas are not appropriate. In the analysis, large differences
+(both isomorphous and anomalous) are listed (only if scales are refined):
+these reflections are candidates for spuriously large differences, and
+should be <em>checked</em>. </P>
+
+<P><A NAME="notes_on_problems"></A>
+Note that there is no unique solution to the problem of scaling together
+two different data sets. Problems arise from: </P>
+
+<ul>
+<li><A NAME="inappropriate_resolution_range"></A> Scaling over an inappropriate resolution range. Derivative data are
+often poorly isomorphous at low resolution, and there is no point trying
+to scale to a resolution where the data are too inaccurate. </P>
+
+<li><A NAME="random_errors"></A> random errors, particularly if the two data sets are of very different
+strengths. Excluding weak data (EXCLUDE SIG) may help in this case </P>
+
+<li><A NAME="poor_estimates_of_sigma"></A> Poor estimates of SIGMA. The default option is NOT to use weights
+derived from the standard deviations of the reflections in the scaling,
+since these are often unreliable, or the two data sets are of very different
+quality. Use keyword WEIGHT to use the standard deviations if you think
+they are reliable. </P>
+
+<li><A NAME="systematic_errors"></A> Systematic errors: the anisotropic scaling will take out some systematic
+errors, but proper scaling to remove such errors <EM>must</EM> be done on data processed
+as P1 data; <EM>i.e.</EM> the indices should be those of the actual observation,
+not those of a symmetry equivalent. If the LAMBDA values defined by the
+anisotropic ellipsoid are very different there is some problem in scaling
+the two data sets. </P>
+
+<li><A NAME="rogue_information"></A> Rogue information; <EM>e.g.</EM> a reflection behind a backstop. If such an
+observation has a very low SIGMA it will be given a lot of weight in the
+refinement calculation (see EXCLUDE options for possible cures).</P>
+
+<li><A NAME="actual_differences_between_crystals"></A> actual 
+differences between the crystals: scaling can only be done
+properly with a model for the difference, thus in refinement of heavy-atom
+parameters, the derivative scale factor is also refined. The scale calculated
+by this program can only be regarded as a rough estimate but it is usually
+adequate for calculating Patterson functions. The program 
+<a href="fhscal.html">FHSCAL</a> may provide
+a better estimate of scale for heavy-atom derivatives. </P>
+</ul>
+
+<P>In general, scales may be calculated either by a least-squares procedure,
+or by Wilson scaling, <EM>i.e.</EM> making &lt;Fph**2&gt; = &lt;Fp**2&gt;. These
+procedures will give different answers, and it is not clear which is better.
+This program allows the option of a final Wilson scaling after least-squares
+determination of isotropic or anisotropic temperature factors: this changes
+the scale factor, but not the temperature factors (option REFINE [AN]ISOTROPIC
+WILSON). </P>
+
+<P>Note that all scales output by the program apply to Fph, although they
+are determined from F**2. </P>
+
+<P>It also possible to apply the scales to all ''scaleable''
+columns in a dataset (i.e. to F+/- and to the structure intensities; see the
+<a href="#labin">LABIN</a> keyword), and this is advisable to avoid mixtures
+of scaled and unscaled data for a single derivative. For input mtz files with
+dataset information, SCALEIT will attempt to check and warn you accordingly
+if it detects datasets which will be output with such a mixture. In these
+cases, specifying the <a href="#auto">AUTO</a> keyword will cause the
+appropriate scale factor to be applied automatically to all such columns.</P>
+
+<H2><A NAME="keywords"></A>KEYWORDED INPUT</H2>
+
+<P>A line beginning with an '#' or '!' indicates to the parser that it
+is a comment line and will be ignored: this is useful for command procedures.
+Parameters given in [] below are optional. </P>
+
+<P>The various data control lines are identified by keywords. The only compulsory
+keyword is LABIN to specify the MTZ column labels; other keywords have sensible
+defaults and are optional. The principal keywords controlling the function
+of the program are REFINE and ANALYSE. The full list of available keywords
+is as follows: </P>
+
+<BLOCKQUOTE>
+<A HREF="#analyse"><B>ANALYSE</B></A>,
+<A HREF="#auto"><B>AUTO</B></A>,
+<A HREF="#converge"><B>CONVERGE</B></A>,
+<A HREF="#exclude"><B>EXCLUDE</B></A>,
+<A HREF="#graph"><B>GRAPH</B></A>,
+<A HREF="#labin"><B>LABIN</B></A>,
+<A HREF="#nowt"><B>NOWT</B></A>,
+<A HREF="#refine"><B>REFINE</B></A>,
+<A HREF="#resolution"><B>RESOLUTION</B></A>,
+<A HREF="#scale"><B>SCALE</B></A>,
+<A HREF="#scatter"><B>SCATTER</B></A>,
+<A HREF="#symmetry"><B>SYMMETRY</B></A>,
+<A HREF="#title"><B>TITLE</B></A>,
+<A HREF="#weight"><B>WEIGHT</B></A>,
+<A HREF="#end"><B>END</B></A>   
+</BLOCKQUOTE>
+
+<H3><A NAME="title"></A>TITLE &lt;string&gt;</H3>
+
+<P>title to replace header in output file </P>
+
+<H3><A NAME="labin"></A>LABIN &lt;program_label&gt;=&lt;file_label&gt;...</H3>
+
+<P>Assign columns to be used. This both assigns columns, and defines how many derivatives to scale, and whether they have anomalous data. </P>
+
+<P>The items required (&lt;program_label&gt;s) are as follows: </P>
+
+<PRE>           H
+           K
+           L
+           FP        F of native data
+           SIGFP     sigma(F) of native data
+           FPHn      F of data for nth derivative
+           SIGFPHn   sigma(F) of derivative data
+          [DPHn]     Anomalous Delta(F) of derivative data
+          [SIGDPHn]  sigma anomalous Delta(F) of derivative data
+</PRE>
+
+<P>and so on for up to 20 possible derivatives. </P>
+
+<P>Additionally the following data items can be included, if present, for
+each derivative: </P>
+
+<PRE>
+         FPHn(+)     F(+) of hkl for nth derivative
+         SIGFPHn(+)  sigma of above
+         FPHn(-)     F(-) of -h-k-l for nth derivative
+         SIGFPHn(-)  sigma of above
+         IMEANn      Average Structure Intensity for nth derivative
+         SIGIMEANn   sigma of above
+         In(+)       Structure Intensity of hkl for nth derivative
+         SIGIn(+)    sigma of above
+         In(-)       Structure Intensity of -h-k-l for nth derivative
+         SIGIn(-)    sigma of above
+</PRE>
+
+<P>If any of these items are specified then SCALEIT will also apply the
+appropriate scale factor (in the case of F+/-) or the scale factor
+squared (in the case of structure intensities) to those columns, however
+no analysis will be performed using the data in the columns. </P>
+
+<P>Alternatively, by specifying the AUTO keyword, the
+scale factor will be applied automatically to all ``scalable'' columns in
+a dataset. Only FPHn and SIGFPHn need to be specified for each derivative
+on the LABIN line (see separate entry for <a href="#auto">AUTO</a>). </P>
+
+<H3><A NAME="auto"></A>AUTO</H3>
+
+<P>Switches on AUTOmatic column selection. This option can only be used if
+the input file contains dataset information. </P>
+
+<P>It is only necessary to specify <tt>FPHn</tt> and <tt>SIGFPHn</tt> for
+each dataset on the <a href="#labin">LABIN</a> line (except in special cases,
+see below). Other labels can also be specified if desired. The program will
+then try to identify all ''scalable'' columns in the dataset, automatically
+read them in and then apply the appropriate scale factor determined from
+<tt>FPHn</tt>. </P>
+
+<P>This option is intended to prevent a mixture of scaled and unscaled columns
+within a dataset, e.g. <tt>FPHn</tt> is scaled but not <tt>FPHn(+)</tt> and
+<tt>FPHn(-)</tt>. There are a couple of caveats:</P>
+
+<P>
+<OL>
+<LI>It is assumed that each dataset contains the information for one derivative.
+<LI>There may be problems with the automatic scaling if datasets contain both
+    <tt>SIGIMEAN</tt> and <tt>SIGDPHn</tt>. This is because the program cannot
+    distinguish between sigmas for intensities (which need to be scaled by the
+    square of the scale factor) and those for other quantities (which are
+    multiplied by the scale factor).
+    <BR> In these cases the automatic selection will make a best guess at
+    which sigma is which; the ambiguity can also be resolved provided that
+    <tt>IMEAN</tt> and <tt>SIGIMEAN</tt> are explicitly set by the user on
+    the <a href="#labin">LABIN</a> line (which is safer).
+</OL>
+
+<H3><A NAME="refine"></A>REFINE [ SCALE | ISOTROPIC | ANISOTROPIC ] [WILSON]</H3>
+
+<P>Alternative to ANALYSE. Default for program is REFINE ANISOTROPIC, which defines
+the type of scale-factors to be refined. This applies to all derivatives specified
+in this run. </P>
+
+<DL>
+<DT><A NAME="refine_scale"></A>SCALE</DT>
+
+<DD> overall scale only </DD>
+
+<DT><A NAME="refine_isotropic"></A>ISOTROPIC</DT>
+
+<DD> scale and isotropic temperature factor </DD>
+
+<DT><A NAME="refine_anisotropic"></A>ANISOTROPIC</DT>
+
+<DD> scale and anisotropic temperature factor (default) </DD>
+
+<DT><A NAME="refine_wilson"></A>WILSON</DT>
+
+<DD> apply a final Wilson scale, after determining relative temperature
+factors. This can be combined with SCALE, ISOTROPIC or ANISOTROPIC keywords.
+I have no idea if this is a good thing to do. </DD>
+</DL>
+
+<H3><A NAME="analyse"></A>ANALYSE</H3>
+
+<P>Alternative to REFINE </P>
+
+<P>Analyse differences between derivative and native without refining scale
+factors. SCALE commands may be given to change the scale and temperature
+factors from no scaling. If this command is given, no output file is written.
+</P>
+
+<H3><A NAME="converge"></A>CONVERGE [ NCYC &lt;n&gt; ] [ ABS &lt;m&gt;
+] [ TOLR &lt;l&gt; ]</H3>
+
+<P>Conditions for convergence. </P>
+
+<DL>
+<DT><A NAME="converge_ncyc"></A>&lt;n&gt;</DT>
+
+<DD> number of cycles of refinement required (default 4) </DD>
+
+<DT><A NAME="converge_abs"></A>&lt;m&gt;</DT>
+
+<DD> convergence limit. The refinement will be ended if all the shifts
+are less than (ABS * the standard deviation of the parameter). (Default
+= 0.001) </DD>
+
+<DT><A NAME="converge_tolr"></A>&lt;l&gt;</DT>
+
+<DD> tolerance (default 0.00000001) </DD>
+</DL>
+
+<H3><A NAME="scatter"></A>SCATTER</H3>
+
+<P>Include scatter plots of scales in logfile. Default is not to. </P>
+
+<H3><A NAME="scale"></A>SCALE [FPHn] Scale [Biso]/[B11 B22 B33 B12 B13
+B23]</H3>
+
+<P>Alternative to REFINE, not usually used. </P>
+
+<P>Input scales (and temperature factors) to be applied to derivative n
+(<EM>i.e.</EM> column assigned to FPHn). If the FPHn key is not given, the scale
+is used for the 1st derivative FPH1. If any scales are given with this
+command, then the scales are NOT determined, just applied and the analysis
+performed. Isotropic and anisotropic temperature factors may NOT be mixed
+for different derivatives. No scale factor may be given for the native.
+</P>
+
+<H3><A NAME="symmetry"></A>SYMMETRY &lt;spacegroup name or number&gt;</H3>
+
+<P>Not normally required. </P>
+
+<P>Spacegroup name or number to override symmetry in input file. </P>
+
+<H3><A NAME="resolution"></A>RESOLUTION &lt;rmin&gt; &lt;rmax&gt;</H3>
+
+<P>Resolution range (either 4sin(theta)**2/lambda**2, or Angstrom). Reflections
+outside this range will be excluded from scale determination and analysis,
+but will be scaled and written to the output file. If this command is not
+given, all data in the file is included.</P>
+
+<H3><A NAME="exclude"></A>EXCLUDE [ FP | FPH&lt;n&gt; ] [ SIG &lt;nsig&gt;
+] [ FMAX &lt;fmax&gt; ] [ DMAX &lt;fmax&gt; ] [ DIFF &lt;diffmax&gt;]</H3>
+
+<P>Set criteria for excluding data from the scale determination and analysis.
+Excluded data will still be scaled and written to the output file. The
+default is to include all data. If the first key is FP the exclusions apply
+to the native data, if FPH&lt;n&gt; to the &lt;n&gt;th derivative: if this
+key is omitted, the exclusions apply to all data, native and derivatives.
+Several EXCLUDE commands may be given. </P>
+
+<DL>
+<DT><A NAME="exclude_sig"></A>SIG &lt;nsig&gt;</DT>
+
+<DD> exclude reflections if FP &lt; &lt;nsig&gt;* SIGFP or FPH&lt;n&gt;
+&lt; &lt;nsig&gt;* SIGFPH&lt;n&gt; </DD>
+
+<DT><A NAME="exclude_fmax"></A>FMAX &lt;fmax&gt;</DT>
+
+<DD> exclude reflections if FP or FPH&lt;n&gt; &gt; &lt;fmax&gt; </DD>
+
+<DT><A NAME="exclude_dmax"></A>DMAX &lt;fmax&gt;</DT>
+
+<DD> exclude reflections if abs(DPHn) &gt; &lt;fmax&gt; </DD>
+
+<DT><A NAME="exclude_diff"></A>DIFF &lt;diffmax&gt;</DT>
+
+<DD> exclude reflections if abs(FPHn-FP) &gt; &lt;diffmax&gt; </DD>
+</DL>
+
+<H3><A NAME="graph"></A>GRAPH [ H K L MODF ]</H3>
+
+<P>List of the analyses to be included as well as that against 4sin(theta)**2/lambda**2.
+H,K,L and MODF can be in any order The default is just to analyse against
+resolution. </P>
+
+<H3><A NAME="nowt"></A>NOWT</H3>
+
+<P>If this command is present, the scale determination will be unweighted
+(the default). </P>
+
+<H3><A NAME="weight"></A>WEIGHT</H3>
+
+<P>Weight the observations for scale determination according to the input
+standard deviations. The default is not to weight them. </P>
+
+<H3><A NAME="end"></A>END</H3>
+
+<P>End of input. If present, this must be last keyword. </P>
+
+<H2><A NAME="files"></A>INPUT AND OUTPUT FILES</H2>
+
+<P>The input files are: </P>
+
+<DL compact>
+<DT>(a)</DT>
+
+<DD> The control data file </DD>
+
+<DT>(b)</DT>
+
+<DD> The input reflection data file in standard MTZ format. </DD>
+</DL>
+
+<P>The output is a reflection data file in standard MTZ format. This is
+a copy of the input reflection data file but with the data items for the
+selected derivative re-scaled. </P>
+
+<H2><A NAME="function"></A>PROGRAM FUNCTION</H2>
+
+<P>The program SCALEIT is used to calculate a derivative to native scaling
+function and apply it to the derivative data. Scales are determined from
+the squared amplitudes. The scaling function for F may be of the form:
+</P>
+
+<P>An overall scale (REFINE SCALE) </P>
+
+<PRE>       C
+</PRE>
+
+<P>Isotropic temperature factor (REFINE ISOTROPIC) </P>
+
+<PRE>       C * exp (-B sintheta/lambda)
+</PRE>
+
+<P>Anisotropic temperature factor (REFINE ANISOTROPIC) (default) </P>
+
+<PRE>       C * exp(-(h**2 B11 + k**2 B22 + l**2 B33 + 
+                      2hk B12 + 2hl  B13  +  2kl B23))
+</PRE>
+
+<P>An initial (and optional final, see REFINE WILSON) scaling factor is
+calculated from the expression </P>
+
+<PRE>              Kinit = Sqrt(Sigma FP**2 / Sigma FPH**2)
+                       (relative Wilson scaling)
+</PRE>
+
+<P>The scale and anisotropic temperature factors are then refined using
+a modification of the method of Fox and Holmes. The function minimised
+is </P>
+
+<PRE>          Sigma Sigma w( h )i(I( h )i - GiI( h ))**2
+            h     i
+</PRE>
+
+<P>with respect to all parameters (2 scale factors and 6 beta values in
+the anisotropic case) </P>
+
+<PRE>             G1   1.0
+             G2 = (1/C) exp(+ 2 h_ B h_ )
+</PRE>
+
+<P>Anisotropic temperature factors are determined on data expanded by symmetry
+to a hemisphere, which constrains certain combinations of coefficients
+in some space groups, <EM>e.g.</EM> in orthorhombic symmetry B12=B13=B23=0, in cubic
+spacegroups B11=B22=B33. </P>
+
+<P>The scale and temperature factors are applied to the derivative data and an output
+file is written with the corrected data. The scale factor SigmaFP**2/SigmaFPH**2
+is then analysed in ranges of h, k, l and 4sin**2 theta/lambda**2. </P>
+
+<H2><A NAME="output"></A>PROGRAM OUTPUT </H2>
+
+<P>The program output starts with details of the input reflection data
+file produced by the MTZ file handling routines, and details of
+the control data. Then for each cycle of the refinement the following 
+details are output. </P>
+
+<OL>
+<LI>The eigenvalues of the matrix </LI>
+
+<LI>The mean residual </LI>
+
+<LI>The scaling parameters giving the new values, the shifts and the standard
+deviations. </LI>
+</OL>
+
+<P>
+At the end of the refinement, there is an analysis of the scaled data.
+For each derivative, an estimate of the acceptable isomorphous and anomalous
+differences is given, followed by a list of individual reflections with
+abnormally high differences. This information can be used to exclude
+outliers from Patterson calculations or direct methods calculations. </P>
+
+<P>
+Then for each derivative, the following information is given as a function of 
+resolution:
+
+<UL>
+<LI>Kraut scale factor and relative Wilson scale factor.
+<LI>R factor ("Rfactor" or "Rfac") and weighted R factor 
+("Rfactor_W" or "Wted_R") for agreement between native and derivative.
+<LI>&lt;diso&gt; and max(diso)
+<LI>&lt;dano&gt; and max(dano)
+</UL>
+
+These statistics may also be given as a function of h, k, l or |FP|,
+see keyword <A HREF="#graph">GRAPH</A>.
+
+<p>
+Some terms defined:
+<blockquote>
+      Rfac = [sum( abs(FPH - FP))]/[sum(FP)]
+<p>
+      RF_I = [sum( abs(FPH*FPH - FP*FP))]/[sum(FP*FP)]
+<p>
+     Wted_R = [sum( abs(FPsq-FFmean)/Var(FPsq) + abs(FPHsq-FFmean)/Var(FPHsq)]
+                / [ sum(FPsq/Var(FPsq) + FPHsq/Var(FPHsq) ]
+<p>
+    FFmean = [FPsq/Var(FPsq) + FPHsq/Var(FPHsq)] / [1/Var(FPsq) + 1/Var(FPHsq)]
+<p>
+     Var(FPsq) = Var(FP) * 4FPsq
+<p>
+     Diso = abs(FPH - FP)
+<p>
+     Dano = abs(DPH)
+</blockquote>
+
+<P><A NAME="diso_and_dano"></A>Diso and Dano are very useful
+analytical tools.  Diso should fall off with increasing resolution,
+and <i>certainly</i> should not increase! That is a good indication of
+either non-isomorphism, or data quality falling off. You need to run
+your Pattersons with resolution ranges which only use reliable data,
+<i>and</i> with sensible EXCLUDE terms based on the plots of Diso and
+Dano. However <A HREF="mlphare.html">MLPHARE</A> has a built in
+weighting scheme which means that it doesn't do much harm to include
+less good data in phasing. After all the poor hkl should get low FOMs,
+and then <A HREF="dm.html">DM</A> can use the few reflections with 
+reasonable phases to help in the phase extension procedure. </P>
+
+<p><A NAME="normal_probability"></A>
+If there is only one derivative then the results of a normal probability
+analysis are also given (see Lynne Howell and Dave Smith, <i>J.Appl. Cryst.</i> 
+<b>25</b> 81-86 (1992)). The reflections in each resolution bin are
+sorted according to the value of:
+<blockquote>
+ delta(real) = (FPH - FP)/sqrt(SIGFPH**2 + SIGFP**2)
+</blockquote>
+where FPH and SIGFPH are the scaled values for the derivative.
+For each reflection, delta(expected) is then calculated based on an assumed
+normal distribution and the position of the reflection in the sorted list. 
+A plot of delta(real) against delta(expected) is called a normal probability 
+plot. </P>
+
+<p>If the native and scaled derivative data sets are essentially identical 
+(in statistical parlance, they represent two samplings of the same population),
+then the spread of the two data sets will be the same within the errors
+defined by SIGFP and SIGFPH, and the normal probability plot will be linear
+with a slope of about 1 and an intercept of 0. However, if the heavy atoms make
+a significant contribution to the observed structure factors, then (FPH - FP)
+will be larger than expected from SIGFP and SIGFPH, and the slope will be &gt; 1.
+The intercept may also be non-zero.</P>
+
+<p>The program plots the slope and intercept of the normal probability
+plot (obtained by a least squares fit) as a function of resolution for
+both centric and acentric reflections. These values are also plotted
+for the case where reflections at the tails of the distribution are
+excluded: these reflections tend not to lie on the straight line and
+distort the least squares fit. The existence and size of the heavy atom
+contribution to the structure factors can be gauged from the values of
+the slope and intercept, and the variation with resolution indicates
+to how high a resolution such contributions extend. A similar analysis
+can be applied to MAD data by assigning FP and FPH to data at different
+wavelengths (dispersive differences) or to F+ and F- (anomalous differences).
+In general, the size of the slope will be smaller in this case.</P>
+
+<H2>SEE ALSO</H2>
+
+<P>
+<A HREF="fhscal.html">fhscal</A>, 
+<A HREF="mlphare.html">mlphare</A>.
+</P>
+
+<H2><a name="references">REFERENCES</a></H2>
+
+<ol>
+<!-- KEEP startreferencelist -->
+<li>  Normal Probability Analysis:
+<br>  Lynne Howell and Dave Smith, <i>J.Appl. Cryst.</i> <b>25</b> 81-86 (1992)
+
+<!-- KEEP endreferencelist -->
+</ol>
+
+<H2>AUTHORS</H2>
+
+<P>Phil Evans / Eleanor Dodson / Richard Dodson </P>
+
+<H2><A NAME="examples"></A>EXAMPLES</H2>
+
+<H3>Simple unix example script found in $CEXAM/unix/runnable/</H3>
+
+<LI><A HREF="../examples/unix/runnable/scaleit.exam">scaleit.exam</A> (Example
+of derivative to native scaling) </LI>
+
+<H3>Also found combined with other programs in the example scripts ($CEXAM/unix/runnable/)</H3>
+
+<LI><A HREF="../examples/unix/runnable/rsearch.exam">rsearch.exam</A> (Use
+of scaleit in R factor search). </LI>
+
+<LI><A HREF="../examples/unix/runnable/fhscal.exam">fhscal.exam</A> (Analysis
+after Kraut scaling of derivative data.) </LI>
+
+
+<! --  .SH PROGRAM STRUCTURE -- ><! --  The main program reads in the control data, opens the input reflection -- ><! --  data file and prints the control data. It then calls the subroutine  SCINIT -- ><! --  to calculate an initial scale factor. The subroutine SCAREF  is  called  to -- ><! --  refine the scale factor parameters and the subroutine SCAPLY is  called  to -- ><! --  apply the scale factors, write the output file and output statistiscs.  The -- ><! --  functions of the more important subroutines are outlined below: -- ><! --  .SS SCINIT  -- ><! --  This subroutine reads through the input reflection data  file  and -- ><! --  collects data  to  calculate  the  scale  factor  such  that  SigmaFP**2  = -- ><! --  SigmaFPH**2. -- ><! --  .SS SCAREF -- ><! --  This subroutine  controls  the  refinement  of  the  scale  factor -- ><! --  parameters. For each cycle of the  refinement  it  performs  the  following -- ><! --  functions. -- ><! --  .PP -- ><! --  (a) Reads through the input reflection data file and sets up terms  for -- ><! --  the matrix, -- ><! --  .PP  -- ><! --  (b) Solves the equations using the subroutine EA06C to  get  the  eigen -- ><! --  values. -- ><! --  .PP  -- ><! --  (c)  Tests for convergence to see if refinement is to be  continued  or -- ><! --  not. -- ><! --  .PP  -- ><! --  (d)  Outputs details of the new scale factor parameters to the printer. -- ><! --  .SS SCAPLY -- ><! --  This subroutine again reads through the input reflection file  and -- ><! --  as each reflection is read the scale factor is applied  to  the  derivative -- ><! --  data and the reflection is written to the output reflection data file. Data -- ><! --  are also collected for the analysis of the  results.  The  subroutine  then -- ><! --  outputs the analysis tables and  calls  the  subroutine  SCATPL  to  output -- ><! --  histograms of the results where required. -- ><! --  .SS SCATPL  -- ><! --  This subroutine outputs scatter plots or  histograms  of  sets  of -- ><! --  data to the line printer. -- ><! --  .SS EA06C -- ><! --  This subroutine calculates eigen values. -- ></LI>
+
+</BODY>
+</HTML>

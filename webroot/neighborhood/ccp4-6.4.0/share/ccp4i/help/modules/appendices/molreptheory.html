@@ -1,0 +1,255 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4 Interface: MOLREP Theory (Appendix A of MOLREP README)</title>
+<link rel="stylesheet" type="text/css" href="../../ccp4idocs.css" title="CCP4i" />
+<link rev="made" href="mailto:mgwt@ysbl.york.ac.uk (Maria Turkenburg)" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta name="AUTHOR" content="Maria and Liz" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="2"><img src="../../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logotitle">MOLREP Theory</td></tr>
+</table>
+<!--<br />
+<table border="0">
+<tr><td>
+<a href="harvest.html" target="_self">
+<img border="0" src="../../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="scalechoose.html" target="_self">
+<img border="0" src="../../images/3Dprevtr.gif" alt="previous button" /></a>
+</td></tr>
+</table>-->
+
+<p>The following comes straight from Appendix A in the README from MOLREP, and can
+now also be found in the CCP4 program documentation for
+<a href="../../../../../html/molrep.html">MOLREP</a> (which may be more up-to-date).</p>
+
+<h3>Molecular replacement method</h3>
+
+<p>There are two major steps in the Molecular replacement method:
+orientation and translation search. They are performed by Rotation
+and Translation function. Both of them are correlation functions
+(or overlapping functions) between observed and calculated model Pattersons.</p>
+     
+<h4>Rotation function</h4>
+<pre>
+     ROT(R) = I<sub>rad</sub> Pobs(r) * Pcalc(R,r) dr
+</pre>
+<p>where</p>
+<table border="0">
+<tr><td><tt>R</tt></td><td>operator of rotation</td></tr>
+<tr><td><tt>I<sub>rad</sub></tt></td><td>integral inside a sphere in the centre of Patterson
+with radius=<font size="-1">rad</font></td></tr>
+<tr><td><tt>Pobs</tt></td><td>observed Patterson</td></tr>
+<tr><td><tt>Pcalc</tt></td><td>calculated Patterson for rotated (R) model</td></tr>
+</table>
+
+<h4>Translation function</h4>
+<pre>
+     TR(s)  = I<sub>cell</sub> Pobs(r) * Pcalc(s,r) dr  =
+
+            = Sum ( I Pobs(r) * Pcalc_ij_(s,r) dr) =
+              i#j                                   
+
+            = Sum TRij(s)  
+              i#j
+</pre>
+<p>where</p>
+<table border="0">
+<tr><td><tt>s</tt></td><td>vector of translation</td></tr>
+<tr><td><tt>I</tt></td><td>integral</td></tr>
+<tr><td><tt>i,j</tt></td><td>cryst. symmetry operator numbers</td></tr>
+<tr><td><tt>Pcalc_ij_(s,r)</tt></td><td>calculated Patterson for model corresponding to <tt>i</tt>th operator and
+model corresponding to <tt>j</tt>th operator</td></tr>
+<tr><td><tt>TRij(s)</tt></td><td>translation function of Pattersons <tt>Pobs(r)</tt> and <tt>Pcalc_ij_(s,r)</tt></td></tr>
+</table>
+
+<p>Translation function is the sum of translation functions for
+every pair of different cryst. symmetry operators.</p>
+
+<p>The best rotation function algorithm is the Crowther Fast Rotation
+Function which is used in the program MOLREP. It utilizes FFT. The program can compute the
+Rotation Function for three different orientations of model and average
+them. That reduces the noise of Rotation function.</p> 
+
+<p>The translation function algorithm was developed by the author and performs 
+calculations in reciprocal space using FFT. There are two major differences from
+other translation function:</p>
+<ol>
+<li>Instead of summation of translation function for two operators <tt>TRij</tt> we
+use their multiplication which results in a map with far more contrast.</li>
+<li>Finally we can multiply translation function by Packing function to
+remove peaks corresponding to incorrect solution with bad packing.</li>
+</ol>
+
+<h4>Packing function</h4>
+
+<p>Packing function is overlapping function:</p>
+<pre>    
+     P(s) = Sum ( I  Roi(r) * Roj(r) dr )
+            i#j  cell
+</pre>
+<p>where <tt>Roi(r)</tt> is the electron density of model which corresponds
+to <tt>i</tt>th cryst. symmetry operator.
+The algorithm of calculation of Packing function is similar to the one
+for translation function and performed by the same program.</p>
+
+<h4>Advanced translation function</h4>
+
+<p>The advanced Translation function is:</p>
+<pre>
+     TR(s)  = [  M  TRij(s) ] * P(s)
+                i#j
+</pre>
+<p>where <tt>M</tt> means multiplication of different <tt>TRij</tt>.</p>
+
+<h4>Secrets of success</h4>
+
+<p>Success of molecular replacement method depends on:</p>
+<ol>
+<li>quality of the model, homology, conformation</li>
+<li>quality of experimental data</li>
+<li>scaling |F|_obs and |F|_calc</li>
+<li>low resolution limit</li>
+<li>high resolution limit</li>
+</ol>
+
+<h4>Patterson scaling</h4>
+
+<p>For scaling we use a completely new strategy based on scaling of two
+Patterson maps. This method makes it possible to have a very good
+approximation for scaling problem even if only low resolution data is available
+where other methods do not work. Scaling by Patterson also is
+useful for Cross rotation function where the cell is different for the model
+and the unknown structure.</p>
+
+<h4>Low resolution cut-off (Boff)</h4>
+
+<p>Low resolution cut-off introduces systematic errors in the electron 
+density especially near the surface of the model. It is the series 
+termination effect. Instead of using the usual low resolution cut-off,
+the program multiplies the modules of structure factors by a special 
+coefficient:</p>
+<pre>
+     Fnew = Fold (1-exp(-Boff*s^2))
+</pre>
+<p>where <tt>Boff = 4resmin^2</tt>.
+<tt>Boff</tt> is called &quot;soft low resolution cut-off&quot;, which allows the removal of
+structure factors in this resolution range without introducing 
+the series termination effect.</p>
+
+<h4>The use of <em>a priori</em> knowledge of similarity and completeness of the model</h4>
+     
+<p>For low similarity the high resolution reflections are weighted down. 
+Program uses for this additional overall factor <tt>Badd</tt>:</p>
+<pre>
+     Fnew = Fold exp(-Badd*s^2)
+</pre>
+<p>Value of similarity 'SIM' can be : from 0.1 to 1.0. It directly corresponds
+to <tt>Badd</tt> ranging from <tt>(B_limit-Boverall)</tt> to <tt>(-Boverall)</tt>,
+where <tt>B_limit</tt> refers to the so-called
+'<a href="#optical_resolution" target="_self">Optical Resolution</a>'. SIM=&quot;1&quot; means normalized
+F will be used.</p>
+
+<p>For low completeness, <em>e.g.</em> when there are several molecules in the asymmetric unit,
+the contribution of low resolution reflections is weighted down.
+To manage the completeness of model, the program uses low resolution
+cut-off (<tt>Boff</tt>). Completeness of model 'COMPL' can be : from 0.2 to 1.0.
+It corresponds to <tt>Boff</tt>: from 400 to 1600.</p>
+
+<h4><a name="optical_resolution"></a>Optical Resolution</h4>
+
+<p>Optical resolution is defined as an expected minimum distance
+between two resolved peaks in the electron density map. It is
+computed from the width of the Patterson origin peak. For reference,
+see <a href="../../../../../html/molrep.html#reference2" target="_PROGDOC">MOLREP program
+documentation</a>.</p>
+
+<h3>Functions of real space searching</h3>
+
+<h4>Spherically averaged phased translation function (SAPTF)</h4>
+
+<p>SAPTF gives expected position of model in Electron density map by
+the comparison of spherically averaged density of model with locally
+spherically averaged observed density.</p>
+<pre>
+     SAPTF(s) = I<sub>rad(s)</sub> Robs(r,s) * Rcalc(r) dr
+</pre>
+<p>where</p>
+<table border="0">
+<tr><td><tt>I<sub>rad(s)</sub></tt></td><td>integral inside a sphere centred in point <tt>s</tt> of
+electron density with radius=<tt><font size="-1">rad</font></tt></td></tr>
+<tr><td><tt>Robs</tt></td><td>spherically averaged around point <tt>s</tt> observed electron density</td></tr>
+<tr><td><tt>Rcalc</tt></td><td>spherically averaged around origin of coordinate system calculated
+electron density for model</td></tr>
+</table>
+
+<h4>Phased Rotation function (PRF)</h4>
+
+<p>PRF gives the orientation of model placed in some point of Electron density.</p>
+<pre>
+     PROT(O) = I<sub>rad(s)</sub> Robs(r) * Rcalc(O,r) dr
+</pre>
+<p>where</p>
+<table border="0">
+<tr><td><tt>O</tt></td><td>operator of rotation</td></tr>
+<tr><td><tt>I<sub>rad(s)</sub></tt></td><td>integral inside a sphere centred in point <tt>s</tt> of
+electron density with radius=<tt><font size="-1">rad</font></tt></td></tr>
+<tr><td><tt>Robs</tt></td><td>observed electron density</td></tr>
+<tr><td><tt>Rcalc</tt></td><td>calculated Electron density for rotated (<tt>O</tt>) model</td></tr>
+</table>
+
+<h4>Phased Translation function (PTF)</h4>
+
+<p>Translation search in Electron density map.</p>
+<pre>
+     PTR(s)  = I<sub>cell</sub> Robs(r) * Rcalc(s,r) dr
+</pre>
+<p>where</p>
+<table border="0">
+<tr><td><tt>s</tt></td><td>vector of translation</td></tr>
+<tr><td><tt>I</tt></td><td>integral</td></tr>
+<tr><td><tt>Robs</tt></td><td>observed electron density</td></tr>
+<tr><td><tt>Rcalc(s,r)</tt></td><td>calculated electron density for model placed in the vector <tt>s</tt></td></tr>
+</table>
+
+<h4>Fitting two models</h4>
+
+<p>Fitting through Electron density. Second model
+(see <a href="../../../../../html/molrep.html#model_2" target="_PROGDOC">MODEL_2</a>) is the
+target model which is converted to electron density.
+To search the best overlapping of electron densities of models
+there are two algorithms:</p>
+<ol>
+<li>Rotation function (Patterson space) and Phased Translation
+function (Real space)</li>
+<li>All functions in real space.
+Spherically averaged phased translation function gives
+expected position for model. 
+Phased Rotation function for expected position gives orientation.
+Phased Translation function checks and refines the translation
+vector</li>
+</ol>
+
+<h4>More information</h4>
+
+<p>For more information on the MOLREP program, see
+<a href="../../../../../html/molrep.html" target="_PROGDOC">MOLREP</a>.</p>
+
+<!--
+<table border="0">
+<tr><td>
+<a href="harvest.html" target="_self">
+<img border="0" src="../../images/3Dnexttr.gif" alt="next button"></a>
+<a href="scalechoose.html" target="_self">
+<img border="0" src="../../images/3Dprevtr.gif" alt="previous button"></a>
+</td></tr>
+</table>-->
+
+</body>
+</html>

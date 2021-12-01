@@ -1,0 +1,40 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#======================================================================
+#
+# getax script
+#
+#======================================================================
+
+# Source the utils/maps_utils.tcl script for map handling
+source [SearchPath TOP utils map_utils.tcl]
+
+set MAP_CELL [GetTmpFileName -ext ext]
+if { !$MAP_TYPE } {
+	set MAP_FFT [GetTmpFileName -ext map]
+	CreateComScript fft fft_script
+	set status [Execute \
+      "[BinPath fft] HKLIN \"$HKLIN\" MAPOUT \"$MAP_FFT\"" \
+      $fft_script program_status report ]
+	ConvertMapCell $MAP_FFT $MAP_CELL
+} else {
+  	ConvertMapCell $MAPIN $MAP_CELL
+}
+
+  set MAP_AXIS [GetTmpFileName -ext map]
+  WriteComFile axis_script "AXIS X Y Z"
+  set status [Execute \
+      "[BinPath mapmask] MAPIN \"$MAP_CELL\" MAPOUT \"$MAP_AXIS\"" \
+      $axis_script program_status report ]
+
+  CreateComScript getax getax_script
+
+  set cmd "[BinPath getax] MAPIN \"$MAP_AXIS\" XYZOUT \"$XYZOUT\" MAPOUT \"$MAPOUT\""
+
+  set status [Execute "$cmd" $getax_script program_status report  ]

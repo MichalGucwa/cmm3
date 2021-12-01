@@ -1,0 +1,305 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::RSEARCH::Deprecated::Molecular Replacement::R-factor and correlation coefficient between Fcalc and Fobs:::::::: -->
+
+<H1> RSEARCH (CCP4: Deprecated Program)</H1>
+<H2> NAME</H2>
+<b>rsearch </b>
+- R-factor and correlation coefficient between Fcalc and Fobs 
+for positions of molecule within a specified grid.
+<H2> SYNOPSIS</H2>
+<b>rsearch</b>
+<b>HKLIN</b>
+<i>foo_in.mtz</i>
+[
+<b>SEARCHSAVE</b>
+<i>foo_search.tmp</i>
+] [
+<b>MAPOUT</b>
+<i>foo_rsearch.map</i>
+]
+<br>
+ [<A HREF="#keywords">Keyworded input</A>]
+<H2> <A NAME="description"></A>DESCRIPTION</H2>
+When a molecule is correctly orientated in a unit cell, but the 
+translation parameters are not known, RSEARCH calculates the R-factor 
+and correlation coefficient between calculated and observed structure 
+factors for each position of the molecule within a specified grid.
+<P> 
+You may prefer to calculate a translation function with TFFC instead
+of RSEARCH, since this is much faster.
+<P> 
+There is an option to restart RSEARCH when it runs out of time :
+a file assigned to SEARCHSAVE will record the intermediate sums for the R 
+factors.  These are updated after every 100th reflection and a note is 
+written to the log file.
+There are also options (keywords CENT and RZONE) to limit the reflections 
+used to centrics or a specified zone. 
+<H2> <A NAME="keywords"></A>KEYWORDED INPUT</H2>
+The various data control lines are identified by keywords.
+Only the first 4 characters need be given.
+Those available are :
+<blockquote>
+<A HREF="#axis"><B>AXIS</B></A>, <A HREF="#binmap"><B>BINMAP</B></A>,
+<A HREF="#bgrv"><B>BGRV</B></A>, <A HREF="#cent"><B>CENT</B></A>,
+<A HREF="#correlation"><B>CORRELATION</B></A>, <A HREF="#end"><B>END</B></A>,
+<A HREF="#fclim"><B>FCLIMIT</B></A>, <A HREF="#folim"><B>FOLIMITS</B></A>,
+<A HREF="#labin"><B>LABIN</B></A>, <A HREF="#lpmap"><B>LPMAP</B></A>,
+<A HREF="#nrfactor"><B>NRFACTOR</B></A>, <A HREF="#resolution"><B>RESOLUTION</B></A>,
+<A HREF="#restart"><B>RESTART</B></A>, <A HREF="#rzone"><B>RZONE</B></A>,
+<A HREF="#scale"><B>SCALE</B></A>, <A HREF="#symmetry"><B>SYMMETRY</B></A>,
+<A HREF="#title"><B>TITLE</B></A>, <A HREF="#xgrid"><B>XGRID</B></A>,
+<A HREF="#ygrid"><B>YGRID</B></A>, <A HREF="#zgrid"><B>ZGRID</B></A>
+</blockquote>
+<H3> <A NAME="axis"></A>AXIS </H3>
+Order of grid axes : fast, medium, slow.<br>
+At present, the program only looks at the slow (sectioning) axis.
+Possible inputs are therefore  
+<pre>                               - X Y Z
+                               - Z X Y
+                               - Y Z X 
+</pre>
+<H3> <A NAME="binmap"></A>BINMAP</H3>
+Output a map of R factors or correlation coefficients over the
+specified grid
+<H3> <A NAME="bgrv"></A>BGRV &lt;brgval&gt;</H3>
+Background R value for maps.<br>
+Default: the average R value.<br>
+The terms calculated are (background R value - grid R value).
+<H3> <A NAME="cent"></A>CENT</H3>
+By default, all reflections are included in the calculation.
+If this is set, ONLY centric reflections are selected.
+Centric zones are identified using the spacegroup operators.
+<H3><A NAME="correlation"></A>CORRELATION</H3>
+Turns ON the plotting of correlation maps
+<H3> <A NAME="fclim"></A>FCLIMIT &lt;fmaxc&gt;</H3>
+Set lower limit on FC for inclusion in R factor calculation.
+<P> 
+In low symmetry space groups such as P21, you should exclude all 
+terms where one calculated (partial) structure factor FC is very 
+small, since then the R factor will be independent of translation.
+<H3> <A NAME="folim"></A>FOLIMITS &lt;fmin&gt; &lt;fmax&gt;</H3>
+Set upper and lower limits on observed structure factors for 
+inclusion in R factor calculation (given in either order).
+<H3> <A NAME="labin"></A>LABIN &lt;program label&gt;=&lt;file label&gt;...</H3>
+Input column assignments.  The program labels are: 
+<pre>
+        H  K  L  FP  SIGFP  FC1  PC1 ... FC12  PC12  FC  PHIC
+</pre>
+FP is the observed structure factor and SIGFP its standard error. 
+FCn and PCn are the partial calculated structure factors and 
+phases for symmetry operation n.
+Known structure may be added in by defining FC and PHIC. 
+<H3> <A NAME="lpmap"></A>LPMAP</H3>
+Output a lineprinter map of R factors for all hkl and for each 
+of 5 resolution shells.
+<H3> <A NAME="nrfactor"></A>NRFACTOR &lt;nrfactor&gt;</H3>
+Number of R factors to be listed to output file.
+Default is 15; maximum is 500.
+<H3> <A NAME="resolution"></A>RESOLUTION [ &lt;resmin&gt; ] &lt;resmax&gt;</H3>
+Low and high resolution limits in either order.
+These are in Angstroms or 4(sintheta/lambda)**2 if both are &lt;1.0.
+Defaults: 1000.0  2.0
+<H3> <A NAME="restart"></A>RESTART &lt;nref&gt; &lt;ihh&gt; &lt;ikk&gt; &lt;ill&gt;</H3>
+Intermediate results will have already been written to a file assigned 
+to SEARCHSAVE.
+Calculation is restarted after the &lt;nref&gt;-th reflection;
+&lt;ihh&gt; &lt;ikk&gt; &lt;ill&gt; are the indices of the first reflection to be included.
+These 4 numbers are printed to the log file after every 100 reflections.
+<H3> <A NAME="rzone"></A>RZONE &lt;number&gt;...</H3>
+5 numbers to define a reflection zone limiting reflections included in 
+the R value calculation.
+<pre>
+To define the zone -h +k +l = 3n     input RZON    -1 1 1   3 0
+To define                 l = 2n +1  input RZON     0 0 1   2 1
+</pre>
+This keyword may be given more than once, but at present ALL conditions 
+must be obeyed simultaneously.
+<H3> <A NAME="scale"></A>SCALE &lt;scale&gt; &lt;bfact&gt;</H3>
+The scale and temperature factor to be applied to observed structure 
+factors FP.
+Defaults: 1.0 0.0.
+<br>
+FP(USED) is scale*FP(INPUT)*EXP(-bfact(SINTHETA/LAMBDA)**2).
+<br>
+It is sensible to run <A HREF="scaleit.html">SCALEIT</A> to put FP onto the same scale as one of 
+the (partial) structure factors FCn before running RSEARCH.
+The scale here should then be approximately sqrt(nsymp), where nsymp 
+is the number of primitive symmetry operators.
+<H3> <A NAME="symmetry"></A>SYMMETRY [ &lt;nspgrp&gt; | &lt;namspg&gt; ]</H3>
+Spacegroup number or name.
+You may alternatively input operators in X,Y,Z form.
+Spacegroup details are normally taken from the input MTZ file.
+<H3> <A NAME="title"></A>TITLE &lt;title&gt;</H3>
+A title to be written to the log file.
+<H3> <A NAME="grid_specifications"></A>GRID SPECIFICATIONS</H3>
+<H3> <A NAME="xgrid"><A NAME="ygrid"><A NAME="zgrid"></A>XGRID | YGRID | ZGRID &lt;min&gt; &lt;max&gt; &lt;n&gt;</H3>
+3 parameters for each of the 3 keywords: XGRID, YGRID and ZGRID.
+<P>  
+The input is complicated to allow greater flexibility in describing the 
+search volume.  
+The first 2 parameters give the range in grid points, either directly or 
+by reference to other limits given; the third, the number of grid points 
+covering the unit cell in the appropriate direction.  
+<pre>
+   For a simple rectangular box :
+    XGRID    ixmin  ixmax  nx    (3 numbers)
+    YGRID    iymin  iymax  ny    (3 numbers)
+    ZGRID    izmin  izmax  nz    (3 numbers)
+
+   For a prism, there are many options. 
+   For example :
+    XGRID    ixmin  ixmax  nx    (3 numbers)
+    YGRID   <EM>xmin</EM>  iymax  ny    (1 character string, 2 numbers) 
+(or YGRID    iymin <EM>xmax</EM>  ny )  (number, character string, number)
+(or YGRID   <EM>xmin</EM> xmax  ny )  (2 character strings, 1 number)
+    ZGRID    izmin  izmax  nz    (3 numbers)
+
+   where <EM>xmin</EM> means type the letters xmin ....
+
+   For another sort of prism :
+    XGRID    ixmin  ixmax  nx    (3 numbers)
+    YGRID   <EM>xmin</EM>  iymax  ny    (1 character string, 2 numbers)
+(or YGRID    iymin <EM>xmax</EM>  ny )  (number, character string, number)
+(or YGRID     <EM>x</EM>    <EM>x</EM>   ny )  (2 character strings, 1 number)
+    ZGRID    izmin  izmax  nz    (3 numbers)
+(or ZGRID   <EM>xmin</EM>  izmax  nz )  (character string, 2 numbers)  
+(or ZGRID    izmin <EM>xmax</EM>  nz )  (number, character string, number)
+(or ZGRID     <EM>x</EM>    <EM>x</EM>   nz )  (2 character strings, 1 number)
+(or ZGRID   <EM>ymin</EM>  izmax  nz )  (1 character string, 2 numbers)  
+(or ZGRID    izmin <EM>ymax</EM>  nz )  (number, character string, number)
+(or ZGRID     <EM>y</EM>    <EM>y</EM>   nz )  (2 character strings, 1 number)
+</pre>
+Note that maps can only be output if the grid is rectangular.
+The maximum total grid points in the search volume is 60000.
+The maximum number in any one direction is 1024.
+<H3> <A NAME="end"></A>END</H3>
+End of input.
+<H2> <A NAME="files"></A>INPUT AND OUTPUT FILES</H2>
+<pre> 
+INPUT  : MTZ Data file assigned to HKLIN
+        [File containing intermediate sums assigned to SEARCHSAVE]
+OUTPUT :[File for Binary R factor map assigned to MAPOUT]       
+
+Those in parentheses are optional.
+</pre>
+<H2> <A NAME="notes"></A>NOTES</H2>
+<H3> <A NAME="notes_memory_allocation"></A>Memory allocation</H3>
+The program allocates memory dynamically.  If the default isn't enough
+you can increase it by setting the logical name RSEARCH_NSIZE to the
+appropriate value indicated by the error message.  (It ought to
+figure this out for itself.)
+<H3> <A NAME="notes_suggested_procedure"></A>Suggested procedure leading to RSEARCH</H3>
+<ol>
+<li>
+Run <A HREF="lsqkab.html">LSQKAB</A> to rotate your search coordinates by alpha beta gamma
+obtained from rotation search.<br>
+DO NOT FORGET to change your CRYSTL and SCALE cards to those of 
+the new space group.<br>
+Remember that the rotation angles are relative to a given NCODE. 
+The SCALE matrix MUST be consistent with NCODE.<br>
+<A HREF="coordconv.html">COORDCONV</A> will generate such a matrix when it converts fractional
+coordinates to PDB format.
+<li>
+Run <A HREF="sfall.html">SFALL</A> to generate a list of h k l FC PC for all +-h +-k l
+for these coordinates in this cell.
+<li>
+Run <A HREF="cad.html">CAD</A> to collect together H K L FP SIGFP FC1 PC1 FC2 PC2 ...
+for the unique set of intensity data.
+<li>
+Run <A HREF="scaleit.html">SCALEIT</A> to scale FP to one of the FCn. 
+<li>
+Run RSEARCH
+<pre>
+#
+# *****************************************************************
+# 
+#  Run sfall to calculate structure factors
+#
+sfall 
+HKLOUT sfrkall.mtz 
+XYZIN trans_pgk.pdb 
+&lt;&lt; END-sfall                     
+TITLE SFS
+MODE  SFCALC XYZIN
+GRID  80 160 160
+RESOLUTION 20 3 
+SYMMETRY 1
+SFSGRP   1
+LABOUT   FC=FC PHIC=AC
+END
+END-sfall
+#
+# *****************************************************************
+# 
+#  Run cad to collect FP and FC's into one file.
+#  Up to this stage, can use the same procedure for TFFC & RSEARCH.
+#  No phase changes made to partial phases.
+#
+cad 
+HKLIN1 allderiv.mtz 
+HKLIN2 sfrkall.mtz 
+HKLOUT cad.mtz 
+&lt;&lt; END-cad
+RESOLUTION OVERALL 20 3
+TITLE  resolving the bacillus pgk 
+LABIN  FILE 1 E1=F  E2=SIGF
+CTYPIN FILE 1 E1=F  E2=Q 
+LABIN  FILE 2 E1=FC E2=AC
+CTYPIN FILE 2 E1=U  E2=V
+END
+END-cad
+#
+# *****************************************************************
+#  
+#  Optional step 
+#  Run scaleit to put FP onto the same scale as one of the FC's. 
+#  Remember you will need to use the resolution required for RSEARCH.
+#
+scaleit 
+HKLIN cad.mtz 
+HKLOUT cad_sc.mtz 
+&lt;&lt; END-scaleit
+TITLE Scale FP to one FCpart ready for RSEARCH
+RESOLUTION 8 4
+REFINE   isotropic
+LABIN    FP=FC1 SIGFP=FC1 FPH1=F SIGFPH1=SIGF
+CONVERGE ABS 0.0001 TOLR 0.000000001 NCYC 4
+END 
+END-scaleit
+</pre>
+</ol>
+<H2> <A NAME="examples"></A>EXAMPLES</H2>
+For previous stages to this, see 'NOTES' 
+<P> 
+<pre> 
+#  Rfactor search
+#  Input mtz hkl list of FP SIGFP FC1 PC1 FC2 PC2.....
+#  R factor requires FP scaled to FC. 
+#  Correlation coefficient should be independent of scale.
+#
+rsearch 
+HKLIN cad_sc.mtz 
+MAPOUT dav.map 
+SEARCHSAVE dav.tmp 
+&lt;&lt; END-r  
+TITLE Bacillus search in a-c plane 
+SCALE FP 1.414 0
+RESOLUTION  8 4           !  resolution limits
+FOLIMITS 10 10000000000.  !  Fobs limits
+FCLIMIT  50               !  Fc minimum
+CORRELATION 
+BINMAP                    !  binary map output
+AXIS  Y Z X             
+XGRID 0 20 40             !  grid limits 
+YGRID 0 1  1 
+ZGRID 0 40 80 
+LABIN FP=F SIGFP=SIGF FC1=FC1 PC1=AC1 FC2=FC2 PC2=AC2  
+END
+END-r
+</pre>
+<H2> AUTHOR</H2>
+Eleanor Dodson, York University
+</body></html>

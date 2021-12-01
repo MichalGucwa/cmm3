@@ -1,0 +1,282 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+
+{ [ IfSet $TITLE ] } title  $TITLE
+
+$EXCLUDE_RESOLUTION resolution low $EXCLUDE_RESOLUTION_MIN high $EXCLUDE_RESOLUTION_MAX
+
+IF { $MULTI_RUNS == 1 }
+LOOP N 1  $NRUNS
+1 run $N
+LOOP I 1  $RUN_DEFS($N)
+CASE  $RUN_MODE($N,$I)
+CASEMATCH ALL
+ - 1 all
+CASEMATCH XTALLIST
+ - 1 crystal $RUN_LIST($N,$I)
+CASEMATCH XTALRANGE
+ - 1 crystal $RUN_IMIN($N,$I) to $RUN_IMAX($N,$I)
+CASEMATCH BATCHRANGE
+ - 1  $RUN_XCLUDE($N,$I) batch $RUN_IMIN($N,$I) to $RUN_IMAX($N,$I)
+CASEMATCH BATCHLIST
+ - 1  $RUN_XCLUDE($N,$I) batch $RUN_LIST($N,$I)
+CASEMATCH RANGE
+ - 1 $RUN_XCLUDE($N,$I) range $RUN_RMIN($N,$I) to $RUN_RMAX($N,$I)
+CASEMATCH DATASET
+ - 1 dataset $RUN_DATASET($N,$I)
+ENDCASE
+ENDLOOP
+ENDLOOP
+
+$REFERENCE $REFERENCE_RUN reference
+
+LOOP N 1 $NRUNS
+LOOP I 1  $RUN_DEFS($N)
+CASE $RUN_MODE($N,$I)
+CASEMATCH RESOLUTION
+1 resolution run $N 
+- {[IfSet $RUN_RMIN($N,$I)] } low $RUN_RMIN($N,$I)
+- {[IfSet $RUN_RMAX($N,$I)] } high $RUN_RMAX($N,$I)
+CASEMATCH SDRANGE
+1 exclude run $N sdmin $RUN_RMIN($N,$I)
+- {[IfSet $RUN_RMAX($N,$I)]} sdmax $RUN_RMAX($N,$I)
+CASEMATCH ABSVALUE
+1 exclude run $N absvalue $RUN_RMIN($N,$I)
+CASEMATCH RECTANGLE
+exclude run $N rectangle $RUN_RMIN($N,$I) $RUN_RMAX($N,$I) $RUN_YMIN($N,$I) $RUN_YMAX($N,$I)
+ENDCASE
+ENDLOOP
+ENDLOOP
+ENDIF
+
+# Datasets out
+IF { !$MULTI_RUNS }
+  IF { $N_FILE_DATASETS <= 1 }
+    IF { [StringSame $OUTPUT POLISH] && [StringSame $HARVEST_MODE NOHARVEST] }
+      1 # No crystal/dataset information is required
+    ELSE
+      1 name project $HARVEST_PNAME crystal $HARVEST_XNAME dataset $HARVEST_DNAME
+    ENDIF
+  ENDIF
+  IF { $COMBINE_DATASETS }
+    1 name project $HARVEST_PNAME crystal $HARVEST_XNAME dataset $HARVEST_DNAME
+  ENDIF
+ELSE
+  LOOP I 1 $NRUNS
+    1 name run $I project $HARVEST_PNAME crystal $RUN_XNAME_OUT($I) dataset $RUN_DNAME_OUT($I)
+  ENDLOOP
+ENDIF
+
+{!$REFINE } onlymerge
+$EXCLUDE_BYSIGMA exclude sdmin $EXCLUDE_BYSIGMA_1 
+- {[IfSet $EXCLUDE_BYSIGMA_2]} sdmax $EXCLUDE_BYSIGMA_2
+$EXCLUDE_MAXIMUM exclude absmax $EXCLUDE_MAXIMUM_1
+1 exclude $EXCLUDE_EMAX 
+ - {[StringSame $EXCLUDE_EMAX EMAX]} $EXCLUDE_EMAX_EMAX
+ - {[StringSame $EXCLUDE_EMAX EPROB]} $EXCLUDE_EMAX_EPROB
+
+IF  { $EXCLUDE_RECT && $N_EXCLUDE_RECT > 0 }
+LOOP I 1 $N_EXCLUDE_RECT
+  1 EXCLUDE RECTANGLE $EXCLUDE_XMIN($I) $EXCLUDE_XMAX($I) $EXCLUDE_YMIN($I) $EXCLUDE_YMAX($I)
+ENDLOOP
+ENDIF
+
+IF { $EXCLUDE_BATCH && $N_EXCLUDE_BATCH > 0 }
+LOOP I 1 $N_EXCLUDE_BATCH
+ 1 exclude batch 
+ - { [StringSame $EXCLUDE_BATCH_DEFINE($I) LIST] } $EXCLUDE_BATCH_LIST($I)
+ - { [StringSame $EXCLUDE_BATCH_DEFINE($I) RANGE] } $EXCLUDE_BATCH_FIRST($I) to $EXCLUDE_BATCH_LAST($I)
+ENDLOOP
+ENDIF
+
+IF { $EXCLUDE_DATASET && $N_EXCLUDE_DATASETS > 0 }
+LOOP I 1 $N_EXCLUDE_DATASETS
+  1 exclude dataset $EXCLUDE_DATASET_NAME($I)
+ENDLOOP
+ENDIF
+
+IF { !$FINAL_DIF_IS }
+  1 partials
+ - $IS_CHECK check | nocheck
+ - $IS_TEST test $IS_TEST_MIN $IS_TEST_MAX | notest
+ - $IS_CORRECT correct $IS_CORRECT_LIMIT
+ - $IS_GAP gap | nogap
+ - { [IfSet $IS_MAXWIDTH]}  maxwidth $IS_MAXWIDTH
+ENDIF
+
+1 intensities $IS_MODE
+ - $SCALE_ANOMALOUS  anomalous
+ - 1 $IS_PARTIALS
+ -- { [StringSame $IS_PARTIALS "SCALE_PARTIALS" ]} $IS_PARTIALS_MINFRAC
+IF { ![StringSame $IS_PARTIALS "FULLS" ] && $FINAL_DIF_IS  }
+ - $IS_CHECK check | nocheck
+ - $IS_TEST test $IS_TEST_MIN $IS_TEST_MAX | notest
+ - $IS_CORRECT correct $IS_CORRECT_LIMIT
+ - $IS_GAP gap | nogap
+ - { [IfSet $IS_MAXWIDTH]}  maxwidth $IS_MAXWIDTH
+ENDIF
+
+1 final $FINAL_PARTIALS
+ - { [StringSame $FINAL_PARTIALS "SCALE_PARTIALS" ]}  $FINAL_PARTIALS_MINFRAC
+
+IF { ![ StringSame $FINAL_PARTIALS "FULLS" ] && $FINAL_DIF_IS }
+ - $FINAL_CHECK check | nocheck
+ - $FINAL_TEST test $FINAL_TEST_MIN $FINAL_TEST_MAX | notest
+ - $FINAL_CORRECT correct $FINAL_CORRECT_LIMIT
+ - $FINAL_GAP  gap | nogap
+ - {[IfSet $FINAL_MAXWIDTH]} maxwidth $FINAL_MAXWIDTH
+ENDIF
+
+LOOP N 1 $NSCALES
+1 scales
+ - { ![regexp ALL $SCALES_RUN($N)] }  $SCALES_RUN($N)
+
+CASE $SCALES_MODE($N)
+CASEMATCH CONSTANT
+ - 1 $SCALES_MODE($N)
+CASEMATCH BATCH
+ - 1 $SCALES_MODE($N)
+CASEMATCH SLOPE
+ - 1 $SCALES_MODE($N)
+CASEMATCH DETECTOR
+ - 1 detector $SCALES_DETECTOR($N) $SCALES_DETECTOR_NX($N) $SCALES_DETECTOR_NY($N)
+CASEMATCH ROTATION
+ - 1 rotation $SCALES_ROTATION($N) $SCALES_ROTATION_ROT($N)
+CASEMATCH ROT&DET
+ - 1 detector $SCALES_DETECTOR($N) $SCALES_DETECTOR_NX($N) $SCALES_DETECTOR_NY($N)
+ - 1 rotation $SCALES_ROTATION($N) $SCALES_ROTATION_ROT($N)
+CASEMATCH SECONDARY
+ - 1 rotation $SCALES_ROTATION($N) $SCALES_ROTATION_ROT($N)
+ - 1 secondary $SECONDARY_LMAX($N) 
+CASEMATCH ABSORPTION
+ - 1 rotation $SCALES_ROTATION($N) $SCALES_ROTATION_ROT($N)
+ - 1 absorption $SECONDARY_LMAX($N) 
+ -- {[IfSet $SURFACE_POLE($N)]} pole $SURFACE_POLE($N)
+CASEMATCH SURFACE
+ - 1 rotation $SCALES_ROTATION($N) $SCALES_ROTATION_ROT($N)
+ - 1 surface $SURFACE_LMAX($N)
+ -- {[IfSet $SURFACE_POLE($N)]} pole $SURFACE_POLE($N)
+ENDCASE
+
+ - 1 bfactor $SCALES_BFACTOR($N)
+ -- { ![StringSame $SCALES_BFACTOR($N) OFF] && ![StringSame $SCALES_BROTATION($N) "NO_TIME" ] } $SCALES_BROTATION($N) $SCALES_BFACTOR_TIME($N)
+ - $SCALES_TAILS($N) tails $TAILS_V($N) $TAILS_A0($N) $TAILS_A1($N)
+
+ENDLOOP
+
+$TAILS_FIX_V FIX V | UNFIX V
+$TAILS_FIX_A0 FIX A0 | UNFIX A0
+$TAILS_FIX_A1 FIX A1 | UNFIX A1
+IF { $N_TAIL_LINK  > 0 } 
+  LOOP N 1 $N_TAIL_LINK 
+    1 $TAIL_LINK($N) 
+     - { [StringSame $TAIL_RUN1($N) "ALL"] } all | $TAIL_RUN1($N) to $TAIL_RUN2($N)
+  ENDLOOP
+ENDIF
+
+IF { $N_SURFACE_LINK  > 0 }
+  LOOP N 1 $N_SURFACE_LINK
+    1 $SURFACE_LINK($N)
+     - { [StringSame $SURFACE_RUN1($N) "ALL"] } all | $SURFACE_RUN1($N) to $SURFACE_RUN2($N)
+  ENDLOOP
+ENDIF
+
+CASE $INITIAL_MODE
+CASEMATCH RUN
+1 initial
+  LOOP N 1 $NRUNS
+   - 1 run $N $INITIAL_VALUE($N)
+  ENDLOOP
+CASEMATCH MEAN
+ 1 initial $INITIAL_MODE
+CASEMATCH UNITY
+ 1 initial $INITIAL_MODE
+CASEMATCH RESTORE
+ 1 restore $RESTORE_FILE
+ENDCASE
+
+{ $TIE_ROTATION } tie rotation $TIE_ROTATION_SD
+{ $TIE_DETECTOR } tie detector $TIE_DETECTOR_SD
+{ $TIE_SURFACE } tie surface $TIE_SURFACE_SD
+{ $TIE_BFACTOR } tie bfactor $TIE_BFACTOR_SD
+{ $TIE_A1 } tie a1 $TIE_A1_SD
+
+IF { $SMOOTHING || $PROB_LIMIT }
+1 smoothing
+ - $SMOOTHING time $SMOOTHING_TIME rotation $SMOOTHING_ROTATION detector $SMOOTHING_DETECTOR
+ - $PROB_LIMIT prob_limit $PROB_LIMIT_TIME $PROB_LIMIT_DETECTOR $PROB_LIMIT_ROTATION
+ENDIF
+
+1 cycles $CYCLES converge $CONVERGE reject $REJECT
+ - $CYCLE_UNIT_WEIGHT weight unit
+$SKIP skip $SKIP_NREFLECTIONS for $SKIP_NCYCLES
+{ [IfSet $FILTER_DAMP ] } filter 1.0e-6  $FILTER_DAMP
+
+$REJECT_CRITERIA reject scale
+ - $REJECT_BYRUN byrun
+ - 1 $REJECT_SDMAX $REJECT_SDMAX2
+$REJECT_CRITERIA reject merge
+ - $MERGE_REJECT_BYRUN  byrun
+ - 1 $MERGE_REJECT_SDMAX $MERGE_REJECT_SDMAX2
+ - 1 all $MERGE_REJECT_ALL
+
+$ANOMALOUS_ON anomalous on 
+- $IF_ANOMALOUS_MATCH  match $ANOMALOUS_MATCH
+ -- {[StringSame $ANOMALOUS_MATCH SYMMETRY]} $ANOMALOUS_MATCH_SYM
+ -- {[IfSet $ANOMALOUS_PHIDIF] } phidif $ANOMALOUS_PHIDIF
+
+1 output $OUTPUT
+CASE $OUTPUT
+CASEMATCH UNMERGED
+ - { !$OUTPUT_REDUCED }  original
+ - $UNMERGED_TOGETHER together
+CASEMATCH SEPARATE
+ - $OUTPUT_REFERENCE reference | noreference
+ - $OUTPUT_OUTLIERS omit outliers
+ LOOP N 1 $NRUNS
+ - $OUTPUT_PARTIALS($N) omit partials run $N
+ ENDLOOP
+CASEMATCH POSTREF
+ - $OUTPUT_REFERENCE reference | noreference
+ - $OUTPUT_OUTLIERS omit outliers
+ LOOP N 1 $NRUNS
+ - $OUTPUT_PARTIALS($N) omit partials run $N
+ ENDLOOP
+CASEMATCH POLISH
+ - 1 UNMERGED
+ENDCASE
+
+$USE_CORNERCORRECT CORNERCORRECT $CORNERCORRECT_FILE
+
+IF $SD_CORRECT 
+LOOP N 1 $NSDS
+1 SDCORRECTION
+ - { ![StringSame $SD_RUNS($N) ALL ] } $SD_RUNS($N)
+ - $SD_ADJUST($N) adjust | noadjust
+ - $SD_REFINE($N) refine | norefine
+ - 1 $SD_APPLY($N) 
+ - { [IfSet $SD_FAC($N) ] } $SD_FAC($N)
+ -- { [IfSet $SD_B($N) ] } $SD_B($N) 
+ -- 1 $SD_ADD($N)
+ENDLOOP
+ELSE
+1 sdcorrection noadjust
+ENDIF
+
+1 print $PRINT $OVERLAP
+{ !$INSCALE } inscale off
+
+IF { $ACCEPT_OVERLOADS || $ACCEPT_PKRATIO }
+  1 ACCEPT
+  - $ACCEPT_OVERLOADS OVERLOADS
+  - $ACCEPT_PKRATIO PKRATIO $PKRATIO
+ENDIF
+
+AT { [FileJoin [GetEnvPath CCP4I_TOP] templates harvest.com ] }

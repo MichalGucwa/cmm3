@@ -1,0 +1,50 @@
+#!/bin/sh
+
+if test ! -f $CCP4_SCR/toxd_phase_mir_pirate1.mtz; then
+  echo '! Run cpirate.exam first' 1>&2
+  exit 1
+fi
+
+##############################################################
+#  example 1
+#  Reduced set of options
+#
+cbuccaneer -stdin << eof
+mtzin-ref $CLIBD/reference_structures/reference-1tqw.mtz
+pdbin-ref $CLIBD/reference_structures/reference-1tqw.pdb
+mtzin-wrk $CCP4_SCR/toxd_phase_mir_pirate1.mtz
+pdbout-wrk $CCP4_SCR/toxd_phase_mir.pdb
+colin-wrk-fo /NATIVE/NATIVE/[FTOXD3,SIGFTOXD3]
+colin-wrk-hl /*/*/[pirate.ABCD.A,pirate.ABCD.B,pirate.ABCD.C,pirate.ABCD.D]
+find
+grow
+join
+link
+prune
+eof
+
+#  remove the next line if you require all the examples
+exit
+
+##############################################################
+#  example 2
+#  use the sequence for sequencing (proper use)
+#
+cbuccaneer -stdin << eof
+mtzin-ref $CLIBD/reference_structures/reference-1tqw.mtz
+pdbin-ref $CLIBD/reference_structures/reference-1tqw.pdb
+mtzin-wrk $CCP4_SCR/toxd_phase_mir_pirate1.mtz
+pdbout-wrk $CCP4_SCR/toxd_phase_mir.pdb
+seqin-wrk $CEXAM/toxd/toxd.seq
+colin-wrk-fo /NATIVE/NATIVE/[FTOXD3,SIGFTOXD3]
+colin-wrk-hl /*/*/[pirate.ABCD.A,pirate.ABCD.B,pirate.ABCD.C,pirate.ABCD.D]
+find
+grow
+join
+link
+sequence
+correct
+filter
+prune
+rebuild
+eof

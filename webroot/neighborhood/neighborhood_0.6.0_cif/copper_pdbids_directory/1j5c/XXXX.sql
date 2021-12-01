@@ -1,0 +1,1 @@
+INSERT INTO usages (sessionid,usagetype,test_data,crystal_contact,pdbfileid,filename,ip,browser_id) VALUES ('1j5c',2,FALSE,FALSE,1867,'/var/www/html/csgid/app/webroot/neighborhood_temp/1j5c/pdb1j5c.ent','84.75.178.124',0);

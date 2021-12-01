@@ -1,0 +1,182 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::MTZMNF::Supported::MTZ manipulations / conversions::Identify missing data entries in an MTZ file and replace with a Missing Number Flag (MNF):::::::: -->
+
+<H1> MTZMNF (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>mtzmnf </b>
+- Identify missing data entries in an MTZ file and replace with a Missing Number Flag (MNF).
+<H2> SYNOPSIS</H2>
+<b>mtzmnf  hklin</b>
+<i>foo_in.mtz </i>
+<b> hklout </b>
+<i>foo_out.mtz</i>
+<br>
+ [<A HREF="#keywords">Keyworded input</A>]
+<H2> <A NAME="description"></A>DESCRIPTION</H2>
+In a typical series of diffraction experiments, not all Bragg
+reflexions for a given resolution range are in fact recorded. Hence,
+after <A HREF="truncate.html">TRUNCATE</A> some reflexion data records may be entirely
+missing from the MTZ file, although the reflexion indices lie within
+the measured resolution range. It is strongly recommended that index
+sets are made complete within the desired resolution range - a
+script to do this is provided in $CETC/uniqueify. The MTZ
+file will then contain records where there are indices but no measured
+data. This means that it is easy to estimate completeness and later programs
+can `restore' values if possible. Furthermore, a particular
+reflexion may be recorded for the native protein but not for a
+derivative, and the corresponding combined reflexion data record
+should indicate `missing data' for the derivative.
+<P> 
+To-date, missing data has been indicated in a variety of ways.
+For example, a zero standard deviation is taken to mean that the
+corresponding datum (<EM>e.g.</EM> structure factor amplitude) is missing.
+In all cases, however, the indicator is a number upon which
+arithmetic operations can (erroneously) be performed. This convention
+has now been discarded in favour of representing missing data by
+Missing Number Flags (MNF), which by default take the value
+of an IEEE NaN or VMS Rop. All relevant
+programs check for the presence of MNFs in input MTZ
+files, and take appropriate action. In particular, when
+displaying MTZ files using the program <A HREF="mtzdump.html">MTZDUMP</A> (or the
+script $CETC/mtzdmp) missing data can be identified and 
+are subsequently represented in the output in an unambiguous 
+manner.
+<P> 
+All programs will now output MNFs where appropriate.
+Where such values occur in an input MTZ file, they will
+be carried through to the output. Alternatively, MNFs
+may be generated when for some reason no value can
+be calculated for a particular reflection and column.
+<P> 
+The program MTZMNF has been provided to convert 
+old-style MTZ files to the new convention. The program relies 
+on being able to identify `missing data', and to this end
+a number of cases are checked. These cases are explained 
+in detail in the section <A HREF="#function">PROGRAM FUNCTION</A> below.
+When a missing datum is identified, the corresponding
+entry in the MTZ file is replaced by a MNF. The value of
+the MNF is taken from the header of the MTZ file, and will
+typically be a NaN or Rop. For old MTZ files, which have no MNF
+specified in the header, the MNF is automatically set to
+NaN or Rop.
+<P> 
+As a safety feature, only columns which are explicitly
+specified with the <A HREF="#labin">LABIN</A> keyword are converted. Columns which
+are not specified via the LABIN keyword are written unchanged
+to HKLOUT. Old-style MTZ files may still be used with all CCP4 
+programs, and old-style checks on missing data remain
+in place (occurring after the check for a MNF).
+However, new data sets, completed with $CETC/uniqueify
+and combined with CAD, should automatically
+include the necessary MNF entries.
+<H2> <A NAME="keywords"></A>KEYWORDED INPUT</H2>
+The various data control lines are identified by keywords,
+those available being:
+<blockquote>
+<A HREF="#end"><B>END</B></A>, <A HREF="#labin"><B>LABIN</B></A>(compulsory),
+<A HREF="#title"><B>TITLE</B></A>
+</blockquote>
+<H3> <A NAME="labin"></A>LABIN &lt;program label&gt;=&lt;file label&gt;</H3>
+(Compulsory.)<br>
+A line giving the labels of the input columns from HKLIN
+to be converted. Only the columns specified will be
+converted to the MNF format; the remainder are output
+unchanged. The allowed program labels 
+are Fi SIGFi Di SIGDi (i=1,20), FCi PHICi (i=1,5),
+Ii SIGIi (i=1,5), PHIBi FOMi HLAi HLBi HLCi HLDi (i=1,5).
+The numbering used must be consistent. In particular, 
+if Di and SIGDi are specified then Fi and SIGFi must
+also be specified, and must refer to the structure factor
+amplitude associated with the anomalous difference data,
+see <A HREF="#examples">example</A> below. Futhermore Fi/SIGFi, Di/SIGDi,
+FCi/PHICi, Ii/SIGIi and PHIBi/FOMi must be specified
+in pairs, <EM>e.g.</EM> it is an error to specify F1 but not
+SIGF1. Columns for which an appropriate program label is
+not supplied by the program cannot be converted. This is usually 
+because an appropriate conversion protocol does not exist.
+<br>
+Note: The conversion of FCi/PHICi columns may in some
+cases be dangerous - see the section <A HREF="#function">PROGRAM FUNCTION</A> below.
+<H3> <A NAME="title"></A>TITLE &lt;title&gt;</H3>
+Title to be used in output log file and in output hkl file.
+<H3> <A NAME="end"></A>END</H3>
+Terminate input.
+<H2> <A NAME="files"></A>INPUT AND OUTPUT FILES</H2>
+The input files are:
+<ul>
+<li>
+The control data file.
+<li>
+Reflection data file in MTZ format, assigned to HKLIN.
+</ul>
+<P> 
+The output file is a reflection data file in MTZ format.
+<H2> <A NAME="output"></A>PRINTER OUTPUT</H2>
+The printer output first gives details taken from the
+input control data. Then header information from the input
+MTZ file is echoed. Finally, a summary of the changes
+made, <EM>i.e.</EM> the number of extra MNFs written to each column
+specified in <A HREF="#labin">LABIN</A>, is given.
+<H2> <A NAME="function"></A>PROGRAM FUNCTION</H2>
+The specified columns of HKLIN are assumed to fall into the 
+following groups: (1) Fi, SIGFi together with Di, SIGDi
+if present; (2) FCi, PHICi; (3) Ii, SIGIi; (4) PHIBi, FOMi
+together with HLAi, HLBi, HLCi, HLDi if present. For each
+reflexion, each specified column is first checked to see if 
+a MNF is already present. If a MNF is found for one
+member of a group, then all remaining members of that
+group are assumed to be missing and are replaced by
+MNF, with the exception that a missing Di/SIGDi does
+not imply missing Fi/SIGFi. Next, an attempt is made
+to identify `missing data' in the specified columns with the 
+following tests:
+<ol>
+<li>
+If SIGF = 0.0 then SIGF and the corresponding F
+(and D/SIGD if present) are replaced by MNFs.
+<li>
+If SIGD = 0.0 and the reflection is acentric 
+then SIGD and the corresponding D are replaced by MNFs.
+However, if the reflection is centric
+then SIGD and the corresponding D are not replaced.
+<li>
+If the calculated structure factor FC = 0.0 
+then FC and PHIC are replaced by MNFs.
+WARNING: this situation is likely to be rare and
+may even be dangerous! In exceptional cases, NCS
+may allow a legitimate value of 0.0 to be calculated
+for FC. On the other hand, FC = 0.0 may indicate use
+of the wrong space group. Finally, low precision data
+may cause a small but non-zero value of FC to be
+confused with 0.0. The latter should not occur with
+output from CCP4 programs, but may occur if FC data
+is imported.
+<li>
+If SIGI = 0.0 then SIGI and the corresponding I are replaced by MNFs.
+<li>
+If the weight FOM = 0.0 then PHIB, FOM and the 
+corresponding Hendrickson-Lattman coefficients HLA, HLB, 
+HLC, HLD (if present) are replaced by MNFs.
+</ol>
+<H2> <A NAME="examples"></A>EXAMPLES</H2>
+<pre>
+    mtzmnf hklin $CEXAM/toxd/toxd_old.mtz hklout $CCP4_SCR/toxd_mnf.mtz 
+    &lt;&lt;eof
+    TITLE testing
+    LABI F1=FTOXD3 SIGF1=SIGFTOXD3 -
+        D2=ANAU20 SIGD2=SIGANAU20 -
+        F2=FAU20  SIGF2=SIGFAU20 -
+        F3=FMM11  SIGF3=SIGFMM11 -
+        F4=FI100  SIGF4=SIGFI100
+    END
+    eof
+</pre>
+<H2> AUTHORS</H2>
+Martyn Winn, Daresbury
+<P> 
+Eleanor Dodson, York University
+
+</body></html>

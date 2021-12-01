@@ -1,0 +1,209 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#     
+#     Extended by Nicholas Furnham 2007 for RAPPER     
+#
+#===========================================================================
+#
+# rapper.script
+#
+#===========================================================================
+
+
+#set up command line 
+
+set cmd "[BinPath rapper]"
+
+set rapperdatadir [FileJoin [GetEnvPath CCP4] share rapper]
+set paramsfile [FileJoin [GetEnvPath CCP4] share rapper params.xml]
+set dirout [GetCurrentProjectDir]
+
+if { $BUILD_TYPE == "MODEL_LOOP_BENCHMARK" } {
+   append cmd " $paramsfile model-loops-benchmark --pdb "
+}
+if { $BUILD_TYPE == "MODEL_LOOP" } {
+   append cmd " $paramsfile model-loops --pdb "
+}
+if [ regexp MODEL_CATRACE|MODEL_BADFIT $BUILD_TYPE ] {
+   append cmd " $paramsfile ca-trace --pdb "
+}
+append cmd "  \"$XYZIN\""
+append cmd " --rapper-dir \"$rapperdatadir\""
+
+if { $BUILD_TYPE == "MODEL_LOOP" } {
+   append cmd " --seq $SEQ "
+}
+
+if { $MAP_TYPE == "WITH" } {
+   append cmd " --map "
+   append cmd "  \"$MAPIN\""
+}
+
+if {[ regexp PART $CATRACE_TYPE ] && ![regexp MODEL_BADFIT $BUILD_TYPE]} {
+   append cmd " --start"
+   append cmd "  \"$RES_START\""
+   append cmd " --stop"
+   append cmd "  \"$RES_STOP\""
+   append cmd " --chain-id"
+   append cmd "  \"$CHAIN_ID\""
+}
+
+append cmd " --models"
+append cmd "  \"$MODEL_NUM\""
+
+if { $MAP_TYPE == "WITH"  } {
+   append cmd " --cryst-d-high"
+   append cmd "  \"$RESOLUTION\""
+   append cmd " --edm-fit true"
+   append cmd " --chi-squared-electron-density-scoring true "
+   ## other args
+   if $EDM_FILTERS {
+      append cmd " --use-edm-filters true "
+   }
+   if $RES_OPT {
+   append cmd " --restraints-are-pass-optional true "
+   }  
+}
+
+append cmd " --use-CCP4i-file-name true"
+append cmd " --ccp4i-file-name"
+## need to have the name minus root path and .pdb extension
+set root [ SetOutputFileRoot ]
+append cmd "  \"$root\""
+
+append cmd " --runs-dir"
+append cmd " \"$dirout\""
+
+##main chain args
+if { $MC_RES || [ regexp BENCHMARK $BUILD_TYPE] }  {
+   append cmd " --enforce-mainchain-restraints true"
+   append cmd " --mainchain-restraint-threshold"
+   append cmd "  \"$MC_RAD\""
+}
+
+##side chain args
+if $SC_BUILD {
+  append cmd " --sidechain-mode smart"
+  append cmd " --sidechain-radius-reduction 0.5"
+
+  if { $SC_RES || [ regexp BENCHMARK $BUILD_TYPE] } {
+      append cmd " --enforce-sidechain-centroid-restraints true"
+      append cmd " --sidechain-centroid-restraint-threshold"
+      append cmd "  \"$SC_RAD\""
+  }
+  if [ regexp RICHARDSON $ROTOMER_LIB ] {
+	append cmd " --sidechain-library RAPPER-DIR/data/richardson.lib "
+  } elseif [ regexp SCL1 $ROTOMER_LIB ] {
+	append cmd " --sidechain-library RAPPER-DIR/data/scl-B30-occ1.0-rmsd1.0-chi60.pdb "	
+  } elseif [ regexp SCL2 $ROTOMER_LIB ] {
+       append cmd " --sidechain-library RAPPER-DIR/data/scl-B30-occ1.0-rmsd0.5-chi60.pdb "	
+  } elseif [ regexp SCL2 $ROTOMER_LIB ] {
+       append cmd " --sidechain-library RAPPER-DIR/data/scl-B30-occ1.0-rmsd0.2-chi60.pdb "	
+  }	
+  
+}
+
+## rebuild poor fit regions args
+if [ regexp MODEL_BADFIT $BUILD_TYPE ] {
+   append cmd " --edm-rebuild-poor-regions true "
+   append cmd " --divide-and-conquer false "
+   append cmd " --divide-and-conquer-ignore-chain-breaks true "
+   append cmd " --default-mainchain-b-factor 20.0 --default-sidechain-b-factor 30.0 --models-get-native-bfactors false "
+   append cmd " --error-for-no-models false --fix-mislabeled-atoms false --write-user-remarks false "
+   append cmd " --edm-poor-region-threshold "
+   append cmd " \"$EDM_POOR_TH\" "
+   append cmd " --edm-poor-region-buffer-size "
+   append cmd " \"$EDM_BUFF_SIZE\" "
+}
+if $CONTACT_FILTERS {
+   append cmd " --use-contact-filters true "
+}
+
+if $ANCHOR_OPT {
+  append cmd " --strict-anchors true "
+}
+if $ANCHOR_OPT2 {
+  append cmd " --enforce-strict-anchor-geometry true "
+}
+if $MC_SIGMA_OPT {
+   append cmd " --enforce-mainchain-min-sigma-restraints true"
+   append cmd " --edm-mainchain-min-sigma "
+   append cmd " \"$MC_SIGMA\" "
+}
+if $SC_SIGMA_OPT {
+   append cmd " --enforce-sidechain-min-sigma-restraints true"
+   append cmd " --edm-sidechain-min-sigma "
+   append cmd " \"$SC_SIGMA\" "
+}
+if $EDM_OPT { 
+   append cmd " --optional-edm-mainchain-restraints true "
+}
+
+CreateComScript rapper rapper_script
+
+# Run RAPPER
+set status [ Execute $cmd $rapper_script program_status report ]
+
+# collate together the output files
+set outfiles AddOutputFile
+if [ regexp MODEL_CATRACE $BUILD_TYPE ] {
+   set file1 "\$root\-trace.pdb"
+   set file7 "\$root\-multitrace.pdb"
+} else {
+  set file1 "\$root\-loop.pdb"
+  set file7 "\$root\-multiloop.pdb"
+}
+
+set file3 "\$root\-joined.pdb"
+set file2 "\$root\-framework.pdb"
+set file4 "\$root\-benchmark.dat"
+set file5 "\$root\-models.dat"
+set file6 "\$root\-native.pdb"
+set file7 "\$root\-multiloop.pdb"
+
+append outfiles " $file1 PROJECT"
+append outfiles " $file2 PROJECT"
+
+if [ regexp MODEL_LOOP|MODEL_LOOP_BENCHMARK|MODEL_BADFIT $BUILD_TYPE ] {
+   append outfiles " $file3 PROJECT"
+}
+append outfiles " $file4 PROJECT"
+append outfiles " $file5 PROJECT"
+append outfiles " $file6 PROJECT"
+append outfiles " $file7 PROJECT"
+append outfiles " $XYZOUT PROJECT" 
+
+# Run RAPPER to join loop back to framework and out put to defined pdb file
+# Also need to sort out multimodel files join - FIX ME
+set cmd2 "[BinPath rapper]"
+append cmd2 " $paramsfile joinpdb "
+append cmd2 " --pdb2 \"$root\-loop.pdb\" "
+append cmd2 " --pdb  \"$root\-framework.pdb\" "
+append cmd2 " --pdb-out \"$root\-joined.pdb\" "
+append cmd2 " --rapper-dir \"$rapperdatadir\""
+
+# Run RAPPER
+if [ regexp MODEL_LOOP|MODEL_LOOP_BENCHMARK|MODEL_BADFIT $BUILD_TYPE ] {
+   WriteToLog " *** Joining modelled loops back to framework structure *** \n"
+   set status [Execute $cmd2 {} program_status report]
+
+   #Copy joined file to named output file
+   CopyFile "$root\-joined.pdb" $XYZOUT
+} else {
+  if { [ regexp PART $CATRACE_TYPE ] && $BUILD_TYPE == "MODEL_CATRACE"  } {
+     WriteToLog " *** Joining modelled loops back to framework structure *** \n"
+   set status [Execute $cmd2 {} program_status report]
+
+   #Copy joined file to named output file
+   CopyFile "$root\-joined.pdb" $XYZOUT
+   }
+  MoveFile "$root\-loop.pdb" "$root\-trace.pdb"
+  MoveFile "$root\-multiloop.pdb" "$root\-multitrace.pdb"
+}
+
+eval  "$outfiles"

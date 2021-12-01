@@ -1,0 +1,538 @@
+<!DOCTYPE doctype PUBLIC "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <title>CCP4 Program Suite : oasis-2006</title>
+</head>
+<body>
+<!-- ::INDEX_INFO::OASIS::Supported::Multiple Isomorphous Replacement,MULTIWAVELENGTH ANOMALOUS DISPERSION::A program for breaking phase ambiguity in OAS or SIR:::::::: -->
+<h1>
+OASIS (CCP4: Supported Program)</h1>
+                                                            
+<h2> NAME</h2>
+<b>oasis</b> - a direct-methods program for SAD/SIR phasing and 
+                 reciprocal-space fragment extension                               
+<h2> SYNOPSIS</h2>
+     <b>oasis HKLIN</b><i> foo_in.mtz </i><b>HKLOUT</b><i> 
+      foo_out.mtz</i>        [<b>XYZIN</b> <i>foo_in.pdb</i>]<br>
+                             [<a href="#keywords">Keyworded input</a>]
+<br>
+<br>
+<h2>CONTENTS</h2>
+<ol>
+                 <li><a href="#description">DESCRIPTION</a></li>
+                 <li><a href="#files">INPUT AND OUTPUT FILES</a></li>
+                 <li><a href="#keywords">KEYWORDED INPUT</a></li>
+                 <li><a href="#examples">EXAMPLES</a></li>
+                 <li><a href="#authors">AUTHORS</a></li>
+                 <li><a href="#references">REFERENCES</a></li>
+</ol>
+<br>                                                          
+<h2> <a name="description"></a>DESCRIPTION</h2>
+OASIS-2006 is a computer program for <i>ab initio</i> SAD/SIR phasing and 
+reciprocal-space fragment extension. The phase problem is reduced to a sign 
+problem once the anomalous-scatterer or the heavy-atom substitution sites are 
+located. The sign problem is then solved by a direct method. OASIS-2006 also 
+performs reciprocal-space fragment extension <b>with</b> or <b>without</b> 
+SAD/SIR information. This is particularly useful when the total contribution of 
+known fragments is not large enough for Fourier recycling.                            
+<h2> <a name="files"></a>INPUT AND OUTPUT FILES</h2>
+                               
+<blockquote>HKLIN                                                              
+<blockquote>Input data file (CCP4 mtz format).</blockquote>                
+XYZIN (optional)
+<br>                                                               
+<blockquote>This is a .pdb file for providing partial structure information, which 
+is usually obtained from automatic model building programs. The file should contain 
+CRYST and SCALE information at the beginning. Dummy atoms will be rejected in 
+subsequent processing.<br>
+</blockquote>
+FRCIN (optional)
+<br>                                                               
+<blockquote>This file contains partial structure information extracted from a *.pdb file 
+using the script <i>pdb2frc.csh</i>. Atomic positional parameters are converted to fractional 
+coordinates. Dummy atoms will be reserved and assigned as carbon atoms.
+<br>
+</blockquote>
+</blockquote>
+
+
+<blockquote>HKLOUT</blockquote>
+<blockquote>                                                
+<dl>
+    <dd> Output data file (CCP4 mtz format).</dd>
+</dl>
+</blockquote>
+</blockquote>                                                            
+<h2> <a name="keywords"></a>KEYWORDED INPUT</h2>
+                                                                  
+<p>The possible keywords are:</p>
+<blockquote>
+<b><a href="#tit">TIT</a>,</b> 
+<b><a href="#running_mode">SAD/SIR/DMR</a></b>,
+<b><a href="#labin">LABIN</a></b>,
+<b><a href="#con">CON</a></b>,
+<b><a href="#cos">COS</a></b>, 
+<b><a href="#fom">FOM</a></b>,
+<b><a href="#aoe">AOE</a></b>,
+<b><a href="#kmi">KMI</a></b>,
+<b><a href="#cyc">CYC</a></b>,  
+<b><a href="#ano">ANO</a></b>,
+<b><a href="#pos">POS</a></b>, 
+<b><a href="#fra">FRA</a></b>,
+<b><a href="#nha">NHA</a></b>, 
+<b><a href="#sed">SED</a></b>,
+<b><a href="#lim">LIM</a></b>
+</blockquote>
+<br>                                              
+<h3> </h3>
+                             
+<h3><a name="tit"></a>TIT &lt;title string&gt;</h3>
+(optional)<br>
+This keyword creates a job-title string, which consists of up to 80 characters.<br>
+<br>
+
+<h3><a name="running_mode"></a>SAD/SIR/DMR</h3>
+(compulsory)<br>
+This specifies the calculation mode:</br>
+<blockquote>
+  <dl compact="compact">
+      <dt><a name="sad"></a><b>SAD</b></dt>
+  </dl>
+</blockquote>
+<blockquote>
+<blockquote>
+  <dl>
+      <dt><i>Ab initio</i> phasing or fragment extension with SAD data</dt>
+  </dl>
+</blockquote>
+</blockquote>
+<blockquote>
+  <dl compact="compact">
+      <dt><a name="sir"></a><b>SIR</b></dt>
+  </dl>
+</blockquote>
+<blockquote>
+<blockquote>
+  <dl>
+      <dt><i>Ab initio</i> phasing or fragment extension with SIR data</dt>
+  </dl>
+</blockquote>
+</blockquote>
+<blockquote>
+  <dl compact="compact">
+      <dt><a name="dmr"></a><b>DMR</b></dt>
+  </dl>
+</blockquote>
+<blockquote>
+<blockquote>
+  <dl>
+      <dt>Fragment extension <b>without</b> SAD/SIR information. 
+      This can be used as <b>D</b>irect-method <b>MR</b>-model completion 
+      with native data in the absence of SAD signals.</dt>
+  </dl>
+</blockquote>
+</blockquote>
+<h3><a name="labin"></a>LABIN FP=... SIGFP=... [FPH=... SIGFPH=...] DANO=...
+        SIGDANO=... [PHIC=...]              </h3>
+(compulsory)
+<blockquote>                                                
+  <dl compact="compact">
+      <dt> FP, SIGFP:</dt>
+  </dl>
+</blockquote>
+<blockquote>                                                
+<blockquote>                                                          
+  <dl>
+      <dt> averaged structure-factor magnitude [F(+) + F(-)]/2 and its standard deviation in 
+           <a href="#sad"><b>SAD</b></a> mode;<br> 
+           Fobs of the native protein and its standard deviation in <a href="#sir"><b>SIR</b></a> 
+           or <a href="#dmr"><b>DMR</b></a> mode.</dt>
+  </dl>
+</blockquote>
+</blockquote>
+                               
+<blockquote> FPH, SIGFPH:</blockquote>
+<blockquote>                                                
+<blockquote>                                                          
+  <dl>
+      <dt>Fobs of the derivative of SIR data and its standard deviation.</dt>
+  </dl>
+</blockquote>
+</blockquote>
+<blockquote>                                                
+  <dl compact="compact">
+      <dt>DANO, SIGDANO:</dt>
+  </dl>
+</blockquote>
+<blockquote>                                                
+<blockquote>                                                          
+  <dl>
+      <dt>Bijvoet difference, F(+) - F(-), of SAD data and its standard deviation.</dt>
+  </dl>
+</blockquote>
+</blockquote>
+<blockquote>                                                
+  <dl compact="compact">
+      <dt>PHIC:</dt>
+  </dl>
+</blockquote>
+</blockquote>
+<blockquote>                                                
+<blockquote>                                                          
+  <dl>
+      <dt>standard phase for comparison with the resultant phase</dt>
+  </dl>
+</blockquote>
+</blockquote>
+<blockquote>
+  <dl compact="compact">
+      <dt>F(+), SIGF(+), F(-), SIGF(-):</dt>
+  </dl>
+</blockquote>
+<blockquote>
+<blockquote>
+  <dl>
+      <dt>structure factor amplitudes for hkl and its Friedel mate -h-k-l.</dt>
+  </dl>
+</blockquote>
+</blockquote>
+<br>
+<p>The acceptable formats for different calculation modes are as follows:</p>
+<blockquote>
+  <dl compact="compact">
+      <dt><b>SAD:</b></dt>
+  </dl>
+</blockquote>
+<blockquote>
+<blockquote>
+  <dl>
+      <dt>LABIN FP=...&nbsp; SIGFP=...&nbsp; DANO=...&nbsp; SIGDANO=...&nbsp; [PHIC=...]</dt>
+      <br><dt>&nbsp;&nbsp;&nbsp;or</dt><br>
+      <dt>LABIN F(+)=...&nbsp; SIGF(+)=...&nbsp; F(-)=...&nbsp; SIGF(-)=...&nbsp; [PHIC=...]</dt>
+  </dl>
+</blockquote>
+</blockquote>
+<blockquote>
+  <dl compact="compact">
+      <dt><b>SIR:</b></dt>
+  </dl>
+</blockquote>
+<blockquote>
+<blockquote>
+  <dl>
+      <dt>LABIN FP=...&nbsp; SIGFP=...&nbsp; FPH=...&nbsp; SIGFPH=...&nbsp; [PHIC=...]</dt>
+  </dl>
+</blockquote>
+</blockquote>
+<blockquote>
+  <dl compact="compact">
+      <dt><b>DMR:</b></dt>
+  </dl>
+</blockquote>
+<blockquote>
+<blockquote>
+  <dl>
+      <dt>LABIN FP=...&nbsp; SIGFP=...&nbsp; [PHIC=...]</dt>
+  </dl>
+  <br>
+</blockquote>
+</blockquote>
+
+<p><i>Note: If the keyword LABIN is missing, the program will assume that SAD data 
+with the format 
+<br>"FP=FP SIGFP=SIGFP DANO=DANO SIGDANO=SIGDANO" 
+<br>are to be input. Any departures from this will result in errors.</i></p>
+
+
+<br>
+
+<h3><a name="con" ></a>CON &lt;atom
+type&gt; &lt;number of atoms in ASU &gt;</h3>
+(compulsory)
+<br>
+Example:
+<pre><font Size=+1>
+  CON    C 770   N 185   O 231   H 1232   CU 1   
+</font></pre><br>
+This keyword specifies contents in the <b>asymmetric unit</b>, which can be 
+approximately estimated as follows:
+<br>
+Let <i>r</i> be the number of residues in the asymmetric unit, then the contents 
+will be C 5<i>r</i>, N 1.2<i>r</i>, O 1.5<i>r</i>, H 8<i>r</i> plus atoms other 
+than the above chemical elements.
+<br>
+An alternative and more accurate way to calculate contents in asymmetric unit is 
+to run the script <i>seq2con.csh</i> with the sequence file by issuing the command:
+<b><font color="0000FF">seq2con.csh <i><u>name</u></i>.pir</font></b>
+<p>
+<br>
+<h3><a name="cos"></a>COS</h3>
+(optional)<br>
+By default, COS(delta_phi) values calculated from experimental Bijvoet 
+differences will be modified to obey uniform distribution within the range of 
+1 to -1. This will cope with large 
+experimental errors. The keyword COS informs the program NOT to fit 
+COS(delta_phi) values to uniform distribution. Instead, COS(delta_phi) values 
+within the range of 1 to -1 will be kept unchanged and, 
+values greater than 1 will be cut to 1 while values smaller than -1 will be set 
+to -1. It is NOT recommended to use the keyword COS except when you 
+are very confident about the measured Bijvoet differences.<br>
+<br>
+<h3><a name="fom"></a>FOM</h3>
+(optional)<br>
+By default the output figures-of-merit for individual reflections will be fitted 
+so as they are uniformly distributed from 0 to 1. Usually this leads to a better 
+electron-density map for the subsequent density modification. The keyword FOM 
+informs the program to turn off this function. This is provided for use when the 
+user is unsatisfied with the default phasing result.<br>
+<br>
+<h3><a name="aoe"></a>AOE &lt;value&gt;</h3>
+(optional)<br>
+By default the average value of EXP[-(sigma_H)**2/2] in the P+ formula will be 
+tuned automatically to 0.5. The user can use the keyword AOE to set the tuned 
+average EXP[-(sigma_H)**2/2] to other values within the range of 0 to 1.<br>
+<br>
+<h3><a name="kmi"></a>KMI &lt;value&gt;</h3>
+(compulsory).<br>
+This keyword specifies the minimum kappa value of three-phase structure invariants 
+accepted in direct-method phasing. The smaller the KMI value, the larger the 
+number of structure invariants involved in the phasing process and 
+the more reliable the phasing results. A KMI value of 0.03 would usually lead 
+to a satisfactory result, while a value of 0.01 may in most cases be even better. 
+However, for a big protein, a KMI of 0.01 may cause problems in computing time. 
+It is recommended to check the total number of 
+three-phase structure invariants (phase relationships) output by the 
+program and adjust the value of kappa minimum accordingly so as the total number 
+of structure invariants is kept within the range of 10,000,000 ~ 50,000,000.<br>
+<br>
+<h3><a name="cyc"></a>CYC &lt;ncycle&gt;</h3>
+(optional)<br>
+Number of cycles for P+ formula iteration (default: 2).
+<br><br>
+<h3><a name="ano"></a>ANO &lt;atom&gt; &lt;f"&gt;</h3>
+(compulsory in <a href="#sad"><b>SAD</b></a> mode)<br>
+chemical symbol of the anomalous scatterer and the corresponding f" value - the 
+imaginary-part correction to the atomic scattering factor.<br>
+<br>
+Example:<br>
+<pre><font size= +1>
+  ANO   HG 7.686
+        ZN 0.678
+</font></pre> 
+The script crossec.csh can help with calculating anomalous corrections, for example 
+the command:
+<font color="0000FF">
+  <b>crossec.csh Br 0.9191</b>
+</font> will calculate anomalous corrections to the atomic scattering factor 
+of Br at the wavelength of 0.9191&Aring;.
+<p>
+<br>
+<h3><a name="pos"></a>POS &nbsp; &lt;atom_1&gt; &nbsp; &lt;1&gt; &nbsp; 
+&lt;x_1&gt; &nbsp; &lt;y_1&gt; &nbsp; &lt;z_1&gt; &nbsp; &nbsp; 
+&lt;occupancy_1&gt; &nbsp; &lt;B-factor_1&gt; <br>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; .<br>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; .<br>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; .<br> 
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &lt;atom_n&gt; &nbsp; &lt;n&gt; &nbsp; 
+&lt;x_n&gt; &nbsp; &lt;y_n&gt; &nbsp; &lt;z_n&gt; &nbsp; &nbsp; 
+&lt;occupancy_n&gt; &nbsp; &lt;B-factor_n&gt;   
+</h3>
+(compulsory in <a href="#sad"><b>SAD</b></a>/<a href="#sir"><b>SIR</b></a> mode)<br>
+Fractional coordinates of anomalous scatterer(s) or replacement heavy atom(s)                                   
+in the <b>asymmetric unit</b>. 
+
+<p><br>
+
+<h3><a name="fra"></a>FRA &nbsp; &lt;atom_1&gt; &nbsp; &lt;1&gt; &nbsp; 
+&lt;x_1&gt; &nbsp; &lt;y_1&gt; &nbsp; &lt;z_1&gt; &nbsp; &nbsp; 
+&lt;occupancy_1&gt; &nbsp; &lt;B-factor_1&gt; <br>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; .<br>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; .<br>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; .<br> 
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &lt;atom_n&gt; &nbsp; &lt;n&gt; &nbsp; 
+&lt;x_n&gt; &nbsp; &lt;y_n&gt; &nbsp; &lt;z_n&gt; &nbsp; &nbsp; 
+&lt;occupancy_n&gt; &nbsp; &lt;B-factor_n&gt;   
+</h3>
+(optional)<br>
+This keyword specifies atomic parameters of the known fragment(s) 
+(in fractional coordinates in the <b>asymmetric unit</b>) for 
+partial-structure iteration when the PDB file is not provided. <br>                
+<br>
+<h3><a name="nha"></a>NHA &lt;value&gt;</h3>
+(optional in <a href="#dmr"><b>DMR</b></a> mode)<br> This specifies the
+percentage of atoms to be included in artificial partial structure (default: 5).
+<br><br>
+
+<h3><a name="sed"></a>SED &lt;value&gt;</h3>
+(optional in <a href="#dmr"><b>DMR</b></a> mode)<br> This specifies the
+seed value of the random-number generator used for creating artificial partial 
+structure (default: 1).
+<br><br>
+
+<h3><a name="lim"></a>LIM &lt;dmin&gt;</h3>
+(optional)<br>
+This specifies the high resolution cutoff in Angstroms for reflections involved 
+in the calculation (default: no cutoff).<br>
+<br>&nbsp;
+<br>&nbsp;
+<br>&nbsp;
+<p>                              
+<h2> <a name="examples"></a>EXAMPLES</h2>
+                                                            
+<h3> Runnable examples</h3>
+                                                            
+<h4>a. Examples of SAD phasing:</h4>
+<ul>
+<li><a href="#example1">
+    <b>Example 1: <i>Ab initio</i> SAD phasing</b></a></li>
+<li><a href="#example2">
+    <b>Example 2: Fragment extension with SAD data</b>
+    </a></li>
+</ul>
+<h4>b. Example of MR-model completion:</h4>
+<ul>
+<li><a href="#example3"><b>Example 3: MR-model completion without SAD/SIR information</a></b></li>
+</ul>
+<br>                                                                 
+<h2> <a name="example1"></a><font color="#ff0000">Example 1: 
+        [<i>Ab initio</i> SAD phasing]</font><br></h2>
+                                                      
+<pre>
+#!/bin/csh -f
+oasis06 hklin pscp.mtz hklout pscp_oasis_1.mtz << +
+TIT Ab initio SAD phasing of pscp
+SAD
+LABIN FP=FP SIGFP=SIGFP DANO=DANO SIGDANO=SIGDANO
+CON C 1683 N 458 O 571 BR 9 S 3
+KMI 0.03
+ANO BR 3.8143
+POS
+BR 1 0.63036 0.20655 0.00000 0.42 14.700
+BR 2 0.50000 0.00000 0.00716 0.28 14.400
+BR 3 0.14603 0.42154 0.25609 0.44 29.700
+BR 4 0.44531 0.41895 0.24849 0.19 3.700
+BR 5 0.90769 0.26779 0.02868 0.39 30.700
+BR 6 0.69134 0.20471 0.27918 0.38 30.200
+BR 7 0.59988 0.42259 0.11135 0.36 25.000
+BR 8 0.65702 0.37410 0.06040 0.33 25.500
+BR 9 0.69461 0.39047 0.25676 0.26 20.100
++
+</pre>
+                                                        
+<h2> <a name="example2"></a><font color="#ff0000">Example 2: 
+       [Fragment extension with SAD data]</font><br></h2>
+                             
+<pre>
+#!/bin/csh -f
+oasis06 hklin azurin.mtz frcin azurin_1.frc hklout azurin_1_oasis.mtz << +
+TIT Fragment extension with azurin SAD data
+SAD
+LABIN FP=FP SIGFP=SIGFP DANO=DANO SIGDANO=SIGDANO
+CON C 600 N 165 O 185 S 10 CU 1
+ANO CU 2.168
+POS
+   CU 1 0.1401 0.8162 -0.0021 1.0 11.7852
+KMI 0.02
++
+</pre>
+                                       
+<h2> <a name="example3"></a><font color="#ff0000">Example 3: 
+     [MR-model completion without SAD/SIR information]</font></h2>
+                                               
+<pre>
+#!/bin/csh -f
+oasis06 hklin 0_start.mtz frcin 0_start.frc hklout 1ujz_1_oasis.mtz << +
+TIT MR-model completion of 1ujz
+DMR
+NHA 5
+SED 9
+LABIN FP=FP SIGFP=SIGFP
+CON C 1086 N 312 O 334 S 3
+COS
+FOM
+KMI 0.05
++
+</pre>
+                                       
+                             
+<h3> </h3>
+                           
+<h2> <a name="authors"></a>AUTHORS</h2>
+                                 
+<p>Tao Zhang, Yao He, Yuan-xin Gu, Chao-de Zheng, Jia-wei Wang &amp; Hai-fu Fan<br>
+<i>Beijing National Laboratory for Condensed Matter Physics, 
+<br>Institute of Physics, Chinese Academy of Sciences, Beijing 100080, China</i><br>
+<br>and<br>
+<br>Quan Hao<br>
+<i>MacCHESS, 273 Wilson Synchrotron Lab, Cornell University, Ithaca, 
+NY 14853-8001, U.S.A.</i><br><br>
+Emails: <a href="mailto:%20gu@cryst.iphy.ac.cn">gu@cryst.iphy.ac.cn</a>;
+        <a href="mailto:%20fanhf@cryst.iphy.ac.cn">fanhf@cryst.iphy.ac.cn</a></p>
+                                
+<pre><br></pre>
+                                                                        
+       
+<h2> <a name="references"></a>REFERENCES</h2>
+                                                            
+<ol>
+<li>Fan, H.F. &amp; Gu, Y.X. (1985). "Combining direct 
+    methods with isomorphous replacement or anomalous scattering data 
+    III. The incorporation of partial structure information". <i>Acta Cryst.</i>         
+    <b>A41</b>, 280-284.</li>
+<li>Hao, Q., Gu, Y.X., Zheng, C.D. &amp; Fan, H.F. (2000). "OASIS: a program 
+    for breaking phase ambiguity in OAS or SIR". <i>J. Appl. Cryst.</i> 
+    <b>33</b>, 980-981.</li>                       
+<li>Wang, J.W., Chen, J.R., Gu, Y.X., Zheng, C.D. &amp; Fan, H.F. (2004).   
+    "Direct-method SAD phasing with partial-structure iteration - towards automation".    
+    <i>Acta Cryst.</i> <b>D60</b>, 1991-1996.</li>
+<li>He, Y., Yao, D.Q., Gu, Y.X., Lin, Z.J., Zheng, C.D. &amp; Fan, H.F. (2007).   
+    "OASIS and MR-model completion". <i>Acta Cryst.</i> <b>D63</b> (in the press).</li>
+<li>He, Y., Gu, Y.X., Lin, Z.J., Zheng, C.D. &amp; Fan, H.F. (2007).   
+    "SIR phasing by combination of SOLVE/RESOLVE and dual-space fragment extension". 
+    (To be published)</li>
+<li>Zhang, T., He, Y., Gu, Y.X., Zheng, C.D. Hao, Q., Wang, J.W. &amp; Fan, H.F. 
+    (2007). "OASIS-2006, a direct-methods program for SAD/SIR phasing and 
+    reciprocal-space fragment extension". (To be published).</li>
+</ol>
+<br>* PDF files of papers in the REFERENCES are available on 
+     <a href="http://cryst.iphy.ac.cn"><i>http://cryst.iphy.ac.cn</i></a>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+
+</body>
+</html>

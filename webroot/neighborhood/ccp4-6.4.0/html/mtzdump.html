@@ -1,0 +1,177 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>CCP4 Program Suite</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]">
+</HEAD>
+<BODY>
+
+<!-- ::INDEX_INFO::MTZDUMP::Supported::MTZ manipulations / conversions::dump data from an MTZ reflection data file:::::::: -->
+
+<H1>MTZDUMP (CCP4: Supported Program)</H1>
+<H2>NAME</H2>
+<B>mtzdump, mtzdmp </B>
+- dump data from an MTZ reflection data file
+
+<H2>SYNOPSIS</H2>
+
+<P><B>mtzdump hklin </B><I>foo.mtz</I> <BR>
+[<A HREF="#keywords">Keyworded input</A>] <BR>
+</P>
+
+<H2><A NAME="description"></A>DESCRIPTION</H2>
+
+<P>MTZDUMP is used to give a file dump of a standard `MTZ' reflection data
+file. The file header information is printed followed by a summary of the
+reflection data which gives, for each data column, the following information:
+</P>
+
+<dl><dt>
+<dd>   Column number
+<dd>   Sort order (asc=ascending, desc=descending, both=all values the
+<dd>   Minimum value present
+<dd>   Maximum value present
+<dd>   Number of missing values present (identified by MNF)
+<dd>   Percentage completeness <EM>i.e.</EM> (measured/(measured + missing)) x 100
+<dd>   Average value excluding missing values
+<dd>   Average absolute value excluding missing values
+<dd>   Low resolution limit of data present
+<dd>   High resolution limit of data present
+<dd>   Column type
+<dd>   Column label
+</dl>
+
+<P>The completeness column in the statistical header information calculates
+the percentage of measured reflections over the total number in the 
+file (where a measured reflection is anything which is not a Missing Number 
+Flag (MNF)). This is NOT necessarily the completeness of the data to the maximum
+resolution. In order for this to be the case you must use 
+the <a href="unique.html">uniqueify</a> script to generate a complete set of
+indices to the maximum resolution. </P>
+
+<P>The summary is followed by a compact but tabulated listing of the individual
+reflection data. The output format depends on the HKLIN type and also the
+options specified. If the data is real then the format depends on the size
+of the number. The largest value that can be written is 99999999. Missing
+data, represented internally in the MTZ file by a MNF,
+are listed as '?'. This makes the output from MTZDUMP very difficult
+to read fortranically as an ASCII file. Use <A HREF="mtz2various.html">MTZ2VARIOUS</A>
+to produce an ASCII file from MTZ. </P>
+
+<P>`mtzdmp' (no `u') is a Unix script (in $CETC) that takes as argument
+a file name (with extension defaulting to .mtz) and optional other arguments
+and runs mtzdump. This is a useful abbreviation and allows, for instance,
+piping the output through `more'. Note that not all options available for
+mtzdump are available for mtzdmp. See <A HREF="#mtzdmp">below</A>. </P>
+
+<H2><A NAME="keywords"></A>KEYWORDED INPUT</H2>
+
+<P>All keyworded input is optional. </P>
+
+<P>Available keywords:
+<blockquote>
+<A HREF="#batch"><B>BATCH</B></A>, <A HREF="#end"><B>END</B></A>,
+<A HREF="#end"><B>GO</B></A>, <A HREF="#header"><B>HEADER</B></A>,
+<A HREF="#lreso"><B>LRESO</B></A>, <A HREF="#nreflections"><B>NREFLECTIONS</B></A>,
+<A HREF="#resolution"><B>RESOLUTION</B></A>, <A HREF="#end"><B>RUN</B></A>,
+<A HREF="#skip"><B>SKIP</B></A>, <A HREF="#starthkl"><B>STARTHKL</B></A>,
+<A HREF="#stats"><B>STATS</B></A>, <A HREF="#symmetry"><B>SYMMETRY</B></A>
+</blockquote>
+</P>
+
+<DL>
+<DT><A NAME="resolution"></A>RESO &lt;hires&gt; [&lt;lowres&gt;]</DT>
+
+<DD> followed by high and low resolution limits in Angstroms. This option
+restricts the list of reflections output to be within the given limits.
+If only one number input then this is treated as the high resolution limit.
+(Default: no resolution limit restrictions.) </DD>
+
+<DT><A NAME="header"></A>HEADER</DT>
+
+<DD> print header information for the MTZ file only. No reflections are
+read or listed, and no statistics produced. </DD>
+
+<DT><A NAME="nreflections"></A>NREF &lt;nref&gt;</DT>
+
+<DD> followed by number of reflections to be listed. If negative, then
+no summary table is printed. If -1, then ALL reflections will be dumped.
+(Default 10.) </DD>
+
+<DT><A NAME="starthkl"></A>STARTHKL &lt;H0&gt; &lt;K0&gt; &lt;L0&gt;</DT>
+
+<DD> followed by H0 K0 L0, the HKL indices of the first reflection to list.
+If H, K and L are all zero (the default), start at the first reflection
+in the file. </DD>
+
+<DT><A NAME="batch"></A>BATCH</DT>
+
+<DD> print orientation block information for each batch. (Default: no batch
+orientation information printed.) </DD>
+
+<DT><A NAME="stats"></A>STATS NBIN &lt;nbin&gt; [ RESO &lt;hires&gt; [&lt;lowres&gt;]
+]</DT>
+
+<DD> gives the no. of resolution bins and overall resolution limits used
+in constructing the FILE STATISTICS tables. If &lt;nbin&gt; = 1, only overall
+summary table is given, but if &lt;nbin&gt; &gt; 1, both overall and partial
+summary tables are given. (Default is one bin and all reflections.) </DD>
+
+<DT><A NAME="lreso"></A>LRESO</DT>
+
+<DD> this means that the listing will include 4sin**2/Lambda**2 for each
+reflection. </DD>
+
+<DT><A NAME="symmetry"></A>SYMMETRY</DT>
+
+<DD> print the symmetry information contained in the header. (Default:
+no symmetry information printed.) </DD>
+
+<DT><A NAME="skip"></A>SKIP &lt;nskip&gt;</DT>
+
+<DD> followed by the number of reflections to skip before listing reflections
+(default 0). </DD>
+
+<DT><A NAME="end"></A>END | GO | RUN</DT>
+
+<DD> Terminate input and start the dump (alternative to end of file). </DD>
+</DL>
+
+<H2><A NAME="mtzdmp"></A>mtzdmp</H2>
+
+<P>There is a shell script for running mtzdump as mtzdmp &lt;filename&gt;
+[options] (in $CETC). This script obviates the necessity of printing hklin
+on the command line as well as being able to input keyword information
+on the command line as in the examples below. Type &quot;mtzdmp -h&quot;
+for listing of options. </P>
+
+<PRE> 
+   mtzdmp File_Name -n Number  : number of hkl to dump (def 10) 
+   mtzdmp File_Name -e         : print header information only
+   mtzdmp File_Name -b         : dump BATCH headers
+   mtzdmp File_Name -s         : dump SYMMETRY info
+   mtzdmp File_Name -bs (-sb)  : dump both SYMM and BATCH
+   mtzdmp File_Name -r Rmax (Rmin) : resolution limits
+   mtzdmp File_Name -i         : Interactive
+ 
+</PRE>
+
+<H2>AUTHORS</H2>
+
+<P>Eleanor Dodson and Sandra McLaughlin </P>
+
+<H2>SEE ALSO</H2>
+
+<P><A HREF="mtz2various.html">mtz2various</A>, <A HREF="unique.html">unique</A>
+</P>
+
+<H2><A NAME="examples"></A>EXAMPLES</H2>
+
+<P>Following examples in directory $CEXAM/unix/runnable : </P>
+
+<UL>
+<LI><A HREF="../examples/unix/runnable/mtzdump.exam">mtzdump.exam</A> </LI>
+</UL>
+
+</BODY>
+</HTML>

@@ -1,0 +1,452 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::SC::Supported::Model Analysis::analyse shape complementarity::supported:::::: -->
+
+<H1> SC (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>sc </b>
+- Determine Sc shape complementarity of two interacting molecular surfaces
+<H2> SYNOPSIS </H2>
+<b>sc</b> <b>XYZIN</b> <i>foo.pdb</i> [ <b>SCRADII</b> <i>radii.lib</i> ]
+[ <b>SURFIN1</b> <i>foo1_in.srf</i> <b>SURFIN2</b> <i>foo2_in.srf</i>
+  <b>SURFOUT1</b> <i>foo1_out.srf</i> <b>SURFOUT2</b> <i>foo2_out.srf</i> ]
+<br>
+ [<a href="#keywords">Keyworded input</a>]
+<H2><a name="description">DESCRIPTION</a></H2>
+
+<P>The shape correlation statistic Sc (<a href="#reference1">Lawrence and
+Colman, 1993</a>) can be used to quantify the
+shape complementarity of protein/protein interfaces and give an idea
+of the &quot;goodness of fit&quot; between two protein surfaces. The program SC
+will calculate values of Sc and related statistics for the interface
+region between two molecules in a Brookhaven coordinate file.
+
+<P>SC also allows the normal products to be merged into GRASP surface
+files for display in <A HREF="http://trantor.bioc.columbia.edu/grasp/">GRASP</A> (<a href="#reference4">Nicholls, 1993</a>).
+
+<H2> <a name="keywords"></a>KEYWORDED INPUT</H2>
+
+<P>The input comprises three sections:
+
+<H3><A NAME="keywords_molecule_definition"></A>Section 1: Molecule definition (compulsory)</H3>
+
+<P>The molecule definition commands are used to select which atoms in the
+input file are to make up the two individual molecules for the Sc calculation.
+Entries for this section appear twice, once for each molecule (see
+<a href="#examples">EXAMPLES</a>):
+
+<BLOCKQUOTE>
+  <a href="#at_excl"><B>AT_EXCL</B></a>,
+  <a href="#at_incl"><B>AT_INCL</B></a>,
+  <a href="#chain"><B>CHAIN</B></a>,
+  <a href="#molecule"><B>MOLECULE</B></a>,
+  <a href="#zone"><B>ZONE</B></a>
+</BLOCKQUOTE>
+
+<H3><A NAME="keywords_parameter_definition"></A>Section 2: Parameter definition (optional)</H3>
+
+<P>The default values for the parameters are set inside the program
+at compilation time (in the file defaults.h), and should be 
+suitable for most applications. In particular you should avoid using
+different values for <A HREF="#probe_radius">PROBE_RADIUS</A>, <A HREF="#trim">TRIM</A> and <A HREF="#weight">WEIGHT</A> if you intend to compare
+your values of Sc with the results of other calculations, or with values
+found in the literature.
+
+<BLOCKQUOTE>
+  <a href="#dot_density"><B>DOT_DENSITY</B></a>,
+  <a href="#interface"><B>INTERFACE</B></a>,
+  <a href="#probe_radius"><B>PROBE_RADIUS</B></a>,
+  <a href="#trim"><B>TRIM</B></a>,
+  <a href="#weight"><B>WEIGHT</B></a>
+</BLOCKQUOTE>
+
+<H3><A NAME="keywords_grasp"></A>Section 3: Grasp input/output (optional)</H3>
+
+<P>These commands are only required if you want to merge the results
+of the Sc calculations with existing GRASP surface files for the
+purposes of graphical display.
+
+<BLOCKQUOTE>
+  <a href="#grasp_background"><B>GRASP_BACKGROUND</B></a>,
+  <a href="#grasp_match"><B>GRASP_MATCH</B></a>
+</BLOCKQUOTE>
+
+<p>See <a href="#notes_on_grasp_files">NOTES ON GRASP FILES</a> if you intend
+to use the merging facility.
+
+<H2>KEYWORDS</H2>
+
+<a name="molecule"></a><H3>MOLECULE &lt;n&gt;</H3>
+This selects which molecule to put the subsequent selection
+in; &lt;n&gt; is either 1 or 2. This keyword is followed by a combination
+of <A HREF="#chain">CHAIN</A>, <A HREF="#zone">ZONE</A>, <A HREF="#at_excl">AT_EXCL</A> and/or <A HREF="#at_incl">AT_INCL</A> keywords, which then select the atoms
+which will be included as the molecule. Selection via these subsequent
+keywords is logically sequential.
+
+<a name="chain"></a><H3>CHAIN &lt;chn&gt;</H3>
+Include a particular chain. All atoms in chain &lt;chn&gt will be
+included in the selected molecule.
+
+<a name="zone"></a><H3>ZONE [ &lt;chn1&gt; ] &lt;res1&gt; [ &lt;chn2&gt; ] &lt;res2&gt;</H3>
+Include a zone of residues. All atoms in and between the named residues
+will be included in the selected molecule. The chain names &lt;chn1&gt; and
+&lt;chn2&gt; should be omitted if the chain identifier field is blank within
+the coordinate file. &lt;res1&gt; and &lt;res1&gt; define the residue sequence numbers
+(not type) that delimit the selected zone.
+
+<a name="at_excl"></a><H3>AT_EXCL [ &lt;chn&gt; ] &lt;res&gt; &lt;atm&gt;</H3>
+Exclude a particular atom. The atom identified by chain &lt;chn&gt;,
+residue sequence number &lt;res&gt; and atom name &lt;atm&gt will be excluded from
+the selected molecule. The chain name &lt;chn&gt; should be omitted if
+the chain identifier field is blank within the coordinate file.
+
+<a name="at_incl"></a><H3>AT_INCL [ &lt;chn&gt; ] &lt;res&gt; &lt;atm&gt;</H3>
+Include a particular atom. The atom identified by chain &lt;chn&gt;,
+residue sequence number &lt;res&gt; and atom name &lt;atm&gt will be included from
+the selected molecule. The chain name &lt;chn&gt; should be omitted if
+the chain identifier field is blank within the coordinate file.
+
+<a name="probe_radius"></a><H3>PROBE_RADIUS &lt;rad&gt;</H3>
+
+<p>[Default: 1.7 &#197;]
+
+<p>Sets the radius of the probe sphere which is used to define the
+solvent excluded surface.
+
+<p><b>Note:</b>You should avoid changing the probe radius if you
+intend to cross-compare the results of the Sc calculation with values obtained
+elsewhere, as the comparison will be invalid if different probe radii are
+used.
+
+<a name="dot_density"></a><H3>DOT_DENSITY &lt;dots&gt;</H3>
+
+<p>[Default: 15 dots/&#197;<sup>2</sup>]
+
+<p>The density of the dots used to calculate the molecular
+surface - higher values (more dots per unit area) give higher
+precision but also take longer to run.
+
+<a name="trim"></a><H3>TRIM &lt;trim&gt;</H3>
+
+<p>[Default: 1.5 &#197;]
+
+<p>Sets the distance used to generate the peripheral band.
+
+<p>The peripheral band consists of those surface points which are
+part of the buried portion of the molecular surface but which lie
+within a distance &lt;trim&gt; of the non-buried (<EM>i.e.</EM> solvent
+accessible) surface. Points in the peripheral band are omitted
+from the calculations.
+
+<p><b>Note:</b> You should avoid changing the width of the peripheral band
+if you intend to cross-compare the results of the Sc calculation with
+values obtained elsewhere, as the value of Sc depends on the width of
+the excluded band.
+
+<a name="interface"></a><H3>INTERFACE &lt;dist&gt;</H3>
+
+<p>[Default: 8 &#197;]
+
+<p>Distance determining which atoms are used in the calculations.
+See <a href="#program_function">PROGRAM FUNCTION</a> for details about
+this parameter before changing it.
+
+<a name="weight"></a><H3>WEIGHT &lt;w&gt;</H3>
+
+<p>[Default: 0.5 &#197;<sup>-2</sup>]
+
+<p>This sets the value of the weighting factor used in the calculation
+of the surface complementarity function S(A-&gt;B).
+(See <a href="#printer_output">PRINTER OUTPUT</a> for the definition of
+S(A-&gt;B).)
+
+<p><b>Note:</b> You should avoid changing the weighting factor if you
+intend to cross-compare the results of the Sc calculation with values
+obtained elsewhere, as the value of Sc depends on the weighting used.
+
+<a name="grasp_match"></a><H3>GRASP_MATCH &lt;tol&gt;</H3>
+
+<p>[Default: 1.5 &#197;]
+
+<p>The tolerance for equivalencing GRASP and SC surface points. The strategy
+employed by the program is to assign to each GRASP surface vertex the
+weighted normal dot product associated with the nearest Connolly surface
+point to that vertex. If no point employed within the Sc calculation is found
+within a distance &lt;tol&gt; of the vertex then the vertex is deemed to
+be part of the non-interacting surface. The value of &lt;tol&gt; will
+depend on the dot density and resolution of the respective surfaces. The
+non-interacting surfaces are assigned a general property 1 value assigned
+by the <a href="#grasp_background">GRASP_BACKGROUND</a> keyword (below).
+
+<a name="grasp_background"></a><H3>GRASP_BACKGROUND &lt;val&gt;</H3>
+
+<p>[Default: -2.0]
+
+<p>General Property 1 value for vertices that lie more than
+<a href="#grasp_match">GRASP_MATCH</a> from any Connolly point within the
+interacting surfaces. The aim here is simply to set up a distinctly
+different value that can hence be displayed in a separate colour within
+GRASP.
+
+<h3>END</h3>
+
+<p>End keyworded input.</p>
+
+<H2><a name="files">INPUT AND OUTPUT FILES</a></H2>
+
+<H3>Input files</H3>
+
+<dl>
+  <dt>XYZIN <dd>[Compulsory]<br>
+                input pdb file containing the coordinates of the
+                molecules for which the shape complementarity
+                will be assessed.
+                Note that multiple conformations are not permitted
+                for atoms at the interface of the molecules. There are
+                also appear to be problems with H atoms in XYZIN, see
+                <a href="#know_problems">KNOWN PROBLEMS</a> below.
+  <dt>SCRADII <dd>[Optional]<br>
+                reference file containing the radii which will
+                be assigned for atoms in XYZIN. This defaults
+                to $CLIBD/sc_radii.lib but can be reassigned on the
+                command line, for example if you have a modified
+                reference file containing extra Van der Waals radii.
+                You may have to specify the path explicitly to stop
+                the program looking in $CLIBD for your file.<br>
+                <b>Note:</b> It is recommended that you do not alter the
+                existing entries if you intend to cross-compare the
+                results of the Sc calculation with values obtained
+                elsewhere, as the comparison will be invalid if
+                different atomic radii are used.
+  <dt>SURFIN1, SURFIN2 <dd>[Optional]<br>
+                Two GRASP surface files, one for each molecule. These
+                surfaces will have the weighted normal dot product
+                assigned to each vertex in the interface.<br>
+                See also <a href="#notes_on_grasp_files">NOTES ON GRASP FILES</a>.
+
+</dl>
+
+<H3>Output files</H3>
+
+<dl>
+  <dt>SURFOUT1, SURFOUT2 <dd>[Only required if SURFIN1, SURFIN2 are specified]<br>
+                 Output files for the GRASP surfaces, appended with the
+                 weighted normal dot product as General Property1. These can
+                 be re-read into GRASP for display.
+</dl>
+
+
+<H2><a name="printer_output"></a>PRINTER OUTPUT</H2>
+
+<P>The program output includes the following loggraph tables for each of
+the molecules.
+
+<ol>
+
+<li><b>Histograms of the distance functions between surfaces, D(1-&gt;2) and D(2-&gt;1)</b>
+
+<p>D(A-&gt;B) is defined as
+
+<p><center>D(A-&gt;B)(x<sub>A</sub>) = |x<sub>A</sub> - x'<sub>A</sub>|<sup>2</sup></center>
+<p>where x<sub>A</sub> is a point on the interface (<EM>i.e.</EM> buried) surface of molecule
+A and x'<sub>A</sub> is the nearest surface point to x<sub>A</sub> on
+molecule B. (It is noted that differences in shape
+complementarity are less well discerned by these simple distance metrics.
+See <a href="#reference1">Lawrence and Colman, 1993</a>.)</p>
+
+<li><b>Histograms of the surface complementarity functions, S(1-&gt;2) and S(2-&gt;1)</b>
+
+<p>S(A-&gt;>B) (also referred to as the weighted normal dot product) is defined as
+
+<p><center>S(A-&gt;B)(x<sub>A</sub>) = (n<sub>A</sub>.n'<sub>A</sub>) exp [-w(|x<sub>A</sub> - x'<sub>A</sub>|)<sup>2</sup>]</center>
+
+<p>where x<sub>A</sub>, x'<sub>A</sub> have the same meanings as above,
+n<sub>A</sub>,n'<sub>A</sub> are the normals to the surfaces at those points,
+and w is a weighting factor.</p>
+
+</ol>
+
+<p>The shape correlation Sc is then defined as
+
+<p><center>Sc = [ { S(A-&gt;B) } + { S(B-&gt;A) } ]/2</center>
+
+<p>where the braces denote the median of the S(A-&gt;B), S(B-&gt;A) distributions.
+(See <a href="#reference1">Lawrence and Colman, 1993</a> for more detailed
+descriptions of these functions.)
+
+<p>Interfaces with Sc = 1 will mesh precisely, interfaces with Sc
+approximately zero will effectively be uncorrelated in their topography.
+
+<p>Note that Sc may become rather meaningless when the buried area becomes
+small, and hence it may not be a good measure for small crystal contacts. This
+is simply because as the overall buried area becomes smaller and/or more
+convoluted or disjointed in shape, the percentage removed as part of the
+peripheral band increases substantially.
+
+<H2><a name="program_function"></a>PROGRAM FUNCTION</H2>
+
+<P>This program computes Sc between two molecules in a
+numerical fashion. The algorithm is fully detailed in <a href="#reference1">Lawrence
+and Colman, 1993</a>.
+Briefly: the molecular surfaces are represented as a series
+of discrete points (<a href="#reference2">Connolly, 1983</a>) of sufficiently
+high surface sampling density (set by the <a href="#dot_density">DOT_DENSITY</a>
+keyword) and S(1-&gt;2) and S(2-&gt;1) are then evaluated at these points.
+
+<p>The interface surfaces are defined as being the portion of the molecular
+surface of molecule 1 which is buried from solvent by its interaction with
+molecule 2 (and vice versa). The molecular surface itself is defined
+(<a href="#reference3">Richards, 1977</a>) as the union of contact and
+re-entrant portions demarcated by a probe sphere of a given radius (set by
+the <a href="#probe_radius">PROBE_RADIUS</a> keyword).
+
+<p>Only atoms within the <a href="#interface">INTERFACE</a> distance of any
+&quot;buried&quot; atoms (defined in the Connolly sense) are selected for initial
+surface computation. This parameter does not enter formally into the
+evaluation of Sc, its purpose is simply to speed up the computation by
+excluding from consideration atoms remote from the interface. The program
+in reality computes not the entire surface for the individual molecules,
+but rather only for the subset of atoms within the
+<a href="#interface">INTERFACE</a> distance from the other molecule. A
+portion of this surface is non-physical, as it is buried with the core of
+the individual molecule, however its presence does not affect the
+computation of Sc as it is remote from the interaction. If there is any
+doubt about the validity of this approach for a particular molecule, the
+program should be rerun with a larger value for this parameter to ensure
+that the computation is stable. Subsequently, a periphery band of
+buried points are removed if they lie within a distance <a href="#trim">TRIM</a>
+of any solvent accessible surface points.
+
+<p>Cross-comparison of Sc numbers between proteins (<EM>i.e.</EM> characterisation of
+surfaces as more or less complementary than other types of surface) is the
+main interest in SC. This is only valid if the same values of the critical
+parameters (probe radius, width of the peripheral band, atomic radii, weighting
+factor) are used in both computations. To this end it is recommended that
+the default values for the <a href="#probe_radius">PROBE_RADIUS</a>,
+<a href="#trim">TRIM</a> width and the atomic radii set in the sc_radii.lib
+file should be used, so that the results will be comparable with other
+literature values.
+
+<p>The program includes a modified version of Michael Connolly's subroutine
+&quot;mds&quot; for calculating molecular surfaces; the original code
+can be obtained from his website at
+<a href="http://www.biohedron.com">http://www.biohedron.com</a>.
+The version contained in SC is provided here with the consent of Michael Connolly.
+The modifications include a minor bug fix, and use of the CCP4 library routines for
+exiting on fatal errors (``CCPERR'') and for calculating vector products (``CROSS'').
+
+<H2><A NAME="interaction_with_grasp"></A>INTERACTION WITH GRASP</H2>
+
+<p>Sc itself cannot be computed satisfactorily within GRASP, as GRASP uses a
+rather different approach to surface definition. However qualitative display of
+the weighted normal products S(A-&gt;B) is possible - this is achieved by a simple
+mapping of this value from the one surface to the other.
+
+<OL>
+<LI>Within GRASP compute a molecular surface for each of the
+interacting molecules.</LI>
+
+<LI>Write these surfaces out within GRASP.</LI>
+
+<LI>Read these surfaces into SC and perform the Sc computation.
+The surfaces will automatically be written out with the S(A-&gt;B) values
+assigned to each surface.</LI>
+
+<LI>Read the modified surfaces back into GRASP.</LI>
+
+<LI>Colour the modified surfaces according to General Property
+1. An appropriate colour ramp will need to be set up within GRASP to achieve
+the desired effect. It will probably also be necessary to &quot;open&quot; the interface
+up via rotating one of the surfaces, otherwise you won't see anything.</LI>
+</OL>
+
+<p>There are however some limits to SC's interaction with GRASP. See the
+<a href="#notes_on_grasp_files">NOTES ON GRASP FILES</a> below.
+
+<H2><A NAME="notes_on_grasp_files"></A>NOTES ON GRASP FILES</H2>
+
+<p>To the best of our knowledge, GRASP is only available for Silicon Graphics
+machines, and since the surface files it produces contain unformatted data
+these files are not generally portable to other systems, <EM>e.g.</EM> Digital Alphas.
+
+<p>SC will make a check on the compatibility of input surface files before
+trying to read them in. In cases where it detects a problem, the files will
+not be read in, no merging will be performed, and no output surface files will
+be generated. In these cases, if GRASP output is required it will be necessary
+to run SC on another machine which has compatible conventions for reading and
+writing unformatted data.
+
+<p>There have been some reports of bugs in GRASP 1.3.6 which have
+caused problems with the GRASP output from SC. Please let us know if you
+experience problems which might be due to such bugs.
+
+<H2><A NAME="format_of_radii_file"></A>FORMAT OF THE RADII FILE</H2>
+
+<P>It will be necessary to edit the radii file used by the program, if your
+input file contains atoms which are not in the file already. It is not
+recommended that you change the values of radii already in the file, as
+this will compromise comparison of your calculated Sc values with
+values used in the literature.
+
+<P>Each entry in the file is a single line with three fields separated by
+spaces, of the format:
+
+<p><pre>Residue_name    Atom_name      Radius</pre>
+
+<P>Either of the name fields can contain one or more wildcards (<EM>i.e.</EM> the
+asterisk character '*') to match to multiple residues or atoms, <EM>e.g.</EM> O* will match
+to O1, O2 etc. Unidentified residue/atom combinations will cause the program to
+stop.
+
+<p>The default radii file is sc_radii.lib in $CLIBD; to use a modified radii
+file in a different directory, assign the filename and path via the SCRADII
+logical name.
+
+<H2><a name="know_problems">KNOWN PROBLEMS</H2>
+
+<p>It is essential to remove ALL multiple conformations from the input PDB
+file (XYZIN). If multiple conformations are present in the file then the
+program may terminate with an message <tt>ERROR IN CHAIN CARD</tt> (from the
+CCP4 libraries) - in which case it is recommended that you check that there
+are no remaining multiple confirmations.</p>
+
+<p>There also appear to be problems with H atoms in XYZIN. The program may stop with
+error message "SC:  imaginary contain". Stripping H atoms from XYZIN seems to cure it.
+It is not known how general this problem is, nor why it occurs.</p>
+
+<p>If these problems persist, then please report it to CCP4.</p>
+
+<H2><a name="examples">EXAMPLES</a></H2>
+
+<h3>Two non-runnable Unix example scripts (using Grasp input) found in $CEXAM/unix/non-runnable/</h3>
+
+          <li><a href="../examples/unix/non-runnable/sc.exam">sc.exam</a>
+
+<H2><A NAME="references"></A>REFERENCES</H2><OL>
+
+<P><!-- KEEP startreferencelist --></P>
+
+<LI><A NAME="reference1"></A>Michael C. Lawrence and Peter M. Colman <i>J. Mol. Biol.</i>, <b>234</b>, p946 - p950 (1993)
+
+<LI><A NAME="reference2"></A>M. L. Connolly <i>J. Appl. Crystallogr.</i>, <b>16</b>, p548 - p558 (1983)
+
+<LI><A NAME="reference3"></A>F. M. Richards <i>Annu. Rev. Biophys. Bioeng</i>, <b>6</b>, p151-176 (1977)
+
+<LI><A NAME="reference4"></A>A.J. Nicholls <i>Biophys. J.</i>, <b>64</b>, A116 (1993)
+
+<!-- KEEP endreferencelist -->
+</OL>
+
+<H2> AUTHOR</H2>
+
+<P>Version 2.0
+
+<P>Copyright Michael Lawrence,<br>
+Biomolecular Research Institute,<br>
+343 Royal Parade Parkville Victoria Australia
+
+<H2> SEE ALSO</H2>
+
+</body></html>

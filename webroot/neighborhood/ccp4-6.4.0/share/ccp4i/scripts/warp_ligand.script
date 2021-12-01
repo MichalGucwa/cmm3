@@ -1,0 +1,116 @@
+global job_params
+global system
+#
+#
+# Source file with utility procedures
+# source [SearchPath TOP src CCP4_utils.tcl]
+  source [SearchPath TOP utils map_utils.tcl]
+# Read the crystal parameters files
+#  ReadSymops [FileJoin [GetEnvPath CLIBD] symop.lib]
+#  ReadCrystalData [SearchPath TOP etc crystal.lib]
+#
+# Write the arp .par file
+
+  set logfile $job_params(LOG_FILE)
+  set arpwarpdir $job_params(JOB_ID)_$job_params(TASKNAME) 
+  set workdir [GetDefaultDirPath]
+
+  set parfile "$workdir/$arpwarpdir.par"
+  set testfile [GetTmpFileName] 
+
+  append partext "set WORKDIR = [GetDefaultDirPath]\n"
+  append partext "set PROJECT = $job_params(PROJECT)\n"
+  append partext "set JOB_ID = $job_params(JOB_ID) \n"
+  append partext "set warpbin = [GetEnvPath warpbin]\n"
+  append partext "set fulllogfile = $job_params(JOB_ID)_warp_ligand_details.log \n"
+
+  append partext "set version = 7.3 \n"
+
+# Put the name of the CCP4i def file  into the par file
+  append partext "set CCP4I_DEFFILE = " [FileJoin [GetDefaultDirPath]  \
+     CCP4_DATABASE $job_params(JOB_ID)_$job_params(TASKNAME).def ] \n
+
+    AddOutputFile $LIGANDOUT PROJECT
+  
+# Handle file names
+
+  foreach par [list HKLIN PROTEININ LIGANDIN LIGANDREF LIGANDOUT EXTRA_LIBRARY ] arppar [list datafile proteinfile ligandfile search_model ligandfileout extralibrary ] {
+    set file [subst $[subst $par]]
+    set dir [subst DIR_$[subst $par]]
+    set value [GetFullFileName1 $file $dir]
+    if { $value == "" } {
+      append partext "set $arppar = ''" \n
+    } else {
+      append partext "set $arppar = $value" \n
+    }
+  }
+
+# stuff the reference ligand(s) file names into the testfile.
+
+   if { $TOGGLE_TEST == "1" } {
+	set file [subst $LIGANDTEST]
+	set dir [subst $DIR_LIGANDTEST]
+   	set value [GetFullFileName1 $file $dir] 
+   	append testtext "$value "
+   	WriteFile $testfile $testtext
+   	append partext "set reflist = $testfile" \n
+   } else {
+	append partext "set reflist = " \n
+   }
+
+# Basic params
+
+    foreach \
+       par [ list LIGCYCLES NPARTIAL WILSON_B FP SIGFP KEEP_WATERS ] \
+    arppar [ list nligandcycles partial wilsonb  fp sigfp keepwaters ] {
+	set value [subst $[subst $par]]
+        append partext "set $arppar = $value" \n
+	}
+
+  set space_gp_number [GetSpaceGroupNumber $SPACE_GROUP]
+
+  append partext "set sym = $space_gp_number" \n
+
+# These are params that have to be included in quotes !!!
+
+  append partext "set scaleopt = 'SIMPLE LSSC ANIS '" \n
+
+    foreach \
+       par [ list XYZLIM RESOL FREELABIN SCALML LIGXYZ] \
+    arppar [ list xyzlim resol freelabin scalml search_position ] {
+	set value [subst $[subst $par]]
+        append partext "set $arppar = ' $value '" \n
+	}
+
+    if { $WEIGHT != "AUTO" } {
+     set WEIGHT [MATRIX $WMAT]	
+    }
+
+    foreach \
+       par [ list REFMAX NCYCLES WEIGHT ] \
+    arppar [ list refmax rrcyc weightv] {
+	set value [subst $[subst $par]]
+        append partext "set $arppar = $value " \n
+	}
+
+    foreach \
+       par [ list KNOWNLIGPOS  LIGRAD] \
+    arppar [ list known_position search_radius ] {
+	set value [subst $[subst $par]]
+        append partext "set $arppar = $value " \n
+	}
+
+
+if { [file exists $parfile] } {
+	   file delete -force -- $parfile
+}
+
+   WriteFile $parfile $partext
+#   WriteFile $testfile $testtext
+ 
+   file attributes $parfile -permissions 0740
+
+   AddOutputFile $parfile PROJECT
+
+    catch {exec [GetEnvPath warpbin]/warp_ligand.sh  $parfile >> $logfile}
+

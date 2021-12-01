@@ -1,0 +1,259 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>CCP4 Program Suite</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]">
+</HEAD>
+<BODY>
+
+<!-- ::INDEX_INFO::CIF2MTZ::Supported::MTZ manipulations / conversions::Convert an mmCIF reflection file to MTZ format:::::::: -->
+
+<H1>CIF2MTZ (CCP4: Supported Program)</H1>
+<H2>NAME</H2>
+<B>cif2mtz </B>
+- Convert an mmCIF reflection file to MTZ format
+
+<H2>SYNOPSIS</H2>
+
+<P><B>cif2mtz hklin</B> <I>foo.cif</I> <B>hklout</B> <I>foo.mtz</I> <BR>
+[<A HREF="#keywords">Keyworded input</A>] </P>
+
+<H2><A NAME="description"></A>DESCRIPTION</H2>
+
+<P>CIF2MTZ is a program to convert an mmCIF reflection file
+to MTZ format. mmCIF reflection files are typically obtained
+from the Protein Data Bank. There are <a href="#examples">examples</a>
+below for some representative PDB entries.</P>
+
+<P>In practice, mmCIF reflection files from the PDB can have
+a wide variety of data item names and contents. The program
+will attempt to identify quantities correctly, but you should
+always check the resulting MTZ file. Keywords are provided
+to supply missing information or to help the program make
+choices.</P>
+
+<P>There are a large number of mmCIF reflection files in the PDB
+which contain the PDB coordinate file header as a comment block.
+In particular, cell and symmetry information is held as the
+CRYST1 line, rather than using the correct mmCIF categories.
+The program will therefore look for a CRYST1 line, as well as
+the mmCIF categories. If neither are present, then cell and
+symmetry information must be provided via keywords.</P>
+
+<P><B>Note:</B> <TT>CIF2MTZ</TT> works with the macromolecular CIF
+format "mmCIF" which is substantially different from the original
+"CIF" format. The latter is usually used within small molecule
+crystallography, but you may come across it with <TT>SHELX</TT>.
+Small molecule "CIF" format has a different syntax (i.e. it is
+based on DDL1 rather than DDL2) and so cannot easily be read
+from <TT>CIF2MTZ</TT>. If you don't know what format a file is
+in, look for <TT>_cell.length_a</TT> (with period: mmCIF) or 
+<TT>_cell_length_a</TT> (with underscore: CIF).</P>
+
+<H2><A NAME="keywords"></A>KEYWORDED INPUT</H2>
+
+<P>Possible keywords are: </P>
+
+<BLOCKQUOTE>
+<a href="#title"><B>TITLE</B></a>, <a href="#labout"><B>LABOUT</B></a>, 
+<a href="#cell"><B>CELL</B></a>, <a href="#symmetry"><B>SYMMETRY</B></a>, 
+<a href="#name"><B>NAME</B></a>, <a href="#block"><B>BLOCK</B></a>,
+<a href="#anom"><B>ANOMALOUS</B></a>, <a href="#status"><B>STATUS</B></a>,
+<a href="#end"><B>END</B></a>
+</BLOCKQUOTE>
+
+<P>All keywords are optional. The program will read in data, such as symmetry,
+from the mmCIF file if it is there. The keywords can be used to provide
+missing information, or to override existing information.
+</P>
+
+<H3><A NAME="title"></A>TITLE &lt;title&gt;</H3>
+
+<P>Put a suitable title in the output MTZ file. </P>
+
+<H3><A NAME="cell"></A>CELL &lt;a&gt; &lt;b&gt; &lt;c&gt; [ &lt;alpha&gt;
+&lt;beta&gt; &lt;gamma&gt; ]</H3>
+
+<P>Followed by the cell lengths and angles. </P>
+
+<H3><A NAME="symmetry"></A>SYMMETRY &lt;spacegroup&gt;</H3>
+
+<P>Followed by the standard space group name or number, or explicit symmetry
+operators. </P>
+
+<H3><A NAME="labout"></A>LABOUT &lt;program label&gt;=&lt;file label&gt; ...</H3>
+
+<P>The program currently recognises the following mmCIF item names for 
+reflection data: </P>
+
+<PRE>
+
+  _refln.index_h                                   H             h index
+  _refln.index_k                                   K             k index
+  _refln.index_l                                   L             l index
+  _refln.status                                    FREE          free R flag
+  _refln.F_meas_au        _refln.F_meas            FP            structure factor
+  _refln.F_meas_sigma_au  _refln.F_meas_sigma      SIGFP         sigma(F)
+  _refln.F_calc_au        _refln.F_calc            FC            calculated SF
+  _refln.phase_calc                                PHIC          calculated phase
+  _refln.phase_meas                                PHIB          experimental phase
+  _refln.fom              _refln.weight            FOM           figure of merit
+  _refln.intensity_meas   _refln.F_squared_meas    I             intensity
+  _refln.intensity_sigma  _refln.F_squared_sigma   SIGI          sigma(I)
+  _refln.F_part_au                                 FPART         partial structure factor
+  _refln.phase_part                                PHIP          partial phase
+  _refln.pdbx_F_plus                               F(+)
+  _refln.pdbx_F_plus_sigma                         SIGF(+)
+  _refln.pdbx_F_minus                              F(-)
+  _refln.pdbx_F_minus_sigma                        SIGF(-)
+  _refln.pdbx_anom_difference                      DP
+  _refln.pdbx_anom_difference_sigma                SIGDP
+  _refln.pdbx_I_plus                               I(+)
+  _refln.pdbx_I_plus_sigma                         SIGI(+)
+  _refln.pdbx_I_minus                              I(-)
+  _refln.pdbx_I_minus_sigma                        SIGI(-)  
+  _refln.pdbx_HL_A_iso                             HLA           HL coefficient A
+  _refln.pdbx_HL_B_iso                             HLB           HL coefficient B
+  _refln.pdbx_HL_C_iso                             HLC           HL coefficient C
+  _refln.pdbx_HL_D_iso                             HLD           HL coefficient D
+
+</PRE>
+
+<P>An MTZ column is output for each mmCIF item found. The default column 
+name &lt;program label&gt; is given in the middle column above, but the LABOUT 
+keyword can be used to rename these columns.</P>
+
+<P>With the <a href="#anom">ANOMALOUS</a> option, there are additional
+columns F(+) SIGF(+) F(-) SIGF(-) which can be renamed by LABOUT.</P>
+
+<P><STRONG>Note:</STRONG> the mmCIF file may contain alternative labels,
+e.g. <tt>_refln.F_meas</tt> rather than <tt>_refln.F_meas_au</tt>. Some
+alternative labels will be recognised, see table above. Otherwise
+it is sufficient to edit the label name directly in the mmCIF
+file to one of the above labels.</P>
+
+<H3> <A NAME="name"></A>NAME PROJECT &lt;pname&gt; CRYSTAL &lt;xname&gt; DATASET &lt;dname&gt;</H3>
+[Note that the keywords PNAME &lt;pname&gt;, XNAME &lt;xname&gt; and DNAME &lt;dname&gt;
+are also available, but the NAME keyword is preferred.]
+<p>
+Specify the project, crystal and dataset names for the output MTZ file.
+&lt;pname&gt; and &lt;xname&gt; are taken from _entry.id if present in the mmCIF file,
+and &lt;dname&gt; is taken from _diffrn.id if present in the mmCIF file.
+If the mmCIF file does not contain _entry.id and _diffrn.id, then
+it is strongly recommended
+that this information is given. Otherwise, the default project, crystal and 
+dataset names are "unknown", "unknown" and "unknownddmmyy" respectively.
+<p>
+The project-name specifies a particular structure solution project, the
+crystal name specifies a physical crystal contributing to that project, 
+and the dataset-name specifies a particular dataset obtained from that
+crystal. All three should be given.
+
+<H3><A name="block"></A>BLOCK &lt;blockname&gt;</H3>
+
+<p>(Optional keyword)<br>
+mmCIF-format reflection files contain reflection data in blocks started
+by a "data_&lt;blockname&gt;" tag. Generally, a file will only contain a single
+block. In some cases, however, there may be several related blocks (e.g. native
+data, and additional datasets for phase determination). A specific block
+may be converted to MTZ format by specifying its name (including the "data_"
+prefix). Without this keyword, cif2mtz will simply convert the first data block.
+
+<H3><A NAME="anom"></A>ANOMALOUS</H3>
+
+<P>(Optional keyword)<br>
+If this keyword is given, the program will attempt to recover F(+) and
+F(-) columns from hkl / -h-k-l pairs in the input mmCIF file. Any hkl
+singletons will be treated as F(+) data. Columns FP/SIGFP will also
+be output as mean of the input F(+) and F(-).</P>
+
+<P><b>Warning:</b> this option will work with mmCIF such as are output
+by <a href="mtz2various.html">MTZ2VARIOUS</a>, where the -h-k-l reflection
+immediately follows the corresponding hkl, and where hkl reflections are
+in the CCP4 asymmetric unit. It will fail in other cases. Without the
+ANOMALOUS option, all reflections will be passed unchanged to HKLOUT.</P>
+
+<P><b>Note also:</b> this option deals with the case where anomalous pairs
+exist as different reflection rows. This is different (and incompatible with) 
+the case where anomalous pairs exist as different columns, e.g. _refln.pdbx_F_plus
+and _refln.pdbx_F_minus
+
+<H3><A name="status"></A>STATUS XPLO | CCP4 </H3>
+
+<P>(Optional keyword)<br>
+The <tt>_refln.status</tt> column (if present) should flag reflections
+used for the free-R calculation by 'f', and others by 'o'. Some mmCIF
+files use '0' and '1' instead. The program will pick this up automatically,
+but needs to know which convention is being used. This keyword can be used
+to set the XPLOr convention ('1' if free, '0' otherwise) or the CCP4
+convention  ('0' if free, '1' otherwise). The default is XPLOr convention.</P>
+
+<P>This is the convention used in the input mmCIF file. The MTZ file
+always adheres to the CCP4 convention.</P>
+
+<H3><A NAME="end"></A>END</H3>
+End keyworded input.
+
+<h2><a name="errors"></a>ERROR MESSAGES</h2>
+
+<dl>
+<dt>"CCIF signal CCIF_PARTLOOP" / "Attempt to process loop with incomplete loop packet"
+<dd>The file should contain a table of reflection data such that the total number of
+items is divisible by the number of columns. If the mmCIF file is badly formatted, 
+two numbers may run together, reducing the apparent number of data items. This shouldn't
+happen with files from the PDB, but may happen after local processing. If you get this
+error message, you need to check through the data careful looking for such mistakes.
+</dl>
+
+<h2><A NAME="examples"></A>EXAMPLES</h2>
+
+Structure factors and their sigmas from 1gme:
+<pre>
+
+cif2mtz hklin r1gmesf.ent hklout 1gme.mtz &lt;&lt;eof
+END
+eof
+
+</pre>
+Another example of diffraction data, this time containing
+squared structure factors (assumed to be intensities) and
+calculated structure factors. The file only contains
+the list of reflections, so additional information must
+be supplied:
+<pre>
+
+cif2mtz hklin r1d9ysf.ent hklout 1d9y.mtz &lt;&lt;eof
+CELL 40.583  111.009  140.423  90.00  90.00  90.00
+SYMM C2221
+NAME PROJ MBP CRYS apoprotein DATA native
+END
+eof
+
+</pre>
+Finally, 1gr5 contains structure factors and phases from
+electron microscopy data:
+<pre>
+
+cif2mtz hklin r1gr5sf.ent hklout 1gr5.mtz &lt;&lt;eof
+END
+eof
+
+</pre>
+Note that this file contains dummy cell dimensions and
+symmetry, and it may be convenient to set these with
+the CELL and SYMM keywords.
+
+
+<H2>AUTHOR</H2>
+
+<P>Martyn Winn </P>
+
+<H2>SEE ALSO</H2>
+
+<P>
+<A HREF=f2mtz.html>f2mtz</A> - convert other ASCII formats to MTZ <br>
+<A HREF=mtz2various.html>mtz2various</A> - convert MTZ to mmCIF and others <br>
+</P>
+
+</BODY>
+</HTML>

@@ -1,0 +1,79 @@
+#!/bin/sh -e
+
+# Example using rnase coordinates for accessible surface
+# calculation
+
+# Comments
+# --------
+# surface is best run interactively; because of its poor
+# input method a script is difficult to write.
+#
+# This is a run of surface which calculates the accessible
+# area for chain A in rnase twice - once for chain A alone
+# and once taking account of the presence of chain B.
+#
+# nb since "chain" command only recognises numbers,
+# specify the chains using atom numbers
+
+# Remove log file (if it already exists)
+if test -f $CCP4_SCR/surface.log; then
+  rm -f $CCP4_SCR/surface.log
+fi
+
+surface XYZIN1 $CEXAM/rnase/rnase.pdb \
+        XYZOUT $CCP4_SCR/rnase_chn_a.rad <<eof-surf >> $CCP4_SCR/surface.log
+# Put the first set of parameters here
+#       e.g. zstep, probe etc
+# This example just uses the defaults
+# At the end you must issue the 'run' command to move onto
+# the next set of commands
+#
+# use the 'subset .. calc .. serial' commands to
+# select only those atoms in chain A for the area
+# calculation
+run
+subset
+calc
+serial
+1
+751
+done
+next
+# The 'next' starts the first area calculation
+# For a second calculation issue 'run' again
+# This time calculate the accessible area of chain A
+# in the presence of chain B
+#
+# use the 'subset...done...reset' to clear the existing
+# selection, before selecting chain A for calcation
+# and chain B for inclusion only
+# (nb would probably be better done using 2 separate
+# runs of the program...)
+run
+subset
+done
+reset
+subset
+calc
+serial
+1
+751
+incl
+serial
+776
+1526
+done
+next
+# 'next' is required to do the 2nd calculation - the
+# accessible area will be less than in the first because
+# chain B obscures some of chain A
+# 'stop' command ends the program
+stop
+eof-surf
+#
+# Use 'grep' to extract the total accessible area from
+# each calculation
+echo ' Total accessible areas from SURFACE are:'
+grep 'all atoms in calculation' $CCP4_SCR/surface.log
+exit
+#

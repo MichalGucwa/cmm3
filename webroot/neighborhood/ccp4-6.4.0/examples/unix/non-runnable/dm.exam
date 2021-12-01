@@ -1,0 +1,103 @@
+#
+#[ a simple solvent/histogram calculation  ]
+#
+
+dm                                      \
+        hklin gmto.mtz                  \
+        hklout gmtodm.mtz               \
+        << 'my-data'
+SOLC 0.35
+MODE SOLV HIST
+NCYCLE 10
+LABIN FP=FP SIGFP=SIGFP PHIO=PHIB FOMO=FOM
+LABOUT PHIDM=PHI1 FOMDM=W1
+'my-data'
+
+#
+#[ a better solvent/histogram calculation, ]
+#[ takes 2x as long, uses fixed free-r set ]
+#[ starts at 3.0A and extends from there   ]
+#
+
+dm                                      \
+        hklin gmto.mtz                  \
+        hklout gmtodm.mtz               \
+        << 'my-data'
+SOLC 0.35
+MODE SOLV HIST
+NCYCLE 10 FREE 2
+SCHEME RES FROM 3.0
+LABIN FP=FP SIGFP=SIGFP PHIO=PHIB FOMO=FOM FREE=FreeR_flag
+LABOUT PHIDM=PHI1 FOMDM=W1
+'my-data'
+
+#
+# NON-CRYSTALLOGRAPHIC SYMMETRY AVERAGING
+#[ a three fold averaging calculation      ]
+#
+
+dm   hklin chmimir.mtz  \
+     hklout dmchm.mtz   \
+     ncsin1 chmi.msk    \
+     << 'MY-DATA'
+SOLC 0.52
+RESO 1000.0 2.1
+NCYC 10
+MODE SOLV HIST AVER
+SCHEME AUTO
+AVER 3 REF
+ROTA POLAR  0.0  0.0  0.0
+TRANS  0.0  0.0  0.0
+ROTA POLAR  113.28130 103.41944 120.33858
+TRANS  43.635 38.059 62.726
+ROTA POLAR   66.58067 -76.78019 119.69176
+TRANS  82.989 15.401 -8.928
+LABI FP=F SIGFP=SIGF PHIO=PHIB FOMO=FOM
+LABO PHIDM=PHIDM FOMDM=FOMDM
+END
+'MY-DATA'
+
+#
+# MULTI-DOMAIN AVERAGING
+#[ a two fold averaging calculation with   ]
+#[ two domains and refinement of the 2nd   ]
+#[ set of averaging matrices.              ]
+#
+
+dm \
+ hklin hpattj.mtz \
+ hklout dm1.mtz \
+ ncsin1 cwnads.mask \
+ ncsin2 cwglobs.mask \
+<< 'EOF-dm'
+SOLC 0.57
+MODE SOLV HIST AVER
+NCYCLE 40
+AVERAGE 2
+ 1.0 0.0 0.0
+ 0.0 1.0 0.0
+ 0.0 0.0 1.0
+ 0.0 0.0 0.0
+    -0.71389002    -0.69492584     0.08611962
+    -0.69635397     0.69129372    -0.19136506
+     0.07357326    -0.19652288    -0.97735721
+   115.37364197    54.98566055    67.00005341
+AVERAGE 2 REF
+ 1.0 0.0 0.0
+ 0.0 1.0 0.0
+ 0.0 0.0 1.0
+ 0.0 0.0 0.0
+     0.75830859     0.65183645     0.00883542
+     0.65189570    -0.75824565    -0.00975925
+     0.00033828     0.01316060    -0.99991322
+    17.30371666   -47.10081482    68.99727631
+LABIN FP=FP SIGFP=SIGFP PHIO=PHIml FOMO=FOMml -
+HLA=HLA HLB=HLB HLC=HLC HLD=HLD
+LABOUT PHIDM=PHIDM FOMDM=FOMDM
+'EOF-dm'
+
+#
+# NOTE: If you don't know what multi-domain averaging is,
+# you don't need it. Use the ncs averaging example, not
+# the multi-domain example.
+#

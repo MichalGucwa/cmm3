@@ -1,0 +1,144 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4i Documentation for Programmers: CreateInputFileLine command</title>
+<link rel="stylesheet" type="text/css" href="../ccp4idocs.css" title="CCP4i" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="3" class="logopic"><img src="../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logoprog">Documentation for Programmers</td></tr>
+<tr><td class="logotitle">CreateInputFileLine</td></tr>
+</table>
+<br />
+<table border="0">
+<tr><td>
+<a href="CreateLabinLine.html" target="_INDEXMAIN">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="update_extendingframe.html" target="_INDEXMAIN">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="progframeset.html" target="_PROGRAMMERSDOCS">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td></tr>
+</table>
+
+<h3><a name="name"></a>NAME</h3>
+
+<p>CreateInputFileLine - draw a line for the user to select input file</p>
+
+<h3><a name="synopsis"></a>SYNOPSIS</h3>
+
+<p><strong>CreateInputFileLine</strong> <em>line_id message_text label filenameVar
+dirVar ?args?</em></p>
+
+<p>Optional Arguments:</p>
+
+<blockquote>
+<strong><a href="#help"
+target="_self">-help</a></strong> <em>help_target</em><br />
+
+<strong><a href="#toggle_display"
+target="_self">-toggle_display</a></strong> <em>controlVar status control_value_list</em><br />
+
+<strong><a href="#filout"
+target="_self">-filout</a></strong> <em>filenameVar dirVar append_text</em><br />
+
+<strong><a href="#setfileparam"
+target="_self">-setfileparam</a></strong> <em>parameter_type parameterVar</em><br />
+
+<strong><a href="#setlabin"
+target="_self">-setlabin</a></strong> <em>labinVar priority_labels</em>
+</blockquote>
+
+<h3><a name="description"></a>DESCRIPTION</h3>
+
+<p>Create a line with the components of a 'file' line: default projects
+menu, an entry field, access to a file browser and access to a file viewer
+and return the id of the line <em>line_id</em>. The line will be drawn with
+a label <em>label</em> (which should be short) and the text <em>message_text</em>
+will be displayed in the message line when the mouse is over the entry
+field. This message text should be a short description of what the file
+is required for and give any program keyword which might help a user who
+is familiar with the program.</p>
+
+<p>There are two variables associated with each file line: the name of
+the selected file, <em>filenameVar</em>, and the name of the default directory
+for the file, <em>dirVar</em>. The <em>dirVar</em> is associated with a menu
+which lists the project directories defined by the user and the scratch
+directory. The initial input value of <em>dirVar</em> is set in the
+<em>taskname</em>.def file and should usually be &quot;&quot; (<em>i.e.</em> null);
+the CCP4i program will then set it to the current default project directory.</p>
+
+<dl>
+<dt><a name="help"></a><strong>-help</strong> <em>help_target</em></dt>
+<dd>The user can access on-line help by clicking the right mouse button
+on a widget. The help file is defined by the preceding
+<em>SetProgramHelpFile</em> command. The <em>help_target</em> is the target
+within that file to go to when the user clicks on he entry field in this line.</dd>
+
+<dt><a name="toggle_display"></a><strong>-toggle_display</strong> <em>controlVar status
+control_value_list</em></dt>
+<dd>Whether the line is displayed is dependent on the value of the parameter
+called <em>controlVar</em>. <em>status</em> can have the values <strong>open</strong>
+or <strong>hide</strong>. If the value of <em>controlVar</em> is one of the values
+in <em>control_value_list</em>, the line will be displayed if <em>status</EM
+is <strong>open</strong> or hidden if <em>status</em> is <strong>hide</strong>. The
+opposite status will be adopted if the value of <em>controlVar</em> is not one of
+those in the <em>control_value_list</em>.</dd>
+
+<dt><a name="filout"></a><strong>-filout</strong> <em>filenameVar dirVar append_text</em></dt>
+<dd>After the user has selected the input file, derive a name for the output
+file name in the variable <em>filenameVar</em>. The output file name will
+have the directory path for the default directory in <em>dirVar</em>. The
+file root will be copied from the input file name with the string <em>append_text</em>
+added. For example, the <em>append_text</em> may include the name of the program
+(<em>e.g.</em> '_refmac'). If you do not want to append anything, set
+<em>append_text</em> to '--'. The file extension will be the appropriate
+one for the data type for the output file. Do NOT use this option if it
+is liable to derive an output file name which is the same as the input
+file name.</dd>
+
+<dt><a name="setfileparam"></a><strong>-setfileparam</strong>
+<em>parameter_type parameterVar</em></dt>
+<dd>If the input file is of data type <strong>_MTZ_file</strong> or
+<strong>_pdb_file</strong>, it will be read and some key crystallographic data will
+be saved within the CCP4i program. This data can be used to initialise variables
+with the task interface. For each variable to be initialised, use the
+<strong>-setfileparam</strong> keyword followed by the <em>parameter_type</em>
+(see
+<a href="#extracted_data"
+target="_self">below</a>) and the name of the variable <em>parameterVar</em></dd>
+
+<dt><a name="setlabin"></a><strong>-setlabin</strong> <em>labinVar priority_labels</em></dt>
+<dd>For an MTZ input file, the names and types of column labels are
+extracted and used to initialise the menus defined by the <em>CreateLabinLine</em>
+command. It is not necessary to use the <strong>-setlabin</strong> keyword for any
+<em>labinVar</em> used in <em>CreateLabinLine</em>. <font color="#FF0000">Not finished</font></dd>
+</dl>
+
+<h3><a name="keywords"></a>KEYWORDS</font></h3>
+
+<h3><a name="extracted_data"></a>DATA EXTRACTED FROM INPUT FILES</h3>
+
+<dl>
+<dt>From MTZ Files</dt>
+<dd>CELL_1</dd>
+<dd>CELL_2</dd>
+<dd>CELL_3</dd>
+<dd>CELL_4</dd>
+<dd>CELL_5</dd>
+<dd>CELL_6</dd>
+<dd>RESOLUTION_MIN</dd>
+<dd>RESOLUTION_MAX</dd>
+<dd>SPACE_GROUP_NAME</dd>
+<dd>SPACE_GROUP_NUMBER</dd>
+
+<dt>From PDB Files</dt>
+<dd>SPACE_GROUP_NAME</dd>
+</dl>
+
+</body>
+</html>

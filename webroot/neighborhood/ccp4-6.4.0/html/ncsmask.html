@@ -1,0 +1,241 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::NCSMASK::Supported::Density Modification - Molecular Averaging::averaging mask manipulation program:::::::: -->
+
+<H1> NCSMASK (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>ncsmask </b>
+- averaging mask manipulation program
+<H2> SYNOPSIS</H2>
+<b>ncsmask</b>
+[
+<b>MSKIN</b>
+<i>foo.msk</i>
+/
+<b>XYZIN</b>
+<i>foo.pdb</i>
+]
+<b>MSKOUT</b>
+<i>bar.msk</i><br>
+[<A HREF="#keywords">Keyworded input</A>]
+<H2> <A NAME="description"></A>DESCRIPTION</H2>
+This program performs operations on non-crystallographic symmetry
+masks. It is ideal as a precursor to `<TT>dm</TT>', since it contains a
+more sophisticated treatment of mask overlap, and may avoid some
+problems commonly caused by poorly defined masks.
+<P> 
+Input can be from a PDB file, in which case a mask is generated from
+spheres around all atoms. A crude 'sphere mask' can be constructed by
+making a PDB file with only a few atoms and specifying a large radius.
+<P> 
+Alternatively input can be from a CCP4 format map/mask file.
+<P> 
+The mask may then be modified by expanding or contracting, smoothing
+the boundary, reducing from a multimer to a monomer (in some cases),
+removing crystallographic- or non-crystallographic symmetry overlap
+and altering the mask box size.
+<P> 
+This program should not normally be used for generating solvent masks, since 
+it does not impose crystallographic symmetry or unit cell repeat. See
+<A HREF="mapmask.html">mapmask</A>
+for further details. However, these masks can be used in DM 1.7.1 or later.
+<H2> <A NAME="files"></A>INPUT/OUTPUT FILES</H2>
+<dl>
+<dt> XYZIN<dd>
+is the input PDB file
+<dt> MSKIN<dd>
+is the input mask file
+<dt> MSKOUT<dd>
+is the output mask file
+</dl>
+<H2> <a name="keywords"> KEYWORDED INPUT</a></H2>
+The GRID and SYMMETRY cards are useful if input is from a .pdb file,
+otherwise the information is taken from the input mask header. Available keywords are:
+<blockquote>
+<A HREF="#average"><B>AVERAGE</B></A>, <A HREF="#axis"><B>AXIS</B></A>,
+<A HREF="#expand"><B>EXPAND</B></A>, <A HREF="#grid"><B>GRID</B></A>,
+<A HREF="#monomer"><B>MONOMER</B></A>, <A HREF="#notrim"><B>NOTRIM</B></A>,
+<A HREF="#overlap"><B>OVERLAP</B></A>, <A HREF="#peak"><B>PEAK</B></A>,
+<A HREF="#radius"><B>RADIUS</B></A>, <A HREF="#smooth"><B>SMOOTH</B></A>,
+<A HREF="#symmetry"><B>SYMMETRY</B></A>, <A HREF="#xyzlim"><B>XYZLIM</B></A>
+</blockquote>
+<H3> <a name="grid"> GRID &lt;nx&gt; &lt;ny&gt; &lt;nz&gt; | SPACING &lt;x&gt; [ &lt;y&gt; &lt;z&gt ]</a></H3>
+Set the sampling grid over the unit cell to &lt;nx&gt;*&lt;ny&gt;*&lt;nz&gt;. 
+The default is 1.0 Angstrom spacing.
+<BR>Alternatively, the SPACING subkeyword allows you to set the grid spacing; if
+only <i>x</i> is specified then this gives <i>x</i> Angstrom spacing along all
+axes, otherwise <i>x</i>, <i>y</i> and <i>z</i> are the spacings along each
+axis.
+<P>The GRID keyword is ignored if a mask is input.
+<H3> <a name="symmetry"> SYMMETRY &lt;spacegroup name/number&gt;</a></H3>
+Set the spacegroup symmetry for the mask. The default is taken
+from the input mask if a mask is input, or P1 if a .pdb file is input.
+<H3> <a name="axis"> AXIS &lt;x&gt; &lt;y&gt; &lt;z&gt;</a></H3>
+Change the default output axis order. The first axis specified will
+vary fastest.
+<H3> <a name="xyzlim"> XYZLIM &lt;x1&gt; &lt;x2&gt; &lt;y1&gt; &lt;y2&gt; &lt;z1&gt; &lt;z2&gt;</a></H3>
+Changes the default mask extent. &lt;x1&gt;-&lt;z2&gt; are either in grid 
+units or fractional coordinates. If the new extent is smaller
+than the input mask extent, the input will be truncated, if
+the new extent is larger the mask will be padded with zeros.
+The default is either the extent of the input mask or the
+extent of the input .pdb file + sphere radius + 3.0 Angstrom.
+See however the <A HREF="#notrim">NOTRIM</A> card.
+<H3> <a name="radius"> RADIUS &lt;rad&gt;</a></H3>
+Set the sphere radius for building a mask out of atoms. Default=3.0
+Angstrom. A much larger value could be used to build a mask around
+C-alpha or sulphur coordinates, for example.
+<H3> <a name="peak"> PEAK &lt;num&gt;</A></H3>
+Pick the &lt;num&gt; largest connected regions of the mask, and delete
+all others. `PEAK 1' is particularly useful for tidying up a
+correlation mask (see <A HREF="maprot.html">maprot</A>).
+<H3> <a name="expand"> EXPAND &lt;rad&gt;</a></H3>
+Expand/contract the mask. This function expands the mask by &lt;rad&gt;
+Angstrom in all directions. The mask will not be expanded beyond the
+current mask extent, if this is required the <A HREF="#xyzlim">XYZLIM</A> card should be
+used to increase the mask extent. A negative value will contract the
+mask.
+<H3> <a name="smooth"> SMOOTH &lt;rad&gt;</a></H3>
+Smooth the mask using a sphere of radius &lt;rad&gt;.  This will eliminate
+features smaller than &lt;rad&gt; from the surface of the mask. Maximum
+radius ~5 grid points.
+<H3> <a name="average"> AVERAGE &lt;nncs&gt;</a></H3>
+Enter NC-symmetry elements for overlap removal. (Note that this card
+has the same format as the `<TT>dm</TT>' `AVERAGE' card). This card is followed by
+&lt;nncs&gt; rotation/translation matrices on subsequent lines in either
+CCP4 or O/RAVE format.
+<dl>
+<dt> CCP4 Formats (see also <A HREF="lsqkab.html#rotate">lsqkab</A>):<dd>
+<pre>
+ROTATE EULER &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt;     (Euler angles)
+TRANSLATE &lt;t1&gt; &lt;t2&gt; &lt;t3&gt;
+</pre>
+<dt> or<dd>
+<pre>
+ROTATE POLAR &lt;omega&gt; &lt;phi&gt; &lt;kappa&gt;      (Polar angles)
+TRANSLATE &lt;t1&gt; &lt;t2&gt; &lt;t3&gt;
+</pre>
+<dt> or<dd>
+<pre>
+ROTATE MATRIX &lt;r11&gt; &lt;r12&gt; &lt;r13&gt; &lt;r21&gt; &lt;r22&gt; &lt;r23&gt; &lt;r31&gt; &lt;r32&gt; &lt;r33&gt;
+TRANSLATE &lt;t1&gt; &lt;t2&gt; &lt;t3&gt;
+</pre>       
+<dt> O/RAVE Format<dd>
+<br>
+OMAT
+<br>
+&lt;r11&gt;  &lt;r21&gt;  &lt;r31&gt;
+<br>
+&lt;r12&gt;  &lt;r22&gt;  &lt;r32&gt;
+<br>
+&lt;r13&gt;  &lt;r23&gt;  &lt;r33&gt;
+<br>
+&lt;t1&gt;   &lt;t2&gt;   &lt;t3&gt;
+<br>
+where
+<br>
+  x' = &lt;r11&gt;x + &lt;r12&gt;y + &lt;r13&gt;z + &lt;t1&gt;
+<br>
+  y' = &lt;r21&gt;x + &lt;r22&gt;y + &lt;r23&gt;z + &lt;t2&gt;
+<br>
+  z' = &lt;r31&gt;x + &lt;r32&gt;y + &lt;r33&gt;z + &lt;t3&gt;
+<br>
+(note that the rotation matrix is transposed with respect to CCP4 
+matrix format.)
+</dl>
+<P> 
+These are the operations which map the density in the region covered
+by the input mask onto the other equivalent regions. The first
+operator must be the identity matrix.  The mask is input in CCP4 mask
+ format on the input file label MSKIN, and should cover
+just one monomer or averaging domain, NOT the whole unit cell.
+<H3> <a name="monomer"> MONOMER</a></H3>
+Reduce a multimer mask to cover only a monomer.  This option will
+generate a mask covering an arbitrarily chosen monomer from a multimer
+in the case where the NCS consists ONLY of a SINGLE PROPER ROTATION
+AXIS of any order.  An arbitrary segment covering an angle of
+2*pi/&lt;nncs&gt; is selected and the rest of the mask is removed.
+<H3> <a name="overlap"> OVERLAP [ &lt;ncycle&gt; ]</a></H3>
+Perform overlap removal.  Overlap removal will be performed by
+removing pixels from the surface of the mask. The mask is overlapped
+with its crystallographic- and non-crystallographic symmetry related
+partners (see <A HREF="#symmetry">SYMMETRY</A> and <A HREF="#average">AVER</A> cards).  The overlap removal calculation
+may not remove all overlap on the first cycle, if &lt;ncycle&gt; is
+specified, overlap removal will be repeated this number of times.
+<H3> <a name="notrim"> NOTRIM</a></H3>
+Disable mask trimming.  The default is to reduce the mask extent to
+obtain the minimum box which will contain the final output mask. With
+NOTRIM, the mask extent will be the same as the input mask or the
+values on the <A HREF="#xyzlim">XYZLIM</A> card if it is present.
+<H2> <A NAME="notes"></A>NOTES</H2>
+The calculations are performed in the following order:
+<ol>
+<li>
+Mask input/generation
+<li>
+Peak picking
+<li>
+Expansion/Contraction
+<li>
+Smoothing
+<li>
+Monomer generation
+<li>
+Overlap removal
+<li>
+Extent trimming
+</ol>
+<P> 
+If you want to do them in a different order, run the program several
+times.
+<P> 
+Read your output. When removing overlap, check that the input and
+output masks fill a sensible volume of the unit cell. Don't complain
+until you have done this.
+<H2> <A NAME="examples"></A>EXAMPLES</H2>
+To remove the overlap from a mask for input to `<TT>dm</TT>':
+<pre>
+#
+ncsmask mskin ins.msk mskout ins1.msk &lt;&lt; eof
+AVERAGE 2
+OMAT
+ 1.000  0.000  0.000
+ 0.000  1.000  0.000
+ 0.000  0.000  1.000
+ 0.000  0.000  0.000
+OMAT
+ -0.88284    -0.46960    -0.00849
+ -0.46899     0.88238    -0.03808
+  0.02537    -0.02964    -0.99924
+ 82.80000     0.10000   -34.10000
+OVERLAP
+END
+eof
+</pre>
+<P> 
+To make a mask from pdb file and remove overlap (note that `<TT>dm</TT>' doesn't
+care about the grid on which input masks are calculated):
+<P> 
+<pre>
+#
+ncsmask xyzin ins.pdb mskout ins1.msk &lt;&lt; eof
+SYMMETRY R3
+RADIUS 3.0
+AVERAGE 2
+ROTATE EULER 0.0 0.0 0.0
+TRANSLATE 0.0 0.0 0.0
+ROTATE EULER -29.6  180.0    0.0
+TRANSLATE 0.3  0.1 -0.1
+OVERLAP
+END
+eof
+</pre>
+<H2> SEE ALSO</H2>
+ <A HREF=dm.html>dm</A>,
+ <A HREF=lsqkab.html>lsqkab</A>,
+ <A HREF=mapmask.html>mapmask</A>, 
+ <A HREF=maprot.html>maprot</A>, 
+ <A HREF=bones2pdb.html>bones2pdb</A>.
+</body></html>

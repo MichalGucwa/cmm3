@@ -1,0 +1,208 @@
+<html>
+<head><title>CCP4 Program Suite : mapmask</title></head>
+<body>
+
+<!-- ::INDEX_INFO::MAPMASK::Supported::Map calculation and manipulation::map/mask extend program:::::::: -->
+
+<H1> MAPMASK (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>mapmask </b>
+- map/mask extend program
+<H2> SYNOPSIS</H2>
+<b>mapmask MAPIN/MSKIN/MAPIN1/MSKIN1</b>
+<i>foo.map</i>
+[
+<b>MAPIN2/MSKIN2</b>
+<i>bar.map</i>
+]
+[
+<b>XYZIN</b>
+<i>foo.pdb</i>
+]
+[
+<b>MAPOUT</b>
+<i>foobar.map</i>
+]
+[
+<b>MSKOUT</b>
+<i>foobar.msk</i>
+]
+<BR>[<A HREF="#keywords">Keyworded Input</A>]
+<H2><A NAME="description"></A> DESCRIPTION</H2>
+`mapmask' is a general map and mask manipulation program. It will
+change the extent of a map or mask file, re-order a map or mask, scale
+a map or mask, and generate a mask from a map and vice versa. It will
+also produce a print out of arbitrary map or mask sections. It can
+combine two input maps or masks to produce a sum or product map, or a
+solvent flattened/flipped map.
+<P> 
+It can be used in conjunction with <A HREF="sfall.html">SFALL</A> to make a solvent mask,
+which can be used for solvent flattening using <A HREF="dm.html">'<TT>dm</TT>'</A> or FLATMAP. In this
+case SFALL is used to make a atom map, and then MAPMASK is used to
+mask the non-zero areas of this map.
+<P> 
+Scaling options from Andrew Leslie's FLATMAP program can be used to
+scale the map for solvent flattening (SCALE card). Jan Pieter
+Abraham's solvent flipping and density truncation techniques may be
+applied (SOLV card).
+<H2><A NAME="files"></A> INPUT/OUTPUT FILES</H2>
+<H3><A NAME="first_input"></A> MAPIN/MAPIN1/MSKIN/MSKIN1</H3>
+Input map or mask. If MAPIN or MAPIN1 is specified, the values of the
+map grid points will converted to real numbers (even if the input file
+is a mask). If MSKIN or MSKIN1 is specified, the values of the grid
+points will be set to 0 or 1 (even if the input file is a real map).
+<H3><A NAME="second_input"></A> MAPIN2/MSKIN2</H3>
+Second input map, used when combining maps or performing solvent
+flattening (used by <A HREF="#solv">SOLV</A>, <A HREF="#maps">MAPS</A> cards). Must be on the same grid as the
+first input map.
+<H3> MAPLIM</H3>
+is for use with <A HREF="#xyzlim">XYZLIM MATCH</A> option.
+<H3> XYZIN</H3>
+is for use with <A HREF="#border">BORDER</A> option.
+<H3> MAPOUT</H3>
+is an output map.
+<H3> MSKOUT</H3>
+is an output mask, 1 wherever MAP&gt;MSKCUT and 0 elsewhere.
+<P> 
+Either MAPOUT, or MSKOUT, or neither, or both may be assigned. If both
+are assigned then MAPOUT will contain the real map values and MSKOUT
+the values 0/1. 
+<H2> <a name="keywords"> KEYWORDED INPUT</a></H2>
+<P>Possible keywords are:
+<BLOCKQUOTE>
+<A HREF="#axis"><B>AXIS</B></A>,
+<A HREF="#border"><B>BORDER</B></A>,
+<A HREF="#extend"><B>EXTEND</B></A>,
+<A HREF="#maps"><B>MAPS</B></A>,
+<A HREF="#mask"><B>MASK</B></A>,
+<A HREF="#mode"><B>MODY</B></A>,
+<A HREF="#pad"><B>PAD</B></A>,
+<A HREF="#print"><B>PRINT</B></A>,
+<A HREF="#scale"><B>SCALE</B></A>,
+<A HREF="#solv"><B>SOLV</B></A>,
+<A HREF="#symmetry"><B>SYMMETRY</B></A>,
+<A HREF="#xyzlim"><B>XYZLIM</B></A>.
+</BLOCKQUOTE>
+<H3> <a name="xyzlim"> XYZLIM</a> [ASU] [CELL] [MATCH]
+&lt;x1&gt; &lt;x2&gt; &lt;y1&gt; &lt;y2&gt; &lt;z1&gt; &lt;z2&gt;</H3>
+Set the output map extent as `extend'. &lt;x1&gt;-&lt;z2&gt; are given in grid
+units or in fractional coordinates. It is possible to automatically
+extend to the CCP4 default asymmetric unit, or a whole unit cell,
+by specifying `XYZLIM ASU' or `XYZLIM CELL'. It is also
+possible to extend the map to match another map (given as MAPLIM) by
+specifiying `XYZLIM MATCH'.  The default is to keep the extent of the
+input map.
+<H3> <a name="border"> BORDER</a> &lt;n&gt;</H3>
+Extend the map to cover the volume of a coordinate model given in
+XYZIN, as `extend'. &lt;n&gt; is the border in Angstrom around the edge of
+the model.
+<H3> <a name="extend"> EXTEND</a> COPY | XTAL | OVERLAP </H3>
+Selects how the map is to be extended.
+<dl>
+<dt><A NAME="extend_copy"></A> COPY<dd>
+copies density from the input to the output map without applying
+symmetry or cell repeat.
+<dt><A NAME="extend_xtal"></A> XTAL<dd>
+applies both symmetry and cell repeat to generate density outside
+the input map extent
+<dt><A NAME="extend_overlap"></A> OVERLAP<dd>
+applies both symmetry and cell repeat to generate density, and when
+multiple values are available for a grid point, the highest is taken.
+This option can be used to generate a solvent mask from an averaging
+mask covering the whole complex.
+</dl>
+Default: If the input map contains the output map: EXTEND COPY.
+If the input map must be extended: EXTEND XTAL.
+<H3> <a name="pad"> PAD</a> &lt;rho&gt;</H3>
+Normally if you try to extend a map which does not contain at least an
+(arbitrary) asymmetric unit, mapmask will give an error since it will
+be impossible to generate some of the map. PAD &lt;rho&gt; suppresses the
+error message and specifies a density value &lt;rho&gt; to be used for such
+regions.
+<H3> <a name="symmetry"> SYMMETRY</a> &lt;spacegroup name or number&gt;</H3>
+Override the spacegroup of the input map.
+<H3> <a name="axis"> AXIS</a> &lt;fast&gt; &lt;medium&gt; &lt;slow&gt;</H3>
+Change the output axis order. Default is input axis order.  &lt;fast&gt;,
+&lt;medium&gt;, &lt;slow&gt; must be some permutation of X Y Z.
+<H3> <a name="mask"> MASK</a> [CUT &lt;mskcut&gt;] [FRAC &lt;mskfrc&gt;] [VOLUME &lt;mskvol&gt;]</H3>
+Set the threshold value for making a mask from a map: all density
+values above this level in the final map will be set to 1.0 in the
+output mask if one is specified.
+<dl>
+<dt><A NAME="mask_cut"></A> CUT    &lt;mskcut&gt;<dd>
+sets the density cutoff value directly.
+<dt><A NAME="mask_frac"></A> FRAC   &lt;mskfrc&gt;<dd>
+sets the fraction of the output mask that should be above the
+threshold. This is used when making a solvent mask, and will work
+correctly on a unit cell or asymmetric unit.
+<dt><A NAME="mask_volume"></A> VOLUME &lt;mskvol&gt;<dd>
+sets the volume of the mask that should be above the threshold as a
+fraction of the unit cell volume. This is used when making an
+averaging mask from a correlation map (see <A HREF="maprot.html">MAPROT</A>).
+</dl>
+<H3> <a name="mode"> MODE</a> &lt;logical_name1&gt; [ &lt;logical_name2&gt; ]</H3>
+[Optional]<BR>Overrides the default mapmask behaviour of looking for any assignment or
+file with a likely name. The names correspond to logical
+assignments on the command line (e.g. <tt>MODE MSKIN MAPIN2</tt>). This keyword
+is not compulsory but is recommended to explicitly ensure that the
+correct data is being used as input.
+<H3> <a name="print"><A NAME="print_map"></A> PRINT</a> MAP &lt;axis&gt; [ &lt;first&gt; [ &lt;last&gt; [ &lt;step&gt; ]]]</H3>
+Print out map sections using the specified section axis.  &lt;axis&gt; must
+be one of X/Y/Z and specifies the section axis. &lt;first&gt;, &lt;last&gt; and
+&lt;step&gt; specify the range of sections to print. The density values are
+output as integers, and so this command will normally be used in
+conjunction with the <A HREF="#scale">SCALE</A> card.
+<H3><A NAME="print_mask"></A> PRINT MASK &lt;axis&gt; [ &lt;first&gt; [ &lt;last&gt; [ &lt;step&gt; ]]]</H3>
+Print out mask sections using the specified section axis. &lt;axis&gt; must
+be one of X/Y/Z and specifies the section axis. &lt;first&gt;, &lt;last&gt; and
+&lt;step&gt; specify the range of sections to print. Density values below
+the current density cutoff will be marked as `*', density values above
+the cutoff as ` '.
+<H3> <a name="scale"><A NAME="scale_factor"></A> SCALE</a> [FACTOR [c1 [c2]]]</H3>
+Multiply the map by &lt;c1&gt; and add &lt;c2&gt;. Thus
+rho'=rho*&lt;c1&gt;+&lt;c2&gt;. Default &lt;c1&gt;=1.0, &lt;c2&gt;=0.0.
+<H3><A NAME="scale_sigma"></A> SCALE [SIGMA [c1 [c2]]]</H3>
+Scale the map to have a standard deviation of &lt;c1&gt; and a mean of
+&lt;c2&gt;. Default &lt;c1&gt;=1.0, &lt;c2&gt;=0.0.
+<H3><A NAME="scale_mean"></A> SCALE [MEAN [rhop [rhos]]]</H3>
+Scale the map so that the mean of the protein region is &lt;rhop&gt; and the
+mean of the solvent region is &lt;rhos&gt;. This option attempts to put the
+density on an absolute scale and depends on the low resolution terms
+being used in the map calculation. MSKIN2 must be assigned. Default
+&lt;c1&gt;=0.433, &lt;c2&gt;=0.330.
+<H3><A NAME="scale_ratio"></A> SCALE [RATIO [ratio]]</H3>
+Scale the map so that the standard deviation of the protein region is
+&lt;ratio&gt; times the mean of the protein region. As the values of the
+electron density are approximately normally distributed about the
+mean, one can use standard tables of the area under a Gaussian curve.
+Thus &lt;ratio&gt;=0.5 corresponds to approximately 31% of the grid points
+in the protein being negative, &lt;ratio&gt;=1.0 corresponds to 16% being
+negative. Default &lt;ratio&gt;=1.0.
+<H3> <a name="solv"> SOLV</a> [FLIP &lt;flipfac&gt;] [ATTN &lt;attnu&gt;]</H3>
+Perform solvent flattening on MAPIN1 using the mask MSKIN2. If FLIP is
+specified, the density shifts are multiplied by &lt;flipfac&gt;, thus
+&lt;flipfac&gt;=1.0 corresponds to solvent flattening, &lt;flipfac&gt;=2.0
+corresponds to solvent flipping. If ATTN is specified, then negative
+density in the protein region is multiplied by &lt;attnu&gt;. &lt;attnu&gt;=0.0
+corresponds to density truncation. Default &lt;flipfac&gt;=1.0, &lt;attnu&gt;=1.0.
+<H3> <a name="maps"> MAPS</a> ADD/MULT</H3>
+Combine maps by addition or multiplication. No scaling is
+performed. MAP/MSKIN1 and MAP/MSKIN2 must be specified.
+
+<H2><A NAME="examples"></A> EXAMPLES</H2>
+
+<H3>Simple unix example script found in $CEXAM/unix/runnable/</H3>
+        <li><a href="../examples/unix/runnable/mapmask.exam">mapmask.exam</a> 
+(Contains several examples of how mapmask can be used).
+
+<H3>....and non runnable examples in $CEXAM/unix/non-runnable/</H3>
+        <li><a href="../examples/unix/non-runnable/mapcutting"mapcutting>mapcutting</a>
+(using ncsmask, mapmask and overlapmap).
+
+
+<H2> SEE ALSO</H2>
+ <A HREF=maprot.html>maprot</A>,
+ <A HREF=ncsmask.html>ncsmask</A>,
+ <A HREF=sfall.html>sfall</A>,
+ <A HREF=bones2pdb.html>bones2pdb</A>.
+</body></html>

@@ -1,0 +1,877 @@
+<html>
+<head>
+<title>CCP4/BIOXHIT: CCP4i Tracking Database Schema</title>
+</head>
+<body>
+<h1>CCP4/BIOXHIT: CCP4i Tracking Database Schema</h1>
+
+<h2>1 Introduction</h2>
+
+<p>This document outlines the specification of the CCP4i project tracking
+database. It is based on the project database used in CCP4i and is geared
+towards tracking runs of software initiated through CCP4i. Later revisions
+of the schema will be more generic to allow a better description of
+non-CCP4i initiated software runs.</p>
+
+<p>The sections below contain the following information: section 2 gives
+an abstract description of the tracking database schema; sections 3 and 4
+describe attempts at concrete implementations of the schema in CCP4i
+def file format and SQL tables respectively.</p>
+
+<h2>2 Description of the tracking database schema</h2>
+
+<h3>2.1 Overview</h3>
+
+<p>CCP4i divides the user's work into <b>projects</b>. A user
+can have as many projects as they wish. The schematic diagram below
+gives a picture of how the data is imagined in a simple hierarchy.</p>
+
+<pre>
+                 User
+                  +
+                  |
+                  |
+   Projects +-----+-----+ Default dirs
+      |                         |
+      +- Name                   +- Name
+      +- Directory              +- Directory
+      +- Database subdirectory
+                  |
+                  +- Job Database
+</pre>
+
+<h3>2.2 Projects</h3>
+
+<p>A <b>project</b> in this model consists very simply of a file directory
+or folder plus an associated job database which is used to store
+information about program runs. There is no formal definition of what
+constitutes a project beyond this, and users are free to define new
+projects to subdivide their work and organise their data as they wish.</p>
+
+<p>A project has the following attributes:</p>
+
+<ul>
+<li>A <em>project name</em> (also called an <em>alias</em>)</li>
+<li>An associated <em>project directory</em></li>
+<li>A <em>database subdirectory</em> with the project directory
+    (conventionally called <tt>CCP4_DATABASE</tt>)</li>
+<li>A job database</li>
+</ul>
+
+<p>The job database contains job records. A job is a run of a software
+application or task, which can be a single program or a script that
+runs many programs in some sequence. The data items associated with each
+each job record are given in the tables below in the section <em>Job
+Records</em>.</p>
+
+<p>In addition to none or more job records, the job database also has a
+data item called NJOBS. This is actually the current highest job id number
+in the database, and not necessarily the total number of jobs.</p>
+
+<h3>2.3 Default Directories ("Def Dirs")</h3>
+
+<p>A <b>default directory</b> (also called a "def dir") has name (also called
+an "alias") and an associated directory, but no database subdirectory or job
+database.</p>
+
+<p>A normal use of a def dir is as a convenient way to refer to a
+directory containing source data.</p>
+
+<h3>2.4 Job records</h3>
+
+<p>A <b>job</b> represents the run of a software application. Typically
+this is a task in CCP4i, however in principle it could be a run of
+any program or script. The following sections describe the data that are
+with each job in the schema.</p>
+
+<h4>2.4.1 Data associated with job records</h4>
+
+<p>Each job has a number of associated data items that are described in
+the following table.</p>
+
+<table border=2>
+<tr>
+<th bgcolor="lightgray">Name</th>
+<th bgcolor="lightgray">Description</th>
+<th bgcolor="lightgray">Type</th>
+</tr>
+<tr>
+<td>JOB_ID</td>
+<td><p>The job number is a unique integer value assigned to each job in
+    the project's job database, starting from 1 and increasing
+    monotonically. It is used as the primary key for identifying records
+    within the job database.</p></td>
+<td>Positive integer</td>
+</tr>
+<tr>
+<td>DATE</td>
+<td><p>The date of the last change to the job record, in "epoch" format
+    i.e. the number of seconds that have elapsed since the system's
+    (arbitrary) start time.</p></td>
+<td>Date (positive integer)</td>
+</tr>
+<tr>
+<td>TASKNAME</td>
+<td><p>The name of the CCP4i task or other application which created
+    the job when it ran.</p></td>
+<td>Text (no whitespace)</td>
+</tr>
+<tr>
+<td>STATUS</td>
+<td><p>The current state of the job, indicating that it is either in
+    progress, or the broad condition under which it terminated.
+    The status of a job indicates the state of the job process,
+    rather than indicating the quality of the output.<br />
+    See below for the possible values and their meanings.</p></td>
+<td>Enumerated type</td>
+</tr>
+<tr>
+<td>TITLE</td>
+<td><p>A descriptive user-defined title for the job run. This provides
+    simple annotation of the job records to help to distinguish
+    between different runs of the same task.</p></td>
+<td>Text</td>
+</tr>
+<tr>
+<td>LOGFILE</td>
+<td><p>The name of the principle logfile associated with the job.
+    Only the filename is specified, the file is assumed to be
+    held in the project directory.<br />
+    Typically CCP4i constructs the logfile names for a particular
+    job using the following convention:</p>
+    <p><tt><em>[JOB_ID]_[TASKNAME].log</em></tt></p>
+    <p>However this is a convention and not a general requirement for
+    logfile naming.</p></td>
+<td>Filename</td>
+</tr>
+<tr>
+<td>RUNFILE</td>
+<td><p>The name of a "control file" that was used to run the job,
+    for example a shell script.</p>
+    <p>It is possible for a job not to have the RUNFILE set; it
+    currently used when the user adds the report of a jobs run
+    from outside CCP4i.</p></td>
+<td>Filename</td>
+</tr>
+<tr>
+<td>SCRATCH</td>
+<td><p>The name of the temporary or "scratch" directory for the
+    job.</p></td>
+<td>Directory</td>
+</tr>
+<tr>
+<td>INPUT_FILES</td>
+<td><p>A list of the names of files that were used as input to the job.
+    Items in the list are separated by whitespace characters, and
+    can either be filenames without a path, in which case they are
+    assumed to reside in one of the project or def dir directories
+    (specified in the INPUT_FILES_DIR), or alternatively the file
+    may be specified by the full path.</p>
+    <p>See section 2.4.3 for details of how the filenames and
+    directories are stored and recovered.</p></td>
+<td>List of filenames</td>
+</tr>
+<tr>
+<td>INPUT_FILES_DIR</td>
+<td><p>A list of the project or def dir names corresponding to the
+    locations of the files in the INPUT_FILES list.
+    Items in the list are separated by whitespace characters.</p>
+    <p>See section 2.4.3 for details of how the filenames and
+    directories are stored and recovered.</p>
+    </td>
+<td>List of directory specifiers</td>
+</tr>
+<tr>
+<td>INPUT_FILES_STATUS</td>
+<td><p>A list of "file status" signifiers for each file in the
+    INPUT_FILES list. This is not used and the signifiers are
+    currently undefined.</p></td>
+<td>List of text</td>
+</tr>
+<tr>
+<td>OUTPUT_FILES</td>
+<td><p>A list of the names of files that were created as
+    output from the job.
+    Items in the list are separated by whitespace characters, and
+    can either be filenames without a path, in which case they are
+    assumed to reside in one of the project or def dir directories
+    (specified in the OUTPUT_FILES_DIR), or alternatively the file
+    may be specified by the full path.</p>
+    <p>See section 2.4.3 for details of how the filenames and
+    directories are stored and recovered.</p></td>
+<td>List of filenames</td>
+</tr>
+<tr>
+<td>OUTPUT_FILES_DIR</td>
+<td><p>A list of the project or def dir names corresponding to the
+    locations of the files in the OUTPUT_FILES list.
+    Items in the list are separated by whitespace characters.</p>
+    <p>See section 2.4.3 for details of how the filenames and
+    directories are stored and recovered.</p>
+    </td>
+<td>List of directory specifiers</td>
+</tr>
+<tr>
+<td>OUTPUT_FILES_STATUS</td>
+<td><p>A list of "file status" signifiers for each file in the
+    OUTPUT_FILES list. This is not used and the signifiers are
+    currently undefined.</p></td>
+<td>List of text</td>
+</tr>
+<tr>
+<td>PARAMETER_FILE</td>
+<td><p>The name of the CCP4i def-format file which contains the
+    parameters and values used to run a CCP4i task.</p>
+    <p>It is possible for jobs not to have an associated
+    parameter file, for example reported jobs.</p></td>
+<td>Filename</td>
+</tr>
+<tr>
+<td>NOTEBOOK_FILE</td>
+<td><p>The name of an ASCII text file with free text typically
+    used to store annotation or notes on the job.</p>
+    <p>It is possible for jobs not to have an associated
+    notebook file, as these files are only created by an
+    application when adding a new notebook entry.</p></td>
+<td>Filename</td>
+</tr>
+</table>
+
+<p>Note that the implementations described in the later sections of
+this document do not necessarily conform to this description at
+present.</p>
+
+<h4>2.4.2 Job Status Values and Meanings</h4>
+
+<p>The table gives the possible values for the STATUS data item in
+a job record:</p>
+
+<table border=2>
+<tr>
+<th bgcolor="lightgray">Value</th>
+<th bgcolor="lightgray">Description/meaning</th>
+</tr>
+<tr>
+<td>STARTING</td>
+<td>The job has been registered but the process is not yet
+    running</td>
+</tr>
+<tr>
+<td>RUNNING</td>
+<td>The job process is currently running on the system</td>
+</tr>
+<tr>
+<td>FINISHED</td>
+<td>The job process terminated without raising any system
+    errors or non-zero termination status</td>
+</tr>
+<tr>
+<td>FAILED</td>
+<td>The job process terminated with a system error or
+    with a non-zero termination status</td>
+</tr>
+<tr>
+<td>KILLED</td>
+<td>The user initiated premature termination of the job
+    process from within CCP4i</td>
+</tr>
+<tr>
+<td>ON_HOLD</td>
+<td>A special status used in auto-testing; the job is
+    scheduled to begin at a later time, under some condition
+    determined by CCP4i/client application.</td>
+</tr>
+<tr>
+<td>REPORTED</td>
+<td>The job process ran under some other system and the
+    user has recorded the details retrospectively</td>
+</tr>
+</table>
+
+<h4>2.4.3 Input and output filename storage and recovery</h4>
+
+<p>The information about references to input and output files
+associated with jobs are stored in the INPUT_FILES and
+INPUT_FILES_DIR data items for input files, and OUTPUT_FILES
+and OUTPUT_FILES_DIR for output files.</p>
+
+<p>INPUT_FILES is a list of filenames and INPUT_FILES_DIR
+is a list of corresponding project or def dir names, so that
+the i'th project name in the INPUT_FILES list is associated
+with the i'th filename in the INPUT_FILES_DIR. This is the
+same for the OUTPUT_FILES and OUTPUT_FILES_DIR lists also.</p>
+
+<p>For files that are stored in a directory that is also a
+project or def dir, usually only the name of the file is stored
+without the leading directory path, e.g.:</p>
+
+<pre>
+<b>INPUT_FILES:  INPUT_FILES_DIR</b>
+toxd.mtz      TOXD
+</pre>
+
+<p>The full path is constructed by acquiring the directory path
+for the project and then appending the filename, e.g.:</p>
+
+<pre>
+/home/pjx/Projects/toxd/toxd.mtz
+</pre>
+
+<p>For files that are not in a project or def dir directory,
+the full filename is recorded in the INPUT_FILES or OUTPUT_FILES
+list, and the corresponding name in the ..._DIR entry is given
+as either <tt>FULL_PATH</tt> or as an "empty" entry <tt>{}</tt>,
+e.g.:</p>
+
+<pre>
+<b>INPUT_FILES:                   INPUT_FILES_DIR:</b>
+/home/pjx/NotAProject/toxd.mtz FULL_PATH
+</pre>
+
+<p>Additionally, references to directories can also be stored.
+In this case the filename in the INPUT_FILES or OUTPUT_FILES
+list is an "empty" entry <tt>{}</tt> and the corresponding
+entry in the ..._DIR list is the full directory path, e.g.:</p>
+
+<pre>
+<b>INPUT_FILES:      INPUT_FILES_DIR:</b>
+{}                /home/pjx/arbitrary/dir/
+</pre>
+
+<h2>3 Implementation in CCP4i def file format</h2>
+
+<p>The above data model has been implemented in CCP4i and in dbCCP4i
+in the CCP4i def file format.</p>
+
+<h3>3.1 Overview of the CCP4i def file format</h3>
+
+<p>Def files use a simple flat file data storage format in ASCII
+text. A line in a def file will be one of:
+
+<ul>
+<li>A CCP4i header line, beginning with the text <tt>#CCP4I</tt>,</li>
+<li>A parameter-value pair,</li>
+<li>A parameter-type-value triplet (nb in any given file there will
+    either pairs or triplets for all parameters - these two forms are
+    not normally mixed),</li>
+<li>An "include" directive, of the form <tt>@filename</tt> (which
+    instructs the processor to insert the contents of the specified file
+    at this point,</li>
+<li>A comment line, beginning with the hash symbol (#), or</li>
+<li>A blank line, consisting of white space only.</li>
+</ul>
+
+<p>The parameter-value pair lines have the form:</p>
+
+<pre>
+PARAMETER      value
+</pre>
+
+<p>The parameter-type-value triplets have the form:</p>
+
+<pre>
+PARAMETER      type      value
+</pre>
+
+<p>The elements on each line are separated by whitespace. Parameter
+names are conventionally uppercased and consist of alphanumeric
+characters and underscores only. Values can be arbitrary strings or
+numbers, however they must be enclosed in double quotes if they
+contain whitespace.</p>
+
+<p>(The types are defined in the $CCP4/etc/types.def file distributed
+with the CCP4 suite.)</p>
+
+<p>"Indexed" parameters provide structures similar to one and
+two-dimensional arrays. An indexed parameter is defined using the
+"zeroeth" element:</p>
+
+<pre>
+PARAMETER,0
+</pre>
+
+<p>The comma (",") indicates that it is an indexed parameter - the
+index is the part after the the comma. Single indexed parameters have
+the form:</p>
+
+<pre>
+PARAMETER,<em>i</em>
+</pre>
+
+<p>where <em>i</em> is an integer and counts from 1 upwards. Double
+indexed parameters have
+the form:</p>
+
+<pre>
+PARAMETER,<em>i</em>_<em>j</em>
+</pre>
+
+<p>where <em>i</em> and <em>j</em> are both integers and counting up
+from 1. Note that although the "zeroeth" element is only singly
+indexed, it also defines doubly indexed parameters i.e. it is only
+necessary to use <tt>PARAMETER,0</tt> (not <tt>PARAMETER,0_0</tt>).</p>
+
+<h3>3.2 Project and directory definitions: <tt>directories.def</tt></h3>
+
+<p>The data defining an individual user's projects and def dirs
+is stored in a file called <tt>directories.def</tt>. The def file
+"schema" is:</p>
+
+<pre>
+N_PROJECTS              _positiveint1           1
+PROJECT_ALIAS,0         _text                   ""
+PROJECT_PATH,0          _dir                    ""
+PROJECT_DB,0            _dir                    ""
+PROJECT_ALIAS,1         _text                   PROJECT
+PROJECT_PATH,1          _dir                    ""
+PROJECT_DB,1            _dir                    ""
+N_DEF_DIRS              _positiveint1           1
+DEF_DIR_PATH,0          _dir                    ""
+DEF_DIR_ALIAS,0         _text                   ""
+DEF_DIR_PATH,1          _dir                    \$CCP4_SCR
+DEF_DIR_ALIAS,1         _text                   TEMPORARY
+</pre>
+
+<p>(See also $CCP4/ccp4i/etc/directories.def.dist. Note that the file
+contains other parameters used by CCP4i for internal purposes, however
+they are not part of the database model and so are not described here.)</p>
+
+<p>The table below describes what each of these parameters represents:</p>
+
+<table border=2>
+<tr>
+<th bgcolor="lightgray">Parameter</th>
+<th bgcolor="lightgray">Description</th>
+</tr>
+<tr>
+<td>N_PROJECTS</td>
+<td>Total number of projects defined.</td>
+</tr>
+<tr>
+<td>PROJECT_ALIAS,i</td>
+<td>The name/alias of the i'th project.</td>
+</tr>
+<tr>
+<td>PROJECT_PATH,i</td>
+<td>The directory path of the i'th project.</td>
+</tr>
+<tr>
+<td>PROJECT_DB,i</td>
+<td>The database subdirectory of the i'th project.</td>
+</tr>
+<tr>
+<td>N_DEF_DIRS</td>
+<td>Total number of def dirs defined.</td>
+</tr>
+<tr>
+<td>DEF_DIR_PATH,i</td>
+<td>The directory path of the i'th def dir.</td>
+</tr>
+<tr>
+<td>DEF_DIR_ALIAS,i</td>
+<td>The name/alias of the i'th def dir.</td>
+</tr>
+</table>
+
+<p>Each user has their own <tt>directories.def</tt> file, which
+resides in a subdirectory in their home area. On UNIX or Linux
+systems this is:</p>
+
+<pre>
+$HOME/.CCP4/unix/directories.def
+</pre>
+
+<h3>3.3 Job database: <tt>database.def</tt></h3>
+
+<p>The <tt>database.def</tt> file in the project database subdirectory
+holds the job database data for that project. The def file
+"schema" is:</p>
+
+<pre>
+NJOBS                   _positiveint            0
+TASKNAME,0              _text                   ""
+DATE,0                  _date                   ""
+STATUS,0                _db_status              ""
+LOGFILE,0               _log_file               ""
+RUNFILE,0               _run_file               ""
+SCRATCH,0               _dir                    ""
+TITLE,0                 _text                   ""
+INPUT_FILES,0           _list_of_files          ""
+INPUT_FILES_DIR,0       _list_of_files          ""
+INPUT_FILES_STATUS,0    _list_of_text           ""
+OUTPUT_FILES,0          _list_of_files          ""
+OUTPUT_FILES_DIR,0      _list_of_files          ""
+OUTPUT_FILES_STATUS,0   _list_of_text           ""
+</pre>
+
+<p>(See also $CCP4/ccp4i/etc/database.def.)</p>
+
+<p>Note that the <tt>NJOBS</tt> data item is actually the current
+highest job id number in the database, and not necessarily the total
+number of jobs.</p>
+
+<p>Not all data items outlined in the schema are explicitly
+defined in this implementation (this is for consistency with CCP4i).
+The following data items are implicitly defined:</p>
+
+<table border=2>
+<tr>
+<th bgcolor="lightgray">Implicit Data Item</th>
+<th bgcolor="lightgray">Comments</th>
+</tr>
+<tr>
+<td>JOB_ID</td></p>
+<td><p>JOB_ID is not explicitly stored in the database.def file, it is an
+    implicit property of the job record. For example, the date for
+    job number 34 is stored in parameter <tt>DATE,34</tt>, while the
+    title of job 102 is in <tt>TITLE,102</tt>.</p></td>
+</tr>
+<tr>
+<td>PARAMETER_FILE</td>
+<td><p>Parameter filenames are implicitly constructed using the
+    following convention:</p>
+    <p><tt><em>[JOB_ID]_[TASKNAME].def</em></tt></p>
+    <p>and conventionally these files are placed in the database
+    subdirectory of the project directory.</p></td>
+</tr>
+<tr>
+<td>NOTEBOOK_FILE</td>
+<td><p>Notebook filenames are not explicitly stored and are
+    instead constructed using the following convention:</p>
+    <p><tt><em>[JOB_ID]_notebook.def</em></tt></p>
+    <p>Conventionally these files are placed in the database
+    subdirectory of the project directory.</p></td>
+</tr>
+</table>
+
+<h2>4 Implementation in SQL tables</h2>
+
+<p>A version of the tracking data model has also been implemented
+in a set of linked SQL tables.</p>
+
+<h3>4.1 Project tracking SQL schema</h3>
+
+<p>The SQL commands for setting up the tables for the database
+are given below:</p>
+
+<pre>CREATE TABLE Project (ProjectId INTEGER primary key,
+                  ProjectName VARCHAR(20),
+                  Owner VARCHAR(45),
+                  Path VARCHAR(45));
+
+CREATE TABLE Job (jobId INTEGER primary key,
+             ProjectId INTEGER,
+             Status VARCHAR(45),
+             Application VARCHAR(45),
+             Taskname VARCHAR(45),
+             Title VARCHAR(45),
+             LastModified DATETIME,
+             LogFile VARCHAR(45),
+             ControlFile VARCHAR(45),
+             NotebookFile VARCHAR(45));
+
+CREATE TABLE File (FileId INTEGER primary key,
+             Name VARCHAR(45),
+             Path VARCHAR(45),
+             Format VARCHAR(45),
+             LastModified DATETIME,
+             Note VARCHAR(45));
+
+CREATE TABLE JobFile ( JobId INTEGER,
+             FileId INTEGER,
+             Type VARCHAR(10));
+
+CREATE TABLE JobLink (JobId INTEGER,
+             NextJobId INTEGER,
+             Note      VARCHAR(45),
+             Type      VARCHAR(45))
+</pre>
+
+<p>These tables and their attributes are described in more
+detail in the following subsections.</p>
+
+<h4>4.1.1 "Project" table</h4>
+
+<p>This table describes the user's projects.</p>
+
+<table border=2>
+<tr>
+<th bgcolor="lightgray">Attributes</th>
+<th bgcolor="lightgray">Description</th>
+<th bgcolor="lightgray">Data Type</th>
+<th bgcolor="lightgray">Example</th>
+</tr>
+<tr>
+<td>ProjectId</td>
+<td>A unique positive integer id number for this
+    project.</td>
+<td>Integer</td>
+<td>1, 2, 3, ...</td>
+</tr>
+<tr>
+<td>ProjectName</td>
+<td>The name or alias for the project. This
+    must also be unique within the system.</td>
+<td>Varchar</td>
+<td>RNASE</td>
+</tr>
+<tr>
+<td>Owner</td>
+<td>The name of the owner of the project.</td>
+<td>Varchar</td>
+<td>"John Smith"</td>
+</tr>
+<tr>
+<td>Path</td>
+<td>The path of the project directory.</td>
+<td>Varchar</td>
+<td>/home/pjx/myProject</td>
+</tr>
+</table>
+
+<h4>4.1.2 "Job" table</h4>
+
+<p>This table describes the jobs that have been run within
+the system. Note that all the user's job records are stored in
+a single "Job" table, with an attribute to specify which project
+they belong to.</p>
+
+<table border=2>
+<tr>
+<th bgcolor="lightgray">Attributes</th>
+<th bgcolor="lightgray">Description</th>
+<th bgcolor="lightgray">Data Type</th>
+<th bgcolor="lightgray">Example</th>
+</tr>
+<tr>
+<td>JobId</td>
+<td>A unique positive integer id number for this job (JOB_ID).</td>
+<td>Integer</td>
+<td>1, 2, 3, ...</td>
+</tr>
+<tr>
+<td>ProjectId</td>
+<td>A number corresponding to the ProjectId number in
+    the "Project" table for the project to which this job
+    belongs.</td>
+<td>Integer</td>
+<td>1, 2, 3, ...</td>
+</tr>
+<tr>
+<td>Status</td>
+<td>The job status (STATUS)</td>
+<td>Varchar</td>
+<td>RUNNING, FINISHED, FAILED, ...</td>
+</tr>
+<tr>
+<td>LastModified</td>
+<td>The last modification time of the job data (DATE)</td>
+<td>Timestamp</td>
+<td>-</td>
+</tr>
+<tr>
+<td>Title</td>
+<td>A short description of the job (TITLE)</td>
+<td>Varchar</td>
+<td>"Refine first mr solution from amore"</td>
+</tr>
+<tr>
+<td>Application</td>
+<td>The name and version of the application program
+    or pipeline which ran the job</td>
+<td>Varchar</td>
+<td>"CCP4I", "HAPPy", ...</td>
+</tr>
+<tr>
+<td>Taskname</td>
+<td>The name of the application-specific task which
+    was run in order to generate the job (TASKNAME)</td>
+<td>Varchar</td>
+<td>"scala", "refmac5", ...</td>
+</tr>
+<tr>
+<td>Logfile</td>
+<td>The id number of a file in the "File" table (see
+    below) corresponding to the logfile for this job
+    (LOGFILE)</td>
+<td>Integer</td>
+<td>1, 2, 3, ...</td>
+</tr>
+<tr>
+<td>ControlFile</td>
+<td>The id number of a file in the "File" table
+    corresponding to the parameter or control file
+    for the job (RUNFILE/PARAMETER_FILE)</td>
+<td>Integer</td>
+<td>1, 2, 3, ...</td>
+</tr>
+<tr>
+<td>NotebookFile</td>
+<td>The id number of a file in the "File" table
+    corresponding to the parameter or control file
+    for the job (NOTEBOOK_FILE)</td>
+<td>Integer</td>
+<td>1, 2, 3, ...</td>
+</tr>
+</table>
+
+<h4>4.1.3 "File" table</h4>
+
+<p>This table holds references to all the files that are
+associated with the jobs and projects. Files are
+associated with specific jobs via entries in the
+"JobFile" table described later on.</p>
+
+<table border=2>
+<tr>
+<th bgcolor="lightgray">Attributes</th>
+<th bgcolor="lightgray">Description</th>
+<th bgcolor="lightgray">Data Type</th>
+<th bgcolor="lightgray">Example</th>
+</tr>
+<tr>
+<td>FileId</td>
+<td>A unique positive integer id number for this file.</td>
+<td>Integer</td>
+<td>1, 2, 3, ...</td>
+</tr>
+<tr>
+<td>Name</td>
+<td>The filename i.e. the trailing part without the directory
+    path.</td>
+<td>Varchar</td>
+<td>toxd.mtz</td>
+</tr>
+<tr>
+<td>Path</td>
+<td>The directory path for the file.</td>
+<td>Varchar</td>
+<td>/some/directory/location</td>
+</tr>
+<tr>
+<td>Format</td>
+<td>The format of the file.</td>
+<td>Varchar</td>
+<td>mtz, pdb, ...</td>
+</tr>
+<tr>
+<td>LastModified</td>
+<td>The last modification time for the file.</td>
+<td>Timestamp</td>
+<td>-</td>
+</tr>
+<tr>
+<td>Note</td>
+<td>Annotation attached to the file (similar to the "notebook"
+    text for a job).</td>
+<td>Varchar</td>
+<td>"Deleted"</td>
+</tr>
+</table>
+
+<h4>4.1.4 "JobFile" table</h4>
+
+<p>This table holds the associations of files with jobs. Each
+row in the table links a file to a particular job, as either
+an input or output file. While a particular file can only be
+linked to a single job as an output file, it can be linked to
+many jobs as a input file.</p>
+
+<table border=2>
+<tr>
+<th bgcolor="lightgray">Attributes</th>
+<th bgcolor="lightgray">Description</th>
+<th bgcolor="lightgray">Data Type</th>
+<th bgcolor="lightgray">Example</th>
+</tr>
+<tr>
+<td>JobId</td>
+<td>The id number of a job in the "Job" table, which forms
+    the first part of the link.</td>
+<td>Integer</td>
+<td>1, 2, 3, ...</td>
+</tr>
+<tr>
+<td>FileId</td>
+<td>The id number of a file in the "File" table, which forms
+    the second part of the link.</td>
+<td>Integer</td>
+<td>1, 2, 3, ...</td>
+</tr>
+<tr>
+<td>Type</td>
+<td>The character of the relationship between the job and
+    the file, i.e. either "input" or "output".</td>
+<td>Varchar</td>
+<td>Either "input" or "output" only</td>
+</tr>
+</table>
+
+<h4>4.1.5 "JobLink" table</h4>
+
+<p>This table relates two job records together to record
+some kind of sequence of jobs. Note that this is not part of the
+original specification.</p>
+
+<table border=2>
+<tr>
+<th bgcolor="lightgray">Attributes</th>
+<th bgcolor="lightgray">Description</th>
+<th bgcolor="lightgray">Data Type</th>
+<th bgcolor="lightgray">Example</th>
+</tr>
+<tr>
+<td>JobId</td>
+<td>The id number of the job in the "Job" table which is
+    the first job in the link.</td>
+<td>Integer</td>
+<td>1, 2, 3, ...</td>
+</tr>
+<tr>
+<td>NextJobId</td>
+<td>The id number of the job in the "Job" table which is
+    the second job in the link.</td>
+<td>Integer</td>
+<td>1, 2, 3, ...</td>
+</tr>
+<tr>
+<td>Note</td>
+<td>Annotation attached to the link (similar to the "notebook"
+    text for a job).</td>
+<td>Varchar</td>
+<td>"Phasing procedure"</td>
+</tr>
+<tr>
+<td>Type</td>
+<td>The relationship between the two jobs: either "logical"
+    (the relationship is due to application or procedural
+    logic) or "data" (there is a flow of data, for example
+    a shared file, between the jobs).</td>
+<td>Varchar</td>
+<td>Either "logic" or "data" only</td>
+</tr>
+</table>
+
+<h3>4.2 Differences between the def file and SQL implementations</h3>
+
+<p>The SQL tables describe a centralised database, where all data
+is held in the same database (for example, all the user's job
+records are stored in a single "Job" table, with an attribute to
+specify which project they belong to) whereas the def file
+implementation describes a distributed database (all job records
+and data for one project is kept separate from all others).</p>
+
+<p>A distributed database is flexible and relatively robust; the
+centralised approach offers the option to easily change associations
+and draw links between data and jobs in different projects.</p>
+
+<p>The SQL tables also define explicit links between jobs which do
+not appear in the original description, but which are needed for a
+fuller description of project history.</p>
+
+<h2>Authors</h2>
+
+<p>Peter Briggs and Wanjuan Yang</p>
+
+</body>
+</html>

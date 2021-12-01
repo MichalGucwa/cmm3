@@ -1,0 +1,60 @@
+#!/bin/csh -f
+#  Copy Raxis standard output from YORTIC to your area on unix.
+#  Beware - Raxis does NOT output  a SIG_ANO_DIF so if you want 
+#           to use the ANO_DIFs 
+#   You need to add a SIG_ANO_DIFF column to your file BEFORE 
+# running f2mtz. jiffy called RAXIS_FUDGE does this..
+#
+#  To change RAXIS data to mtz - run f2mtz first 
+#  f2mtz
+#!/bin/csh -f
+#
+#  f2mtz			\
+#  HKLIN /y/people/brady/cd34/cd34nat_2.hkl  \
+#  HKLOUT $SCRATCH/junk.mtz	\
+#  << 'END-mtzrwrot' 
+#  TITLE tested RAXIS output - ascii to MTZ
+#  CELL 77.583 77.583 82.565 90 90 120
+#  LABOUT H  K  L   Fraxis SIGFraxis Draxis 
+#  CTYPOUT  H  H  H  F Q D 
+#  SYMM 154
+#  SKIP 0
+#  END
+#  'END-mtzrwrot'
+#exit
+# If you have  anom data -output Draxis will have the same sigma as Fraxis...
+cad		\
+HKLIN1  $SCRATCH/junk.mtz	\
+HKLOUT $SCRATCH/junk2.mtz	\
+<< 'END-cadlcf'
+
+RESO OVERALL 1000000 1
+MONI FULL
+TITL short 
+
+REFMONI 1000
+LABI FILE 1 E1=Fraxis  E2=SIGFraxis E3=Draxis  E4=SIGFraxis
+CTYP FILE 1 E1=F E2=Q  E3=D E4=Q 
+LABO FILE 1 E4=SIGDraxis
+
+END
+'END-cadlcf'
+# If you have no anom data...
+# If you have no anom data...
+cad		\
+HKLIN1  $SCRATCH/junk.mtz	\
+HKLOUT $SCRATCH/junk2.mtz	\
+<< 'END-cadlcf'
+
+RESO OVERALL 1000000 1
+MONI FULL
+TITL short 
+
+REFMONI 1000
+LABI FILE 1 E1=Fraxis  E2=SIGFraxis
+CTYP FILE 1 E1=F E2=Q   
+
+END
+'END-cadlcf'
+exit
+exit

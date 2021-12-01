@@ -1,0 +1,27 @@
+#!/bin/sh
+
+set -e
+
+# make PDB file of waters only
+
+pdbset xyzin $CEXAM/rnase/rnase.pdb xyzout $CCP4_SCR/rnase_wat.pdb <<eof
+select chain W
+eof
+
+# RELATE keyword gives rotation matrix (transpose of that output
+# by LSQKAB) and translation (in A) of NCS operation relating
+# two chains of rnase
+
+watncs <<eof
+pdb $CCP4_SCR/rnase_wat.pdb
+out $CCP4_SCR/rnase_out.pdb
+relate
+     0.970  -0.048   -0.238 
+     0.238   0.384    0.892
+     0.049  -0.922    0.384
+ -33.27858  21.14615  19.01986
+error 0.6
+least 1
+eof
+#
+

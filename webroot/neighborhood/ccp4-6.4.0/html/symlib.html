@@ -1,0 +1,1927 @@
+<html>
+<head><title>CCP4 Program Suite: symlib</title></head>
+<body>
+
+<!-- ::INDEX_INFO::SYMLIB::Library::::Fortran Software Library for handling symmetry operations:::::::: -->
+
+<H1> SYMLIB (CCP4: Library)</H1>
+
+<H2> NAME</H2>
+
+<b>symlib </b> - Software Library for handling symmetry operations
+
+<H2>DESCRIPTION</H2>
+
+<p>
+From CCP4 5.0, the core handling of symmetry information
+is done by a set of C functions. Separate <a href="C_library/csym_page.html">
+documentation</a> describes the structures and functions used, and the
+API for C/C++ programs. 
+<p>
+For Fortran programs, the original set of subroutines (held in <tt>symlib.f</tt>)
+has been replaced by an <a href="C_library/csym_f_page.html">interface</a> to
+the C library. From the point of view of an application programmer,
+this interface should be identical to the original set of subroutines. This
+document originates from the original Fortran library, but should be
+applicable to the new library.
+<p>
+
+The available Fortran calls have been arranged as much as possible into groups by 
+function. There are often several versions of calls apparently performing the same
+or very similar tasks, reflecting the policy of never removing existing
+functionality in order to maintain compatibility with programs written using older
+versions of the library.
+
+<H2>CONTENTS</H3>
+
+<ol>
+<li> <a href="#symmetry_library">DESCRIPTION OF THE SYMMETRY LIBRARY</a><p>
+<li> <a href="#symmetry_store">HOW SYMMETRY OPERATIONS ARE STORED AND APPLIED</a><p>
+<li> <a href="#describe_group">DESCRIPTION OF THE GROUPS OF ROUTINES</a><p>
+    <ol>
+    <li> <a href="#group_1">Deriving and manipulating symmetry operations</a>
+       <ul>
+       <li> <a href="#group_1_a">1.a. Deriving symmetry operator matrices</a>
+       <li> <a href="#group_1_b">1.b. Deriving information from symmetry operators</a>
+       </ul>
+       <p>
+    <li> <a href="#group_2">Testing reflection data</a>
+       <ul>
+       <li> <a href="#group_2_a">2.a. Centric reflections</a>
+       <li> <a href="#group_2_b">2.b. Epsilon zones</a>
+       </ul>
+       <p>
+    <li> <a href="#group_3">Choosing asymmetric units</a>
+       <ul>
+       <li> <a href="#group_3_a">3.a. Choosing asymmetric units for reflection data</a>
+       <li> <a href="#group_3_b">3.b. Choosing asymmetric units in real space consistent
+                                      with FFT expectations</a>
+       </ul>
+       <p>
+    <li> <a href="#group_4">Testing coordinate data</a>
+    <li> <a href="#group_5">Permuting symmetry operators</a>
+    <li> <a href="#group_6">Generating and accessing a hash table</a>
+    <li> <a href="#group_7">Miscellaneous routines</a>
+    <li> <a href="#group_8">Multiple Spacegroups</a>
+    </ol>
+    <p>
+<li> <a href="#list_of_routines">FORTRAN API</a> (arranged alphabetically)<p>
+<li> <a href="#asymmetric_unit">DEFINITION OF THE CCP4 ASYMMETRIC UNIT</a>
+    <ul>
+    <li> <a href="#recip_asym_unit">a. Reciprocal space</a>
+    <li> <a href="#real_asym_unit">b. Real space</a>
+    </ul>
+</ol>
+
+
+<a name="symmetry_library"></a>
+
+<H2>1. DESCRIPTION OF THE SYMMETRY LIBRARY</H2>
+
+<p> In CCP4, the primary symmetry information is held in a library data
+file defined by the logical name SYMINFO. In the standard configuration of CCP4 this
+is the file syminfo.lib which normally resides in $CLIBD. This file replaces
+the previous data file SYMOP (i.e. $CLIBD/symop.lib).
+
+<p> syminfo.lib holds information for all the standard spacegroups
+in the International Tables. For each spacegroup, several alternative settings
+are included (e.g. "P&nbsp;1&nbsp;2&nbsp;1", "P&nbsp;1&nbsp;1&nbsp;2" (a.k.a. 1003) and 
+"P&nbsp;2&nbsp;1&nbsp;1" for spacegroup 3).
+
+<H3>Format of the symmetry library file</H3>
+
+<p>Each setting of a spacegroup is delimited by begin_spacegroup / end_spacegroup 
+records, and contains the following items: 
+<pre>
+
+  number = standard spacegroup number 
+  basisop = change of basis operator 
+  symbol ccp4 = CCP4 spacegroup number e.g. 1003 
+                (0 if not a CCP4 group) 
+  symbol Hall = Hall symbol 
+  symbol xHM =  extended Hermann Mauguin symbol 
+  symbol old =  CCP4 spacegroup name 
+                (blank if not a CCP4 group) 
+  symbol laue = Laue group symbol 
+  symbol patt = Patterson group symbol 
+  symbol pgrp = Point group symbol 
+  hklasu ccp4 = reciprocal space asymmetric unit 
+                (with respect to standard setting) 
+  mapasu ccp4 = CCP4 real space asymmetric unit 
+                (with respect to standard setting) 
+                (negative ranges if not a CCP4 group) 
+  mapasu zero = origin based real space asymmetric unit 
+                (with respect to current setting) 
+  mapasu nonz = non-origin based real space asymmetric unit 
+                (with respect to current setting) 
+  cheshire = Cheshire cell 
+                (with respect to standard setting) 
+  symop = list of primitive symmetry operators 
+  cenop = list of centering operators 
+   
+</pre>
+For example:
+<pre>
+
+begin_spacegroup
+number  3
+basisop z,x,y
+symbol ccp4 1003
+symbol Hall ' P 2y (z,x,y)'
+symbol xHM  'P 1 1 2'
+symbol old  'P 1 1 2'
+symbol laue '-P 2' '2/m'
+symbol patt '-P 2' '2/m'
+symbol pgrp ' P 2' '2'
+hklasu ccp4 'k&gt;=0 and (l&gt;0 or (l=0 and h&gt;=0))'
+mapasu ccp4 0&lt;=x&lt;=1/2; 0&lt;=y&lt;1; 0&lt;=z&lt;1
+mapasu zero 0&lt;=x&lt;1; 0&lt;=y&lt;=1/2; 0&lt;=z&lt;1
+mapasu nonz 0&lt;=x&lt;1; 0&lt;=y&lt;=1/2; 0&lt;=z&lt;1
+cheshire 0&lt;=x&lt;=1/2; 0&lt;=y&lt;=0; 0&lt;=z&lt;=1/2
+symop x,y,z
+symop -x,-y,z
+cenop x,y,z
+end_spacegroup
+
+</pre>
+
+<p>A call to <a href="#msymlb3">MSYMLB3</a> should be used to retrieve
+information from the symmetry library. Note that not all the data items are
+compulsory for MSYMLB3, although older versions of the routine (MSYMLB2, MSYMLB,
+MSYGET) still need them.
+
+<a name="symmetry_store"></a>
+
+<H2>2. HOW SYMMETRY OPERATIONS ARE STORED AND APPLIED</H2>
+
+<H3>Storage of symmetry operations</H3>
+
+<p>In syminfo.lib the symmetry operations in each spacegroup are listed as
+strings, for example X,Y,Z or -Y,X-Y,Z+1/3 etc. To be useful within a
+program these string representations have to be converted to some
+mathematical representation.
+
+<p>Typically a symmetry operation RSym will consist of a rotation
+operation R and a translation operation T (basically a vector). These
+are applied to a vector x to obtain x':
+<p>
+<center>
+x' = Rx + T
+</center>
+
+<p> It is convenient to represent the rotation by a 3*3 matrix:
+<pre>
+            ( R11  R12  R13 )
+      [R] = ( R21  R22  R23 )
+            ( R31  R32  R33 )
+</pre>               
+and the translation by a column vector with 3 elements:
+<pre>
+            ( T1 )
+      [T] = ( T2 )
+            ( T3 ).
+</pre>
+
+
+<p>CCP4 uses 4x4 arrays to store these symmetry operations as follows:
+<pre>
+      RSym = ( R11  R12  R13  T1 )
+             ( R21  R22  R23  T2 )
+             ( R31  R32  R33  T3 )
+             (  0    0    0   1  )
+</pre>
+or
+<pre>
+      RSym = (    [R]    | [T] ) 
+             (  0  0  0  |  1  )
+</pre>
+Essentially this is a 4x4 matrix holding 3x3 transformation matrix in
+the "top-left-hand corner", the 3-element column (translation) vector
+in the "top-right-hand corner", and then (0 0 0 1) in the bottom row.
+
+<p>The subroutine <a href="#msymlb3">MSYMLB3</a> will obtain the set of symmetry
+matrices in this representation for a given spacegroup, whilst
+<a href="#symfr2">SYMFR2</a> or <a href="#symfr3">SYMFR3</a> will obtain
+individual matrices from the string representation mentioned above.
+(<a href="#symtr4">SYMTR4</a> will perform the inverse operation, converting
+matrices to string representation.)
+
+<H3>Application of symmetry operations</H3>
+
+<H4>1. Real Space Coordinates</H4>
+
+<p>Using the convention outlined above, post-multiplying the 4x4 matrix by a column
+vector as follows:
+<pre>
+     RSym . [xf]
+            [yf]
+            [zf]
+            [1 ]
+</pre>
+will apply both the symmetry and the translation operations to real space
+coordinates with a single matrix multiplication. The CCP4
+<a href="modlib.html">MODLIB</a> library provides
+<a href="modlib.html#matrix_vector_ops">matrix-vector routines</a> MATVEC4 and
+TRANSFRM which can be used to perform this operation.
+
+<H4>2. Reciprocal Space</H4>
+
+<p>The inverse of real-space symmetry matrices are applied to reflection
+indices by pre-multiplying them by a row vector representing hkl,
+<p>
+<center>
+ie. h' = h R<sup>-1</sup>
+</center>
+or,
+<center>
+(h' k' l') = (h k l) R<sup>-1</sup>
+</center>
+<p>
+Note that only the operations in the appropriate Laue group are applied to
+reflection indices, so there are no translational components (i.e. the
+vector part of the operation, [T], is zero).
+The subroutine <a href="#invsym">INVSYM</a>
+will invert a 4x4 matrix stored in this representation, for the purpose
+of applying symmetry operations to reflection indices.
+
+<H4>3. Axis Vectors</H4>
+
+<p>Real space axis vectors are transformed like reciprocal space
+vectors, i.e.</p>
+<center>
+(a' b' c') = (a b c) R<sup>-1</sup>
+</center>
+<p>while reciprocal space axis vectors are transformed like real space
+coordinates, i.e.</p>
+<center>
+(a*' b*' c*') = R (a* b* c*)
+</center>
+<p>(See also the <a href="reindex.html">REINDEX</a> documentation.)</p>
+
+<a name="describe_group"></a>
+
+<H2>3. DESCRIPTION OF THE GROUPS OF ROUTINES</H2>
+
+The routines have been broken down into groups according to function.
+
+
+<a name="group_1"></a>
+
+<H3>Group 1: Subroutines for deriving and manipulating symmetry operations</H3>
+
+This group contains routines for obtaining the lists of symmetry
+operators from the library, and converting between the string (eg Y,X,-Z
+etc) and matrix representations of symmetry operators. 
+
+<a name="group_1_a"></a>
+
+<H3>Group 1a: Deriving symmetry operator matrices</H3>
+
+<dl>
+<dt> <a href="#msymlb3">MSYMLB3</a>
+   <dd> Gets the symmetry operators in matrix representation for a
+specified spacegroup from the symmetry library. The spacegroup is
+specified either by the spacegroup number (which could be a
+non-standard CCP4 number such as 4005) or a spacegroup name. It will
+match to any valid s/g name but always returns the longest
+name. 
+   <br> Replaces: <a href="#msymlb2">MSYMLB2</a>,
+                  <a href="#msymlb">MSYMLB</a>,
+                  <a href="#msyget">MSYGET</a>
+<dt> <a href="#symfr2">SYMFR2</a>, <a href="#symfr3">SYMFR3</a>
+   <dd> Translates a character string containing symmetry operator(s) into matrix representation, stored in a 4*4 matrix/array.
+   <br> NB: SYMFR2 will translate real space coordinate operations (e.g.
+<tt>x+z,z,-y</tt>), reciprocal space operations (e.g. <tt>h,l-h,-k</tt>) and
+reciprocal- and real-space axis vector operations (e.g. <tt>a*+c*,c*,-b*</tt> and
+<tt>a,c-a,-b</tt> respectively). SYMFR3 only translates real space coordinate
+operations.
+<dt> <a href="#symtr4">SYMTR4</a>
+   <dd> Translates symmetry matrices into character strings with the equivalent symmetry operations.
+   <br> Replaces: <a href="#symtrn">SYMTRN</a>, <a href="#symtr3">SYMTR3</a>
+<dt> <a href="#invsym">INVSYM</a>
+   <dd> Invert the 4*4 array holding the symmetry matrices, to get the inverse symmetry operation.
+</dl>
+
+Use MSYMLB3 to obtain the set of symmetry operator matrices given the spacegroup name
+or number. SYMFR2/3 will generate individual symmetry operator matrices from their string
+representation (useful if the operators are a subset of a spacegroup). SYMTR4
+performs the opposite action, and generates string representations of individual
+symmetry operations from the matrices.
+<p>
+INVSYM will generate the inverse matrix of a real space symmetry operation, to be
+applied to reflection indices as described in <a href="#symmetry_store">section 2</a>.
+
+<H4>Internal routines:</H4>
+
+<dl>
+<dt> <a href="#determ">DETERM</a>  <dd> Calculate the determinant of 4*4 matrix.
+</dl>
+
+
+<a name="group_1_b"></a>
+
+<H3>Group 1b: Deriving information from symmetry operators</H3>
+
+<dl>
+<dt> <a href="#pgdefn">PGDEFN</a>
+   <dd> Obtain/guess pointgroup and primitive set of symmetry operators from analysis of all symmetry operators.
+<dt> <a href="#pgmdf">PGMDF</a>
+   <dd> Gronigen subroutine: determine the nature of the rotation and screw axes from the symmetry matrices.
+<dt> <a href="#pgnlau">PGNLAU</a>
+   <dd> Determine the Laue group from pointgroup name.
+<dt> <a href="#patsgp">PATSGP</a>
+   <dd>Determine the Patterson spacegroup from true spacegroup.
+<dt> <a href="#hklrange">HKLRANGE</a>
+   <dd> Return HKL ranges chosen in PGNLAU
+</dl>
+
+These routines all derive additional information from the symmetry operators or
+the spacegroup name. The subroutine HKLRANGE returns the information stored in
+the common block which it shares with PGNLAU
+
+<a name="group_2"></a>
+
+<H3>Group 2: Subroutines for testing reflection data</H3>
+
+<a name="group_2_a"></a>
+
+<H3>a) Centric reflections</H3>
+
+<dl>
+<dt> <a href="#centric">CENTRIC</a>
+    <dd>Sets up symmetry elements; must be called first.
+<dt> <a href="#centr">CENTR</a>
+    <dd>Tests if a reflection is centric
+</dl>
+Nb: routines <a href="#centrc">CENTRC</a> and CENPHS both appear to be unused.
+<p>
+Call CENTRIC once to set up the symmetry elements in common blocks shared with CENTR.
+This defines the set of centric reflections. Then for each reflection, a call to
+CENTR will return whether it is centric.
+
+<a name="group_2_b"></a>
+
+<H3>b) Epsilon zones</H3>
+
+<dl>
+<dt> <a href="#epsln">EPSLN</a>
+    <dd> Sets up tables of epsilon zones; must be called first.
+<dt> <a href="#epslon">EPSLON</a>
+    <dd> Returns the epsilon zone of a given reflection, as well as whether the reflection is systematically absent (using a call to SYSAB).
+<dt> <a href="#sysab">SYSAB</a>
+    <dd> Function: determines if a reflection is systematically absent.
+</dl>
+Call EPSLN once to generate the epsilon zones (general sets of reflections eg 00l or 0k0) and determine the multiplicity/fold. For each reflection a call to EPSLON returns the zone and if the reflection is systematically absent. SYSAB is not called directly.
+
+<p>
+
+<a href="#hkleq">HKLEQ</a> - used in SCALA to test if two reflections have equal indices.
+
+<a name="group_3"></a>
+
+<H3>Group 3: Subroutines for choosing asymmetric units</H3>
+
+Remember that the choice of asymmetric unit is NOT UNIQUE. These routines define the
+set of CCP4 asymmetric units. The limits for these definitions are given in 
+<a href="#asymmetric_unit">section 3</a>.
+
+<a name="group_3_a"></a>
+
+<H3>a) Subroutines for choosing asymmetric units for reflection data</H3>
+
+<dl>
+<dt>  <a href="#asuset">ASUSET</a>
+   <dd> Set up symmetry for ASUPUT and ASUGET; must be called first. Calls PRTRSM.
+<dt>  <a href="#asuput">ASUPUT</a>
+   <dd> Put reflection into asymmetric unit defined in ASUSET (reverse operation of ASUGET). Calls INASU.
+<dt>  <a href="#asuget">ASUGET</a>
+   <dd> Recover original indices of a reflection in the asymmetric unit defined in ASUSET (reverse operation of ASUPUT).
+<dt>  <a href="#asuphp">ASUPHP</a>
+   <dd> Change phase for symmetry related reflection.
+</dl>
+
+Call ASUSET first to set up symmetry operations in common blocks shared with the other
+routines. For each reflection calls can then be made to ASUPUT (return the unique hkl
+indices in the asymmetric unit and symmetry number) or ASUGET (obtain real space indices
+given unique hkl's and symmetry number). INASU will determine whether a given reflection lies in the asymmetric unit and ASUPHP will convert the phase.
+
+<H4>Internal routines:</H4>
+
+<dl>
+<dt> <a href="#inasu">INASU</a>
+   <dd> Function: test if reflection is in the asymmetric unit defined by ASUSET.
+<dt> <a href="#prtrsm">PRTRSM</a>
+   <dd> Print reciprocal space symmetry operations.
+</dl>
+
+Both these routines are called from within other routines, although they can also be
+called independently. ASUSET must be called before INASU can be used.
+
+<a name="group_3_b"></a>
+
+<H3>b) Subroutines for choosing asymmetric units in real space consistent with FFT expectations; FFT grids etc.</H3>
+
+<dl>
+<dt> <a href="#setlim">SETLIM</a>
+   <dd> Set the appropriate box (=asymmetric unit) for the true spacegroup (ie not the FFT spacegroup). For cubic symmetry spacegroups, this will be more than one asymmetric unit.
+<dt> <a href="#setlim_zero">SETLIM_ZERO</a>
+   <dd> Set the appropriate box (=asymmetric unit) for the true spacegroup (ie not the FFT spacegroup). For cubic symmetry spacegroups, this will be more than one asymmetric unit.<br><i>NB: This s/r differs from SETLIM in using asu limits derived from cctbx.</i>
+<dt> <a href="#setgrd">SETGRD</a>
+   <dd> Set up a suitable sampling grid for FFT. Calls FNSMP.
+</dl>
+
+<H4>Internal routines:</H4>
+
+<dl>
+<dt><a href="#factrz">FACTRZ</a>
+   <dd> Function: returns TRUE if N has all prime factors < 19.
+<dt><a href="#fndsmp">FNDSMP</a>
+   <dd> Find suitable grid sample.
+</dl>
+
+<a name="group_4"></a>
+
+<H3>Group 4: Subroutines for testing coordinate data</H3>
+
+<dl>
+<dt> <a href="#calc_orig_ps">CALC_ORIG_PS</a>
+   <dd> Creates a list of equivalent origins for a given spacegroup
+<dt> <a href="#xspecials">XSPECIALS</a>
+   <dd> Finds which coordinates occupy special positions (i.e. have occupancies less than 1.0) from consideration of the symmetry operations.
+<dt> <a href="#krot">KROT</a>
+   <dd> Function: apply symmetry operation to coordinate triplet and check if the result lies in the asymmetric unit.
+</dl>
+
+<p>Neither of the routines XSPECIALS or KROT appear to be used in supported CCP4
+programs.
+
+<a name="group_5"></a>
+
+<H3>Group 5: Subroutines for permuting symmetry operators</H3>
+
+Three subroutines for permuting symmetry operations. They do not really belong here
+in symlib, but are widely used invisibly in FFT routines using symmetry operations to permute axes for easier fast fourier calculations.
+
+<dl>
+<dt> <a href="#prmvci">PRMVCI</a>
+  <dd> Permutes specified column of an integer input matrix using another matrix.
+<dt> <a href="#prmvcr">PRMVCR</a>
+  <dd> Equivalent to PRMVCI but operates on a real input matrix.
+<dt> <a href="#rotfix">ROTFIX</a>
+  <dd> Permutes inverse symmetry operations.
+</dl>
+
+<a name="group_6"></a>
+
+<H3>Group 6: Subroutines for generating and accessing a hash table</H3>
+
+A set of routines used in SCALA, POSTREF and REBATCH.
+
+<dl>
+<dt><a href="#ccp4_hash_setup">CCP4_HASH_SETUP</a><dd>
+Places a value in the internal look-up table.
+<dt><a href="#ccp4_hash_lookup">CCP4_HASH_LOOKUP</a><dd>
+Access a value stored in the table.
+<dt><a href="#ccp4_hash_zeroit">CCP4_HASH_ZEROIT</a><dd>
+Initialise contents of the table to zero.
+</dl>
+
+These routines are not directly related to symmetry operations. Hashing
+is a method of storing data value pairs in such a way that they can be
+be efficiently retrieved later on; the hash table is the resulting data
+structure.
+<p>
+
+<a name="group_7"></a>
+
+<H3> Group 7: Miscellaneous subroutines</H3>
+
+<dl>
+<dt><a href="#setrsl">SETRSL</a><dd>
+Routine to calculate set coefficients for calculation of (sin(theta)/lambda)**2,
+from cell dimensions and angles.
+<dt><a href="#sthlsq">STHLSQ</a><dd>
+Calculate (sin(theta)/lambda)**2 from h,k,l, using coefficients set by a
+call to SETRSL.
+<dt><a href="#sts3r4">STS3R4</a><dd>
+Calculate (sin(theta)/lambda)**2 from h,k,l, using coefficients set by a
+call to SETRSL. Duplicates STHLSQ exactly.
+</dl>
+
+These three routines share the common block RECPLT. SETRSL and STHLSQ are used only
+in CAD, whilst STS3R4 does not appear in any supported program.
+<p>
+This is how the routines are used in CAD. A call to SETRSL with the cell dimensions
+and angles sets up coefficients in RECPLT, which are then used by the function STHLSQ
+to calculate the quantity "(sin(theta)/lambda)**2" for any given set of
+h, k, l indices. From Bragg's Law, this quantity is equal to 1/(4*d**2), that is,
+one-quarter of the resolution. Within CAD, multiplication by 4 yields the resolution
+1/d**2.
+
+<dl>
+<dt><a href="#pstoph">PSTOPH</a><dd>
+Phase angle conversion routine.
+</dl>
+
+The exact function of this routine is unclear and it does not appear in any
+supported program.
+
+<a name="group_8"></a>
+
+<H3> Group 8: Multiple Spacegroups</H3>
+<p>The set of Fortran calls which mimic the original symlib.f assume
+you are working within a single spacegroup. All calls access the
+same spacegroup data structure, in analogy with the COMMON blocks
+of symlib.f For cases where you wish to work with multiple
+spacegroups (e.g. in the program <a href="reindex.html">REINDEX</a>,
+a different set of calls is provided (the names of which generally
+start with "CCP4SPG_F_"). These identify the spacegroup of interest
+via an index "sindx" (by analogy with the "mindx" of mtzlib).
+<dl>
+<dt><a href="#ccp4spg_f_asuput">CCP4SPG_F_ASUPUT</a>
+<dd>Put reflection in asymmetric unit of spacegroup on index sindx.
+
+<dt><a href="#ccp4spg_f_centphase">CCP4SPG_F_CENTPHASE</a>
+
+<dt><a href="#ccp4spg_f_epslon">CCP4SPG_F_EPSLON</a>
+
+<dt><a href="#ccp4spg_f_equal_ops_order">CCP4SPG_F_EQUAL_OPS_ORDER</a>
+<dd>Compare two sets of symmetry operators to see if they are
+in the same order. 
+
+<dt><a href="#ccp4spg_f_get_laue">CCP4SPG_F_GET_LAUE</a>
+<dd>Return Laue number and name for a spacegroup onto index "sindx".
+
+<dt><a href="#ccp4spg_f_inasu">CCP4SPG_F_INASU</a>
+<dd>Test whether reflection or it's Friedel mate is in the asymmetric unit of the spacegroup 
+on index "sindx". 
+
+<dt><a href="#ccp4spg_f_is_centric">CCP4SPG_F_IS_CENTRIC</a>
+
+<dt><a href="#ccp4spg_f_is_sysabs">CCP4SPG_F_IS_SYSABS</a>
+
+<dt><a href="#ccp4spg_f_load_by_name">CCP4SPG_F_LOAD_BY_NAME</a>
+<dd>Loads a spacegroup onto index "sindx". The spacegroup is identified by the spacegroup name.
+
+<dt><a href="#ccp4spg_f_load_by_ops">CCP4SPG_F_LOAD_BY_OPS</a>
+<dd>Loads a spacegroup onto index "sindx". The spacegroup is identified by the set of symmetry matrices.
+
+</dl>
+</p>
+
+<a name="list_of_routines"></a>
+
+<H2>4. FORTRAN API</H2>
+
+The following calls are available to Fortran programs. They are arranged alphabetically.
+
+<H2><a name="asuget"></a>Subroutine ASUGET(IHKL,JHKL,ISYM)</H2>
+Get original indices of reflection from  asymmetric unit,
+i.e. reverse operation of ASUPUT. Symmetry defined by call to ASUSET.
+<p>
+On input:
+<dl>
+<dt>IHKL(3)<dd>
+    input unique indices hkl
+<dt>ISYM<dd>
+       symmetry number for output<br>
+                 odd  numbers are for I+<br>
+                 even numbers are for I-<br>
+               real-space symmetry operation number L = (ISYM-1)/2 + 1
+</dl>
+On output:
+<dl>
+<dt>JHKL(3)<dd>
+    output original indices hkl
+</dl>
+The real-space symmetry matrices are applied in ASUPUT by
+premultiplying them by a row vector hkl,  ie  (h'k'l') = (hkl)R.
+So here we calculate (hkl) = (h'k'l') R**-1
+
+<H2><a name="asuphp"></a>Subroutine ASUPHP(JHKL,LSYM,ISIGN,PHASIN,PHSOUT)</H2>
+Generate phase of symmetry equivalent JHKL from that of IHKL.
+<p>
+On input:
+<dl>
+<dt>JHKL(3)<dd>
+    indices hkl generated in ASUPUT
+<dt>LSYM<dd>
+       symmetry number for generating JHKL ( found by ASUPUT)
+<dt>ISIGN<dd>
+         =  1   for I+<br>
+         = -1   for I-
+<dt>PHASIN<dd>
+     phase for reflection IHKL(3)
+</dl>
+On output:
+<dl>
+<dt>PHSOUT<dd>
+     phase for reflection JHKL(3)
+</dl>
+
+<H2><a name="asuput"></a>Subroutine ASUPUT(IHKL,JHKL,ISYM)</H2>
+Put reflection into asymmetric unit defined by call to ASUSET
+<p>
+On input:
+<dl>
+<dt>IHKL(3)<dd>
+    input indices hkl
+</dl>
+On output:
+<dl>
+<dt>JHKL(3)<dd>
+    output indices hkl
+<dt>ISYM<dd>
+       symmetry number for output<br>
+                 odd  numbers are for I+<br>
+                 even numbers are for I-<br>
+               real-space symmetry operation number L = (ISYM-1)/2 + 1
+</dl>
+The real-space symmetry matrices are applied by premultiplying them
+by a row vector hkl,  ie  (h'k'l') = (hkl)R
+
+<H2><a name="asuset"></a>Subroutine ASUSET(SPGNAM, NUMSPG, PGNAME, MSYM,
+RSYM, MSYMP, MLAUE, LPRINT)</H2>
+Set up & store symmetry information for later use in ASUPUT or ASUGET. 
+Should be used with subroutine LRSYMI to get PGNAME and subroutine LRSYMM 
+(both in mtzlib) to get RSYM and MSYM.
+<p>
+On input:
+<dl>
+<dt>SPGNAM<dd>
+ space-group name (not used) ( character)
+<dt>NUMSGP<dd>
+  space-group number (not used)
+<dt>PGNAME<dd>
+  point-group name ( character)
+<dt>MSYM<dd>
+    total number of symmetry operations
+<dt>RRSYM(4,4,MSYM)<dd>
+ symmetry matrices (real-space)
+<dt>LPRINT<dd>
+  - printing flag. ( logical)
+</dl>
+On output:
+<dl>
+<dt>PGNAME<dd>
+  point-group name ( character)
+<dt>MSYMP<dd>
+   number of primitive symmetry operations
+<dt>MLAUE<dd>
+   Laue group number - See PGNLAU for details
+</dl>
+
+<H2><a name="calc_orig_ps"></a>Subroutine CALC_ORIG_PS(NAMSPG_CIF,NSYM,RSYM,NORIG,ORIG,LPAXISX,LPAXISY,LPAXISZ)</H2>
+Creates a list of equivalent origins for the named spacegroup.
+
+<p>ARGUMENTS
+<dl>
+<dt>(I) NAMSPG_CIF<dd>
+  spacegroup name (character)
+<dt>(I) NSYM<dd>
+  number of symmetry operations
+<dt>(I) RSYM(4,4,NSYM)<dd>
+  symmetry ops stored as 4x4 matrices
+<dt>(O) NORIG<dd>
+  number of origins.
+<dt>(O) ORIG(3,i)<dd>
+  vector of alternate origin (for example : 0.5,0.0,0.5)
+                only positive components. include vector: (0,0,0)
+<dt>(O) LPAXISX<dd>
+  logical; set true if s/grp is polar along x axis
+<dt>(O) LPAXISY<dd>
+  logical; set true if s/grp is polar along y axis
+<dt>(O) LPAXISZ<dd>
+  logical; set true if s/grp is polar along z axis
+</dl>
+                        
+<p>Taken from Alexei Vagin
+
+<H2><a name="ccp4_hash_lookup"></a><i>Integer</i> Function CCP4_HASH_LOOKUP(NSER)</H2>
+The function CCP4_HASH_LOOKUP returns the value NFIND (which was input when
+setting up the function in the subroutine CCP4_HASH_SETUP) for the large
+range variable NSER.  Uses hashing. (see comments for
+CCP4_HASH_SETUP for description of hashing method).
+
+<H2><a name="ccp4_hash_setup"></a>Subroutine CCP4_HASH_SETUP(NSER,NFIND)</H2>
+This subroutine sets up a value for the function ccp4_hash_lookup.
+<P>
+When ccp4_hash_lookup(nser) is later evaluated it will return nfind
+<P>
+This function will allow the efficient retrieval of an identifier
+for a large range variable (such as a crystal number). The values
+of the function ccp4_hash_lookup(nser) are stored in the array
+it(2, kpri) where kpri is the prime number used to generate the
+function.
+<P>
+The array 'it' lives in the common block which is shared by
+ccp4_hash_setup and the function ccp4_hash_lookup
+<P>
+NOTES: A hash table is a way of storing information so that it
+easily be retrieved without the need for indexing or long searches.
+NSER is referred to as the "key", which is "hashed" (computer-
+science speak for "messed up") by the hashing function (in this
+case MOD(NSER4,KPRI) + 1) to determine where the value pair will
+be stored. The function LOOKUP can then search on the same basis
+when supplied with the key, to retrieve the pair in (at most) 3
+calculations. Note that KPRI (the table size) MUST BE A PRIME in
+order for this method to work.
+
+<H2><a name="ccp4_hash_zeroit"></a>Subroutine CCP4_HASH_ZEROIT()</H2>
+Initialises elements of array 'it' used in ccp4_hash_setup and
+ccp4_hash_lookup to zero.
+
+<H2><a name="ccp4spg_f_asuput"></a>Subroutine CCP4SPG_F_ASUPUT(sindx,ihkl[3],jhkl[3],isym)</H2>
+Put reflection in asymmetric unit of spacegroup on index sindx.
+
+<H2><a name="ccp4spg_f_centphase"></a>Subroutine CCP4SPG_F_CENTPHASE(sindx,ih[3],cenphs)</H2>
+
+<H2><a name="ccp4spg_f_epslon"></a>Subroutine CCP4SPG_F_EPSLON(sindx,ih[3],epsi,isysab)</H2>
+
+<H2><a name="ccp4spg_f_equal_ops_order"></a>Integer Function CCP4SPG_F_EQUAL_OPS_ORDER(msym1,rrsym1,msym2,rrsym2)</H2>
+Compare two sets of symmetry operators to see if they are
+in the same order. This is important for the consistent use
+of ISYM which encodes the operator position in the list.
+Returns 1 if operator lists are equal and in the same order, 0 otherwise.
+
+<H2><a name="ccp4spg_f_get_laue"></a>Subroutine CCP4SPG_F_GET_LAUE(sindx,nlaue,launam)</H2>
+Return Laue number and name for a spacegroup onto index "sindx".
+
+<H2><a name="ccp4spg_f_inasu"></a>Integer Function CCP4SPG_F_INASU(sindx,ihkl[3])</H2>
+Test whether reflection or it's Friedel mate is in the asymmetric unit of the spacegroup 
+on index "sindx". Return 1 if in asu, -1 if -h -k -l is in asu, 0 otherwise.
+
+<H2><a name="ccp4spg_f_is_centric"></a>Subroutine CCP4SPG_F_IS_CENTRIC(sindx,ih[3],ic)</H2>
+
+<H2><a name="ccp4spg_f_is_sysabs"></a>Subroutine CCP4SPG_F_IS_SYSABS(sindx,in[3],isysab)</H2>
+
+<H2><a name="ccp4spg_f_load_by_name"></a>Subroutine CCP4SPG_F_LOAD_BY_NAME(sindx,namspg)</H2>
+Loads a spacegroup onto index "sindx". The spacegroup is identified by the spacegroup name.
+
+<H2><a name="ccp4spg_f_load_by_ops"></a>Subroutine CCP4SPG_F_LOAD_BY_OPS(sindx,msym,rrsym)</H2>
+Loads a spacegroup onto index "sindx". The spacegroup is identified by the set of symmetry matrices.
+
+<H2><a name="centr"></a>Subroutine CENTR(IH,IC)</H2>
+Input IH(3) - reflection indices
+<p>
+Returns IC
+<p>
+Determine whether a reflection is centric (return IC=1)
+or not (IC=0).  If none of the zone tests is satisfied,
+the reflection is non-centric.
+
+<H2><a name="centrc"></a><i>Logical</i> Function CENTRC(KHKL,ICENT)</H2>
+Returns value as true if reflection khkl is centric, false otherwise.
+It is general for all point groups - but only for the unique set of
+indices which conforms to the criterion of maximising the value of
+<br>
+<center>        (khkl(3)*256 + khkl(2))*256 + khkl(1)</center>
+<br>
+as produced by e.g. subroutine turnip in protin and ulysses.
+<p>
+In this case the required tests are controlled by 7 flags in
+icent for
+<p>
+<center>0KL  H0L  HK0  HKK  HKH  HHL  H,-2H,L</center>
+<p>
+(the last is needed in pg312)
+
+<H2><a name="centric"></a>Subroutine CENTRIC(NSM,RSMT,IPRINT)</H2>
+This is Randy Read's method of defining centric reflections.
+It uses NSM and the symmetry operators stored in RSMT(4,4,NSM)
+<p>
+It decides how many centric zones there are, and flags them.
+<p>
+set up tests for 0kl h0l hk0 hhl hkh hkk h,-hl hk-h hk-k
+-h 2h l   2h -h l  hkl
+<p>
+Zones are encoded using an idea from a program by Bricogne.
+If h*zone(1) + k*zone(2) + l*zone(3) is equal to 0.0,
+that reflection is in that zone.  All that is needed is the
+most general conditions - a reflection is either centric or
+not.
+
+<H2><a name="determ"></a>Subroutine DETERM(det,a)</H2>
+Gets determinant of a matrix
+<dl>
+<dt>Input A<dd>
+4*4 matrix  (real)
+<dt>Output DET<dd>
+determinant of A.
+</dl>
+
+
+<H2><a name="epsln"></a>Subroutine EPSLN(NSM,NSMP,RSMT,IPRINT)</H2>
+It works out the epsilon cards using NSM and the symmetry operators stored in
+RSMT(4,4,NSM).
+<p>
+This is Randy's program description:
+<blockquote>
+         zones defined as for centric zones, but
+         fourth number on each line is the multiplicity corresponding
+         to this zone.  last card should always be 0 0 0 n, where n is
+         appropriate for the lattice (1 for primitive, 2 for face-
+         centred, etc.), so that general reflections get a value
+         for epsilon. be very careful of the order of the zones. cards
+         for reciprocal lattice rows should be given before those for
+         planes, because the first test that is satisfied defines
+         the zone.
+<p>
+       set up tests for <br>
+        h00 0k0 00l hh0 h0h 0kk h,-h0 h0-h 0k-k -h2h0 2h-h0 hhh hkl
+</blockquote>
+
+<H2><a name="epslon"></a>Subroutine EPSLON(IH,EPSI,ISYSAB)</H2>
+Input IH(3) - reflection indices
+<p>
+Returns EPSI ( epsilon zone) , and ISYSAB flag.
+Systematic absences flagged with ISYSAB = 1
+<p>
+Find the zone a reflection falls into, and return the
+appropriate value for the reflection multiplicity factor.
+Each reflection must have a zone.
+
+<H2><a name="factrz"></a><i>Logical</i> Function FACTRZ(N)</H2>
+Returns true if N has all prime factors &lt;= 19
+
+
+<H2><a name="fndsmp"></a>Subroutine FNDSMP(MINSMP, NMUL, SAMPLE, NSAMPL)</H2>
+Find suitable grid sample, approximately = SAMPLE/2 * maximum index,
+with required factor, and no prime factor &gt; 19
+<p>
+On entry:
+<dl>
+<dt>MINSMP<dd>
+     minimum sample, approximately 2 * maximum index
+<dt>NMUL<dd>
+       required factor
+<dt>SAMPLE<dd>
+     desired sample factor, ie if = 1.0 (minimum), try to get sample close to MINSMP
+</dl>
+On exit:
+<dl>
+<dt>nsampl<dd>
+     grid sample; if MINSMP<=0, nsampl=nmul
+</dl>
+
+<H2><a name="hkleq"></a><i>Logical</i> Function HKLEQ(IH,KH)</H2>
+Checks if indices are equal.
+<p>
+Returns true if indices ih = kh
+
+<H2><a name="handchange"></a>Subroutine HANDCHANGE(lspgrp,cx,cy,cz)</H2>
+Used in program phistats.
+
+<H2><a name="hklrange"></a>Subroutine HKLRANGE(IHRNG0,IKRNG1,IKRNG0,IKRNG1,ILRNG0,ILRNG1)</H2>
+Return HKL ranges chosen in PGNLAUE
+<p>     
+Arguments: (INTEGER) HRNG0,HRNG1,KRNG0,KRNG1,LRNG0,LRNG1
+
+<H2><a name="inasu"></a><i>Integer</i> Function INASU(IH, NLAUE)</H2>
+Arguments:                                               
+<dl>
+<dt>NLAUE<dd>
+ - code number for this pointgroup
+<dt>IH(3)<dd>
+ - indices
+</dl>
+Returns:
+<p>
+INASU = +1  if  h k l chosen<br>
+INASU = -1  if -h-k-l chosen<br>
+INASU =  0   if reflection is out-of-bounds
+
+<H2><a name="invsym"></a>Subroutine INVSYM(S,ST)</H2>
+Inverts a 4*4 matrix. Used here to get inverse symmetry operation for
+generating equivalent h k l, i.e.
+<p>
+<center>
+[h']    = [h][St]
+<p>
+h'(j) =Sum(I=1,3)[ h(i)*St(I,J,NS)]
+</center>
+<p>
+Arguments:
+<dl>
+<dt>Input S<dd>
+4*4 matrix to be inverted
+<dt>Output ST<dd>
+4*4 matrix (inverse of S)
+</dl>
+
+<H2><a name="krot"></a><i>Integer</i> Function KROT(NS)</H2>
+Apply NS'th symmetry operation to JP to get LP,
+check if lies in asymmetric unit given by NAU.
+<p>
+Returns KROT=0  correct operation, =1  if not.
+
+<H2><a name="msyget"></a>Subroutine MSYGET(IST,LSPGRP,NSYM,ROT)</H2>
+Get symmetry operations for space-group LSPGRP
+from library file, logical name SYMINFO.
+<p>
+Arguments:
+<dl>
+<dt>IST<dd>
+dummy parameter for backwards compatibility
+<dt>LSPGRP (input)<dd>
+Name of spacegroup
+<dt>IST (input)<dd>
+Stream of library file
+<dt>NSYM (output)<dd>
+Number of symmetry operations
+<dt>ROT(4,4,NSYM) (output)<dd>
+Rotation/translation matrices
+</dl>
+
+<H2><a name="msymlb"></a>Subroutine MSYMLB(IST,LSPGRP,NAMSPG,NAMPG,NSYMP,NSYM,ROT)</H2>
+Get symmetry operations from library file, logical name SYMINFO.
+Space group defined by LSPGRP - spacegroup number or NAMSPG - spacegroup name.
+This routine is obsolete now, and simply wraps MSYMLB3.
+<p>
+Arguments:
+<dl>
+<dt>IST<dd>
+dummy parameter for backwards compatibility
+<dt>LSPGRP (I/O)<dd>
+spacegroup number
+<dt>NAMSPG (I/O)<dd>
+spacegroup name
+<dt>NAMPG  (O)<dd>
+pointgroup name
+<dt>NSYMP  (O)<dd>
+number of primitive symmetry operations
+<dt>NSYM   (O)<dd>
+number of symmetry operations
+<dt>ROT(4,4,NSYM)<dd>
+rotation/translation  matrices
+</dl>
+
+<H2><a name="msymlb2"></a>Subroutine MSYMLB2(IST,LSPGRP,NAMSPG_CIF,NAMPG,NSYMP,NSYM,ROT)</H2>
+Identical to MSYMLB, except that on output NAMSPG_CIF
+has correct CIF format, e.g. 'P 21 21 21'. This routine is obsolete now, and 
+simply wraps MSYMLB3.
+
+<H2><a name="msymlb3"></a>Subroutine MSYMLB3(IST,LSPGRP,NAMSPG_CIF,NAMSPG_CIFS,NAMPG,NSYMP,NSYM,RSYM)</H2>
+Get symmetry operations from library file, logical name SYMINFO.
+<ol>
+<li>The routine first tries to identify the spacegroup by its number.
+    This requires that the number is UNIQUE, so alternate settings are
+    numbered n000 + Int Tab number.
+<li>If the spacegroup number is set to 0 on input, the routine will try to match the 
+    assigned NAMSPG_CIF. This uses the C function ccp4spg_load_by_ccp4_spgname
+    which will cope with a variety of possible formats for the name, e.g.
+    presence or absence of spaces.
+</ol>
+<p>
+On entry:
+<dl>
+<dt>IST<dd>
+stream number to read file
+<dt>LSPGRP<dd>
+spacegroup number, can be set to 0
+<dt>NAMSPG_CIF<dd>
+any acceptable spacegroup name: this will be used to 
+identify the spacegroup if possible
+</dl>
+<p>
+Returns:
+<dl>
+<dt>LSPGRP<dd>
+spacegroup number
+<dt>NAMSPG_CIF<dd>
+full spacegroup name 
+<dt>NAMSPG_CIFS<dd>
+name without any spaces
+<dt>NAMPG<dd>
+pointgroup name
+<dt>NSYMP<dd>
+number of primitive symmetry operations,
+only different from NSYM in non-primitive spacegroups
+<dt>NSYM<dd>
+total number of symmetry operations
+<dt>RSYM(4,4,NSYM)<dd>
+Symmetry rotation/translation  matrices
+</dl>
+
+<H2><a name="patsgp"></a>Subroutine PATSGP(SPGNAM, PGNAME, PATNAM, LPATSG)</H2>
+Determine Patterson spacegroup from true space-group
+<p>
+On entry:
+<dl>
+<dt>SPGNAM<dd>
+    space-group name. Only used to determine lattice centering
+<dt>PGNAME<dd>
+    point-group name
+</dl>
+On exit:
+<dl>
+<dt>PATNAM<dd>
+    name of Patterson spacegroup
+<dt>LPATSG<dd>
+    number of Patterson spacegroup
+</dl>
+
+<H2><a name="pgdefn"></a>Subroutine PGDEFN(NAMPG,NSYMP,NSYM,RSYMT,LPRINT)</H2>
+Arguments:
+<dl>
+<dt>Input NSYM<dd>
+  - number of symmetry operators. ( integer)
+<dt>Input RSYMT<dd>
+ - 4*4 symmetry matrices. ( real)
+<dt>Input LPRINT<dd>
+  - printing flag. ( logical)
+<dt>Returns  NAMPG<dd>
+ - name of point group. ( character)
+<dt>Returns  NSYMP<dd>
+ - number of primitive symmetry operators. ( integer)
+<dt>Returns  RSYMT<dd>
+ - possibly reordered.
+</dl>
+<p>
+This subroutine chooses the primitive set of symmetry operators.
+<p>
+If necessary it re-orders the symmetry operators to give the 
+primitive ones first.
+<p>
+This subroutine works out the point group name NAMPG. That is ; it checks
+rotation axes, etc etc and recognises these point groups.  (It DOES NOT cope
+with mirror planes etc)
+<p>
+Gronigen MDF stuff:  It now sets up the common block MDFPAR for 
+MDF file mods and  fills in the symmetry info.  See subroutine for
+details.
+
+<H2><a name="pgmdf"></a>Subroutine PGMDF(JLASS,JCENTR,JSCREW)</H2>
+Gronigen subroutine.
+<p>
+Use this subroutine to transfer information to and from MDFPAR.<br>
+If JLASS eq 0   then fill JLASS JCENTR JSCREW from common block.<br>
+If JLASS gt 0   then fill KLASS ICENTR ISCREW in common block.
+
+<H2><a name="pgnlau"></a>Subroutine PGNLAU(NAMPG,NLAUE,LAUNAM)</H2>
+Choose Laue group from PG name.
+<p>
+On entry:
+<dl>
+<dt>NAMPG<dd>
+      point-group name ( character)
+</dl>
+On exit:
+<dl>
+<dt>NLAUE<dd>
+     Laue group number ( integer)
+<dt>LAUNAM<dd>
+    Laue group name ( character)
+</dl>
+This subroutine returns a laue code number used to choose
+the unique region of reciprocal space for each point group.  
+<p>
+The number nlaue is the same as the one set in CAD for this purpose.
+<pre>
+Pointgroup Laue group        Limits
+
+ 3 pg1     1bar       hkl:l>=0  hk0:h>=0  0k0:k>=0   1,2
+   pg1bar
+ 4 pg2 (b) 2/m        hkl:k>=0, l>=0  hk0:h>=0       3/b,4/b....
+   pgm pg2/m
+ 5 pg2 (c) 2/m        hkl:k>=0, l>=0  h0l:h>=0       1003,1004
+ 6 pg222   mmm        hkl:h>=0, k>=0, l>=0            16 ...
+   pgmm2 pgmmm 
+ 7 pg4     4/m        hkl:h>=0, l>=0 with k>=0 if  h=0  and
+   pg4bar pg4/m                            k>0 if h>0
+ 8 pg422   4/mmm       hkl:h>=0, k>=0, l>=0            89..
+   pg4mm pg4bar2m pg4barm2 pg4/mmm
+ 9 pg3     3bar      hkl:h>=0, k>0  00l:l>0         143..
+   pg3bar
+10 pg312   3/m        hkl:h>=0, k>=0 with k<=h for all l.
+   pg32 pg3m pg3m1 pg3barm1 if k = 0  l>=0
+         Space group numbers :   149-151-153 157 159 162 163
+11 pg321   3bar1m     hkl:h>=0, k>=0 with k<=h for all l.
+   pg31m pg3bar1m      if h = k  l>=0
+         Space group numbers :   150-152-154
+12 pg6     6/m        hkl:h>=0, k>=0, l>=0 with k>=0 if  h=0
+   pg6bar  6/m        and k> 0 if h>0
+13 pg622   6/mmm       hkl:h>=0, k>=0, l>=0 with h>=k 177..
+   pg6mm pg6barm2 pg6bar2m  pg 6/mmm
+14 pg23    m3         hkl:h>=0, k>=0, l>=0 with l>=h,  k>=h
+   pgm3bar 
+15 pg432   m3m        hkl:h>=0, k>=0, l>=0  with  k>=l
+   pg4bar3m pgm3barm
+</pre>
+
+<H2><a name="prmvci"></a>Subroutine PRMVCI(PERM,JV,N,N1)</H2>
+<dl>
+<dt>Input PERM<dd>
+ - 4*4 matrix  (real)
+<dt>Input JV<dd>
+   - N1*3 matrix (integer)
+<dt>Output JV<dd>
+  - N1*3 matrix (integer)<p> 
+    This has been modified by permuting the Nth column by matrix PERM.
+</dl>
+Here is the code for clarity:
+<pre>
+C---- Permute
+C
+C     DO 10 I = 1,3
+C       BV(I) = PERM(I,1)*JV(N,1) + PERM(I,2)*JV(N,2) +
+C    +          PERM(I,3)*JV(N,3)
+C  10 CONTINUE
+C
+C---- Copy back
+C
+C     DO 20 I = 1,3
+C       JV(N,I) = NINT(BV(I))
+C  20 CONTINUE
+</pre>
+
+<H2><a name="prmvcr"></a>Subroutine PRMVCR(PERM,AV,N,N1)</H2>
+<dl>
+<dt>Input PERM<dd>
+ - 4*4 matrix  (real)
+<dt>Input AV<dd>
+   - N1*3 matrix (real)
+<dt>Output AV<dd>
+  - N1*3 matrix (real)
+   This has been modified by permuting the Nth column by matrix PERM.
+</dl>
+<p>
+See PRMVCI - this routine is its real equivalent.
+
+<H2><a name="prtrsm"></a>Subroutine PRTRSM(PGNAME, NSYMP, RSYMIV)</H2>
+Print reciprocal space symmetry operations
+<p>
+The real-space symmetry matrices are applied by premultiplying them
+by a row vector hkl,  ie  (h'k'l') = (hkl)R
+
+<H2><a name="pstoph"></a>Subroutine PSTOPH (PSIX,PSIY,PSIZ,PHIX,PHIY,PHIZ,AVPHI)</H2>
+Convert PSIX,PSIY,PSIZ (= epsx,epsy,epsz) to PHIX,PHIY,PHIZ, using AVPHI
+<p>
+All angles in radians
+
+<H2><a name="rotfix"></a>Subroutine ROTFIX</H2>
+Permutes inverse symmetry operations
+<p>
+Matrices passed in Common block ATSYM
+
+<H2><a name="setgrd"></a>Subroutine SETGRD(NLAUE,SAMPLE,NXMIN,NYMIN,NZMIN,NX,NY,NZ)</H2>
+Set up a suitable sampling grid for FFT
+<p>
+Input:
+<dl>
+<dt>NLAUE<dd>
+         Laue-group for FFT/SF calculation
+<dt>SAMPLE<dd>
+        default fineness of sample, ie if = 1.0 (minimum),
+        try to get sampling as close to minimum as possible.<br>
+        Typically = 1.5 to get sample at traditional 3 * maximum index
+<dt>NXMIN NYMIN NZMIN<dd>
+        minimum sampling (true XYZ)
+</dl>
+Output:
+<dl>
+<dt>NX,NY,NZ<dd>
+       sampling intervals along X,Y,Z
+</dl>
+The sampling intervals must satisfy the following conditions:
+<ol>
+<li>approximately SAMPLE * minimum sampling
+<li>no prime factor &gt; 19
+<li>special restrictions for particular space-groups
+</ol>
+
+<p>
+This is ALL the point groups.
+<pre>
+ PG1 PG1bar PG2 PGm PG2/m PG222 PGmm2 PGmmm 
+ PG4 PG4bar PG4/m PG422 PG4mm PG4bar2m PG4/mmm 
+ PG3 PG3bar PG32 PG3m PG3barm 
+ PG6 PG6bar PG6/m PG622 PG6mm PG6bar2m  PG6/mmm
+ PG23 PGm/3bar PG432 PG4bar3m PGm3bar m
+</pre>
+We use:
+<pre>
+ PG1 PG1bar PG2  PG2/m PG222  PGmmm 
+ PG4 PG4/m PG422 PG4/mmm 
+ PG3 PG3bar PG32 PG3bar/m 
+ PG6 PG6/m PG622 PG6/mmm
+ PG23 PGm/3bar PG432 PGm3barm
+</pre>
+For grid restrictions we only need to know the laue number.
+Here is the table:
+<pre>
+   3 pg1     1bar      hkl:l>=0  hk0:h>=0  0k0:k>=0   1,2
+   4 pg2    2/m        hkl:k>=0, l>=0  hk0:h>=0       3/b,4/b....
+   5 pg2(c) 2/m        hkl:k>=0, l>=0  h0l:h>=0       1003,1004
+   6 pg222  mmm        hkl:h>=0, k>=0, l>=0            16 ...
+   7 pg4    4/m        hkl:h>=0, l>=0 with k>=0 if  h=0  and
+   8 pg422 4/mmm       hkl:h>=0, k>=0, l>=0            89..
+   9 pg3     3bar      hkl:h>=0, k>0  00l:l>0         143..
+  10 pg312  3/m        hkl:h>=0, k>=0 with k<=h for all l.
+                           if k = 0  l>=0
+           Space group numbers :   149-151-153
+  11 pg321  3/m        hkl:h>=0, k>=0 with k<=h for all l.
+                           if h = k  l>=0
+           Space group numbers :   150-152-154
+  12 pg6    6/m        hkl:h>=0, k>=0, l>=0 with k=0 if  h=0
+  13 pg622  6/mmm
+  14 pg23   m3
+  15 pg432  m3m
+</pre>
+
+
+<H2><a name="setlim"></a>Subroutine SETLIM(LSPGRP,XYZLIM)</H2>
+Set appropriate box (asymmetric unit) for spacegroup (true spacegroup rather than
+FFT spacegroup) LSPGRP. For cubic symmetry spacegroups, this will be more than
+one asymmetric unit.
+<p>
+On entry:
+<dl>
+<dt>lspgrp<dd>
+    true spacegroup (not FFT spacegroup)
+</dl>
+On exit:
+<dl>
+<dt>xyzlim(2,3)<dd>
+  minimum, maximum limits on x,y,z (fractions of cell); if spacegroup not
+  recognized, returns xzylim(1,1) = -1.0<br>
+  Note that the minimum limits (xyzlim(1,)) will always = 0.0
+</dl>
+
+<H2><a name="setlim_zero"></a>Subroutine SETLIM_ZERO(LSPGRP,XYZLIM)</H2>
+Set appropriate box (asymmetric unit) for spacegroup (true spacegroup rather than
+FFT spacegroup) LSPGRP. For cubic symmetry spacegroups, this will be more than
+one asymmetric unit.
+<p>
+NB This s/r differs from SETLIM in that the limits are taken from cctbx
+via CCP4's syminfo.lib file.
+<P>
+On entry:
+<dl>
+<dt>lspgrp<dd>
+    true spacegroup (not FFT spacegroup)
+</dl>
+On exit:
+<dl>
+<dt>xyzlim(2,3)<dd>
+  minimum, maximum limits on x,y,z (fractions of cell); if spacegroup not
+  recognized, returns xzylim(1,1) = -1.0<br>
+  Note that the minimum limits (xyzlim(1,)) will always = 0.0
+</dl>
+
+<H2><a name="setrsl"></a>Subroutine SETRSL(A,B,C,ALPHA,BETA,GAMMA)</H2>
+Routine to calculate coefficients for (sin(theta)/lambda)**2 from
+h,k,l for general axes.
+<p>
+First calculates the components of input axes in an orthonormal
+basis, then calculate components of reciprocal axes in same basis.
+<p>
+The input angles are in degrees.
+
+<H2><a name="sthlsq"></a><i>Real</i> Function STHLSQ(IH,IK,IL)</H2>
+Calculate (sin(theta)/lambda)**2 from h,k,l. The coefficients are set by
+a previous call to SETRSL. Works for any kind of axes.
+
+<H2><a name="sts3r4"></a><i>Real</i> Function STS3R4(IH,IK,IL)</H2>
+Calculate (sin(theta)/lambda)**2 from h,k,l. The coefficients are set by a
+call to SETRSL. Works for any kind of axes.
+
+<H2><a name="symfr2"></a>Subroutine SYMFR2(ICOL,I1,NS,ROT)</H2>
+Read and interpret symmetry operations
+
+<p>SYMFR2 recognises the following types of input:
+<pre>
+     real space symmetry operations, e.g. X+1/2,Y-X,Z
+     reciprocal space operations,    e.g. h,l-h,-k
+     reciprocal axis vectors,        e.g. a*+c*,c*,-b*
+     real space axis vectors,        e.g. a,c-a,-b
+</pre>
+<p>The subroutine returns the appropriate 4x4 transformation
+matrix for each operation. The calling program must
+interpret the resulting matrix(ces) correctly.</p>
+
+<p>On entry I1 is the first character of ICOL to look at (say after
+keyword 'SYMM')</p>
+
+<p>NS is the number of the first symmetry operation to be read, &amp; returns
+with the number of the last one read.</p>
+
+<p>On exit, ROT(4,4,NS) contains the real-space symmetry matrices, in standard
+convention, i.e.
+<p>
+<center>
+[x']    = [s][x]
+<p>
+x'(I)=Sum(J=1,3)ROT(I,J,NS)*x(J) + ROT(I,4,NS)
+</center>
+<p>
+Input:
+<dl>
+<dt>ICOL<dd>
+character string containing symmetry operations
+<dt>I1<dd>
+first character in ICOL to interpret from.
+</dl>
+Output:
+<dl>
+<dt>ROT(I,4,NS)<dd>
+contains the fractional translations.
+</dl>
+
+<H2><a name="symfr3"></a>Subroutine SYMFR3(ICOL,I1,NS,ROT,EFLAG)</H2>
+Read and interpret symmetry operations.
+<p>
+Arguments:
+<p>
+<dl>
+<dt>ICOL      (I)	CHARACTER*80<dd>
+Line containing the symmetry operations
+<dt>I1        (I)	INTEGER<dd>
+First character to look at in ICOL (say after keyword 'SYM')
+<dt>NS        (I/O)	INTEGER<dd>
+is the number of the first symmetry operation to be read, & returns with the
+number of the last one read (ie you can have more than one on a line!)
+<dt>ROT       (O)	REAL<dd>
+Array (4,4,at_least_NS), on exit contains the real-space
+symmetry matrices, in standard convention, i.e.
+<br><center>[x']    = [s][x]</center>
+<br><center>x'(I)=Sum(J=1,3)ROT(I,J,NS)*x(J) + ROT(I,4,NS)</center>
+<br>ROT(I,4,NS) contains the fractional translations
+<dt>EFLAG     (O)	INTEGER<dd>
+Error flag - on exit, if 0 then OK, &gt; 0, an error occurred.
+</dl>
+
+<H2><a name="symtrn"></a>Subroutine SYMTRN(NSM,RSM)</H2>
+Symmetry translation from matrix back to characters
+<p>
+This translates the symmetry matrices RSM(4,4,NSM) into INT TAB
+character strings
+<p>
+It gives the real and reciprocal space operations.
+<pre>
+                eg     X,Y,Z        H  , K, L
+                eg     -Y,X-Y, Z   -H-K, H, L  etc
+</pre>
+That is more complicated than you might think!!
+
+<H2><a name="symtr3"></a>Subroutine SYMTR3(NSM,RSM)</H2>
+Symmetry translation from matrix back to characters
+<p>
+This translates the symmetry matrices RSM(4,4,NSM) into INT TAB
+character strings
+<p>
+It gives the real and reciprocal space operations.
+<pre>
+                eg     X,Y,Z        H  , K, L
+                eg     -Y,X-Y, Z   -H-K, H, L  etc
+</pre>
+That is more complicated than you might think!!
+<p>
+Arguments :
+<dl>
+<dt>NSM       (I)     INTEGER<dd>
+Number of Symmetry operations
+<dt>RSM       (I)     REAL<dd>
+Array of dimension (4,4,at least NSM) containing symmetry operations on input
+<dt>SYMCHS    (O)     CHARACTER*(*)<dd>
+Array of dimension at least NSM containing int tab char strings on output
+<dt>IPRINT    (I)     INTEGER<dd>
+Print flag<br>
+=0 No printing<br>
+=1 Print the int tab strings
+</dl>
+
+<H2><a name="symtr4"></a>Subroutine SYMTR4(NSYM,RSM,SYMCHS)</H2>
+Symmetry translation from matrix back to characters
+<p>
+This translates the symmetry matrices RSM(4,4,NSM) into INT TAB
+character strings
+<p>
+It gives the real and reciprocal space operations.
+<pre>
+                eg     X,Y,Z        H  , K, L
+                eg     -Y,X-Y, Z   -H-K, H, L  etc
+</pre>
+That is more complicated than you might think!!
+<p>
+Arguments :
+<dl>
+<dt>Nsym (I) INTEGER<dd>
+Number of Symmetry operations
+<dt>Rsm  (I) REAL<dd>
+Array of dimension (4,4,at least Nsym) containing symmetry operations on input
+<dt>Symchs (O) CHARACTER*(*)<dd>
+Array of dimension at least Nsym containing int tab char strings on output
+</dl>
+
+<H2><a name="sysab"></a>Subroutine SYSAB(IN,ISYSAB)</H2>
+Input IN(3) - reflection indices
+<p>
+Returns  ISYSAB flag.
+Systematic absences flagged with ISYSAB = 1
+Only reflns with EPSI &gt; 1 need be considered.
+
+<H2><a name="xspecials"></a>Subroutine XSPECIALS(NSYM,RSYM,XF,YF,ZF,NSPEC)</H2>
+<dl>
+<dt>Input NSYM<dd>
+  - number of symmetry operators. ( integer)
+<dt>Input RSYM<dd>
+  - 4*4*NSYM symmetry matrices. ( real)
+<dt>Input XF YF ZF<dd>
+  - a coordinate in fractional coordinates.
+<dt>Output NSPEC<dd>
+ - the multiplicity of the coordinate.
+   eg: NSPEC = 3 for an atom on a 3fod axis.
+</dl>
+This subroutine finds what coordinates occupy special positions
+i.e. have occupancies less than 1.0
+from consideration of the symmetry operations.
+
+
+<a name="asymmetric_unit"></a>
+
+<H2>5. DEFINITION OF THE CCP4 ASYMMETRIC UNIT</H2>
+
+There is no standard defined asymmetric unit so the definitions are arbitrary and
+may differ between differ packages. The subroutines in
+<a href="#group_3_a">group 3.a</a> are used to define the CCP4 asymmetric unit, and
+to determine whether a reflection falls within this definition.
+<p>
+Below are the definitions of the <a href="#recip_asym_unit">reciprocal space</a>
+and the <a href="#real_asym_unit">real space</a> asymmetric units under the CCP4
+convention.
+
+<a name="recip_asym_unit"></a>
+
+<H3>a. Reciprocal Space Asymmetric Unit Definitions</H3>
+
+The reciprocal space asymmetric unit is defined in the subroutine ASUSET from the
+Laue group using calls to the s/r's PGDEFN and PGNLAU. The limits of the CCP4
+asymmetric unit are (from <a href="#pgnlau">PGNLAU</a>):
+<p>
+<table border=1>
+<tr>
+ <th colspan=2>Pointgroup
+ <th>Laue group
+ <th>Limits
+ <th>Spacegroup Nos
+<tr>
+ <td>3
+ <td>pg1 <br> pg1bar
+ <td>1bar
+ <td>hkl:l&gt;=0 <br> hk0:h&gt;=0 <br> 0k0:k&gt;=0
+ <td>1,2
+<tr>
+ <td>4
+ <td>pg2 (b) <br> pgm pg2/m
+ <td>2/m
+ <td>hkl:k&gt;=0, l&gt;=0 <br> hk0:h&gt;=0
+ <td>3,4....
+<tr>
+ <td>5
+ <td>pg2 (c)
+ <td>2/m
+ <td>hkl:k&gt;=0, l&gt;=0 <br> h0l:h&gt;=0
+ <td>1003, 1004
+<tr>
+ <td>6
+ <td>pg222 <br> pgmm2 <br> pgmmm
+ <td>mmm
+ <td>hkl:h&gt;=0, k&gt;=0, l&gt;=0
+ <td>16 ...
+<tr>
+ <td>7
+ <td>pg4 <br> pg4bar <br> pg4/m
+ <td>4/m
+ <td>hkl:h&gt;=0, l&gt;=0 with k&gt;=0 if h=0<br>
+     and k&gt;0 if h&gt;0
+ <td>75,..
+<tr>
+ <td>8
+ <td>pg422 pg4mm pg4bar2m <br> pg4barm2 pg4/mm
+ <td>4/mmm
+ <td>hkl:h&gt;=0, k&gt;=0, l&gt;=0
+ <td>89,..
+<tr>
+ <td>9
+ <td>pg3 <br> pg3bar
+ <td>3bar
+ <td>hkl:h&gt;=0, k&gt;0 00l:l&gt;0
+ <td>143,..
+<tr>
+ <td>10
+ <td>pg312 pg32 <br> pg3m pg3m1 pg3barm1
+ <td>3/m
+ <td>hkl:h&gt;=0, k&gt;=0 with k&lt;=h for all l. <br>
+                                   if k=0  l&gt;=0
+ <td>149 151 153 157 159 162 163
+<tr>
+ <td>11
+ <td>pg321 pg31m pg3bar1m
+ <td>3bar1m
+ <td>hkl:h&gt;=0, k&gt;=0 with k&lt;=h for all l. <br>
+                                   if k=h  l&gt;=0
+ <td>150 152 154
+<tr>
+ <td>12
+ <td>pg6 pg6bar
+ <td>6/m
+ <td>hkl:h&gt;=0, k&gt;=0, l&gt;=0 with k&gt;=0 if h=0
+                                   and k&gt;0 if h&gt;0
+ <td>168..
+<tr>
+ <td>13
+ <td>pg622 pg6mm pg6barm2 pg6bar2m pg6/mmm
+ <td>6/mmm
+ <td>hkl:h&gt;=0, k&gt;=0, l&gt;=0 with h&gt;=k
+ <td>177..
+<tr>
+ <td>14
+ <td>pg23 pgm3bar
+ <td>m3
+ <td>hkl:h&gt;=0, k&gt;=0, l&gt;=0 with l&gt;=h, k&gt;=h
+ <td>195..
+<tr>
+ <td>15
+ <td>pg432 pg4bar3m pgm3barm
+ <td>m3m
+ <td>hkl:h&gt;=0, k&gt;=0, l&gt;=0 with k&gt;=1
+ <td>209..
+</table>
+
+<a name="real_asym_unit"></a>
+
+<H3>b. Real Space Asymmetric Unit Definitions</H3>
+
+The subroutine <a href="#setlim">SETLIM</a> contains the definitions of the
+real space asymmetric unit. Note that not all of the spacegroups have a
+definition within SETLIM.
+<p>
+
+<table border=1>
+<tr>
+ <th>No.
+ <th>Spacegroup
+ <th>Upper limits on x, y, z <a href="#asterisk">(*)</a>
+<tr>
+ <td>  1
+ <td>P 1                 
+ <td>x &lt; 1,    y &lt; 1,    z &lt; 1,    
+<tr>
+ <td>  2
+ <td>P -1                
+ <td>x &lt; 1,    y &lt;= 1/2, z &lt; 1,    
+<tr>
+ <td>  3
+ <td>P 1 2 1             
+ <td>x &lt;= 1/2, y &lt; 1,    z &lt; 1,    
+<tr>
+ <td>  4
+ <td>P 1 21 1            
+ <td>x &lt; 1,    y &lt; 1/2,  z &lt; 1,    
+<tr>
+ <td>  5
+ <td>C 1 2 1             
+ <td>x &lt;= 1/2, y &lt; 1/2,  z &lt; 1,    
+<tr>
+ <td> 10
+ <td>P 1 2/M 1           
+ <td>x &lt;= 1/2, y &lt;= 1/2, z &lt; 1,    
+<tr>
+ <td> 16
+ <td>P 2 2 2             
+ <td>x &lt;= 1/2, y &lt;= 1/2, z &lt; 1,    
+<tr>
+ <td> 17
+ <td>P 2 2 21            
+ <td>x &lt;= 1/2, y &lt;= 1/2, z &lt; 1,    
+<tr>
+ <td> 18
+ <td>P 21 21 2           
+ <td>x &lt; 1,    y &lt;= 1/4, z &lt; 1,    
+<tr>
+ <td> 19
+ <td>P 21 21 21          
+ <td>x &lt; 1,    y &lt; 1,    z &lt;= 1/4, 
+<tr>
+ <td> 20
+ <td>C 2 2 21            
+ <td>x &lt;= 1/2, y &lt;= 1/4, z &lt; 1,    
+<tr>
+ <td> 21
+ <td>C 2 2 2             
+ <td>x &lt;= 1/2, y &lt;= 1/4, z &lt; 1,    
+<tr>
+ <td> 22
+ <td>F 2 2 2             
+ <td>x &lt;= 1/4, y &lt;= 1/4, z &lt; 1,    
+<tr>
+ <td> 23
+ <td>I 2 2 2             
+ <td>x &lt;= 1/2, y &lt;= 1/4, z &lt;= 1,   
+<tr>
+ <td> 24
+ <td>I 21 21 21          
+ <td>x &lt;= 1/2, y &lt;= 1/4, z &lt; 1,    
+<tr>
+ <td> 47
+ <td>P 2/M 2/M 2/M       
+ <td>x &lt;= 1/2, y &lt;= 1/2, z &lt;= 1/2, 
+<tr>
+ <td> 65
+ <td>C 2/M 2/M 2/M       
+ <td>x &lt;= 1/2, y &lt;= 1/4, z &lt;= 1/2, 
+<tr>
+ <td> 69
+ <td>F 2/M 2/M 2/M       
+ <td>x &lt;= 1/4, y &lt;= 1/4, z &lt;= 1/2, 
+<tr>
+ <td> 71
+ <td>I 2/M 2/M 2/M       
+ <td>x &lt;= 1/2, y &lt;= 1/4, z &lt;= 1/2, 
+<tr>
+ <td> 75
+ <td>P 4                 
+ <td>x &lt;= 1/2, y &lt;= 1/2, z &lt; 1,    
+<tr>
+ <td> 76
+ <td>P 41                
+ <td>x &lt; 1,    y &lt; 1,    z &lt; 1/4,  
+<tr>
+ <td> 77
+ <td>P 42                
+ <td>x &lt;= 1/2, y &lt; 1,    z &lt; 1/2,  
+<tr>
+ <td> 78
+ <td>P 43                
+ <td>x &lt; 1,    y &lt; 1,    z &lt; 1/4,  
+<tr>
+ <td> 79
+ <td>I 4                 
+ <td>x &lt;= 1/2, y &lt;= 1/2, z &lt;= 1/2, 
+<tr>
+ <td> 80
+ <td>I 41                
+ <td>x &lt;= 1/2, y &lt; 1,    z &lt; 1/4,  
+<tr>
+ <td> 83
+ <td>P 4/M               
+ <td>x &lt;= 1/2, y &lt;= 1/2, z &lt;= 1/2, 
+<tr>
+ <td> 87
+ <td>I 4/M               
+ <td>x &lt;= 1/2, y &lt;= 1/2, z &lt;= 1/4, 
+<tr>
+ <td> 89
+ <td>P 4 2 2             
+ <td>x &lt;= 1/2, y &lt;= 1/2, z &lt;= 1/2, 
+<tr>
+ <td> 90
+ <td>P 4 21 2            
+ <td>x &lt;= 1/2, y &lt;= 1/2, z &lt;= 1/2, 
+<tr>
+ <td> 91
+ <td>P 41 2 2            
+ <td>x &lt; 1,    y &lt; 1,    z &lt;= 1/8, 
+<tr>
+ <td> 92
+ <td>P 41 21 2           
+ <td>x &lt; 1,    y &lt; 1,    z &lt;= 1/8, 
+<tr>
+ <td> 93
+ <td>P 42 2 2            
+ <td>x &lt;= 1/2, y &lt; 1,    z &lt;= 1/4, 
+<tr>
+ <td> 94
+ <td>P 42 21 2           
+ <td>x &lt;= 1/2, y &lt;= 1/2, z &lt;= 1/2, 
+<tr>
+ <td> 95
+ <td>P 43 2 2            
+ <td>x &lt; 1,    y &lt; 1,    z &lt;= 1/8, 
+<tr>
+ <td> 96
+ <td>P 43 21 2           
+ <td>x &lt; 1,    y &lt; 1,    z &lt;= 1/8, 
+<tr>
+ <td> 97
+ <td>I 4 2 2             
+ <td>x &lt;= 1/2, y &lt;= 1/2, z &lt;= 1/4, 
+<tr>
+ <td> 98
+ <td>I 41 2 2            
+ <td>x &lt;= 1/2, y &lt; 1,    z &lt;= 1/8, 
+<tr>
+ <td>123
+ <td>P 4/M 2/M 2/M       
+ <td>x &lt;= 1/2, y &lt;= 1/2, z &lt;= 1/2, 
+<tr>
+ <td>139
+ <td>I 4/M 2/M 2/M       
+ <td>x &lt;= 1/2, y &lt;= 1/2, z &lt;= 1/4, 
+<tr>
+ <td>143
+ <td>P 3                 
+ <td>x &lt;= 2/3, y &lt;= 2/3, z &lt; 1,    
+<tr>
+ <td>144
+ <td>P 31                
+ <td>x &lt; 1,    y &lt; 1,    z &lt; 1/3,  
+<tr>
+ <td>145
+ <td>P 32                
+ <td>x &lt; 1,    y &lt; 1,    z &lt; 1/3,  
+<tr>
+ <td>146
+ <td>H 3                 
+ <td>x &lt;= 2/3, y &lt;= 2/3, z &lt; 1/3,  
+<tr>
+ <td>147
+ <td>P -3                
+ <td>x &lt;= 2/3, y &lt;= 2/3, z &lt;= 1/2, 
+<tr>
+ <td>148
+ <td>R -3                
+ <td>x &lt;= 2/3, y &lt;= 2/3, z &lt;= 1/6, 
+<tr>
+ <td>149
+ <td>P 3 1 2             
+ <td>x &lt;= 2/3, y &lt;= 2/3, z &lt;= 1/2, 
+<tr>
+ <td>150
+ <td>P 3 2 1             
+ <td>x &lt;= 2/3, y &lt;= 2/3, z &lt;= 1/2, 
+<tr>
+ <td>151
+ <td>P 31 1 2            
+ <td>x &lt; 1,    y &lt; 1,    z &lt;= 1/6, 
+<tr>
+ <td>152
+ <td>P 31 2 1            
+ <td>x &lt; 1,    y &lt; 1,    z &lt;= 1/6, 
+<tr>
+ <td>153
+ <td>P 32 1 2            
+ <td>x &lt; 1,    y &lt; 1,    z &lt;= 1/6, 
+<tr>
+ <td>154
+ <td>P 32 2 1            
+ <td>x &lt; 1,    y &lt; 1,    z &lt;= 1/6, 
+<tr>
+ <td>155
+ <td>H 3 2               
+ <td>x &lt;= 2/3, y &lt;= 2/3, z &lt;= 1/6, 
+<tr>
+ <td>162
+ <td>P -31 2/M           
+ <td>x &lt;= 2/3, y &lt;= 1/2, z &lt;= 1/2, 
+<tr>
+ <td>164
+ <td>P -3 2/M 1          
+ <td>x &lt;= 2/3, y &lt;= 1/3, z &lt;= 1,   
+<tr>
+ <td>166
+ <td>R -3 2/M            
+ <td>x &lt;= 2/3, y &lt;= 2/3, z &lt;= 1/6, 
+<tr>
+ <td>168
+ <td>P 6                 
+ <td>x &lt;= 2/3, y &lt;= 1/2, z &lt; 1,    
+<tr>
+ <td>169
+ <td>P 61                
+ <td>x &lt; 1,    y &lt; 1,    z &lt; 1/6,  
+<tr>
+ <td>170
+ <td>P 65                
+ <td>x &lt; 1,    y &lt; 1,    z &lt; 1/6,  
+<tr>
+ <td>171
+ <td>P 62                
+ <td>x &lt; 1,    y &lt; 1,    z &lt; 1/3,  
+<tr>
+ <td>172
+ <td>P 64                
+ <td>x &lt; 1,    y &lt; 1,    z &lt; 1/3,  
+<tr>
+ <td>173
+ <td>P 63                
+ <td>x &lt;= 2/3, y &lt;= 2/3, z &lt; 1/2,  
+<tr>
+ <td>175
+ <td>P 6/M               
+ <td>x &lt;= 2/3, y &lt;= 2/3, z &lt;= 1/2, 
+<tr>
+ <td>177
+ <td>P 6 2 2             
+ <td>x &lt;= 2/3, y &lt;= 1/2, z &lt;= 1/2, 
+<tr>
+ <td>178
+ <td>P 61 2 2            
+ <td>x &lt; 1,    y &lt; 1,    z &lt;= 1/12,
+<tr>
+ <td>179
+ <td>P 65 2 2            
+ <td>x &lt; 1,    y &lt; 1,    z &lt;= 1/12,
+<tr>
+ <td>180
+ <td>P 62 2 2            
+ <td>x &lt; 1,    y &lt; 1,    z &lt;= 1/6, 
+<tr>
+ <td>181
+ <td>P 64 2 2            
+ <td>x &lt; 1,    y &lt; 1,    z &lt;= 1/6, 
+<tr>
+ <td>182
+ <td>P 63 2 2            
+ <td>x &lt;= 2/3, y &lt;= 2/3, z &lt;= 1/4, 
+<tr>
+ <td>191
+ <td>P 6/M 2/M 2/M       
+ <td>x &lt;= 2/3, y &lt;= 1/3, z &lt;= 1/2, 
+<tr>
+ <td>195
+ <td>P 2 3               
+ <td>x &lt; 1,    y &lt; 1,    z &lt;= 1/2, 
+<tr>
+ <td>196
+ <td>F 2 3               
+ <td>x &lt;= 1/4, y &lt;= 1/4, z &lt; 1,    
+<tr>
+ <td>197
+ <td>I 2 3               
+ <td>x &lt; 1,    y &lt; 1,    z &lt;= 1/2, 
+<tr>
+ <td>198
+ <td>P 21 3              
+ <td>x &lt;= 1/2, y &lt;= 1/2, z &lt; 1,    
+<tr>
+ <td>199
+ <td>I 21 3              
+ <td>x &lt;= 1/2, y &lt;= 1/2, z &lt;= 1/2, 
+<tr>
+ <td>200
+ <td>P 2/M -3            
+ <td>x &lt;= 1/2, y &lt;= 1/2, z &lt;= 1/2, 
+<tr>
+ <td>202
+ <td>F 2/M -3            
+ <td>x &lt;= 1/2, y &lt;= 1/2, z &lt;= 1/4, 
+<tr>
+ <td>204
+ <td>I 2/M -3            
+ <td>x &lt;= 1/2, y &lt;= 1/2, z &lt;= 1/2, 
+<tr>
+ <td>207
+ <td>P 4 3 2             
+ <td>x &lt; 1,    y &lt;= 1/2, z &lt;= 1/2, 
+<tr>
+ <td>208
+ <td>P 42 3 2            
+ <td>x &lt;= 1/2, y &lt; 1,    z &lt;= 1/4, 
+<tr>
+ <td>209
+ <td>F 4 3 2             
+ <td>x &lt;= 1/2, y &lt;= 1/2, z &lt;= 1/2, 
+<tr>
+ <td>210
+ <td>F 41 3 2            
+ <td>x &lt;= 1/2, y &lt; 1,    z &lt;= 1/8, 
+<tr>
+ <td>211
+ <td>I 4 3 2             
+ <td>x &lt;= 1/2, y &lt;= 1/2, z &lt;= 1/4, 
+<tr>
+ <td>212
+ <td>P 43 3 2            
+ <td>x &lt; 1,    y &lt; 1,    z &lt;= 1/8, 
+<tr>
+ <td>213
+ <td>P 41 3 2            
+ <td>x &lt; 1,    y &lt; 1,    z &lt;= 1/8, 
+<tr>
+ <td>214
+ <td>I 41 3 2            
+ <td>x &lt;= 1/2, y &lt; 1,    z &lt;= 1/8, 
+<tr>
+ <td>221
+ <td>P 4/M -3 2/M        
+ <td>x &lt;= 1/2, y &lt;= 1/2, z &lt;= 1/2, 
+<tr>
+ <td>225
+ <td>F 4/M -3 2/M        
+ <td>x &lt;= 1/2, y &lt;= 1/4, z &lt;= 1/4, 
+<tr>
+ <td>229
+ <td>I 4/M -3 2/M        
+ <td>x &lt;= 1/2, y &lt;= 1/2, z &lt;= 1/4, 
+</table>
+
+<p>
+<a name="asterisk">(*)</a> The limits are in fractional coordinates,
+and the lower limits are always x=0, y=0, z=0.
+
+<hr>
+
+</body>
+</html>

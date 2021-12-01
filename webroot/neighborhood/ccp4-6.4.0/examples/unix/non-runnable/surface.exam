@@ -1,0 +1,50 @@
+#!/bin/csh -f
+#
+surface  xyzin1 ../brk/iv96C.brk\
+       xyzout ../results/iv96C.surface \
+       << eof
+NFILES 1
+FORM 1 BNL
+PROBE 1.40
+ZSTEP 0.25
+RUN
+ALLATM
+NEXT
+STOP
+eof
+#
+Volume:
+#
+volume xyzin     ../results/iv96C.surface               \
+       xyzout    ../results/iv96C.volume_calc_shell     \
+       errout    ../results/iv96C.volume_calc_shell_err \
+       shellfile ../results/iv96C.shell                 \
+       << eof
+SHELL
+NOCALC
+NOWATER
+RUN
+eof
+#
+#
+#
+volume xyzin     ../results/iv96C.surface                       \
+       xyzout    ../results/iv96C.volume_results_with_shell     \
+       errout    ../results/iv96C.volume_results_with_shell_err \
+       shellfile ../results/iv96C.shell                         \
+       << eof
+NOSHELL
+CALC
+WATER
+RUN
+eof
+#
+readradfile < ../results/iv96C.volume_results_with_shell | \
+awk '{printf("%5s %3d %8.3f\n",$1,$2+1,$3)}' > ../vols/iv96C.residue_volumes
+
+
+
+
+
+
+

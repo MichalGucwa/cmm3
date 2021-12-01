@@ -1,0 +1,69 @@
+#!/bin/sh
+
+# processing TEXSAN data through to the `truncate' step
+
+set -e
+
+for i in 1 2 6 7; do
+rotaprep HKLIN hkl$i.dat HKLOUT hkl$i.mtz << END-mtzrwrot 
+MONITOR 1000 
+INPUT TEXHKL
+SYMMETRY 146  
+CELL 80.64 80.64 37.52 90 90 120
+BATCH $i
+TITLE thioins 
+END 
+END-mtzrwrot
+done
+
+sortmtz    HKLOUT thioins_sort.mtz << EOF-sortmtz
+# 
+# Sort keys since default keys are H K L
+#
+    H K L M/ISYM BATCH
+hkl1.mtz 
+hkl2.mtz 
+hkl6.mtz 
+hkl7.mtz 
+EOF-sortmtz
+#
+rotavata HKLIN thioins_sort.mtz SCALES rot.scale << END-rotavata 
+BATCHES 4 
+BREFINE ON
+BINS 10
+CYCLES 8
+BADREJECT_FLAGS NOBS =      3  PERCENT =      70 FTWO
+MEAN ALL
+SCALE UNITY
+WIDTH 300
+INTENSITIES INTEGRATED
+SHIFTS 0.0 1.0
+FMAXR 1.0
+FSAFE 0.0
+ICRYST 100
+PROCESS FULL PARTIAL 
+SYMMETRY 146 
+RECORDS TRUNCATE
+ANOMALOUS OFF   
+TITL thioins 
+SDINFLATE SDFAC = 0.25 SDADD = 0.20
+SDREJECT 3.0
+SDMONITOR  3.0
+SDANOM 3.0
+SOUT 1.0
+FRCMAX 3.0
+END-rotavata
+
+agrovata HKLIN thioins_sort.mtz HKLOUT thioins_agr.mtz  ROGUES baddies << END-agrovata
+@rot.scale
+END-agrovata
+
+truncate HKLIN thioins_agr.mtz HKLOUT thioins_tru.mtz  << END-truncate
+SYMMETRY 146
+LABOUT F=F_thio SIGF=SIGF_thio
+TITLE
+NRES 200
+WILSON
+TRUNCATE YES
+ANOM NO 
+END-truncate

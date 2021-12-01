@@ -1,0 +1,505 @@
+#!/bin/ksh
+version="Time-stamp: <1998-07-13 11:11:56 vonrhein>"
+#
+# Author: Clemens Vonrhein <vonrhein@globalphasing.com>
+#         (C) 1998
+#
+# very simple script to determine NCS
+#
+# 1) gets range of sensible Vm values (via matthews_coef)
+# 2) does self-rotation (POLARRFN)
+# 3) runs GETAX on several "solutions" (only for 2- to 6-folds)
+# 4) uses best solution from GETAX as i/p to simple DM run
+#
+# have a look at the first step of NCS operator refinement in
+# DM. Since no bias due to already done averaging is present in the
+# initial map this gives a good indicator of a correct solution - at
+# least in my feeling.
+#
+#########################################################
+#              BEGIN OF USER INPUT
+#########################################################
+
+###########
+# MISC
+###########
+
+# extension to identify this run
+  ext="_01"
+
+###########
+# DATA
+###########
+
+# native data MTZ-file and column names
+  nat=native-unique.mtz
+  fp=FP
+  sigfp=SIGFP
+  free=FreeR_flag
+
+# resolution limits of native data (used in DM step)
+  low_res=20.0
+  high_res=2.80
+
+# mtz-file with best available phase and f.o.m. (if no HLs available
+# set them to '').
+  mtz=sir.mtz
+  phib=PHIB
+  fomb=FOM
+  hla=HLA
+  hlb=HLB
+  hlc=HLC
+  hld=HLD
+
+###########
+# PROTEIN
+###########
+
+# molecular weight of monomer [Da]
+  mr=20000
+
+###########
+# SELF-ROTATION
+###########
+
+# set this to given values to force usage of only these polar angles
+# otherwise set to ""
+  polar=""
+
+# which orthogonalisation code to use (remember: DM uses NCODE=1,
+# and nothing else!):
+  orth=1
+
+###########
+# GETAX
+###########
+
+# run GETAX with how many self-rotation solutions?
+  nsol=10
+
+###########
+# DM
+###########
+
+# real solvent content (10% less will be used in Wang algorithm to
+# define envelope)
+  solcon="0.50"
+
+###########
+# MISC
+###########
+
+# awk binary that understands the -v flag (e.g. GNU awk)
+  myawk=awk
+
+# GETAX executable
+  mygetax=getax
+
+#########################################################
+#               END OF USER INPUT
+#########################################################
+echo >&2
+echo " `basename $0`   version ${version#Time-stamp: } " >&2
+echo " Clemens Vonrhein <vonrhein@globalphasing.com>" >&2
+echo >&2
+#########################################################
+#               BEGIN OF SCRIPT
+#########################################################
+
+if [ ! -d ${CCP4_SCR} ]; then
+  echo " ERROR: directory ${CCP4_SCR} not found:"
+  echo "        (perhaps CCP4 not properly setup)"
+  exit 1
+fi
+
+rm -f ${CCP4_SCR}/$$*
+
+echo
+for file in $nat $mtz
+do
+  if [ ! -f $file ]; then
+    echo "ERROR: file not found = $file"
+    exit 1
+  fi
+done
+
+###########################
+# get necessary information
+
+echo " running MTZDMP ..."
+mtzdmp ${nat} >${CCP4_SCR}/$$.log
+if [ $? -ne 0 ]; then
+  echo ERROR
+  rm -f ${CCP4_SCR}/$$.*
+  exit 1
+fi
+
+cell=`awk '/Cell Dimensions/{getline;getline;print $1,$2,$3,$4,$5,$6}' ${CCP4_SCR}/$$.log`
+symm=`awk '/ Space group = /{n=sub(/\)/,"",$NF);print $NF}' ${CCP4_SCR}/$$.log`
+spac=`awk '/ Space group = /{print $5}' ${CCP4_SCR}/$$.log`
+nasu=`grep "^${symm} " ${CLIBD}/symop.lib | $myawk '{print $2}'`
+vol=`echo $cell | $myawk '{
+ dtor=3.1415927/180.0
+ a=$1;b=$2;c=$3;al=$4*dtor;be=$5*dtor;ga=$6*dtor
+ v=a*b*c*sqrt(1+2*cos(al)*cos(be)*cos(ga)-cos(al)*cos(al)-cos(be)*cos(be)-cos(ga)*cos(ga))
+ printf("%10.2f\n",v)
+}'`
+
+echo " running MATTHEWS_COEF ..."
+echo
+echo " # mol/asu    |    Vm     | Solvent content [%]"
+doit=1
+typeset -R3 nmol=0
+while [ $doit -eq 1 ]
+do
+  nmol=$((${nmol}+1))
+  matthews_coef <<end_ip >${CCP4_SCR}/$$.log 2>&1
+CELL $cell
+SYMM $symm
+MOLW $mr
+NMOL $nmol
+end_ip
+  if [ $? -ne 0 ]; then
+    echo ERROR
+    rm -f ${CCP4_SCR}/$$.*
+    exit 1
+  fi
+  vm=`awk '/^ The Matthews Coefficient is/{printf("%6.2f\n",$NF)}' ${CCP4_SCR}/$$.log`
+  solc=`awk '/ Assuming protein density is/{printf("%3d\n",$NF)}' ${CCP4_SCR}/$$.log`
+  if [ $solc -le 80 ] && [ $solc -ge 25 ]; then
+    echo "     $nmol      |  $vm   |  $solc"
+  fi
+  if [ $solc -lt 20 ]; then
+    doit=0
+  fi
+done
+
+echo
+echo " cell ....................... $cell"
+echo " symmetry ................... $symm"
+echo " spacegroup ................. $spac"
+echo " unit cell volume ........... $vol A^3"
+echo " # asym. units .............. $nasu"
+
+if [ ! -f polarrfn${ext}.log ] && [ "${polar}" = "" ]; then
+
+  patrad=`echo $mr $nfold | $myawk '{
+    r=((1.233*$1*0.75)/3.1415927)^(1./3.)
+    printf("%4d\n",r)
+  }'`
+  echo " Patterson radius ........... $patrad 4.0"
+
+  ###########################
+  # running Self-rotation
+  echo
+  echo " running POLARRFN ..."
+  polarrfn hklin $nat \
+           mapout ${CCP4_SCR}/$$.map \
+           plot ${CCP4_SCR}/$$.plot \
+           <<end_ip >polarrfn${ext}.log 2>&1
+TITL Selfrotation using $nat
+LABI FILE 1 F=$fp SIGF=$sigfp
+SELF $patrad 4.0
+RESO $low_res 5.0
+CRYS FILE 1 BFAC 0.0 ORTH $orth FLIM 0 1000000000
+LIMI 0 180 2.5 0 180 2.5 0 180 2.5
+FIND 3 100
+NOPRINT
+MAP
+END
+end_ip
+  if [ $? -ne 0 ]; then
+    echo ERROR
+    rm -f ${CCP4_SCR}/$$.*
+    exit 1
+  fi
+
+  mean=`awk '/^   Mean density/ {print $NF}' polarrfn${ext}.log | head -1`
+  rms=`awk '/^   Rms deviation from mean/ {print $NF}' polarrfn${ext}.log | head -1`
+  start=`echo $mean $rms | $myawk '{print $1+(1.0*$2)}'`
+  step=`echo $rms | $myawk '{print 0.25*$1}'`
+
+  polarrfn hklin $nat \
+           mapin ${CCP4_SCR}/$$.map \
+           plot ${CCP4_SCR}/$$.plot \
+           <<end_ip >polarrfn${ext}.log 2>&1
+TITL Selfrotation using $nat
+LABI FILE 1 F=$fp SIGF=$sigfp
+SELF $patrad 4.0
+RESO $low_res 5.0
+CRYS FILE 1 BFAC 0.0 ORTH $orth FLIM 0 1000000000
+LIMI 0 180 2.5 0 180 2.5 0 180 2.5
+FIND 3 100
+NOPRINT
+READ 0 180
+PLOT $start $step
+END
+end_ip
+  if [ $? -ne 0 ]; then
+    echo ERROR
+    rm -f ${CCP4_SCR}/$$.*
+    exit 1
+  fi
+
+  pltdev ${CCP4_SCR}/$$.plot && mv plot84.ps polarrfn${ext}.ps
+  if [ $? -ne 0 ]; then
+    echo ERROR
+    rm -f ${CCP4_SCR}/$$.*
+    exit 1
+  fi
+  rm -f ${CCP4_SCR}/$$.map ${CCP4_SCR}/$$.plot PEAKS
+
+fi
+
+if [ "${polar}" = "" ]; then
+  ###########################
+  # getting best self-rotation solutions
+  echo
+  echo " solutions for different common kappa values:"
+  rm -f ${CCP4_SCR}/$$.list
+  for kappa in 60 72 90 120 180
+  do
+
+    typeset -R3 k=${kappa}
+    grep "^         ..[0-9]" polarrfn${ext}.log | $myawk -v k=${kappa} '{d=$9-k;if ( d < 0.0 ) d=-1.0*d
+      if ( d <= 0.5 ) printf("%7.1f%7.1f%7.1f%7.1f\n",$6,$7,$8,$9)}' |\
+      sort -u -rn +0 -1 | \
+      $myawk -v k=${kappa} '{printf(" kappa = %3d : %7.1f%7.1f%7.1f   Height = %7.1f\n",k,$2,$3,$4,$1)}' >>${CCP4_SCR}/$$.list
+
+  done
+  cat ${CCP4_SCR}/$$.list
+fi
+
+use_res=`echo $high_res | $myawk '{x=4.0; if ( $1 > 4 ){x=$1};print x}'`
+
+###########################
+# getting map
+if [ "${hla}" != '' ] && [ "${hlb}" != '' ] && \
+   [ "${hlc}" != '' ] && [ "${hld}" != '' ]; then
+  extra1="E3=$hla E4=$hlb E5=$hlc E6=$hld"
+  extra2="HLA=$hla HLB=$hlb HLC=$hlc HLD=$hld"
+else
+  extra1=""
+  extra2=""
+fi
+
+echo
+echo " running CAD ..."
+cad hklin1 $nat \
+    hklin2 $mtz \
+    hklout ${CCP4_SCR}/$$.mtz \
+    <<end_ip >cad${ext}.log 2>&1
+LABI FILE 1 E1=$fp E2=$sigfp E3=$free
+LABI FILE 2 E1=$phib E2=$fomb $extra1
+RESO OVERALL $low_res $use_res
+END
+end_ip
+if [ $? -ne 0 ]; then
+  echo ERROR
+  rm -f ${CCP4_SCR}/$$.*
+  exit 1
+fi
+
+echo " running FFT ..."
+fft hklin ${CCP4_SCR}/$$.mtz \
+    mapout ${CCP4_SCR}/$$.map \
+    <<end_ip >fft${ext}.log 2>&1
+LABI F1=$fp SIG1=$sigfp PHI=$phib W=$fomb
+RESO $low_res 6.0
+END
+end_ip
+if [ $? -ne 0 ]; then
+  echo ERROR
+  rm -f ${CCP4_SCR}/$$.*
+  exit 1
+fi
+xyzl=`awk '/^           Grid sampling/{print 0,$8-1,0,$9-1,0,$10-1}' fft${ext}.log`
+grid=`awk '/^           Grid sampling/{print $8,$9,$10}' fft${ext}.log`
+
+echo " running MAPMASK ..."
+mapmask mapin ${CCP4_SCR}/$$.map \
+        mapout ${CCP4_SCR}/$$.ext \
+        <<end_ip >mapmask${ext}.log 2>&1
+XYZL $xyzl
+AXIS X Y Z
+END
+end_ip
+if [ $? -ne 0 ]; then
+  echo ERROR
+  rm -f ${CCP4_SCR}/$$.*
+  exit 1
+fi
+rm -f ${CCP4_SCR}/$$.map
+
+###########################
+# running GETAX
+if [[ "${polar}" = "" ]]; then
+  sort -rn +9 -10 ${CCP4_SCR}/$$.list >${CCP4_SCR}/$$.dat
+else
+  echo $polar | $myawk '{printf(" kappa = %3d : %7.1f%7.1f%7.1f   Height =   100.0\n",$3,$1,$2,$3)}' >${CCP4_SCR}/$$.dat
+  nsol=1
+fi
+
+i=1
+while [ $i -le $nsol ]
+do
+  kappa=`head -$i ${CCP4_SCR}/$$.dat | tail -1 | $myawk '{print $3}'`
+  omega=`head -$i ${CCP4_SCR}/$$.dat | tail -1 | $myawk '{print $5}'`
+  phi=`head -$i ${CCP4_SCR}/$$.dat | tail -1 | $myawk '{print $6}'`
+  nfold=`echo $kappa | $myawk '{print 360/$1}'`
+  r=`echo $mr $nfold | $myawk '{
+    r=((1.233*$1*0.75)/3.1415927)^(1./3.)
+    s=r
+    # two-fold
+    if ( $2 == 2 ) {s=r}
+    # three-fold
+    if ( $2 == 3 ) {s=r+((sqrt(3)/6)*2*r)}
+    # four-fold
+    if ( $2 == 4 ) {s=2*r}
+    # five-fold
+    if ( $2 == 5 ) {s=r+(sqrt(25+(10*sqrt(5)))*((2*r)/10))}
+    printf("%4d\n",s)
+  }'`
+  id=`echo $omega $phi $kappa | $myawk '{print $1"_"$2"_"$3}'`
+  if [ ! -f getax_${id}${ext}.lis ]; then
+    echo
+    echo " running GETAX ( Omega=$omega Phi=$phi Kappa=$kappa | SLICE $r $r ) ..."
+    $mygetax mapin ${CCP4_SCR}/$$.ext \
+             mapout getax_${id}${ext}.map \
+             xyzout getax_${id}${ext}.pdb \
+             <<end_ip >getax_${id}${ext}.log 2>&1
+POLAR $omega $phi $kappa
+ORTHO $orth
+SLICE $r $r
+REPORT 0.400
+OUTPUT MAP GXYZ
+CHECK CORR AX4
+END
+end_ip
+    if [ $? -ne 0 ]; then
+      echo ERROR
+      rm -f ${CCP4_SCR}/$$.*
+      exit 1
+    fi
+    echo " running PEAKMAX ..."
+    peakmax mapin getax_${id}${ext}.map \
+            <<end_ip >${CCP4_SCR}/$$.log 2>&1
+THRE RMS 3
+NUMP 100
+OUTP NONE
+end_ip
+    if [ $? -ne 0 ]; then
+      echo ERROR
+      cat ${CCP4_SCR}/$$.log
+      rm -f ${CCP4_SCR}/$$.*
+      exit 1
+    fi
+    $myawk '/Order   Number   Site/,/PEAKMAX/' ${CCP4_SCR}/$$.log | grep -v ':'\
+      | grep "[0-9,a-z]" > getax_${id}${ext}.lis
+    rm -f ${CCP4_SCR}/$$.log
+  fi
+
+  cen=`awk '/^   1   /{print $9,$10,$11}' getax_${id}${ext}.log`
+  echo
+  echo " running PDBSET ..."
+  pdbset xyzin getax_${id}${ext}.pdb \
+         xyzout ${CCP4_SCR}/$$.pdb \
+         <<end_ip >pdbset${ext}.log 2>&1
+CELL $cell
+ORTH $orth
+SPAC $spac
+ROTA POLA 0 0 0
+SHIF $cen
+END
+end_ip
+  if [ $? -ne 0 ]; then
+    echo ERROR
+    rm -f ${CCP4_SCR}/$$.*
+    exit 1
+  fi
+
+  echo " running NCSMASK ..."
+  ncsmask xyzin ${CCP4_SCR}/$$.pdb \
+          mskout ${CCP4_SCR}/$$.msk \
+          <<end_ip >ncsmask${ext}.log 2>&1
+RADI $r
+GRID $grid
+OVER 3
+END
+end_ip
+  if [ $? -ne 0 ]; then
+    echo ERROR
+    rm -f ${CCP4_SCR}/$$.*
+    exit 1
+  fi
+
+  echo $omega $phi $kappa $cen | $myawk '{
+    printf("AVER DOMAIN 1\n")
+    printf("ROTA POLA %6.1f %6.1f %6.1f\n",0,0,0)
+    printf("TRAN %8.3f %8.3f %8.3f\n",0,0,0)
+    #
+    dtor=3.1415927/180.
+    co=cos(dtor*$1);so=sin(dtor*$1)
+    cp=cos(dtor*$2);sp=sin(dtor*$2)
+    l=so*cp;m=so*sp;n=co
+    for (i=$3;i<360;i=i+$3) {
+      ck=cos(dtor*i);sk=sin(dtor*i)
+      mat[1,1]=l*l+(m*m+n*n)*ck
+      mat[1,2]=l*m*(1-ck)-n*sk
+      mat[1,3]=n*l*(1-ck)+m*sk
+      mat[2,1]=l*m*(1-ck)+n*sk
+      mat[2,2]=m*m+(l*l+n*n)*ck
+      mat[2,3]=m*n*(1-ck)-l*sk
+      mat[3,1]=n*l*(1-ck)-m*sk
+      mat[3,2]=m*n*(1-ck)+l*sk
+      mat[3,3]=n*n+(l*l+m*m)*ck
+      t[1]=-$4*mat[1,1]-$5*mat[2,1]-$6*mat[3,1]+$4
+      t[2]=-$4*mat[1,2]-$5*mat[2,2]-$6*mat[3,2]+$5
+      t[3]=-$4*mat[1,3]-$5*mat[2,3]-$6*mat[3,3]+$6
+      printf("AVER DOMAIN 1 REFINE\n")
+      printf("ROTA POLA %6.1f %6.1f %6.1f\n",$1,$2,i)
+      printf("TRAN %8.3f %8.3f %8.3f\n",t[1],t[2],t[3])
+    }
+  }' >${CCP4_SCR}/$$.ncs
+
+  echo " running DM ..."
+  dm hklin ${CCP4_SCR}/$$.mtz \
+     ncsin1 ${CCP4_SCR}/$$.msk \
+     hklout ${CCP4_SCR}/$$.mtz1 \
+     <<end_ip >dm_${id}${ext}.log 2>&1
+SOLC $solcon MASK `echo $solcon | awk '{print ($1-0.1),(1+0.1-$1)}'`
+MODE SOLV HIST MULT AVER
+RESO $low_res $use_res
+SCHE AUTO
+COMB FREE 2
+NCYC 20
+`cat ${CCP4_SCR}/$$.ncs`
+LABI FP=$fp SIGFP=$sigfp FREE=$free -
+     PHIO=$phib FOMO=$fomb $extra2
+LABO PHIDM=PHIDM_${id}${ext} FOMDM=FOMDM_${id}${ext}
+END
+end_ip
+  if [ $? -ne 0 ]; then
+    echo ERROR
+    rm -f ${CCP4_SCR}/$$.*
+    exit 1
+  fi
+  rm -f ${CCP4_SCR}/$$.mtz1
+  corr[1]=`awk '/^   Correlation/{print $2}' dm_${id}${ext}.log | head -1`
+  corr[2]=`awk '/^   Correlation/{print $2}' dm_${id}${ext}.log | tail -1`
+  rfac[1]=`awk '/^ FREE-R FACTOR/{print $NF}' dm_${id}${ext}.log | head -1`
+  rfac[2]=`awk '/^ FREE-R FACTOR/{print $NF}' dm_${id}${ext}.log | tail -1`
+  echo
+  awk '/^ NCS correlations/,/ xloggraph /' dm_${id}${ext}.log | grep -v xloggraph
+  echo "       | Correlation    FREE-R FACTOR"
+  echo " start |    ${corr[1]}      ${rfac[1]}"
+  echo "   end |    ${corr[2]}      ${rfac[2]}"
+  i=$((${i}+1))
+done
+
+rm -f ${CCP4_SCR}/$$*
+
+#########################################################
+#               END OF SCRIPT
+#########################################################
+

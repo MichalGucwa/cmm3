@@ -1,0 +1,113 @@
+#======================================================================
+#
+# sculptor.script
+#
+#======================================================================
+
+set OUTPUT_FILE_ROOT "[SetOutputFileRoot]"
+set OUTPUT_FOLDER [ file dirname $OUTPUT_FILE_ROOT ]
+set OUTPUT_ROOT [ file tail $OUTPUT_FILE_ROOT ]
+set PDBROOT [ file rootname [ file tail $PDBIN ] ]
+
+set cmd "[BinPath phaser.sculptor] --stdin"
+
+if { [ string equal $SCULPTOR_MODE "PREDEFINED" ] == 1 } {
+    append cmd " --mode=predefined"
+
+    if { $USE_ALL_PROTOCOLS == 1 } {
+        set protocols [ list 1 2 3 4 5 6 7 8 9 10 11 12 13 ]
+    } else {
+        set protocols ""
+
+        for { set j 1 } { $j <= $NPROTOCOLS } { incr j } {
+            lappend protocols $PROTOCOL($j)
+        }
+    }
+
+    if { [ llength $protocols ] == 0 } {
+        set PROTOCOLS "None"
+    } else {
+        set PROTOCOLS [ join $protocols "+" ]
+    }
+    
+    foreach j $protocols {
+        AddOutputFile [ format { %s_%s_%s.pdb } $OUTPUT_FILE_ROOT $PDBROOT $j ]
+    }
+} else {
+    AddOutputFile [ format { %s_%s.pdb } $OUTPUT_FILE_ROOT $PDBROOT ]
+
+    # Deletions
+    set deletions ""
+
+    if { $USE_DELETION_GAP } { lappend deletions "gap" }
+    if { $USE_DELETION_COMP } {
+        lappend deletions "completeness_based_similarity"
+    }
+    if { $USE_DELETION_THR } { lappend deletions "threshold_based_similarity" }
+
+    if { [ llength $deletions ] == 0 } {
+        set DELETIONS "None"
+    } else {
+        set DELETIONS [ join $deletions "+" ]
+    }
+    
+    # Polishings
+    set polishings ""
+
+    if { $USE_POLISHING_RS } { lappend polishings "remove_short" }
+    if { $USE_POLISHING_KR } { lappend polishings "keep_regular" }
+
+    if { [ llength $polishings ] == 0 } {
+        set POLISHINGS "None"
+    } else {
+        set POLISHINGS [ join $polishings "+" ]
+    }
+    
+    # Prunings
+    set prunings ""
+
+    if { $USE_PRUNING_SCH } { lappend prunings "schwarzenbacher" }
+    if { $USE_PRUNING_SIM } { lappend prunings "similarity" }
+
+    if { [ llength $prunings ] == 0 } {
+        set PRUNINGS "None"
+    } else {
+        set PRUNINGS [ join $prunings "+" ]
+    }
+    
+    # Bfactors
+    set bfactors ""
+
+    if { $USE_BFACTOR_ORIGINAL } { lappend bfactors "original" }
+    if { $USE_BFACTOR_SIM } { lappend bfactors "similarity" }
+    if { $USE_BFACTOR_ASA } { lappend bfactors "asa" }
+
+    if { [ llength $bfactors ] == 0 } {
+        set BFACTORS "None"
+    } else {
+        set BFACTORS [ join $bfactors "+" ]
+    }
+
+    if { $USE_CBETA } {
+        set COMPLETIONS "cbeta"
+    } else {
+        set COMPLETIONS "None"
+    }
+}
+
+set heteros ""
+
+for { set j 1 } { $j <= $NHETEROS } { incr j } {
+    lappend heteros $HETERO($j)
+}
+
+if { [ llength $heteros ] == 0 } {
+    set HETEROS "None"
+} else {
+    set HETEROS [ join $heteros "," ]
+}
+
+CreateComScript sculptor sculptor_script
+
+set status [Execute $cmd $sculptor_script program_status report]
+

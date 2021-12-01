@@ -1,0 +1,44 @@
+#!/bin/sh
+
+set -e
+
+amore hklin $CEXAM/toxd/toxd.mtz hklpck0 $CCP4_SCR/toxd_pck0.hkl <<eof
+SORTFUN 
+LABIN FP=FTOXD3  SIGFP=SIGFTOXD3
+eof
+
+amore xyzin1 $CEXAM/toxd/toxd.pdb xyzout1 $CCP4_SCR/toxd_tabled.pdb \
+    table1 $CCP4_SCR/toxd_table1.tab <<eof | tee $CCP4_SCR/toxd_tabling.log
+TABFUN 
+MODEL 1 
+SAMPLE 1 RESO 2.3 
+eof
+
+prep_bulk <<eof
+$CEXAM/toxd/toxd.pdb 
+$CCP4_SCR/toxd_table1.tab   
+$CCP4_SCR/toxd_tabling.log  
+$CCP4_SCR/toxd_table1.tabs  
+$CCP4_SCR/toxd_bulking.inp  
+0.35         ! value of ksol 
+50.0         ! value of Bsol
+1.4          ! value of the solvent radius used for mask
+eof
+
+bulking < $CCP4_SCR/toxd_bulking.inp
+
+# Bulk results are used for translation and fitting steps
+# We assume we have a rotation solution from somewhere, e.g.
+# an Amore ROTING run.
+
+amore hklpck0 $CCP4_SCR/toxd_pck0.hkl table1 $CCP4_SCR/toxd_table1.tabs \
+      mapout $CCP4_SCR/toxd_TF <<eof | tee $CCP4_SCR/toxd_traing.log
+TRAFUN CB NMOL 1 RESOLUTION 20.0 3.0
+SOLUTIONRCD   1  157.12   90.00   73.57  0.0000  0.0000  0.0000  7.3 62.3  8.0 14.7   1
+eof
+
+amore hklpck0 $CCP4_SCR/toxd_pck0.hkl table1 $CCP4_SCR/toxd_table1.tabs <<eof
+FITFUN NMOL 1 RESOLUTION 20.0 3.0
+# Here are the solutions to fit:
+  `grep SOLUT_ $CCP4_SCR/toxd_traing.log | sort -r -n +8 -9 | head -99`
+eof

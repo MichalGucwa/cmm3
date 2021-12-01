@@ -1,0 +1,161 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#===========================================================================
+#
+# areaimol.script
+#
+#===========================================================================
+
+#CCP4i_cvs_Id $Id$
+
+#-------------------------------------------------------
+# Generate files with selected chains only
+#-------------------------------------------------------
+proc areaimol_select_chains { select_chains xyzin log_file } {
+  # Create a new file with just the requested chains
+  set chain_list [split $select_chains ","]
+  WriteToLog "Running PDBSET to generate temporary file with requested chains: $chain_list"
+  set script "SELECT CHAIN"
+  foreach chain $chain_list {
+    append script " " $chain
+  }
+  append script "\nEND"
+  WriteFile [set pdbset_script [GetTmpFileName -ext com]] $script
+  set xyzout [GetTmpFileName -ext pdb]
+  set cmd "[BinPath pdbset] XYZIN \"$xyzin\" XYZOUT \"$xyzout\""
+  set status [Execute $cmd $pdbset_script $log_file program_status report]
+  return $xyzout
+}
+
+#-------------------------------------------------------
+# Differences due to ligand binding
+#-------------------------------------------------------
+
+if { $AREAIMOL_PROTOCOL == "LIGAND" } {
+  set xyzin2 [areaimol_select_chains $PROTEIN_CHAINS $XYZIN $LOG_FILE]
+}
+
+if { $AREAIMOL_PROTOCOL == "FILES" } {
+  set xyzin2 $XYZIN2
+}
+
+if { $AREAIMOL_PROTOCOL == "MOLECULES" } {
+
+  #-------------------------------------------------------
+  # Differences between molecules
+  #-------------------------------------------------------
+
+  # List of the results
+  set result(list) {}
+
+  # Set up a temporary filename to copy the logfiles to
+  set tmp_log_file [GetTmpFileName -ext log]
+
+  for { set i 1 } { $i <= $NMOLS } { incr i } {
+
+     set molecule_i $MOL_CHAINS($i)
+     set xyzin_i [areaimol_select_chains $molecule_i $XYZIN $LOG_FILE]
+
+     for { set j 1 } { $j <= $NMOLS } { incr j } {
+
+        if { $i != $j } {
+
+          WriteToLog "Differences between $MOL_NAME($i) and $MOL_NAME($j)"
+
+          # Differences between pairs of molecules
+          set molecule_j $MOL_CHAINS($j)
+          append molecule_j " " $molecule_i
+          set xyzin_j [areaimol_select_chains $molecule_j $XYZIN $LOG_FILE]
+
+          # Run areaimol
+          CreateComScript areaimol areaimol_script
+          set cmd "[BinPath areaimol] XYZIN \"$xyzin_i\" XYZIN2 \"$xyzin_j\""
+          set status [Execute $cmd $areaimol_script \
+              program_status report -copy_log_file $tmp_log_file ] 
+
+          # Extract the total differences for tabulation at the end
+          if { ![ReadFile $tmp_log_file text] } {
+             # Failed to read the logfile - terminate the script
+             TerminateScript 0 -report "Failed to read the AreaIMol logfile"
+          }
+          set name "[subst $i]::$j"
+          lappend result(list) $name 
+          set result($name) [ExtractFromText $text "TOTAL AREA DIFFERENCE:" 0 3]
+
+        } else {
+
+          set name "[subst $i]::$j"
+          lappend result(list) $name 
+          set result($name) "-"
+	
+        }
+     }
+
+  }
+
+  # Finished: tabulate the results
+  set ttext "
+Definitions of Molecules
+========================\n"
+
+  for { set i 1 } { $i <= $NMOLS } { incr i } {
+    append ttext "\n\t$MOL_NAME($i):\t$MOL_CHAINS($i)"
+  }
+  append ttext "
+
+Area excluded on first molecule due to interaction with second
+==============================================================\n\n"
+
+  append ttext "\n\t"
+  for { set i 1 } { $i <= $NMOLS } { incr i } {
+    append ttext "\t$MOL_NAME($i)"
+  }
+  append ttext "\n"
+
+  for { set i 1 } { $i <= $NMOLS } { incr i } {
+    append ttext "\n\t$MOL_NAME($i)"
+    for { set j 1 } { $j <= $NMOLS } { incr j } {
+	set name "[subst $i]::$j"
+	append ttext "\t$result($name)"
+    }
+    append ttext "\n"
+  }
+
+  # Averages
+  append ttext "
+
+Average areas excluded in pairwise interactions
+===============================================\n\n"
+
+  for { set i 1 } { $i <= $NMOLS } { incr i } {
+    for { set j [expr $i+1] } { $j <= $NMOLS } { incr j } {
+      set average [expr $result([subst $i]::$j)/2.0 + $result([subst $j]::$i)/2.0]
+      append ttext "\t$MOL_NAME($i):$MOL_NAME($j)\t$average\n"
+    }
+  }
+
+  append ttext "\n\nValues are in Angstroms squared\n" \
+               "Point density = $PNTDEN points/square Angstrom\n" \
+               "Probe sphere radius = $PROBE_RADIUS Angstroms\n"
+  WriteToLog $ttext
+
+} else {
+
+  #-------------------------------------------------------
+  # Run areaimol
+  #-------------------------------------------------------
+
+  CreateComScript areaimol areaimol_script
+
+  set cmd "[BinPath areaimol] XYZIN \"$XYZIN\""
+  if {$DIFFMODE == "COMPARE"} { append cmd " XYZIN2 \"$xyzin2\"" }
+  if {$WRITE_OUTPUT_FILE} { append cmd " XYZOUT \"$XYZOUT\"" }
+
+  set status [Execute $cmd $areaimol_script program_status report]
+}

@@ -1,0 +1,273 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4 Interface: Data Harvesting</title>
+<link rel="stylesheet" type="text/css" href="../../ccp4idocs.css" title="CCP4i" />
+<link rev="made" href="mailto:m.d.winn@dl.ac.uk (Martyn Winn)" />
+<link rev="made" href="mailto:mgwt@ysbl.york.ac.uk" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta name="AUTHOR" content="Martyn and Maria" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="2"><img src="../../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logotitle">Data Harvesting in CCP4</td></tr>
+</table>
+<br />
+<table border="0">
+<tr><td>
+<a href="molreptheory.html" target="_self">
+<img border="0" src="../../images/3Dprevtr.gif" alt="previous button" /></a>
+</td></tr>
+</table>
+
+<font color="#ff3333">The following is a slight adaptation of Martyn Winn's article
+in the CCP4 Newsletter
+<a href="http://www.dl.ac.uk/CCP/CCP4/newsletter37/13_harvest.html" target="_EXTERNAL">Implementation of
+Data Harvesting in the CCP4 Suite</a>.</font>
+
+<h3><a name="introduction"></a>Introduction</h3>
+
+<p>The Data Harvesting paradigm pioneered by Kim Henrick at the European 
+Bioinformatics Institute (EBI) has been under development for a 
+couple of years, and will soon be in operation in users' labs. Background
+information can be found on the 
+<a href="http://msd.ebi.ac.uk/Development/Harvesting/harvesting.html" target="_EXTERNAL">EBI-MSD web</a>,
+and in two earlier Newsletter articles which give an
+<a href="http://www.dl.ac.uk/CCP/CCP4/newsletter35/dataharvest.html" target="_EXTERNAL">overview</a>,
+and a report on the September 1998
+<a href="http://www.dl.ac.uk/CCP/CCP4/newsletter36/03_harvest.html" target="_EXTERNAL">
+Joint CCP4/EBI Software Developers and Data Harvesting Workshop</a>. Briefly,
+Data Harvesting means that software used in structure solution outputs to
+a deposition file details of the method used and results obtained, for example
+heavy atom sites used in phasing. By the time the user is ready to deposit
+the model coordinates, there should be a collection of files holding details
+of how the model was obtained. These files can be sent directly to the
+deposition centre, thereby by-passing much of the manual processing needed
+by AutoDep.</p>
+
+<p>The EBI plan to be in a position to accept harvest files in Autumn 1999.
+Meanwhile, changes are being made to CCP4, MOSFLM and other common
+programs to produce harvest files. This article describes the 
+relevant changes to CCP4.</p>
+
+<h3><a name="definition"></a>Definition and application of datasets</h3>
+
+<p>Every deposition file should have associated in-house tags that identify
+the &quot;Project Name&quot; and &quot;Dataset Name&quot;, where the Project Name is the
+working equivalent to what will become a PDB ID code (or in mmCIF terms
+the _entry.id ) and the Dataset Name is the particular dataset within the
+project (either X-ray diffraction structure factors or NMR experimentally
+determined data) that is being used ( _diffrn.id in mmCIF). For each
+program that writes out a deposition file, it is possible to specify
+the Project and Dataset names using the program keywords <a href="#pname" target="_self">PNAME</a>
+and <a href="#dname" target="_self">DNAME</a>.
+In principle, however, the Project and Dataset names should be considered
+attributes of the dataset being used, and be specified once only for that 
+dataset. The Project and Dataset names would then be inherited from the 
+dataset by each program in turn.</p>
+
+<p>This has been implemented in CCP4 by adding information on Project and 
+Dataset names to the header of the MTZ file. In a merged MTZ file, 
+datasets are held as one or more data columns. In addition to the
+label and type attributes, each column now has an extra attribute specifying
+to which dataset it belongs. A list of all datasets included in the file, 
+with the corresponding Project and Dataset names, is held separately in
+the MTZ header.</p>
+
+<p>The code changes necessary to manipulate this information were included
+in CCP4 release 3.5. Ideally, dataset information should be added to the
+MTZ file at the beginning, <em>e.g.</em> in MOSFLM, but this information can be added
+at any time, most conveniently with the program <a href="../../../../../html/cad.html" target="_PROGDOC">CAD</a>.
+Once the information
+is in the MTZ file, it can be checked by running <tt>mtzdmp</tt> which
+shows all the MTZ header information (go on, try it!), including the 
+list of datasets:
+<pre><a name="list_of_datasets"></a>
+ * Number of Datasets =   4
+ 
+ * Dataset ID, protein name, dataset name:
+ 
+        1 TOXD
+          NATIVE
+        2 TOXD
+          DERIV_AU
+        3 TOXD
+          DERIV_MM
+        4 TOXD
+          DERIV_I
+</pre>
+and the datasets which each column corresponds to:
+<pre>
+ * Column Labels :
+ 
+ H K L FTOXD3 SIGFTOXD3 ANAU20 SIGANAU20 FAU20 SIGFAU20 FMM11 SIGFMM11 FI100
+ SIGFI100 FreeR_flag
+ 
+ * Column Types :
+ 
+ H H H F Q D Q F Q F Q F Q I
+ 
+
+ * Associated datasets :
+ 
+    1   1   1   1   1   2   2   2   2   3   3   4   4   1
+</pre>
+
+<p>In CCP4, columns to be used are selected from the MTZ file by the
+LABIN keyword; for example, the command
+<pre>
+LABIN FP=FMM11 SIGFP=SIGFMM11
+</pre>
+tells the program to use the 10th and 11th columns. In addition, the program
+now also knows that these columns are from the 3rd dataset, with Project Name
+TOXD and Dataset Name DERIV_MM.</p>
+
+<p>Unmerged or multi-record MTZ files are treated slightly differently. 
+In this case, a particular column may correspond to several datasets,
+distinguished by different batch numbers. Datasets are therefore attached
+to batches rather than columns, and a pointer to the relevant dataset
+is held in the batch header.</p>
+
+<p>As an aside, classifying MTZ columns according to dataset has other uses.
+Previously, it was assumed that columns existed as independent entities,
+but this is clearly not the case, for example F(+) and F(-) columns, or
+F and sigmaF columns. Some programs now use dataset information to check
+for certain dependencies, for example the program
+<a href="../../../../../html/reindex.html" target="_PROGDOC">REINDEX</a> may need to
+swap F(+) and F(-) columns and therefore needs to identify which F(+)
+column goes with which F(-) column.</p>
+
+<h3><a name="harvesting_from_CCP4"></a>Harvesting from CCP4 programs</h3>
+
+<p>The current CCP4 release (3.5) thus handles datasets, but does not as yet
+write out deposition files. This is currently being implemented and will
+be included in the next release (4.0). The CCP4 programs affected are 
+<a href="../../../../../html/scala.html" target="_PROGDOC">SCALA</a>,
+<a href="../../../../../html/truncate.html" target="_PROGDOC">TRUNCATE</a>,
+<a href="../../../../../html/mlphare.html" target="_PROGDOC">MLPHARE</a>,
+<a href="../../../../../html/refmac.html" target="_PROGDOC">REFMAC</a> and
+<a href="../../../../../html/restrain.html" target="_PROGDOC">RESTRAIN</a>. Provided a Project Name
+and a Dataset Name are specified (either explicitly or from the MTZ file)
+and provided the NOHARVEST keyword is <em>not</em> given, these programs will
+automatically produce a deposition file. This file will be written to
+<pre>
+<tt>$HARVESTHOME</tt>/<tt>DepositFiles</tt>/<i>&lt;projectname&gt;</i>/
+<i>&lt;datasetname&gt;.&lt;programname&gt;</i>
+</pre>
+The environment variable <tt>$HARVESTHOME</tt> defaults to the user's
+home directory, but could be changed, for example, to a group project
+directory.</p>
+
+<p>At the end of a project, the entire contents of the directory
+<tt>$HARVESTHOME</tt>/<tt>DepositFiles</tt>/<i>&lt;projectname&gt;</i>
+can be sent to the deposition centre for processing. Note that, because
+of the file-naming scheme, only the last run of a particular program
+with a particular dataset will be preserved, and it is the user's responsibility
+to ensure that this is the authoritative version. The <a href="#usecwd" target="_self">USECWD</a> keyword can
+be used to send deposit files from speculative runs to the local directory
+rather than the official project directory. This keyword can also be used 
+when the program is being run on a machine without access to the directory
+<tt>$HARVESTHOME</tt>, in which case the user must transfer the deposition
+file afterwards.</p>
+
+<p>In summary, the extra keywords associated with harvesting that will be
+included in most programs are:
+<dl>
+<dt><a name="pname"></a>PNAME
+<dd>Project Name. In most cases, this will be inherited from the MTZ file.
+<dt><a name="dname"></a>DNAME
+<dd>Dataset Name. In most cases, this will be inherited from the MTZ file.
+<dt><a name="private"></a>PRIVATE
+<dd>Set the directory permissions to '700', <em>i.e.</em> read/write/execute for
+the user only (otherwise '755').
+<dt><a name="usecwd"></a>USECWD
+<dd>Write the deposit file to the current directory, rather than a
+subdirectory of $HARVESTHOME
+<dt><a name="rsize"></a>RSIZE
+<dd>Maximum width of a row in the deposit file (default 80).
+<dt>NOHARVEST
+<dd>Do not write out a deposit file; default is to do so provided Project
+and Dataset names are available.
+</dl>
+There will inevitably have to be cooperation between members of a group
+working on the same project to ensure that all relevant deposition files
+are gathered together in the same directory, but such cooperation should
+occur anyway. At the time of deposition, there should be a resultant
+saving of time, as well increased reliability in the information submitted.</p>
+
+<h3><a name="deposition_files"></a>Deposition files</h3>
+
+<p>Deposition files are written in 
+<a href="http://www.iucr.ac.uk/iucr-top/cif/mmcif/ndb/index.html" target="_EXTERNAL">mmCIF</a>
+format. The possible contents of an mmCIF file are described in a continually-evolving 
+<a href="http://www.iucr.ac.uk/iucr-top/cif/mmcif/ndb/dictionary/dict-html/cif_mm.dic/Index/index.html" target="_EXTERNAL">dictionary</a> 
+of allowed data items. Harvesting requires
+additional data items to those in the current standard dictionary, and
+an extended dictionary will be distributed by CCP4.</p>
+
+<h3><a name="example"></a>Example of deposition files</h3>
+
+<p>The distributed TOXD example dataset contains 4 datasets, all assigned
+to the Project Name &quot;TOXD&quot;, and having the Dataset Names &quot;NATIVE&quot;, &quot;DERIV_AU&quot;,
+&quot;DERIV_MM&quot; and &quot;DERIV_I&quot; (see <a href="#list_of_datasets">above</a>).
+Running <tt>mlphare</tt> to phase the native
+dataset produces a file <tt>$HARVESTHOME/DepositFiles/TOXD/NATIVE.mlphare</tt>. This file starts
+with information on when and how the file was created:
+<pre>
+data_TOXD[NATIVE]
+_entry.id TOXD
+_diffrn.id NATIVE
+_audit.creation_date 1999-07-08T11:19:51+01:00
+_software.classification phasing
+_software.contact_author 'Z.Otwinowski or E.Dodson'
+_software.contact_author_email 'ccp4@dl.ac.uk, ccp4@ysbl.york.ac.uk'
+_software.description
+'maximum likelihood heavy atom refinement & phase calculation'
+_software.name mlphare
+_software.version CCP4_3.5
+</pre>
+This is followed by details such as the cell dimensions and symmetry
+information, and then by a summary of the results, for example the
+figures of merit for the phases obtained:
+<pre>
+loop_
+_phasing_MIR_shell.d_res_high
+_phasing_MIR_shell.d_res_low
+_phasing_MIR_shell.reflns
+_phasing_MIR_shell.fom
+_phasing_MIR_shell.reflns_centric
+_phasing_MIR_shell.fom_centric
+_phasing_MIR_shell.reflns_acentric
+_phasing_MIR_shell.fom_acentric
+ 9.56 15.00      61   0.484      41   0.553      20   0.343
+ 7.01  9.56      80   0.315      36   0.423      44   0.227
+ 5.54  7.01     120   0.351      45   0.502      75   0.261
+ 4.58  5.54     186   0.338      61   0.506     125   0.256
+ 3.90  4.58     255   0.327      68   0.484     187   0.270
+ 3.40  3.90     345   0.276      86   0.417     259   0.230
+ 3.01  3.40     430   0.271      90   0.446     340   0.225
+ 2.70  3.01     536   0.287     108   0.454     428   0.245
+</pre>
+The deposit files should be easily readable, but they should not be
+altered - they represent an authentic record of the structure solution 
+process.</p>
+
+<h4><a name="implementation_in_ccp4i"></a>Implementation in CCP4i</h4>
+
+<p>Details on the implementation of data harvesting in CCP4i (mainly for
+programmers only) can be found
+<a href="../../programmers/harvest.html" target="_PROGRAMMERSDOCS">elsewhere</a>.</p>
+
+<table border="0">
+<tr><td>
+<a href="molreptheory.html" target="_self">
+<img border="0" src="../../images/3Dprevtr.gif" alt="previous button" /></a>
+</td></tr>
+</table>
+
+</body>
+</html>

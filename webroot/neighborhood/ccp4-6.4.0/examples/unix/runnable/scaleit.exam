@@ -1,0 +1,39 @@
+#!/bin/sh
+#
+set -e
+
+#
+#  SCALEIT:  derivative to native scaling
+#
+#  In this example, we estimate and refine a scale and 
+#  isotropic temperature factor for each derivative. These
+#  are then applied to the derivative data output to HKLOUT.
+
+#  Here we scale all three sets of derivative data included
+#  in toxd.mtz. If instead only one derivative is specified,
+#  then a Normal Probability Analysis for both centric and
+#  acentric data is performed in addition to the usual analysis.
+#
+
+scaleit \
+HKLIN $CEXAM/toxd/toxd.mtz    \
+HKLOUT $CCP4_SCR/toxd_sc.mtz    \
+<< END-scaleit
+TITLE FPHs scaled to FP
+reso 10 2.3      # Usually better to exclude lowest resolution data
+WEIGHT           # Sigmas seem to be reliable, so use for weighting
+refine isotropic
+#Exclude FP data if: FP < 5*SIGFP & if FMAX > 1000000
+EXCLUDE FP SIG 5 FMAX 10000000
+LABIN FP=FTOXD3 SIGFP=SIGFTOXD3 -
+  FPH1=FAU20 SIGFPH1=SIGFAU20 -  
+  FPH2=FI100 SIGFPH2=SIGFI100 -
+  FPH3=FMM11 SIGFPH3=SIGFMM11 -
+  DPH1=ANAU20 SIGDPH1=SIGANAU20
+CONV ABS 0.0001 TOLR  0.000000001 NCYC 4
+END
+END-scaleit
+
+exit 0
+#
+

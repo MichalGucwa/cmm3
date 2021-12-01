@@ -1,0 +1,1500 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "DTD/xhtml1-transitional.dtd"> 
+<html><head> 
+   <meta name="Author" content="Martyn Winn" /> 
+   <meta name="Changedby" content="Eleanor and Maria" /> 
+   <meta name="Description" content="A step-by-step structure solution using CCP4i" /> 
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" /> 
+    
+<title>CCP4 Tutorial - Session 3</title> 
+<link rel="stylesheet" type="text/css" href="../tut.css" title="CCP4i tutorial" /> 
+</head> 
+ 
+<body> 
+ 
+<h1 align="center">CCP4 Tutorial: Session 3 - Heavy Atom Search and Phasing by MIR</h1> 
+ 
+<p><em>See also the <a href="heavy-doc.html">accompanying document</a>  
+giving background information.</em></p> 
+ 
+<p>In the following instructions, when you need to type something, or 
+click on something, it will be shown <font color="#ff0000">in red</font>. 
+Output from the programs or text from the interface is given 
+<font color="#009900">in green</font>.</p> 
+ 
+<h2>Outline of the method</h2> 
+<ol type="a"> 
+<li><a href="#step_3a">Scaling and analysing datasets</a></li> 
+<li><a href="#step_3b">Finding first heavy atom sites by Patterson Search</a></li> 
+<li><a href="#step_3c">Find heavy atoms by direct methods or automated Patterson Search</a></li> 
+<li><a href="#step_3d">Heavy atom refinement for first derivative</a></li> 
+<li><a href="#step_3e">Find heavy atoms for other derivatives using difference Fouriers phased from first derivative</a></li> 
+<li><a href="#step_3f">Final Refinement and Phasing</a></li> 
+<li><a href="#step_3g">Correcting the hand</a></li> 
+<li><a href="#step_3h">Improving the density</a></li> 
+</ol> 
+ 
+<h2>The Data Files</h2> 
+ 
+<p>Files in directory <font color="#009900">DATA</font>:</p> 
+<table> 
+<tr> 
+<td><font color="#ff0000">rnase25.mtz</font></td><td>An MTZ file containing experimental data (including anomalous), 
+extending to 2.5&#197;, for the native protein and three derivatives (mercury, platinum and iodine), as used for 
+experimental phasing by MIR and <a href="heavy-tutorial-mad.html">experimental phasing by MAD</a></td> 
+</tr> 
+<tr> 
+<td><font color="#ff0000">rnase25_scaleit1.mtz</font></td><td>Reflection file as output by SCALEIT</td> 
+</tr> 
+</table> 
+ 
+<p>Files in directory <font color="#009900">RESULTS</font>:</p> 
+<table> 
+<tr> 
+<td><font color="#ff0000">scaleit-rnase.log</font></td><td>.log of scaling RNase native and derivative data</td> 
+</tr> 
+<tr> 
+<td><font color="#ff0000">shelx-rnase.log</font></td><td>.log of heavy atom search with SHELX (through CCP4i)</td> 
+</tr> 
+</table> 
+ 
+ 
+<h2><a name="step_3a"></a>3a) Scaling and analysing datasets</h2> 
+ 
+<h3>The Problem</h3> 
+ 
+<p>There is a file $CEXAM/tutorial/data/rnase25.mtz which contains native data, 
+plus three derivatives; Hg, Pt and I with their anomalous signals. First, 
+we scale each derivative to the native dataset, so that all data is on the 
+same scale. At the same time, we analyse the heavy atom data to estimate 
+the strength of the signals.</p> 
+ 
+<h3>Exercise</h3> 
+ 
+<ol> 
+<li><p>Select the <font color="#ff0000">Experimental Phasing</font> module, 
+and open the <font color="#ff0000">Scale and Analyse Datasets</font> 
+task window.</p></li> 
+ 
+<li><p>On the first line, enter a suitable job title such as:</p> 
+<dl> 
+<dd><font color="#009900">Job title</font> 
+<font color="#ff0000">Scaling RNase SA Derivatives (mir tutorial step 1)</font>.</dd> 
+</dl><br /></li> 
+ 
+<li><p>On the second line, select</p> 
+<dl> 
+<dd><font color="#009900">Do</font> 
+<font color="#ff0000">scale refinement using Scaleit</font>.</dd> 
+</dl> 
+ 
+<p>On the next  line, select</p> 
+<dl> 
+<dd><font color="#009900">Include anomalous difference data for each
+derivative</font></dd> 
+</dl> 
+ 
+<p>On the next  line, select</p> 
+<dl> 
+<dd><font color="#009900">Perform cross-comparison of derivative data sets
+</font></dd> 
+</dl> 
+<p>and de-select</p> 
+<dl> 
+<dd><font color="#009900">and analyse anomalous differences</font></dd> 
+</dl> 
+ 
+<p>using the radiobuttons.</p></li> 
+ 
+<li><p>Select the input MTZ file</p> 
+<dl> 
+<dd><font color="#009900">MTZ in</font> 
+<font color="#ff0000">DATA</font> 
+<font color="#ff0000">rnase25.mtz</font></dd> 
+</dl><br /></li> 
+ 
+<li><p>Now select the columns from the MTZ file. The first line has the native 
+<font color="#ff0000">FNAT</font> and <font color="#ff0000">SIGFNAT</font>. 
+Then select columns for the 3 derivatives, using the button 
+<font color="#ff0000">Add Derivative Data</font> to add more columns. 
+You should end up with:</p> 
+ 
+<dl><dd> 
+<table class="thleft"> 
+<tr> 
+<th><font color="#009900">FP</font></th><th><font color="#ff0000">FNAT</font></th> 
+<th><font color="#009900">SigmaFP</font></th><th><font color="#ff0000">SIGFNAT</font></th> 
+</tr> 
+<tr> 
+<th><font color="#009900">FPH1</font></th><th><font color="#ff0000">FHG2</font></th> 
+<th><font color="#009900">SigFPH1</font></th><th><font color="#ff0000">SIGFHG2</font></th> 
+</tr> 
+<tr> 
+<th><font color="#009900">DPH1</font></th><th><font color="#ff0000">DANOHG2</font></th> 
+<th><font color="#009900">SigDPH1</font></th><th><font color="#ff0000">SIGDANOHG2</font></th> 
+</tr> 
+<tr> 
+<th><font color="#009900">FPH2</font></th><th><font color="#ff0000">FPTNCD25</font></th> 
+<th><font color="#009900">SigFPH2</font></th><th><font color="#ff0000">SIGFPTNCD25</font></th> 
+</tr> 
+<tr> 
+<th><font color="#009900">DPH2</font></th><th><font color="#ff0000">DANOPTNCD25</font></th> 
+<th><font color="#009900">SigDPH2</font></th><th><font color="#ff0000">SIGDANOPTNCD25</font></th> 
+</tr> 
+<tr> 
+<th><font color="#009900">FPH3</font></th><th><font color="#ff0000">FIOD25</font></th> 
+<th><font color="#009900">SigFPH3</font></th><th><font color="#ff0000">SIGFIOD25</font></th> 
+</tr> 
+<tr> 
+<th><font color="#009900">DPH3</font></th><th><font color="#ff0000">DANOIOD25</font></th> 
+<th><font color="#009900">SigDPH3</font></th><th><font color="#ff0000">SIGDANOIOD25</font></th> 
+</tr> 
+</table> 
+</dd></dl> 
+ 
+<p>Check that the output MTZ file is given as</p> 
+ 
+<dl> 
+<dd><font color="#009900">MTZ out</font> 
+<font color="#ff0000">TEST</font> 
+<font color="#ff0000">rnase25_scaleit1.mtz</font></dd> 
+</dl><br /></li> 
+ 
+<li><p>You should not need to change anything else. Select 
+<font color="#ff0000">Run -&gt; Run Now</font>.</p></li> 
+ 
+<li><p>When the job has finished, return to the main window, 
+highlight the job in the <b>Job List</b>, and select 
+<font color="#ff0000">View Files from Job -&gt; View Log Graphs</font>. 
+This task outputs a large number of graphs for analysing the data, and 
+we will just look at some of them.</p></li> 
+ 
+<li><p>We can gauge the strength of the <strong>isomorphous differences</strong> by 
+looking at the graphs:</p> 
+<blockquote><font color="#009900">Centric Normal probability v resolution</font> and</blockquote> 
+<blockquote><font color="#009900">Acentric Normal probability v resolution ...</font></blockquote> 
+<p>for each pair of wavelengths, <em>e.g.</em> 
+<font color="#009900"> ... FP = FNAT FPH = FHG2 SIGFHG2 , FPTNCD25 etc 
+DANOHG2 SIGDANOHG2</font>. For each graph, look at the line 
+<font color="#009900">Gradient_on_reflection_prob.lt.0.9</font>. 
+Use the crosswires to estimate a rough value, <em>e.g.</em> for the native 
+against the Hg derivative, the value is about 2.5 for centric data 
+and 2.05 for acentric data.</p></li> 
+ 
+<li><p><a name="scaleit_summary"></a>The values can be summarised as (these values are contained 
+in the file <font color="#ff0000">View Files from Job -&gt; ...scaleit.summary</font>):</p> 
+<pre> Table: Normal Probability for acentric data 
+ 
+ Normal Prob.   |FNAT        FHG2        FPTNCD25    FIOD25 
+ ---------------------------------------------------------------- 
+ FNAT           |            2.051       9.458       10.873 
+ FHG2           |2.051                   3.124       3.804 
+ FPTNCD25       |9.458       3.124                   11.484 
+ FIOD25         |10.873      3.804       11.484 
+ 
+ Table: Normal Probability for Centric data 
+ 
+ Normal Prob.   |FNAT        FHG2        FPTNCD25    FIOD25 
+ ---------------------------------------------------------------- 
+ FNAT           |            2.521       9.517       8.939 
+ FHG2           |2.521                   3.482       4.042 
+ FPTNCD25       |9.517       3.482                   9.946 
+ FIOD25         |8.939       4.042       9.946 
+</pre> 
+ 
+<p>This shows that the <strong>isomorphous difference</strong> (<em>i.e.</em> difference 
+between native and derivative) is smallest for the Hg derivative, and largest for the 
+Iodine derivative.</p></li> 
+</ol> 
+ 
+<h2><a name="step_3b"></a>3b) Finding the first heavy atom sites by Patterson Search</h2> 
+ 
+<h3>The Problem</h3> 
+ 
+<p>Before carrying out any experimental phasing it is necessary to know 
+the atomic coordinates of the heavy atoms. We do this using <strong>isomorphous</strong> 
+or <strong>anomalous</strong> differences. The isomorphous difference is a component of 
+<strong>FH</strong>, and the anomalous difference is a component of 2F&quot;H.</p> 
+<p>For the Hg derivative there is 1 Hg atom to be positioned.</p> 
+<p>For the Pt derivative there are 4 Pt atoms to be positioned.</p> 
+<p>For the I derivative there are 2 I atoms to be positioned.</p> 
+ 
+<p>One site can be found quite easily by a Patterson search. For four sites, 
+a Patterson search is quite complicated. However it is always 
+good practice to calculate Pattersons using both the isomorphous and anomalous 
+for each derivative. Each pair should show a similar pattern of peaks.</p> 
+ 
+<h3>Exercise</h3> 
+ 
+<ol start="100"> 
+<li><p>Select the <font color="#ff0000">Experimental Phasing</font> module, 
+and open the <font color="#ff0000">Generate Patterson Map</font> 
+task window.</p></li> 
+ 
+<li><p>On the first line, enter a suitable job title such as</p> 
+<dl> 
+<dd><font color="#009900">Job title</font> 
+<font color="#ff0000">RNase Hg isomorphous Patterson 10 to 3.5A (mir tutorial step 100)</font>.</dd> 
+</dl><br /></li> 
+ 
+<li><p>On the next line, select</p> 
+<dl> 
+<dd><font color="#009900">Run FFT to generate</font> 
+<font color="#ff0000">difference Patterson</font></dd> 
+</dl> 
+ 
+<p>then select with the radio button</p> 
+<dl> 
+<dd><font color="#009900">Plot</font> 
+<font color="#ff0000">default Harker</font> 
+<font color="#009900">map sections with</font> 
+<font color="#ff0000">coordinates of peaks in map</font></dd> 
+</dl><br /></li> 
+ 
+<li><p>Select the input MTZ file</p> 
+<dl> 
+<dd><font color="#009900">MTZ in</font> 
+<font color="#ff0000">TEST</font> 
+<font color="#ff0000">rnase25_scaleit1.mtz</font>.</dd> 
+</dl> 
+ 
+<p>(If you do not have this file from the previous session, take the 
+file from the DATA directory.)</p> 
+ 
+<p>Now select the columns from the MTZ file:</p> 
+<dl><dd> 
+<table class="thleft"> 
+<tr> 
+<th><font color="#009900">F1</font></th><th><font color="#ff0000">FHG2</font></th> 
+<th><font color="#009900">SIG1</font></th><th><font color="#ff0000">SIGFHG2</font></th> 
+</tr> 
+<tr> 
+<th><font color="#009900">F2</font></th><th><font color="#ff0000">FNAT</font></th> 
+<th><font color="#009900">SIG2</font></th><th><font color="#ff0000">SIGFNAT</font></th> 
+</tr> 
+</table> 
+</dd></dl> 
+ 
+<p>Check that the output MAP file is given a sensible name</p> 
+<dl><dd><font color="#009900">Map</font> 
+<font color="#ff0000">TEST</font> 
+<font color="#ff0000">rnase25-HGDISOpatterson1.map</font></dd> 
+</dl><br /></li> 
+ 
+<li><p><a name="diffpatt"></a><strong>It is VERY important to exclude outliers which are often due to measurement errors.</strong></p> 
+<p>In the folder <font color="#009900">Exclude Reflections</font>:</p> 
+<dl> 
+<dd>The <font color="#009900">Exclude Reflections with difference between F1 and F2 &gt;</font> 
+<font color="#ff0000">?</font> will be estimated from a <tt>scaleit</tt> analysis if you switch on the radio button, 
+or you can enter your own value.</dd> 
+<dd>It is sensible to always exclude reflections with 
+<font color="#009900">F less than n * sigmaF where n is</font> <font color="#ff0000">3</font> 
+(for all data concerned).</dd> 
+<dd>You also need to select a suitable resolution limit. Use plots of the 
+<font color="#009900">Analysis of data vs. resolution</font> to select sensible limits found in the <tt>scaleit</tt> run 
+(<font color="#ff0000">View Files from Job -&gt; View Log Graphs</font>); 
+here enter</dd> 
+<dd><font color="#009900">Resolution less than</font> <font color="#ff0000">10</font> 
+<font color="#009900">&#197; or greater than</font> <font color="#ff0000">3.5</font> 
+<font color="#009900">&#197;</font>.</dd> 
+</dl><br /></li> 
+ 
+<li><p>You should not need to change anything else, so select 
+<font color="#ff0000">Run -&gt; Run Now</font>.</p></li> 
+ 
+<li><p>The Harker sections will be plotted -  click on 
+<font color="#ff0000">View Files from Job -&gt; jobid...plt</font>. 
+It is a good idea to compare these plots for the dispersive and anomalous Pattersons. 
+They should have a similar pattern of peaks.</p></li> 
+ 
+<li><p>Now also generate an anomalous Patterson Map using DANOHG2, using the same MTZ file. 
+Enter a meaningful job title.</p> 
+<dl> 
+<dd><font color="#009900">Job title</font> 
+<font color="#ff0000">RNase Hg anomalous Patterson 10 to 3.5A (mir tutorial step 107)</font></dd> 
+</dl><br /></li> 
+ 
+<li><p>On the next line, select</p> 
+<dl> 
+<dd><font color="#009900">Run FFT to generate</font> 
+<font color="#ff0000">Patterson using anom diff (D) data</font></dd> 
+<dd><font color="#009900">MTZ in</font> 
+<font color="#ff0000">TEST</font> 
+<font color="#ff0000">rnase25_scaleit1.mtz</font></dd> 
+</dl> 
+ 
+<p>Now select the columns from the MTZ file:</p> 
+<dl><dd> 
+<table class="thleft"> 
+<tr> 
+<th><font color="#009900">AnomDif</font></th><th><font color="#ff0000">DANOHG2</font></th> 
+<th><font color="#009900">SigmaD</font></th><th><font color="#ff0000">SIGDANOHG2</font></th> 
+</tr> 
+</table> 
+</dd></dl><br /></li> 
+ 
+<li><p>Check that the output MAP file is given as</p> 
+<dl> 
+<dd><font color="#009900">Map</font> 
+<font color="#ff0000">TEST</font> 
+<font color="#ff0000">rnase25-HGDANOpatterson1.map</font></dd> 
+</dl><br /></li> 
+ 
+<li><p>You should not need to change anything else, so select 
+<font color="#ff0000">Run -&gt; Run Now</font>.</p></li> 
+ 
+<li><p><a name="rnaseharkers"></a>The Harker sections will be plotted - click on 
+<font color="#ff0000">View Files from Job -&gt; jobid...plt</font>. 
+It is a good idea to compare these plots for the isomorphous and anomalous Pattersons. 
+They should have a similar pattern of peaks. Have a look at 
+<a href="heavy-doc.html#rnaseharkers">RNase Harkers</a> for pictures, 
+comparison and discussion. The outcome of this is a heavy atom at 
+<i>x</i>&#126;&#177;0.1&#177;1/2, <i>y</i>&#126;&#177;0.1&#177;1/2, 
+<i>z</i>&#126;&#177;0.2&#177;1/2.</p></li> 
+</ol> 
+ 
+<h2><a name="step_3c"></a>3c) Find heavy atoms by direct methods or automated Patterson Search</h2> 
+ 
+<p>You are now going to use a direct methods approach for locating the 
+Hg sites. This is more useful (and more successful) when there are many sites. 
+In this section, you will prepare the Isomorphous data for use 
+in the direct methods program <tt>SHELX</tt>.</p> 
+ 
+<h3>Exercise</h3> 
+ 
+<ol start="200"> 
+<li><p>Select the <font color="#ff0000">Experimental Phasing</font> module, 
+and open the <font color="#ff0000">Prepare Data for HA Search</font> 
+task window.</p></li> 
+ 
+<li><p>On the first line, enter a suitable job title such as</p> 
+<dl> 
+<dd><font color="#009900">Job title</font> 
+<font color="#ff0000">Run SHELX for Hg isomorphous data</font>.</dd> 
+</dl><br /></li> 
+ 
+<li><p>On the next line, select</p> 
+<dl> 
+<dd><font color="#009900">Input</font> 
+<font color="#ff0000">SIR data</font> 
+<font color="#009900">and prepare data for</font> 
+<font color="#ff0000">SHELXD</font></dd> 
+</dl><br /></li> 
+ 
+<li><p>Select the input MTZ file</p> 
+<dl><dd><font color="#009900">MTZ in</font> 
+<font color="#ff0000">TEST</font> 
+<font color="#ff0000">rnase25_scaleit1.mtz</font></dd> 
+</dl> 
+ 
+<p>Now select the columns from the MTZ file:</p> 
+ 
+<dl><dd> 
+<table class="thleft"> 
+<tr> 
+<th><font color="#009900">FP</font></th><th><font color="#ff0000">FNAT</font></th> 
+<th><font color="#009900">SigFP</font></th><th><font color="#ff0000">SIGFNAT</font></th> 
+</tr> 
+<tr> 
+<th><font color="#009900">FPH</font></th><th><font color="#ff0000">FHG2</font></th> 
+<th><font color="#009900">SigFPH</font></th><th><font color="#ff0000">SIGFHG2</font></th> 
+</tr> 
+</table> 
+</dd></dl><br /></li> 
+ 
+<li><p>Check that the output SHELX hkl file is given as</p> 
+<dl> 
+<dd><font color="#009900">Output HKL</font> 
+<font color="#ff0000">TEST</font> 
+<font color="#ff0000">rnase25_scaleit1HGDISO.hkl</font></dd> 
+</dl><br /></li> 
+ 
+<li><p><strong>Again it is VERY important to exclude outliers due to measurement errors.</strong> 
+Use the same criteria as you chose for the Patterson. In the folder 
+<i>Exclude data when converting to Shelx format</i>, use the radio buttons and fill in the 
+following:</p> 
+<dl> 
+<dd><font color="#009900">Resolution less than</font> 
+<font color="#ff0000">10.0</font> 
+<font color="#009900">Angstrom or greater than</font> 
+<font color="#ff0000">3.5</font> 
+<font color="#009900">Angstrom</font></dd> 
+<dd><font color="#009900">FP less than n * sigmaF where n is</font> 
+<font color="#ff0000">3.0</font></dd> 
+<dd><font color="#009900">FPH less than n * sigmaFH where n is</font> 
+<font color="#ff0000">3.0</font></dd> 
+<dd><font color="#009900">Difference between F1 and F2 greater than</font> 
+<font color="#ff0000">272.07</font></dd> 
+</dl> 
+<p>The value of <font color="#ff0000">272.07</font> can be found in the log file of 
+the difference Patterson (see <a href="#diffpatt">above</a>); search log file for 
+&quot;reflections excluded&quot; and adapt as you see fit.</p></li> 
+ 
+<li><p>Select <font color="#ff0000">Run -&gt; Run Now</font>.</p></li> 
+ 
+<li><p>When the data preparation has finished, open the <font color="#ff0000">ShelxS - 
+Heavy Atom Search</font> task window.</p></li> 
+ 
+<li><p>On the first line, enter a suitable job title such as</p> 
+<dl> 
+<dd><font color="#009900">Job title</font> 
+<font color="#ff0000">Shelx heavy atom search RNase locating Hg (mir tutorial step 208)</font></dd> 
+</dl><br /></li> 
+ 
+<li><p>On the next line, select</p> 
+<dl> 
+<dd><font color="#009900">Try to find heavy atoms by</font> 
+<font color="#ff0000">direct methods</font></dd> 
+</dl> 
+<p>And the next line should read</p> 
+<dl> 
+<dd><font color="#009900">Input format is</font> 
+<font color="#ff0000">Shelx hkl file</font> 
+<font color="#009900">data is</font> 
+<font color="#ff0000">intensities</font></dd> 
+</dl><br /></li> 
+ 
+<li><p>Select the input HKL and MTZ files</p> 
+<dl> 
+<dd><font color="#009900">HKL in</font> 
+<font color="#ff0000">TEST rnase25_scaleit1HGDISO.hkl</font></dd> 
+<dd><font color="#009900">MTZ in</font> 
+<font color="#ff0000">TEST rnase25_scaleit1.mtz</font></dd> 
+</dl><br /></li> 
+<li><p>Most of the Cell Parameters folder should be filled in automatically. It now 
+only needs the desired number of heavy atoms to find, and its/their type:</p> 
+<dl> 
+<dd><font color="#009900">Search for</font> 
+<font color="#ff0000">1</font> 
+<font color="#009900">atoms of</font> 
+<font color="#ff0000">HG</font></dd> 
+</dl><br /></li> 
+<li><p>No other parameters need to change, so select 
+<font color="#ff0000">Run -&gt; Run Now</font>.</p></li> 
+ 
+<li><p>When the job has finished, return to the main window, highlight the 
+job in the <b>Job List</b>, and select <font color="#ff0000">View Files from 
+Job -&gt; View Log File</font>. Near the end of the log file, find:</p> 
+<blockquote><pre>Heavy-atom assignments: 
+ 
+          x       y       z    s.o.f.   Height 
+ 
+ HG1   0.8945  0.0947  0.8000  1.0000   418.3</pre></blockquote> 
+<p>Comparing this with the outcome of the <a href="#rnaseharkers">Patterson map calculations above</a>:</p> 
+<blockquote>x<sub><font size="small">HG1</font></sub> = -x<sub><font size="-1">Patt</font></sub> (+ whole cell shift)<br /> 
+y<sub><font size="-1">HG1</font></sub> = y<sub><font size="-1">Patt</font></sub><br /> 
+z<sub><font size="-1">HG1</font></sub> = -z<sub><font size="-1">Patt</font></sub> (+ whole cell shift)</blockquote> 
+</li> 
+<li><p>Experience has shown that, for situations where only one or a few heavy atoms are sought, 
+Shelx 'PATT' (CCP4i Protocol option 'Patterson search' rather than 'direct methods') may perform 
+more reliably. For the mercury search in RNase, however, this does not seem to be the case. Try 
+it, if you like. No other options need to change, although <font color="#009900">Try</font> 
+<font color="#ff0000">4</font> <font color="#009900">superposition vectors</font> (Shelx Patterson 
+Search Parameters folder) sometimes helps.</p></li> 
+ 
+</ol> 
+ 
+<h2><a name="step_3d"></a>3d) Heavy atom refinement for first derivative</h2> 
+ 
+<h3>The Problem</h3> 
+ 
+<p>We now have an initial solution for 1 Hg site. Heavy atom refinement and 
+phasing is done using the program MLPHARE. We will calculate cross-peak and difference map(s) 
+to start looking for more heavy atoms.</p> 
+ 
+<h3>Exercise</h3> 
+ 
+<p>Stage 1. Refine Hg solution and search difference maps for more peaks.</p> 
+ 
+<ol start="300"> 
+<li><p>Select the <font color="#ff0000">Experimental Phasing</font> module, 
+and open the <font color="#ff0000">Run Mlphare</font> task window.</p></li> 
+ 
+<li><p>On the first line, enter a suitable job title such as</p> 
+<dl> 
+<dd><font color="#009900">Job title</font> 
+<font color="#ff0000">Refining Hg reso 10-3.5A XYZ occ centric (mir tutorial step 300)</font>.</dd> 
+</dl><br /></li> 
+ 
+<li><p>In the Protocol folder, select:</p> 
+<dl> 
+<dd><font color="#009900">Use centric data only</font> (you may have to switch off the 'Use anomalous difference data' option first).</dd> 
+</dl> 
+ 
+<p>There are enough centric observations to refine the Hg parameters.</p> 
+ 
+<p>Select</p> 
+<dl> 
+<dd><font color="#009900">Output</font> 
+<font color="#ff0000">cross-peaks map(s)</font></dd> 
+<dd><font color="#009900">Generate</font> 
+<font color="#ff0000">difference</font> 
+<font color="#009900">maps and do peak search for more heavy atoms</font></dd> 
+</dl><br /></li> 
+ 
+<li><p>Select the input MTZ file:</p> 
+<dl> 
+<dd><font color="#009900">MTZ in</font> 
+<font color="#ff0000">TEST</font> 
+<font color="#ff0000">rnase25_scaleit1.mtz</font></dd> 
+</dl> 
+ 
+<p>Now select the columns from the MTZ file.</p> 
+<dl> 
+<dd> 
+<table class="thleft"> 
+<tr> 
+<th><font color="#009900">FP</font></th><th><font color="#ff0000">FNAT</font></th> 
+<th><font color="#009900">SigmaFP</font></th><th><font color="#ff0000">SIGFNAT</font></th> 
+</tr> 
+<tr> 
+<th><font color="#009900">FPH1</font></th><th><font color="#ff0000">FHG2</font></th> 
+<th><font color="#009900">SigFPH1</font></th><th><font color="#ff0000">SIGFHG2</font></th> 
+</tr> 
+<tr> 
+<td colspan="4"><em>Choose other derivatives for cross-peaks maps</em> (Use 'Add Another Cross-Peak Derivative' for this)</td> 
+</tr> 
+<tr> 
+<th><font color="#009900">FPH1</font></th><th><font color="#ff0000">FPTNCD25</font></th> 
+<th><font color="#009900">SigFPH1</font></th><th><font color="#ff0000">SIGFPTNCD25</font></th> 
+</tr> 
+<tr> 
+<th><font color="#009900">FPH2</font></th><th><font color="#ff0000">FIOD25</font></th> 
+<th><font color="#009900">SigFPH2</font></th><th><font color="#ff0000">SIGFIOD25</font></th> 
+</tr> 
+</table> 
+</dd> 
+</dl><br /></li> 
+ 
+<li><p>Check that the output MTZ file has a sensible name, especially if you intend to save 
+intermediate versions of it.</p></li> 
+ 
+<li><p>Enter a memorable MTZ output column label identifier, such as:</p> 
+<dl> 
+<dd><font color="#009900">Output label identifier</font> 
+<font color="#ff0000">mlp-hg1</font></dd> 
+</dl><br /></li> 
+ 
+<li><p>In the folder <font color="#009900">Key Parameters</font>, select and enter:</p> 
+<dl> 
+<dd><font color="#009900">Resolution limit from</font> 
+<font color="#ff0000">10.0</font> 
+<font color="#009900">to</font> 
+<font color="#ff0000">3.5</font></dd> 
+</dl><br /></li> 
+ 
+<li><p>In the folder <font color="#009900">Describe Derivatives &amp; Refinement</font>, select and enter:</p> 
+<dl> 
+<dd><font color="#ff0000">Phase with&amp;refine</font> 
+<font color="#009900">derivative</font> 
+<font color="#ff0000">One HG</font></dd> 
+<dd><font color="#009900">Use</font> 
+<font color="#ff0000">isomorphous</font> 
+<font color="#009900">data to</font> 
+<font color="#ff0000">refine XYZ and refine occupancy</font></dd> 
+<dd><font color="#009900">Use heavy atom site data</font> 
+<font color="#ff0000">entered below</font></dd> 
+<dd><font color="#ff0000">HG 0.8945 0.0947 0.8 20.0 1.0</font></dd> 
+</dl><br /></li> 
+ 
+<li><p>Select <font color="#ff0000">Run -&gt; Run Now</font>.</p></li> 
+ 
+<li><p>When the job has finished, return to the main window, highlight 
+the job in the Job List, and select <font color="#ff0000">View Files from Job</font>. 
+In the list of output files, note the following:</p> 
+<table> 
+<tr><td>TEST_<em>jobnumber</em>_1.ha</td><td>refined Hg parameters</td></tr> 
+<tr><td>TEST_<em>jobnumber</em>_FHG2.map</td><td>difference map calculated with coefficients FHG2-FNAT and 
+phases from the mlphare run refining Hg parameters</td></tr> 
+<tr><td>TEST_<em>jobnumber</em>_FHG2_peaks.pdb</td><td>peaks found in difference map, can be viewed with 
+graphics program</td></tr> 
+<tr><td>TEST_<em>jobnumber</em>_FHG2.ha</td><td>peaks from the difference map, in fractional coordinates, 
+to be re-used by CCP4i</td></tr> 
+<tr><td>TEST_<em>jobnumber</em>_FPTNCD25.map</td><td>difference map ('cross-peaks map') calculated 
+with coefficients FPTNCD25-FNAT and phases from Hg</td></tr> 
+<tr><td>TEST_<em>jobnumber</em>_FPTNCD25_peaks.pdb</td><td>as for HG derivative</td></tr> 
+<tr><td>TEST_<em>jobnumber</em>_FPTNCD25.ha</td><td>as for HG derivative</td></tr> 
+<tr><td>TEST_<em>jobnmuber</em>_FIOD25...</td><td>as for PT derivative</td></tr> 
+</table><br /></li> 
+<li><p>Select <font color="#ff0000">View Files from Job -&gt; TEST_<em>jobnumber</em>_1.ha</font>. 
+The occupancy of the Hg site has refined to around 0.4. This is respectable.</p></li> 
+<li><p>Select <font color="#ff0000">View Files from Job -&gt; View Log Graphs</font>. Graphs are 
+given for the last refinement cycle and the final phasing cycle. Look in particular at:</p> 
+<dl> 
+<dt><font color="#009900">Lack of closure analysis ....</font> / 
+<font color="#009900">Phasing power ....</font>, 
+<font color="#009900">Lack of closure analysis ....</font> / 
+<font color="#009900">Cullis Rfactor ....</font></dt> 
+<dd>For good data and a good derivative, the phasing power should be greater than 1, and 
+the Cullis Rfactor should be significantly less than one. From the first graph, it can be 
+seen that for one Hg site and just the centric data, the phasing power is not great. 
+However, the structure was solved by this method, so on to the next stage.</dd> 
+</dl><br /></li> 
+</ol> 
+ 
+<p>Stage 2. Refine all plausible-looking Hg sites (coordinates and occupancy) 
+and search for more peaks in all derivatives.</p> 
+ 
+<ol start="320"> 
+<li><p>In the Run Mlphare task window, adapt the job title:</p> 
+<dl> 
+<dd><font color="#009900">Job title</font> 
+<font color="#ff0000">Refining 4 poss Hg reso 10-3.5A XYZ occ centric (mir tutorial step 320)</font></dd> 
+</dl><br /></li> 
+ 
+<li><p>In the Files folder, adapt the MTZ output filename if you wish. Re-using the same is 
+not a problem in most cases. Adapt the column label for the output:</p> 
+<dl> 
+<dd><font color="#009900">Output label identifier</font> 
+<font color="#ff0000">mlp-hg4</font></dd> 
+</dl><br /></li> 
+<li><p>In the folder <font color="#009900">Describe Derivatives &amp; Refinement</font>, select and enter:</p> 
+<dl> 
+<dd><font color="#ff0000">Phase with&amp;refine</font> 
+<font color="#009900">derivative</font> 
+<font color="#ff0000">Four HG</font></dd> 
+<dd><font color="#009900">Use heavy atom site data</font> 
+<font color="#ff0000">from HA file</font></dd> 
+<dd><font color="#009900">HA in</font> 
+<font color="#ff0000">TEST TEST_<em>jobnumber</em>_FHG2.ha</font></dd> 
+</dl> 
+<p>Then click the <font color="#ff0000">View</font> button to check and edit the ...FHG2.ha file.</p> 
+<p>In the .ha File Viewer, click <font color="#ff0000">Change all</font>. This results in hashes&nbsp;(#) at the 
+beginning of each line. CCP4i ignores any ATOM lines in .ha files which start with a hash, so remove the hash at 
+the beginning of lines we want to keep through a <font color="#ff0000">click on the first four atom lines</font>. 
+Then click the <font color="#ff0000">Edit Columns</font> button and enter:</p> 
+<dl> 
+<dd><font color="#009900">Set atom names</font> 
+<font color="#ff0000">HG</font></dd> 
+<dd><font color="#009900">Set occupancies</font> 
+<font color="#ff0000">0.2</font></dd> 
+<dd>and click <font color="#ff0000">OK</font></dd> 
+</dl> 
+<p>Back in the .ha File Viewer, click <font color="#ff0000">Save&amp;Exit</font>.</p> 
+</li> 
+ 
+<li><p>Select <font color="#ff0000">Run -&gt; Run Now</font>. If you have left the name of the 
+output MTZ file as it was, you will have to delete the old version of it.</p></li> 
+ 
+<li><p>When the job has finished, <font color="#ff0000">View Log Graphs</font>. The phasing power 
+for the centrics is now above 1 for some of the resolution ranges, and the Cullis Rfactor is 
+coming down a little.</p></li> 
+</ol> 
+ 
+<h2><a name="step_3e"></a>3e) Find heavy atoms for other derivatives</h2> 
+ 
+<p>Including heavy atoms for other derivatives in the refinement can be a process of 
+trial-and-error. It may be necessary to take a step back and remove sites to try others. 
+Proposed stages are:</p> 
+ 
+<ol> 
+<li>Phase on Pt derivative peaks found from the Hg phasing, and refine their coordinate and 
+occupancy parameters.</li><!-- (mgwt: done in two stages, as there is some possible confusion over Hg 
+and Pt in the same site) (mgwt; Job 75-76)--> 
+<li>Phasing and refining (coordinate and occupancy parameters) all convincing Hg and Pt sites.</li><!--(mgwt; Job 77)--> 
+<li>Include I derivative sites found from the phasing of the best derivative or both other derivatives.</li> 
+</ol> 
+ 
+<p>Some tips:</p> 
+ 
+<ul> 
+ 
+<li>Remove any incorrect sites. Their occupancy will refine to a small or 
+negative value. These may/will be obvious 
+after refining against the centric data only; there are enough centric 
+observations to refine the Hg parameters, and  the occupancies. If you have 
+no centric data use the <font color="#009900">Use every XXX-th reflection for refinement</font> option to 
+use a subset of the reflections for refinement.</li> 
+ 
+<li>Look for new atom sites using Fourier difference (or double difference) maps. 
+These can be calculated using the very poor phase estimates calculated from the Hg 
+sites after the preliminary centric refinement. The 
+output MTZ file has phases for all the data to the requested resolution limit. 
+A difference Fourier will contain the present sites plus potential new sites; a 
+double difference Fourier will only show potential new sites (and may therefore be 
+more difficult to interpret). The peak height for a new site will be 
+positive, but probably only 20-30% of the height of sites included in the refinement. 
+Beware: these maps are VERY noisy. Then add any new sites, and repeat the refinement and difference Fourier 
+calculations.</li> 
+ 
+<li>MLPHARE provides useful graphs to monitor your progress. 
+The most useful are those labelled: <font color="#009900">Lack of Closure analysis v resln</font> and 
+<font color="#009900">Anomalous lack of closure v resln</font>. 
+The Cullis Rfactor and the Anomalous Cullis Rfactor should be less than 1, 
+and any &quot;improvement&quot; to the sub-structure should reduce them. 
+The Phasing power should increase as the solution improves.</li> 
+ 
+<li>When you are satisfied that you have the best Hg solution, use the phases 
+derived from the Hg sites to calculate difference Fouriers for the Pt and I 
+derivatives; select likely Pt and I sites and refine them against 
+their centric differences, and finally combine all three derivatives to 
+generate the final phases.</li> 
+</ul> 
+ 
+<p>To do this, you need to run MLPHARE several times. Steps using 
+centric data (or a subset of the full data set) will be very fast. The heavy atom parameters 
+are held in a <tt>.ha</tt> file, which is updated after each pass. The output MTZ file will be used 
+as input for the difference Fouriers.</p> 
+ 
+<h3>Exercise</h3> 
+ 
+<p>Stage 1a. Phase with and refine potential Pt sites. The first peak found for Pt is actually in exactly 
+the same position as the original Hg solution. At this stage it cannot be determined whether this is an 
+artefact of the Mlphare refinement, or a real solution for Pt. It is therefore best to exclude it 
+from phasing and refinement.</p> 
+ 
+<ol start="400"> 
+<li><p>In the Run Mlphare task window, adapt the job title:</p> 
+<dl> 
+<dd><font color="#009900">Job title</font> 
+<font color="#ff0000">Refining 2 poss Pt reso 10-3.5A XYZ occ centric (mir tutorial step 400)</font></dd> 
+</dl><br /></li> 
+ 
+<li><p>In the Files folder, select the input MTZ file column labels according to the following:</p> 
+<dl> 
+<dd> 
+<table class="thleft"> 
+<tr> 
+<th><font color="#009900">FP</font></th><th><font color="#ff0000">FNAT</font></th> 
+<th><font color="#009900">SigmaFP</font></th><th><font color="#ff0000">SIGFNAT</font></th> 
+</tr> 
+<tr> 
+<th><font color="#009900">FPH1</font></th><th><font color="#ff0000">FPTNCD25</font></th> 
+<th><font color="#009900">SigFPH1</font></th><th><font color="#ff0000">SIGFPTNCD25</font></th> 
+</tr> 
+<tr> 
+<td colspan="4"><em>Choose other derivatives for cross-peaks maps</em></td> 
+</tr> 
+<tr> 
+<th><font color="#009900">FPH1</font></th><th><font color="#ff0000">FHG2</font></th> 
+<th><font color="#009900">SigFPH1</font></th><th><font color="#ff0000">SIGFHG2</font></th> 
+</tr> 
+<tr> 
+<th><font color="#009900">FPH2</font></th><th><font color="#ff0000">FIOD25</font></th> 
+<th><font color="#009900">SigFPH2</font></th><th><font color="#ff0000">SIGFIOD25</font></th> 
+</tr> 
+</table> 
+</dd> 
+</dl> 
+ 
+<p>Adapt the MTZ output filename if you wish. Re-using the same is not a problem in most cases.  
+Adapt the column label for the output:</p> 
+<dl> 
+<dd><font color="#009900">Output label identifier</font> 
+<font color="#ff0000">mlp-pt2</font></dd> 
+</dl><br /></li> 
+ 
+<li><p>In the folder <font color="#009900">Describe Derivatives &amp; Refinement</font>, select and enter:</p> 
+<dl> 
+<dd><font color="#ff0000">Phase with&amp;refine</font> 
+<font color="#009900">derivative</font> 
+<font color="#ff0000">Two PT from HG</font></dd> 
+<dd><font color="#009900">Use heavy atom site data</font> 
+<font color="#ff0000">from HA file</font></dd> 
+<dd><font color="#009900">HA in</font> 
+<font color="#ff0000">TEST TEST_<em>jobnumber</em>_FPTNCD25.ha</font></dd> 
+</dl> 
+<p>Then click the <font color="#ff0000">View</font> button to be able to edit the ...FPTNCD25.ha file. If 
+all is well, ATOM1 will have coordinates of <i>x</i>&#126;0.4, <i>y</i>&#126;0.4, <i>z</i>&#126;0.2. This 
+is also the position of the first Hg solution, so to be safe, this should not be used as a Pt site in the 
+first instance.</p> 
+<p>In the .ha File Viewer, click <font color="#ff0000">Change all</font>. Then click on the lines beginning 
+<font color="#009900">ATOM2</font> and <font color="#009900">ATOM3</font> (<em>i.e.</em> the two highest 
+scoring ones but not the one in the Hg position). These can now be used to phase and refine. Click the 
+<font color="#ff0000">Edit Columns</font> button and enter:</p> 
+<dl> 
+<dd><font color="#009900">Set atom names</font> 
+<font color="#ff0000">PT</font></dd> 
+<dd><font color="#009900">Set occupancies</font> 
+<font color="#ff0000">0.2</font></dd> 
+<dd>and click <font color="#ff0000">OK</font></dd> 
+</dl> 
+<p>Back in the .ha File Viewer, click <font color="#ff0000">Save&amp;Exit</font>.</p> 
+</li> 
+ 
+<li><p>Select <font color="#ff0000">Run -&gt; Run Now</font>. If you have left the name of the 
+output MTZ file as it was, you will have to delete the old version of it.</p></li> 
+ 
+<li><p>When the job has finished, <font color="#ff0000">View Log Graphs</font>. The phasing power 
+and Cullis Rfactor for the two Pt sites are better than those for the four Hg sites. This is very 
+promising. Also view the file TEST_<em>jobnumber</em>_FPTNCD25.ha. The peak for the 'Hg site', which 
+was not included in phasing and refinement, comes up high in the list and is therefore almost 
+certainly a genuine Pt site, too. It can be included in the next stage.</p></li> 
+</ol> 
+ 
+<p>Stage 1b. Phase with and refine all plausible-looking Pt sites.</p> 
+ 
+<ol start="410"> 
+<li><p>In the Run Mlphare task window, adapt the job title:</p> 
+<dl> 
+<dd><font color="#009900">Job title</font> 
+<font color="#ff0000">Refining 4 poss Pt reso 10-3.5A XYZ occ centric (mir tutorial step 410)</font></dd> 
+</dl><br /></li> 
+ 
+<li><p>In the Files folder, adapt the MTZ output filename if you wish. Re-using the same is not a problem 
+in most cases. Adapt the column label for the output:</p> 
+<dl> 
+<dd><font color="#009900">Output label identifier</font> 
+<font color="#ff0000">mlp-pt4</font></dd> 
+</dl><br /></li> 
+ 
+<li><p>In the folder <font color="#009900">Describe Derivatives &amp; Refinement</font>, select and enter:</p> 
+<dl> 
+<dd><font color="#ff0000">Phase with&amp;refine</font> 
+<font color="#009900">derivative</font> 
+<font color="#ff0000">Four PT</font></dd> 
+<dd><font color="#009900">Use heavy atom site data</font> 
+<font color="#ff0000">from HA file</font></dd> 
+<dd><font color="#009900">HA in</font> 
+<font color="#ff0000">TEST TEST_<em>jobnumber</em>_FPTNCD25.ha</font></dd> 
+</dl> 
+<p>Then click the <font color="#ff0000">View</font> button to be able to edit the ...FPTNCD25.ha file.</p> 
+<p>In the .ha File Viewer, click <font color="#ff0000">Change all</font> and then the 
+<font color="#ff0000">first four ATOM lines</font> (which should include the 'Hg site'). 
+Click the <font color="#ff0000">Edit Columns</font> button and enter:</p> 
+<dl> 
+<dd><font color="#009900">Set atom names</font> 
+<font color="#ff0000">PT</font></dd> 
+<dd><font color="#009900">Set occupancies</font> 
+<font color="#ff0000">0.3</font></dd> 
+<dd>and click <font color="#ff0000">OK</font></dd> 
+</dl> 
+<p>Back in the .ha File Viewer, click <font color="#ff0000">Save&amp;Exit</font>.</p> 
+</li> 
+ 
+<li><p>Select <font color="#ff0000">Run -&gt; Run Now</font>. If you have left the name of the 
+output MTZ file as it was, you will have to delete the old version of it.</p></li> 
+ 
+<li><p>When the job has finished, <font color="#ff0000">View Log Graphs</font>. The phasing 
+power and Cullis Rfactor for the Pt derivative have improved considerably. From the 
+...FPTNCD25.ha file it can be seen that there is a fifth probable Pt site. It is worth 
+considering whether to include that in the next stage.</p></li> 
+</ol> 
+ 
+<p>Stage 2. Phase with and refine Pt and Hg sites.</p> 
+ 
+<ol start="420"> 
+<li><p>In the Run Mlphare task window, adapt the job title:</p> 
+<dl> 
+<dd><font color="#009900">Job title</font> 
+<font color="#ff0000">Refining 4Pt and 3Hg reso 10-3.5A XYZ occ centric (mir tutorial step 420)</font></dd> 
+</dl><br /></li> 
+ 
+<li><p>In the Files folder, select the input MTZ file column labels according to the following:</p> 
+<dl> 
+<dd> 
+<table class="thleft"> 
+<tr> 
+<th><font color="#009900">FP</font></th><th><font color="#ff0000">FNAT</font></th> 
+<th><font color="#009900">SigmaFP</font></th><th><font color="#ff0000">SIGFNAT</font></th> 
+</tr> 
+<tr> 
+<th><font color="#009900">FPH1</font></th><th><font color="#ff0000">FPTNCD25</font></th> 
+<th><font color="#009900">SigFPH1</font></th><th><font color="#ff0000">SIGFPTNCD25</font></th> 
+</tr> 
+<tr> 
+<th><font color="#009900">FPH2</font></th><th><font color="#ff0000">FHG2</font></th> 
+<th><font color="#009900">SigFPH2</font></th><th><font color="#ff0000">SIGFHG2</font></th><td>(Use 'Add another derivative')</td> 
+</tr> 
+<tr> 
+<td colspan="5"><em>Choose other derivatives for cross-peaks maps</em> (Use 'Edit list -&gt; Delete selected item', 
+and RIGHT mouse button on any widget in the HG2 line)</td> 
+</tr> 
+<tr> 
+<th><font color="#009900">FPH1</font></th><th><font color="#ff0000">FIOD25</font></th> 
+<th><font color="#009900">SigFPH1</font></th><th><font color="#ff0000">SIGFIOD25</font></th> 
+</tr> 
+</table> 
+</dd> 
+</dl> 
+<p>Adapt the MTZ output filename if you wish. Re-using the same is not a problem in most cases. 
+Adapt the column label for the output:</p> 
+<dl> 
+<dd><font color="#009900">Output label identifier</font> 
+<font color="#ff0000">mlp-pt4-hg3</font></dd> 
+</dl><br /></li> 
+ 
+<li><p>In the folder <font color="#009900">Describe Derivatives &amp; Refinement</font>,  
+subfolder <font color="#009900">Derivative number 1</font>, select and enter:</p> 
+<dl> 
+<dd><font color="#ff0000">Phase with&amp;refine</font> 
+<font color="#009900">derivative</font> 
+<font color="#ff0000">Four PT</font></dd> 
+<dd><font color="#009900">Use heavy atom site data</font> 
+<font color="#ff0000">from HA file</font></dd> 
+<dd><font color="#009900">HA in</font> 
+<font color="#ff0000">TEST TEST_<em>jobnumber</em>_1.ha</font> from the previous job, where 4 Pt sites were refined.</dd> 
+</dl> 
+<p>In subfolder <font color="#009900">Derivative number 2</font>, select and enter:</p> 
+<dl> 
+<dd><font color="#ff0000">Phase with&amp;refine</font> 
+<font color="#009900">derivative</font> 
+<font color="#ff0000">Three HG</font></dd> 
+<dd><font color="#009900">Use heavy atom site data</font> 
+<font color="#ff0000">from HA file</font></dd> 
+<dd><font color="#009900">HA in</font> 
+<font color="#ff0000">TEST TEST_<em>jobnumber</em>_1.ha</font> from the most recent job in which Hg sites were refined.</dd> 
+</dl> 
+<p>For the HG .ha file, click the <font color="#ff0000">View</font> button. Click on the lines 
+concerned with ATOM4 (<font color="#ff0000">ATOM4</font> and <font color="#ff0000">ATREF</font> below it), 
+because the occupancy refined to an unbelievably low value (0.049). Then click <font color="#ff0000">Save&amp;Exit</font>.</p> 
+</li> 
+ 
+<li><p>Select <font color="#ff0000">Run -&gt; Run Now</font>. If you have left the name of the 
+output MTZ file as it was, you will have to delete the old version of it.</p></li> 
+ 
+<li><p>When the job has finished, <font color="#ff0000">View Log Graphs</font>. The phasing powers 
+and Cullis Rfactors have not improved (if anything, they have deteriorated) compared to the phasing and 
+refinement runs for the derivatives separately. Checking the refined Hg parameters against those 
+calculated from the difference map, something seems to have gone awry. The first three peaks of 
+the difference map do not match the three Hg sites from the refinement. Time to re-run with the 
+three highest peaks from the difference map.</p> 
+</li> 
+</ol> 
+ 
+<p>Stage 2b. Phase with and refine 4 previously refined Pt sites and 3 different Hg sites from the 
+difference map.</p> 
+ 
+<ol start="430"> 
+ 
+<li><p>In the Run Mlphare task window, adapt the job title:</p> 
+<dl> 
+<dd><font color="#009900">Job title</font> 
+<font color="#ff0000">Refining 4Pt and 3differentHg reso 10-3.5A XYZ occ centric (mir tutorial step 430)</font></dd> 
+</dl><br /></li> 
+ 
+<li><p>Adapt the MTZ output filename if you wish. Re-using the same is not a problem in most cases. 
+Adapt the column label for the output:</p> 
+<dl> 
+<dd><font color="#009900">Output label identifier</font> 
+<font color="#ff0000">mlp-pt4-hgdiff3</font></dd> 
+</dl><br /></li> 
+ 
+<li><p>In the folder <font color="#009900">Describe Derivatives &amp; Refinement</font>, 
+subfolder <font color="#009900">Derivative number 1</font>, select and enter:</p> 
+<dl> 
+<dd><font color="#ff0000">Phase with&amp;refine</font> 
+<font color="#009900">derivative</font> 
+<font color="#ff0000">Four PT</font></dd> 
+<dd><font color="#009900">Use heavy atom site data</font> 
+<font color="#ff0000">from HA file</font></dd> 
+<dd><font color="#009900">HA in</font> 
+<font color="#ff0000">TEST TEST_<em>jobnumber</em>_1.ha</font> from the previous job, where 4 Pt sites were refined.</dd> 
+</dl> 
+<p>In subfolder <font color="#009900">Derivative number 2</font>, select and enter:</p> 
+<dl> 
+<dd><font color="#ff0000">Phase with&amp;refine</font> 
+<font color="#009900">derivative</font> 
+<font color="#ff0000">Three different HG</font></dd> 
+<dd><font color="#009900">Use heavy atom site data</font> 
+<font color="#ff0000">from HA file</font></dd> 
+<dd><font color="#009900">HA in</font> 
+<font color="#ff0000">TEST TEST_<em>jobnumber</em>_FHG2.ha</font> from the previous job, from the difference map calculations.</dd> 
+</dl> 
+<p>For the HG .ha file, click the <font color="#ff0000">View</font> button. In the .ha File Viewer, 
+click <font color="#ff0000">Change all</font> and then the <font color="#ff0000">first three ATOM lines</font>. 
+Click the <font color="#ff0000">Edit Columns</font> button and enter:</p> 
+<dl> 
+<dd><font color="#009900">Set atom names</font> 
+<font color="#ff0000">HG</font></dd> 
+<dd><font color="#009900">Set occupancies</font> 
+<font color="#ff0000">0.2</font></dd> 
+<dd>and click <font color="#ff0000">OK</font></dd> 
+</dl> 
+<p>Back in the .ha File Viewer, click <font color="#ff0000">Save&amp;Exit</font>.</p> 
+</li> 
+ 
+<li><p>Select <font color="#ff0000">Run -&gt; Run Now</font>. If you have left the name of the 
+output MTZ file as it was, you will have to delete the old version of it.</p></li> 
+ 
+<li><p>When the job has finished, <font color="#ff0000">View Log Graphs</font>. The phasing 
+power and Cullis Rfactor for the Pt derivative have improved marginally. However, the 
+statistics for the Hg derivative have improved markedly. Time to include the iodine 
+derivative.</p></li> 
+ 
+</ol> 
+ 
+<p>Stage 3a. Include the iodine derivative. Take peaks from the difference map calculated 
+with phases from the best derivative (Pt, <em>i.e.</em> from the end of stage 1) only, or from 
+both derivatives together (<em>i.e.</em> from the end of stage 2).</p> 
+ 
+<ol start="440"> 
+ 
+<li><p>In the Run Mlphare task window, adapt the job title:</p> 
+<dl> 
+<dd><font color="#009900">Job title</font> 
+<font color="#ff0000">Refining 4Pt 3Hg 3I reso 10-3.5A XYZ occ centric (mir tutorial step 440)</font></dd> 
+</dl><br /></li> 
+ 
+<li><p><font color="#ff0000">Un-select</font> the option to output 
+<font color="#ff0000">cross-peaks map(s)</font>.<p></li> 
+ 
+<li><p>In the Files folder, select the input MTZ file column labels according to the following:</p> 
+<dl> 
+<dd> 
+<table class="thleft"> 
+<tr> 
+<th><font color="#009900">FP</font></th><th><font color="#ff0000">FNAT</font></th> 
+<th><font color="#009900">SigmaFP</font></th><th><font color="#ff0000">SIGFNAT</font></th> 
+</tr> 
+<tr> 
+<th><font color="#009900">FPH1</font></th><th><font color="#ff0000">FPTNCD25</font></th> 
+<th><font color="#009900">SigFPH1</font></th><th><font color="#ff0000">SIGFPTNCD25</font></th> 
+</tr> 
+<tr> 
+<th><font color="#009900">FPH2</font></th><th><font color="#ff0000">FHG2</font></th> 
+<th><font color="#009900">SigFPH2</font></th><th><font color="#ff0000">SIGFHG2</font></th> 
+</tr> 
+<tr> 
+<th><font color="#009900">FPH3</font></th><th><font color="#ff0000">FIOD25</font></th> 
+<th><font color="#009900">SigFPH3</font></th><th><font color="#ff0000">SIGFIOD25</font></th><td>(Use 'Add another derivative')</td> 
+</tr> 
+</table> 
+</dd> 
+</dl> 
+<p>Adapt the MTZ output filename if you wish. Re-using the same is not a problem in most cases. 
+Adapt the column label for the output:</p> 
+<dl> 
+<dd><font color="#009900">Output label identifier</font> 
+<font color="#ff0000">mlp-pt4-hg3-i3</font></dd> 
+</dl><br /></li> 
+ 
+<li><p>In the folder <font color="#009900">Describe Derivatives &amp; Refinement</font>, 
+subfolder <font color="#009900">Derivative number 1</font>, select and enter:</p> 
+<dl> 
+<dd><font color="#ff0000">Phase with&amp;refine</font> 
+<font color="#009900">derivative</font> 
+<font color="#ff0000">Four PT</font></dd> 
+<dd><font color="#009900">Use heavy atom site data</font> 
+<font color="#ff0000">from HA file</font></dd> 
+<dd><font color="#009900">HA in</font> 
+<font color="#ff0000">TEST TEST_<em>jobnumber</em>_1.ha</font> from the previous job, where 4 Pt sites were refined.</dd> 
+</dl> 
+<p>In subfolder <font color="#009900">Derivative number 2</font>, select and enter:</p> 
+<dl> 
+<dd><font color="#ff0000">Phase with&amp;refine</font> 
+<font color="#009900">derivative</font> 
+<font color="#ff0000">Three HG</font></dd> 
+<dd><font color="#009900">Use heavy atom site data</font> 
+<font color="#ff0000">from HA file</font></dd> 
+<dd><font color="#009900">HA in</font> 
+<font color="#ff0000">TEST TEST_<em>jobnumber</em>_2.ha</font> from the previous job, where 3 Hg sites were refined.</dd> 
+</dl> 
+<p>In subfolder <font color="#009900">Derivative number 3</font>, select and enter:</p> 
+<dl> 
+<dd><font color="#ff0000">Phase with&amp;refine</font> 
+<font color="#009900">derivative</font> 
+<font color="#ff0000">Three I</font></dd> 
+<dd><font color="#009900">Use heavy atom site data</font> 
+<font color="#ff0000">from HA file</font></dd> 
+<dd><font color="#009900">HA in</font> 
+<font color="#ff0000">TEST TEST_<em>jobnumber</em>_FIOD25.ha</font> from the previous job, from the difference map calculations.</dd> 
+</dl> 
+<p>For the I .ha file, click the <font color="#ff0000">View</font> button. In the .ha File Viewer, 
+click <font color="#ff0000">Change all</font> and then the <font color="#ff0000">first three ATOM lines</font>. 
+Click the <font color="#ff0000">Edit Columns</font> button and enter:</p> 
+<dl> 
+<dd><font color="#009900">Set atom names</font> 
+<font color="#ff0000">I</font></dd> 
+<dd><font color="#009900">Set occupancies</font> 
+<font color="#ff0000">0.2</font></dd> 
+<dd>and click <font color="#ff0000">OK</font></dd> 
+</dl> 
+<p>Back in the .ha File Viewer, click <font color="#ff0000">Save&amp;Exit</font>.</p> 
+</li> 
+ 
+<li><p>Select <font color="#ff0000">Run -&gt; Run Now</font>. If you have left the name of the 
+output MTZ file as it was, you will have to delete the old version of it.</p></li> 
+ 
+<li><p>When the job has finished, <font color="#ff0000">View Log Graphs</font>. The 
+statistics for Pt and Hg are still improving slightly, and the iodine derivative 
+looks promising. Investigate possible improvements from inclusion of more sites for 
+any of the derivatives.</p></li> 
+</ol> 
+ 
+<p>Stage 3b. [Optional] The heavy atom structure is now probably complete enough for 
+final refinement and phasing. The statistics may, however, improve with the inclusion 
+of more sites for any or all of the derivatives. Investigate. Be aware of symmetry-related 
+sites and 'shoulders'.</p> 
+ 
+<ol start="450"> 
+<li><p>Try including 5 Pt, 4 Hg, 4 I from their respective difference maps. Edit the 
+occupancies to a slightly lower value of what they refined to in the previous run. If 
+the occupancy refines back to the previous (higher) value, this gives an additional 
+check on the validity of the site. Suggested values: 0.4 for PT, 0.3 for HG and I.</p></li> 
+<li><p>When the job has finished, View Log Graphs and compare with the graphs from the 
+previous run (4 Pt, 3 Hg, 3 I). Also, check the refined values for the occupancies 
+of new and previously included heavy atom sites, and whether the refined sites are 
+at the top of the peak list from the difference map calculations. The fourth Hg site does 
+not refine to a satisfactory value, and the statistics for the Hg derivative do not improve. 
+The fifth Pt and fourth I, however, improve statistics and refine to a satisfactory 
+occupancy, and the first four Pt and first three I sites behave as hoped.</p></li> 
+<li><p>Try taking out the worst Hg site again. Use the refined sites from step 450 
+as input, without re-setting occupancies.</p></li> 
+<li><p>When the job has finished, View Log Graphs, refined sites and difference map 
+peak lists as before. The refinement is now stable, and no new sites suggest themselves 
+for inclusion.</p></li> 
+</ol> 
+ 
+<a name="step_3f"></a><h2>3f) Final Refinement and Phasing</h2> 
+ 
+<h3>The Problem</h3> 
+ 
+<p>Phasing and refining (coordinates, real occupancy and anomalous occupancy parameters), 
+against <em>all</em> data, including anomalous.</p> 
+ 
+<h3>Exercise</h3> 
+ 
+<ol start="500"> 
+<li><p>In the <font color="#ff0000">Run Mlphare</font> task window, 
+enter a suitable job title such as:</p> 
+<dl> 
+<dd><font color="#009900">Job title</font> 
+<font color="#ff0000">Refinement against all data (mir tutorial step 500)</font>.</dd> 
+</dl><br /></li> 
+ 
+<li><p>In the first folder:</p> 
+<dl> 
+<dd>First <strong>de-select</strong> <font color="#009900">Use centric data only</font></dd> 
+</dl> 
+<dl> 
+<dd>Then <strong>select</strong> <font color="#009900">Use anomalous difference data</font></dd> 
+</dl> 
+ 
+<dl> 
+<dd><font color="#009900">Generate</font> 
+<font color="#ff0000">difference</font> 
+<font color="#009900">maps and do peak search for more heavy atoms</font></dd> 
+</dl><br /></li> 
+ 
+<li><p>In the Files folder, select the input MTZ file:</p> 
+ 
+<dl> 
+<dd><font color="#009900">MTZ in</font> 
+<font color="#ff0000">TEST</font> 
+<font color="#ff0000">rnase25_scaleit1.mtz</font></dd> 
+</dl> 
+ 
+<p>Now select the columns from the MTZ file.</p> 
+ 
+<dl><dd> 
+<table class="thleft"> 
+<tr> 
+<th><font color="#009900">FP</font></th><th><font color="#ff0000">FNAT</font></th> 
+<th><font color="#009900">SigmaFP</font></th><th><font color="#ff0000">SIGFNAT</font></th> 
+</tr> 
+<tr> 
+<th><font color="#009900">FPH1</font></th><th><font color="#ff0000">FPTNCD25</font></th> 
+<th><font color="#009900">SigFPH1</font></th><th><font color="#ff0000">SIGFPTNCD25</font></th> 
+</tr> 
+<tr> 
+<th><font color="#009900">DPH1</font></th><th><font color="#ff0000">DANOPTNCD25</font></th> 
+<th><font color="#009900">SigDPH1</font></th><th><font color="#ff0000">SIGDANOPTNCD25</font></th> 
+</tr> 
+<tr> 
+<th><font color="#009900">FPH2</font></th><th><font color="#ff0000">FHG2</font></th> 
+<th><font color="#009900">SigFPH2</font></th><th><font color="#ff0000">SIGFHG2</font></th> 
+</tr> 
+<tr> 
+<th><font color="#009900">DPH2</font></th><th><font color="#ff0000">DANOHG2</font></th> 
+<th><font color="#009900">SigDPH2</font></th><th><font color="#ff0000">SIGDANOHG2</font></th> 
+</tr> 
+<tr> 
+<th><font color="#009900">FPH3</font></th><th><font color="#ff0000">FIOD25</font></th> 
+<th><font color="#009900">SigFPH3</font></th><th><font color="#ff0000">SIGFIOD25</font></th> 
+</tr> 
+<tr> 
+<th><font color="#009900">DPH3</font></th><th><font color="#ff0000">DANOIOD25</font></th> 
+<th><font color="#009900">SigDPH3</font></th><th><font color="#ff0000">SIGDANOIOD25</font></th> 
+</tr> 
+</table> 
+</dd></dl> 
+ 
+<p>Check that the output MTZ file is given as</p> 
+<dl> 
+<dd><font color="#009900">Output MTZ</font> 
+<font color="#ff0000">TEST</font> 
+<font color="#ff0000">rnase25_mlphare2.mtz</font></dd> 
+</dl><br /></li> 
+ 
+<li><p>Enter a memorable MTZ output column label identifier, such as:</p> 
+<dl> 
+<dd><font color="#009900">Output label identifier</font> 
+<font color="#ff0000">mlp-all-anom</font></dd> 
+</dl><br /></li> 
+ 
+<li><p>In the folder <font color="#009900">Key parameters</font>, 
+enter resolution limits to include all the data between 50 and 2.5&#197;:</p> 
+ 
+<dl> 
+<dd><font color="#009900">Resolution limit from</font> 
+<font color="#ff0000">50.0</font> 
+<font color="#009900">to</font> 
+<font color="#ff0000">2.5</font>.</dd> 
+</dl><br /></li> 
+ 
+<li><p>In the folder <font color="#009900">Describe Derivatives &amp; Refinement</font>, 
+subfolder <font color="#009900">Derivative Number 1</font>, select and enter:</p> 
+<dl> 
+<dd><font color="#ff0000">Phase with&amp;refine</font> 
+<font color="#009900">derivative</font> 
+<font color="#ff0000">Five PT anom</font></dd> 
+<dd><font color="#009900">Use</font> 
+<font color="#ff0000">isomorphous</font> 
+<font color="#009900">data to</font> 
+<font color="#ff0000">refine XYZ and refine occupancy</font> 
+<font color="#ff0000">Refine anom occ</font></dd> 
+<dd><font color="#009900">Use heavy atom site data</font> 
+<font color="#ff0000">from HA file</font></dd> 
+<dd><font color="#009900">HA in</font> 
+<font color="#ff0000">TEST TEST_<em>jobnumber</em>_1.ha</font> from the previous job, where 5 Pt sites were refined.</dd> 
+</dl> 
+<p>In subfolder <font color="#009900">Derivative number 2</font>, select and enter:</p> 
+<dl> 
+<dd><font color="#ff0000">Phase with&amp;refine</font> 
+<font color="#009900">derivative</font> 
+<font color="#ff0000">Three HG anom</font></dd> 
+<dd><font color="#009900">Use heavy atom site data</font> 
+<font color="#ff0000">from HA file</font></dd> 
+<dd><font color="#009900">HA in</font> 
+<font color="#ff0000">TEST TEST_<em>jobnumber</em>_2.ha</font> from the previous job, where 3 Hg sites were refined.</dd> 
+</dl> 
+<p>In subfolder <font color="#009900">Derivative number 3</font>, select and enter:</p> 
+<dl> 
+<dd><font color="#ff0000">Phase with&amp;refine</font> 
+<font color="#009900">derivative</font> 
+<font color="#ff0000">Four I anom</font></dd> 
+<dd><font color="#009900">Use heavy atom site data</font> 
+<font color="#ff0000">from HA file</font></dd> 
+<dd><font color="#009900">HA in</font> 
+<font color="#ff0000">TEST TEST_<em>jobnumber</em>_3.ha</font> from the previous job, where 4 I sites were refined.</dd> 
+</dl> 
+<p>For all three .ha files, click the <font color="#ff0000">View</font> button, then the 
+<font color="#ff0000">Edit Columns</font> button and enter:</p> 
+<dl> 
+<dd><font color="#009900">Set anomalous occupancies</font> 
+<font color="#ff0000">0.1</font></dd> 
+<dd>and click <font color="#ff0000">OK</font></dd> 
+</dl> 
+<p>Back in the .ha File Viewer, click <font color="#ff0000">Save&amp;Exit</font>.</p> 
+</li> 
+ 
+<li><p>Select <font color="#ff0000">Run -&gt; Run Now</font>.</p></li> 
+ 
+<li><p>When the job has finished, return to the main window, 
+highlight the job in the <strong>Job List</strong>, and select 
+<font color="#ff0000">View Files from Job -&gt; View Log Graphs</font>. 
+The statistics look good for all three derivatives. Then look at 
+<font color="#009900">Anomalous lack of closure analysis ....</font> / 
+<font color="#009900">Ano Cullis Rfactor ....</font>. 
+For good data the anomalous Cullis Rfactor should be significantly less than one. 
+However, none of the three derivatives has particularly good data (and the Hg 
+derivative is the worst of the three). This explains why the anomalous Patterson 
+maps are (almost) uninterpretable.</p> 
+<p>Also, look at the refined sites (in the ..._1.ha, ..._2.ha and ..._3.ha files). 
+All (or nearly all) anomalous occupancies have refined to a negative value. This 
+means that the refinement has been performed on the wrong hand.</p></li> 
+</ol> 
+ 
+<h2><a name="step_3g"></a>3g) Correcting the hand</h2> 
+ 
+<h3>The Problem</h3> 
+ 
+<p>The procedure for locating the Hg sites cannot distinguish between 
+a particular set of sites and the same set of sites transformed through 
+a point of inversion, <em>i.e.</em> it cannot distinguish the <strong>hand</strong> of 
+the solution. Therefore, the previous phasing run should be repeated 
+using the opposite hand.</p> 
+ 
+<h3>Exercise</h3> 
+ 
+<ol start="600"> 
+<li><p>In the Run Mlphare task window, adapt the job title:</p> 
+<dl> 
+<dd><font color="#009900">Job title</font> 
+<font color="#ff0000">Refinement against all data correcting hand (mir tutorial step 600)</font>.</dd> 
+</dl><br /></li> 
+ 
+<li><p>Make sure to generate difference maps, which will be used later to shift the heavy 
+atom coordinates to a 'friendly' asymmetric unit.</p></li> 
+ 
+<li><p>Use the MTZ file and column selection from the previous run (step 500).</p></li> 
+ 
+<li><p>Choose a suitable name for the output MTZ file, reflecting the different hand, such as:</p> 
+<dl> 
+<dd><font color="#009900">MTZ out</font> 
+<font color="#ff0000">TEST</font> 
+<font color="#ff0000">rnase25_scaleit2h.mtz</font></dd> 
+</dl> 
+ 
+<p>It should be no problem to re-use the output column label identifier.</p></li> 
+ 
+<li><p>For the derivative descriptions, start from the same set as for step 500.</p> 
+<p>For the Pt .ha file, click the <font color="#ff0000">View</font> button. In the 
+.ha File Viewer, click the <font color="#ff0000">Reverse hand</font> button. 
+A small 'Change Hand' window will appear. Our spacegroup is P212121, so there is 
+no need to type the spacegroup name. Just click <font color="#ff0000">OK</font>. 
+Back in the File Viewer window, all coordinates have changed to negative values. 
+Click <font color="#ff0000">Save As..</font> and change the output filename to 
+reflect the change of hand (<em>e.g.</em> 
+<font color="#ff0000">TEST_<em>jobnumber</em>_1h.ha</font>). 
+Back in the File Viewer, click <font color="#ff0000">Quit</font>. 
+Back with the description for Derivative number 1 (Five Pt anom), click the 
+<font color="#ff0000">Browse</font> button and select the .ha file just saved 
+(<font color="#ff0000">TEST_<em>jobnumber</em>_1h.ha</font>).</p> 
+ 
+<p>Repeat this for the Hg and I .ha files (<em>i.e.</em> create ..._2h.ha and 
+..._3h.ha respectively, and select those for Derivative number 2&nbsp;and&nbsp;3).</p></li> 
+ 
+<li><p>Select <font color="#ff0000">Run -&gt; Run Now</font>.</p></li> 
+ 
+<li><p>When the job has finished, <font color="#ff0000">View Log Graphs</font>. 
+The Anomalous Cullis Rfactor has improved, at least for the Pt and I derivatives. 
+All but one (one of the iodine sites) of the anomalous occupancies have refined to a 
+value higher than the starting value of 0.1.</p> 
+<p>Comparing TEST_<em>jobnumber</em>_1.ha with TEST_<em>jobnumber</em>_FPTNCD25.ha, 
+it should be easy to see how to transfer the heavy atom sites to a 'friendly' 
+asymmetric unit.</p></li> 
+ 
+<li><p>[Optional] It is easy to transfer the heavy atom sites to an asymmetric 
+unit with all positive coordinates (which fits with the refined coordinates as 
+they can be found in the Protein Data Bank).</p> 
+<p>In the Run Mlphare task window, adapt the job title:</p> 
+<dl> 
+<dd><font color="#009900">Job title</font> 
+<font color="#ff0000">Transferring ha coordinates to friendly asymmetric unit (mir tutorial step 606)</font></dd> 
+</dl><br /></li> 
+ 
+<li><p>Leave all MTZ input and output data as before.</p></li> 
+<li><p>In the folder <font color="#009900">Describe Derivatives &amp; Refinement</font>, 
+subfolder <font color="#009900">Derivative number 1</font>, select and enter:</p> 
+<dl> 
+<dd><font color="#ff0000">Phase with&amp;refine</font> 
+<font color="#009900">derivative</font> 
+<font color="#ff0000">Five PT positive</font></dd> 
+<dd><font color="#009900">Use heavy atom site data</font> 
+<font color="#ff0000">from HA file</font></dd> 
+<dd><font color="#009900">HA in</font> 
+<font color="#ff0000">TEST TEST_<em>jobnumber</em>_FPTNCD25.ha</font> from the previous job, from the difference map calculations.</dd> 
+</dl> 
+<p>In subfolder <font color="#009900">Derivative number 2</font>, select and enter:</p> 
+<dl> 
+<dd><font color="#ff0000">Phase with&amp;refine</font> 
+<font color="#009900">derivative</font> 
+<font color="#ff0000">Three HG positive</font></dd> 
+<dd><font color="#009900">Use heavy atom site data</font> 
+<font color="#ff0000">from HA file</font></dd> 
+<dd><font color="#009900">HA in</font> 
+<font color="#ff0000">TEST TEST_<em>jobnumber</em>_FHG2.ha</font> from the previous job, from the difference map calculations.</dd> 
+</dl> 
+<p>In subfolder <font color="#009900">Derivative number 3</font>, select and enter:</p> 
+<dl> 
+<dd><font color="#ff0000">Phase with&amp;refine</font> 
+<font color="#009900">derivative</font> 
+<font color="#ff0000">Four I positive</font></dd> 
+<dd><font color="#009900">Use heavy atom site data</font> 
+<font color="#ff0000">from HA file</font></dd> 
+<dd><font color="#009900">HA in</font> 
+<font color="#ff0000">TEST TEST_<em>jobnumber</em>_FIOD25.ha</font> from the previous job, from the difference map calculations.</dd> 
+</dl> 
+<p>Edit all three .ha files such that only the desired sites are included for refinement, 
+and give appropriate names and occupancies. Suggested values:</p> 
+<table> 
+<tr> 
+<td>atom</td><td>sites</td><td>occupancy</td><td>anomalous occupancy</td> 
+</tr> 
+<tr> 
+<td>PT</td><td>first 5</td><td>0.4</td><td>0.3</td> 
+</tr> 
+<tr> 
+<td>HG</td><td>first 3</td><td>0.3</td><td>0.2</td> 
+</tr> 
+<tr> 
+<td>I</td><td>first 4</td><td>0.4</td><td>0.3</td> 
+</tr> 
+</table> 
+<p>This still includes the low-occupancy iodine site.</p> 
+</li> 
+ 
+<li><p>Select <font color="#ff0000">Run -&gt; Run Now</font>.</p></li> 
+<li><p>When the job has finished, check everything is in order. The low-occupancy 
+iodine site seems to be just that.</p></li> 
+</ol> 
+ 
+<h2><a name="step_3h"></a>3h) Improving the density</h2> 
+ 
+<p>Before going on to model building and refinement, the phases can be improved through 
+density modification/improvement. For this, the program <tt>'dm'</tt> is used.</p> 
+ 
+<h4>Exercise</h4> 
+ 
+<ol start="700"> 
+<li><p>Select the <font color="#ff0000">Density Improvement</font> module, 
+and open the <font color="#ff0000">Run DM</font task window.</p></li> 
+ 
+<li><p>On the first line, enter a suitable job title such as</p> 
+<dl> 
+<dd><font color="#009900">Job title</font> 
+<font color="#ff0000">DM on MIR phases (mir tutorial step 700)</font>.</dd> 
+</dl><br /></li> 
+ 
+<li><p>Select <font color="#009900">Input Hendrickson-Lattman coefficients</font></p> 
+ 
+<li><p>Select the input MTZ file:</p> 
+<dl> 
+<dd><font color="#009900">MTZ in</font> 
+<font color="#ff0000">TEST</font> 
+<font color="#ff0000">rnase25_mlphare2h.mtz</font></dd> 
+</dl> 
+ 
+<p>Now select the columns from the MTZ file.</p> 
+ 
+<dl><dd> 
+<table class="thleft"> 
+<tr> 
+<th><font color="#009900">FP</font></th><th><font color="#ff0000">FNAT</font></th> 
+<th><font color="#009900">SIGFP</font></th><th><font color="#ff0000">SIGFNAT</font></th> 
+</tr> 
+<tr> 
+<th><font color="#009900">PHIO</font></th><th><font color="#ff0000">PHIB_mlp-all-anom</font></th> 
+<th><font color="#009900">Weight</font></th><th><font color="#ff0000">FOM_mlp-all-anom</font></th> 
+</tr> 
+<tr> 
+<th><font color="#009900">HLA</font></th><th><font color="#ff0000">HLA_mlp-all-anom</font></th> 
+<th><font color="#009900">HLB</font></th><th><font color="#ff0000">HLB_mlp-all-anom</font></th> 
+</tr> 
+<tr> 
+<th><font color="#009900">HLC</font></th><th><font color="#ff0000">HLC_mlp-all-anom</font></th> 
+<th><font color="#009900">HLD</font></th><th><font color="#ff0000">HLD_mlp-all-anom</font></th> 
+</tr> 
+</table> 
+<br /></dd></dl></li> 
+ 
+<li><p>In the Required Parameters folder, enter the solvent content as</p> 
+<dl> 
+<dd><font color="#009900">Fraction solvent content</font> 
+<font color="#ff0000">0.46</font>.</dd> 
+</dl><br /></li> 
+ 
+<li><p>Everything else can be left as default, so <font color="#ff0000">Run -&gt; Run Now</font>.</p></li> 
+ 
+<li><p>When the job has finished, look at the log file and loggraph to check statistics 
+and solvent boundaries. To really appreciate the results, it would be best to calculate 
+maps (one with the phases from just MLPHARE, one with phases from DM) and compare.</p></li> 
+</ol> 
+ 
+<hr /> 
+<p>On to the next tutorial - <a href="heavy-tutorial-mad.html">Experimental Phasing (by MAD)</a>.</p> 
+<p>Back to the previous tutorial - <a href="dataproc-tutorial.html">Data Processing and Reduction</a>.</p> 
+<p>Back to the <a href="index.html">index</a>.</p> 
+ 
+<hr /> 
+<p>Prepared by Liz Potterton and Martyn Winn, 2000</p> 
+<p>Adapted by Eleanor Dodson and Maria Turkenburg, 2002-2003</p> 
+<p> 
+<a href="http://jigsaw.w3.org/css-validator/"><img width="88" height="31" 
+src="images/vcss" alt="Valid CSS!" /></a> 
+<a href="http://validator.w3.org/"><img src="images/valid-xhtml10" alt="Valid XHTML 1.0!" height="31" width="88" /></a> 
+</p> 
+ 
+</body> 
+</html> 

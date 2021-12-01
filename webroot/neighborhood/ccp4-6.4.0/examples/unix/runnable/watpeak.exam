@@ -1,0 +1,102 @@
+#!/bin/sh
+
+#
+# A simple Procedure  for finding water peaks. They can be compared with
+# the ones from toxd.pdb
+#
+set -e
+#
+########################################################################
+# Remove the original waters from toxd
+########################################################################
+pdbset XYZIN $CEXAM/toxd/toxd.pdb XYZOUT $CCP4_SCR/temp1.pdb << eof-set
+# select protein atoms only
+SELECT CHAIN A 
+eof-set
+########################################################################
+# Calculate sfs for final coordinates -
+########################################################################
+sfall    			\
+HKLIN $CEXAM/toxd/toxd.mtz \
+HKLOUT $CCP4_SCR/toxd.mtz  \
+XYZIN $CCP4_SCR/temp1.pdb \
+<< END-sfall 
+MODE SFCALC XYZIN HKLIN
+FORM NGAU 2
+RESO  10 2.0 40
+RSCB  6 2.0
+BADD 0
+LABI FP=FTOXD3 SIGFP=SIGFTOXD3
+LABO FC=FC PHIC=AC
+END-sfall
+#
+###################################################################
+#  Scale the Fc's to the Fo's
+###################################################################
+
+rstats hklin $CCP4_SCR/toxd.mtz hklout $CCP4_SCR/toxd_sc.mtz <<-eof-rstats 
+	LABIN FP=FTOXD3 SIGFP=SIGFTOXD3 FC=FC PHIC=AC
+	TITLE Fc scaled to Fo
+        OUTPUT FOFC
+        PROCESS FCAL
+	RESOLUTION 10.0 2.0
+        WEIGHTING NONE
+        END
+eof-rstats
+#
+########################################################################
+# Fo-Fc map from final coordintes.  
+########################################################################
+#
+fft \
+HKLIN $CCP4_SCR/toxd_sc.mtz  \
+MAPOUT $CCP4_SCR/toxd_fo-fc.map  \
+<< END-fft
+RESO 10 2.0
+SCALE F1 1.0 0.0
+SCALE F2 1.0 0.0
+GRID 152 80 48
+XYZLIM 0 151 0 79 0 12
+BINMAPOUT
+LABI F1=FTOXD3 SIG1=SIGFTOXD3 F2=FC PHI=AC
+END-fft
+#
+#  run mapmask to cover molecule
+mapmask    \
+XYZIN $CCP4_SCR/temp1.pdb \
+ MAPIN  $CCP4_SCR/toxd_fo-fc.map \
+ MAPOUT  $CCP4_SCR/toxd_fo-fc.ext \
+<< END 
+border 3.0
+mode MAPIN
+end
+END
+#
+########################################################################
+#  Some peaks may appear twice since map has been extended.
+########################################################################
+
+peakmax                 \
+ XYZOUT $CCP4_SCR/toxd_peaks.pdb \
+ MAPIN  $CCP4_SCR/toxd_fo-fc.ext \
+<< END-peakmax
+NUMPEAKS 1200
+THRESHOLD RMS 1.5
+END-peakmax
+#
+########################################################################
+# run atpeak to check distances within 3.6A
+########################################################################
+#
+
+watpeak                  \
+PEAKS $CCP4_SCR/toxd_peaks.pdb \
+XYZIN $CCP4_SCR/temp1.pdb \
+xyzout $CCP4_SCR/toxd_waters.pdb \
+<<END-watpeak
+TITLE  Toxd contacts
+DISTANCE 3.6 2.0
+SYMMETRY 19
+!HETATOMONLY ! use if only distances from O and N wanted
+END-watpeak
+#

@@ -1,0 +1,186 @@
+<!doctype html public "-//ietf//dtd html//en">
+<html>
+<head>
+<title>CCP4 Program Suite : refmac - theory - chirality</title>
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX64 6.2 IP19) [Netscape]" />
+</head>
+
+<body>
+<h1>CCP4 Program Suite : refmac</h1>
+
+<h1>REFMAC (CCP4: Supported Program)</h1>
+<h2>NAME</h2>
+<p><b>refmac version 5.0.*</b>  -  macromolecular refinement program</p>
+<h2>Chiral centres</h2>
+
+<a href="#why"><b>Why use chirality?</b></a><br />
+<a href="#definition"><b>Definition of chiral centres</b></a><br />
+<a href="#sequence_rules"><b>Sequence rules</b></a><br />
+<a href="#relation"><b>Relation between chiral centres and R/S definitions</b></a><br />
+<a href="#references"><b>References</b></a><br />
+
+<h3><a name="why" id="why"></a>Why use chirality?</h3>
+
+<p>There are two reasons for using chiral centres. Firstly they are used in
+refinement. Secondly they are important when new coordinates are created from
+the chemical description.<p>
+<p>Use in the refinement and new coordinate creation are different although similar.
+As restraints they are useful at low resolution and at the
+early stages of refinement when coordinates are poor. If all four atoms
+surrounding a chiral centre have been given, or at high resolution and at the end 
+stages of the refinement, the use of chiral volume as a restraint may be abandoned.</p>
+<p>In refmac it can be switched off using:
+<pre>
+CHIR 0.0
+</pre>
+Then REFMAC will print out information about chiral volumes but they will not be
+used in restraints (<em>i.e.</em> chirality restraints will have weight 0).</p>
+<table border="0"><a name="figure1" id="figure1"></a>
+<tr>
+<td rowspan="2">Sometimes even if there is no chiral centre, some atoms may be used as
+having chirality. For example in figure 1 carbons bound to NH<sub>2</sub> are not chiral
+centres. But chirality can be used in this case to preserve conformation of the molecule
+during refinement.</td>
+<td align="right"><img src="../images/chiral4tr.gif" /></td>
+</tr>
+<tr>
+<td align="center">Figure 1</td>
+</tr>
+</table>
+
+<p>Another important use of chiral centres is for coordinate creation. In this case
+proper chiral volumes and their signs should be used. They are important in deciding
+which stereoisomer should be created.</p>
+
+<h3><a name="definition" id="definition"></a>Definition of chiral centres</h3>
+
+<table border="0"><a name="figure2" id="figure2"></a>
+<tr>
+<td rowspan="2">The Origin of the word chiral is Greek <i>cheir</i>, which means 
+'handedness'. If molecules cannot be superimposed on their mirror images, they are called 
+chiral. It is like left and right hands. The mirror image of the right hand is the left 
+hand, which cannot be superimposed on the right hand. For example in the figure 2 the left
+and right images are not superimposable.</td>
+<td align="right"><img src="../images/chiral1tr.gif" /></td>
+</tr>
+<tr>
+<td align="center">Figure 2</td>
+</tr>
+</table>
+
+<p>Chiral centres are usually (but not always) a property of chiral molecules. 
+What decides if an atom is a chiral centre? If an atom has four bonds then use 
+<a href="#sequence_rules">sequence rules</a>. If all four atoms attached to 
+the considered atom have different priorities, it is a chiral centre. If at 
+least two atoms have the same priority, this atom is not a chiral centre.
+There are cases when a molecule has no chiral centres but still is chiral. For example
+the molecule in the <a href="#figure1">figure 1</a> is chiral without chiral centres.</p>
+<p>Chiral centres are a property of atoms with sp3 hybridisation. Potential
+chiral centres should have a tetrahedral bonding environment.</p>
+<p>Chiral centres are defined by four atoms:
+<tt>atom1 atom2 atom3 atom4</tt></p>
+<p>Here <tt>atom1</tt> is the chiral centre and <tt>atom2</tt>, <tt>atom3</tt>,
+<tt>atom4</tt> are three of the four atoms bound to the centre. The sign of the chiral
+volume depends on the arrangement of these atoms.</p>
+
+<h4>Procedure to find the sign of a chiral centre</h4>
+
+<table border="0"><a name="figure3" id="figure3"></a>
+<tr>
+<td rowspan="2">
+<ol>
+<li>Put <tt>atom1</tt> and draw bonds from the centre (<tt>atom1</tt>) to
+<tt>atom2</tt>, <tt>atom3</tt>, <tt>atom4</tt> as in figure 3. When the eye goes from
+<tt>atom2</tt> to <tt>atom4</tt> it should travel clockwise.</li>
+<li>Assuming that <tt>atom2</tt>, <tt>atom3</tt>, <tt>atom4</tt> are in the plane
+of the picture, then if <tt>atom1</tt> is below the plane, the chiral volume sign
+is plus, and otherwise it is minus.
+If the numbering is based on the <a href="#sequence_rules">sequence rules</a>,
+a positive chiral volume corresponds directly to R and negative to S
+(see <a href="#relation">below</a>).</li>
+</ol>
+<p>Note that if <tt>atom1</tt> is below the plane of the picture, then the fourth atom
+around this central atom is also below the plane of the picture.</p></td>
+<td align="right"><img src="../images/chiral5tr.gif" /></td>
+</tr>
+<tr>
+<td align="center">Figure 3</td>
+</tr>
+</table>
+
+<p>There is a relationship between the sign of the chiral volume and right/left-handed coordinate 
+systems. If chiral volume's sign is positive then vectors 2-1, 3-1, 4-1 form a right handed
+coordinate system. Otherwise they form a left handed coordinate system.</p>
+
+<h3><a name="sequence_rules" id="sequence_rules"></a>Sequence rules</h3>
+
+<p>There are 3 major rules in finding the relative priority of the atoms attached 
+to the chiral centres. These rules are also used in deciding geometric isomers,
+<em>i.e.</em> <i>cis/trans</i> conformations.</p> 
+
+<p>Rule 1:</p>
+<p>Atoms attached to the centre with higher atomic number have highest priority.
+If atoms have the same atomic number, a heavier isotope has higher priority.</p>
+<p>Example: in <a href="#figure2">figure 2</a> Cl has higher priority than the other 3 atoms.</p>
+
+<p>Rule 2:</p>
+<p>If the relative priority of the attached atoms cannot be decided using
+their weights, then atoms bound to them are compared. If these cannot define priorities, the next
+atoms are compared. It is not the overall weight of the group attached to the central atom
+which determines the priority; it is considered step-by-step, in levels outward from the central atom.
+If at least one of the atoms in a group (<em>e.g.</em> <tt>atom2</tt> and its directly attached atoms)
+is heavier than any in another group (<em>i.e.</em> <tt>atom3</tt> and <tt>atom4</tt> and their
+directly attached atoms) then the first atom (<em>i.e.</em> <tt>atom2</tt>) has higher priority. If
+the heaviest atoms in both groups are the same, their number is considered. Then the next heaviest
+atoms are compared and so on. It should be repeated outwards from the centre until all atoms have
+been considered <em>or the first point of difference has been encountered</em>. If atoms cannot be
+distinguished at the end, they are equal and there is no chiral centre.</p>
+<p>Example: in <a href="#figure2">figure 2</a> CH<sub>2</sub>CH<sub>3</sub> has higher priority
+than CH<sub>3</sub> since C is heavier than H.</p>
+
+<p>Rule 3:</p>
+<table border="0">
+<tr>
+<td rowspan="2">If one of bonds is double or triple, the atoms to which it is attached
+are 'cloned', see figure 4. After that, the previous rules are applied again.</td>
+<td align="right"><img src="../images/chiral2tr.gif" /></td>
+</tr>
+<tr>
+<td align="center">Figure 4</td>
+</tr>
+</table>
+
+<p>In the case of an aromatic structure like a benzene ring, only one of the Kekul&#233;
+structures should be considered, see figure 5. Left and right images are two Kekul&#233; structures
+of a benzene ring (middle image). In these cases only one of them should be considered. Then rule 3 is
+applied and after that rules 1 and 2 are applied.</p>
+<table border="0" align="center">
+<td><img src="../images/chiral3tr.gif" /></td>
+</tr>
+<tr>
+<td align="center">Figure 5</td>
+</tr>
+</table>
+
+<h3><a name="relation" id="relation"></a>Relation between chiral centres and R/S definitions</h3>
+
+<p>To determine whether a chiral centre is R (Latin: <i>rectus</i>) or S (Latin:
+<i>sinister</i>) first use the <a href="#sequence_rules">sequence rules</a> to assign priorities. Then
+draw a picture so that the atom with lowest priority seems below the plane of the
+picture. Then start counting from the highest priority to the lowest. If your eye goes
+in a clockwise direction, the configuration is R, otherwise it is S. The molecule
+shown on the left-hand side of <a href="#figure2">figure 2</a> is R and that on the right
+is S.</p>
+<p>If <a href="#sequence_rules">sequence rulings</a> have been used in determining the order of
+the atoms in the chiral centre, <em>i.e.</em> highest priority is first, second is second priority
+and third is third priority, then the configuration R has a chiral volume with plus sign
+and S has a chiral volume with a minus sign. If the order of the atoms is different,
+then adjustment should be made accordingly. It should be remembered that if two
+atoms swap their places in the sequence, the sign changes.</p>
+
+<h3><a name="references" id="references"></a>References</h3>
+
+<p>Morrison, RT and Boyd, RN. Organic chemistry, Allyn and Bacon Inc. Boston, 3rd edition, 1973</p>
+
+</body>
+</html>

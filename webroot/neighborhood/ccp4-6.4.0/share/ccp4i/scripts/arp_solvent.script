@@ -1,0 +1,68 @@
+global job_params
+global system
+#
+#
+  source [SearchPath TOP utils map_utils.tcl]
+
+  set logfile $job_params(LOG_FILE)
+  set arpwarpdir $job_params(JOB_ID)_$job_params(TASKNAME) 
+  set workdir [GetDefaultDirPath]
+
+  set parfile "$workdir/$job_params(JOB_ID)_arp_warp_solvent.par"
+
+  append partext " workdir [GetDefaultDirPath] "
+  append partext " projectName $job_params(PROJECT) "
+  append partext " jobId $job_params(JOB_ID) "
+
+  append partext " defFile " [FileJoin [GetDefaultDirPath]  \
+     CCP4_DATABASE $job_params(JOB_ID)_$job_params(TASKNAME).def ]
+
+    AddOutputFile $parfile PROJECT
+
+    set localwarpbin [GetEnvPath warpbin]
+
+#    append partext " warpbin $localwarpbin "
+#    append partext " version 7.2"
+    append partext " parfile $parfile"
+  
+    append partext " fulllogfile [GetDefaultDirPath]/$job_params(JOB_ID)_warp_solvent_details.log"
+
+
+# Handle file names
+
+  foreach par [list HKLIN XYZIN XYZOUT TLSIN EXTRA_LIBRARY] \
+    arppar [list datafile protein solventfileout tlsin extralibrary ] {
+    set file [subst $[subst $par]]
+    set dir [subst DIR_$[subst $par]]
+    set value [GetFullFileName1 $file $dir]
+    if { $value != "" } {
+      append partext " $arppar $value"
+    }
+  }
+
+
+# Some basic params
+
+    foreach \
+       par [ list  FP SIGFP ADDATOM_SIGMA REMATOM_SIGMA SMALL_CYCLES NCYCLES WEIGHTVAL] \
+    arppar [ list fp sigfp fsig rsig restrcyc rrcyc weightv] {
+	set value [subst $[subst $par]]
+        append partext " $arppar $value " 
+	}
+
+# These are params that have to be included in quotes !!!
+
+    foreach \
+       par [ list RESOL SCALEOPT FREELABIN] \
+    arppar [ list resol scaleopt freer    ] {
+	set value [subst $[subst $par]]
+        append partext "$arppar ' $value ' "
+	}
+
+if { [ catch { exec echo $localwarpbin/auto_solvent.sh $partext | csh -f  >> $logfile } ] } {
+    WriteToLog { Error while checking software versions and setting up parameters.}
+    TerminateScript 0 -report { Setup of the job has failed.}
+} else {	       
+    catch { exec $localwarpbin/warp_solvent.sh $parfile >> $logfile }
+}
+

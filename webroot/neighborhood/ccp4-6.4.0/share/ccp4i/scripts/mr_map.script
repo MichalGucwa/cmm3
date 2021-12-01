@@ -1,0 +1,158 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#===========================================================================
+#
+# mr_map.script
+#
+# This script will generate an Emap from coordinates 
+# Based on Ian Tickle's notes $CCP4/doc/Mol_repl_itickle_tut.bath.ps
+#===========================================================================
+
+# Source the file with utility procedures for running amore
+  source [SearchPath TOP utils amore_utils.tcl ]
+
+# Get some names for intermediate files
+  set xyztmp [GetTmpFileName -ext pdb]
+  set tmptable [GetTmpFileName -ext tab]
+  set hkltmp1 [GetTmpFileName -ext mtz]
+  set hkltmp2 [GetTmpFileName -ext mtz]
+
+# Set  the size of cell for making the map
+  set BIG_CELL_1 {}
+
+#------------------------------------------------------------------------
+# Run Amore to get the optimal position of the coordiate file 
+#------------------------------------------------------------------------
+
+  if $AMORE_OPT_COORD {
+
+    if { $UPDATE_DATABASE } {
+      set TABFUN_TABLE  1
+    } else {
+      set TABFUN_TABLE  0
+    }
+    set TABFUN_HKLOUT 0
+    set TABFUN_ROTATE 1
+    set TABFUN_TRANSLATE 1
+
+
+  set comline "[BinPath amore] XYZIN1 \"$XYZIN\" XYZOUT1 \"$XYZSHFT\" TABLE1 \"$tmptable\""
+  foreach var [list TABLING_MI TABLING_MR TABLING_MC HKLTABLING_MC ] {
+    eval "if \[IfSet \$$var\] \{ append comline \" $var \$$var\"\}"
+  }
+
+
+  set tmp_log_file [GetTmpFileName -ext log]
+
+  CreateComScript amore_table table_comfile
+
+  set status [Execute $comline $table_comfile  \
+		program_status report -copy_log $tmp_log_file]
+
+# Extract minimal box info from log file and guestimate a cell and sphere
+   if { $UPDATE_DATABASE } {
+
+# Extract data from log file
+     amore_get_tabling_data $tmp_log_file box max_dcom com euler
+
+#     amore_calc_model_cell \
+#        [list $CRYSTAL_CELL_1 $CRYSTAL_CELL_2 $CRYSTAL_CELL_3 ] \
+#		$box $max_dcom model_cell MODEL_IRMAX
+
+# Try to save this information to the amore_model database def file
+     amore_update_database  $AMORE_DATABASE $MODEL_TITLE \
+        [ list  [list  MINIMAL_BOX $box ] \
+                [list  MAX_DCOM $max_dcom ] \
+		[list MODEL_COM $com ] \
+		[list MODEL_EULER $euler ] ]
+
+   }
+
+# Get the size of the tabling cell from the log file 
+
+     if { [ReadFile $tmp_log_file text ] &&
+         [ExtractTextLine $text "TABLING CELL:" 0 all line] } {
+       set BIG_CELL_1 [lindex $line 2]
+       set BIG_CELL_2 [lindex $line 3]
+       set BIG_CELL_3 [lindex $line 4]
+     }
+
+     DeleteFile $tmp_log_file
+
+
+  } else {
+ 
+    set XYZSHFT $XYZIN
+
+  }
+
+
+#------------------------------------------------------------------------
+#  Run PDBSET to change PDB header
+#------------------------------------------------------------------------
+  if { $BIG_CELL_1 == "" } {
+    set mult 2.0
+    set BIG_CELL_1 [expr $CRYSTAL_CELL_1 * $mult]
+    set BIG_CELL_2 [expr $CRYSTAL_CELL_2 * $mult]
+    set BIG_CELL_3 [expr $CRYSTAL_CELL_3 * $mult]
+  }
+
+  WriteComFile pdbset_comfile  "SPACEGROUP P1
+CELL $BIG_CELL_1 $BIG_CELL_2 $BIG_CELL_3 \n"
+
+  set status [Execute "[BinPath pdbset] XYZIN \"$XYZSHFT\" XYZOUT \"$xyztmp\"" \
+	 $pdbset_comfile program_status report]
+
+#------------------------------------------------------------------------
+# Run SFALL to generate SFs
+#------------------------------------------------------------------------
+
+  WriteComFile sfall_comfile "MODE SFCALC XYZIN
+SFSG 1
+SYMMETRY 1
+BADD 10
+RESOLUTION $RESOLUTION_MIN $RESOLUTION_MAX
+LABOUT FC=$FC PHIC=$PHIC"
+
+  set status [Execute "[BinPath sfall] XYZIN \"$xyztmp\" HKLOUT \"$hkltmp1\"" \
+	 $sfall_comfile  program_status report]
+
+#------------------------------------------------------------------------
+# Calculate the E's
+#------------------------------------------------------------------------
+
+  if [regexp EMAP $MODE ] {
+    set LABIN "FP"
+    set FP $FC
+    set LABOUT "E"
+    CreateComScript ecalc ecalc_comfile
+    set status [Execute "[BinPath ecalc] HKLIN \"$hkltmp1\" HKLOUT \"$HKLOUT\"" \
+      $ecalc_comfile program_status report]
+  } else {
+# if not generating EMAP then just copy intermediate MTZ file to 
+# output file name
+    CopyFile $hkltmp1 $HKLOUT
+  }
+
+#--------------------------------------------------------------------------
+# Generate Amore table file   NOT!
+#--------------------------------------------------------------------------
+
+#  if $AMORE_TABLE {
+#
+#    set SORTFUN_MODEL 1
+#    set LABIN "FC PHIC"
+#    if [regexp EMAP $MODE ] { set FC $E }
+#
+#    CreateComScript amore_sort sort_comfile
+#    set status [Execute "[BinPath amore] HKLIN \"$HKLOUT\" TABLE1 \"$SF_TABLE\"" \
+#              $sort_comfile program_status report ]
+#
+#  }

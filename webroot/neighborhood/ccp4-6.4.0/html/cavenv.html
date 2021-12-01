@@ -1,0 +1,231 @@
+<html>
+<head><title>CCP4 Program Suite : cavenv</title></head>
+<body>
+
+<!-- ::INDEX_INFO::CAVENV::Supported::Model Analysis::Visualise cavities in macromolecular structures:::::::: -->
+
+<H1> CAVENV (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>cavenv </b>
+- Visualise cavities in macromolecular structures
+<H2> SYNOPSIS</H2>
+<b>cavenv xyzin</b>
+<i>foo_in.pdb </i>
+<b>mapout</b>
+<i>foo_out.map</i>
+<br>
+ [<A HREF="#keywords">Keyworded input</A>]
+
+<H2><a name="description">DESCRIPTION</a></H2>
+
+<p>CAVENV produces a CCP4 map from an input model structure, which is 
+designed to help visualise cavities in the protein. By default, the program
+produces a "cavity" map in which each grid point is given a value
+equal to the distance of the closest atom, minus its Van der Waals
+radius, up to a maximum of &lt;maxrad&gt; (<A href="#radmax">maximal 
+probe radius</a> to be tested). Thus the grid values are zero within
+the Van der Waals envelope of the protein. Outside this envelope, the
+value represents radius of the largest probe that access that grid
+point. In the middle of solvent regions, the grid value is that
+of the largest probe considered &lt;maxrad&gt;.</p>
+
+<p>The program will also output an estimate of the percent protein and
+percent solvent in the volume covered by the generated map. Here, "protein" 
+refers to the Van der Waals envelope of the 
+atoms in the input model, and will include crystallographic waters unless
+they are specifically excluded. The "solvent" is the complement of the protein
+region, and thus larger than the volume accessible to the centre of a solvent
+probe. These percentages can only be compared to
+the value from a Matthews coefficient calculation if the output map covers
+a whole number of asymmetric units.</p>
+
+<p>If one of the keywords <A href="#envprotein">ENVPROTEIN</A>, 
+<A href="#envncs">ENVNCS</A> or <A href="#envsolvent">ENVSOLVENT</A>
+is given, then a mask is produced instead of the cavity map.</p>
+
+<H2> <A NAME="files"></A>INPUT AND OUTPUT FILES</H2>
+The following input and output files are used by the program:
+<P> 
+Input Files:
+<dl>
+<dt> XYZIN  <dd>
+Coordinates of model of interest. The program will generate symmetry mates of the
+input coordinates automatically.
+</dl>
+<P> 
+Output Files:
+<dl>
+<dt> MAPOUT  <dd>
+Output map containing cavity map, or mask. <br>
+ <br>
+</dl>
+
+<H2> <A NAME="keywords"></A>KEYWORDED INPUT</H2>
+
+<h3>TITLE  &lt;title string&gt;</h3>  
+Job title. Included in MAPOUT header. <br>
+Default is "From CAVENV".
+
+<h3><A NAME="radmax">RADMAX &lt;maxrad&gt;</h3>
+Maximum probe radius to be tested in Angstrom.<br>
+Default is 3.0
+
+<h3>RANGE &lt;nfirst&gt; &lt;nlast&gt;</h3>
+Residue range of atoms to be included from XYZIN. This applies
+to all chains. <br>
+Default range is 1 to 10000.
+
+<h3>EXCLUDE &lt;atomname&gt;</h3>
+Atoms to be excluded from XYZIN, e.g. "EXCLUDE NZ".  Several EXCLUDE
+cards may be given (up to a maximum number which is currently 150).
+
+<H3> <A NAME="cell"></A>CELL  &lt;a&gt; &lt;b&gt; &lt;c&gt; [ &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt; ]</H3>
+Input cell parameters explicitly. If omitted, program will try to
+obtain cell parameters from XYZIN.
+
+<h3>SYMM [&lt;spacegroup number&gt; | &lt;spacegroup name&gt; | &lt;symmetry operations&gt; | OFF] </h3>
+
+<p>Input spacegroup explicitly. If omitted, program will try to
+obtain spacegroup from XYZIN.</p>
+
+<p>The spacegroup symmetry operators, together with lattice translations up to one unit cell in any
+direction, are used to generate symmetry mates of the atoms in XYZIN that lie within the limits 
+of the output map. If the input coordinates are in a wildly different location from the desired
+map limits, then some relevant coordinates may not be generated.</p>
+
+<p>If the subkeyword OFF is given, then no symmetry or lattive translations are applied.</p>
+
+<h3>AXIS &lt;fast axis&gt; &lt;medium axis&gt; &lt;slow axis&gt;</h3> 
+Specify the axis order for the output map, where each axis is
+one of "X", "Y" or "Z".<br>
+Default is "AXIS X Y Z".
+
+<H3><A NAME="grid"></A>GRID &lt;nx&gt; &lt;ny&gt; &lt;nz&gt; </H3>
+
+<P>Number of sampling divisions along whole cell edges.<br>
+Default is such as to give grid spacing of 0.5 A.
+
+<H3><A NAME="xyzlim"></A>XYZLIM &lt;xmin&gt; &lt;xmax&gt; &lt;ymin&gt;
+&lt;ymax&gt; &lt;zmin&gt; &lt;zmax&gt; </H3>
+
+<P>Range of unit cell to be included in output map. 
+&lt;xmin&gt; &lt;xmax&gt; etc. are minimum and maximum grid numbers 
+along each cell edge.<br>
+Default is to include entire unit cell.
+
+<h3><A NAME="envprotein"></A>ENVPROTEIN </h3>
+Instead of the default cavity map, MAPOUT will contain a protein mask with
+1's within the protein region and 0's in the solvent region. The solvent
+region is defined as the volume accessible by a probe of 
+radius &lt;maxrad&gt; (see <A href="#radmax">RADMAX</a> keyword). Thus the
+solvent region corresponds to the flat central region of the cavity map,
+when the same value of &lt;maxrad&gt; is used.
+
+<h3><A NAME="envncs"></A>ENVNCS &lt;numncs&gt; </h3>
+As ENVPROTEIN, but masks will be generated for &lt;numncs&gt; NCS-related
+molecules. This card should be followed by 3 x &lt;numncs&gt; records
+specifying the NCS operators. Each record consists of 3 elements of the
+rotation matrix and one element of the translation. The first group
+of three records will usually represent the identity:
+<pre>
+
+1.0 0.0 0.0 0.0
+0.0 1.0 0.0 0.0
+0.0 0.0 1.0 0.0
+
+</pre>
+
+<h3><A NAME="envsolvent"></A>ENVSOLVENT</h3>
+Instead of the default cavity map, MAPOUT will contain a solvent mask with
+1's within the solvent region and 0's in the protein region. The solvent
+region is defined as the volume accessible by a probe of 
+radius &lt;maxrad&gt; (see <A href="#radmax">RADMAX</a> keyword). Thus the
+solvent region corresponds to the flat central region of the cavity map,
+when the same value of &lt;maxrad&gt; is used.
+
+<h3>END </h3>    
+End of the keyword list
+
+<H2><A NAME="examples"></A>EXAMPLES</H2>
+
+<h3>Runnable examples using rnase data</h3>
+
+<ul>
+<li><a href="../examples/unix/runnable/cavenv.exam">cavenv.exam</a><br>
+Simple example of producing a cavity map from the rnase model coordinates.
+</ul>
+
+<h3>Other examples</h3>
+
+[job example (unix)]
+<pre>
+
+cavenv xyzin model.pdb mapout output.map &lt;&lt; eof
+range 1 2000  		   ! include this residue range
+radmax 3.0			   ! add 3.0 Angstroem to R_vdw
+TITLE probe sizes &lt; 3 Angstroem  ! title for cavity map or envelope
+CELL 100. 100. 100. 90. 90. 90.  ! unit cell (can be artificial)
+AXIS X Y Z 		   ! fast, medium and slow map index
+GRID 200 200 200		   ! Ngrid along A/B/C for unit cell
+XYZLIM 46 102 58 144 166 224     ! grid limits along A/B/C
+SYMMETRY 1			   ! space group
+ENVNCS 6			   ! make envelope for a hexamer
+1.0 0.0 0.0 0.0		   !
+0.0 1.0 0.0 0.0		   ! 1st ncs operation
+0.0 0.0 1.0 0.0		   !
+-0.496382    0.868067   -0.008077	   21.3054 !
+-0.868089   -0.496407   -0.001331	   39.5577 ! 2nd ncs operation
+-0.005165    0.006350    0.999966	   44.4143 !
+-1.000000   -0.000038    0.000297	   44.4809 !
+ 0.000039   -1.000000    0.000687	   92.5910 ! 3rd ncs operation
+ 0.000297    0.000687    1.000000	   66.5566 !
+-0.498075   -0.867075    0.010130	   44.8044 !
+ 0.867133   -0.498059    0.004165	    1.1216 ! 4th ncs operation
+ 0.001434    0.010859    0.999940	   88.5292 !
+ 0.498336    0.866924   -0.010155	   -0.3177 !
+-0.866981    0.498328   -0.003483	   91.4965 ! 5th ncs operation
+ 0.002041    0.010540    0.999942	   21.9734 !
+ 0.496579   -0.867951    0.008414	   23.1853 !
+ 0.867971    0.496611    0.002098	   53.0822 ! 6th ncs operation
+-0.005999    0.006261    0.999962	  110.9757 !
+eof
+
+</pre>
+
+<h2>Bugs</h2>
+
+The main memory requirement is holding the map in memory. The program
+is currently dimensioned to hold a maximal map size of 3375000 (150*150*150) 
+grid points. If this is too large for your system, then you need to
+change the value of NMAP in 1 PARAMETER statement in the source code,
+and recompile.
+
+<h2>SEE ALSO</h2>
+<a href="areaimol.html">areaimol</a> - Analyse solvent accessible areas <br>
+
+<H2><A NAME="references"></A>REFERENCES</H2>
+
+<OL>
+<!-- KEEP startreferencelist -->
+<LI> A. Volbeda, private communication
+or with reference (in french):
+Anne Volbeda, Speleologie des hydrogenases a nickel et a fer. In:
+"Les Ecoles Physique et Chimie du Vivant, numero 1 - avril 1999,
+Analyse de l'organisation tridimensionnelle des proteines", pp 47-52.
+<!-- KEEP endreferencelist -->
+</OL>
+
+<P>Other examples using CAVENV:
+<ol>
+<li>T. I. Doukov, T. M. Iverson,  J. Seravalli, S. W. Ragsdale, C. L. Drennan (2002)
+<em>Science</em> <b>298</b> 567 - 572<br>
+"... putative channel for CO as calculated by program CAVENV..."
+</ol>
+</P>
+
+<H2>AUTHORS</H2>
+ANNE VOLBEDA, IBS/LCCP GRENOBLE <br>
+CCP4 version - Martyn Winn
+
+</body></html>
+

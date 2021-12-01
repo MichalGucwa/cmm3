@@ -1,0 +1,141 @@
+<html>
+<head>
+<title>ccp4i.py: overview</title>
+</head>
+<body>
+<h1>ccp4i.py: overview</h1>
+
+<h2>Classes</h2>
+
+<h3>database</h3>
+
+<p>Implements a CCP4i def file based database. Requires that
+the CCP4 environment is set up in order to work. Usage example:
+</p>
+
+<pre>
+d = ccp4i.database("PROJECT","/home/pjx/PROJECTS/myProject") # Instantiate a database
+                                                             # object
+d.open()            # Open the database and lock the source file
+d.open(force=True)  # Open the database, overriding any lock
+
+d.save()            # Save the database contents to the source file
+d.close()           # Close the database, saving contents and releasing the lock
+</pre>
+
+<p>This is not the full range of methods.</p>
+
+<h3>lockfile</h3>
+
+<p>Implements a general CCP4i-type lockfile, which can be
+associated with arbitrary file-based resources. Used by the
+directories class, and as the base class for the dblockfile
+class. Should not be required directly.</p>
+
+<h3>dblockfile</h3>
+
+<p>An extension of the lockfile class that provides the
+specific lockfile functionality for the database.def files
+of the database class. It is used by the database class.
+Should not be required directly.</p>
+
+<h3>directories</h3>
+
+<p>Provides methods for reading and writing directories.def.
+Requires that the CCP4 environment is set up in order to work.
+Usage example:</p>
+
+<pre>
+d = ccp4i.directories() # Instantiate a directories object that will use
+                        # user's default directories.def fiel
+d = ccp4i.directories(filen="./directories.def") # As above but use the named file
+
+d.load()                # Load the data and lock the file
+d.load(force=True)      # Load the data and grab any existing lock
+
+d.listprojects()        # Return a list of the project names
+% ['CSTAFF', 'JUNK', 'RCSB_DEMOS', 'CHOOCH', 'PROJECT', ...
+
+d.projectdir("PROJECT") # Return the directory path for a project
+% '/home/pjx/PROJECTS/myProject'
+
+d.save(filen="...")     # Save data to the named file
+d.release()             # Finish using the data; release the lock on the base file
+</pre>
+
+<p>These are not the whole range of methods. Also the save
+and release methods haven't been fully thought out yet so may
+not behave as expected. The directories class should probably
+also support a "read-only" mode, and a "refresh" operation
+(which would re-read the data from the source file).
+
+<h3>array</h3>
+
+<p>Implements an interface to CCP4i .def files. This class is
+used in the database and directories classes to interface to
+the underlying def files. Should not be required directly at
+present.</p>
+
+<h3>history</h3>
+
+<p>Provides methods for generating "history links" between jobs
+in a CCP4i database object.</p>
+
+<h2>Functions</h2>
+
+<h3>General supporting functions</h3>
+
+<p>GetAbsolutePath: Return the absolute path - assume that
+   relative paths are rooted at the current working directory.</p>
+
+<p>MakeDir: Create a new directory.</p>
+
+<p>DirExists: Check for the existence of a directory.</p>
+
+<p>FileExists: Check for the existence of a file.</p>
+
+<p>GetFileRootname: Return the rootname of a filename.</p>
+
+<p>GetUserId: Return the username of the current user.</p>
+
+<p>GetDate: Return the current date.</p>
+
+<p>GetDefDate: Return the current date for a def file header.</p>
+
+<p>GetPid: Return the current process id.</p>
+
+<h3>Handling the platform and the CCP4 environment</h3>
+
+<p>GetPlatform: Return the platform information.</p>
+
+<p>GetOPSYS: Return 'WINDOWS' or 'UNIX', depending on the operating system.</p>
+
+<p>GetOpsys: Return 'windows' or 'unix', depending on the operating system.</p>
+
+<p>SearchPath: Return the full path name for a CCP4i code or data file.</p>
+
+<p>GetDotCCP4: Return the location of the .CCP4 directory.</p>
+
+<p>GetEnvVar: Return the value of an environment variable.</p>
+
+<h3>Supporting database handling functions</h3>
+
+<p>GetDbDir: Return the name of the CCP4i database directory for a project.</p>
+
+<p>GetDbFile: Return the name of the database.def file.</p>
+
+<p>MakeDbFile: Make a new CCP4i database.def file.</p>
+
+<h3>CCP4i def file supporting functions</h3>
+
+<p>tokenise: Tokenise a string and return a list.</p>
+
+<h2>Known problems/Things to be fixed</h2>
+
+<ol>
+<li>CCP4 environment is required to use the database and directories
+    classes, and fails otherwise.</li>
+</ol>
+
+</body>
+</html>

@@ -1,0 +1,127 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::WATPEAK::Supported::Coordinate file manipulations::selects peaks from peakmax and puts them close to the respective protein atoms:::::::: -->
+
+<h1>WATPEAK (CCP4: Supported Program)</h1>
+<h2>NAME</h2>
+<b>watpeak</b>
+- selects peaks from peakmax and puts them close to the respective protein atoms
+<h2>SYNOPSIS</h2>
+<b>watpeak XYZIN</b>
+<i>foo_in.pdb</i>
+<b>PEAKS</b>
+<i>peaks_in.pdb</i>
+<b>XYZOUT</b>
+<i>foo_out.pdb</i>
+<br />
+[<a href="#keywords">Keyworded input</a>]
+
+<h2><a name="description"></a>DESCRIPTION</h2>
+<p>Select atoms from one coordinate set (PEAKS, <em>e.g.</em> from <a href="peakmax.html">PEAKMAX</a>) which
+lie close to atoms in another coordinate set (XYZIN, <em>e.g.</em> your
+molecule). This is used to choose peaks from a difference map which
+are candidates as water molecules belonging to the molecule you are
+building (as opposed to belonging to neighbouring molecules in the
+cell).</p>
+
+<h2><a name="keywords"></a>KEYWORDED INPUT</h2>
+<p>Available keywords are:
+<blockquote>
+<a href="#bfactor"><b>BFACTOR</b></a>,
+<a href="#cell"><b>CELL</b></a>,
+<a href="#chain"><b>CHAIN</b></a>,
+<a href="#distance"><b>DISTANCE</b></a>,
+<a href="#end"><b>END</b></a>,
+<a href="#hetatomonly"><b>HETATOMONLY</b></a>,
+<a href="#symmetry"><b>SYMMETRY</b></a>,
+<a href="#title|remark"><b>TITLE|REMARK</b></a>.
+</blockquote></p>
+
+<h3><a name="title|remark"></a>TITLE | REMARK</h3>
+<p>Anything on these lines is just echoed to the output PDB file.
+A TITLE line is also echoed to the log file.</p>
+
+<h3><a name="distance"></a>DISTANCE &lt;dmin&gt; &lt;dmax&gt;</h3>
+<p>Maximum distance for a peak to be accepted (default = 5.0&Aring;).
+Minimum distance for a peak to be accepted (default = 0.1&Aring;).</p>
+
+<h3><a name="bfactor"></a>BFACTOR  &lt;Bfactor&gt; [&lt;occupancy&gt;]</h3>
+<p>Values to set Bfactor &amp; occupancy to, default = 30.0, 1.0
+Note the input peak list may have the peak height in the occupancy column
+(see <a href="#examples">example</a>). If this command is omitted, the Bfactor &amp; occupancy
+will be left as input.</p>
+
+<h3><a name="chain"></a>CHAIN &lt;Chain_id&gt;</h3>
+<p>Set chain id for output (default blank).</p>
+
+<h3><a name="hetatomonly"></a>HETATOMONLY</h3>
+<p>Toggle switch to only match Oxygen or Nitrogen from the XYZIN file
+to a new peak in the PEAKS file. Default: accept close contacts to any 
+atom.</p>
+
+<h3><a name="cell"></a>CELL &lt;a&gt; &lt;b&gt; &lt;c&gt; [&lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt;]</h3>
+<p>Must be given if cell is not specified in either PDB file. If this is 
+the case NCODE will be assumed to be 1. If the CRYST1 card is supplied 
+then the cell and ncode from PEAKS must be the same as XYZIN. See 
+<a href="rwbrook.html">RWBROOK</a> for more information about the orthogonalisation parameter 
+ncode. Defaults alpha=90.0, beta=90.0, gamma=90.0</p>
+
+<h3><a name="symmetry"></a>SYMMETRY</h3>
+<p>This card is COMPULSORY and can be given as the spacegroup number, name
+or as symmetry cards <em>e.g.</em>
+<pre>
+     SYMM 19
+     SYMM x,y,z * -x,-y,-z
+     SYMM P21
+</pre></p>
+
+<h3><a name="end"></a>END</h3>
+<p>End input.</p>
+
+<h2><a name="files"></a>INPUT AND OUTPUT FILES</h2>
+<h3>Input:</h3>
+<p><blockquote>
+<dl>
+<dt>XYZIN</dt><dd>molecule to test against (Brookhaven format).</dd>
+<dt>PEAKS</dt><dd>peak list. The peak height (for printing only) is
+assumed to be in the occupancy slot, as from <a href="peakmax.html">PEAKMAX</a>
+with option OUTPUT BROOKHAVEN.</dd>
+</dl>
+</blockquote></p>
+<h3>Output:</h3>
+<p><blockquote>
+<dl>
+<dt>XYZOUT</dt><dd>all atoms from PEAKS within DISTANCE of any atom from
+XYZIN (Brookhaven format).</dd>
+</dl>
+</blockquote></p>
+
+<h2><a name="notes"></a>NOTES</h2>
+<p>The different rejection criteria are explained below.
+<ol>
+<li>The number of symmetry rejected waters; any water or its symmetry
+equivalent closer than dmin to a previously accepted water. Note that
+if dmin is set to zero then no symmetry equivalent waters will be 
+rejected.</li>
+<li>The number of waters with near contacts; any water with one or more
+contacts closer than dmin to the protein. Note that the protein 
+includes any atoms in XYZIN.</li>
+<li>The number of waters too far from the protein; any water with all
+its contacts greater than dmax.</li>
+</ol></p>
+<h2><a name="examples"></a>Examples</h2>
+<pre>
+    peakmax  mapin  c40_fo-fcx xyzout c40_peaks.pdb &lt;&lt; eof-1
+    numpeaks 100
+    threshold 0.2
+    eof-1
+    
+    watpeak  xyzin a95_40.pdb peaks c40_peaks.pdb xyzout waters_40.pdb &lt;&lt;eof-2
+    title Possible waters from C40 DelF
+    distance 4.0
+    symm 19
+    eof-2
+</pre>
+</body></html>

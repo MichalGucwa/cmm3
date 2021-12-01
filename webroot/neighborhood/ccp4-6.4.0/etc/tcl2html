@@ -1,0 +1,104 @@
+#!/bin/sh
+# \
+exec ${CCP4I_TCLTK}/tclsh "$0" ${1+"$@"}  
+#----------------------------------------------------------------
+proc OpenFile { filename channel {mode a+ } } {
+#----------------------------------------------------------------
+  upvar $channel f
+
+  if [file isdirectory $filename] { return 0 }
+#  puts "OpenFile mode $mode"
+  return [expr 1 - [catch "open $filename $mode" f ] ]
+}
+
+#--------------------------------------------------------------------
+proc CloseFile { f {filename ""} } {
+#--------------------------------------------------------------------
+  if { [catch "close $f" ] } {
+    WarningMessage "Error closing file $filename
+Probably due to disk being full or exceeding disk quota"
+    return 0
+  } else {
+    return 1
+  }
+}
+
+#--------------------------------------------------------------------
+proc ReadFile { filename textVar args } {
+#--------------------------------------------------------------------
+  upvar $textVar text
+  if [OpenFile $filename f r ] {
+    if [catch "read $f" tt ] { CloseFile $f; return 0 }
+    CloseFile $f
+    if { [lsearch $args "-split"] < 0 } {
+      set text $tt
+    } else {
+      set text_list [split $tt \n]
+      if { [lsearch $args "-noblank"] < 0 } {
+        set text [lrange $text_list 0 [expr [llength $text_list]-2] ]
+      } else {
+        foreach line $text_list {
+          if {[llength $line ] > 0 } { append text "$line\n" }
+        }
+      }
+    }
+    return 1
+  } else {
+    return 0
+  }
+}
+
+
+#--------------------------------------------------------------------
+proc WriteFile { filename text args } {
+#--------------------------------------------------------------------
+  if { [lsearch -regexp $args -overwrite] >= 0 } {
+    if { ![OpenFile $filename fo w] } { return 0 }
+  } else {
+    if { ![OpenFile $filename fo a+] } { return 0 }
+  }
+  if [catch {puts $fo "$text"}] { return 0 }
+  return [CloseFile $fo]
+}
+
+# Body of function - read a file which is probably code and convert to html
+# with numbering at beginning of line
+
+  set usage_message "Usage: number_lines input_file output_file"
+
+  if { [llength $argv] == 0 } {
+    puts $usage_message
+    exit
+  } elseif { [llength $argv] == 1 } {
+    puts "No output file specified"
+    puts $usage_message
+    exit
+  } elseif { [llength $argv] > 2 } {
+    puts "Too many arguments"
+    puts $usage_message
+    exit
+  }
+  if { ![ReadFile [lindex $argv 0] text -split ] } {
+    puts "Can not read file [lindex $argv 0]"
+    puts $usage_message
+    exit
+  }
+
+  set texout "<html><pre>\n"
+
+  set n 0
+  foreach line $text {
+    incr n
+    append texout "<a name=\"$n\"><font color=\"#CC3333\">[format "%-5d" $n]</font>"
+    if { [regexp ^# $line ] } {
+      append texout "<font color=\"#CC3333\">$line</font>\n"
+    } else {
+      append texout "<font face=\"Courier New,Courier\">$line</font>\n"
+    }
+  }
+
+  append text "</pre></html>"
+
+  WriteFile [lindex $argv 1] $texout -overwrite
+
+  exit

@@ -1,0 +1,373 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4 Interface: I. Tickle tutorial MIR (continuation 7)</title>
+<link rel="stylesheet" type="text/css" href="../../../ccp4idocs.css" title="CCP4i" />
+<link rev="made" href="mailto:mgwt@yorvic.york.ac.uk" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta name="AUTHOR" content="Maria and Liz" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="2"><img src="../../../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logotitle">MIR Tutorial Bath - Phased refinement</td></tr>
+</table>
+
+<table class="bathbuttons" width="100%">
+<tr>
+<td><a href="irbath6.html"><img src="back.gif" /></a></td>
+<td align="center"><a href="irbath98.html">BACK TO INDEX</a></td>
+<td align="right"><a href="irbath8.html"><img src="forward.gif" /></a></td>
+</tr>
+</table>
+
+<h1>7. Suggested procedure for phased refinement with MLPHARE</h1>
+
+<ol type="a">
+<li>
+<p>Each derivative should be carefully monitored for evidence of <strong>non-isomorphism</strong>,
+as this is a major source of difficulties during refinement; any changes in cell lengths
+relative to the native crystal should be at most
+<a href="../chargifs/ae.gif"><font face="symbol">&#187;</font></a> 0.5% (this will give
+<a href="../chargifs/ae.gif"><font face="symbol">&#187;</font></a> 15% mean
+intensity change at 3&#197; resolution). A plot (<em>e.g.</em> using SCALEIT) of mean isomorphous
+difference <em>vs.</em> resolution should decrease smoothly at the high resolution end. Note
+that if non-isomorphism is detected, it is not sufficient simply to apply a high
+resolution cutoff at the point of upturn in the plot; ideally the dataset should be
+discarded completely.</p>
+
+<p>From the isomorphous difference Patterson, locate 1 or, even better, 2 major sites in
+your &quot;best&quot; derivative. Frequently what happens is that you collect data for many
+derivatives, but none of the Pattersons appear readily soluble. However, provided
+a derivative is not non-isomorphous it may still be usable for phasing. Then one day,
+the next Patterson is soluble: this is your best derivative! At this point you stop
+collecting data and start refining.</p>
+</li>
+
+<li>
+<p>Do 5 cycles of phasing and refinement of the coordinates and site occupancies
+(initially set to 1) for this derivative. At this stage it is advisable to keep the overall
+scale and isotropic thermal parameter fixed (at the default values of 1 and 0 resp.),
+to fix the individual thermal parameters (<em>e.g.</em> 25), and to use a high resolution data
+cutoff (<em>e.g.</em> if the derivative data extends to 3&#197;, cutoff at 4.5&#197;). Also the anomalous
+data should not be included yet, and centric data only should be used in the
+refinement, provided the space group has more than one centric zone. Note that
+MLPHARE doesn't need initial estimates of RMS lack of closure errors.</p>
+
+<pre>#
+mlphare  HKLIN pbgd_fhscal  HKLOUT ufmr  &lt;&lt;EOD
+CYCLES 5
+LABIN  FP=FNAT   SIGFP=SIGFNAT   -
+       FPH1=FUF  SIGFPH1=SIGFUF
+LABOUT ALLIN
+PRINT  AVF AVE
+THRESH 2.5 .5
+RESOL  20 4.5
+CENTRI
+
+DERIV  UF
+DCYCLE PHASE ALL  REFCYC ALL
+ATOM  U         0.28    0.18    0.16    1  BFAC     25
+ATREF  X ALL  Y ALL  Z ALL  OCC ALL
+EOD
+</pre>
+</li>
+
+<li>
+<p>Using the reflection file output by MLPHARE, calculate a <strong>difference Fourier</strong> with
+the <strong>FFT</strong> program, and run a peak search program (<em>e.g.</em> <strong>PEAKMAX</strong>) on it, listing the
+highest 10 peaks. Examine the peak listing, and eliminate any symmetry-related
+peaks at the edges of the map. You will certainly see the sites that were input (even
+if they are wrong! - but at this stage you have to assume they are right). Take the
+remaining peaks in order one at a time, and check against the Patterson (<em>e.g.</em> with
+program <strong>RSPS</strong> or <strong>VECSUM</strong>), until a site is found or the list is exhausted.</p>
+
+<pre>#
+fft  HKLIN ufmr  MAPOUT ufmrdf  &lt;&lt;EOD
+TITLE  UF diff Fourier phased on UF derivative refined by MLPHARE.
+LABIN  F1=FUF  SIG1=SIGFUF  F2=FNAT  SIG2=SIGFNAT  PHI=PHIB  W=FOM
+EOD
+
+if ($status) exit
+
+peakmax  MAPIN ufmrdf  &lt;&lt;EOD
+NUMPEA 10
+OUTPUT NONE
+EOD
+rm ufmrdf.map</pre>
+</li>
+
+<li>
+<p>Add any new site found to the input for MLPHARE, and repeat steps <em>b</em> and <em>c</em>,
+until no new sites are found. The statistics for each derivative output by MLPHARE
+on the final phasing cycle should always be checked. A reduction in <em>R</em><sub>Cullis</sub> (average
+<em>P</em>-weighted lack of closure divided by average isomorphous difference) is supposed
+to be a good validator of a new site.</p>
+
+<pre>#
+mlphare  HKLIN pbgd_fhscal  HKLOUT ufmr  &lt;&lt;EOD
+CYCLES 5
+LABIN  FP=FNAT   SIGFP=SIGFNAT   -
+       FPH1=FUF  SIGFPH1=SIGFUF
+LABOUT ALLIN
+PRINT  AVF AVE
+THRESH 2.5 .5
+RESOL  20 4.5
+CENTRI
+
+DERIV  UF
+DCYCLE PHASE ALL  REFCYC ALL
+ATOM  U         0.282  0.173  0.158  0.889  BFAC     25
+ATREF  X ALL  Y ALL  Z ALL  OCC ALL
+ATOM  U         0.18731  0.17452  0.11287    .5  BFAC     25
+ATREF  X ALL  Y ALL  Z ALL  OCC ALL
+EOD
+
+if ($status) exit
+
+fft  HKLIN ufmr  MAPOUT ufmrdf  &lt;&lt;EOD
+TITLE  UF diff Fourier phased on UF derivative refined by MLPHARE.
+LABIN  F1=FUF  SIG1=SIGFUF  F2=FNAT  SIG2=SIGFNAT  PHI=PHIB  W=FOM
+EOD
+
+if ($status) exit
+
+peakmax  MAPIN ufmrdf  &lt;&lt;EOD
+NUMPEA 10
+OUTPUT NONE
+EOD
+rm ufmr.mtz ufmrdf.map
+</pre>
+</li>
+
+<li>
+<p>Repeat step <em>c</em>, but this time calculate a <strong>cross-difference Fourier</strong> on another
+derivative.</p>
+
+<pre>#
+fft  HKLIN ufmr  MAPOUT uamrdf  &lt;&lt;EOD
+TITLE  UAc diff Fourier phased on UF derivative refined by MLPHARE.
+LABIN  F1=FUAC  SIG1=SIGFUAC  F2=FNAT  SIG2=SIGFNAT  PHI=PHIB  W=FOM
+EOD
+
+if ($status) exit
+
+peakmax  MAPIN uamrdf  &lt;&lt;EOD
+NUMPEA 10
+OUTPUT NONE
+EOD
+rm ufmr.mtz uamrdf.map</pre>
+</li>
+
+<li>
+<p>Add the new derivative and its site to the input for MLPHARE and repeat steps
+<em>b</em>, <em>c</em> and <em>d</em> on the new derivative.</p>
+
+<pre>#
+mlphare  HKLIN pbgd_fhscal  HKLOUT uamr  &lt;&lt;EOD
+CYCLES 5
+LABIN  FP=FNAT    SIGFP=SIGFNAT    -
+       FPH1=FUF   SIGFPH1=SIGFUF   -
+       FPH2=FUAC  SIGFPH2=SIGFUAC
+LABOUT ALLIN
+PRINT  AVF AVE
+THRESH 2.5 .5
+RESOL  20 4.5
+CENTRI
+
+DERIV  UF
+DCYCLE PHASE ALL  REFCYC ALL
+ATOM   U     0.284  0.166  0.162  0.926 BFAC   25.000
+ATREF  X ALL  Y ALL  Z ALL  OCC ALL
+ATOM   U     0.185  0.176  0.106  0.603 BFAC   25.000
+ATREF  X ALL  Y ALL  Z ALL  OCC ALL
+ATOM   U     0.499  0.243  0.381  0.281 BFAC   25.000
+ATREF  X ALL  Y ALL  Z ALL  OCC ALL
+
+DERIV  UAc
+DCYCLE PHASE ALL  REFCYC ALL
+ATOM   U     0.284  0.170  0.160  1  BFAC   25.000
+ATREF  X ALL  Y ALL  Z ALL  OCC ALL
+EOD
+
+if ($status) exit
+
+fft  HKLIN uamr  MAPOUT uamrdf  &lt;&lt;EOD
+TITLE  UAc diff Fourier phased on UF &amp; UAc derivatives refined by MLPHARE.
+LABIN  F1=FUAC  SIG1=SIGFUAC  F2=FNAT  SIG2=SIGFNAT  PHI=PHIB  W=FOM
+EOD
+
+if ($status) exit
+
+peakmax  MAPIN uamrdf  &lt;&lt;EOD
+NUMPEA 10
+OUTPUT NONE
+EOD
+rm uamr.mtz uamrdf.map</pre>
+</li>
+
+<li>
+<p>Repeat steps <em>e</em> and <em>f</em> for all remaining derivatives (at this stage no sites consistent
+with the Patterson could be found for the PCMBS derivative, so it was not included).</p>
+</li>
+
+<li>
+<p>At this point any anomalous data should be brought into play, and it is first
+necessary to establish the &quot;hand&quot; of the heavy atoms. The easiest way to do this is
+to set all &quot;anomalous occupancies&quot; to zero, and using both centric and acentric data,
+do 10 cycles of phasing and refinement. The high resolution cutoff should be
+removed.</p>
+
+<p>The anomalous occupancies should all refine positive if the hand is already correct,
+or negative if it is wrong, in which case the coordinates of all sites must be inverted
+(<em>i.e. x,y,z</em> becomes <em>-x,-y,-z </em>, which is equivalent to <em>x,y,-z</em> in point group 222).</p>
+
+<p>If there is no consistent change in the anomalous occupancies, the anomalous data
+should be left out and brought in later; alternatively it may be possible to include
+anomalous data for only the higher occupancy derivatives.</p>
+
+<pre>#
+mlphare  HKLIN pbgd_fhscal  HKLOUT allmr1  &lt;&lt;EOD
+TITLE  Refine 5 derivatives with anomalous occupancy = 0.
+CYCLES 10
+LABIN  FP=FNAT      SIGFP=SIGFNAT                                         -
+       FPH1=FUF     SIGFPH1=SIGFUF     DPH1=DANUF     SIGDPH1=SIGDANUF    -
+       FPH2=FUAC    SIGFPH2=SIGFUAC    DPH2=DANUAC    SIGDPH2=SIGDANUAC   -
+       FPH3=FUS     SIGFPH3=SIGFUS                                        -
+       FPH4=FPTCL   SIGFPH4=SIGFPTCL   DPH4=DANPTCL   SIGDPH4=SIGDANPTCL  -
+       FPH5=FYBCL   SIGFPH5=SIGFYBCL
+LABOUT ALLIN
+PRINT  AVF AVE
+THRESH 2.5 .5
+
+DERIV   UF
+DCYCLE  PHASE ALL  REFCYC ALL
+ATOM U   0.287   0.171    0.163   0.968   0  BFAC 25
+ATREF   X ALL  Y ALL  Z ALL  OCC ALL  AOCC ALL
+ATOM U   0.495   0.238    0.380   0.547   0  BFAC 25
+ATREF   X ALL  Y ALL  Z ALL  OCC ALL  AOCC ALL
+ATOM U   0.186   0.187    0.109   0.615   0  BFAC 25
+ATREF   X ALL  Y ALL  Z ALL  OCC ALL  AOCC ALL
+ATOM U   0.986   0.051    0.510   0.314   0  BFAC 25
+ATREF   X ALL  Y ALL  Z ALL  OCC ALL  AOCC ALL
+
+DERIV   UAc
+DCYCLE  PHASE ALL  REFCYC ALL
+ATOM U   0.188   0.186    0.110   0.974   0  BFAC 25
+ATREF   X ALL  Y ALL  Z ALL  OCC ALL  AOCC ALL
+ATOM U   0.292   0.170    0.155   0.837   0  BFAC 25
+ATREF   X ALL  Y ALL  Z ALL  OCC ALL  AOCC ALL
+ATOM U   0.486   0.235    0.370   0.829   0  BFAC 25
+ATREF   X ALL  Y ALL  Z ALL  OCC ALL  AOCC ALL
+
+DERIV   US
+DCYCLE  PHASE ALL  REFCYC ALL
+ATOM U   0.180   0.195    0.111   0.625  BFAC 25
+ATREF   X ALL  Y ALL  Z ALL  OCC ALL
+
+DERIV   Pt
+DCYCLE  PHASE ALL  REFCYC ALL
+ATOM PT     0.254   0.042    0.589   0.910   0  BFAC 25
+ATREF   X ALL  Y ALL  Z ALL  OCC ALL  AOCC ALL
+
+DERIV   Yb
+DCYCLE  PHASE ALL  REFCYC ALL
+ATOM YB     0.493   0.234    0.381   0.413  BFAC 25
+ATREF   X ALL  Y ALL  Z ALL  OCC ALL
+</pre>
+</li>
+
+<li>
+<p>Using the newly determined phases, repeat the difference Fourier and peak search
+for each derivative, adding any new sites found. Repeat the phasing and refinement,
+including the overall scale and thermal parameter, and possibly the individual
+thermal parameters, though it is often found that these tend to be unstable.</p>
+
+<pre>#
+mlphare  HKLIN pbgd_fhscal  HKLOUT allmr2  &lt;&lt;EOD
+TITLE  Refine all derivatives (hand inverted with z changed to 1-z).
+CYCLES 10
+LABIN  FP=FNAT      SIGFP=SIGFNAT                                          -
+       FPH1=FUF     SIGFPH1=SIGFUF     DPH1=DANUF     SIGDPH1=SIGDANUF     -
+       FPH2=FUAC    SIGFPH2=SIGFUAC    DPH2=DANUAC    SIGDPH2=SIGDANUAC    -
+       FPH3=FUS     SIGFPH3=SIGFUS                                         -
+       FPH4=FPTCL   SIGFPH4=SIGFPTCL   DPH4=DANPTCL   SIGDPH4=SIGDANPTCL   -
+       FPH5=FYBCL   SIGFPH5=SIGFYBCL                                       -
+       FPH6=FPCMBS  SIGFPH6=SIGFPCMBS  DPH6=DANPCMBS  SIGDPH6=SIGDANPCMBS
+LABOUT ALLIN
+PRINT  AVF AVE
+THRESH 2.5 .5
+
+DERIV     UF
+DCYCLE PHASE ALL  REFCYC ALL  KBOV ALL
+ATOM   U     0.287  0.172  0.837  0.811  0.638 BFAC   13.881
+ATREF X ALL  Y ALL  Z ALL  OCC ALL  AOCC ALL  B ALL
+ATOM   U     0.494  0.240  0.619  0.564  0.425 BFAC   12.593
+ATREF X ALL  Y ALL  Z ALL  OCC ALL  AOCC ALL  B ALL
+ATOM   U     0.185  0.187  0.892  0.607  0.476 BFAC   15.953
+ATREF X ALL  Y ALL  Z ALL  OCC ALL  AOCC ALL  B ALL
+ATOM   U     0.988  0.052  0.489  0.437  0.460 BFAC   65.797
+ATREF X ALL  Y ALL  Z ALL  OCC ALL  AOCC ALL  B ALL
+
+DERIV     UAc
+DCYCLE PHASE ALL  REFCYC ALL  KBOV ALL
+ATOM   U     0.186  0.186  0.890  0.912  0.759 BFAC   19.199
+ATREF X ALL  Y ALL  Z ALL  OCC ALL  AOCC ALL  B ALL
+ATOM   U     0.289  0.172  0.845  0.732  0.537 BFAC   16.749
+ATREF X ALL  Y ALL  Z ALL  OCC ALL  AOCC ALL  B ALL
+ATOM   U     0.488  0.239  0.627  0.755  0.593 BFAC   17.873
+ATREF X ALL  Y ALL  Z ALL  OCC ALL  AOCC ALL  B ALL
+
+DERIV     US
+DCYCLE PHASE ALL  REFCYC ALL  KBOV ALL
+ATOM   U     0.181  0.195  0.889  0.571 BFAC   34.773
+ATREF X ALL  Y ALL  Z ALL  OCC ALL  B ALL
+
+DERIV     Pt
+DCYCLE PHASE ALL  REFCYC ALL  KBOV ALL
+ATOM   PT    0.252  0.044  0.409  0.878  0.871 BFAC   33.104
+ATREF X ALL  Y ALL  Z ALL  OCC ALL  AOCC ALL  B ALL
+
+DERIV     Yb
+DCYCLE PHASE ALL  REFCYC ALL  KBOV ALL
+ATOM   YB    0.493  0.237  0.619  0.458 BFAC   19.003
+ATREF X ALL  Y ALL  Z ALL  OCC ALL  B ALL
+
+DERIV     PCMBS
+DCYCLE PHASE ALL  REFCYC ALL  KBOV ALL
+ATOM   HG    0.245  0.060  0.145  0.271  0.252 BFAC   52.205
+ATREF X ALL  Y ALL  Z ALL  OCC ALL  AOCC ALL  B ALL
+ATOM   HG    0.074  0.064  0.154  0.326  0.311 BFAC   47.182
+ATREF X ALL  Y ALL  Z ALL  OCC ALL  AOCC ALL  B ALL
+EOD
+</pre>
+</li>
+
+<li>
+<p>Repeat step <em>i</em> until there is no further change in the list of sites. Note that once a
+good derivative is well-refined and there are obviously no new sites to be found, its
+refinement flags can be switched off, and refinement performed on only the weaker
+derivatives. The printed &quot;refinement parameters&quot; indicate the progress of
+convergence of refinement for each derivative.</p>
+
+<p>Note that in the above procedure, only the Patterson for the first (and best) derivative
+needs to be solved; the other derivatives are solved from the difference Fouriers, and
+the Pattersons, which are often difficult to solve <em>ab initio</em>, are then only used to cross-check the new sites. This also obviates the problem of ensuring that all derivatives
+are solved relative to the same origin and on the same hand. Of course, if more than
+one Patterson can be solved independently, so much the better, but then difference
+Fouriers must still be used to correlate the origins and the hand.</p>
+</li>
+</ol>
+
+<table class="bathbuttons" width="100%">
+<tr>
+<td><a href="irbath6.html"><img src="back.gif" /></a></td>
+<td align="center"><a href="irbath98.html">BACK TO INDEX</a></td>
+<td align="right"><a href="irbath8.html"><img src="forward.gif" /></a></td>
+</tr>
+</table>
+
+</body></html>

@@ -1,0 +1,199 @@
+<!DOCTYPE html
+                     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                     "DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+   <meta name="Author" content="Martyn Winn" />
+   <meta name="Changedby" content="Eleanor and Maria" />
+   <meta name="Description" content="A step-by-step structure solution using CCP4i" />
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+   <title>CCP4 Tutorial - Session 3 - supplementary documentation</title>
+<link rel="stylesheet" type="text/css" href="../tut.css" title="CCP4i tutorial" />
+</head>
+<body>
+
+<h1 align="center">CCP4 Tutorial: Session 3 and 4 - Heavy Atom Search and Phasing, by MIR and MAD</h1>
+
+<p><em>See also the <a href="heavy-tutorial-mir.html">tutorial worksheet for MIR</a>
+or the <a href="heavy-tutorial-mad.html">tutorial worksheet for MAD</a>.</em></p>
+<p align="center"><a href="../../../ccp4i/help/roadmaps/exptphase.html"><img
+src="images/exptphase.png" width="777" height="999" border="0"
+alt="roadmap for experimental phasing in CCP4i" /></a></p>
+
+<h2><a name="rnaseharkers"></a>4a) Patterson Harkers (comparing difference and anomalous Pattersons) - MIR</h2>
+
+<p>Difference and Anomalous Pattersons as run in the Experimental Phasing (by MIR) tutorial,
+step 3b) Finding the first heavy atom sites by Patterson Search.</p>
+<p>Left-hand side of the table below represent difference Patterson,
+right-hand side represent anomalous Patterson. Harkers of x=1/2, y=1/2 and z=1/2
+underneath each other.</p>
+<p>In all cases, reflections outside resolution range 10-3.5&#197; were excluded.</p>
+<p>Table 1. Difference and Anomalous Pattersons. Peak numbers labelled on map.</p>
+<table>
+<tr>
+<td><img src="images/rnaseiso-harkerx-labels.png" /><br />iso 10-3.5</td>
+<td><img src="images/rnaseano-harkerx-labels.png" /><br />ano 10-3.5</td>
+</tr>
+<tr>
+<td><img src="images/rnaseiso-harkery-labels.png" /><br />iso 10-3.5</td>
+<td><img src="images/rnaseano-harkery-labels.png" /><br />ano 10-3.5</td>
+</tr>
+<tr>
+<td><img src="images/rnaseiso-harkerz-labels.png" /><br />iso 10-3.5</td>
+<td><img src="images/rnaseano-harkerz-labels.png" /><br />ano 10-3.5</td>
+</tr>
+</table>
+
+<p>The difference Patterson is clear, at least on sections <i>u</i>=1/2 and <i>v</i>=1/2. From those,
+we can work out which peak on section <i>w</i>=1/2 is the 'correct' one.</p>
+<p>For Harker section <i>u</i>=1/2: <i>v</i>=1/2-2y and <i>w</i>=2z. Peak 13 is at <i>v</i>&#126;0.3,<i>w</i>&#126;0.4,
+so <i>z</i>&#126;0.2 (check the .ha file for more precise values)<br />
+For Harker section <i>v</i>=1/2: <i>u</i>=2x and <i>w</i>=1/2-2z. Peak 7 is at <i>u</i>&#126;0.2,<i>w</i>&#126;0.1,
+so <i>x</i>&#126;0.1<br />
+For Harker section <i>w</i>=1/2: <i>u</i>=1/2-2x and <i>v</i>=2y. <i>u</i> is therefore &#126;0.3,
+which leaves <i>v</i>&#126;0.2 as the only usable peak (linking back to section <i>u</i>=1/2!), so <i>y</i>&#126;0.1.
+Keep in mind that, due to the Patterson symmetry for this spacegroup, the actual values for <i>x</i>,<i>y</i> and
+<i>z</i> may turn out to be negative or positive, and 1/2 can be added or subtracted to any or all of them.</p>
+<p>Unfortunately (and this is not at all uncommon), the anomalous Patterson is not a big help in this.
+Sometimes excluding outlier reflections becomes crucial in the interpretability of the anomalous Patterson,
+or it can be made more interpretable by using F(+) and F(-) (CCP4i Protocol option 'Anomalous Difference Patterson'),
+rather than DANO.</p>
+
+<h2>4b) Scaling and analysing datasets - MAD</h2>
+
+<p>f' and f'' for Se varies with wavelength as (output from program
+<tt>crossec</tt>):</p>
+
+<p align="center"><img src="images/crossec.gif" width="429" height="326" alt="f' and f'' for Se" /></p>
+
+<p>We have data for 4 wavelengths, labelled as:</p>
+<dl compact="compact">
+<dt>lrm</dt>
+<dd>Low wavelength remote - f' small, f'' large</dd>
+<dt>peak</dt>
+<dd>Peak of absorption - f' large, f'' very large</dd>
+<dt>infl</dt>
+<dd>Point of inflection - f'' very large, f'' small</dd>
+<dt>hrm</dt>
+<dd>High wavelength remote - f' small, f'' very small</dd>
+</dl>
+
+<p><b>But</b>:</p>
+<ul>
+<li>Need to check data is labelled properly</li>
+<li>&quot;Peak&quot; may not be exactly on peak, so check real strength
+of anomalous signal</li>
+</ul>
+
+<h3>Normal Probability plots</h3>
+
+<p>See Lynne Howell and Dave Smith, <i>J.Appl. Cryst.</i> <b>25</b> 81-86 (1992)</p>
+
+<h2>4c) Preparing datasets for finding heavy atoms - MAD</h2>
+
+<h3>Normalised Structure Factors</h3>
+
+<p>Most <b>direct methods</b> procedures make use of
+<b>normalised structure factors</b> (denoted E) rather than
+the bare structure factor amplitude F. The value of E
+for a reflection is defined as F divided by
+the product of epsilon (a factor dependent on the Laue group symmetry) and
+the r.m.s. value of the structure amplitudes at its sin(theta)/lambda
+value. The values of E therefore do not fall off with increasing
+scattering angle.</p>
+
+<p>See C.Giacovazzo <em>et al.</em>, Fundamentals of Crystallography, p.321</p>
+
+<p>In CCP4, the program <tt>ECALC</tt> is used to derive Es from Fs. These can
+then be used in the direct methods program <tt>RANTAN</tt>.</p>
+
+<h2>4d) Find heavy atoms - MAD</h2>
+
+<h3>Heavy atom positions</h3>
+
+<p>When trying to understand heavy atom positions, remember to
+consider symmetry equivalent positions. Also, depending on the
+spacegroup, there may be alternative origins. Finally, there
+are 2 possible hands for each set of positions.</p>
+
+<p>The current example is in spacegroup C2. This is a <b>polar</b> spacegroup,
+so that the origin is not fixed along the <b>b</b> axis. In addition, there
+are 4 possible origins in the <b>a</b>-<b>c</b> plane:</p>
+<pre>
+      Norigin   Xo       Yo       Zo
+
+         1    0.0000   0.0000   0.0000
+         2    0.0000   0.0000   0.5000
+         3    0.5000   0.0000   0.0000
+         4    0.5000   0.0000   0.5000</pre>
+
+<p>Heavy atom sites from different phase sets output from <tt>RANTAN</tt>
+may be with respect to different origins. For example, the first
+3 sites from phase set 1 are:</p>
+<pre>
+     0.26 0.06 0.75
+     0.43 0.24 0.38
+     0.20 0.45 0.36</pre>
+
+<p>The opposite hand would also be a solution:</p>
+<pre>
+     -0.26 -0.06 -0.75
+     -0.43 -0.24 -0.38
+     -0.20 -0.45 -0.36</pre>
+
+<p>We can then change the origin to -0.5,-0.24,-0.5 (origin 4 above, plus
+a shift along the <b>b</b> axis):</p>
+<pre>
+     0.24 0.18 0.75
+     0.07 0.00 0.12
+     0.30 0.79 0.14</pre>
+
+<p>Finally, we find a symmetry mate of site 3 by applying the symmetry
+operation 1/2-X,1/2+Y,-Z:</p>
+<pre>
+     0.24 0.18 0.75
+     0.07 0.00 0.12
+     0.20 0.29 0.86</pre>
+
+<p>These are in fact the first 3 sites of phase set 2!!</p>
+
+<h2>4e) Heavy atom refinement - MAD</h2>
+
+<h3>Describe Derivatives and Refinement</h3>
+
+<p>In MAD, the &quot;derivatives&quot; correspond to different wavelengths of the same
+derivative (<em>e.g.</em> a 3 wavelength Se-Met MAD experiment would give 3 &quot;derivatives&quot;).
+When refining heavy atom positions for each &quot;derivative&quot;, you are actually refining
+the same heavy atom coordinates (<em>e.g.</em> Se coordinates) against different data
+for the different wavelengths.</p>
+
+<p>For each heavy atom, you can refine its XYZ coordinates, its occupancy and
+its B factor. For each &quot;derivative&quot; or wavelength, you can refine the heavy
+atom parameters against:</p>
+<dl>
+<dt><b>isomorphous data</b></dt>
+<dd>the difference in the average structure factor F at that wavelength and the
+F at a reference wavelength (the &quot;native&quot;, usually chosen to be the inflection
+point wavelength)</dd>
+<dt><b>anomalous data</b></dt>
+<dd>the anomalous difference D at that wavelength</dd>
+</dl>
+
+<p>The value of occupancy refined against isomorphous data (&quot;real occupancy&quot;) will
+be different from that refined against anomalous data (&quot;anomalous occupancy&quot;)
+because they include the f' and f'' values. Therefore the .ha file holds
+both values of the occupancy (the 2 numbers before BFAC).</p>
+
+<hr />
+<p>Back to the <a href="index.html">index</a>.</p>
+
+<hr />
+<p>
+<a href="http://jigsaw.w3.org/css-validator/"><img width="88" height="31"
+src="images/vcss" alt="Valid CSS!" /></a>
+<a href="http://validator.w3.org/"><img src="images/valid-xhtml10"
+alt="Valid XHTML 1.0!" height="31" width="88" /></a>
+</p>
+
+</body>
+</html>

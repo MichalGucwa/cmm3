@@ -1,0 +1,35 @@
+#===========================================================================
+#
+# phaser_ATOM.script
+#
+#===========================================================================
+ 
+  set OUTPUT_FILE_ROOT "[SetOutputFileRoot]"
+
+  CreateComScript phaser_ATOM phaser_ATOM_script -ampersand
+
+  set cmd "[BinPath phaser]"
+
+  set status [Execute $cmd $phaser_ATOM_script program_status report]
+
+  set SUM_FILE "[SetOutputFileRoot].sum"
+  if { [file exists $SUM_FILE] } { AddOutputFile $SUM_FILE PROJECT }
+
+  set SOL_FILE "[SetOutputFileRoot].sol"
+  if { [file exists $SOL_FILE] } { AddOutputFile $SOL_FILE PROJECT }
+
+# Check if any pdb or mtz files have been generated,
+#   to add them to the output file list
+# Value of 100 for MAXFILES is more than Phaser default will ever be.
+# Default is 1 (probably)
+   if [IfSet $XYZOUT_NPDB] {
+     set MAXFILES $XYZOUT_NPDB
+   } else {
+     set MAXFILES 100 
+   }
+   for { set n 1 } { $n <= $MAXFILES } { incr n } {
+     set PDB_FILE($n) "[SetOutputFileRoot].$n.pdb"
+     if { [file exists $PDB_FILE($n)] } { AddOutputFile $PDB_FILE($n) PROJECT }
+     set MTZ_FILE($n) "[SetOutputFileRoot].$n.mtz"
+     if { [file exists $MTZ_FILE($n)] } { AddOutputFile $MTZ_FILE($n) PROJECT }
+   }

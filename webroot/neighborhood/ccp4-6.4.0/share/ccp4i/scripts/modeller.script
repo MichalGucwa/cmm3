@@ -1,0 +1,423 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+# Script to run Modeller from CCP4 interface
+# Liz Potterton - Sept 99
+
+  global configure
+
+# sanity check on existence of modeller
+
+  if { ![file exists [FileJoin $configure(MODELLER_MODINSTALL) $configure(MODELLER_PROGRAM)]] } {
+    WriteToLog "Failed to find Modeller program. \nCheck the Modeller entries in the configure interface." 
+    TerminateScript 0
+  }
+
+# The setmodeller should exist for modeller4. It is not in modeller6, but may
+# have been artificially created.
+  set setmodeller_line " "
+  if { [file exists [FileJoin $configure(MODELLER_MODINSTALL) bin setmodeller ]] } {
+    set setmodeller_line "source [FileJoin $configure(MODELLER_MODINSTALL) bin setmodeller]"
+  }
+
+
+  if {$DEFINE_TOP_FILE} {
+
+	  WriteFile [set modeller_csh [GetTmpFileName -ext csh]] \
+"setenv MODINSTALL $configure(MODELLER_MODINSTALL)
+setenv KEY $configure(MODELLER_KEY)
+$setmodeller_line
+[file join $configure(MODELLER_MODINSTALL) $configure(MODELLER_PROGRAM)] $COM_FILE"
+
+   set mod_log [ChangeFileExt $COM_FILE log]	
+   set status [Execute "csh $modeller_csh" $COM_FILE \
+      program_status report -success 999 -copy_log $mod_log]
+
+#   puts "status $status program_status $program_status report $report"
+
+   DeleteFile $mod_log
+
+  }
+
+
+
+
+#---------------------------------------------------------------------------
+# Create a subdirectory of temporary for the modeller ATOM_FILES_DIRECTORY
+# Move to the temporary directory
+#---------------------------------------------------------------------------
+
+  set ATOM_FILES_DIRECTORY [SetOutputFileRoot -tmp]_modeller_
+
+#  puts "ATOM_FILES_DIRECTORY $ATOM_FILES_DIRECTORY"
+  DeleteFile $ATOM_FILES_DIRECTORY
+  CreateDir $ATOM_FILES_DIRECTORY
+
+  ChangeDirectory $ATOM_FILES_DIRECTORY
+
+  WriteToLog "Creating directory $ATOM_FILES_DIRECTORY
+All temporary output files will be written to this directory
+If you have problems running Modeller check the contents of this directory"
+
+#----------------------------------------------------------------------------
+# If input is sequence file then need to create a segfile and do alignment
+#----------------------------------------------------------------------------
+  switch $INPUT_MODE SEQ {
+
+  set ALNFILE [SetOutputFileRoot]_modeller.ali
+
+  AddOutputFile $ALNFILE PROJECT
+
+  source [SearchPath TOP utils seq_utils.tcl ]
+
+  if { ![ReadSequence $SEQFILE SEQUENCE NRES] } {
+    WriteToLog "ERROR reading sequence file $SEQFILE"
+    TerminateScript 0 
+  }
+    
+  set MODEL_NAME [file tail [file  rootname $SEQFILE]]
+  set segtext ">P1;$MODEL_NAME
+sequence:[subst $MODEL_NAME]:@:@:[subst $NRES]:@:@:@:@:@
+[string trimright $SEQUENCE \n]*\n"
+  for { set n 1 } { $n <= $NKNOWNS } { incr n } {
+    if { [string trim $FIRST_RES_CHAIN($n)] == "" } { set FIRST_RES_CHAIN($n) "@" }
+    if { [string trim $LAST_RES_CHAIN($n)] == "" } { set LAST_RES_CHAIN($n) "@" }
+    append segtext ">P1;$KNOWNCODE($n)
+structure:[subst $KNOWNCODE($n)]:[subst $FIRST_RES_ID($n)]:[subst $FIRST_RES_CHAIN($n)]:[subst $LAST_RES_ID($n)]:[subst $LAST_RES_CHAIN($n)]:@:@:@:@
+*"
+  }
+  set SEGFILE [file join $ATOM_FILES_DIRECTORY alignment.seg ]
+  WriteFile $SEGFILE "$segtext" -overwrite
+
+  }
+  
+
+#---------------------------------------------------------------------------
+# Copy input 'known' PDBs to the ATOM_FILES_DIRECTORY with appropriate file names
+# and work out which of the alignment file sequences is for the model (MODEL_NAME)
+#---------------------------------------------------------------------------
+
+
+  for { set n 1 } { $n <= $NKNOWNS } { incr n } { 
+    if { [string trim $KNOWNFILE($n)] == "" } {
+      set MODEL_NAME $KNOWNCODE($n)
+    } else {
+      append KNOWNS_LIST "$KNOWNCODE($n) "
+      CopyFile $KNOWNFILE($n) [FileJoin $ATOM_FILES_DIRECTORY $KNOWNCODE($n).atm ]
+    }
+  }
+
+#---------------------------------------------------------------------------
+# Create the modeller script
+#---------------------------------------------------------------------------
+
+   set USER_REFINE_MODE $REFINE_MODE
+   if { $REFINE_MODE == "NO" && $EDIT_MODEL && $EDIT_MODE != "NO" } { set REFINE_MODE FAST }
+
+   CreateComScript modeller runmod_script
+
+   # Change the name to have a .top extension (needed for 6v2)
+   set original_script $runmod_script
+   set runmod_script [ChangeFileExt $original_script top]
+   MoveFile $original_script $runmod_script
+
+   set mod_log [ChangeFileExt $runmod_script log]
+   DeleteFile $mod_log
+
+#---------------------------------------------------------------------------
+# Write a csh script to wrap around the modeller setup and run modeller
+#---------------------------------------------------------------------------
+
+  WriteFile [set modeller_csh [GetTmpFileName -ext csh]] \
+"setenv MODINSTALL $configure(MODELLER_MODINSTALL)
+setenv KEY $configure(MODELLER_KEY)
+$setmodeller_line
+[file join $configure(MODELLER_MODINSTALL) $configure(MODELLER_PROGRAM)] $runmod_script"
+
+
+   set status [Execute "csh $modeller_csh" $runmod_script \
+      program_status report -success 999 -copy_log $mod_log]
+
+#   puts "status $status program_status $program_status report $report"
+
+   DeleteFile $mod_log
+
+   if { $USER_REFINE_MODE == "NO" && ![file exists $MODEL_NAME.ini] && 
+       ![file exists [string toupper $MODEL_NAME.ini]] }  {
+           WriteToLog "Can not find Modeller output $MODEL_NAME.ini
+Modeller job failed??"
+      TerminateScript 0 
+   }
+
+
+#---------------------------------------------------------------------------
+# Rename the output files to have extension pdb and move to project directory
+#---------------------------------------------------------------------------
+  set output_file_list "AddOutputFile"
+
+  set model_file_list {}
+
+#  puts "REFINE_MODE $REFINE_MODE USER_REFINE_MODE $USER_REFINE_MODE"
+
+  switch $REFINE_MODE \
+  NO {
+
+    set new_name [subst $MODEL_NAME]_modeller_[GetJobid].pdb
+    if { [file exists $MODEL_NAME.ini] } {
+      MoveFile $MODEL_NAME.ini [FileJoin [GetDefaultDirPath] $new_name] -overwrite
+    } elseif { [file exists [string toupper $MODEL_NAME.ini]] } {
+      MoveFile [string toupper $MODEL_NAME.ini] \
+	[FileJoin [GetDefaultDirPath] $new_name] -overwrite
+    }
+    lappend model_file_list [FileJoin [GetDefaultDirPath] $new_name]
+
+    append output_file_list " $new_name PROJECT"
+
+  } default { 
+    if {$REFINE_MODE == "FAST" } {set NMODELS 1}
+
+    for { set n 1 } { $n <= $NMODELS } { incr n } {
+      if { $n < 9 }  {
+        set output_file  $MODEL_NAME.B9999000$n.pdb
+      } else {
+        set output_file  $MODEL_NAME.B999900$n.pdb
+      }
+      if { $USER_REFINE_MODE == "NO" }      {
+        set new_name [subst $MODEL_NAME]_modeller_[GetJobid].pdb
+        MoveFile $MODEL_NAME.ini [FileJoin [GetDefaultDirPath] $new_name] -overwrite
+        lappend model_file_list [FileJoin [GetDefaultDirPath] $new_name]
+      } else {
+        set new_name [subst $MODEL_NAME]_modeller_[GetJobid]_$n.pdb
+        MoveFile $output_file [FileJoin [GetDefaultDirPath] $new_name ]  -overwrite
+        lappend model_file_list [FileJoin [GetDefaultDirPath] $new_name ]
+      }
+      append output_file_list " $new_name PROJECT"
+    }
+
+#------------------------------------------------------------------------------------------
+# make a 'graph' file to contain the violations v. sequence number
+#------------------------------------------------------------------------------------------
+
+    set violation_column 2
+    if { $USING_MODELLER6 } { set violation_column 35 }
+
+    for { set n 1 } { $n <= $NMODELS } { incr n } {
+      if { $n < 9 }  {
+        set output_file  $MODEL_NAME.V9999000$n
+      } else {
+        set output_file  $MODEL_NAME.V999900$n
+      }
+      set viols {}
+      ReadFile [FileJoin $ATOM_FILES_DIRECTORY $output_file] viols -split
+      if { $n == 1 } {
+        set nres  0
+        foreach line $viols { if { ![regexp {^#} $line] && ![regexp {^$} $line] } {
+          lappend id_list [lindex $line 0]
+          lappend restype_list [lindex $line 1]
+          incr nres
+        }}
+      } 
+      foreach line $viols { if { ![regexp {^#} $line] && ![regexp {^$} $line] } { 
+        if { [scan [lindex $line $violation_column] %e tt ] } { 
+          lappend viol_score($n) $tt } else { lappend viol_score($n) 0.0 }
+      }}
+    }
+
+    set text \
+   "\$TABLE:Modeller violations [subst $MODEL_NAME]_ modeller_[GetJobid]_n.pdb
+\$GRAPHS:Violations for models 1 to $NMODELS:XD:1,3"
+    for { set n 2 } { $n <= $NMODELS } { incr n } {  append text , [expr $n +2] }
+    append text ": \$\$\n ID    RESN"
+    for { set n 1 } { $n <= $NMODELS } { incr n } {  append text "  model_$n" }
+    append text "\n\$\$ \$\$"
+    for { set ir 0 } { $ir < $nres } { incr ir } { 
+      append text \n [format %5s%6s [lindex $id_list $ir] [lindex $restype_list $ir]]
+      for { set n 1 } { $n <= $NMODELS } { incr n } {
+        append text [format %10s [lindex $viol_score($n) $ir] ]
+      }
+    }
+    append text \n\$\$"
+
+    set VIOL_GRAPH [FileJoin [GetDefaultDirPath] modeller_violations_[GetJobid].graph ]
+    WriteFile $VIOL_GRAPH "$text" -overwrite 
+    append output_file_list " $VIOL_GRAPH PROJECT"
+     
+  }
+
+#  puts "output_file_list $output_file_list"
+
+  eval "$output_file_list"
+
+#--------------------------------------------------------------------------------------------
+# Edit the Bfactors in the output PDBs
+#--------------------------------------------------------------------------------------------
+
+  if { $EDIT_BFACTORS} {
+    set main_bfactor [format %6.2f $MAIN_BFACTOR ]
+    set side_bfactor [format %6.2f $SIDE_BFACTOR ]
+#    puts "main_bfactor '$main_bfactor' side_bfactor '$side_bfactor'"
+    foreach model $model_file_list {
+      ReadFile $model pdbin -split
+      set pdbout {}
+      foreach line $pdbin {
+        if { ![regexp ^ATOM $line] } {
+          append pdbout "$line\n"
+        } else {
+          set atomname [string trim [string range $line 12 15] ]
+	  if { [StringSame $atomname CA C N O OXT] } {
+            append pdbout "[string range $line 0 59]" $main_bfactor  \
+			"[string range $line 66 end]" \n
+          } else {
+            append pdbout "[string range $line 0 59]" $side_bfactor  \
+			"[string range $line 66 end]" \n 
+          }
+        }
+      }
+      WriteFile $model "$pdbout" -overwrite
+    }
+  }
+
+
+#-------------------------------------------------------------------------------------------
+# Edit the output structures
+# First work out which residues need editting
+#-------------------------------------------------------------------------------------------
+
+  if { $EDIT_MODEL } { 
+
+# EDITRES will be a list with one element per residue to flag residues to edit
+  set EDITRES {}
+  for { set ir 0 } { $ir < $nres } { incr ir } { lappend EDITRES 0 }
+
+
+# Read ALNFILE 
+
+  if { $SIDE_EDIT_MODE != "NO" || ( $EDIT_MODE != "NO" && $REFINE_MODE == "NO") } {
+    ReadFile $ALNFILE alntext -split
+    set skip 0
+    foreach line $alntext { if $skip { set skip 0 } else {
+      if { [regsub ">P1;" $line {} seqname] } {
+        set skip 1
+        switch $seqname \
+        $MODEL_NAME { 
+          set alignindex MODEL 
+        } $KNOWNCODE(1) {
+          set alignindex COMPARE
+        } default {
+          set alignindex TMP 
+        }
+      } else {
+        for { set i 0 } { $i < [string length $line] } { incr i } {
+          lappend align($alignindex) [string index $line $i]
+        }
+      }
+    } }
+
+#    foreach seqname [array names align] { puts "$seqname [llength $align($seqname)] $align($seqname)" }
+
+  }
+
+  if { $SIDE_EDIT_MODE != "NO" } {
+
+  set ip -1; for { set ir 0 } { $ir < $nres } { incr ir } { incr ip
+    while { [lindex $align(MODEL) $ip] == "-" } { incr ip }
+    if { [lindex $align(MODEL) $ip] != [lindex $align(COMPARE) $ip] } {
+      set EDITRES [lreplace $EDITRES $ir $ir 1] }
+  }
+
+  }
+
+# Look for poorly modelled regions
+
+  if { $EDIT_MODE != "NO" } {
+
+    if { [catch  \
+      {set sorted_viol_score [lsort -real -decreasing $viol_score(1)]} ] } {
+      WriteToLog "ERROR in CCP4i script while trying to remove bady modelled regions.  This is probably due to error reading the violation scores from the Modeller output file" 
+      TerminateScript 0
+    }
+
+    set cut_point [expr int($EDIT_FRACTION * [llength $sorted_viol_score])]
+    set cut_score [lindex $sorted_viol_score $cut_point]
+    append logtext "CCP4i will edit $cut_point poorly modelled residues 
+with Modeller violation scores greater than $cut_score\n"
+
+    for { set ir 0 } { $ir < $nres } { incr ir } {
+      if { [lindex $viol_score(1) $ir] > $cut_score } { 
+        set EDITRES [lreplace $EDITRES $ir $ir 2] }
+    }
+
+  }  
+
+#  OK now edit the model(s)
+
+  foreach model $model_file_list {
+    ReadFile $model pdbin -split
+    set pdbout {}
+    switch $EDIT_MODE \
+    ZERO_OCC { 
+     append pdbout "REMARK Editted by CCP4i setting poorly modelled residues to zero occupancy\n" 
+     append logtext "Poorly modelled residues set to zero occupancy\n"
+    } DELETE { 
+      append pdbout "REMARK Editted by CCP4i deleting poorly modelled residues\n" 
+      append logtext "Poorly modelled residues deleted\n"
+    }
+    switch $SIDE_EDIT_MODE \
+    ZERO_OCC { 
+      append pdbout "REMARK Editted by CCP4i setting mutated side chains to zero occupancy\n" 
+      append logtext "Setting mutated side chains to zero occupancy\n"
+    } GLY { 
+      append pdbout "REMARK Editted by CCP4i converting mutated residues to glycine\n" 
+      append logtext "Setting mutated side chains to glycines"
+    } ALA { 
+      append pdbout "REMARK Editted by CCP4i converting mutated residues to alanine\n" 
+      append logtext "Setting mutated side chains to alanine\n"
+    }
+    
+    set ir -1; set current_chain "?"; set current_id "?"
+    foreach line $pdbin {
+    if { ![regexp ^ATOM $line] } { 
+      append pdbout "$line\n"
+    } else {
+      set resid [string trim [string range $line 23 25] ]
+      set chainid [string range $line 21 21]
+      if { $resid != $current_id || $chainid != $current_chain } {
+        incr ir; set current_chain $chainid; set current_id $resid
+        set edit_mode [lindex $EDITRES $ir]
+      }
+      switch $edit_mode \
+      2 {
+        if { $EDIT_MODE == "ZERO_OCC" } { 
+          append pdbout "[string range $line 0 55]" "0.00" "[string range $line 60 end]" \n }
+      } 1 {
+        set atomname [string trim [string range $line 12 15] ]
+        set restyp [string range $line 17 19]
+        if { [StringSame $atomname CA C N O OXT] ||
+             ( $SIDE_EDIT_MODE == "ALA" && $atomname == "CB" ) } {
+          if { $SIDE_EDIT_MODE != "ZERO_OCC" && $restyp != "GLY" } { 
+			set restyp $SIDE_EDIT_MODE }
+          append pdbout "[string range $line 0 16]" "$restyp" \
+			"[string range $line 20 end]" \n 
+        } elseif {  $SIDE_EDIT_MODE == "ZERO_OCC" } {
+          append pdbout "[string range $line 0 55]" "0.00" "[string range $line 60 end]" \n 
+        }
+      } 0 {
+        append pdbout "$line\n"
+      }
+    } }
+    WriteFile $model "$pdbout" -overwrite
+  }
+  
+
+# End of the EDIT_MODEL section
+
+  } 
+
+  if { [info exists logtext ] } { WriteToLog "$logtext" }
+#  DeleteFile $ATOM_FILES_DIRECTORY

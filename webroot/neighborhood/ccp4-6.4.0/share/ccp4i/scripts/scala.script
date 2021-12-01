@@ -1,0 +1,398 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#======================================================================
+#
+# scala script
+#
+#======================================================================
+
+# Source pdb_utils for harvest handling & move to project directory 
+# if we are going to dump harvest file to current directory 
+  source [SearchPath TOP utils pdb_utils.tcl ] 
+  if { [StringSame $HARVEST_MODE  CURRENTDIR ] } {
+    ChangeDirectory [GetDefaultDirPath]
+   } 
+
+#-----------------------------------------------------------------------
+# run sortmtz
+#-----------------------------------------------------------------------
+
+  if { $RUN_SORTMTZ } {
+
+    WriteHtml beg pre
+
+    WriteToLog "Sorting input MTZ file $HKLIN"
+
+    CreateComScript sortmtz sortmtz_script
+
+    set SORTED_HKL [file join [GetDefaultDirPath $DIR_HKLOUT] \
+	  [FileRootName $HKLIN]_sorted.mtz ]
+
+    set cmd "[BinPath sortmtz] HKLIN \"$HKLIN\" HKLOUT \"$SORTED_HKL\""
+    set status [ Execute $cmd  $sortmtz_script program_status report ]
+
+    WriteHtml end pre
+
+    AddOutputFile $SORTED_HKL $DIR_HKLOUT
+  
+  } else {
+    set SORTED_HKL $HKLIN
+  }
+
+
+#==========================================================================
+#
+# run scala
+#
+#==========================================================================
+
+# Preprocess input for LINK_SURFACE
+# This is necessary because SURFACE_RUN1/2 come from the interface
+# in the form "RUN 1" etc but the com file needs the "RUN" part
+# to be removed
+  if { $N_SURFACE_LINK  > 0 } {
+    for { set n 1 } { $n <= $N_SURFACE_LINK } { incr n } {
+      if { ![StringSame $SURFACE_RUN1($n) "ALL"] } {
+        regsub -- "(RUN|Run|run) " $SURFACE_RUN1($n) "" SURFACE_RUN1($n)
+        regsub -- "(RUN|Run|run) " $SURFACE_RUN2($n) "" SURFACE_RUN2($n)
+      }
+    }
+  }
+
+  if { [StringSame $OUTPUT POLISH] } {
+    set HKLTMP [GetTmpFileName -ext sca]
+  } else {
+    set HKLTMP [GetTmpFileName -ext mtz]
+  }
+
+  CreateComScript scala scala_script 
+
+  set root [SetOutputFileRoot]
+  append SCALES $root .scala
+  append ROGUES $root _rogues.log
+  append NORMPLOT $root _normplot.xmgr
+  append ANOMPLOT $root _anomplot.xmgr
+  append PLOT $root _surface_plot.plt
+  append CORRELPLOT $root _correlplot.xmgr
+  append ROGUEPLOT $root _rogueplot.xmgr
+
+  set cmd "[BinPath scala] HKLIN \"$SORTED_HKL\""
+  if { [StringSame $OUTPUT POLISH] } {
+    append cmd " SCALEPACK \"$HKLTMP\""
+  } else {
+    append cmd " HKLOUT \"$HKLTMP\""
+  }
+  append cmd " SCALES \"$SCALES\" ROGUES \"$ROGUES\" NORMPLOT \"$NORMPLOT\" ANOMPLOT \"$ANOMPLOT\" PLOT \"$PLOT\" CORRELPLOT \"$CORRELPLOT\" ROGUEPLOT \"$ROGUEPLOT\""
+
+  set status [ Execute $cmd  $scala_script $LOG_FILE program_status report ]
+
+  AddOutputFile $SCALES PROJECT $ROGUES PROJECT $NORMPLOT PROJECT \
+	$ANOMPLOT PROJECT $PLOT PROJECT $ROGUEPLOT PROJECT
+
+  #-----------------------------------------------------------------------
+  # Deal with output files and harvesting
+  #-----------------------------------------------------------------------
+  # Determine whether there are multiple output files from scala
+
+  set ndatasets [llength $DATASETS_OUT]
+
+  if { [StringSame $OUTPUT AVERAGE POLISH] } {
+
+    if { $ndatasets > 1 } {
+      # If there are multiple datasets then we'll get multiple
+      # files in this mode
+      set multifiles 1
+    } else {
+      # Only one dataset so only one output file
+      set multifiles 0
+    }
+
+  } elseif { [StringSame $OUTPUT UNMERGED] } {
+
+    if { $UNMERGED_TOGETHER } {
+      # Scala will produce a single output file
+      set multifiles 0
+    } elseif { $ndatasets > 1 } {
+      # If there are multiple datasets then we'll get multiple
+      # files in this mode
+      set multifiles 1
+    } else {
+      # Only one dataset so only one output file
+      set multifiles 0
+    }
+
+  } else {
+
+    set multifiles 0
+  }
+    
+  if { ! $multifiles } {
+     set scala_outfiles $HKLTMP
+     if { ![StringSame $OUTPUT POLISH] } {
+       set final_outfiles "\"$HKLOUT\""
+     } else {
+       set final_outfiles $SCALOUT
+     }
+     # A single scatter plot
+     AddOutputFile $CORRELPLOT PROJECT
+  } else {
+     set scala_outfiles ""
+     set final_outfiles ""
+     set scala_root [file root $HKLTMP]
+     if { ![StringSame $OUTPUT POLISH] } {
+       set final_root [file root $HKLOUT]
+       set ext [file extension $HKLOUT]
+     } else {
+       set final_root [file root $SCALOUT]
+       set ext [file extension $SCALOUT]
+     }
+  }
+
+  # Construct output file names from Scala based on datasets
+  # and deal with harvest files at the same time
+  for { set i 0 } { $i < $ndatasets } { incr i } {
+
+     set project_name [lindex $PROJECTS_OUT $i]
+     set dataset_name [lindex $DATASETS_OUT $i]
+
+     # Generate scala and final file name lists
+     if { $multifiles } {
+       lappend scala_outfiles "[subst $scala_root]_[subst $dataset_name].tmp"
+       lappend final_outfiles "[subst $final_root]_[subst $dataset_name]$ext"
+       # A scatter plot for each output dataset
+       set correlplot "[subst $root]_correlplot_[subst $dataset_name].xmgr"
+       AddOutputFile $correlplot PROJECT
+     }
+
+     # Deal with Harvest Files
+     HandleHarvestFile $HARVEST_MODE $project_name $dataset_name scala
+  }
+
+  # Running Truncate/Cad means there will be a single output file
+  # This is only possible in OUTPUT AVERAGE mode
+  if { [StringSame $OUTPUT AVERAGE] && $RUN_TRUNCATE && $RUN_CAD } {
+     set final_outfiles $HKLOUT
+  }
+
+#==========================================================================
+#
+# run native patterson and look for pseudotranslations
+#
+#==========================================================================
+
+  if { $RUN_PATTERSON && [StringSame $OUTPUT AVERAGE] } {
+    # Use the first output file from Scala
+    set HKL_PATT [lindex $scala_outfiles 0]
+    set MAP_PATT [GetTmpFileName -ext map]
+    # Run the patterson
+    WriteComFile patterson_script "labin I=IMEAN SIGI=SIGIMEAN
+PATT
+RHOLIM 100
+RESO 4.0
+XYZLIM ASU
+END"
+    set status [Execute "[BinPath fft] HKLIN \"$HKL_PATT\" MAPOUT \"$MAP_PATT\"" \
+                  $patterson_script program_status report ]
+    # Run the peaksearch
+    set HA_PATT [file join [GetDefaultDirPath $DIR_HKLOUT] \
+	  [FileRootName $HKLIN]_peaks.ha ]
+    WriteComFile peakmax_script "THRESHOLD RMS 3.0
+NUMPEAKS 50
+OUTPUT FRAC
+END"
+    set status [Execute "[BinPath peakmax] MAPIN \"$MAP_PATT\" XYZFRC \"$HA_PATT\"" \
+                  $peakmax_script program_status report ]
+    # Add it as an output file
+    AddOutputFile $HA_PATT $DIR_HKLOUT
+  }
+
+#==========================================================================
+#
+# run truncate
+#
+#==========================================================================
+
+  # We can only run truncate if OUTPUT AVERAGE is selected
+  if { $RUN_TRUNCATE && [StringSame $OUTPUT AVERAGE] } {
+    set RUN_TRUNCATE 1
+  } else {
+    set RUN_TRUNCATE 0
+  }
+
+  if { $RUN_TRUNCATE } {
+
+    # If there are multiple files output from scala then we need to run
+    # the truncate procedure on each one
+
+    set truncate_outfiles ""
+
+    for { set i 0 } { $i < $ndatasets } { incr i } {
+
+      set project_name [lindex $PROJECTS_OUT $i]
+      set dataset_name [lindex $DATASETS_OUT $i]
+      set labout_label [lindex $LABELS_OUT $i]
+      set HKLTMP [lindex $scala_outfiles $i]
+      set HKL_TRUNCATE [GetTmpFileName -ext "mtz_[subst $dataset_name]"]
+
+      if { $labout_label != "" } {
+        set USE_LABOUT 1
+        if { $ANOMALOUS } {
+          set LABOUT "IMEAN SIGIMEAN Ip SIGIp Im SIGIm F SIGF DANO SIGDANO Fp SIGFp Fm SIGFm ISYM"
+        } else {
+          set LABOUT "IMEAN SIGIMEAN F SIGF"
+        }
+        if { [regsub {^_} $labout_label {} label] } { set labout_label $label}
+        foreach item $LABOUT { 
+          set sign ""
+          if { [regsub p$ $item {} lab0] } { set sign "(+)" }
+          if { [regsub m$ $lab0 {} lab1] } { set sign "(-)" }
+          eval "set $item [subst $lab1]_[subst $labout_label]$sign" 
+        }
+      } else {
+        set USE_LABOUT 0
+      }
+
+      if { $TRUNCATE_PROG == "CTRUNCATE" } {
+        CreateComScript ctruncate ctruncate_script
+        set cmd "[BinPath ctruncate] -hklin \"$HKLTMP\" -hklout \"$HKL_TRUNCATE\""
+        append cmd " -colin \"/*/*/\\\[IMEAN,SIGIMEAN\\\]\""
+        if  { $ANOMALOUS } {
+          append cmd " -colano \"/*/*/\\\[I(+),SIGI(+),I(-),SIGI(-)\\\]\""
+        }
+        if { $COLUMN_ID_TYPE == "USER" } {
+          append cmd " -colout $LABOUT_LABEL"
+        } else {
+          append cmd " -colout $dataset_name"
+        }
+        if { $CONTENTS_NRESC != "" } {
+          append cmd " -nres $CONTENTS_NRESC"
+        }
+        set status [Execute $cmd $ctruncate_script $LOG_FILE  program_status report  ]
+
+      } else {
+        CreateComScript truncate truncate_script
+        set cmd "[BinPath truncate] HKLIN \"$HKLTMP\" HKLOUT \"$HKL_TRUNCATE\""  
+        set status [Execute $cmd $truncate_script $LOG_FILE  program_status report  ]
+      }
+          
+      # Remove intensities?
+      if { ! $OUTPUT_I } {
+        set HKL_NOIS [GetTmpFileName -ext mtz]
+        if { $ANOMALOUS } {
+          WriteComFile mtzutils_script \
+          "include $F $SIGF $DANO $SIGDANO $Fp $SIGFp $Fm $SIGFm $ISYM"
+        } else {
+	  WriteComFile mtzutils_script "include $F $SIGF"
+        }
+        set status [Execute "[BinPath mtzutils] HKLIN \"$HKL_TRUNCATE\" HKLOUT \"$HKL_NOIS\"" \
+                  $mtzutils_script program_status report ]
+        # Reset the output file name
+        set HKL_TRUNCATE $HKL_NOIS
+      }
+
+      if { $TRUNCATE_PROG == "TRUNCATE" } {
+        HandleHarvestFile $HARVEST_MODE $project_name $dataset_name truncate
+      }
+
+      lappend truncate_outfiles $HKL_TRUNCATE
+
+    }
+    set scala_outfiles $truncate_outfiles
+
+    if { $RUN_CAD } {
+
+      # User has requested merge of files into a single file
+      # There will only be more than one file to merge if we are in
+      # OUTPUT AVERAGE mode and there are more than one datasets
+      if { $ndatasets > 1 && [StringSame $OUTPUT AVERAGE] } {
+
+        set HKL_CAD [GetTmpFileName -ext mtz]
+        
+	# Create Cad command line and script
+        set cmd "[BinPath cad]"
+        set script ""
+        set i 0
+        foreach infile $scala_outfiles {
+          incr i
+          append cmd " HKLIN$i \"$infile\""
+	  append script "LABIN FILE $i ALL\n" 
+        }
+        append cmd " HKLOUT \"$HKL_CAD\""
+        append script "END\n"
+        WriteFile [set cad_script [GetTmpFileName -ext com]] $script
+
+        set status [Execute $cmd $cad_script $LOG_FILE  program_status report ]
+
+        set scala_outfiles $HKL_CAD
+      }
+    }
+
+  }
+
+#==================================================================
+# run uniqueify
+#==================================================================
+
+  # We can only run uniqueify if OUTPUT AVERAGE is selected
+  if { $UNIQUEIFY && [StringSame $OUTPUT AVERAGE] } {
+    set UNIQUEIFY 1
+  } else {
+    set UNIQUEIFY 0
+  }
+
+  if { $UNIQUEIFY } {
+
+    # Protocol now depends on the number of output files ...
+    # If there are multiple files output from Scala/Truncate then we
+    # need to run the uniqueify procedure on each one
+
+    WriteHtml beg pre
+    source [SearchPath TOP utils phasing_utils.tcl ]
+    
+    set n_files [llength $scala_outfiles]
+
+    for { set i 0 } { $i < $n_files } { incr i } {
+
+      set HKL_TRUNCATE [lindex $scala_outfiles $i]
+      set HKLOUT [lindex $final_outfiles $i]
+
+      set cmd "Uniqueify \"$HKL_TRUNCATE\" \"$HKLOUT\""
+
+      if [IfSet $UNIQUEIFY_FREERFRAC] { append cmd " -fraction $UNIQUEIFY_FREERFRAC" }
+
+      if { $COPY_FREER } {
+        append cmd " -copy $COPY_FREER_MTZ $COPY_FREER_LABEL"
+      } elseif { $i > 0 } {
+        append cmd " -copy [lindex $final_outfiles 0] FreeR_flag"
+      }
+
+      if { $UNIQUEIFY_EXTEND && [IfSet $UNIQUEIFY_MAXRES] } {
+        append cmd " -extend $UNIQUEIFY_MAXRES"
+      }
+
+      eval "$cmd"
+    }
+
+    WriteHtml end pre
+
+  } else {
+
+    # Copy the files to their final names
+
+    set n_files [llength $scala_outfiles]
+    for { set i 0 } { $i < $n_files } { incr i } {
+      set old_file [lindex $scala_outfiles $i]
+      set new_file [lindex $final_outfiles $i]
+      WriteToLog "Renaming file $old_file to\n$new_file"
+      MoveFile $old_file $new_file
+    }
+  }
+
+#==================================================================

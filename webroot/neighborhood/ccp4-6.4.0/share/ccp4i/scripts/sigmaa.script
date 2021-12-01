@@ -1,0 +1,83 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+##########################################################
+#  Sigmaa script
+#
+##########################################################
+
+  if {$USE_SFALL} {
+
+  set SFALL_HKLOUT [GetTmpFileName ]
+  set SPACE_GROUP $SIGMAA_SPACE_GROUP
+  set SFALL_MODE SFCALC
+  set SFALL_SFCALC_IN XYZIN
+  set SFALL_SFCALC_HKLIN 1
+  set SFALL_RESOLUTION $SIGMAA_RESOLUTION
+  set LABIN "FP SIGFP FREE"
+  set LABOUT "FC PHIC"
+  
+  if { $SIGMAA_ACTION != "PART" } {
+    set ALLIN 1
+  }
+
+  set FC $SFALL_FC
+  set PHIC $SFALL_PHIC
+  CreateComScript sfall sfall_script
+
+  set cmd "[BinPath sfall] HKLIN \"$HKLIN\" HKLOUT \"$SFALL_HKLOUT\" XYZIN \"$XYZIN\""
+  set status [Execute $cmd $sfall_script program_status report ]
+  }
+
+
+  incr NPS
+
+  if { $NPS > 3 } { set NPS 3}
+  if { $SIGMAA_ACTION == "PART" } {
+	set LABIN "FP SIGFP FC PHIC"
+	set LABOUT "DELFWT FWT WCMB"
+	set PART 1
+	set COMBINE_PARTS 1
+	set SIGMAA_DAMP [append SIGMAA_DAMP "$DAMP"]
+     }
+  if { $SIGMAA_ACTION == "COMB_PART" } {
+	set LABIN "FP SIGFP PHIBP WP HLA HLB HLC HLD"
+	set LABOUT "DELFWT PHDELFWT FWT PHFWT WCMB PHCMB"
+	set COMBINE_PART 1
+	set COMBINE_PARTS $NPS
+	set SIGMAA_DAMP [append SIGMAA_DAMP "$DAMP"]
+
+	if { $NPS == 1 } {
+	  set LABIN [append LABIN " FC PHIC" ]
+        } else {
+          for { set i 2} { $i <= $NPS } {incr i} {
+	    set LABIN [append LABIN " FC$i PHIC$i" ]
+            set FC[expr $i] $FCN([expr $i-1])
+            set PHIC[expr $i] $PHICN([expr $i-1])
+            set SIGMAA_DAMP [append SIGMAA_DAMP " $DAMPN([expr $i-1])"]
+          }
+          set FC1 $FC
+          set PHIC1 $PHIC
+       }
+        
+     }
+  if { $SIGMAA_ACTION == "COMB_MIR" } {
+	set LABIN "FP SIGFP PHIBP WP PHIB2 W2 HLA HLB HLC HLD HLA2 HLB2 HLC2 HLD2"
+	set LABOUT "WCMB PHCMB HLAC HLBC HLCC HLDC"
+	set COMBINE_MIR 1
+     }
+
+  CreateComScript sigmaa sigmaa_script
+
+  if {$USE_SFALL} {set HKLIN $SFALL_HKLOUT }
+
+  set status [Execute "[BinPath sigmaa] HKLIN \"$HKLIN\" HKLOUT \"$HKLOUT\""  \
+                  $sigmaa_script program_status report ]
+
+  if {$USE_SFALL} { DeleteFile $SFALL_HKLOUT }

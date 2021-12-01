@@ -1,0 +1,612 @@
+<!DOCTYPE html
+                     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                     "DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+   <meta name="Author" content="Martyn Winn" />
+   <meta name="Changedby" content="Eleanor and Maria" />
+   <meta name="GENERATOR" content="Mozilla/4.03 [en] (X11; I; SunOS 5.7 sun4m) [Netscape]" />
+<title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::MTZ2VARIOUS::Supported::MTZ manipulations / conversions::produces reflexion file for MULTAN, SHELX, TNT, X-PLOR/CNS, pseudo-SCALEPACK, XtalView, mmCIF or other ascii format:::::::: -->
+
+<h1>MTZ2VARIOUS (CCP4: Supported Program)</h1>
+<h2>NAME</h2>
+<p><b>mtz2various</b>
+- produces an ASCII reflection file for MULTAN, SHELX, TNT, X-PLOR/CNS, MAIN, mmCIF, pseudo-SCALEPACK, XtalView (foo.phs) or user-defined format.
+This may contain amplitudes, intensities or differences.</p>
+
+<h2>SYNOPSIS</h2>
+<p><b>mtz2various hklin</b>
+<i>foo_in.mtz</i>
+<b>hklout</b>
+<i>foo_out</i>
+<br />
+[<a href="#keywords">Keyworded input</a>]</p>
+
+<h2>DESCRIPTION</h2>
+<p>This reads an MTZ file (assigned to HKLIN) and produces an ASCII file (assigned to
+HKLOUT)in a suitable form
+for MULTAN, SHELX, TNT, X-PLOR/CNS, pseudo-SCALEPACK, MAIN, XtalView (foo.phs) or in a user-defined format.
+For SHELX it is possible to output all quantities as intensities, <i>i.e.</i> F or delF terms may be
+squared. An mmCIF file can also be produced with all the relevant
+information taken from the MTZ header.</p>
+
+<p>There are many options controlled by the assignments on the LABIN line.
+The most common requirements are:</p>
+
+<ul>
+<li>If only <tt>FP SIGFP</tt> or <tt>I SIGI</tt> are assigned on LABIN, then
+<tt>h k l FP SIGFP</tt> or <tt>h k l I SIGI</tt> is output.</li>
+
+<li>If the FSQUAred keyword is given, all output terms are squared.</li>
+
+<li>If <tt>FP SIGFP</tt> and <tt>DP SIGDP</tt> are assigned, then <i>F+</i> and <i>F-</i> are reconstructed,
+and for X-PLOR and SHELX formats, two reflections, <i>hkl</i> and <i>-h-k-l</i>, are output.</li>
+
+<li>If <tt>F(+) SIGF(+)</tt> and <tt>F(-) SIGF(-)</tt> or <tt>I(+) SIGI(+)</tt> and <tt>I(-) SIGI(-)</tt>
+are assigned, then again two reflections are output for X-PLOR and SHELX, <i>hkl</i> and <i>-h-k-l</i>.</li>
+
+<li>If <tt>FP SIGFP</tt> and <tt>FPH SIGFPH</tt>  are both assigned, then
+<tt>h k l |FP-FPH| SIG|FP-FPH|</tt> is output (not applicable for USER and CIF). This
+can be useful when solving heavy atom positions via direct methods.</li>
+
+<li>If <tt>DP SIGDP</tt> are assigned, and <tt>FP SIGFP</tt>  are NOT assigned, then
+<tt>h k l |DP| SIGDP</tt> is output (not applicable for USER). This also can be used
+to solve for anomalous scatterers using direct methods.</li>
+
+<li>The same result can be obtained by assigning <tt>FP</tt> to <i>FPH(+)</i> and <tt>FPH</tt> to <i>FPH(-)</i>.
+Then <tt>h k l |F(+) -F(-)| SIG|F(+) -F(-)|</tt> is output.</li>
+</ul
+
+<p>There is no guarantee that the reflection count is completely robust.
+Files sometimes have been slightly corrupted; <i>e.g.</i> DP not present but F(+) and F(-)
+there.</p>
+
+<p>When using OUTPUT USER you can define the output columns as you wish; this option can be used to 
+construct a <tt>foo.phs</tt> file by assigning F PHI and FOM (see examples).</p>
+
+<p>Many of the tasks can also be performed with <a href="sftools.html">SFTOOLS</a>.</p>
+
+<h2><a name="keywords"></a>KEYWORDED INPUT</h2>
+
+<p>The allowed keywords are:</p>
+
+<blockquote>
+<a href="#end">END</a>,
+<a href="#exclude">EXCLUDE</a>,
+<a href="#freeval">FREEVAL</a>,
+<a href="#fsqu">FSQUARED</a>,
+<a href="#include">INCLUDE</a>,
+<a href="#labin">LABIN</a>,
+<a href="#miss">MISS</a>,
+<a href="#monitor">MONITOR</a>,
+<a href="#output">OUTPUT</a>,
+<a href="#resolution">RESOLUTION</a>,
+<a href="#scale">SCALE</a>
+</blockquote>
+
+<p>Compulsory input keywords are OUTPUT and LABIN.</p>
+
+<h3><a name="output"></a>OUTPUT [ MULTAN | SHELX | SHELXDiff | TNT | CIF | XPLOR | CNS | MAIN | SCAL | USER ]</h3>
+
+<p>The output types are as follows:</p>
+<dl>
+<dt>MULTAN</dt>
+<dd><p>The output file has <tt>h,k,l,f,imt</tt> in FORMAT(3I4,7X,F7.0,I6), where
+<tt>imt</tt>=0 for a good reflection.</p></dd>
+
+<dt>SHELX (for complete structure solution, for structure refinement, or for finding heavy atoms from 
+isomorphous difference) or</dt>
+<dt>SHELXDiff (for finding anomalous scatterers from anomalous differences)</dt>
+<dd><p>To use the SHELX suite of programs (SHELXD, SHELXE, SHELXL or SHELXS) it is necessary to prepare 
+two input files:
+<tt>foo.ins</tt> containing information about the cell, symmetry and some parameters to control the
+SHELX run, and <tt>foo.hkl</tt> containing a reflection list. The <tt>foo.hkl</tt> file may contain
+intensities (HKLF 4) or amplitudes (HKLF 3). Intensities may be generated from input amplitudes
+using the <a href="#fsqu">FSQUARED</a> keyword, but it is better to use the original intensities.
+The <tt>foo.ins</tt> file finishes with a record HKLF 3 if <tt>foo.hkl</tt> contains amplitudes,
+or HKLF 4 for intensities.</p>
+
+<p>The <tt>foo.hkl</tt> file created by this program contains:
+<dl>
+<dt>if F terms are to be output (HKLF 3 format), lines of the form
+<dd>h, k, l, &quot;F&quot;, &quot;sigmaF&quot;,  &quot;freeRflag&quot; in FORMAT(3I4,2F8.2,I4).
+<dt>if I terms are to be output (HKLF 4 format), lines of the form
+<dd>h, k, l, &quot;I&quot;, &quot;sigmaI&quot;,  &quot;freeRflag&quot; in FORMAT(3I4,2F8.2,I4).
+</dl>
+</p>
+
+<dd><p>To use the programs SHELXD to solve a complete molecule by direct methods, 
+to use SHELXL for refinement, or to prepare a reflection list for SHELXE, assign either 
+I/SIGI/FREE or FP/SIGFP/FREE only on the LABIN line. 
+Reflections previously flagged for FreeR analysis are marked with -1 in the last column. 
+These can be extracted by "grep -e -1$ foo.hkl"</p></dd>
+
+<dd><p>To use the program SHELXD to find heavy atom or anomalous scattering sites, followed
+by SHELXE to calculate protein phases, you need to prepare two <tt>*.hkl</tt> files, 
+one containing the FP to be phased, and
+the other the differences between two observations which are related to the substructure signal.
+To use isomorphous differences, scale FP and FPH together, and assign FP and FPH on the labin line. 
+Request OUTPUT SHELX. MTZ2VARIOUS outputs to <tt>foo.hkl</tt> the difference |FP - FPH|, or its 
+squared value (<i>i.e.</i> |FP - FPH|^2) if <a href="#fsqu">FSQUARED</a> specified, and an 
+appropriate SIGMA, followed by a phase estimate.
+The output file will contain lines of the form (HKLF 3 format if FSQUARED not specified):
+<pre>
+h, k, l, Del= ABS(&quot;FPH-Fp&quot;), sigma&quot;DEL&quot;, PHIdel  in FORMAT(3I4,2F8.1,I4)
+</pre>
+where PHIdel is 0 or 180, depending on whether Del is positive or negative. Similarly for HKLF 4
+format, if <a href="#fsqu">FSQUARED</a> is specified.
+</dd>
+
+<dd><p>If you wish to use anomalous differences, you can EITHER assign FP as FPH(-) and FPH as FPH(+),
+OR assign DP as DPH in which case the program will output DPH or its square. You must use keyword SHELXDiff to
+use this option; this flags that phases must be 90 or 270, not 0 or 180.
+The output file contains the anomalous differences and has lines of the form 
+(HKLF 3 format if FSQUARED not specified):</p>
+<pre>    
+h, k, l, Del=ABS(&quot;FPH(+)-FPH(-)&quot;), sigma&quot;DEL&quot;, PHIdel  in FORMAT(3I4,2F8.1,I4)
+</pre>
+where PHIdel is 90 or 270, depending on whether Del is positive or negative. Similarly for HKLF 4
+format, if <a href="#fsqu">FSQUARED</a> is specified.
+</dd>
+
+<dd><p>The phase information is needed for SHELXE. If the program SHELXD is to be used to find heavy
+atom or anomalous scattering sites from substructure differences, and you wish to run the program SHELXE to
+calculate protein phases using the SHELXD file, it must also list a phase estimate for the difference.</p></dd>
+
+<dt>TNT</dt>
+<dd><p>The output file has 'HKL ', h, k, l, F, sig(F), phase, fom in
+format(A4,3I4,3F8.1,F8.4), with phase = 1000, fom = 0 <i>i.e.</i> dummies. 
+Note that files for TNT must be sorted on h, k, l and certain reflection
+zones are required. You may need to run <a href="cad.html">CAD</a> to resort your data.
+Use keywords
+<a href="#include">INCLUDE FREER &lt;num&gt;</a> and <a href="#exclude">EXCLUDE FREER &lt;num&gt;</a>
+to generate files for R-free calculation.<br />
+There is a maximum likelihood version of TNT from Pannu and Read 
+which requires a free-R flag (in XPLOR convention). This column
+will be output if you assign the FREE column in LABIN and do
+not use the INCLUDE | EXCLUDE FREER options.</p></dd>
+
+<dt>CIF &lt;data block header&gt;</dt>
+<dd><p>CIF output is invoked, where &lt;data block header&gt; is a maximum of 80 characters 
+long, and must begin with the characters &quot;data_&quot; (any mixture of upper and 
+lowercase thereafter). OUTPUT CIF can be used to prepare data (from crystallography
+or EM) for deposition to the PDB.
+<br />
+Unlike the other output formats, all the reflections from HKLIN are written
+to HKLOUT. Not all column labels are appropriate for CIF output (see <a href="#cif">Notes
+on CIF</a>). Also, only <a href="#reso">RESO</a>, <a href="#exclude">EXCLUDE SIGP</a> and
+<a href="#freeval">FREEVAL</a> can be used with OUTPUT CIF. 
+They are used to flag certain reflections but not to reject them. The others 
+are ignored.</p></dd>
+
+<dt>XPLOR</dt>
+<dd><p>The output file has FORMAT(A,3I5,A,F10.1,F10.1,A,F10.2,A,I6...). The exact
+contents will depend on which labels have been specified by the
+<a href="#labin">LABIN</a> keyword. See the documentation for
+<a href="freerflag.html">FREERFLAG</a> for a table explaining the differences in
+free R flag conventions.</p></dd>
+
+<dt>CNS</dt>
+<dd><p>Similar to XPLOR output. However, free R flags are left unchanged. To select
+the correct free R flag in CNS, you will need something like:</p>
+<pre>{===>} test_flag=0;</pre></dd>
+
+<dt>Outputting Anomalous pairs</dt>
+<dd><p>For SHELX and XPLOR/CNS ONLY. If FP and the anomalous difference is assigned (see
+<a href="#labin">LABIN</a>), 
+then the amplitudes for reflections <i>h,k,l</i> and <i>-h,-k,-l</i> are generated and 
+output as separate reflections. In this case, the column ISYM 
+may also be assigned if it is present: this is a flag from <a href="truncate.html">TRUNCATE</a> which<br />
+= 0 if F comes from both positive (<i>hkl</i>) and negative (<i>-h-k-l</i>) Bijvoet 
+reflections,<br />
+= 1 if only from F+ and<br />
+= 2 if only F-</p></dd>
+
+<dt>MAIN</dt>
+<dd><p>This gives output suitable for the <a href="http://www-bmb.ijs.si/">MAIN</a>
+program. The output file contains H K L FP SIGFP and optionally FREE, PHIB and FOM
+if they are specified on the LABIN line. Alternatively, if FC is specified
+on the LABIN line, then FP and FC are interpreted as the real and imaginary
+parts respectively of a calculated F, and output as a &quot;COMPLEX&quot;
+field.</p></dd>
+
+<dt>SCAL</dt>
+<dd><p>This gives pseudo-SCALEPACK output which is needed as input to the SOLVE
+package. The output file assigned to HKLOUT is ASCII and writes out
+H K L I(+) SIGI(+) I(-) SIGI(-), with the format (3I4,4F8.1). The output
+may need to be rescaled to fit this format. If the input is F(+) and F(-) the rescaling is done within the program</p></dd>
+
+<dt>USER &lt;format&gt;</dt>
+<dd><p>The output file is of the form <tt>H K L ? ? ...</tt> where the user can
+specify which columns are to be output, how many and in what format. It can be used to generate a
+<tt>foo.phs</tt> file suitable for XtalView. See examples.
+Ten dummy labels (<tt>DUM??</tt>) are available to assign to any column and are output
+as real. Also, there are ten dummy columns (<tt>IDUM??</tt>) which are output as
+integer. The order of the data in the ASCII file are taken from the order of
+the program labels specified on the LABIN card <i>e.g.</i>
+<tt>LABIN FP=FP1 DP=DP1 SIGFP=SIG1 SIGDP=SIGDP1</tt> would give the order
+<tt>H K L FP1 DP1 SIG1 SIGDP1</tt> in the output file. The format must either be of a
+FORTRAN type with initially three integer items
+and the rest must be complementary with the LABIN card <i>e.g.</i></p>
+<pre>  LABIN FP=FP DUM1=X IDUM1=Y
+  OUTPUT USER '(3I4,2F7.1,I4)'</pre>
+<p>or</p>
+<pre>  OUTPUT USER *</pre>
+<p>to use free formatted output. However, all columns after H, K and L will be
+treated as real numbers.</p></dd>
+</dl>
+
+<h3><a name="labin"></a>LABIN &lt;program label&gt;=&lt;file label&gt;</h3>
+
+<p> The output is controlled by the labels specified here:</p>
+<p> Beware: if you want to take any sort of difference: Fph - Fp, or F(+) - F(-) you 
+MUST specify FP= ..., FPH=...:</p>
+
+<p>Input labels accepted are:</p>
+<blockquote><table>
+<tr>
+<td>H, K, L</td><td>Indices</td>
+</tr>
+<tr>
+<td>FP, SIGFP</td><td>F and Sigma for native</td>
+</tr>
+<tr>
+<td>FPH, SIGFPH</td><td>F and Sigma for derivative</td>
+</tr>
+<tr>
+<td>FC, PHIC</td><td>F and Phase from model</td>
+</tr>
+<tr>
+<td>FPART, PHIPART</td><td>F and Phase from partial structure</td>
+</tr>
+<tr>
+<td>DP, SIGDP</td><td>Anomalous difference and Sigma</td>
+</tr>
+<tr>
+<td>I, SIGI</td><td>I and Sigma</td>
+</tr>
+<tr>
+<td>F(+), SIGF(+)</td><td>F+ and Sigma(F+)</td>
+</tr>
+<tr>
+<td>F(-), SIGF(-)</td><td>F- and Sigma(F-)  used for anomalous output</td>
+</tr>
+<tr>
+<td>I(+), SIGI(+)</td><td>I+ and Sigma(I+)</td>
+</tr>
+<tr>
+<td>I(-), SIGI(-)</td><td>I- and Sigma(I-)</td>
+</tr>
+<tr>
+<td>FPART_BULK_S, PHIPART_BULK_S</td><td>Partial F and Phase for bulk solvent correction</td>
+</tr>
+<tr>
+<td>W, FOM</td><td>Weights</td>
+</tr>
+<tr>
+<td>PHIB</td><td>Best phase (experimental)</td>
+</tr>
+<tr>
+<td>HLA,HLB,HLC,HLD</td><td>Hendrickson-Lattman coefficients</td>
+</tr>
+<tr>
+<td>FREE</td><td>FreeR flag</td>
+</tr>
+<tr>
+<td>ISYM</td><td>(see <a href="truncate.html">TRUNCATE</a>)</td>
+</tr>
+<tr>
+<td>DUM??</td><td>Dummy labels (output as real)</td>
+</tr>
+<tr>
+<td>IDUM??</td><td>Dummy labels (output as integer)</td>
+</tr>
+</table></blockquote>
+
+<p>Not all columns are used in the various output formats, see <a href="#inputoutput">
+Notes on INPUT and OUTPUT</a>. Also, the contents of the columns which are output
+may depend on which input columns are assigned by LABIN, see DESCRIPTION
+above.</p>
+<p><i>Note:</i> when using the <tt>DUM??</tt> and <tt>IDUM??</tt> labels, the program
+may generate warnings about column type mismatches. This may happen for instance if
+an anomalous difference (column type D) is assigned to one of the <tt>DUM</tt> labels
+(which is nominally of type R, <i>i.e.</i> 'any other real'). These warnings should be ignored,
+and the output is not affected.</p>
+
+<h3><a name="end"></a>END</h3>
+<p>End input.</p>
+
+<h3><a name="fsqu"></a>FSQUARED</h3>
+<p>If this flag is set, the program expects F and SIGF and will output 
+I and SIGI: I = F*F, SIGI = 2*SIGF*F + SIGF*SIGF. These intensities are not
+necessarily the same as the measured intensities (pre-TRUNCATE); it is better
+to use the measured values if you have them.</p>
+
+<h3><a name="monitor"></a>MONITOR &lt;Nmon&gt;</h3>
+<p>followed by an integer &lt;Nmon&gt;.
+Every &lt;Nmon&gt;-th reflection within the resolution range is monitored
+(printed out).</p>
+
+<h3><a name="resolution"></a>RESOLUTION &lt;resmin&gt; &lt;resmax&gt;</h3>
+<p>followed by 2 real numbers, &lt;resmin&gt;, &lt;resmax&gt;. This can be used to
+restrict the output data to the given resolution range.</p>
+
+<h3><a name="scale"></a>SCALE &lt;scale&gt;</h3>
+<p>The F/SIGF or I/SIGI are multiplied by &lt;scale&gt; before output.
+For SHELX output, if the SCALE keyword is not given then a scale factor is computed so
+that the maximum intensity is 99999.0 (so as to fit into the output format).</p>
+
+<h3><a name="include"></a>INCLUDE &lt;keyword&gt; &lt;value&gt; ...</h3>
+<p>Each secondary keyword is followed by a number setting the
+appropriate limit for excluding data. Possible keywords are FREER.</p>
+<dl>
+<dt>FREER  &lt;num&gt;</dt>
+<dd>Include only reflections with FreeRflag = &lt;num&gt;. This is different from the
+FREEVAL keyword which specifies the freeR set. This will only be applicable
+if you have assigned the FREE column.</dd>
+</dl>
+
+<h3><a name="exclude"></a> EXCLUDE &lt;keyword&gt; &lt;value&gt; ...</h3>
+<p>Each secondary keyword is followed by a number setting the
+appropriate limit for excluding data. Possible keywords are SIGP,
+SIGH, DIFF, FPMAX, FPHMAX, FREER. If DP is assigned without FP
+then the exclusion criterion for DIFF are applied to |DP|.</p>
+<dl>
+<dt>SIGP &lt;Nsig1&gt;, SIGH &lt;Nsig2&gt;</dt>
+<dd>Reflections are excluded if: FP&lt;(&lt;Nsig1&gt;*SIGFP), FPH(&lt;Nsig2&gt;*SIGFPH).
+Formerly MULTAN reflections were flagged and others unaffected
+but now not output to any format.</dd>
+<dt>DIFF &lt;difference_limit&gt;</dt>
+<dd>Reflections are excluded if |FP-FPH| (or |DP|) &gt; &lt;difference_limit&gt;</dd>
+<dt>FPMAX &lt;maximum&gt;</dt>
+<dd>Give &lt;maximum&gt; value for FP.</dd>
+<dt>FPHMAX &lt;maximum&gt;</dt>
+<dd>Give &lt;maximum&gt; value for FPH</dd>
+<dt>FREER &lt;num&gt;</dt>
+<dd>Omit reflections with FreeRflag = &lt;num&gt;. This is different from the
+FREEVAL keyword which specifies the freeR set. This will only be applicable
+if you have assigned the FREE column.</dd>
+</dl>
+
+<h3><a name="freeval"></a>FREEVAL &lt;num&gt;</h3>
+<p>The reflections with FreeRflag = &lt;num&gt; are treated as the freeR set: the 
+default is 0 if FREE is assigned. This is important if you want to include 
+a free-R test in your XPLOR/CNS or SHELX refinement, or you are using the
+Pannu-Read version of TNT. The FREE column must be assigned with LABIN.</p>
+
+<h3><a name="miss"></a>MISS &lt;valm&gt;</h3>
+<p>By default, if any data associated with a reflection are missing,
+<i>i.e.</i> are represented in HKLIN by a Missing Number Flag (MNF), then
+that reflection will not appear in the output. However, if the keyword
+MISS is given then these reflections will be output, but with 
+the MNFs converted to &lt;valm&gt;. The latter need not be given, and defaults
+to 0.0. The other exclusions are still effective. Note that mmCIF output 
+is a special case, and the mmCIF character '?' is used to denote missing
+values. This keyword is therefore ignored for mmCIF output.</p>
+
+<p>Also, if MISS is present then when producing isomorphous data, <i>i.e.</i> |FPH-FP|,
+if either FPH or FP is a MNF then the difference is set to zero and the sigma
+is twice the measured sigma. For example; FP=MNF SIGFP=MNF, FPH=100 SIGFPH=10
+then FPH-FP = 0 and SIG=20.</p>
+
+<h2><a name="inputoutput"></a>Notes on INPUT and OUTPUT</h2>
+<p>Not all INPUT columns are accepted with a particular OUTPUT format. If one
+has OUTPUT &lt;subkw&gt; then the allowed input columns are given below (see
+<a href="#labin">LABIN</a> and <a href="#output">OUTPUT</a>):</p>
+<dl>
+<dt>subkw = USER</dt>
+<dd>accepts all input columns. Remember the format must match up with the 
+column assignments <i>i.e.</i> assignments to IDUM must be output as integers, all
+others are treated as real. Warnings about mismatched column types when
+using DUM or IDUM labels can be ignored; see <a href="#labin">LABIN</a>
+keyword.</dd>
+<dt>subkw = XPLOR [or CNS]</dt>
+<dd>accepts all input columns except DUM1 to DUM10 and IDUM1 to IDUM10 and
+I+, SIGI+, I- and SIGI-.</dd>
+<dt>subkw = SHELX or SHELXD </dt>
+<dd>accepts columns H to SIGFPH, DP/SIGDP (with or without FP), I/SIGI and FREE</dd>
+<dt>subkw = MULTAN</dt>
+<dd>is like SHELX but will only use FREE to include or exclude reflections.</dd>
+<dt>subkw = TNT</dt>
+<dd>is like SHELX except for the use of FREE: if the INCLUDE FREER or
+EXCLUDE FREER keywords are specified then FREE is used to
+include or exclude reflections, otherwise the FREE column (if assigned)
+is output.</dd>
+<dt>subkw = MAIN</dt>
+<dd>accepts H, K, L, FP, SIGFP, FREE, PHIB, FOM, FC</dd>
+<dt>subkw = CIF</dt>
+<dd>accepts H, K, L, FP, SIGFP, I, SIGI, DP, SIGDP, FC, PHIC, PHIB, FOM, 
+I(+), SIGI(+), I(-), SIGI(-), F(+), SIGF(+), F(-), SIGF(-),
+FPART_BULK_S, PHIPART_BULK_S, FREE, HLA, HLB, HLC, HLD </dd>
+</dl>
+
+<p>You may still have trouble getting exactly the output you want. You can use
+the UNIX utilities cut(1) or sed(1) to manipulate the mtz2various output.</p>
+
+<h2><a name="cif"></a>Notes on CIF</h2>
+
+<p>All reflections in the MTZ input file will be output to the CIF
+file. However, there are ways to flag certain reflections with the data type
+_refln.status. Observed reflections will be flagged with 'o'. Unobserved
+reflections, <i>i.e.</i> those flagged as missing in the relevant amplitude
+or intensity column, will be flagged as 'x'; these
+reflections will not be added to _reflns.number_obs. The 'free' reflections
+will be flagged as 'f'. The keyword FREEVAL can be used to indicate this set.
+Systematically absent reflections are flagged with '-'.</p>
+
+<p>If the RESO keyword is specified then reflections at higher or lower
+resolution than the limits given, will be written with _refln.status 'h'
+or 'l' respectively. The limits will be written to the CIF as the values of
+_refine.ls_d_res_high and _refine.ls_d_res_low.</p>
+
+<p>If EXCLUDE SIG is given then reflections for which F &lt; &lt;value&gt;*sigma(F),
+and which satisfy the resolution limits (if given), will be written with
+_refln.status '&lt;'. The value of _reflns.number_obs excludes all reflections
+which do not satisfy the condition on sigma(F). All other sub-keywords of
+EXCLUDE are ignored for CIF output.
+<br />
+<i>NB</i>: The translation of the RESOLUTION and EXCLUDE SIGP conditions to
+_refln.status values does not imply that the the use of these conditions is
+good crystallographic practice. Be prepared to justify why you have excluded
+any data from your final refinement!</p>
+
+<p>Below is a list of the items output to the CIF file:</p>
+<pre>
+ _entry.id
+
+ _audit.revision_id
+ _audit.creation_date
+ _audit.creation_method
+ _audit.update_record
+
+ _cell.entry_id
+ _cell.length_a
+ _cell.length_b
+ _cell.length_c
+ _cell.angle_alpha
+ _cell.angle_beta
+ _cell.angle_gamma
+
+ _symmetry.entry_id
+ _symmetry.Int_Tables_number
+ _symmetry.space_group_name_H-M
+ _symmetry_equiv.id
+ _symmetry_equiv.pos_as_xyz
+
+ _reflns.entry_id
+ _reflns.d_resolution_high
+ _reflns.d_resolution_low
+ _reflns.limit_h_max
+ _reflns.limit_h_min
+ _reflns.limit_k_max
+ _reflns.limit_k_min
+ _reflns.limit_l_max
+ _reflns.limit_l_min
+ _reflns.number_all
+ _reflns.number_obs
+
+ _diffrn_radiation_wavelength.id
+ _exptl_crystal.id
+ _reflns_scale.group_code
+
+These items are the ones per reflection.
+
+ _refln.wavelength_id     Always written
+ _refln.crystal_id        Always written
+ _refln.scale_group_code  Always written
+ _refln.index_h           Always written
+ _refln.index_k           Always written
+ _refln.index_l           Always written
+ _refln.status            Always written
+ _refln.F_meas_au         FP
+ _refln.F_meas_sigma_au   SIGFP
+ _refln.F_calc            FC
+ _refln.phase_calc        PHIC
+ _refln.phase_meas        PHIB
+ _refln.fom               FOM
+ _refln.intensity_meas    I
+ _refln.intensity_sigma   SIGI
+ _refln.ebi_F_xplor_bulk_solvent_calc        FPART_BULK_S
+ _refln.ebi_phase_xplor_bulk_solvent_calc'   PHIPART_BULK_S
+ _refln.pdbx_HL_A_iso                   HLA
+ _refln.pdbx_HL_B_iso                   HLB
+ _refln.pdbx_HL_C_iso                   HLC
+ _refln.pdbx_HL_D_iso                   HLD
+ _refln.pdbx_F_meas_plus                F(+)
+ _refln.pdbx_F_plus_sigma               SIGF(+)
+ _refln.pdbx_F_minus                    F(-)
+ _refln.pdbx_F_minus_sigma              SIGF(-)
+ _refln.pdbx_anom_difference            DP
+ _refln.pdbx_anom_difference_sigma      SIGDP
+ _refln.pdbx_I_plus                     I(+)
+ _refln.pdbx_I_plus_sigma               SIGI(+)
+ _refln.pdbx_I_minus                    I(-)
+ _refln.pdbx_I_minus_sigma              SIGI(-) 
+</pre>
+
+<p><b>Important note:</b> In the 6.0 version of MTZ2VARIOUS, the tokens
+associated with anomalous data (such as <tt>_refln.pdbx_F_meas_plus</tt>)
+and with Hendrickson-Lattman coefficients have been updated to use the
+PDB exchange dictionary, replacing those from the CCP4 harvest dictionary.
+This is a change in nomenclature only and the new tokens are accepted by
+the deposition sites.</p>
+
+<p>mmCIF (at least at version 0.8) makes no provision for the output of
+derivative data in the same data block as native data. For more information 
+about what these mmCIF categories are, check out the 
+<a href="http://www.iucr.ac.uk/iucr-top/cif/mmcif/ndb/dictionary/dict-html/cif_mm.dic/Index/index.html">mmCIF
+dictionary</a>.</p>
+
+<h2><a name="examples"></a>EXAMPLES</h2>
+
+<pre>
+#   Output a file suitable for input to CNS or XPLOR
+#
+    mtz2various HKLIN nicona HKLOUT dell.hkl &lt;&lt; EOF
+    RESOLUTION 10000 2
+    OUTPUT XPLOR
+    EXCLUDE SIGP 0.01   # to exclude unmeasured refl.
+    LABIN FP=F SIGFP=SIGF FREE=FreeR_flag
+    END
+    EOF
+
+# Output a file suitable for shelx solution or refinement
+    mtz2various HKLIN aucn_trn-unique.mtz HKLOUT aucn_I.hkl &lt;&lt;eof
+    LABIN I=IMEAN SIGI=SIGIMEAN FREE=FreeR_flag
+    OUTPUT SHELX
+    END
+    eof
+
+# Output a file suitable for shelxd to find heavy atom sites
+    mtz2various HKLOUT $CCP4_SCR/toxd.hkl hklin $CEXAM/toxd/toxd &lt;&lt;EOF
+    LABIN  FP=FTOXD3 SIGFP=SIGFTOXD3  FPH=FAU20 SIGFPH=SIGFAU20 
+    OUTPUT SHELX ( Program will recognise this is an isomorphous difference)
+    RESOLUTION 10 3.5
+    END
+    EOF
+
+# Output a file suitable for shelxd to find heavy atom sites from anomalous differences
+    mtz2various HKLOUT $CCP4_SCR/toxd.hkl hklin $CEXAM/toxd/toxd &lt;&lt;EOF
+    LABIN   DPH=DANOAU20 SIGDPH=SIGDANOAU20   or 
+    LABIN FP=FAU20(-) SIGFP=SIGFAU20(-) FPH=FAU20(+) SIGFPH=SIGFAU20(+)
+    OUTPUT SHELXD 
+    RESOLUTION 10 3.5
+    END
+    EOF
+
+# Output a foo.phs file suitable for XtalView map calculation after a REFMAC5 refinement
+    mtz2various HKLOUT $CCP4_SCR/toxd.phs hklin $CEXAM/toxd/toxd-refmac5 &lt;&lt;EOF
+    LABIN   DUM1=FWT DUM2=SIGFP DUM3=PHWT
+    OUTPUT USER 
+    RESOLUTION 10 3.5
+    FORMAT( (3i5,3f12.1)
+    END
+    EOF
+</pre>
+
+
+<p>A runnable unix example script is in $CEXAM/unix/runnable/</p>
+<ul>
+<li><a href="../examples/unix/runnable/mtz2various.exam">mtz2various.exam</a></li>
+</ul>
+<p>A non-runnable unix example script which demonstrates mtz2various used to output
+anomalous data is in $CEXAM/unix/non-runnable/</p>
+<ul>
+<li><a href="../examples/unix/non-runnable/mtz2various.exam">mtz2various.exam</a></li>
+</ul>
+
+<h2>SEE ALSO</h2>
+<p><a href="mtzdump.html">mtzdump</a>,
+<a href="f2mtz.html">f2mtz</a>,
+<a href="sftools.html">SFTOOLS</a>,
+cut(1), sed(1)</p>
+
+<h2>AUTHOR</h2>
+<p>Eleanor Dodson, York University</p>
+
+</body>
+</html>

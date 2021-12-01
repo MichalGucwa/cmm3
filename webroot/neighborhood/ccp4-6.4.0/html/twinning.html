@@ -1,0 +1,438 @@
+<HTML>
+<HEAD>
+<TITLE>CCP4 Program Suite</TITLE>
+<LINK REV="made" HREF="mailto:mgwt@ysbl.york.ac.uk (Maria Turkenburg)">
+</HEAD>
+<BODY>
+
+<!-- ::INDEX_INFO::twinning::General::Data Processing and Reduction::dealing with data from twinned crystals:::::::: -->
+
+<H1>Twinning (CCP4: General)</H1>
+<H2>NAME</H2>
+twinning - dealing with data from twinned crystals
+
+<P><STRONG>PLEASE NOTE:
+Most of this document has been taken directly from chapter 6 of the SHELX-97 Manual.</STRONG></P>
+
+<H2>Contents</H2>
+<ul>
+  <li><a href="#introduction">Introduction</a>
+  <li><a href="#warning">The warning signs for twinning</a>
+  <li><a href="#examples">Examples</a>
+  <li><a href="#frequently_enc">Frequently encounted twin laws</a>
+  <li><a href="#likely_operators">Likely twinning operators</a>
+  <ul>
+    <li><a href="#general_remarks">General Remarks</a>
+    <li><a href="#lookup_tables">Lookup tables</a>
+  </ul>
+</ul>
+
+<a name="introduction"></a>
+<H2>Introduction</H2>
+
+<P>A typical definition of a twinned crystal is the following: &quot;Twins are regular
+aggregates consisting of crystals of the same species joined together in some definite 
+mutual orientation&quot; (Giacovazzo, 1992). For this to happen two lattice repeats in the 
+crystal must be of equal length to allow the array of unit cells to pack compactly. 
+The result is that the reciprocal lattice diffracted from each component will overlap,
+and instead of measuring only I<SUB>hkl</SUB> from a single crystal, the experiment
+yields<BR>
+k<SUB>m</SUB> I<SUB>hkl</SUB>(crystal<SUB>1</SUB>) +
+(1-k<SUB>m</SUB>) I<SUB>h'k'l'</SUB>(crystal<SUB>2</SUB>)</P>
+
+<P>For a description
+of a twin it is necessary to know the matrix that transforms the hkl indices of one crystal
+into the h'k'l'  of the other, and the value of the fractional component k<SUB>m</SUB>.
+Those space groups where it is possible to index the cell along different axes are also very
+prone to twinning. 
+
+<p>When the diffraction patterns from the different domains are completely
+superimposable, the twinning is termed <b>merohedral</b>. The special case
+of just two distinct domains (typical for macromolecules) is termed
+<b>hemihedral</b>. When the reciprocal lattices do not superimpose exactly,
+the diffraction pattern consists of two (or more) interpenetrating lattices,
+which can in principle be separated. This is termed <b>non-merohedral</b> or
+<b>epitaxial</b> twinning.
+
+<a name="warning"></a>
+<H2>The warning signs for twinning</H2>
+
+<P>Experience shows that there are a number of characteristic warning signs for twinning.
+Of course not all of them can be present in any particular example, but if one finds
+several of them, the possibility of twinning should be given serious consideration.
+<OL TYPE=a>
+<LI>The metric symmetry is higher than the Laue symmetry.</LI>
+<LI>The R<SUB>merge</SUB>-value for the higher symmetry Laue group is only slightly higher
+than for the lower symmetry Laue group.</LI>
+<LI>The mean value for <TT>|E<SUP>2</SUP>-1|</TT> is much lower than the expected value
+of 0.736 for the non-centrosymmetric case. If we have two twin domains and every reflection
+has contributions from both, it is unlikely that both contributions will have very high or
+that both will have very low intensities, so the intensities will be distributed so that
+there are fewer extreme values. This can be seen by plotting the output of
+<A HREF="#cumdisexample" TARGET="_self">TRUNCATE</A> or ECALC.</LI>
+<LI>The space group appears to be trigonal or hexagonal.</LI>
+<LI>There are impossible or unusual systematic absences.</LI>
+<LI>Although the data appear to be in order, the structure cannot be solved.</LI>
+<LI>The Patterson function is physically impossible.</LI>
+<P>The following points are typical for non-merohedral twins, where the reciprocal lattices
+do not overlap exactly and only some of the reflections are affected by the twinning:
+<LI>There appear to be one or more unusually long axes, but also many absent
+reflections.</LI>
+<LI>There are problems with the cell refinement.</LI>
+<LI>Some reflections are sharp, others split.</LI>
+<LI>K=mean(<EM>F</EM><SUB>o</SUB><SUP>2</SUP>)/mean(<EM>F</EM><SUB>c</SUB><SUP>2</SUP>)
+is systematically high for the reflections with low intensity.</LI>
+<LI>For all of the 'most disagreeable' reflections, <EM>F</EM><SUB>o</SUB> is much greater
+than <EM>F</EM><SUB>c</SUB>.</LI>
+</OL>
+
+<H2><A NAME="examples"></A>Examples</FONT></H2>
+
+<P>Example of a cumulative intensity distribution with twinning present,
+as plotted by <a href="truncate.html">TRUNCATE</a>.
+(A full size version of the example can be viewed by clicking on the small
+picture.)</P>
+
+<TABLE>
+<TR><TD><A NAME="cumdisexample"></A><A HREF="images/cumdis-twin.gif">
+<IMG BORDER=0 SRC="images/cumdis-twin.gif"
+ALT="Cumulative intensity distribution for twin" HEIGHT=100>
+<!--ALT="Cumulative intensity distribution for twin" HEIGHT=628><BR>--></TD>
+<TD>Cumulative intensity distribution for twin</TD></TR>
+</TABLE>
+
+<a name="frequently_enc"></a>
+<H2>Frequently encountered twin laws</FONT></H2>
+
+<P>The following cases are relatively common:
+<OL TYPE=a>
+<LI>Twinning by merohedry. The lower symmetry trigonal, rhombohedral, tetragonal, hexagonal or
+cubic Laue groups may be twinned so that they look (more) like the corresponding higher
+symmetry Laue groups (assuming the c-axis unique except for cubic)</LI>
+<LI>Orthorhombic with <STRONG>a</STRONG> and <STRONG>b</STRONG> approximately equal in
+length may emulate tetragonal</LI>
+<LI>Monoclinic with beta approximately 90&#176; may emulate orthorhombic:</LI>
+<LI>Monoclinic with <STRONG>a</STRONG> and <STRONG>c</STRONG> approximately equal and
+beta approximately 120&#176; may emulate hexagonal [P2<SUB>1</SUB>/c would give
+absences and possibly also intensity statistics corresponding to P6<SUB>3</SUB>].
+</LI>
+<LI>Monoclinic with <STRONG><TT>na + nc ~ a</TT></STRONG> or
+<STRONG><TT>na + nc ~ c</TT></STRONG>&nbsp;can be twinned. See
+<A HREF="reindexing.html#HIPIPexamples" TARGET="_self">HIPIP examples</A>.</LI>
+</OL>
+</P>
+
+
+<a name="likely_operators"></a>
+<H2>Likely twinning operators</H2>
+
+Data from a merohedrally twinned crystal can be deconvoluted using the
+program <a href="detwin.html">DETWIN</a>. This program requires a likely
+twinning operator for the spacegroup in question to be specified. Possible
+operators are listed here.
+
+<a name="general_remarks"></a>
+<H3>General Remarks</H3>
+
+
+<P>A crystal is a 3-dimensional translational repeat of a structural pattern
+which may comprise a molecule, part of a symmetric molecule, or several molecules.
+The repeats which can overlap by simple translation, are called unit cells. </P>
+
+<P>Lattice symmetry enforces extra limitations.  There are 7 basic symmetry classes
+possible within a crystal:</P>
+
+<DL>
+<DT><DD> Triclinic - no rotational symmetry. No restrictions on a b c or alpha beta gamma
+<DT><DD> Monoclinic - one 2 fold axis of rotation - two angles must be 90; usually alpha and Gamma.
+<DT><DD> Orthorhombic - two perpendicular 2 fold axes of rotation (these must generate a 3rd) All angles 90.
+<DT><DD> Tetragonal - one 4 fold axis of rotation (plus possible perpendicular 2-fold). All angles 90; a = b.
+<DT><DD> Trigonal - one 3 fold axis of rotation (plus possible perpendicular 2-folds). 
+Alpha and Beta = 90, Gamma = 120 ; a = b (hexagonal setting).
+<DT><DD> Hexagonal - one 6 fold axis of rotation (plus possible perpendicular 2-fold).
+Alpha and Beta = 90, Gamma = 120 ; a = b.
+<DT><DD> Cubic -  all axes equal and equivalent, related by a diagonal 3-fold;
+also 2-fold, or 4-fold axes of rotation
+along crystal axes. All angles 90 ; a = b = c 
+</DL>
+
+<P>Problems arise most commonly when two or more crystal axes are the same length, 
+either by accident in the <STRONG>monoclinic</STRONG> and <STRONG>orthorhombic</STRONG> 
+system, or as a requirement 
+of the symmetry as in the <STRONG>tetragonal</STRONG>, <STRONG>trigonal</STRONG>, <STRONG>hexagonal</STRONG> or
+<STRONG>cubic</STRONG> systems.
+
+
+<P> Although the <STRONG>a</STRONG> and <STRONG>b</STRONG> axes in the tetragonal, trigonal, hexagonal and cubic classes
+must be equal in length, there can still be ambiguities in their definition,
+and consequentially in the indexing of the diffraction pattern. It is these classes
+of crystals which are most prone to twinning. </P>
+
+<h3>monoclinic</h3>
+
+<P>It is possible that 
+in <STRONG>P2<FONT SIZE=-2>1</FONT></STRONG>
+or <STRONG>C2</STRONG>  there are two possible choices of <STRONG>a</STRONG> with 
+a<EM><FONT SIZE=-2>new</FONT></EM> = a<EM><FONT SIZE=-2>old</FONT></EM>
++ nc<EM><FONT SIZE=-2>old</FONT></EM>.  If the magnitude of <STRONG>a</STRONG> is equal to that
+of a+nc, the cos rule requires that cos(Beta*) = |nc|/2|a|, or, if |a|&gt;|c|,
+cos(Beta*) = |na|/2|c|.<!--mgwt:  See figure.-->
+
+<h3>orthorhombic</h3>
+
+<P>For orthorhombic crystal forms  the only possibility for twinning
+is if there are two axes with nearly the same length.  </P>
+
+<h3>tetragonal, trigonal, hexagonal, cubic</h3>
+
+<P>For tetragonal, trigonal, hexagonal or cubic systems it is a requirement 
+of the symmetry that two cell axes are equal. Assuming the lengths of
+<STRONG>a</STRONG> and <STRONG>b</STRONG> to be equal, and maintaining
+a right-handed axial system, we find:</P>
+<P>
+<TABLE NOBORDER>
+<TR><TD>For these spacegroups the real axial system could be:</TD><TD>(a,b,c)</TD><TD>or</TD><TD>(-a,-b,c)</TD><TD>or</TD>
+<TD>(b,a,-c)</TD><TD>or</TD><TD>(-b,-a,-c)</TD></TR>
+<TR><TD>with corresponding reciprocal axes:</TD><TD>(a*,b*,c*)</TD><TD>or</TD><TD>(-a*,-b*,c*)</TD><TD>or</TD>
+<TD>(b*,a*,-c*)</TD><TD>or</TD><TD>(-b*,-a*,-c*)</TD></TR>
+<TR><TD>Corresponding indexing systems:</TD><TD>(h,k,l)</TD><TD>or</TD><TD>(-h,-k,l)</TD><TD>or</TD>
+<TD>(k,h,-l)</TD><TD>or</TD><TD>(-k,-h,-l)</TD></TR>
+</TABLE>
+</P>
+<EM>N.B.</EM> There may be alternatives where other pairs of symmetry operators 
+are paired, but this is the simplest and most general set of operators and has the added
+advantage that the transformation matrices in real and reciprocal space are the same. For example:
+ in P3<FONT SIZE=-1>i</FONT> (-a,-b,c)  is a equivalent of (-b,a+b,c) but the corresponding reciprocal space conversion matches 
+(a*,b*,c*) to (a*-b*,a*,c*) </P>
+
+<P>In these cases, any of the above definitions of axes is equally valid.
+For many cases the alternative systems are symmetry equivalents, and hence do 
+not generate detectable differences in the diffraction pattern.  But for crystals 
+where this is not true, twinning is possible. Different domains may have
+different definitions of axes, which lead to different diffraction intensities
+superimposed on the same lattice. </P>
+
+<a name="lookup_tables"></a>
+<H3>Lookup tables for tetragonal, trigonal, hexagonal, cubic</H3>
+
+<P> Here are details for the possible systems. These tables are generated
+by considering each of the indexing systems above, and eliminating those
+which correspond to symmetry operators of the spacegroup. While twinning
+involves more than one indexing possibility within a single dataset, these
+operators are also relevant for ensuring the same indexing between
+multiple datasets when there is no twinning.</P>
+
+<UL>
+<LI>All <STRONG>P4<FONT SIZE=-1>i</FONT></STRONG> and related <STRONG>4<FONT SIZE=-1>i</FONT></STRONG>
+space groups:<BR> (h,k,l) equivalent to (-h,-k,l) so we only need to check:
+<TABLE NOBORDER>
+<TR><TD>real axes:</TD><TD>(a,b,c)</TD><TD>and</TD><TD>(b,a,-c)</TD></TR>
+<TR><TD>reciprocal axes:</TD><TD>(a*,b*,c*)</TD><TD>and</TD><TD>(b*,a*,-c*)</TD></TR>
+</TABLE>
+When more than one dataset, check if reindexing (h,k,l) to (k,h,-l) gives a better match to previous data sets.</LI>
+<LI> Twinning possible with this operator - apparent Laue symmetry for perfect twin would be P422</LI>
+<CENTER>
+<TABLE BORDER>
+<TR><TH>space group number</TH><TH>space
+group</TH><TH>point group</TH><TH>possible twin operator </TH></TR>
+<TR ALIGN=CENTER><TD>75</TD>  <TD>P4</TD>     <TD>PG4</TD> <TD>k,h,-l</TD></TR>
+<TR ALIGN=CENTER><TD>76</TD>  <TD>P4<FONT SIZE=-2>1</FONT></TD>    <TD>PG4</TD> <TD>k,h,-l</TD></TR>
+<TR ALIGN=CENTER><TD>77</TD>  <TD>P4<FONT SIZE=-2>2</FONT></TD>    <TD>PG4</TD> <TD>k,h,-l</TD></TR>
+<TR ALIGN=CENTER><TD>78</TD>  <TD>P4<FONT SIZE=-2>3</FONT></TD>    <TD>PG4</TD> <TD>k,h,-l</TD></TR>
+<TR ALIGN=CENTER><TD>79</TD>  <TD>I4</TD>     <TD>PG4</TD> <TD>k,h,-l</TD></TR>
+<TR ALIGN=CENTER><TD>80</TD>  <TD>I4<FONT SIZE=-2>1</FONT></TD>    <TD>PG4</TD> <TD>k,h,-l</TD></TR>
+</TABLE>
+</CENTER>
+<BR>
+<LI>For all <STRONG>P4<FONT SIZE=-1>i</FONT>2<FONT SIZE=-1>i</FONT>2</STRONG> and related
+<STRONG>4<FONT SIZE=-1>i</FONT>2<FONT SIZE=-1>i</FONT>2</STRONG>
+space groups:<BR> (h,k,l) is equivalent to  all of (-h,-k,l) <EM>,</EM> (k,h,-l)  
+<EM>and</EM> (-k,-h,-l) so all axial pairs are already equivalent as a result of the crystal symmetry.
+</LI>
+<LI> No twinning possible but a perfect twin for the Laue group P4 might appear to have this symmetry.</LI>
+<CENTER>
+<TABLE BORDER>
+<TR><TH>space group number</TH><TH>space
+group</TH><TH>point group</TH><TH>no twin operators </TH></TR>
+<TR ALIGN=CENTER><TD>  89</TD> <TD>P422</TD>   <TD>PG422</TD> <TD>none</TD></TR>
+<TR ALIGN=CENTER><TD>  90</TD> <TD>P42<FONT SIZE=-2>1</FONT>2</TD>  <TD>PG422</TD> <TD>none</TD></TR>
+<TR ALIGN=CENTER><TD>  91</TD> <TD>P4<FONT SIZE=-2>1</FONT>22</TD>  <TD>PG422</TD> <TD>none</TD></TR>
+<TR ALIGN=CENTER><TD>  92</TD> <TD>P4<FONT SIZE=-2>1</FONT>2<FONT SIZE=-2>1</FONT>2</TD> <TD>PG422</TD> <TD>none</TD></TR>
+<TR ALIGN=CENTER><TD>  93</TD> <TD>P4<FONT SIZE=-2>2</FONT>22</TD>  <TD>PG422</TD> <TD>none</TD></TR>
+<TR ALIGN=CENTER><TD>  94</TD> <TD>P4<FONT SIZE=-2>2</FONT>2<FONT SIZE=-2>1</FONT>2</TD> <TD>PG422</TD> <TD>none</TD></TR>
+<TR ALIGN=CENTER><TD>  95</TD> <TD>P4<FONT SIZE=-2>3</FONT>22</TD>  <TD>PG422</TD> <TD>none</TD></TR>
+<TR ALIGN=CENTER><TD>  96</TD> <TD>P4<FONT SIZE=-2>3</FONT>2<FONT SIZE=-2>1</FONT>2</TD> <TD>PG422</TD> <TD>none</TD></TR>
+<TR ALIGN=CENTER><TD>  97</TD> <TD>I422</TD>   <TD>PG422</TD> <TD>none</TD></TR>
+<TR ALIGN=CENTER><TD>  98</TD> <TD>I4<FONT SIZE=-2>1</FONT>22</TD>  <TD>PG422</TD> <TD>none</TD></TR>
+</TABLE>
+</CENTER>
+<BR>
+<LI>All <STRONG>P3<FONT SIZE=-1>i</FONT></STRONG> and <STRONG>H3</STRONG>:<BR> (h,k,l) <EM>neither </EM> equivalent to
+(-h,-k,l) <EM>nor</EM> (k,h,-l) <EM>nor</EM> (-k,-h,-l) so we need to check all 4 possibilities. These
+are the only cases where tetratohedral twinning can occur:
+<TABLE NOBORDER>
+<TR><TD>real axes:</TD><TD>(a,b,c)</TD><TD>and</TD><TD>(-a,-b,c)</TD><TD>and</TD><TD>(b,a,-c)</TD><TD>and</TD><TD>(-b,-a,c)</TD></TR>
+<TR><TD>reciprocal axes:</TD><TD>(a*,b*,c*)</TD><TD>and</TD><TD>(-a*,-b*,c*)</TD><TD>and</TD><TD>(b*,a*,-c*)</TD><TD>and</TD><TD>(-b*,-a*,c*)</TD></TR>
+</TABLE>
+<EM>i.e.</EM> For P3, consider reindexing (h,k,l) to (-h,-k,l) <EM>or</EM> (k,h,-l) 
+<EM>or</EM> (-k,-h,-l).<BR>
+<P> For  <STRONG>H3</STRONG> the indices must satisfy the relationship <EM> -h +k+l =3n </EM>
+so it is only possible to reindex as ( k, h,-l). Note that the latter is a 
+symmetry operator of <STRONG>H32</STRONG>, so that twinning is not possible
+in H32. However, twinning in H3 may give apparent H32 symmetry.</P>
+
+<P>
+<EM> For trigonal space groups, symmetry equivalents do not seem as "natural" as in other systems. 
+Replacing the 4 basic sets with other symmetry equivalents gives a bewildering range of apparent 
+possibilities, but all are equivalent to one of the above.</EM></P>
+<P> Two-fold twinning possible with this operator - apparent Laue symmetry for two fold perfect twin could be 
+P321 (operator k,h,-l) or P312 (operator -k,-h,-l) or P6 (operator -h,-k,l) 
+ Four-fold twinning with these operators could generate  apparent Laue symmetry of P622 </P>
+<CENTER>
+<TABLE BORDER>
+<TR><TH>space group number</TH><TH>space
+group</TH><TH>point group</TH><TH>possible twin operators </TH></TR>
+<TR ALIGN=CENTER><TD>143</TD>  <TD>P3</TD>     <TD>PG3</TD> <TD>-h,-k,l; k,h,-l; -k,-h,-l</TD></TR>
+<TR ALIGN=CENTER><TD>144</TD>  <TD>P3<FONT SIZE=-2>1</FONT></TD>    <TD>PG3</TD> <TD>-h,-k,l; k,h,-l; -k,-h,-l</TD></TR>
+<TR ALIGN=CENTER><TD>145</TD>  <TD>P3<FONT SIZE=-2>2</FONT></TD>    <TD>PG3</TD> <TD>-h,-k,l; k,h,-l; -k,-h,-l</TD></TR>
+<TR ALIGN=CENTER><TD>146</TD>  <TD>H3</TD>     <TD>PG3</TD> <TD>k,h,-l</TD></TR>
+</TABLE>
+</CENTER>
+<BR>
+<LI>All <STRONG>P3<FONT SIZE=-1>i</FONT>12</STRONG>:<BR> (h,k,l) already equivalent to (-k,-h,-l)
+so we only need to check:
+<TABLE NOBORDER>
+<TR><TD>real axes:</TD><TD>(a,b,c)</TD><TD>and</TD><TD>(b,a,-c)</TD><TR>
+<TR><TD>reciprocal axes:</TD><TD>(a*,b*,c*)</TD><TD>and</TD><TD>(b*,a*,-c*)</TD></TR>
+</TABLE>
+<EM>i.e.</EM> reindex (h,k,l) to (k,h,-l) [or its equivalent operator (-h,-k,l)].</LI>
+<LI> Twinning possible with this operator - apparent symmetry for two fold perfect twin would be 
+ P622 (operator -h,-k,l) </LI>
+<CENTER>
+<TABLE BORDER>
+<TR><TH>space group number</TH><TH>space
+group</TH><TH>point group</TH><TH>possible twinning operator</TH></TR>
+<TR ALIGN=CENTER><TD> 149</TD>  <TD>P312</TD>   <TD>PG312</TD> <TD>-h,-k,l or k,h,-l</TD>
+<TR ALIGN=CENTER><TD> 151</TD>  <TD>P3<FONT SIZE=-2>1</FONT>12</TD>  <TD>PG312</TD> <TD>-h,-k,l or  k,h,-l</TD>
+<TR ALIGN=CENTER><TD> 153</TD>  <TD>P3<FONT SIZE=-2>2</FONT>12</TD>  <TD>PG312</TD> <TD>-h,-k,l or  k,h,-l</TD></TR>
+</TABLE>
+</CENTER>
+<BR>
+<LI>All <STRONG>P3<FONT SIZE=-1>i</FONT>21</STRONG></STRONG>:<BR> (h,k,l) already equivalent
+to (k,h,-l) so we only need to check:
+<TABLE NOBORDER>
+<TR><TD>real axes:</TD><TD>(a,b,c)</TD><TD>and</TD><TD>(-a,-b,-c)</TD></TR>
+<TR><TD>reciprocal axes:</TD><TD>(a*,b*,c*)</TD><TD>and</TD><TD>(-a*,-b*,-c*)</TD></TR>
+</TABLE>
+<EM>i.e.</EM> reindex (h,k,l) to (-h,-k,l) [or its equivalent operator (-k,-h,-l)].</LI>
+<LI> Twinning possible with this operator - apparent symmetry for two fold perfect twin would be 
+ P622 (operator -h,-k,l) </LI>
+<CENTER>
+<TABLE BORDER>
+<TR><TH>space group number</TH><TH>space
+group</TH><TH>point group</TH><TH>possible twinning operator</TH></TR>
+<TR ALIGN=CENTER><TD> 150</TD>  <TD>P321</TD>   <TD>PG321</TD> <TD>-h,-k,l or  -k,-h,-l</TD>
+<TR ALIGN=CENTER><TD> 152</TD>  <TD>P3<FONT SIZE=-2>1</FONT>21</TD>  <TD>PG321</TD> <TD>-h,-k,l or -k,-h,-l</TD>
+<TR ALIGN=CENTER><TD> 154</TD>  <TD>P3<FONT SIZE=-2>2</FONT>21</TD>  <TD>PG321</TD> <TD>-h,-k,l or  -k,-h,-l</TD></TR>
+</TABLE>
+</CENTER>
+<BR>
+<LI>All <STRONG>P6<FONT SIZE=-1>i</FONT></STRONG>:<BR> (h,k,l) already equivalent to (-h,-k,l)
+so we only need to check:
+<TABLE NOBORDER>
+<TR><TD>real axes:</TD><TD>(a,b,c)</TD><TD>and</TD><TD>(b,a,-c)</TD></TR> 
+<TR><TD>reciprocal axes:</TD><TD>(a*,b*,c*)</TD><TD>and</TD><TD>(b*,a*,-c*)</TD></TR>
+</TABLE>
+<EM>i.e.</EM> reindex (h,k,l) to (k,h,-l).</LI>
+<LI> Twinning possible with this operator - apparent symmetry for two fold perfect twin would be 
+ P622 (operator k,k,-l) 
+<CENTER>
+<TABLE BORDER>
+<TR><TH>space group number</TH><TH>space
+group</TH><TH>point group</TH><TH>possible twinning operator</TH></TR>
+<TR ALIGN=CENTER><TD> 168</TD>  <TD>P6</TD>     <TD>PG6</TD> <TD>k,h,-l</TD></TR>
+<TR ALIGN=CENTER><TD> 169</TD>  <TD>P6<FONT SIZE=-2>1</FONT></TD>    <TD>PG6</TD> <TD>k,h,-l</TD></TR>
+<TR ALIGN=CENTER><TD> 170</TD>  <TD>P6<FONT SIZE=-2>5</FONT></TD>    <TD>PG6</TD> <TD>k,h,-l</TD></TR>
+<TR ALIGN=CENTER><TD> 171</TD>  <TD>P6<FONT SIZE=-2>2</FONT></TD>    <TD>PG6</TD> <TD>k,h,-l</TD></TR>
+<TR ALIGN=CENTER><TD> 172</TD>  <TD>P6<FONT SIZE=-2>4</FONT></TD>    <TD>PG6</TD> <TD>k,h,-l</TD></TR>
+<TR ALIGN=CENTER><TD> 173</TD>  <TD>P6<FONT SIZE=-2>3</FONT></TD>    <TD>PG6</TD> <TD>k,h,-l</TD></TR>
+</TABLE>
+</CENTER>
+<BR>
+<LI>All <STRONG>P6<FONT SIZE=-1>i</FONT>22</STRONG>:<BR> (h,k,l) already equivalent to (-h,-k,l)
+<EM>and</EM> (k,h,-l) <EM>and</EM> (-k,-h,-l) so no twinning possible.
+However a perfect twin for the Laue group, P312, P321 or P6 might appear to have this symmetry.</LI>
+<CENTER>
+<TABLE BORDER>
+<TR><TH>space group number</TH><TH>space
+group</TH><TH>point group</TH><TH>no twinning operator</TH></TR>
+<TR ALIGN=CENTER><TD> 177</TD> <TD>P622</TD>   <TD>PG622</TD> <TD>none</TD></TR>
+<TR ALIGN=CENTER><TD> 178</TD> <TD>P6<FONT SIZE=-2>1</FONT>22</TD>  <TD>PG622</TD> <TD> none</TD></TR>
+<TR ALIGN=CENTER><TD> 179</TD> <TD>P6<FONT SIZE=-2>5</FONT>22</TD>  <TD>PG622</TD> <TD> none</TD></TR>
+<TR ALIGN=CENTER><TD> 180</TD> <TD>P6<FONT SIZE=-2>2</FONT>22</TD>  <TD>PG622</TD> <TD> none</TD></TR>
+<TR ALIGN=CENTER><TD> 181</TD> <TD>P6<FONT SIZE=-2>4</FONT>22</TD>  <TD>PG622</TD> <TD> none</TD></TR>
+<TR ALIGN=CENTER><TD> 182</TD> <TD>P6<FONT SIZE=-2>3</FONT>22</TD>  <TD>PG622</TD> <TD> none</TD></TR>
+</TABLE>
+</CENTER>
+<BR>
+<LI>All <STRONG>P2<FONT SIZE=-1>i</FONT>3</STRONG> and related <STRONG>2<FONT SIZE=-1>i</FONT>3</STRONG>
+space groups:<BR> (h,k,l) already equivalent to (-h,-k,l) so we only need to check:
+<TABLE NOBORDER>
+<TR><TD>real axes:</TD><TD>(a,b,c)</TD><TD>and</TD><TD>(b,a,-c)</TD></TR>
+<TR><TD>reciprocal axes:</TD><TD>(a*,b*,c*)</TD><TD>and</TD><TD>(b*,a*,-c*)</TD></TR>
+</TABLE>
+<EM>i.e.</EM> reindex (h,k,l) to (k,h,-l).</LI>
+<LI> Twinning possible with this operator - apparent symmetry for two fold perfect twin would be 
+ P43 (operator k,h,-l) 
+<CENTER>
+<TABLE BORDER>
+<TR><TH>space group number</TH><TH>space
+group</TH><TH>point group</TH><TH>possible twinning operator</TH></TR>
+<TR ALIGN=CENTER><TD> 195</TD> <TD>P23</TD>    <TD>PG23</TD> <TD>k,h,-l</TD></TR>
+<TR ALIGN=CENTER><TD> 196</TD> <TD>F23</TD>    <TD>PG23</TD> <TD>k,h,-l</TD></TR>
+<TR ALIGN=CENTER><TD> 197</TD> <TD>I23</TD>    <TD>PG23</TD> <TD>k,h,-l</TD></TR>
+<TR ALIGN=CENTER><TD> 198</TD> <TD>P2<FONT SIZE=-2>1</FONT>3</TD> <TD>PG23</TD> <TD>k,h,-l</TD></TR>
+<TR ALIGN=CENTER><TD> 199</TD> <TD>I2<FONT SIZE=-2>1</FONT>3</TD> <TD>PG23</TD> <TD>k,h,-l</TD></TR>
+</TABLE>
+</CENTER>
+<BR>
+<LI>All <STRONG>P4<FONT SIZE=-1>i</FONT>32</STRONG> and related <STRONG>4<FONT SIZE=-1>i</FONT>32</STRONG>
+space groups:<BR> (h,k,l) already equivalent to (-h,-k,l) <EM>and</EM> (k,h,-l)  
+<EM>and</EM> (-k,-h,-l) so we do not need to check.</LI>
+<CENTER>
+<TABLE BORDER>
+<TR><TH>space group number</TH><TH>space group</TH><TH>point group</TH>
+<TH>no twinning operator</TH></TR>
+<TR ALIGN=CENTER><TD> 207</TD> <TD>P432</TD> <TD>PG432</TD> <TD>none</TD></TR>
+<TR ALIGN=CENTER><TD> 208</TD> <TD>P4<FONT SIZE=-2>2</FONT>32</TD> <TD>PG432</TD> <TD>none</TD></TR>
+<TR ALIGN=CENTER><TD> 209</TD> <TD>F432</TD> <TD>PG432</TD> <TD>none</TD></TR>
+<TR ALIGN=CENTER><TD> 210</TD> <TD>F4<FONT SIZE=-2>1</FONT>32</TD> <TD>PG432</TD> <TD>none</TD></TR>
+<TR ALIGN=CENTER><TD> 211</TD> <TD>I432</TD> <TD>PG432</TD> <TD>none</TD></TR>
+<TR ALIGN=CENTER><TD> 212</TD> <TD>P4<FONT SIZE=-2>3</FONT>32</TD> <TD>PG432</TD> <TD>none</TD></TR>
+<TR ALIGN=CENTER><TD> 213</TD> <TD>P4<FONT SIZE=-2>1</FONT>32</TD> <TD>PG432</TD> <TD>none</TD></TR>
+<TR ALIGN=CENTER><TD> 214</TD> <TD>I4<FONT SIZE=-2>1</FONT>32</TD> <TD>PG432</TD> <TD>none</TD></TR>
+</TABLE>
+</CENTER>
+</UL>
+
+
+<h2>SEE ALSO</h2>
+
+<P>More information on twinning can be found at:
+<A HREF="http://nihserver.mbi.ucla.edu/Twinning/intro.html"
+TARGET="_self">Fam and Yeates' Introduction to Hemihedral Twinning</A>,
+which includes a
+<A HREF="http://nihserver.mbi.ucla.edu/Twinning/"
+TARGET="_self">Twinning test</A>.</P>
+
+
+<H2> AUTHORS</H2>
+
+<p><STRONG>Acknowledgement in SHELX manual:</STRONG>
+<PRE>"I should like to thank Regine Herbst-Irmer
+            who wrote most of this chapter."</PRE></p>
+
+<p>Prepared for CCP4 by Maria Turkenburg, University of York, England</p>
+
+</BODY>
+</HTML>

@@ -1,0 +1,1 @@
+INSERT INTO usages (sessionid,usagetype,test_data,crystal_contact,pdbfileid,filename,ip,browser_id) VALUES ('2vb2',2,FALSE,FALSE,1885,'','128.178.198.127',0);

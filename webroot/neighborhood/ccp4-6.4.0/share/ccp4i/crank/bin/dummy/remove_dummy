@@ -1,0 +1,145 @@
+#!/usr/bin/perl
+#removes dummy/water atoms from second PDB file that are located close to any atom from the first PDB file
+
+# distance treshold (A)
+$tresh = 2.;
+if ($ARGV[2]) { $tresh=$ARGV[2]; }
+
+use File::Copy;
+
+sub get_cellmat
+{
+  my ($file,$x,$m1,$m2,$m3) = @_ ;
+  while ( $line=<$file> ) 
+  {
+	if ( $line =~ /CRYST1\s+(\d*\.*\d*)\s+(\d*\.*\d*)\s+(\d*\.*\d*)/ ) 		{ @{$x}[0]=$1;  @{$x}[1]=$2;  @{$x}[2]=$3;  }
+	if ( $line =~ /SCALE1\s+(\d*\.*\d*)\s+(-?\d*\.*\d*)\s+(-?\d*\.*\d*)/ ) 	{ @{$m1}[0]=$1; @{$m1}[1]=$2; @{$m1}[2]=$3; }
+	if ( $line =~ /SCALE2\s+(\d*\.*\d*)\s+(\d*\.*\d*)\s+(-?\d*\.*\d*)/ ) 	{ @{$m2}[0]=$1; @{$m2}[1]=$2; @{$m2}[2]=$3; }
+	if ( $line =~ /SCALE3\s+(\d*\.*\d*)\s+(\d*\.*\d*)\s+(\d*\.*\d*)/ ) 		{ @{$m3}[0]=$1; @{$m3}[1]=$2; @{$m3}[2]=$3; }
+  }
+}
+
+open(HEAVY,$ARGV[0]) || die "Problem opening file $ARGV[0].\n";
+open(INP,$ARGV[1]) || die "Problem opening file $ARGV[1].\n";
+open(ARPOUT,">$ARGV[1]_remove_dummy_temp") || die "Problem opening output file.\n";
+
+#get the transformation matrix
+for ($i=0;$i<3;$i++) { $x[$i]=$mat1[$i]=$mat2[$i]=$mat3[$i]=0.; }
+for ($i=0;$i<3;$i++) { $x_aux[$i]=$mat_aux1[$i]=$mat_aux2[$i]=$mat_aux3[$i]=0.; }
+get_cellmat(INP,\@x,\@mat1,\@mat2,\@mat3);
+get_cellmat(HEAVY,\@x_aux,\@mat_aux1,\@mat_aux2,\@mat_aux3);
+#print "$mat1[0] $mat2[1] $mat3[2]\n";
+#checks follow...
+if ($x[2]<=0.||$x_aux[2]<=0.) {
+  if ($x[2]<=0.&&$x_aux[2]<=0.) { die "Cell parameters could not be read from either input file.\n";}
+  elsif ($x[2]<=0.) { print "Warning: Cell parameters could not be read from $ARGV[1] file.\n";} 
+  else { print "Warning: Cell parameters could not be read from $ARGV[0] file.\n"; }
+}
+else {
+  if ( 	abs($x_aux[0]-$x[0]) > 0.05*$x[0] || 
+	    abs($x_aux[1]-$x[1]) > 0.05*$x[1] || 
+		abs($x_aux[2]-$x[2]) > 0.05*$x[2] ) { 
+		  die "Cells in inputted files are too different."; }
+}
+if ($mat3[2]<=0.||$mat_aux3[2]<=0.) {
+  if ($mat3[2]<=0.&&$mat_aux3[2]<=0.) { die "Matrix (SCALE keyword) could not be read from either input file.\n";}
+  elsif ($mat3[2]<=0.) { print "Warning: Matrix (SCALE keyword) could not be read from $ARGV[1] file.\n";
+	for ($i=0;$i<3;$i++) { $mat1[$i]=$mat_aux1[$i]; $mat2[$i]=$mat_aux2[$i]; $mat3[$i]=$mat_aux3[$i];  }
+  } 
+  #else { print "Warning: Matrix (SCALE keyword) could not be read from $ARGV[0] file.\n";}
+}
+if ( $mat1[0] <= 0. || $mat2[1] <= 0. || $mat3[2] <= 0.) { die "Problem with SCALE from input file(s).\n";}
+
+#calculate the inverse of the transformation matrix
+$invmat3[2] = 1./$mat3[2];
+$invmat2[1] = 1./$mat2[1]; 
+$invmat2[2] =  -$mat2[2]*$invmat2[1]*$invmat3[2];
+$invmat1[0] = 1./$mat1[0];
+$invmat1[1] = -$mat1[1]*$invmat1[0]*$invmat2[1];
+$invmat1[2] = -$mat1[1]*$invmat1[0]*$invmat2[2] - $mat1[2]*$invmat1[0]*$invmat3[2];
+
+seek(INP,0,0);
+seek(HEAVY,0,0);
+
+
+#read heavy atoms
+$num_heavy=0;
+while ( $line=<HEAVY> ) 
+{
+  if ( $line =~ /(HETATM|ATOM).{22}\s*(-*\d+\.*\d*)\s*(-*\d+\.*\d*)\s*(-*\d+\.*\d*)\s*(-*\d+\.*\d*)/ ) { 
+	if ( $5 > 0.01 ) {
+	  $heavy1[$num_heavy]=$2; 	$heavy2[$num_heavy]=$3; 	$heavy3[$num_heavy]=$4;
+	  $num_heavy++;
+	}
+  }
+  if ( $line =~ /HEAVY\s*\S+\s*(-*\d+\.*\d*)\s*(-*\d+\.*\d*)\s*(-*\d+\.*\d*)\s*(-*\d+\.*\d*)/ ) {
+	if ( $4 > 0.01 ) {
+	  $heavy1[$num_heavy]=$1; 	$heavy2[$num_heavy]=$2; 	$heavy3[$num_heavy]=$3;
+	  $num_heavy++;
+	}
+  }
+}
+#for ($i=0; $i<$num_heavy; $i++) { print "$heavy1[$i] $heavy2[$i] $heavy3[$i]\n"; }
+#move heavy atoms to defined unit cell
+for ($h=0; $h<$num_heavy; $h++) 
+{ 
+  $fx = $mat1[0]*$heavy1[$h] + $mat1[1]*$heavy2[$h] + $mat1[2]*$heavy3[$h];
+  $fy = $mat2[1]*$heavy2[$h] + $mat2[2]*$heavy3[$h];
+  $fz = $mat3[2]*$heavy3[$h];
+
+  while ( $fx<0. ) { $fx += 1.; }
+  while ( $fy<0. ) { $fy += 1.; }
+  while ( $fz<0. ) { $fz += 1.; }
+  while ( $fx>1. ) { $fx -= 1.; }
+  while ( $fy>1. ) { $fy -= 1.; }
+  while ( $fz>1. ) { $fz -= 1.; }
+
+  $heavy1[$h] = $invmat1[0]*$fx + $invmat1[1]*$fy + $invmat1[2]*$fz;
+  $heavy2[$h] = $invmat2[1]*$fy + $invmat2[2]*$fz;
+  $heavy3[$h] = $invmat3[2]*$fz;
+#  print "HEAVY $h $heavy1[$h] $heavy2[$h] $heavy3[$h]\n";
+}
+
+#read dummy/water atoms and remove if too close to heavy atom
+$num_rem = 0;
+while ( $line=<INP> ) 
+{
+  $write=1;
+  if ( $line =~ /(DUM|DU)\s+(DUM|DU).{8}\s*(-*\d+\.*\d*)\s*(-*\d+\.*\d*)\s*(-*\d+\.*\d*)/ ) {
+#	print "$3 $4 $5\n";
+	$dum1 = $3;	$dum2 = $4;	$dum3 = $5;
+
+	#transform to defined unit cell
+	$fx = $mat1[0]*$dum1 + $mat1[1]*$dum2 + $mat1[2]*$dum3;
+	$fy = $mat2[1]*$dum2 + $mat2[2]*$dum3;
+	$fz = $mat3[2]*$dum3;
+	while ( $fx<0. ) { $fx += 1.; }
+	while ( $fy<0. ) { $fy += 1.; }
+	while ( $fz<0. ) { $fz += 1.; }
+	while ( $fx>1. ) { $fx -= 1.; }
+	while ( $fy>1. ) { $fy -= 1.; }
+	while ( $fz>1. ) { $fz -= 1.; }
+	$dum1 = $invmat1[0]*$fx + $invmat1[1]*$fy + $invmat1[2]*$fz;
+	$dum2 = $invmat2[1]*$fy + $invmat2[2]*$fz;
+	$dum3 = $invmat3[2]*$fz;
+
+	#check distance
+	for ($h=0; $h<$num_heavy; $h++) {
+	  if ( ($dist=sqrt( ($dum1-$heavy1[$h])**2 + ($dum2-$heavy2[$h])**2 + ($dum3-$heavy3[$h])**2 )) < $tresh ) 
+	  { 
+		$write = 0; 
+#		 print "$h  $dist      $line"; 
+		$num_rem++;
+	  }
+	}
+  }
+  if ($write) { syswrite(ARPOUT,$line); }
+}
+
+close(HEAVY);
+close(INP);
+close(ARPOUT);
+
+move("${ARGV[1]}_remove_dummy_temp", $ARGV[1]);
+# || die "Could not rename temporary file\n";
+print "Removed $num_rem dummy atoms too close to heavy atoms.\n";

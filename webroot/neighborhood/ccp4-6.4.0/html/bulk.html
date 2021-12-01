@@ -1,0 +1,159 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::BULK::Supported::Molecular Replacement::bulk solvent correction for translation search and rigid body refinement steps of AMoRe :::::::: -->
+
+<H1> BULK (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>bulk </b>
+- bulk solvent correction for translation search and rigid body refinement steps of AMoRe
+<p><br>
+<H2> SYNOPSIS</H2>
+<b>prep_bulk</b>
+<br>
+<b>bulking</b>
+<p>
+
+<H2> DESCRIPTION</H2>
+
+BULK calculates a bulk solvent correction for the translation search
+and the rigid body refinement steps of the program AMoRe (Navaza,
+J. (1994). Acta Cryst.  A50,157-163).
+<p>
+Low resolution reflections are very useful for the translation search
+because they are less sensitive to errors in the model and in its
+orientation. However, at low resolution the contribution from the bulk
+solvent is quite significant and structure factors calculated from a
+macromolecular model alone cannot be compared with experimental values
+if the bulk solvent correction is neglected.
+<p>
+This program implements the bulk solvent correction using the flat solvent 
+model (Jiang, J.-S. & Brünger, A. (1994) J.Mol.Biol., 91, 201-228).
+<p>
+
+<B>IMPORTANT NOTE: Use this program if you have only one molecule in the 
+asymmetric unit. The model has to be more or less complete. </B>
+
+<h2>ALGORITHM</h2>
+
+<p>See <a href="#references">references</a> below. <br>  
+The main steps of the procedure are:
+<ol>
+<li>The molecular envelope (a binary function) is determined from the atomic
+   model. 
+<li>Structure factors Fenv are calculated as the Fourier coefficients of this 
+   function.
+<li>The structure factors Fsolv are calculated as -ksol*exp(Bsol/(4*d*d))*Fenv
+   For parameters ksol and Bsol the values ksol=0.35 e/A3, Bsol=50 A2 are 
+   recommended, but can be altered (see below).
+<li>The structure factors Fsolv are added to the structure factors Fatom
+   calculated from the atomic model to obtain the corrected structure factors
+   Fcorrected=Fatom+Fsolv.
+<li>The corrected structure factors are used, instead of the structure factors
+   calculated from the atomic model, in the translation search and rigid
+   body fitting.
+</ol>
+  
+<p>To run the procedure 'BULK' a user has to:
+<ol>
+<li>execute the 'tabling' procedure of AMoRe
+<li>prepare the file 'prep_bulk.inp' with the following content:
+<pre>
+
+          a.pdb         ! name of the file with model coordinates (the same as 
+                        !  used for the 'tabling' step)
+
+          search.tab    ! name of the file with the structure factors from 
+                        ! AMoRe's 'tabling' procedure
+
+          tab.log       ! name of the log file of AMoRe's 'tabling' procedure
+
+          search.tabs   ! name of the file with the bulk-solvent-corrected 
+                        ! structure factors (this file will be created by the current 
+procedure)
+
+          bulking.inp   ! name of an intermediate file of control parameters for 
+                        !  'bulking'; 
+                        ! this file will be created by the program prep_bulk (see sect
+iot 4)
+
+           0.35         ! value of ksol
+ 
+          50.0          ! value of Bsol
+
+           1.0          ! value of the solvent radius used for the solvent mask 
+                        !  calculation 
+
+</pre>
+Alternatively, these parameters can be given directly to the program
+prep_bulk, as in the example linked below.
+<li>issue consecutively the two following commands:
+<pre>
+
+          prep_bulk < prep_bulk.inp
+
+          bulking < bulking.inp
+
+</pre>
+The output file 'search.tabs' with bulk-solvent-corrected structure factors
+can be used for the translation search and/or for rigid-body refinement. 
+</ol>
+
+<H2> INPUT AND OUTPUT FILES</H2>
+<H3>a.pdb</H3>
+PDB file of search model, as used in Amore tabling.
+<H3>search.tab</H3>
+Output tabling file from Amore.
+<H3>tab.log</H3>
+Log file of Amore tabling step.
+<H3>search.tabs</H3>
+Output file from bulking. This file can be used in Amore in place of
+the original search.tab
+
+<H2><A NAME="examples"></A>EXAMPLES</H2>
+
+<h3><A NAME="example"></A>Runnable example</h3>
+
+<a href="../examples/unix/runnable/bulk.exam">bulk.exam</a> - this is
+a very simple example for testing purposes. For scientifically more
+interesting examples, see <a href="#references">references</a> below.
+
+<h2>MEMORY ALLOCATION</h2>
+
+Program is written in standard FORTRAN 77, so it uses static memory allocation.
+In the case of problems, the maximal array dimensions can be changed by setting
+the parameters:
+<pre>
+
+                     maxNgrid=20000000
+                      maxrefl=3000000
+                       maxatm=100000
+
+</pre>
+right at the beginning of the source file bulking.f 
+
+<H2> SEE ALSO</H2>
+
+<a href="amore.html">amore</a> 
+
+<H2><A NAME="references"></A>REFERENCES</H2>
+
+<OL>
+<P><!-- KEEP startreferencelist --></P>
+
+<LI>A. Fokine, G. Capitani, M.G. Grutter, A. Urzhumtsev,
+<I>J. Appl. Cryst.</I> <B>36</B> 352-355 (2003)
+<LI>A. Fokine and A. Urzhumtsev, <I>Acta Cryst.</I> <B>A58</B> 72-74 (2002)
+<LI>A. Fokine and A. Urzhumtsev, <I>Acta Cryst.</I> <B>D58</B> 1387-1392 (2002)
+
+<!-- KEEP endreferencelist -->
+</OL>
+
+<H2> AUTHORS</H2>
+A. Fokine, A. Urzhumtsev: 
+University of Nancy 1, France<br>
+G. Capitani, M.G. Grutter: 
+University of Zurich, Switzerland
+
+</body></html>

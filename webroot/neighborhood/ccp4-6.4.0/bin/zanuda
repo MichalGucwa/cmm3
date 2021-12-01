@@ -1,0 +1,1653 @@
+#!/usr/bin/env ccp4-python
+
+import os
+import sys
+import subprocess
+import shutil
+import time
+import signal
+from threading import Thread, Event, Timer
+#import traceback
+
+# ------------------------------------------------------------------------------
+
+class Printable( object ) :
+
+
+   def __str__( self ) :
+      n = 0
+      for key in self.__dict__.keys() : n = max( n, len(key) )
+      fmt = "%-" + str(n) + "s =  %s\n"
+      txt = "-"* 12 + "\n"
+      txt += type( self ).__name__ + "\n"
+      for key, val in self.__dict__.items() :
+         tv = type( val )
+         sv = str( tv )
+         if tv == str or tv == int or tv == float or tv == bool : sv = str( val )
+         txt += fmt %( key, sv )
+      txt += "-"* 12
+      return txt
+
+
+# ------------------------------------------------------------------------------
+
+class Program( list ) :
+
+
+   def __init__( self, *items ) :
+      if len( items ) == 0 : raise Exception()
+      self.cmd = []
+      self.txt = ["", "", "<<+"]
+      self.sep = ""
+      self.add_cmd( *items )
+      self.sep = "\n  "
+
+
+   def add_cmd( self, *items ) :
+      if len( items ) == 0 : return
+      self.txt[1] += self.sep
+      for item in items :
+         string = str( item )
+         self.cmd.append( string )
+         self.txt[1] += string + " "
+      self.txt[1] += "\\"
+
+
+   def add_kwd( self, *items ) :
+      for item in items :
+         self.txt.append( str( item ) )
+
+
+   def input( self ) :
+      return "\n".join( self.txt[3:] + [""] )
+
+
+   def __str__( self ) :
+      return "\n".join( self.txt + ["+", "", ""] )
+
+
+# ------------------------------------------------------------------------------
+
+class Scratch( object ) :
+
+   holders = []
+   path = None
+   sgpath = None
+   test = 0
+
+
+   @classmethod
+   def setup( cls, path, prefix, sgpath, test=0 ) :
+
+      cls.count = 0
+      cls.test = test
+      cls.path = os.path.abspath( path )
+
+      if os.path.isfile( cls.path ) :
+         os.remove( cls.path )
+
+      if not cls.test and os.path.isdir( cls.path ) :
+         shutil.rmtree( cls.path )
+
+      if not os.path.lexists( cls.path ) :
+         os.mkdir( cls.path )
+
+      cls.prefix = os.path.join( cls.path, prefix )
+
+      if sgpath :
+         cls.sgpath = os.path.abspath( sgpath )
+         if cls.sgpath == cls.path :
+            raise ZnError( "Cannot handle " + str( dir ) + " - we should not get here" )
+
+         os.mkdir( cls.sgpath )
+
+
+   @classmethod
+   def append( cls, subgrp, pdb, mtz ) :
+
+         cls.holders.append( ( subgrp, pdb, mtz ) )
+
+
+   @classmethod
+   def clear( cls ) :
+
+      if cls.holders and cls.sgpath :
+         try :
+            if os.path.isfile( cls.sgpath ) :
+               os.remove( cls.sgpath )
+
+            if os.path.isdir( cls.sgpath ) :
+               shutil.rmtree( cls.sgpath )
+
+            os.mkdir( cls.sgpath )
+          
+            for subgrp, pdb, mtz in cls.holders :
+               dir = os.path.join( cls.sgpath, "sg%03d" %( subgrp ) )
+               os.mkdir( dir )
+               if cls.test :
+                  shutil.copy( pdb, dir )
+                  shutil.copy( mtz, dir )
+
+               else :
+                  shutil.move( pdb, dir )
+                  shutil.move( mtz, dir )
+
+         except :
+            pass
+            raise ZnError( "Cannot handle " + str( cls.sgpath ) + " - we should not get here" )
+
+      if cls.test : return
+      if cls.path and os.path.isdir( cls.path ) : shutil.rmtree( cls.path )
+
+
+   def __init__( self, suffix ) :
+
+      cls = type( self )
+      cls.count += 1
+
+      dir = "%s%03d_%s" %( cls.prefix, cls.count, suffix )
+      if os.path.isfile( dir ) : os.remove( dir )
+      if not os.path.isdir( dir ) : os.mkdir( dir )
+      self.bname = os.path.join( dir, "x" )
+
+
+# ------------------------------------------------------------------------------
+
+class Runnable( Printable ) :
+
+   @classmethod
+   def setup( cls, max_time, max_size, blck_size=256, test=0 ) :
+
+      cls.max_time = max_time
+      cls.max_size = max_size
+      cls.blck_size = blck_size
+      cls.test = test
+
+      try :
+         startupinfo = subprocess.STARTUPINFO()
+         startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+         cls.args = dict( bufsize=cls.blck_size, startupinfo = startupinfo )
+
+      except :
+         cls.args = dict( bufsize=cls.blck_size )
+
+
+   std_items = (("com", ".com"), ("inp", ".inp"), ("log", ".log"), ("err", ".err"))
+
+   def _setup( self, suffix, **map ) :
+
+      bname = Scratch( suffix ).bname
+
+      for key, val in map.items() :
+         if val.startswith( "." ) or val.startswith( "_" ) : val = bname + val
+         self.__setattr__( key, val )
+
+      for key, val in self.std_items :
+         if key not in map :
+            self.__setattr__( key, bname + val )
+
+
+   def _run( self, prog ) :
+
+      ofile = open( self.com, "w" )
+      try :
+         ofile.write( str( prog ) )
+      finally :
+         ofile.close()
+
+      ofile = open( self.inp, "w" )
+      try :
+         ofile.write( str( prog.input() ) )
+      finally :
+         ofile.close()
+
+      if os.path.exists( self.log ) and not os.path.exists( self.err ) : return
+
+      if self.test :
+         sys.stderr.write( "%-14s" %os.path.basename( os.path.dirname( self.log ) ) )
+         enter_time = time.time()
+
+      timer = Timer( self.max_time, self._kill )
+      try :
+         timer.start()
+
+         stdin = open( self.inp )
+         try :
+            try :
+               pipe = subprocess.PIPE
+               args = dict( stdin=stdin, stdout=pipe, stderr=pipe )
+               args.update( self.args )
+
+               self.proc = subprocess.Popen( prog.cmd, **args )
+               try :
+                  try :
+                     self._write( self.proc.stdout, self.log, self._accept )
+                     self._write( self.proc.stderr, self.err, lambda x : True )
+
+                  except :
+                     self._kill()
+                     raise ZnError( "we should not get here" )
+
+               finally :
+                  self.proc.stdout.close()
+                  self.proc.stderr.close()
+
+                  code = self.proc.wait()
+                  if code :
+                     raise ZnExecError( code, prog.cmd[0] )
+
+            except :
+               raise ZnError( "failed to execute " + prog.cmd[0] )
+
+         finally :
+            stdin.close()
+
+      finally :
+         timer.cancel()
+         timer.join()
+
+      if self.test :
+         exit_time = time.time()
+         sys.stderr.write( "%9.3f\n" %( exit_time - enter_time ) )
+
+
+   def _write( self, std, name, accept ) :
+
+      if os.path.exists( name ) : os.remove( name )
+      line = std.read( self.blck_size )
+      if not line : return
+      size = len( line )
+
+      ofile = open( name, "w" )
+      try :
+         while line :
+            if size > self.max_size : self._kill()
+            ofile.write( line )
+            line = std.read( self.blck_size )
+            size += len( line )
+
+      finally :
+         ofile.flush()
+         os.fsync( ofile.fileno() )
+         ofile.close()
+
+
+   def _filtered_write( self, std, name, accept ) :
+
+      if os.path.exists( name ) : os.remove( name )
+      line = std.readline( self.blck_size )
+      if not line : return
+      size = len( line )
+
+      ofile = open( name, "w" )
+      try :
+         while line :
+            if size > self.max_size : self._kill()
+
+            if accept( line ) :
+               ofile.write( line )
+               ofile.flush()
+               os.fsync( ofile.fileno() )
+
+            line = std.readline( self.blck_size )
+            size += len( line )
+
+      finally :
+         ofile.close()
+
+
+   def _kill( self ) :
+
+      try : self.proc.kill()
+      except : pass
+      else : return
+
+      try : os.kill( self.proc.pid, signal.SIGKILL )
+      except : pass
+      else : return
+
+      raise Exception( "stopping because cannot kill a subprocess" )
+
+
+   exclude = ["User: ", "CPU", "From cif2mtz", "  unknown", " Elapsed", "data from CAD"]
+
+   def _accept( self, line ) :
+
+      for word in self.exclude :
+         if line.find( word ) >= 0 : return False
+      return True
+
+
+# ------------------------------------------------------------------------------
+
+class ZnError( Exception ) :
+
+
+   def __init__( self, msg ) :
+
+      self.args = (msg,)
+
+
+   def format( self ) :
+
+      return "\n".join( ["","   Zanuda: " + self.args[0], ""] )
+
+
+# ------------------------------------------------------------------------------
+
+class ZnExecError( ZnError ) :
+
+   def __init__( self, code, command ) :
+
+      msg = "error while executing command "
+      msg += command + ", return code = " + str(code )
+      super( type(self), self ).__init__( msg )
+
+
+# ------------------------------------------------------------------------------
+
+class ZnPath( object ) :
+
+
+   @classmethod
+   def setup( cls, own_dir ) :
+
+      ftn = os.path.join( own_dir, "znd_subs.exe" )
+      if not os.path.isfile( ftn ) :
+         ftn = os.path.join( own_dir, "znd_subs" )
+
+      if os.path.isfile( ftn ) and os.access( ftn, os.X_OK ) :
+         cls.znd_subs = os.path.realpath( ftn )
+
+      else :
+         raise ZnError( "cannot find fortran module '" + ftn + "'" )
+
+
+# ------------------------------------------------------------------------------
+
+class ZnTrimmed( ZnPath, Runnable ) :
+
+
+   def __init__( self, pdb ) :
+
+      self._setup( suffix="p1", pdb=".pdb" )
+
+      prog = Program( self.znd_subs )
+      prog.add_cmd( "XYZIN", pdb )
+      prog.add_cmd( "XYZOUT", self.pdb )
+
+      self._run( prog )
+
+
+# ------------------------------------------------------------------------------
+
+class ZnEqualised( ZnPath, Runnable ) :
+
+
+   def __init__( self, pdb ) :
+
+      self._setup( suffix="p2", pdb=".pdb", rej=".rej" )
+
+      prog = Program( self.znd_subs )
+
+      prog.add_cmd( "XYZIN", pdb )
+      prog.add_cmd( "XYZOUT", self.pdb )
+      prog.add_cmd( "XYZREJ", self.rej )
+
+      self._run( prog )
+
+
+# ------------------------------------------------------------------------------
+
+class ZnCompareCaa( ZnPath, Runnable ) :
+
+
+   def __init__( self, mst, pdb1, pdb2 ) :
+
+      self._setup( suffix="p6", pdb=".pdb" )
+
+      prog = Program( self.znd_subs )
+      prog.add_cmd( "OPSIN", mst )
+      prog.add_cmd( "XYZIN1", pdb1 )
+      prog.add_cmd( "XYZIN2", pdb2 )
+      prog.add_cmd( "XYZOUT", self.pdb )
+
+      self.rmsd = None
+
+      try :
+         self._run( prog )
+
+         ifile = open( self.log )
+         try :
+            for line in ifile :
+               if line[0:2] == "AA" :
+                  self.rmsd = float( line.replace( "F", " " ).replace( "T", " " ).split()[1] )
+                  break
+
+         finally :
+            ifile.close()
+
+      except :
+         pass
+
+
+# ------------------------------------------------------------------------------
+
+class ZnTransformCif( ZnPath, Runnable ) :
+
+
+   def __init__( self, mst, cif, subgrp_in, subgrp_out, badd, fslim ) :
+
+      self._setup( suffix="p5", cif=".cif" )
+
+      prog = Program( self.znd_subs )
+      prog.add_cmd( "OPSIN", mst )
+      prog.add_cmd( "SGIN", subgrp_in )
+      prog.add_cmd( "SGOUT", subgrp_out )
+      prog.add_cmd( "CIFIN", cif )
+      prog.add_cmd( "CIFOUT", self.cif )
+      prog.add_cmd( "BADD", badd )
+      prog.add_cmd( "FSLIM", fslim )
+
+      self._run( prog )
+
+
+# ------------------------------------------------------------------------------
+
+class Znd_dmp_to_cif( ZnPath, Runnable ) :
+
+
+   def __init__( self, dmp ) :
+
+      self._setup( suffix="pX", cif=".cif" )
+
+      prog = Program( self.znd_subs )
+      prog.add_cmd( "DMPIN", dmp )
+      prog.add_cmd( "CIFOUT", self.cif )
+
+      self._run( prog )
+
+
+# ------------------------------------------------------------------------------
+
+class Znd_stat_hkl( Runnable ) :
+
+
+   def __init__( self, mtz ) :
+
+      self._setup( suffix="mtzdump", log=".dmp" )
+
+      prog = Program( "mtzdump" )
+      prog.add_cmd( "HKLIN", mtz )
+      prog.add_kwd( "go" )
+
+      self._run( prog )
+
+      ifile = open( self.log )
+      try :
+         x = ifile.readlines()
+
+      finally :
+         ifile.close()
+
+      cou = 0
+      for line in x :
+         if line.startswith( " * Column Types :" ) : i1 = cou
+         elif line.startswith( " * Space group =" ) : i2 = cou
+         cou += 1
+
+      self.free = x[i1+2].find( " I" ) > 0
+      self.symm = int( x[i2].replace(")"," ").rsplit( None, 1 )[1] )
+
+
+# ------------------------------------------------------------------------------
+
+class Znd_sort_hkl( Runnable ) :
+
+
+   def __init__( self, mtz, symm ) :
+
+      self._setup( suffix="cad", mtz=".mtz" )
+
+      prog = Program( "cad" )
+      prog.add_cmd( "HKLIN1", mtz )
+      prog.add_cmd( "HKLOUT", self.mtz )
+      prog.add_kwd( "labin file 1 allin", "symmetry " + str( symm ), "end" )
+
+      self._run( prog )
+
+
+# ------------------------------------------------------------------------------
+
+class Znd_free_flag( Runnable ) :
+
+
+   def __init__( self, mtz ) :
+
+      self._setup( suffix="freerflag", mtz=".mtz" )
+
+      prog = Program( "freerflag" )
+      prog.add_cmd( "HKLIN", mtz )
+      prog.add_cmd( "HKLOUT", self.mtz )
+      prog.add_kwd( "freefr 0.05", "end" )
+
+      self._run( prog )
+
+
+# ------------------------------------------------------------------------------
+
+class Znd_dump_hkl( Runnable ) :
+
+
+   def __init__( self, mtz ) :
+
+      self._setup( suffix="mtzdump", log=".dmp" )
+
+      prog = Program( "mtzdump" )
+      prog.add_cmd( "HKLIN", mtz )
+      prog.add_kwd( "nref -1", "go" )
+
+      self._run( prog )
+
+
+# ------------------------------------------------------------------------------
+
+class Znd_cif_to_mtz( Runnable ) :
+
+
+   def __init__( self, cif ) :
+
+      self._setup( suffix="cif2mtz", mtz=".mtz" )
+
+      prog = Program( "cif2mtz" )
+      prog.add_cmd( "HKLIN", cif )
+      prog.add_cmd( "HKLOUT", self.mtz )
+      prog.add_kwd( "end" )
+
+      self._run( prog )
+
+
+# ------------------------------------------------------------------------------
+
+class Cif_Info( object ) :
+
+
+   def __init__( self, cif ) :
+
+      ifile = open( cif )
+      try :
+         for line in ifile :
+            if line.startswith( "_reflns.number_obs" ) :
+               word = line.split()[1]
+               if word.isdigit() :
+                  self.nrefl = int( word )
+
+               break
+
+      finally :
+         ifile.close()
+
+
+# ------------------------------------------------------------------------------
+
+class Pdb_Info( object ) :
+
+
+   def __init__( self, pdb ) :
+
+      if not pdb : return
+
+      ifile = open( pdb )
+      try :
+         for line in ifile :
+
+            if line.startswith( "CRYST1" ) :
+               self.spacegrp = line[55:65].strip()
+               self.cell = tuple( line[6:55].split() )
+
+      finally :
+         ifile.close()
+
+
+# ------------------------------------------------------------------------------
+
+class ZnOperations( ZnPath, Runnable ) :
+
+
+   def __init__( self, pdb, mtz, badd, fslim ) :
+
+      self._setup( suffix="p3", t_pdb="_t.pdb", pdb=".pdb", mst=".mst" )
+
+      prog = Program( self.znd_subs )
+
+      prog.add_cmd( "XYZIN", pdb )
+      prog.add_cmd( "XYZOUT", self.t_pdb )
+      prog.add_cmd( "OPSOUT", self.mst )
+
+      self._run( prog )
+
+      self._renumber( self.t_pdb, self.pdb )
+
+      self.subgrp = self._subgrp_from_pdb( self.pdb )
+
+      hklinfo = Znd_stat_hkl( mtz )
+      if not hklinfo.free : mtz = Znd_free_flag( mtz ).mtz
+      sorted = Znd_sort_hkl( mtz, hklinfo.symm )
+      cif = Znd_dmp_to_cif( Znd_dump_hkl( sorted.mtz ).log ).cif
+
+      self.high = ZnTransformCif( self.mst, cif, 0, 1, 0.0, 0.0 ).cif
+      self.low = ZnTransformCif( self.mst, cif, 0, 1, badd, fslim ).cif
+
+
+   def _subgrp_from_pdb( self, pdb ) :
+
+      ifile = open( pdb )
+      try :
+         line = ifile.readline()
+
+      finally :
+         ifile.close()
+
+      if line.startswith( "END" ) : return -1
+
+      if line.find( "subgroup_number" ) < 0 : return
+      words = line.split()
+
+      if len( words ) < 3 or not words[2].isdigit() : return
+      return int( words[2] )
+
+
+   def rigid_groups( self ) :
+
+      rg = []
+      ifile = open( self.log )
+      try :
+         for line in ifile :
+            if line.startswith( "rigid group" ) : rg.append( line.strip() )
+
+      finally :
+         ifile.close()
+
+      return rg
+
+
+   def get_list( self, notwin ) :
+
+      prefix = "group  Z"
+      if notwin : prefix = "group  ZZ"
+
+      group_list = []
+      ifile = open( self.log )
+      try :
+         for line in ifile :
+            if line.startswith( prefix ) : group_list.append( int( line[17:21] ) )
+
+      finally :
+         ifile.close()
+
+      return group_list
+
+
+   def _renumber( self, ipdb, opdb ) :
+
+      ifile = open( ipdb )
+      ofile = open( opdb, "w" )
+      try :
+         iline = ifile.readline()
+         while iline and not ( iline.startswith( "ATOM " ) or iline.startswith( "HETATM" ) ) :
+            ofile.write( iline )
+            iline = ifile.readline()
+
+         cou = 0
+         while iline and ( iline.startswith( "ATOM " ) or iline.startswith( "HETATM" ) ) :
+            cou = cou + 1
+            ofile.write( iline[0:6] + "%5d" %( cou ) + iline[11:] )
+            iline = ifile.readline()
+            if cou == 99999 :
+               cou = 0
+
+         while iline :
+            ofile.write( iline )
+            iline = ifile.readline()
+
+      finally :
+         ifile.close()
+         ofile.close()
+
+
+# ------------------------------------------------------------------------------
+
+class ZnTransform( ZnOperations ) :
+
+
+   fmt = "REMARK subgroup_number %5d\n"
+
+   def __init__( self, data, input, subgrp_out ) :
+
+      if input.subgrp != self._subgrp_from_pdb( input.pdb ) :
+         raise Exception()
+
+      suffix = "%s_s%03d" %( "p4", max( 0, subgrp_out ) )
+
+      self._setup( suffix=suffix, t_pdb="_t.pdb", pdb=".pdb" )
+
+      prog = Program( self.znd_subs )
+      prog.add_cmd( "OPSIN", data.mst )
+      prog.add_cmd( "SGOUT", str(subgrp_out) )
+      prog.add_cmd( "XYZIN", input.pdb )
+      prog.add_cmd( "XYZOUT", self.t_pdb )
+
+      self._run( prog )
+
+      self._renumber( self.t_pdb, self.pdb )
+
+      self.subgrp = self._subgrp_from_pdb( self.pdb )
+
+      if not self.subgrp :
+         raise Exception()
+
+      if self.subgrp <= 0 and subgrp_out >= 0 :
+         raise Exception()
+
+
+# ------------------------------------------------------------------------------
+
+class RefmacVersion( Runnable ) :
+
+
+   def __init__( self, refmac ) :
+
+      self._setup( suffix="version" )
+      prog = Program( refmac, "-i" )
+      prog.add_kwd( "end" )
+
+      try :
+         self._run( prog )
+
+      except ZnExecError :
+         pass
+
+      try :
+         ifile = open( self.log )
+         try :
+            x = ifile.read( 500 ).lower()
+            self.version = x[x.find("version ",100):].split()[1]
+            self.old = int( self.version.replace( ".", "" ) ) < 540030
+
+         finally :
+            ifile.close()
+
+      except :
+         raise ZnError( "cannot identify refmac version.\nCommand used: " + refmac )
+
+
+# ------------------------------------------------------------------------------
+
+class VirtualRun( object ) :
+
+
+   counts_at_crash = None
+   count = 0L
+
+   @classmethod
+   def setup( cls, crash ) :
+
+      if crash :
+         cls.counts_at_crash = []
+         for x in crash.split(",") :
+            cls.counts_at_crash.append( int( x ) )
+         
+
+   @classmethod
+   def has_crashed( cls ) :
+
+      if cls.counts_at_crash is None :
+         return False
+
+      cls.count += 1
+      crashed = cls.count in cls.counts_at_crash
+      print "@@@@@@@@ COU", cls.count, crashed
+      return crashed
+
+#     return cls.count in cls.counts_at_crash
+
+
+# ------------------------------------------------------------------------------
+
+class Refmac( Runnable ) :
+
+   old_refmac_on_server = "/data/programs/BALBES/BALBES_0.0.1/bin/refmac_linintel"
+
+
+   @classmethod
+   def setup( cls, path_scr, own_dir, test=0 ) :
+
+      if not os.environ.has_key( "CCP4" ) or not os.environ.has_key( "CBIN" ) :
+         raise ZnError( "fatal error, CCP4 is not installed" )
+
+      cls.refmac="refmac5"
+      own_refmac = os.path.join( own_dir, cls.refmac )
+      if os.path.isfile( own_refmac ) and os.access( own_refmac, os.X_OK ) :
+         cls.refmac = os.path.realpath( own_refmac )
+         if test :
+            print "refmac   = ", cls.refmac
+
+      own_monomers = os.path.join( own_dir, "monomers" )
+      if os.path.isdir( own_monomers ) and os.access( own_monomers, os.R_OK ) :
+         os.environ["CLIBD_MON"] = os.path.join( os.path.realpath( own_monomers ), "" )
+         if test :
+            print "monomers = ", os.environ["CLIBD_MON"]
+
+      rv = RefmacVersion( cls.refmac )
+      cls.version = rv.version
+      cls.scr = "SCRREF", os.path.join( path_scr, "SCRREF" )
+      if rv.old : cls.scr = ()
+
+
+   def _refine( self, pdb, mtz, reformat=True, no_free_ok=False ) :
+
+      if reformat :
+         self._setup( suffix="refmac", t_pdb="_t.pdb", pdb=".pdb", mtz=".mtz" )
+
+      else :
+         self._setup( suffix="refmac", pdb=".pdb", mtz=".mtz" )
+         self.t_pdb = self.pdb
+
+      prog = Program( self.refmac )
+      prog.add_cmd( "XYZIN", pdb )
+      prog.add_cmd( "HKLIN", mtz )
+      prog.add_cmd( "XYZOUT", self.t_pdb )
+      prog.add_cmd( "HKLOUT", self.mtz )
+      prog.add_cmd( *self.scr )
+      prog.add_kwd( *self.kwd )
+
+      try :
+         self._run( prog )
+
+         self.R_over = None
+         self.R_free = None
+         ifile = open( self.log )
+         try :
+            for line in ifile :
+               if line.startswith( "Overall R factor " ) :
+                  self.R_over = float( "0." + line.split( "." )[1] )
+
+               elif line.startswith( "Free R factor " ) :
+                  self.R_free = float( "0." + line.split( "." )[1] )
+
+         finally :
+            ifile.close()
+
+         if no_free_ok :
+            pass
+
+         elif self.R_free == None :
+            raise Exception()
+
+         if reformat :
+            self._reformat( pdb, self.t_pdb, self.pdb )
+
+         self.status = 0
+
+         if VirtualRun.has_crashed() :
+            raise Exception()
+
+      except :
+         self.pdb = pdb
+         self.mtz = None
+         self.R_over = None
+         self.R_free = None
+         self.status = 1
+
+
+   def _reformat( self, fpdb, ipdb, opdb ) :
+
+      try :
+         ffile = open( fpdb )
+         ifile = open( ipdb )
+         ofile = open( opdb, "w" )
+
+         fline = ffile.readline()
+         while fline and not ( fline.startswith( "ATOM " ) or fline.startswith( "HETATM" ) ) :
+            ofile.write( fline )
+            fline = ffile.readline()
+
+         iline = ifile.readline()
+         while iline and not ( iline.startswith( "ATOM " ) or iline.startswith( "HETATM" ) ) :
+            iline = ifile.readline()
+
+         while fline and ( fline.startswith( "ATOM " ) or fline.startswith( "HETATM" ) ) :
+            if not self._compare( iline, fline ) :
+               print iline
+               print fline
+               raise ZnError( "cannot reformat refmac output" )
+
+            ofile.write( fline[0:30] + iline[30:66] + fline[66:] )
+            iline = ifile.readline()
+            fline = ffile.readline()
+
+         while fline != "" :
+            ofile.write( fline )
+            fline = ffile.readline()
+
+      finally :
+         ffile.close()
+         ifile.close()
+         ofile.close()
+
+
+   def _compare( self, iline, fline ) :
+
+      if iline[11:16].strip() != fline[11:16].strip() :
+         print iline[11:16].strip()
+         print fline[11:16].strip()
+         return False
+
+      if iline[16:17] != fline[16:17] :
+         print iline[16:17]
+         print fline[16:17]
+         return False
+
+      if iline[17:21].strip() != fline[17:21].strip() :
+         print iline[17:21].strip()
+         print fline[17:21].strip()
+         return False
+
+      if iline[22:30] != fline[22:30] :
+         print iline[22:30]
+         print fline[22:30]
+         return False
+
+      return True
+
+
+# ------------------------------------------------------------------------------
+
+class Tested( Refmac ) :
+
+
+   kwd = ["make hydr no", "make check none", "make link no connectivity no", "ncyc 0", "end"]
+
+   def __init__( self, xyzin, hklin ) :
+
+      self._refine( xyzin, hklin, reformat=False, no_free_ok=True )
+
+      if self.status : return
+
+      pdbinfo = Pdb_Info( self.pdb )
+      self.info_spacegrp = pdbinfo.spacegrp
+      self.info_cell = pdbinfo.cell
+
+      self.info_reso = "n/a"
+      ifile = open( self.log )
+      try :
+         for line in ifile :
+            if line.startswith( "Resolution limits " ) :
+               try :
+                 self.info_reso = "%5.3f" %( float( line.split( "=" )[1].split()[1] ) )
+
+               except :
+                  pass
+
+               break
+
+      finally :
+         ifile.close()
+
+
+# ------------------------------------------------------------------------------
+
+class Rigid( Refmac ) :
+
+
+   kwd = ["make hydr no", "make segid yes", "bfac set 20.0", "refi type rigid", "labin FP=FP SIGFP=SIGFP FREE=FREE"]
+
+   def __init__( self, pdb, mtz, subgrp, ncyc_rigid, rigid_groups ) :
+
+      self.subgrp = subgrp
+
+      self.kwd = self.kwd + rigid_groups + ["rigid ncyc " + str( ncyc_rigid ), "end"]
+      self._refine( pdb, mtz )
+
+
+# ------------------------------------------------------------------------------
+
+class Restrained( Refmac ) :
+
+
+   kwd = ["make segid yes", "make check NONE", "make -"]
+   kwd += ["hydrogen NO -", "hout NO -", "peptide NO -", "cispeptide NO -", "ssbridge YES -"]
+   kwd += ["chain NO -", "symmetry NO -", "sugar NO -", "connectivity NO -", "link NO"]
+   kwd += ["weight auto", "labin FP=FP SIGFP=SIGFP FREE=FREE"]
+#  kwd += ["bfac set 20.0", "scale type bulk", "weight -", "matrix 0.01"]
+
+   def __init__( self, pdb, mtz, subgrp, ncyc_restr ) :
+
+      self.subgrp = subgrp
+
+      self.kwd = self.kwd + ["ncyc " + str( ncyc_restr ), "end"]
+      self._refine( pdb, mtz )
+
+
+# ------------------------------------------------------------------------------
+
+class MtzHolder( object ) :
+
+
+   def __init__( self, data, subgrp, high=True ) :
+
+      if high :
+         cif_in = data.high
+
+      else :
+         cif_in = data.low
+
+      cif_out = ZnTransformCif( data.mst, cif_in, 1, subgrp, 0.0, 0.0 ).cif
+      self.mtz = Znd_cif_to_mtz( cif_out ).mtz
+
+
+# ------------------------------------------------------------------------------
+
+class RefCycle( object ) :
+
+   rigid = None
+   restr = None
+   score = 999.9
+
+
+   def __init__( self, data, subgroup, subgrp_no, ncyc_rigid, ncyc_restr, flag_save=False ) :
+
+      self.initial = ZnTransform( data, subgroup, subgrp_no )
+      current = self.initial
+
+      if current.subgrp < 0 :
+         return
+
+      if ncyc_rigid >= 0 :
+         holder = MtzHolder( data, self.initial.subgrp, False )
+         rgrp = self.initial.rigid_groups()
+         self.rigid = Rigid( current.pdb, holder.mtz, self.initial.subgrp, ncyc_rigid, rgrp )
+         current = self.rigid
+
+      if ncyc_restr >= 0 or flag_save :
+         holder = MtzHolder( data, self.initial.subgrp )
+
+      if flag_save :
+         Scratch.append( self.initial.subgrp, self.initial.pdb, holder.mtz )
+
+      if ncyc_restr >= 0 :
+         self.restr = Restrained( current.pdb, holder.mtz, self.initial.subgrp, ncyc_restr )
+         current = self.restr
+         if self.restr.R_free : self.score = self.restr.R_free
+
+      self.pdbinfo = Pdb_Info( current.pdb )
+      self.compared = ZnCompareCaa( data.mst, data.pdb, current.pdb )
+
+
+   def __str__( self ) :
+
+      models = self.initial, self.pdbinfo, self.compared, self.rigid, self.restr, self.restr, self
+
+      table = zip( models, self.keys, self.fmt_val, self.fmt_n_a, self.fmt_err )
+      if VirtualRun.counts_at_crash is None :
+         table = table[0:len(table)-1]
+
+      line = ""
+      for model, key, fv, fn, fe in table :
+         if model :
+            value = getattr( model, key )
+            if value != None : value = fv %( value )
+            else : value = fe
+         else : value = fn
+         line += value
+      return line
+
+
+   keys =   ["subgrp",  "spacegrp",   "rmsd",     "R_over",   "R_over",   "R_free",   "score"]
+
+   fmt_val = "1111   |; P 21 21 21 |;100.0000  |;100.0000  |;100.0000  |;100.0000  |;100.0000  |"
+   fmt_n_a = "  --   |;     --     |;    --    |;    --    |;    --    |;    --    |;    --    |"
+   fmt_err = " error |;    error   |;   error  |;   error  |;   error  |;   error  |;   error  |"
+
+   fmt_val = fmt_val.replace( "1111"      , "%4d"   )
+   fmt_val = fmt_val.replace( "P 21 21 21", "%-10s" )
+   fmt_val = fmt_val.replace( "100.0000"  , "%8.4f" )
+   fmt_val = fmt_val.split( ";" )
+   fmt_n_a = fmt_n_a.split( ";" )
+   fmt_err = fmt_err.split( ";" )
+
+
+# ------------------------------------------------------------------------------
+
+class ZnPrinter( object ) :
+
+
+   @classmethod
+   def setup( cls, version, date, title, test=0 ) :
+      cls.title = title
+      cls.test = test
+      print
+      print "   zanuda", version, "(", date, ")"
+
+
+   time0 = 1292077608.66
+   time1 = 1292077618.82
+   time2 = 1292077659.98
+   time3 = 1292077789.10
+   time4 = 1292077929.96
+
+   def _timef( self, value ) :
+      return time.strftime( "%b %d %H:%M %Z", time.localtime( value ) )
+
+
+   def __init__( self, xyzin, hklin ) :
+      self.xyzin_bname = os.path.basename( xyzin )
+      self.hklin_bname = os.path.basename( hklin )
+
+
+   def print_step0a( self ) :
+
+      if self.title :
+         print
+         print "   title             " + self.title
+
+      print
+      print "   coordinates       " + self.xyzin_bname
+      print "   data              " + self.hklin_bname
+      sys.stdout.flush()
+
+
+   def print_step0b( self, tested ) :
+
+      print "   readability test  passed (Refmac_" + tested.version + ")"
+      print "   resolution        " + tested.info_reso
+      print "   spacegroup        " + tested.info_spacegrp
+      print "   cell              " + " ".join( tested.info_cell )
+      sys.stdout.flush()
+
+
+   def print_step0c( self, tested ) :
+
+      print "   readability test  failed (Refmac_" + tested.version + "):"
+      print
+
+      if os.path.exists( tested.err ) :
+         ifile = open( tested.err )
+         try :
+            sys.stdout.write( ifile.read() )
+
+         finally :
+            ifile.close()
+
+      print
+      print "   ------------------------------------------"
+      print "   Make sure that the following script works:"
+      print
+      print "   refmac5 xyzin " + self.xyzin_bname + " hklin " + self.hklin_bname + "<<+"
+      print "   " + "\n   ".join( tested.kwd )
+      print "   +"
+      print
+      sys.stdout.flush()
+
+
+   def estimate_times( self, grp_list, ncyc, nrefl ) :
+      ngrp = len( grp_list )
+      self.delta1 = ( ( ncyc[0]  + ncyc[1]* 2 )* ngrp + ncyc[2] + ncyc[3]* 8 )* nrefl/ 26000
+      self.coef2 = ( ngrp + 3.0 )/ 2
+      self.coef3 =  4.0/ ngrp
+      self.ngrp = str( ngrp )
+
+
+   def print_step1( self ) :
+
+      time0 = time.time()
+      if self.test : time0 = self.time0
+
+      timeE = time0 + self.delta1
+
+      print
+      print "   Step 1."
+      print "   R-factors for the starting model."
+      print "   Transformation into a supergroup."
+      print
+      print "   current time:                                        " + self._timef( time0 )
+      print "   expected end of job (rough estimate):                " + self._timef( timeE )
+      print
+      sys.stdout.flush()
+
+
+   def print_step2a( self, cycle, cycle_max, cycle_wrk ) :
+
+      self.cycle = cycle_wrk
+
+      if not self.test : self.time1 = time.time()
+
+      if self.cycle == cycle : arrow = "  "
+      elif self.cycle == cycle_max : arrow = "<<"
+      else : raise Exception()
+
+      print "   ---------------------------------------------------------------------"
+      print "   | Subgroup | Spacegroup | R.m.s.d. |   Refinement in tested group   |"
+      print "   |          |            | from the |--------------------------------|"
+      print "   |   Ref    |            | starting |  Rigid   |     Restrained      |"
+      print "   |          |            | model, A |----------|---------------------|"
+      print "   |          |            |          |    R     |    R     |  R-free  |"
+      print "   |----------|------------|----------|----------|----------|----------|"
+      print "   | >>" + str( cycle )
+      print "   | " + arrow + str( cycle_max )
+      print "   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+      print
+      print "   Step 2."
+      print "   Refinements in subgroups."
+      print "   There are " + self.ngrp + " subgroups to test."
+      print
+      print "   current time:                                        " + self._timef( self.time1 )
+      sys.stdout.flush()
+
+
+   def print_step2b( self ) :
+
+      time2 = time.time()
+      if self.test : time2 = self.time2
+
+      timeE = time2 + ( time2 - self.time1 )* self.coef2
+
+      print "   expected end of job:                                 " + self._timef( timeE )
+      print
+      print "   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+      print "   | >>" + str( self.cycle )
+      print "   ---------------------------------------------------------------------"
+      sys.stdout.flush()
+
+
+   def print_cycle( self, cycle ) :
+
+      print "   |   " + str( cycle )
+      sys.stdout.flush()
+
+
+   def print_step3a( self ) :
+
+      print "   ---------------------------------------------------------------------"
+
+
+   def print_step3b( self, cycle ) :
+
+      time3 = time.time()
+      if self.test : time3 = self.time3
+
+      timeE = time3 + ( time3 - self.time1 )* self.coef3
+
+      print "   | <<" + str( cycle )
+      print "   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+      print
+      print "   Step 3."
+      print "   Refinement of the best model."
+      print "   Candidate symmetry elements are added one by one."
+      print
+      print "   current time:                                        " + self._timef( time3 )
+      print "   expected end of job:                                 " + self._timef( timeE )
+      print
+      print "   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+      print "   | >>" + str( cycle )
+      print "   ---------------------------------------------------------------------"
+      sys.stdout.flush()
+
+
+   def print_results( self, the_same, cycle ) :
+
+      time4 = time.time()
+      if self.test : time4 = self.time4
+
+      print "   ---------------------------------------------------------------------"
+      print "   | <<" + str( cycle )
+      print "   ---------------------------------------------------------------------"
+      print
+
+      if the_same :
+         print "   R-factor in the original subgroup is (almost) the best."
+         print "   The original spacegroup assignment seems to be correct."
+
+      else :
+         print "   R-factor in the original subgroup is NOT the best."
+         print "   The original spacegroup assignment seems to be incorrect."
+
+      print
+      print "   end of job:                                          " + self._timef( time4 )
+      print
+      sys.stdout.flush()
+
+# ------------------------------------------------------------------------------
+
+class ZnMain( object ) :
+
+   ncyc = [ 24, 8, 8, 8 ]
+   xyzout = None
+   hklout = None
+
+
+   @classmethod
+   def setup_cycles( cls, *ncyc ) :
+
+      cls.ncyc = list( ncyc )
+
+
+   def __init__( self, xyzin, hklin, badd, fslim, notwin, aver ) :
+
+      tolerance = 0.02
+
+      printer = ZnPrinter( xyzin, hklin )
+      printer.print_step0a()
+
+      trimmed = ZnTrimmed( xyzin )
+
+      tested = Tested( trimmed.pdb, hklin )
+      if not tested.status :
+         printer.print_step0b( tested )
+
+      else :
+         printer.print_step0c( tested )
+         raise ZnError( "cannot read input data" )
+
+
+      data = ZnOperations( ZnEqualised( tested.pdb ).pdb, tested.mtz, badd, fslim )
+      grp_list = data.get_list( notwin )
+      printer.estimate_times( grp_list, self.ncyc, Cif_Info( data.high ).nrefl )
+      printer.print_step1()
+
+
+      c0n = RefCycle( data, data, 0, -1, 0 )
+      c0a = RefCycle( data, data, 999, -1, -1 )
+      c1 = c0n
+      if aver :
+         c1 = c0a
+
+      printer.print_step2a( c0n, c0a, c1 )
+
+      first = True
+      for subgrp_no in grp_list :
+         c2 = RefCycle( data, c1.initial, subgrp_no, self.ncyc[0], self.ncyc[1], True )
+         if first :
+            first = False
+            printer.print_step2b()
+            best2 = c2
+
+         elif c2.score <= best2.score :
+            best2 = c2
+
+         printer.print_cycle( c2 )
+
+      printer.print_step3a()
+
+      if self.ncyc[2] < 0 or self.ncyc[3] < 0 :
+         return
+
+      elif not best2.rigid.status :
+         selected2 = best2.rigid
+
+      elif not best2.restr.status :
+         selected2 = best2.restr
+
+      else :
+         raise Exception()
+
+      printer.print_step3b( best2 )
+
+
+      best3 = RefCycle( data, selected2, 1, self.ncyc[2], self.ncyc[3] )
+      c3 = best3
+
+      count = 1
+      while c3.initial.subgrp > 0 :
+
+         printer.print_cycle( c3 )
+
+         if c3.restr.status :
+            raise Exception()
+
+         if c3.score - best3.score > tolerance :
+            break
+
+         count += 1
+         if count > 7 :
+            raise Exception()
+
+         best3 = c3
+         c3 = RefCycle( data, c3.restr, -100, -1, self.ncyc[3] )
+
+      the_same = best3.initial.subgrp == c0n.initial.subgrp
+      printer.print_results( the_same, best3 )
+
+      self.xyzout = best3.restr.pdb
+      self.hklout = best3.restr.mtz
+
+
+# ------------------------------------------------------------------------------
+
+class ZnOptions( Printable ) :
+
+
+   myname = "zanuda"
+
+   usage = " \\ \n    ".join((
+      "Usage:\n    " + myname,
+      "xyzin <name1>.pdb hklin <name2>.mtz",
+      "[xyzout <name3>.pdb hklout <name4>.mtz | output <name without extention> | sgdir <directory> ]",
+      "[aver] [notwin] [badd <number>] [fslim <number>] [title <title>]",
+      "[v] [tmpdir <directory>]",
+      "[stdin]"
+   ))
+
+   def __init__( self ) :
+
+      self.xyzin  = None
+      self.hklin  = None
+      self.xyzout = None
+      self.hklout = None
+      self.output = None
+      self.sgdir  = None
+      self.aver   = False
+      self.notwin = False
+      self.badd   = None
+      self.fslim  = None
+      self.title  = None
+      self.v      = False
+      self.tmpdir = None
+      self.stdin  = False
+
+      self.crash  = None # For emulation of refmac crashes
+      self.twin   = False # YSBL server (not used)
+      self.slow   = False # YSBL server (currently used as a footprint)
+
+      # YSBL server:
+      if not self.tmpdir and self.slow :
+         try :
+            self.tmpdir = "/tmp/" + self.myname + "_" + str( os.getpid() )
+
+         except :
+            raise ZnError( "working directory" )
+
+
+      self.alias = os.path.abspath( sys.argv[0] )
+      self.zanuda = os.path.realpath( self.alias )
+      self.owndir = os.path.realpath( os.path.dirname( self.alias ) )
+
+      self._parse_( sys.argv[1:] )
+
+      if self.stdin :
+         for line in sys.stdin :
+            words = line.split()
+            if len( words ) > 0 :
+               key = words[0].upper()
+               lk4 = len( key ) >= 4
+               lw1 = len( words ) == 1
+               lw2 = len( words ) == 2
+
+               if "TITLE".startswith( key ) and lk4 :
+                  self.title = " ".join( words[1:] ) + "\n"
+
+               elif "NOTWIN" == key and lw1 :
+                  self.notwin = True
+
+               elif "AVERAGE".startswith( key ) and lw1 and lk4 :
+                  self.aver = True
+
+               elif "BADD" == key and lw2 :
+                  self.badd = words[1]
+
+               elif "FSLIM".startswith( key ) and lw2 and lk4 :
+                  self.fslim = words[1]
+
+               elif "END" == key and lw1 :
+                  break
+
+               elif len( words ) > 0 :
+                  print "WARNING: unrecognised keyword '" + line + "'"
+
+      output_defined = False
+      if self.output or self.xyzout and self.hklout :
+         output_defined = True
+
+      self._set_path( "xyzin", old=True, type="file" )
+      self._set_path( "hklin", old=True, type="file" )
+      self._set_path( "output", default = self.myname )
+      self._set_path( "xyzout", default = self.output + ".pdb", type="file" )
+      self._set_path( "hklout", default = self.output + ".mtz", type="file" )
+      self._set_path( "tmpdir", default = self.output + "_wrk", type="dir" )
+
+      if not output_defined :
+         self.xyzout = None
+         self.hklout = None
+
+      if( self.sgdir ) :
+         self._set_path( "sgdir", type="dir" )
+
+      self._set_real( "badd", 60.0 )
+      self._set_real( "fslim", 10.0 )
+
+      del self.output
+
+      if self.v :
+         print self
+         sys.stdout.flush()
+
+
+   def _set_path( self, attr, type="path", old=False, default=None ) :
+
+      val = getattr( self, attr )
+      if not val : val = default
+      if not val :                               raise ZnError( self.usage )
+      val = os.path.realpath( val )
+
+      if os.path.exists( val ) :
+         if type is "file" :
+            if not os.path.isfile( val ) :       raise ZnError( attr + " is not a file" )
+
+         elif type is "dir" :
+            if not os.path.isdir( val ) :        raise ZnError( attr + " is not a directory" )
+
+      else :
+         if old :                                raise ZnError( attr + " does not exist" )
+         dir = os.path.dirname( val )
+         if not os.path.isdir( dir ) :           raise ZnError( dir + " does not exist" )
+
+      setattr( self, attr, val )
+
+
+   def _set_real( self, attr, default ) :
+
+      val = getattr( self, attr )
+      if val :
+         try :
+            val = float( val )
+
+         except :                                raise ZnError( attr + " is not a number" )
+
+      else :
+         val = default
+
+      setattr( self, attr, val )
+
+
+   def _parse_( self, args ) :
+
+      map = self.__dict__
+      key = None
+      for word in args :
+         if key :
+            map[ key ] = word
+            key = None
+
+         else :
+            key = word.lower()
+            if not map.has_key( key ) :          raise ZnError( self.usage )
+
+            val = map[ key ]
+            if val :                             raise ZnError( self.usage )
+
+            if type( val ) is bool :
+               map[ key ] = True
+               key = None
+
+      if key :                                   raise ZnError( self.usage )
+
+# ------------------------------------------------------------------------------
+
+def main() :
+
+   status = 0
+   try :
+      try :
+         version = "1.06"
+         date = "18 Oct 2012"
+
+         max_time = 1800.0
+         max_size = 300* 1000* 1000
+         blck_size = 4096
+
+         stopf = None
+         opt = ZnOptions()
+
+         # YSBL server:
+         if opt.slow : stopf = "FINISHED"
+
+         ZnPrinter.setup( version, date, opt.title, test=opt.v )
+         Scratch.setup( opt.tmpdir, "z", opt.sgdir, test=opt.v )
+         Runnable.setup( max_time=max_time, max_size=max_size, blck_size=blck_size, test=opt.v )
+         Refmac.setup( opt.tmpdir, opt.owndir, test=opt.v )
+         ZnPath.setup( opt.owndir )
+         VirtualRun.setup( opt.crash )
+
+         # CCP4I will create correct default names if all output files from yet running jobs exist
+         if opt.xyzout and opt.hklout :
+            open( opt.xyzout, "w" ).close()
+            open( opt.hklout, "w" ).close()
+
+         if opt.sgdir and not ( opt.xyzout and opt.hklout ) :
+            ZnMain.setup_cycles( -1, -1, -1, -1 )
+
+         znd = ZnMain( opt.xyzin, opt.hklin, opt.badd, opt.fslim, opt.notwin, opt.aver )
+         if opt.xyzout and opt.hklout :
+            shutil.copy( znd.xyzout, opt.xyzout )
+            shutil.copy( znd.hklout, opt.hklout )
+
+      except ZnError, e :
+         sys.stdout.write( e.format() )
+         status = 1
+
+      except :
+         sys.stdout.write( ZnError( "fatal error, cannot continue." ).format() )
+         status = 1
+
+   finally :
+      Scratch.clear()
+
+      # YSBL server:
+      if stopf and not os.path.lexists( stopf ) : os.mkdir( stopf )
+
+   sys.exit( status )
+
+# ------------------------------------------------------------------------------
+
+if __name__ == "__main__" : main()
+

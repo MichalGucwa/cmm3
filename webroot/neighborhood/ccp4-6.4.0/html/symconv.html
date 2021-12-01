@@ -1,0 +1,156 @@
+<html>
+<head><title>CCP4 Program Suite: symconv</title></head>
+<body>
+
+<!-- ::INDEX_INFO::SYMCONV::Supported::Symmetry utilities::Fetch and convert symmetry and spacegroup information:::::::: -->
+
+<h1>SYMCONV (CCP4: Supported Program)</h1>
+<h2>NAME</h2>
+<b>symconv</b>
+- fetches and converts symmetry operators and spacegroup information
+<h2>SYNOPSIS</h2>
+<b>symconv</b>
+<br />
+[<a href="#keywords">Keyworded input</a>]
+
+<h2><a name="description">DESCRIPTION</a></h2>
+
+<p>SYMCONV is a utility program that allows interrogation of the CCP4
+symmetry library. It provides a way to look up spacegroup information
+(<a href="#spacegroup">SPACEGROUP</a> keyword), and to acquire data
+about symmetry operations expressed in different formats.</p>
+
+<h2><a name="files">INPUT AND OUTPUT FILES</a></h2>
+
+<p>There are no input or output files associated with SYMCONV;
+all input is via keywords and all output is to standard out.</p>
+
+<h2><a name="keywords">KEYWORDED INPUT</a></h2>
+
+<p>The program is designed to be able to operate in an interactive
+manner, so the order that keywords are supplied are important - the
+output of later commands e.g. <a href="#op">OP</a> will be affected
+by commands entered previously in that run.</p>
+
+<p>The available keywords are:
+<blockquote>
+<a href="#op"><b>OP</b></a>,
+<a href="#xds"><b>XDS</b></a>,
+<a href="#noxds"><b>NOXDS</b></a>,
+<a href="#cell"><b>CELL</b></a>,
+<a href="#nocell"><b>NOCELL</b></a>,
+<a href="#rcsb"><b>RCSB</b></a>,
+<a href="#norcsb"><b>NORCSB</b></a>,
+<a href="#spacegroup"><b>SPACEGROUP</b></a>,
+<a href="#nospacegroup"><b>NOSPACEGROUP</b></a>,
+<a href="#end"><b>END</b></a>
+</blockquote>
+
+<h3><a name="op">OP</a> &lt;symop_string&gt;</h3>
+
+<p>The OP keyword must be followed by a symmetry operation expressed in
+string format, e.g. x,y,z or x-y,x,z+1/2 (real space) or h,-l,k
+(reciprocal space).</p>
+
+<p>The program will print the equivalent symmetry matrix, and for
+reciprocal space operations it will also print the XDS REIDX
+command. If a cell has previously been supplied via the
+<a href="#cell">CELL</a> keyword then the symmetry operation matrix to
+be applied to real space atom coordinates will also be printed. If a
+spacegroup has previously been supplied via the
+<a href="#spacegroup">spacegroup</a> command then the program will
+identify the sym.id for the operation, plus any additional lattice
+translations that may have been applied (for real space operations
+only). If the RCSB symmetry data is available then it will also
+print the RCSB sym.id (see the <a href="#rcsb">RCSB</a> keyword).</p>
+
+<h3><a name="xds">XDS</a></h3>
+
+<p>Specifying the XDS keyword means that an XDS REIDX line will also be
+written out as part of the output of an <a href="#op">OP</a> keyword,
+when a reciprocal space symmetry operation is supplied. This is the
+default, and can be turned off using the <a href="#noxds">NOXDS</a>
+keyword.</p>
+
+<h3><a name="noxds">NOXDS</a></h3>
+
+<p>Turn off the output of an XDS REIDX line by the <a href="#op">OP</a>
+keyword. Turn back on using the <a href="#xds">XDS</a> keyword.</p>
+
+<h3><a name="cell">CELL</a> &lt;a&gt; &lt;b&gt; &lt;c&gt; [&lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt;]</h3>
+
+<p>Specify a unit cell to be used in conjunction with <a href="#op">OP</a>
+keywords. Cell lengths are in Angstroms and cell angles are in degrees; if
+the angles are not specified then they default to 90 degrees.</p>
+
+<p>After a CELL keyword is given the program will generate and print the
+fractionalising and orthogonalising matrices. It will also store the cell
+parameters and use them for subsequent <a href="#OP">OP</a> keywords, to
+generate the real space symmetry matrix. Use the <a href="#nocell">NOCELL</a>
+keyword to clear the cell parameters.</p>
+
+<h3><a name="nocell">NOCELL</a> &lt;a&gt; &lt;b&gt; &lt;c&gt; [&lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt;]</h3>
+
+<p>Clear the unit cell parameters specified by a previous
+<a href="#cell">CELL</a> keyword.</p>
+
+<h3><a name="rcsb">RCSB</a></h3>
+
+<p>Turn on the printing of the RCSB sym.ids for
+<a href="#spacegroup">SPACEGROUP</a> and <a href="#op">OP</a> keywords
+(this is the default).</p>
+
+<p>Use the <a href="#norcsb">NORCSB</a> keyword to turn off this behaviour.</p>
+
+<h3><a name="norcsb">NORCSB</a></h3>
+
+<p>Turn off printing of the RCSB sym.ids (see the <a href="#rcsb">RCSB</a>
+keyword).</p>
+
+<h3><a name="spacegroup">SPACEGROUP</a> &lt;sg name&gt;</h3>
+
+<p>Look up a spacegroup in the syminfo.lib file and return information
+such as number and a list of symmetry operations and sym.ids (sym.id is
+the position of the operator in the list).</p>
+
+<p>After a SPACEGROUP keyword is given the program will also store the
+spacegroup information (if the spacegroup was found in the library),
+and will attempt to look up symmetry operations given by subsequent
+<a href="#op">OP</a> keywords. If the symmetry operation is found in the
+list of operators for the current spacegroup then its sym.id is
+reported. Use the <a href="#nospacegroup">NOSPACEGROUP</a> keyword
+to clear the spacegroup information.</p>
+
+<h3><a name="nospacegroup">NOSPACEGROUP</a></h3>
+
+<p>Clear the spacegroup data specified by a previous
+<a href="#spacegroup">SPACEGROUP</a> keyword.</p>
+
+<h3><a name="end">END</a></h3>
+<p>End of input, also end-of-file will do.</p>
+
+<h2>KNOWN PROBLEMS</h2>
+
+<p>Due to a bug in the CCP4 parser library in releases 6.0.1 and earlier,
+the RCSB lookup functions may not work correctly. This has been fixed
+for subsequent CCP4 versions (6.0.2 and later).</p>
+
+<h2><a name="examples">EXAMPLES</a></h2>
+
+<h3>Unix example script found in $CEXAM/unix/runnable/</h3>
+<ul>
+<li><a href="../examples/unix/runnable/symconv.exam">symconv.exam</a></li>
+</ul>
+
+<h2>AUTHOR</h2>
+<p>Peter Briggs, CCLRC Daresbury Laboratory<br />
+August 2006</p>
+
+<p>The program also includes spacegroup data kindly provided by
+the RCSB-PDB.</p>
+
+<h2> SEE ALSO</h2>
+
+</body>
+</html>
+

@@ -1,0 +1,683 @@
+<html>
+<head><title>CCP4 Program Suite: unix.m4/vms.for/w32mvs.f</title></head>
+<body>
+
+<!-- ::INDEX_INFO::UNIX.M4::Library::::library routines for system interactions:::::::: -->
+
+<H1> UNIX (CCP4: Library)</H1>
+
+<H2> NAME</H2>
+
+<b>unix.m4, vms.for, w32mvs.f </b> - library routines for system interactions
+
+<H2>DESCRIPTION</H2>
+
+<p>These subroutines allow Fortran programs to interact directly with the
+appropriate operating system. There are three files for three types of operating
+system: <tt>unix.m4</tt> (UNIX), <tt>vms.for</tt> (VMS) and <tt>w32mvs.f</tt>
+(Microsoft Visual Studio, for NT).
+
+<p>Each file should contain the same basic set of routines in the three different
+implementations; differences between them are to cope with platform-specific
+aspects of each system.
+
+<H2>Contents</H2>
+
+<ul>
+   <li><a href="#list_of_routines">List of Routines</a>
+   <li><a href="#descriptions">Descriptions of the Routines</a>
+</ul>
+
+<a name="list_of_routines"></a><H2>List of Routines</H2>
+
+<p>The following table lists the subroutines, and notes which file(s) they can
+be found in.
+
+<p><table border=1>
+<tr><th>Routine  <th>Description  <th>unix.m4   <th>vms.for   <th>w32mvs.f
+<tr><td><a href="#ccpopn">CCPOPN</a>
+    <td>Open a file
+    <td>yes  <td>yes  <td>yes
+<tr valign="top"><td><a href="#ubytes">UBYTES</a>
+    <td>Returns number of bytes per word and 'words'/'bytes'
+                    to indicate if byte handling is available
+    <td>yes  <td>yes  <td>yes
+<tr><td><a href="#ucputm">UCPUTM</a>
+    <td>Get CPU time
+    <td>yes  <td>yes  <td>yes
+<tr><td><a href="#ugerr">UGERR</a>
+    <td>Get error explanation
+    <td>yes  <td>yes  <td>yes
+<tr><td><a href="#ugtenv">UGTENV</a>
+    <td>Get value of env. variable
+    <td>yes  <td>yes  <td>yes
+<tr><td><a href="#ugtuid">UGTUID</a>
+    <td>Get user id - it's name
+    <td>yes  <td>yes  <td>yes
+<tr><td><a href="#uidate">UIDATE</a>
+    <td>Get date in 3 integer format
+    <td>yes  <td>yes  <td>yes
+<tr><td><a href="#uisatt">UISATT</a>
+    <td>Is file a terminal?
+    <td>yes  <td>yes  <td>yes
+<tr><td><a href="#ustime">USTIME</a>
+    <td>Get absolute time in seconds
+    <td>yes  <td>yes  <td>yes
+<tr><td><a href="#utime">UTIME</a>
+    <td>Get current time
+    <td>yes  <td>yes  <td>yes
+<tr><td><a href="#vaxvms">VAXVMS</a>
+    <td>Logical function returns TRUE if VAX/VMS
+    <td>yes  <td>yes  <td>yes
+<tr><td><a href="#winmvs">WINMVS</a>
+    <td>Logical function returns TRUE if Windows/MVS
+    <td>yes  <td>yes  <td>yes
+<tr><td><a href="#ttsend">TTSEND</a>
+    <td>Write string to terminal with various carriage control
+                    options
+    <td>yes  <td>yes  <td>yes
+<tr><td><a href="#getelapsed">GETELAPSED</a>
+    <td>Print timing info for CCPERR
+    <td>yes  <td>yes  <td>yes
+<tr><td><a href="#ugtarg">UGTARG</a>
+    <td>Get command-line argument
+    <td>yes  <td>yes  <td>yes
+<tr><td><a href="#ccpspw">CCPSPW</a>
+    <td>Spawns a new process to run shell command
+    <td>yes  <td>yes  <td>yes
+<tr><td><a href="#cexit">CEXIT</a>
+    <td>Wrap around for exit routines
+    <td>yes  <td>yes  <td>yes
+<tr><td>IEOR
+    <td>Integer function: "XOR" wrap around for f2c compiler
+    <td>yes  <td>no  <td>no
+<tr><td>IOR
+    <td>Integer function: "OR" wrap around f2c compiler
+    <td>yes  <td>no  <td>no
+<tr><td>IAND
+    <td>Integer function: "AND" wrap around for f2c compiler
+    <td>yes  <td>no  <td>no
+<tr><td><a href="#rtnbks">RTNBKS</a>
+    <td>Character function
+    <td>yes  <td>yes  <td>yes
+<tr><td><a href="#urenam">URENAM</a>
+    <td>Rename a file
+    <td>no   <td>yes  <td>no
+<tr><td><a href="#getarg">GETARG</a>
+    <td>Get command line arguments
+    <td>no   <td>yes  <td>no
+<tr><td><a href="#ustenv">USTENV</a>
+    <td>Create a logical name
+    <td>no   <td>yes  <td>no
+<tr><td><a href="#ccpal1">CCPAL1</a>
+    <td>Support for CCPALC
+    <td>no   <td>yes  <td>yes
+<tr><td><a href="#iargc">IARGC</a>
+    <td>number of command line arguments
+    <td>no   <td>yes  <td>no
+<tr><td><a href="#getpid">GETPID</a>
+    <td>Integer function: get pid
+    <td>no   <td>yes  <td>no
+<tr><td><a href="#hciftime">HCIFTIME</a>
+    <td>local date and time, and relative to GMT
+    <td>yes  <td>yes  <td>yes
+<tr><td><a href="#binsrt">SRTBEG</a>
+    <td>Integer function: (VMS version of that in binsortint)
+    <td>no   <td>yes  <td>no
+<tr><td><a href="#binsrt">SRTRLS</a>
+    <td>Integer function: (VMS version of that in binsortint)
+    <td>no   <td>yes  <td>no
+<tr><td><a href="#binsrt">SRTMRG</a>
+    <td>Integer function: (VMS version of that in binsortint)
+    <td>no   <td>yes  <td>no
+<tr><td><a href="#binsrt">SRTRET</a>
+    <td>Integer function: (VMS version of that in binsortint)
+    <td>no   <td>yes  <td>no
+<tr><td>GDUMMY
+    <td>Dummy GL stubs iff not SGI (see routine for entry's)
+    <td>yes  <td>no   <td>yes
+<tr><td>CLEAR   <td>Null routine (dummy GL stub) iff not SGI
+    <td>yes  <td>no  <td>yes
+</table>
+
+
+<a name="descriptions"></a><H2>Descriptions of the Subroutines</H2>
+
+<dl>
+<dt><a name="ccpopn"></a><H3>CCPOPN</H3>
+      <dd>SUBROUTINE CCPOPN(IIUN,LOGNAM,KSTAT,ITYPE,LREC,IFAIL)
+      <p>
+      This subroutine is used to open a file
+      <p>
+ <table noborder>
+  <tr valign="TOP"><td>Arguments: <td> INTEGER <td>IIUN, KSTAT, ITYPE, LREC, IFAIL
+  <tr valign="TOP"><td> <td> CHARACTER*(*) <td> LOGNAM
+  <tr valign="TOP"><td>
+  <tr valign="TOP"><td>Input: <td> IIUN <td> unit number.  If negative no messages.
+  <tr valign="TOP"><td> <td> LOGNAM <td> logical file name /file name 
+                                         (up to 8 characters?)
+  <tr valign="TOP"><td> <td> KSTAT <td> <dl> <dt> file status flag
+                                              <dd>1, 'UNKNOWN'
+					      <dd>2, 'SCRATCH' (see below)
+					      <dd>3, 'OLD'
+					      <dd>4, 'NEW'
+					      <dd>5, 'READONLY' (see below)
+					      <dd>6, 'PRINTER' (see below)
+                                        </dl>
+  <tr valign="TOP"><td> <td> ITYPE <td> <dl> <dt>file type flag
+                                               <dd>1, 'SEQUENTIAL' & 'FORMATTED'
+					       <dd>2, 'SEQUENTIAL' & 'UNFORMATTED'
+					       <dd>3, 'DIRECT' & 'FORMATTED'
+					       <dd>4, 'DIRECT' & 'UNFORMATTED'
+					</dl>
+  <tr valign="TOP"><td> <td> LREC <td> record length for direct file access. <br>
+                                       In characters for a formatted file, in words
+				       for an unformatted file. <br>
+				       Not relevant for a seqUential file
+  <tr valign="TOP"><td> <td> IFAIL <td> 0, stop on open failure <br>
+                                        1, continue after open failure<br>
+                                        2, continue silently after open failure
+  <tr valign="TOP"><td>
+  <tr valign="TOP"><td>Output: <td> IFAIL <td>Unchanged if file open successful <br>
+                                              -1, error in opening file
+ </table>				     
+ <p>
+      The requirement to specify that leading carriage control
+      characters in the output records should be obeyed (or not) can't
+      be implemented portably; likewise specifying readonly opening.
+      Some compilers accept VAXtran `carriagecontrol=' and `readonly'
+      specifiers; if so we use them.  Others have IOINIT, which can be
+      used to specify the carriage control.  The HPUX compiler is said
+      not to have any means of doing this and AIX seems to be likewise,
+      sigh; they both seem to obey the normal unix convention of
+      printing the format as-is rather than obeying the first character
+      as carriage control.  Concentrix does obey the first column a la
+      VMS and `traditional' Fortran; the MIPS compilers have a compile
+      (link?) option to do so.  [Unfortunately, carriagecontrol
+      specification isn't even defined in Fortan90, although
+      `ACTION="READ"' can be used.]
+      Other machines, dispos, etc
+<p>
+<dt><a name="ubytes"></a><H3>UBYTES</H3>
+ <dd>SUBROUTINE UBYTES(INUM,STRING)
+  <p>
+      Return statistics about byte handling
+  <p>
+   <table noborder>
+    <tr valign="TOP"><td>Arguments: <td> INTEGER <td> INUM
+    <tr valign="TOP"><td> <td> CHARACTER*5 <td> HANDLE
+    <tr valign="TOP"><td>
+    <tr valign="TOP"><td>Input: <td>none
+    <tr valign="TOP"><td>
+    <tr valign="TOP"><td>Output: <td>INUM <td> number of bytes per word (set to 4)
+    <tr valign="TOP"><td> <td> HANDLE <td>'WORDS' or 'BYTES' <br>
+                                           For unformatted files records are usually
+					   counted in 'BYTES', however both VAX and 
+					   SGI swap to 'WORDS' for this file type.
+   </table>
+  <p> In <tt>unix.m4</tt> <i>_ubytes</i> is set at the precompilation stage 
+      dependant on the compiler.
+      For SGI and Dec-Fortran the value is 'WORDS', the default is 'BYTES'.  In 
+      <tt>vms.for</tt> and
+      <tt>w32mvs.f</tt> the values are coded, 'WORDS' for the VMS and 'BYTES' for MVS.
+      <br> In all cases INUM is coded as 4.
+<p>
+<dt><a name="ucputm"></a><H3>UCPUTM</H3>
+  <dd>SUBROUTINE UCPUTM(SEC)
+    <p>
+     Get CPU time in seconds
+    <p>
+    <table noborder>
+     <tr valign="TOP"><td>Arguments: <td>SEC <td> REAL
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Input/Output <td> SEC <td>
+                     If sec &lt;= 0.0, initialize timer and return current
+                     elapsed cpu time since start of execution, otherwise
+                     return elapsed cpu since timer was initialized.
+                     Time is in seconds.
+    </table>
+
+<p>
+<dt><a name="ugerr"></a><H3>UGERR</H3>
+   <dd>SUBROUTINE UGERR(STATUS,ERRSTR)
+     <p>
+     Get error message string for error number in STATUS
+     (VMS).  Actually for UNIX and MVS it ignores STATUS and always uses the
+     *last* error that occurred.
+     <p>
+      <table noborder>
+      <tr valign="TOP"><td>Arguments: <td>INTEGER <td> STATUS
+      <tr valign="TOP"><td> <td>CHARACTER*(*) <td>ERRSTR
+      <tr valign="TOP"><td>
+      <tr valign="TOP"><td>Input: <td>STATUS <td>Error number <br>
+                                                 (If negative print error message)
+      <tr valign="TOP"><td>
+      <tr valign="TOP"><td>Output <td>ERRSTR <td>Error message string
+      </table> 
+
+<p>
+<dt><a name="ugtenv"></a><H3>UGTENV</H3>
+    <dd>SUBROUTINE UGTENV(NAMENV,VALENV)
+     <p> Get value of env. variable
+     <p>
+     <table noborder>
+     <tr valign="TOP"><td> Arguments: <td> CHARACTER*(*) <td>NAMENV, VALENV
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Input: <td>NAMENV <td>Logical name (trailing blanks 
+            are stripped)
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Output: <td>VALENV <td>Value
+     </table>
+
+<p>
+<dt><a name="ugtuid"></a><H3>UGTUID</H3>
+    <dd>SUBROUTINE UGTUID(USRNAM)
+     <p>Get user ID
+     <p>
+     <table noborder>
+     <tr valign="TOP"><td>Arguments: <td>CHARACTER*(*) <td>UID
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Input: <td>none
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Output: <td>UID <td>user ID string
+     </table>
+
+<p>
+<dt><a name="uidate"></a><H3>UIDATE</H3>
+    <dd>SUBROUTINE UIDATE(IMONTH,IDAY,IYEAR)
+     <p>Get date in 3 integer format. 
+     <p>
+     <table noborder>
+     <tr valign="TOP"><td>Arguments: <td>INTEGER <td>IMONTH, IDAY, IYEAR
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Input: <td>none
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Output: <td>IMONTH <td>month
+     <tr valign="TOP"><td> <td>IDAY <td>day
+     <tr valign="TOP"><td> <td>IYEAR <td>year
+     </table>
+     <p>Variation in IDATE syntax. Alliant uses INTEGER*4 and order is IDAY,IMONTH,IYEAR
+
+<p>
+<dt><a name="uisatt"></a><H3>UISATT</H3>
+    <dd>SUBROUTINE UISATT(FLUN,ANSWER)
+     <p>This function determines whether a program is being
+        run online, if this information is available.
+     <p>
+     <table noborder>
+     <tr valign="TOP"><td>Arguments: <td>INTEGER <td>FLUN, ANS
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Input: <td>FLUN <td>Fortran Unit Number
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Output: <td>ANS <td>1, online <br>
+                                              0 otherwise
+     </table>
+
+<p>
+<dt><a name="ustime"></a><H3>USTIME</H3>
+    <dd>SUBROUTINE USTIME(ISEC)
+     <p> Get absolute time in seconds.
+     <p>
+     <table noborder>
+     <tr valign="TOP"><td>Arguments: <td>INTEGER <td>SEC
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Input: <td>none
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Output: <td>SEC <td>
+     </table>
+ 
+<p>
+<dt><a name="utime"></a><H3>UTIME</H3>
+    <dd>SUBROUTINE UTIME(CTIME)
+     <p>Get current time hh:mm:ss
+     <p>
+     <table noborder>
+     <tr valign="TOP"><td>Arguments: <td>CHARACTER*(*) <td>CTIME
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Input: <td> None
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Output: <td>CTIME <td>time as a string hh:mm:ss
+     </table>
+
+<p>
+<dt><a name="vaxvms"></a><H3>VAXVMS</H3>
+    <dd>LOGICAL FUNCTION VAXVMS()
+    <p>Operating System in use; returns .TRUE. if VAXVMS
+    <p>
+    <table noborder>
+    <tr valign="TOP"><td>Arguments: <td>none
+    <tr valign="TOP"><td>
+    <tr valign="TOP"><td>Input: <td>none
+    <tr valign="TOP"><td>
+    <tr valign="TOP"><td>Returns: <td>.TRUE. <td>for VAXVMS
+    <tr valign="TOP"><td> <td>.FALSE. <td>otherwise
+    </table>
+    <p>UNIX and MVS routines are set to .FALSE., VMS set to .TRUE.
+<p>
+<dt><a name="winmvs"></a><H3>WINMVS</H3>
+    <dd>LOGICAL FUNCTION WINMVS()
+    <p>Windows Microsoft Visual Studio
+    <p>
+    <table noborder> 
+    <tr valign="TOP"><td>Arguments: <td>none
+    <tr valign="TOP"><td>
+    <tr valign="TOP"><td>Input: <td>none
+    <tr valign="TOP"><td>
+    <tr valign="TOP"><td>Returns: <td>.TRUE. <td>for w32mvs
+    <tr valign="TOP"><td> <td>.FALSE. <td>otherwise
+    </table>
+    <p>UNIX and VAX routines are set to .FALSE., MVS set to .TRUE.
+
+<p>
+<dt><a name="ttsend"></a><H3>TTSEND</H3>
+    <dd>SUBROUTINE TTSEND (IUN, STR, ICC)
+      <p>Write a string to a terminal with various carriage control options
+      [for LAUE]
+      <p>
+      <table noborder>
+      <tr valign="TOP"><td>Arguments: <td>INTEGER <td>IUN, ICC
+      <tr valign="TOP"><td> <td>CHARACTER*(*) <td>STR
+      <tr valign="TOP"><td>
+      <tr valign="TOP"><td>Input: <td>IUN <td> Unit number for output
+      <tr valign="TOP"><td> <td>STR <td>The string to be output
+      <tr valign="TOP"><td> <td>ICC <td>0, no carriage control at the end
+                                        of the string (for prompts), e.g. 
+					for routine TPROMP <br>
+					1, normal carriage control, e.g. for
+					routine TWRITE <br>
+					2, no carriage control (for sending
+					escape/control character sequences to
+					ANSI/T4014 terminals, e.g. for QSCREEN
+					graphics routines<br>
+					3, output line at current point on 
+					screen (no leading linefeed or carriage
+					return - trailing does not matter)
+      <tr valign="TOP"><td>
+      <tr valign="TOP"><td>Output: <td>none
+      </table>
+      <p>UNIX and MVS versions check if leading VMS-style carriage control characters 
+         are obeyed for file IUN (issues of support and use are discussed in 
+	 <a href="#ccpopn">CCPOPN</a>.
+
+<p>
+<dt><a name="getelapsed"></a><H3>GETELAPSED</H3>
+    <dd>SUBROUTNE GETELAPSED
+    <p>print timing information for CCPERR.
+    <p>Contains ENTRY INITFYP to initialise elapsed time.
+       <tt>unix.m4</tt> contains FPE initialisation for Sun OS. <br>
+       <tt>vms.for</tt> gets user id and use for argv[0] and splits command 
+       line into arguments (referenced in VMS routines <a href="#getarg">GETARG</a> 
+       and <a href="#iargc">IARGC</a>.
+<p>
+<dt><a name="ugtarg"></a><H3>UGTARG</H3>
+    <dd >SUBROUTINE UGTARG(I, ARG)
+     <p>get I'th command-line argument. <br>
+        UNIX and MVS use system call <i>getarg</i>, except for HPUX which 
+	calls <i>igetarg</i>.  VMS calls <tt>vms.for</tt> routine GETARG.
+     <p>
+     <table noborder>
+     <tr valign="TOP"><td>Arguments: <td>INTEGER <td>I
+     <tr valign="TOP"><td> <td>CHARACTER*(*) <td>ARG
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Input: <td>I <td>number of argument
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Output: <td>ARG <td>argument string
+     </table>
+
+<p>
+<dt><a name="ccpspw"></a><H3>CCPSPW</H3>
+      <dd>SUBROUTINE CCPSPW(STRING)
+      <p>Spawns a new process to run shell command
+      <p>
+      <table noborder>
+      <tr valign="TOP"><td>Arguments: <td>CHARACTER*(*) <td>STRING
+      <tr valign="TOP"><td>
+      <tr valign="TOP"><td>Input: <td>STRING <td>command
+      <tr valign="TOP"><td>
+      <tr valign="TOP"><td>Output: <td>none
+      </table>
+      <p>Uses system (UNIX, MVS) or LIB$SPAWN (VMS)
+
+<p>
+<dt><a name="cexit"></a><H3>CEXIT</H3>
+    <dd>SUBROUTINE CEXIT(ICODE)
+     <p>Wrap around for EXIT routines.
+     <p>
+     <table noborder>
+     <tr valign="TOP"><td>Arguments: <td>INTEGER <td>ICODE
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Input: <td>ICODE <td>error code
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Output:<td>none
+     </table>
+     <p>Machine specific routines are called to exit and flush FORTRAN buffers.
+        EXIT in most cases.  See <tt>unix.mt</tt> code for details.
+
+<p>
+<dt><a name="rtnbks"></a><H3>RTNBKS</H3>
+    <dd>CHARACTER FUNCTION RTNBKS()
+      <p>Returns a Backslash for NT as unix compilers are fussy!
+      <p>
+      <table noborder>
+      <tr valign="TOP"><td>Arguments: <td>none
+      <tr valign="TOP"><td>
+      <tr valign="TOP"><td>Input: <td>none
+      <tr valign="TOP"><td>
+      <tr valign="TOP"><td>Returns: <td>'\' if MVS <br>
+                                        ' ' if UNIX or VMS
+      </table>
+      <p>Result is coded in appropriate library.
+
+<p>
+<dt><a name="urenam"></a><H3>URENAM</H3>
+    <dd>SUBROUTINE URENAM(NAME1,NAME2,STATUS)
+     <p>Rename file assigned to NAME1 to NAME2. <br>
+        VMS (<tt>vms.for</tt>) only.  
+     <p>
+     <table noborder>
+     <tr valign="TOP"><td>Arguments: <td>CHARACTER*(*) <td>NAME1, NAME2
+     <tr valign="TOP"><td> <td>INTEGER <td>STATUS
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Input: <td> NAME1 <td>file name
+     <tr valign="TOP"><td> <td>NAME2 <td>file name
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Output: <td>STATUS <td>0, if ok <br>
+                                                 &lt;&gt; if an error
+     </table>
+
+<p>
+<dt><a name="getarg"></a><H3>GETARG</H3>
+    <dd>SUBROUTINE GETARG(INUM,LINE)
+    <p>Get INUM'th command line argument or ' ' into LINE <br>
+       VMS (<tt>vms.for</tt>) only. Replaces <i>getarg</i> system call.
+    <p>
+    <table noborder>
+    <tr valign="TOP"><td>Arguments: <td>INTEGER <td>INUM
+    <tr valign="TOP"><td> <td>CHARACTER*(*) <td>LINE
+    <tr valign="TOP"><td>
+    <tr valign="TOP"><td>Input: <td>INUM <td>desired command line argument
+    <tr valign="TOP"><td>
+    <tr valign="TOP"><td>Output: <td>LINE <td>command line argument
+    </table>
+    <p>Gets the value from a common block (ARGS) set up in ENTRY INITFYP of
+       <a href="#getelapsed">GETELAPSED</a>.
+
+<dt><a name="ustenv"></a><H3>USTENV</H3>
+    <dd>SUBROUTINE USTENV(LINE,IRESULT)
+    <p>Logical name assignment <br>
+       VMS (<tt>vms.for</tt>) only. UNIX and MVS versions use <a href="library.html">
+       library.c</a> version which accesses <i>putenv</i> (POSIX) or <i>setenv </i>
+       (non-POSIX). 
+     <p>
+     <table noborder>
+     <tr valign="TOP"><td>Arguments: <td>CHARACTER*(*) <td>LINE
+     <tr valign="TOP"><td> <td>INTEGER <td>IRESULT
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Input: <td>LINE <td>line takes the form <br>
+                     '&lt;logical name&gt;=&lt;filename&gt;'
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Output: <td>IRESULT <td>0 iff successful
+     </table>
+     <p>Under VMS there is no standard way of setting the environmental variables.  
+        The work around stores the file name in a STRUCTURE array.
+
+<p>
+<dt><a name="ccpal1"></a><H3>CCPAL1</H3>
+    <dd>SUBROUTINE CCPAL1 (ROUTNE, N, TYPE, LENGTH)
+     <p>Arrange to call ROUTNE with N TYPEd array arguments of given.
+        LENGTH (see calling routine <a href="./ccplib.html#ccpalc">CCPALC</a> 
+	for fuller discussion).
+     <p>
+     <table noborder>
+     <tr valign="TOP"><td>Arguments: <td>EXTERNAL <td>ROUTNE
+     <tr valign="TOP"><td> <td>INTEGER <td>N
+     <tr valign="TOP"><td> <td>INTEGER*(*) <td> LENGTH
+     <tr valign="TOP"><td> <td>CHARACTER*1 (*) <td>TYPE
+     <tr valign="TOP"><td>Input <td>ROUTNE <td>routine to call
+     <tr valign="TOP"><td> <td>N <td>number of arguments to ROUTNE (&lt;=12)
+     <tr valign="TOP"><td> <td>TYPE <td> <dl> <dt>type of argument to ROUTNE
+                                           <dd>'I': INTEGER
+					   <dd>'R': REAL
+					   <dd>'D': DOUBLE
+					   <dd>'C': COMPLEX </dl>
+     <tr valign="TOP"><td> <td>LENGTH <td>number of elements on each array
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Output: <td>none
+     </table>
+     <p>Note: assumes 32 bit (4 byte words). <br>
+        VMS and MVS routines.  UNIX uses a C routine in <a href="./library.html">
+	library.c</a>.
+
+<p>
+<dt><a name="iargc"></a><H3>IARGC</H3>
+    <dd>INTEGER FUNCTION IARGC(IDUMMY)
+     <p>Gets the number of command-line arguments. <br>
+        VMS only.  UNIX and MVS use system call <i>iargc</i>.
+     <p>
+     <table noborder>
+     <tr valign="TOP"><td>Arguments: <td>INTEGER (dummy) <td>IDUMMY
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Input: <td>IDUMMY <td>dummy argument
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Returns: <td> <td>number of command-line arguments.
+     </table>
+     <p>Gets value from common block (ARGCOUNT) variable set up in ENTRY INITFYP of
+        <a href="#getelapsed">GETELAPSED</a>.  If value not set calls INITFYP.
+<p>
+<dt><a name="getpid"></a><H3>GETPID</H3>
+    <dd>INTEGER FUNCTION GETPID(IDUMMY)
+     <p>Get process ID. <br>
+        VMS only, using VMS specific system call.  UNIX and MVS use system call 
+	<i>getpid</i>.
+     <p>
+     <table noborder>
+     <tr valign="TOP"><td>Arguments: <td>INTEGER (dummy) <td>IDUMMY
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Input: <td>IDUMMY <td>dummy argument
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Returns: <td> <td>process id
+     </table>
+
+<p>
+<dt><a name="hciftime"></a><H3>HCIFTIME</H3>
+    <dd>SUBROUTINE HCIFTIME(CIFTIME)
+     <p>Get local time and difference from GMT.
+     <pre>       1997-08-12T13:55:58-05:00
+                  local    GMT
+     </pre>
+     <p>
+     <table noborder>
+     <tr valign="TOP"><td>Arguments: <td>CHARACTER*(*) (&gt;25)<td>CIFTIME 
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Input: <td>none
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Output: <td>CIFTIME <td>local time stamp
+                                                  and difference to GMT.
+     </table>
+     <p>version of the routine in SCALA.<br>
+        VMS uses f90 intrinsic Date_and_Time. MVS uses same intrinsic.<br>
+	Using f77:  works on VMS Fortran V7 but not earlier versions
+        works on Digital UNIX V4.0F. <br>
+	UNIX uses fortran system call <i>Ltime</i> and <i>gmtime</i> which
+	dissect a UNIX time into month, day, etc., either for the local time zone 
+	 or as GMT.
+
+</dl>
+<p><a name="binsrt"><H3>Binsortint Routines</H3>
+<p></a>SRTBEG, SRTRLS, SRTMRG and SRTRET in this file are the VMS 
+   versions of library routines in <tt>binsortint.c</tt> (UNIX) and 
+   <tt>w32binsort</tt> (MVS).  binsortint is a set of routines used as an interface to
+   binsort mainly from FORTRAN programs.
+
+<p>
+<dl>
+<dt><a name="srtbeg"></a><H3>SRTBEG</H3>
+    <dd>INTEGER FUNCTION SRTBEG(NKEYS,KEYB,LRECL,MEMSIZE)
+     <p>integer binsort -sort initialisation.  Launches VMS specific sort library 
+        routine.
+     <p>
+     <table noborder>
+     <tr valign="TOP"><td>Arguments: <td>INTEGER <td>NKEYS, LRECL, MEMSIZE
+     <tr valign="TOP"><td> <td>INTEGER*2(*) <td>KEYB 
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Input: <td>NKEYS <td>number of keys
+     <tr valign="TOP"><td> <td>KEYB <td> for each key block have five data items
+                      <ol> <li>key type (=7 only REAL implemented)
+                      <li>sort order (ascending (0) or descending (1))
+		      <li>position within record (BYTES, 1st is position 0) 
+		      <li>length (data units chars, shorts ...)
+		      <li> mask applied to data element before
+                           comparison (= 0 no mask, only implemented) </ol>
+     <tr valign="TOP"><td> <td>LRECL <td>(fixed) length of record (BYTES)
+     <tr valign="TOP"><td> <td>MEMSIZE <td>size of memory used by sort (BYTES)<br>
+                                                if == 0, default size
+     <tr valign="TOP"><td> <td>
+     <tr valign="TOP"><td>Returns: <td>== 0 <td>status OK
+     <tr valign="TOP"><td> <td>== 1 <td>failure
+     </table>
+
+<p>  
+<dt><a name="srtrls"></a><H3>SRTRLS</H3>
+    <dd>INTEGER FUNCTION SRTRLS(RECORD)
+     <p>integer binsort -pipes one record into sort routine
+     <p>
+     <table noborder>
+     <tr valign="TOP"><td>Arguments: <td>REAL(*) <td>RECORD
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Input: <td>RECORD <td>one record of data to be sorted
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Returns: <td>==0 <td>status OK
+     </table>
+
+<p>
+<dt><a name="srtmrg"></a><H3>SRTMRG</H3>
+    <dd>INTEGER FUNCTION SRTMRG()
+     <p>integer binsort -finishes sequence of input records(?)
+     <p>
+     <table noborder>
+     <tr valign="TOP"><td>Arguments: <td>none
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Returns<td>==0 <td>status OK
+     </table>
+
+<p>
+<dt><a name="srtret"></a><H3>SRTRET</H3>
+    <dd>INTEGER FUNCTION SRTRET(RECORD)
+     <p>integer binsort -gets one record from sort routine   
+     <p>
+     <table noborder>
+     <tr valign="TOP"><td>Arguments: <td>REAL(*) <td>RECORD
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Input: <td>none 
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Output: <td> RECORD <td>one record of sorted data
+     <tr valign="TOP"><td>
+     <tr valign="TOP"><td>Returns: <td>==0 <td>status OK
+     <tr valign="TOP"><td> <td>==-1 <td>sort failure
+     </table>
+
+</dl>
+
+<hr>
+</body>
+</html>

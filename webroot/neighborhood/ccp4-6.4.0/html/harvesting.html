@@ -1,0 +1,308 @@
+<HTML>
+<HEAD>
+<TITLE>CCP4 Program Suite</TITLE>
+</HEAD>
+<BODY>
+
+<!-- ::INDEX_INFO::harvesting::General::Data Harvesting and Datasets::harvesting data automatically and using datasets:::::::: -->
+
+<H1>Harvesting (CCP4: General)</H1>
+<H2>NAME</H2>
+harvesting - harvesting data automatically and using datasets
+
+<p>
+<FONT COLOR="#FF3333">The following is an adaptation of Martyn Winn's article
+in the CCP4 Newsletter
+<A HREF="http://www.ccp4.ac.uk/newsletters/newsletter37/13_harvest.html" TARGET="_EXTERNAL">Implementation of
+Data Harvesting in the CCP4 Suite</A>.</FONT>
+
+<H2><A NAME="introduction"></A><FONT COLOR="#CC3333">Introduction</FONT></H2>
+
+<p>The Data Harvesting paradigm, pioneered by Kim Henrick at the
+European Bioinformatics Institute (EBI) has been under development for
+a number of years and is in operation in users' labs. Background
+information can be found in two earlier Newsletter articles: an <a
+href="http://www.ccp4.ac.uk/newsletters/newsletter35/dataharvest.html"
+TARGET="_EXTERNAL">overview of data harvesting,</a> and a <a
+href="http://www.ccp4.ac.uk/newsletters/newsletter36/03_harvest.html"
+TARGET="_EXTERNAL">report on the September 1998 Joint CCP4/EBI
+software developers and Data Harvesting Workshop.</a> The concept of
+data harvesting, within CCP4, implies the collection of various
+relevant pieces of information obtained during the different steps
+from structure solution, into a collection of files. These files are
+then deposited into a database, for example the PDB, along with the
+final model coordinates to provide a full characterisation of the
+methods used and results and statistics obtained from the experiment.
+
+<H2><A NAME="definition"></A><FONT COLOR="#CC3333">Definition and application of datasets</FONT></H2>
+<p>Data harvesting uses the concept of "datasets". A particular
+dataset is identified by a Project Name / Dataset Name pair. The
+Project Name specifies the structure solution project, and is
+equivalent to what will become a PDB ID code (or in mmCIF terms the
+_entry.id ). The Dataset Name identifies the particular dataset within
+the project (either X-ray diffraction structure factors or NMR
+experimentally determined data) that is being used ( _diffrn.id in
+mmCIF). Thus, a particular structure solution may involve several
+datasets with the same Project Name but distinguished by different 
+Dataset Names (e.g. for native and heavy atom derivatives, or for 
+different wavelengths in a MAD experiment). Alternatively, one may have
+several datasets for an apoprotein and its complexes, and these would
+be distinguished by different Project Names since they correspond to
+different structure solutions.</P>
+
+<P>Every harvest deposition file should have associated in-house tags that 
+identify the &quot;Project Name&quot; and &quot;Dataset Name&quot;. For each
+program that writes out a deposition file, it is possible to specify
+the Project and Dataset names using the program keywords <A HREF="#pname" TARGET="_self">PNAME</A> and <A HREF="#dname" TARGET="_self">DNAME</A>.
+In principle, however, the Project and Dataset names should be considered
+attributes of the dataset being used, and be specified once only for that 
+dataset. The Project and Dataset names would then be inherited from the 
+dataset by each program in turn.</P>
+
+<P>This has been implemented in CCP4 by adding information on Project and 
+Dataset names to the header of the MTZ file. In a merged MTZ file, 
+datasets are held as one or more data columns. In addition to the
+label and type attributes, each column now has an extra attribute specifying
+to which dataset it belongs. A list of all datasets included in the file, 
+with the corresponding Project and Dataset names, is held separately in
+the MTZ header.</P> 
+
+<P>Since CCP4 release 5.0, datasets are grouped according to the crystal
+they were obtained from. The MTZ header now holds various information about 
+the crystals and the datasets represented in the file, see the 
+<A HREF="mtzformat.html">MTZ format</a> document. This structure continues
+to support the Project Name / Dataset Name for harvesting, but is also
+used in a wider context.</P>
+
+<P>The code changes necessary to manipulate this information were included
+in CCP4 release 3.5. Ideally, dataset information should be added to the
+MTZ file at the beginning, <EM>e.g.</EM> in MOSFLM, but this information can be added
+at any time, most conveniently with the program <A HREF="cad.html">CAD</A>. 
+Once the information is in the MTZ file, it can be checked by running 
+<A HREF="mtzdump.html"><tt>mtzdmp</tt></A> which
+shows all the MTZ header information (go on, try it!), including the 
+list of datasets:
+<pre><A NAME="list_of_datasets"></A>
+ 
+ * Number of Datasets =   4
+ 
+ * Dataset ID, project/crystal/dataset names, cell dimensions, wavelength:
+ 
+        1 RNASE
+          RNASE
+          NATIVE
+             64.8970   78.3230   38.7920   90.0000   90.0000   90.0000
+             1.54200
+        2 RNASE
+          RNASE3
+          DERIV_HG
+             64.9000   78.3200   38.7900   90.0000   90.0000   90.0000
+             1.54200
+        3 RNASE
+          RNASE4
+          DERIV_PT
+             64.8500   78.5600   39.5100   90.0000   90.0000   90.0000
+             1.54200
+        4 RNASE
+          RNASE5
+          DERIV_I
+             65.0000   78.6600   38.8100   90.0000   90.0000   90.0000
+             1.54200
+ 
+</pre>
+and the datasets which each column corresponds to:
+<pre>
+ 
+ * Column Labels :
+
+ H K L FNAT SIGFNAT FreeR_flag FHG2 SDFHG2 FHG2DEL SDFHG2DEL FPTNCD25 SIGFPTNCD25 
+DELFPTNCD25 SIGDELFPTNCD25 FIOD25 SIGFIOD25 DELFIOD25 SIGDELFIOD25
+
+ * Column Types :
+
+ H H H F Q I F Q D Q F Q D Q F Q D Q
+
+ * Associated datasets :
+
+ 0 0 0 1 1 1 2 2 2 2 3 3 3 3 4 4 4 4
+ 
+</pre>
+
+<P>In CCP4, columns to be used are selected from the MTZ file by the
+LABIN keyword; for example, the command
+<pre>
+LABIN FP=FIOD25 SIGFP=SIGFIOD25
+</pre>
+tells the program to use the 15th and 16th columns. In addition, the program
+now also knows that these columns are from the 4th dataset, with Project Name
+RNASE and Dataset Name DERIV_I.</P>
+
+<P>Unmerged or multi-record MTZ files are treated slightly differently. 
+In this case, a particular column may correspond to several datasets,
+distinguished by different batch numbers. Datasets are therefore attached
+to batches rather than columns, and a pointer to the relevant dataset
+is held in the batch header.</P>
+
+<P>As an aside, classifying MTZ columns according to dataset has other uses.
+Previously, it was assumed that columns existed as independent entities,
+but this is clearly not the case, for example F(+) and F(-) columns, or
+F and sigmaF columns. Some programs now use dataset information to check
+for certain dependencies, for example the program <A HREF="reindex.html">REINDEX</A> 
+may need to
+swap F(+) and F(-) columns and therefore needs to identify which F(+)
+column goes with which F(-) column.</P>
+
+<H2><A NAME="assigning"></A><FONT COLOR="#CC3333">Assigning datasets</FONT></H2>
+
+Dataset names should be assigned when an MTZ file is first created, e.g. in
+the programs <a href="mosflm.html">MOSFLM</a>, <A HREF="combat.html">COMBAT</A>, 
+<A HREF="scalepack2mtz.html">SCALEPACK2MTZ</A>, <A HREF="f2mtz.html">F2MTZ</A> and <a href="dtrek2mtz.html">DTREK2MTZ</a>. 
+This is done with the keywords PNAME and DNAME, or with the more general NAME
+keyword; otherwise simple defaults are
+chosen by the program. These names can be changed at any time using the 
+program <A HREF="cad.html">CAD</A> for merged MTZ files or <A HREF="rebatch.html">
+REBATCH</A> for unmerged MTZ files, or by any of the harvesting programs.
+
+<H2><A NAME="harvesting_from_CCP4"></A><FONT COLOR="#CC3333">Harvesting from CCP4 programs</FONT></H2>
+
+<P>From CCP4 release 4.0, dataset information will be used to write out
+deposition files. The CCP4 programs affected are 
+<A HREF="scala.html">SCALA</A>, <A HREF="truncate.html">TRUNCATE</A>, 
+<A HREF="mlphare.html">MLPHARE</A>, <A HREF="refmac5.html">REFMAC</A> and 
+<A HREF="restrain.html">RESTRAIN</A>. Provided a Project Name
+and a Dataset Name are specified (either explicitly or from the MTZ file)
+and provided the NOHARVEST keyword is <EM>not</EM> given, these programs will
+automatically produce a deposition file. This file will be written to
+<P><quote>
+<tt>$HARVESTHOME</tt>/<tt>DepositFiles</tt>/<i>&lt;projectname&gt;</i>/
+<i>&lt;datasetname&gt;.&lt;programname&gt;</i>
+</quote></P>
+<P>The environment variable <tt>$HARVESTHOME</tt> defaults to the user's
+home directory, but could be changed, for example, to a group project
+directory.</P>
+
+<P>At the end of a project, the entire contents of the directory
+<tt>$HARVESTHOME</tt>/<tt>DepositFiles</tt>/<i>&lt;projectname&gt;</i>
+can be sent to the deposition centre for processing. Note that, because
+of the file-naming scheme, only the last run of a particular program
+with a particular dataset will be preserved, and it is the user's responsibility
+to ensure that this is the authoritative version. The <A HREF="#usecwd" TARGET="_self">USECWD</A> keyword can
+be used to send deposit files from speculative runs to the local directory
+rather than the official project directory. This keyword can also be used 
+when the program is being run on a machine without access to the directory
+<tt>$HARVESTHOME</tt>, in which case the user must transfer the deposition
+file afterwards.</P>
+
+<P>In summary, the extra keywords associated with harvesting that will be
+included in most programs are:
+<dl>
+<dt><A NAME="pname"></A>PNAME
+<dd>Project Name. In most cases, this will be inherited from the MTZ file.
+<dt><A NAME="dname"></A>DNAME
+<dd>Dataset Name. In most cases, this will be inherited from the MTZ file.
+<dt><A NAME="private"></A>PRIVATE
+<dd>Set the directory permissions to '700', <EM>i.e.</EM> read/write/execute for
+the user only (otherwise '755').
+<dt><A NAME="usecwd"></A>USECWD
+<dd>Write the deposit file to the current directory, rather than a
+subdirectory of $HARVESTHOME
+<dt><A NAME="rsize"></A>RSIZE
+<dd>Maximum width of a row in the deposit file (default 80).
+<dt>NOHARVEST
+<dd>Do not write out a deposit file; default is to do so provided Project
+and Dataset names are available.
+</dl>
+There will inevitably have to be cooperation between members of a group
+working on the same project to ensure that all relevant deposition files
+are gathered together in the same directory, but such cooperation should
+occur anyway. At the time of deposition, there should be a resultant
+saving of time, as well increased reliability in the information submitted.</P>
+
+<H2><A NAME="deposition_files"></A><FONT COLOR="#CC3333">Deposition files</FONT></H2>
+
+<P>Deposition files are written in 
+<a href="http://www.iucr.ac.uk/iucr-top/cif/mmcif/ndb/index.html" TARGET="_EXTERNAL">mmCIF</a>
+format. The possible contents of an mmCIF file are described in a continually-evolving 
+<a href="http://www.iucr.ac.uk/iucr-top/cif/mmcif/ndb/dictionary/dict-html/cif_mm.dic/Index/index.html" TARGET="_EXTERNAL">dictionary</a> 
+of allowed data items. Harvesting requires
+additional data items to those in the current standard dictionary, and
+an extended dictionary is distributed by CCP4 as
+<tt>$CLIBD/cif_mm.dic</tt></P>
+
+<H2><A NAME="example"></A><FONT COLOR="#CC3333">Example of deposition files</FONT></H2>
+
+<P>The distributed TOXD example dataset contains 4 datasets, all assigned
+to the Project Name &quot;TOXD&quot;, and having the Dataset Names &quot;NATIVE&quot;, &quot;DERIV_AU&quot;,
+&quot;DERIV_MM&quot; and &quot;DERIV_I&quot; (see <A HREF="#list_of_datasets">above</A>). Running <tt>mlphare</tt> to phase the native
+dataset produces a file <tt>$HARVESTHOME/DepositFiles/TOXD/NATIVE.mlphare</tt>. This file starts
+with information on when and how the file was created:
+<pre>
+data_TOXD[NATIVE]
+_entry.id TOXD
+_diffrn.id NATIVE
+_audit.creation_date 1999-07-08T11:19:51+01:00
+_software.classification phasing
+_software.contact_author 'Z.Otwinowski or E.Dodson'
+_software.contact_author_email 'ccp4@dl.ac.uk, ccp4@yorvic.york.ac.uk'
+_software.description
+'maximum likelihood heavy atom refinement & phase calculation'
+_software.name mlphare
+_software.version CCP4_3.5
+</pre>
+This is followed by details such as the cell dimensions and symmetry
+information, and then by a summary of the results, for example the
+figures of merit for the phases obtained:
+<pre>
+loop_
+_phasing_MIR_shell.d_res_high
+_phasing_MIR_shell.d_res_low
+_phasing_MIR_shell.reflns
+_phasing_MIR_shell.fom
+_phasing_MIR_shell.reflns_centric
+_phasing_MIR_shell.fom_centric
+_phasing_MIR_shell.reflns_acentric
+_phasing_MIR_shell.fom_acentric
+ 9.56 15.00      61   0.484      41   0.553      20   0.343
+ 7.01  9.56      80   0.315      36   0.423      44   0.227
+ 5.54  7.01     120   0.351      45   0.502      75   0.261
+ 4.58  5.54     186   0.338      61   0.506     125   0.256
+ 3.90  4.58     255   0.327      68   0.484     187   0.270
+ 3.40  3.90     345   0.276      86   0.417     259   0.230
+ 3.01  3.40     430   0.271      90   0.446     340   0.225
+ 2.70  3.01     536   0.287     108   0.454     428   0.245
+</pre>
+The deposit files should be easily readable, but they should not be
+altered - they represent an authentic record of the structure solution 
+process.</P>
+
+<H2><A NAME="implementation_in_ccp4i"></A><FONT COLOR="#CC3333">Implementation in CCP4I</FONT></H2>
+
+<P>Details on the implementation of data harvesting in CCP4I (mainly for
+programmers only) can be found
+<A HREF="../ccp4i/help/programmers/harvest.html" TARGET="_PROGRAMMERSDOCS">elsewhere</A>.</P>
+
+
+<H2><FONT COLOR="#CC3333">Deposition</FONT></H2>
+<P>The process of deposition involves sending a collection of files containing all the information about the structure of the molecule, and how it was solved, to a deposition centre. The deposition centre will then run a series of programs to check the validity of the structure before accepting it into the PDB. There are three main deposition sites:
+<p>1.   <a href="http://autodep.ebi.ac.uk">European Bioinformatics Institute, UK</a>
+<br>2.   <a href="http://pdb.rutgers.edu/adit">Rutgers, USA</a>
+<br>3.   <a href="http://pdbdep.protein.osaka-u.ac.jp/adit">Osaka, Japan</a>
+
+<p>The current version of <a href="http://autodep.ebi.ac.uk/">Autodep, version 3.1,</a> supports the upload of CCP4 Harvest files. Autodep recommends the following information be available when depositing a structure:
+<pre>      Harvest Files from CCP4 or CNS
+      PDB file of atomic coordinates
+      Sequence reference
+      Description of heterogens
+      Manuscript describing structure
+      Data collection results, unit cell and structure refinement statistics
+</pre>
+
+<p>For information regarding the deposition of Structure Factors into the Protein Data Bank, <a href="http://autodep.ebi.ac.uk/sf.html">click here.</a>
+
+<p>The current version of <a href="http://pdb.rutgers.edu/adit/">ADIT! (AutoDep Input Tool)</a> involves 3 steps: a data format check, which checks the file format of the PDB model and CIF structure factor files; a validation precheck, which creates a validation report for the structure, and finally the deposition of the structure into the database. ADIT requires the same information as the AutoDep tool.
+
+
+
+</BODY>
+</HTML>
+

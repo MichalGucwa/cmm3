@@ -1,0 +1,79 @@
+#=====================================================================
+#
+# ample.script
+#
+#=====================================================================
+
+  global env
+
+  CreateComScript demoprog ample_script
+
+  set ample_exe [file join $env(CCP4) bin/ample]
+
+  set job_id [GetJobid]
+  set job_name "ample_"
+  append job_name $job_id
+  set run_directory [GetDefaultDirPath]
+
+  set model_options ""
+  set build_options ""
+  set mrbump_options ""
+  set additional_options ""
+
+  if { $USE_MOLREP == 0 } {
+     if { $USE_PHASER == 1 } {
+        set mroptions "-phaser_only True"
+     } else {
+        set mroptions "-molrep_only True"
+     }
+  } else {
+     if { $USE_PHASER == 1 } {
+        set mroptions ""
+     } else {
+        set mroptions "-molrep_only True"
+     }
+  } 
+ 
+  if { $USE_SCWRL == 1 } {
+     append model_options " -use_scwrl True" 
+  }
+
+  if { $USE_SHELXE == 1 } {
+     append build_options " -use_shelxe True" 
+  }
+
+  if { $USE_BUCC == 0 } {
+     append build_options " -use_buccaneer False" 
+  }
+
+  if { $USE_ARP == 1 } {
+     append build_options " -use_arpwarp True" 
+  } else {
+     append build_options " -use_arpwarp False" 
+  }
+
+  if { $NAMPKEY > 0 } {
+     for {set i 1} {$i <= $NAMPKEY} {incr i} {
+        append additional_options " $AKEYWORD($i)" 
+     }
+  }
+
+  if { $NBUMPKEY > 0 } {
+     for {set i 1} {$i <= $NBUMPKEY} {incr i} {
+        append mrbump_options " -mr_keys \"$MKEYWORD($i)\"" 
+     }
+  }
+
+  if { $AMPLE_MODE == "ABINITIO" } {
+      set cmd "[BinPath ccp4-python] -u $ample_exe -mtz $HKLIN -fasta $SEQIN -nmodels $NMODELS -name MVD0 -run_dir $run_directory -nproc $NProc -make_models $MakeModels -rosetta_dir $ROSETTA_DIR -frags_3mers $3mers -frags_9mers $9mers -make_frags $make_frags -F $F -SIGF $SIGF -FREE $FreeR_flag $mroptions -early_terminate $TRYALL $model_options $build_options $additional_options $mrbump_options"
+  } else {
+      set cmd "[BinPath ccp4-python] -u $ample_exe -mtz $HKLIN -fasta $SEQIN -nmodels $NMODELS -name MVD0 -run_dir $run_directory -nproc $NProc -make_models $MakeModels -rosetta_dir $ROSETTA_DIR -frags_3mers $3mers -frags_9mers $9mers -make_frags $make_frags -F $F -SIGF $SIGF -FREE $FreeR_flag $mroptions -NMR_model_in $XYZIN -early_terminate $TRYALL $model_options $build_options $additional_options $mrbump_options"
+  }
+
+  set status [Execute $cmd $ample_script program_status report]
+
+ 
+#  set cmd "[BinPath ccp4-python] -u $ample_exe -MTZ $HKLIN -fasta $SEQIN -NMODELS $NMODELS -name $job_name -RunDir $run_directory -NProc $NProc -MakeModels $MakeModels -ROSETTA_DIR $ROSETTA_DIR -3mers $3mers -9mers $9mers -make_frags $make_frags -F $F -SIGF $SIGF -FREE $FreeR_flag -TRYALL $tryallmode"
+
+#  set status [Execute $cmd $ample_script program_status report]
+

@@ -1,0 +1,527 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+<title>CCP4 Interface: Refinement Module - Sketcher Task</title>
+<link rel="stylesheet" type="text/css" href="../ccp4idocs.css" title="CCP4i" />
+<link rev="made" href="mailto:mgwt@ysbl.york.ac.uk" />
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta name="AUTHOR" content="Liz and Maria" />
+<meta name="CHANGEDBY" content="Maria" />
+<meta name="CHANGED" content="20000524" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.3 IP32) [Netscape]" />
+</head>
+<body>
+
+<table border="0" >
+<tr><td rowspan="2"><img src="../images/weblogo175.gif" alt="CCP4 web logo" / ></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logotitle">Monomer Library Sketcher</td></tr>
+</table>
+<br />
+<table border="0" >
+<tr><td>
+<a href="analysis.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="refinement.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="../index.html" target="_top">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td></tr>
+</table>
+
+<dl>
+<dt><a href="#sketcher" target="_self">Monomer Library Sketcher</a></dt>
+<dd><a href="#sketcher_introduction" target="_self">Sketcher - Introduction</a></dd>
+<dd><a href="#sketcher_key_bindings" target="_self">Sketcher - Key Bindings</a></dd>
+<dd><a href="#sketcher_edit_functions" target="_self">Sketcher - Edit Functions</a></dd>
+<dd><a href="#sketcher_moving_atoms" target="_self">Sketcher - Moving Atoms</a></dd>
+<dd><a href="#sketcher_edit_table" target="_self">Sketcher - Edit Table</a></dd>
+<dd><a href="#sketcher_chiral_table" target="_self">Sketcher - Chiral Table</a></dd>
+<dd><a href="#sketcher_reading_data" target="_self">Sketcher - Reading Data</a></dd>
+<dd><a href="#sketcher_writing_data" target="_self">Sketcher - Writing Data</a></dd>
+<dd><a href="#sketcher_edit_pull-down" target="_self">Sketcher - The Edit Pull-Down Menu</a></dd>
+<dd><a href="#sketcher_credits" target="_self">Sketcher - Credits</a></dd>
+</dl>
+
+<p>The layout of each task window, <em>i.e.</em> the number of folders present,
+and whether these folders are open or closed by default, depends on the choices
+made in the <strong>Protocol</strong> folder of the task (see
+<a href="../general/intro.html#task_window_format" target="_self">Introduction</a>). Although
+certain folders are closed by default, there are specific reasons why you should
+or may want to look at them. These reasons are described in the Task Window
+Layout sections below.</p>
+
+<h3><a name="sketcher"></a>Monomer Library Sketcher</h3>
+
+<p>This is an interface to the <a href="../../../../html/libcheck.html" target="_PROGDOC">Libcheck</a> 
+program which creates new <a href="../../../../html/intro_mon_lib.html" target="_PROGDOC">monomer library
+descriptions</a> for use in refinement. You should use this if you have a novel residue
+or ligand which is not in the geometry library or if you want to look at the contents of
+the geometry library.</p>
+
+<p><i>Note that the Sketcher will only display a relatively small number
+of atoms. Trying to read in a whole protein will just freeze it absolutely.
+You have been warned.</i></p>
+
+<p>There is a <a href="../../../examples/tutorial/html/refine-tutorial.html" target="_TUTORIALS">tutorial</a>
+introducing the Sketcher and Refmac.</p>
+
+<h4><a name="sketcher_introduction"></a>Sketcher - Introduction</h4>
+
+<p>There is a large library (by default in $CLIBD_MON/...)
+which provides the geometry restraints used in energy minimisation by
+Refmac. The library contains over one thousand monomers (basic
+units for biologically relevant polymers) and small molecules which may
+occur as ligands in crystallography. These will just be referred to as
+'monomers'. If your structure includes a monomer which is not in
+the library, you will need to use the Sketcher to enter sufficient
+information about the monomer for the program
+<a href="../../../../html/libcheck.html" target="_PROGDOC">LIBCHECK</a>
+to generate a library entry for your monomer.</p>
+
+<p>The information required is a 'minimal description' of the molecule which consists
+of:</p>
+<ul>
+<li> list of all atoms (but not necessarily including hydrogen atoms)</li>
+<li>the formal charge on the atoms</li>
+<li>list of bonds and bond order (<em>i.e.</em> single bond, double bond <em>etc.</em>). </li>
+</ul>
+
+<p>Optionally you can also define the chirality or the planar groups rather than take the
+definitions derived automatically.</p>
+
+<p>The easiest way to enter this information is to sketch the monomer which provides the bonding
+information and then edit the element types, atom names and formal charge in the
+<a href="#edit_table" target="_self">Edit Table</a> on the right hand side of the Sketcher.
+Sketching the monomer will probably be easier if you can refer to a diagram of the 
+chemical structure.</p>
+<p>If the monomer structure is available as a PDB or CIF file
+it can be read in, or, if a similar monomer is already in the library,
+it can be loaded from the library and edited. An extra advantage
+to editing an existing library entry is that it will start from something
+conforming to atom naming conventions.</p>
+
+<p>This program will be easier to understand if you think of it as a 'sketcher',
+where you sketch in the framework of a monomer, rather than a 'builder',
+where you bolt together fragments of the monomer. It is not important
+if the sketch does not have good molecular geometry so long as it shows
+the correct bonds. The sketching tools will initially set all atoms
+to be carbon atoms. You can change the element type in the Edit Table
+on the right hand side of the sketcher. The Edit Table should also
+be used to set the atom names and formal charge. It is also possible to set
+the atom type - this is not usually necessary as the atom type can be deduced.</p>
+
+<p>Unless you have all hydrogen atoms defined you should specify which bonds 
+are double or triple bonds. With this information Libcheck can derive correct atom
+types and assign hydrogen atoms. Note that there is no recognised aromatic bond 
+type - for ring structures you should enter the double bonds for one of the Kekul&#233;
+structures.<p>
+
+<p>The Libcheck program will identify chiral centres in an input structure
+and will, by default, set the chirality to 'both' - which means that both
+chiralities are allowed, so no chirality restraint is applied.  
+If you want to enforce a chiral restraint, you should define it in 
+the Chirality Table at the bottom right of the Sketcher window. The easiest way to
+do this is probably to run Libcheck once and let it define the chiral centres, then
+you can edit the definitions and rerun Libcheck.
+The chiral definitions set in the table are input to Libcheck and will
+appear in the complete geometry description generated by Libcheck and
+will be used in generating the output structure. When Sketcher reads in 
+coordinates from a PDB or CIF file it will attempt to define all
+of the chiral centres but the user should check these carefully.</p>
+
+<p>After you have sketched in the structure and set the atom names and
+types, use the <tt>Create Library Description</tt> option under the File pull-down
+menu to generate a complete geometric description using the Libcheck program.
+A PDB file containing idealised coordinates for the monomer
+is also generated and automatically displayed in the Sketcher. If
+this structure is not correct, you have three options:</p>
+<ul>
+<li>If the atom types are not deduced correctly you may need to set them
+manually in the Edit Table and then rerun <tt>Create Library Description</tt>. You
+can also change the sign of any chiral centres or change
+the definition of planar groups and rerun <tt>Create Library Description</tt>.</li>
+<li>If the structure is not well optimised you can run the <tt>Regularize</tt> option
+on the Edit pull-down menu which will run Refmac to improve the coordinates.</li>
+<li>If the structure is stubbornly stuck in a false minimum you can use
+the option to move atoms (described <a href="#sketcher_moving_atoms" target="_self">below</a>) to
+change the starting conformation for Regularization.</li>
+</ul>
+<!--hereiwas-->
+
+<p>When you are satisfied with the result, you can add the new library entry to
+your personal geometry library </p>
+
+<h4><a name="sketcher_key_bindings"></a>Sketcher - Key Bindings</h4>
+
+<dl>
+<dt><strong>To move the monomer:</strong></dt>
+<p><dd>Hold down <strong>left</strong> mouse button and move cursor to <strong>rotate</strong>
+molecule</dd>
+<dd>Hold down <strong>right</strong> mouse button and move cursor to <strong>translate</strong>
+molecule</dd>
+<dd>Hold down the <strong>Control</strong> key and <strong>left</strong> mouse button and move cursor up
+or down to <strong>shrink or enlarge</strong> molecule</dd></p>
+
+<dd><p>Use the <strong>Recentre View</strong> button to place the molecule in the centre
+of the display in the same orientation.</p></dd>
+
+<dt><strong>To edit the monomer:</strong></dt>
+<dd>Make sure you have the <strong>Edit Monomer</strong> button selected for the mouse mode
+(see the left side of the main window).</dd>
+
+<dd>Hold down <strong>Control</strong> key on the keyboard and click with the
+<strong>right</strong> mouse button to select or deselect the active atom. If you click
+on an atom, it will be made the active atom; if you click not on an atom, any
+active atom will be switched off.</dd>
+
+<dd>Select an edit function from the left hand menu and then hold down the
+<strong>Shift</strong> key on the keyboard and click with the <strong>left</strong>
+mouse button to apply the edit. Depending on the edit function you will need to click
+on either an atom or a bond or a position to place a new fragment.</dd>
+</dl>
+
+<h4><a name="sketcher_edit_functions"></a>Sketcher - The Edit Functions</h4>
+
+<p>Note that new atoms will be placed where you click with the position
+in and out of the screen the same as the active atom. This
+may lead to monomers with 'bad' geometry - this does not matter.</p>
+
+<table border="0" >
+<tr>
+<th valign="top">Button</th>
+<th valign="top">Function</th>
+<th valign="top">Use Shift-Left Mouse to click on</th>
+</tr>
+
+<tr>
+<td>'<tt>Do nothing</tt>'</td>
+<td>switch off all edit functions</td>
+<td></td>
+</tr>
+
+<tr>
+<td>'<tt>Undo last edit</tt>'</td>
+<td>return to structure before the last edit was performed</td>
+<td></td>
+</tr>
+
+<tr>
+<td><img border="0" src="../images/alic_40x20.gif" alt="add aliphatic carbon" /></td>
+<td>Add one atom</td>
+<td>Atom position of new atom, close to active atom</td>
+</tr>
+
+<tr>
+<td><img border="0" src="../images/bond_40x20.gif" alt="add bond" /></td>
+<td>Add a bond</td>
+<td>The atom to be bonded to the active atom</td>
+</tr>
+
+<tr>
+<td><img border="0" src="../images/5ring_40x20.gif" alt="add five-membered ring" /></td>
+<td>Add 5-membered ring</td>
+<td>Atom position of new atom, close to active atom</td>
+</tr>
+
+<tr>
+<td><img border="0" src="../images/3ring_40x20.gif" alt="add three atoms to form five-membered ring" /></td>
+<td>Add 3 atoms which will form 5-membered ring appended to existing ring</td>
+<td>Atom bonded to the active atom which will be second anchor point</td>
+</tr>
+
+<tr>
+<td><img border="0" src="../images/6ring_40x20.gif" alt="add six-membered ring" /></td>
+<td>Add 6-membered ring</td>
+<td>Atom position of new atom, close to active atom</td>
+</tr>
+
+<tr>
+<td><img border="0" src="../images/4ring_40x20.gif" alt="add four atoms to form six-membered ring" /></td>
+<td>Add 4 atoms which will form 6-membered ring appended to existing ring</td>
+<td>Atom bonded to the active atom which will be second anchor point</td>
+</tr>
+
+<tr>
+<td><img border="0" src="../images/delc_40x20.gif" alt="delete atom" /></td>
+<td>Delete atom</td>
+<td>Atom to be deleted</td>
+</tr>
+
+<tr>
+<td><img border="0" src="../images/delbond_40x20.gif" alt="delete bond" /></td>
+<td>Delete bond</td>
+<td>Bond to be deleted</td>
+</tr>
+
+<tr>
+<td>'<tt>Recentre View</tt>'</td>
+<td>place monomers in centre of screen, in current orientation</td>
+</tr>
+</table>
+
+<h4><a name="sketcher_moving_atoms"></a>Sketcher - Moving Atoms</h4>
+
+<p>The position of atoms is usually unimportant for Creating Descriptions
+but you may wish to move atoms for clarity and you may need to move atoms before
+regularising if the structure is stuck in a false minimum. Make sure that you have the
+<strong>Move Fragment</strong> option selected from the Mouse Mode menu (on the
+panel to the left of the main window). It is possible to select more than one active
+atom - with the keyboard Control key held down and clicking on atoms with
+the right mouse button:</p>
+
+<table border="0" >
+<tr>
+<th>Action</th>
+<th>Result</th>
+</tr>
+
+<tr>
+<td>Single click on non-active atom</td>
+<td>Make that atom active</td>
+</tr>
+
+<tr>
+<td>Single click on active atom</td>
+<td>Make that atom non-active</td>
+</tr>
+
+<tr>
+<td>Double click on atom</td>
+<td>Make all atoms which are in bonded fragment active</td>
+</tr>
+</table>
+
+<p>To move the fragment, hold down the <strong>Shift</strong> key on the keyboard and either:</p>
+<ul>
+<li>hold down the <strong>left</strong> mouse button to <strong>rotate</strong> the active atoms</li>
+<li>hold down the <strong>right</strong> mouse button to <strong>translate</strong> the fragment</li>
+</ul>
+
+<h4><a name="sketcher_edit_table"></a>Sketcher - The Edit Table</h4>
+
+<p>The currently displayed atoms are listed on the right hand side of the
+sketcher window. The columns are:</p>
+<dl>
+<dt>Element</dt><dd>Change the element type using the pop-up menu. This
+will automatically change the atom name and the menu of appropriate atom
+types.</dd>
+<dt>Atom Name</dt><dd>You can edit the atom name -  if you adhere to
+the naming conventions defined in
+<a href="http://www.rcsb.org/pdb/docs/format/pdbguide2.2/part_76.html"
+target="_EXTERNAL">Appendix 3: Atom Names</a> in the
+<a href="http://www.rcsb.org/pdb/docs/format/pdbguide2.2/guide2.2_frame.html"
+target="_EXTERNAL">PDB Format Guide</a>
+(at <a href="http://www.rcsb.org/pdb/" target="_EXTERNAL">RCSB</a>) now then
+submitting structure to a database will be easier later.</dd>
+<dt><a name="edit_table_types"></a>Atom Types</dt><dd>There are pull-down
+menus for the atom types where the atom types are grouped according to the
+valence atom. It is not usually necessary to select the atom type - it will
+be deduced automatically.</dd>
+<dt>Oxidation State</dt><dd>The oxidation state is the formal charge on the atom,
+which must be an integer value.</dd>
+</dl>
+
+<h4><a name="sketcher_chiral_table"></a>Sketcher - The Chiral Table</h4>
+
+<dl>
+<dt>Chiral Centre</dt><dd>The name of the chiral atom.</dd>
+<dt>Neighbours</dt><dd>The neighbouring atoms to the chiral centre. Note that
+the order of the atoms is critical in the definition of the chirality.</dd>
+<dt>Sign</dt><dd>Chirality can be defined as positive or negative or be left
+undefined.</dd>
+</dl>
+
+<p>The chiral centres are usually deduced automatically by Libcheck
+when you run Create Description but they are assigned the chirality of
+'both' which means that either chirality is allowed.  If you wish to enforce
+a given chirality then you should define it in the Chirality Table.
+You can add or remove a chiral definition using the edit buttons at the 
+bottom of the table.</p>
+
+<h4><a name="sketcher_reading_data"></a>Sketcher - Reading Data into the Sketcher</h4>
+
+<p>A monomer structure can be read in from various file formats.
+Alternatively, one or more fragments which help to build up the monomer
+can be imported and edited as necessary. BEWARE: attempting
+to read in a whole large molecule will just freeze the Sketcher. Whatever
+the format of the input file, you will have the options to:</p>
+
+<ul>
+<li>Delete any currently displayed monomer</li>
+<li>Not to load hydrogen atoms. By default the Sketcher will NOT load
+hydrogen atom coordinates - it is easier to edit the structure without
+them and they can make the display very slow for large monomers and small
+computers.</li>
+</ul>
+
+<p>Under the File pull-down menu, the Read File options are:</p>
+
+<dl>
+<dt><strong>Load Monomer from Library</strong></dt>
+<dd><p>A list of the monomers in the library, sorted by chemical type,
+is displayed. You should select a monomer from the list and
+suitable names for the output files will be generated. The two output files
+are:
+<dl>
+<dt>code_name_geom.cif</dt><dd>Contains the geometry and bonding information
+which has been extracted from the monomer library.</dd>
+<dt>code_name_coord.cif</dt><dd>Contains idealised coordinates for the monomer
+which will be displayed in the Sketcher.</dd>
+</dl>
+</p></dd>
+<dt><strong>Read PDB File and Read CIF File</strong></dt>
+<dd><p>Select a file to read - note that if the file contains multiple residues,
+you must enter the residue type and/or id of the required residue.
+Only the first residue which satisfies the selection criteria will be read.</p>
+<p>On reading the coordinate file the sketcher will define bonded atoms on 
+the basis of proximity but will not attempt to assign the bond order, 
+(<em>i.e.</em> single, double or triple bond); you will need to edit these by 
+clicking on the bond with the right mouse button and the Shift key depressed.
+The Sketcher will try to find chiral centres
+and list them. Any carbon atom with three connected atoms which are not too
+close to planar will be assumed to be chiral. Users should check that all 
+the chiral centres have been found, especially if the input coordinates are 
+poor.</p></dd>
+<dt><strong>Read CCP4i Def File</strong></dt>
+<dd><p>A .def file is the CCP4i 'native' format and if you wish to save whatever
+you have currently displayed, use the option to Save to CCP4i Def File
+and reload it later with this option.</p></dd>
+</dl>
+
+<h4><a name="sketcher_writing_data"></a>Sketcher - Writing Data from the Sketcher</h4>
+
+<h5>Temporary Data Saving to CCP4i Def File</h5>
+
+<p>If you need to save what you currently have displayed, for instance to use
+as the basic template for a range of monomers or as a fragment which you
+will want to add to various monomers, use the option to Save to CCP4i
+Def File.</p>
+
+<h5>Creating a Geometric Description</h5>
+
+<p>This option will create a file containing the information which needs
+to go into a monomer library and also a CIF coordinate file containing
+idealised coordinates for the monomer. The idealised coordinates
+will be displayed in the Sketcher and you are advised to check the result
+carefully. There is an option to run Refmac to regularise the idealised
+structure. This may be necessary for more complex structures.</p>
+
+<p>You need to enter a unique code name for the monomer and some fuller
+name to identify the structure. You should also choose the chemical
+category for the structure from the menu. Default file names
+for the three files which will be generated are derived from the code name.</p>
+
+<dl>
+<dt>Bond file: <em>code_name</em>_bondlist.cif</dt>
+<dd>This forms a minimal description of the structure containing
+the atoms and bonds currently displayed in the Sketcher.  This is the input
+to the Libcheck program.</dd>
+<dt>Geometry description file: <em>code_name.</em>_mon_lib.cif</dt>
+<dd>This file is output from Libcheck and will contain the geometry restraints
+for the monomer. Once you are satisfied with the results, this file should
+be appended to your personal monomer library.</dd>
+<dt>Coordinate file: <em>code_name.</em>pdb</dt>
+<dd>This file contains idealised coordinates for the monomer which will be
+read and displayed in the Sketcher.</dd>
+</dl>
+
+<p>When creating the library description there are options:</p>
+<dl>
+<dt>Use any defined atom energy types</dt>
+<dd>By default Libcheck derives the atom energy types but you can set the
+types in the Edit Table.  By default the atom types are not visible but this
+can be changed in the Preferences window.</dd>
+<dt>Use user defined planar groups</dt>
+<dd>This option is only visible if you have edited and saved planar group
+definitions.  The defined planar groups will be retained by Libcheck but, beware, there
+will be no checking for consistency.</dd>
+<dt>Extract ideal geometry from coordinates</dt>
+<dd>By default the target bond lengths and angles assigned in the new geometry library
+file will be values taken from a lookup table based on the assigned atom types.
+This option allows you to override that default and the target values are extracted from
+the input PDB file.  This is a means to input idealised values which have been derived
+by some other mechanism - e.g. QM.</dd>
+<dt>Regularise the structure with Refmac</dt>
+<dd>The PDB structure generated by Libcheck may not be fully minimised (particularly
+if it is a complex structure) - this option will apply Refmac refinement to improve 
+the structure.</dd>
+<dt>Load and display hydrogen atoms</dt>
+<dd>By default when the output structure is displayed it will not include hydrogen atoms -
+though these are included in the geometry definition and the 'idealised' PDB file.</dd>
+</dl>
+
+
+<h4><a name="edit  pull-down"></a>Sketcher - The Edit Pull-Down Menu</h4>
+
+<h5>Edit Planar Group Definitions</h5>
+
+<p>The list of planar groups generated by Libcheck should be correct but this option
+will enable you to visualise the planes and if necessary change the definitions.  If
+you do need to change these definitions then be aware that there may be a more fundamental
+problem of incorrect atom typing and that an atom which is a chiral centre can not also
+be in a planar group.  This tool can save the planar group definitions to a CIF file.
+If you wish to use these changed definitions then you will need to edit the monomer 
+library file and replace the planar group definitions with those you have saved from 
+the tool.</p>
+
+<p>A table showing the currently defined planar groups is displayed.  
+The atoms in the planar group can be changed either by editing the list of
+atoms in the table or by clicking on the <strong>Edit</strong> button for one planar group
+and then clicking on atoms on the display using either the middle mouse button
+or, with the <strong>Control</strong> key depressed, the right mouse button.  The atoms in
+the plane are indicated by flashing name labels.  Clicking on an atom currently
+in the plane definition will remove it from the plane definition.</p>
+<p>If you want to create a new plane definition then click on the 
+<strong>Add Plane</strong> button at the bottom of the table.  
+You can then click on the <strong>Edit</strong> button to select the atoms using the display. 
+To save your changes you must click on the <strong>Save to File </strong> button under the 
+table.
+ While you are editing the planar definitions the mouse mode
+options to <strong>Edit Monomer</strong> and <strong>Move Fragment</strong> are not available.  </p> 
+<p>If you have saved your changes after editing the plane definitions then
+the <strong>Create Library Description</strong> tool will have an option to 
+<strong>Use user-defined planar groups</strong>.  If you select this option then Libcheck will 
+retain the planar group definitions that you provided but, beware, there is
+no checking for consistency with any other parameters.</p>
+
+<h5>Regularize Structure</h5>
+
+<p>Regularise the currently displayed monomer. Note that a geometric
+description file must already have been created using the Create Description
+option OR the structure must be a monomer already in a library
+file. Note that if you have changed the atomic composition, atom
+names, atom types or bond types since running Create Description then you
+must run it again. To run Regularize Structure you will be asked
+to enter the name of a geometry description file or a geometry library
+file and the id of your monomer in that file.</p>
+
+<h5>Delete All Atoms</h5>
+
+<p>This will completely reinitialise the monomer data in the Sketcher.</p>
+
+<h5>Preferences</h5>
+
+<p>The default graphic parameters for the sketcher may not suit all systems
+or users - you can change them with this option. Let us know if any
+other aspect of the display is not optimal for your system.</p>
+
+<h4><a name="sketcher_credits"></a>Sketcher - Credits</h4>
+
+<p>The 3-D Viewer is based on code by Leo Caves (University of York) and Mike
+Hartshorn (Astex Technology).<br />
+Kim Henrick (EBI) provided information on web resources.</p>
+
+<table border="0" >
+<tr><td>
+<a href="analysis.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="refinement.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="../index.html" target="_top">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td></tr>
+</table>
+
+</body>
+</html>

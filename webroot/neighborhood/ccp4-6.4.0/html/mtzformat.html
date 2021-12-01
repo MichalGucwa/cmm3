@@ -1,0 +1,466 @@
+<html>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 draft//EN">
+<HEAD><TITLE>CCP4 Program Suite: mtz format</title></head>
+<body>
+
+<!-- ::INDEX_INFO::MTZFORMAT::File Formats::::MTZ file format for CCP4:::::::: -->
+
+<h1>MTZ FORMAT: (CCP4: Formats)</h1>
+<h2> NAME</h2>
+<b> MTZ format for CCP4</b>
+- the MTZ reflection format as used in CCP4
+ 
+<ol>
+<li><a href="#introduction">INTRODUCTION</a>
+<li><a href="#datamodel">DATA MODEL</a>
+<li><a href="#fileformat">THE MTZ FILE FORMAT</a>
+<li><a href="#storage">STORAGE OF DATA ITEMS</a>
+<li><a href="#itemnames">Column labels and standard names</a>
+<li><a href="#coltypes">Column types</a>
+<li><a href="#see_also">See also</a>
+</ol>
+
+<h2><a name="introduction"></a>INTRODUCTION</h2>
+
+<p>The MTZ file format is used for the storage of reflection data. The file
+contains the data and a header of metadata. The former is held as a table 
+with rows representing reflections and columns representing different quantities 
+for each reflection. The latter aims to make the file self-contained by including
+all necessary information, such as symmetry operations, cell dimensions, etc.
+The MTZ file is a flat-file representation of a particular data model. We
+first describe the data model, and then the particular implementation used.</p>
+
+<H2><a name="datamodel">DATA MODEL</H2>
+
+The MTZ file can contain an arbitrary number of columns of data provided they
+belong to the same spacegroup (in principle, they need only belong to the
+same Laue group, but this is not implemented). With only this restriction,
+we consider arranging the columns of data in the following hierarchical manner: 
+<pre>
+
+    File -> Crystal -> Dataset -> Datalist -> Column 
+
+</pre>
+A `Crystal' is essentially a single crystal form: usually there will
+be one crystal per derivative, unless a single derivative can
+crystalise in several cells (e.g. RT and frozen). A `Dataset' is a set
+of observations on a particular crystal. If data is collected at several
+wavelengths, each of these becomes a separate dataset. A `Datalist' is
+a grouping of associated columns. Thus a single list will hold both F
+and SigF. Another list holds all four Hendrickson Lattman coefficients.
+Each data list is linked to one of the datasets and each dataset is
+linked to one of the crystals. There may be several data lists per
+dataset and several datasets per crystal.
+<p>
+The Datalist level is not yet implemented in the MTZ format, but the
+remainder of the above hierarchy is recorded in the MTZ file header.
+The header lists the columns of data held in the file, and identifies which 
+dataset they belong to, and in turn which crystal that dataset belongs to.
+The crystals, datasets and columns are each identified by a label. The
+labels for the datasets and columns need not be unique, provided the
+full identification "crystal name/dataset name/column label" is unique.
+<p>
+Each crystal is further identified as belonging to a project, labelled
+by a "project name". The project name is currently used in 
+<a href="harvesting.html">Data Harvesting</a> where it corresponds to
+a particular structure determination (and is equivalent to the mmCIF data 
+item _entry.id). In the current implementation of MTZ files, the project
+is simply an attribute of a crystal and is not an integral part of the data
+structure.
+<p>
+The total number of datasets represented in a file is given by the keyword
+NDIF in the main file header (see <a href="#fileformat">below</a>), 
+and a list of the project, crystal and dataset names
+associated with each dataset is given by the PROJECT, CRYSTAL and DATASET keywords
+also in the main file header. Each dataset is identified internally by an
+integer "dataset ID". For a merged single-record-per-reflection MTZ
+file, each column has as one of its attributes (included in the COL keyword) 
+a "dataset ID", which acts as a pointer to the main list of datasets. For
+unmerged multi-record MTZ files, a column may be associated with several
+datasets (corresponding to different batches) and the "dataset ID" is not used.
+Instead, each batch header contains a "dataset ID", which points to the dataset
+associated with that batch.
+<p>
+The main file header also contains properties of each dataset. Each crystal
+can have its own cell dimensions identified by the keyword DCELL, e.g. native
+and derivative crystals may well have significantly different cells. All
+datasets belonging to a particular crystal should have the same cell dimensions. 
+The information held in DCELL records is distinct from the general cell held in
+the CELL record; the use of DCELL is now preferred. A wavelength can also
+be attributed to each dataset via the keyword DWAVEL. Other dataset information
+may be added in the future. The records DCELL and DWAVEL are optional; the
+header reading routines assume that if they are present, then they will
+occur immediately after the relevant PROJECT, CRYSTAL and DATASET keywords.
+<p>
+The dataset information can be viewed via the program <a href="mtzdump.html">
+MTZDUMP</a>:
+<pre>
+
+ * Base dataset:
+
+        0 HKL_base
+          HKL_base
+          HKL_base
+
+ * Number of Datasets = 1
+
+ * Dataset ID, project/crystal/dataset names, cell dimensions, wavelength:
+
+        1 HEWL
+          wildtype
+          native
+             79.0026   79.0026   36.8933   90.0000   90.0000   90.0000
+             1.54180
+
+</pre>
+
+<h3>Dataset naming conventions</h3>
+
+The project, crystal and dataset names should obey the following rules:
+<ol>
+<li>Each name should be a single word containing alphanumeric characters
+and underscores. However, do not choose a purely numeric name as
+this will confuse some programs (XNAME="x13" is OK whereas XNAME="13" is not).
+<li>Each name can be up to 64 characters long (the limit is imposed by the
+format of the MTZ file header).
+<li>Names are case sensitive.
+</ol>
+
+<h3>The base dataset</h3>
+
+From CCP4 5.0, there should always be a base dataset, called HKL_base and with 
+dataset ID of zero. This dataset will be added automatically by the library, if it 
+doesn't already exist. The columns H, K and L are forced to belong to the Base dataset. 
+Other columns will be assigned to the Base dataset if they are not assigned explicitly
+to another dataset.
+
+<h3>More on cell dimensions</h3>
+
+Cell dimensions are stored in 3 places:
+<dl>
+<dt>CELL record in main header
+<dd>The use of these cell dimensions is now deprecated.
+<dt>DCELL record in main header
+<dd>There is one DCELL record for each dataset. However, the CMTZ library
+assumes that the cell dimensions are a property of the crystal, so that DCELL
+will be identical for each dataset in the same crystal. This is a simplification.
+Different datasets will in general provide different estimates of the crystal
+cell dimensions.
+<dt>Batch headers
+<dd>In an unmerged MTZ file, each batch header records the cell dimensions
+for that batch. Each batch belongs to a dataset (see "Associated dataset ID"
+in the batch header) with a separate record of the cell dimensions, see above.
+</dl>
+
+<h3>Compatibility between MTZ files from different CCP4 releases</h3>
+
+A brief history:
+<dl>
+<dt>CCP4 3.5
+<dd>Added Project and Dataset names for use in data harvesting.
+<dt>CCP4 4.1
+<dd>Added dataset cell and wavelength information.
+<dt>CCP4 4.2
+<dd>Library will pass Crystal header line through, but no additional
+functionality.
+<dt>CCP4 5.0
+<dd>Full support for Crystal line, and addition of HKL_base dataset.
+</dl>
+Later versions of CCP4 should read files produced in earlier versions.
+Earlier versions of CCP4 should read files produced in later versions,
+but may give out warnings of unrecognised header records. Although
+some information will be lost, the older programs should continue to
+run.
+
+<H2><a name="fileformat"></a>THE MTZ FILE FORMAT</H2>
+General description
+<P> 
+The MTZ reflection file format uses fixed length logical 'records'
+written in a byte stream with, in general, 
+four bytes for each data item (REAL*4), with a minimum of 3 columns and
+currently a maximum of 200 columns of data per record, although these
+limits could easily be increased.  Additional information (title,
+cell dimensions, column labels, symmetry information, resolution range,
+history information and, if necessary, batch titles and orientation
+data) is contained in labelled header records.  The columns of the 
+reflection data records are identified by alphanumeric labels held
+as part of the file header information.  The user relates the item names
+used by the program to the required data items, as identified by the labels, 
+by means of assignment statements in the program control data.
+<P> 
+Record Formats
+<P> 
+The file contains basically two classes of records - header records and
+reflection data records. A standard reflection data file contains the 
+following items, in the order given, not necessarily all items have
+to be present:
+<ul>
+<li>
+The first 4 bytes should be "MTZ " (if the first 3 characters are
+not "MTZ" then the library will complain that the file is not an MTZ file).
+This is followed by an integer indicating the location of the header
+records (which occur at the end after the reflections records). The integer
+occupies sizeof(int) bytes (typically 4).
+<li>
+Next is the "machine stamp" held as 4 characters. This encodes the number 
+formats of the of the architecture the file was written on. 
+(In fact, the machine stamp is positioned 2 words from the start, 
+where a word is sizeof(float), i.e. typically 8 bytes in. The first 4 half-bytes
+represent the real, complex, integer and character formats, and the last
+two bytes are currently unused.)
+<li>
+Reflection data starting at byte 21:
+<br>
+Columns of data held as REAL*4
+<li>
+A beginning of header record
+<li>
+A set of keyworded records containing
+</ul>
+<P> 
+<blockquote>
+<dl>
+<dt> VERS<dd>
+Version stamp  (Character*10,  currently MTZ:V1.1)
+<dt> TITLE<dd>
+File Title - short identification of file (Character*70)
+<dt> NCOL<dd>
+number of columns, number of reflections in file, number of batches (Integer)
+if number of batches &gt; 0 this indicates multi-record file
+<dt> CELL<dd>
+Global Cell Parameters (Real(6)). The use of these is deprecated in
+favour of the dataset cell parameters, see DCELL below.
+<dt> SORT<dd>
+Sort order of 1st 5 columns in file (Integer(5))
+<dt> SYMINF<dd>
+Number of Symmetry operations (Integer)
+<br>
+Number of Primitive operations (Integer)
+<br>
+Lattice Type (Character*1)
+<br>
+Space Group Number (Integer)
+<br>
+Space Group Name   (Character*10)
+<br>
+Point Group Name   (Character*6)
+<dt> SYMM<dd>
+Symmetry operations in international tables style
+<dt> RESO<dd>
+Minimum (smallest number) and Max (largest number)
+resolution stored as 1/d-squared (Real(2))
+<dt> VALM<dd>
+Value with which Missing Number Flag is represented.
+<dt> COL<dd>
+Column Label (Character*30)
+<br>
+Column Type (Character*1) for each column
+<br>
+Minimum and Maximum value in each column  (Real)
+<br>
+ID of corresponding dataset (Integer)
+<dt> NDIF<dd>
+Number of datasets represented in the file.
+<dt> PROJECT<dd>
+ID of dataset (Integer) <br>
+Project Name  (Character*64). Normally one for each structure determination.
+<dt> CRYSTAL<dd>
+ID of dataset (Integer) <br>
+Crystal Name  (Character*64). May be several for each structure determination,
+representing the different crystals used.
+<dt> DATASET<dd>
+ID of dataset (Integer) <br>
+Dataset Name  (Character*64). May be several for each structure determination,
+representing the different datasets measured.
+<dt> DCELL<dd>
+ID of dataset (Integer) <br>
+Cell dimensions (Real(6)). These are identical for all datasets belonging to
+the same crystal.
+<dt> DWAVEL<dd>
+ID of dataset (Integer) <br>
+Wavelength (Real) for dataset.
+<dt> BATCH<dd>
+Batch Serial Number for each batch present (Integer).  This line is
+only present in `multi-record' files.
+</dl>
+</blockquote>
+<ul>
+<li>
+END of main header card
+<li>
+Up to 30 Character*80 lines containing history information
+<li>
+For multi-record files:
+<br>
+Batch title (Character*70) and (optionally) orientation data
+for each batch present in the file
+<li>
+End of all headers record
+</ul>
+<P> 
+NB: Column Types are an extra check that the user input assignment for a
+requested program label is of the correct type. For a list of all column types
+see section <a href="#coltypes">COLUMN TYPES</a>.
+<P> 
+Normally the Miller indices will be held in the first
+three columns though, within the definition of the format, there is no
+restriction on the use of the columns of the reflection data records. However,
+the subroutines which output the MTZ header information in a formatted way (e.g.
+Subroutine LHPRT) presume that the first 3 columns of a standard MTZ file are
+the Miller Indices, and the first 5 columns of a multi-record MTZ file are
+H,K,L,M/ISYM and Batch number.
+
+<H2><a name="storage"> STORAGE OF DATA ITEMS</H2>
+This section describes the way in which some standard data items are stored in
+an MTZ file.
+<dl>
+<dt> Item<dd>
+Storage
+<dt> h,k,l<dd>
+The Miller indices are held as REAL*4
+<dt> Structure Factors<dd>
+The structure factor magnitude is held as a REAL*4
+<dt> Phases<dd>
+Phases are held as REAL*4 values in degrees.
+<dt> S<dd>
+There is no need for an S column in MTZ files - values of (4 sin**2
+theta / lambda**2) are calculated and returned, for each reflection,
+by the calls to LRREFF and LRREFL, and the max and min values are
+stored in the header of the MTZ file as REAL*4 (cf old-LCF as 10000*S
+as INTEGER*2).
+<dt> Centric flag<dd>
+0 for centric, 1 for acentric.
+<dt> A,B,C,D<dd>
+Hendrickson-Lattman coefficients
+<dt> Figures of merit<dd>
+Figures of merit.
+</dl>
+
+<H2><a name="itemnames">Column labels and standard names</H2>
+
+<p>Columns of reflection data in an MTZ file are identified through column labels. 
+Through the LABIN/LABOUT mechanism, it is possible to connect a column of data
+expected by a particular program with a column of data in a file.</p>
+
+<p>Column labels must be no more than 30 characters long. This limit is hardwired
+in the software library used to read and write MTZ files. It is also imposed by
+the MTZ format itself, where several details of a particular column must be fitted 
+onto a header record of 80 characters.</p>
+
+<p>Column labels should be alphanumeric. Avoid special characters (the "/" in
+the standard label "M/ISYM" is a special case - slashes in other places will
+break the code).</p>
+
+<p>Although you are free to choose any column labels, the following table lists some
+conventional choices:</p>
+
+<table border='5'>
+<tr><th> Name</th><th>
+Item</th></tr>
+<tr><td> H, K, L</td><td>
+Miller indices.</td></tr>
+<tr><td> M/ISYM</td><td>
+Column contains a combination of the partiality flag M and 
+the symmetry number ISYM: 256M+ISYM. M is 0 for fully recorded
+reflections or 1 for partials. ISYM = 2*isymop - 1 for 
+reflections placed in the positive asu, i.e. I+ of a Friedel pair, and
+ISYM = 2*isymop for reflections placed in the negative asu, i.e. I- of 
+a Friedel pair. Here "isymop" is the number of the symmetry operator used.</td></tr>
+<tr><td> BATCH</td><td>
+Batch number.</td></tr>
+<tr><td> I</td><td>
+Intensity.</td></tr>
+<tr><td> SIGI</td><td>
+sigma(I).</td></tr>
+<tr><td> FRACTIONCALC</td><td>
+Calculated partial fraction of spot.</td></tr>
+<tr><td> IMEAN</td><td>
+Mean intensity.</td></tr>
+<tr><td> SIGIMEAN</td><td>
+sigma(IMEAN).</td></tr>
+<tr><td> FP</td><td>
+Native F value.</td></tr>
+<tr><td> FC</td><td>
+Calculated F.</td></tr>
+<tr><td> FPH&lt;n&gt;</td><td>
+F value for derivative &lt;n&gt;.</td></tr>
+<tr><td> DP</td><td>
+Anomalous difference for native data.</td></tr>
+<tr><td> DPH&lt;n&gt;</td><td>
+Anomalous difference for derivative &lt;n&gt;.</td></tr>
+<tr><td> SIGFP</td><td>
+sigma(FP).</td></tr>
+<tr><td> SIGDP</td><td>
+sigma(DP).</td></tr>
+<tr><td> SIGFPH&lt;n&gt;</td><td>
+sigma(F&lt;n&gt;).</td></tr>
+<tr><td> SIGDPH&lt;n&gt;</td><td>
+sigma(DEL&lt;n&gt;).</td></tr>
+<tr><td> PHIC</td><td>
+Calculated Phase.</td></tr>
+<tr><td> PHIB</td><td>
+Phase from experimental phasing.</td></tr>
+<tr><td> FOM</td><td>
+figure of merit.</td></tr>
+<tr><td> WT</td><td>
+weight</td></tr>
+<tr><td> HLA,HLB,HLC,HLD</td><td>
+Hendrickson-Lattman (HL) coefficients</td></tr>
+<tr><td> FREE</td><td>
+Free R flag (program label)</td></tr>
+<tr><td> FreeR_flag</td><td>
+Free R flag (file label)</td></tr>
+</table>
+
+<H2><a name="coltypes"></a>Column types</H2>
+
+<p>All columns in an MTZ file are assigned a type, taken from the following list. The LABIN line
+of a particular job connects columns in an input MTZ file with the columns expected by the program.
+The column types are used to check that a sensible assignment is made, e.g. that you do not try
+to use an Intensity (type J) column where a Structure Factor Amplitude (type F) is expected. If there
+is a mismatch between file and program column types, a warning will be issued by the CCP4 library.
+The allowed column types are as follows:</p>
+
+<table border='5'>
+<tr><td> H</td><td>
+index h,k,l</td></tr>
+<tr><td> J</td><td>
+intensity</td></tr>
+<tr><td> F</td><td>
+structure amplitude, F</td></tr>
+<tr><td> D</td><td>
+anomalous difference</td></tr>
+<tr><td> Q</td><td>
+standard deviation of J,F,D or other (but see L and M below)</td></tr>
+<tr><td> G</td><td>
+structure amplitude associated with one member of an hkl -h-k-l pair, F(+) or F(-)</td></tr>
+<tr><td> L</td><td>
+standard deviation of a column of type G</td></tr>
+<tr><td> K</td><td>
+intensity associated with one member of an hkl -h-k-l pair, I(+) or I(-)</td></tr>
+<tr><td> M</td><td>
+standard deviation of a column of type K</td></tr>
+<tr><td> E</td><td>
+structure amplitude divided by symmetry factor ("epsilon"). Normally scaled
+as well to give normalised structure factor</td></tr>
+<tr><td> P</td><td>
+phase angle in degrees</td></tr>
+<tr><td> W</td><td>
+weight (of some sort)</td></tr>
+<tr><td> A</td><td>
+phase probability coefficients (Hendrickson/Lattman)</td></tr>
+<tr><td> B</td><td>
+BATCH number</td></tr>
+<tr><td> Y</td><td>
+M/ISYM, packed partial/reject flag and symmetry number</td></tr>
+<tr><td> I</td><td>
+any other integer</td></tr>
+<tr><td> R</td><td>
+any other real</td></tr>
+</table>
+
+<h2><a name="see_also">See also</a></h2>
+
+<p><a href="mtzlib.html">mtzlib</a></p>
+
+</body></html>

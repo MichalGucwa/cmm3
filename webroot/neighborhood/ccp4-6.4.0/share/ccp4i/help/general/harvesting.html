@@ -1,0 +1,233 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4 Interface: Data Harvesting</title>
+<link rel="stylesheet" type="text/css" href="../ccp4idocs.css" title="CCP4i" />
+<link rev="made" href="mailto:mgwt@ysbl.york.ac.uk" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta name="AUTHOR" content="Maria, Liz and Martyn" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="2"><img src="../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logotitle">Data Harvesting</td></tr>
+</table>
+<br />
+<table border="0">
+<tr><td>
+<a href="preferences.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="maps.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="../index.html" target="_top">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td></tr>
+</table>
+
+<p><a href="#introduction" target="_self">Introduction</a></p>
+<p><a href="#pnames_and_dnames" target="_self">MTZ Project Names and Dataset Names in CCP4i</a></p>
+<p><a href="#creating_new_mtzs" target="_self">Creating New MTZs in CCP4i</a></p>
+<dl>
+<dt><a href="#data_harvesting_in_ccp4i" target="_self">Data Harvesting in CCP4i</a></dt>
+<!-- <dd><a href="#implementation" target="_self">Implementation</a></dd> -->
+<dd><a href="#preferences" target="_self">Preferences</a></dd>
+</dl>
+
+<h3><a name="introduction"></a>Introduction</h3>
+
+<p>From CCP4 release 4.0 onwards, dataset information is used to control the
+writing of structure deposition files (also known as harvesting files).
+Data harvesting aims to help simplify submission of structures to the database,
+see <a href="../../../../html/harvesting.html">Data Harvesting</a>.
+The CCP4 programs affected are
+<a href="../../../../html/mosflm.html" target="_PROGDOC">MOSFLM</a>,
+<a href="../../../../html/scala.html" target="_PROGDOC">SCALA</a>,
+<a href="../../../../html/truncate.html" target="_PROGDOC">TRUNCATE</a>,
+<a href="../../../../html/mlphare.html" target="_PROGDOC">MLPHARE</a>,
+<a href="../../../../html/refmac.html" target="_PROGDOC">REFMAC</a> and
+<a href="../../../../html/restrain.html" target="_PROGDOC">RESTRAIN</a>. 
+Dataset information can either be supplied explicitly to the program,
+or is taken from the MTZ file. The following data preparation programs 
+can be used to add or adjust Project and Dataset names in the MTZ file:
+<a href="../../../../html/scalepack2mtz.html" target="_PROGDOC">SCALEPACK2MTZ</a>,
+<a href="../../../../html/dtrek2mtz.html" target="_PROGDOC">DTREK2MTZ</a>,
+<a href="../../../../html/dtrek2scala.html" target="_PROGDOC">DTREK2SCALA</a>,
+<a href="../../../../html/combat.html" target="_PROGDOC">Combat</a>,
+<a href="../../../../html/f2mtz.html" target="_PROGDOC">F2MTZ</a> and
+<a href="../../../../html/cad.html" target="_PROGDOC">CAD</a>.
+
+<p>Provided a Project Name and a Dataset Name are specified (either explicitly or from the MTZ file)
+and provided the NOHARVEST keyword is <em>not</em> given, the harvesting programs will
+automatically produce a deposition file. This file will be written to
+<pre>
+<tt>$HARVESTHOME</tt>/<tt>DepositFiles</tt>/<i>&lt;projectname&gt;</i>/<i>&lt;datasetname&gt;.&lt;programname&gt;</i>
+</pre>
+The environment variable <tt>$HARVESTHOME</tt> defaults to the user's
+home directory, but could be changed, for example, to a group project
+directory. <tt>$HARVESTHOME</tt> may also be reset by CCP4i, see below.</p>
+
+<p>The extra keywords associated with harvesting that are included in
+the data harvesting programs are: 
+<dl>
+<dt>PNAME</dt>
+<dd>Project Name. In most cases, this will be inherited from the MTZ file.</dd>
+<dt>DNAME</dt>
+<dd>Dataset Name. In most cases, this will be inherited from the MTZ file.</dd>
+<dt>PRIVATE</dt>
+<dd>Set the directory permissions to '700', <em>i.e.</em> read/write/execute for the user only (otherwise '755').</dd>
+<dt>USECWD</dt>
+<dd>Write the deposit file to the current directory, rather than a subdirectory of $HARVESTHOME.</dd>
+<dt>RSIZE</dt>
+<dd>Maximum width of a row in the deposit file (default 80).</dd>
+<dt>NOHARVEST</dt>
+<dd>Do not write out a deposit file; default is to do so provided Project and Dataset names are
+available.</dd>
+</dl>
+
+<p>The CCP4 Interface does not do any additional data harvesting;
+all this activity is in the data harvesting programs. However, CCP4i
+contains options for controlling and customising data harvesting, and
+these are described below.</p>
+
+<h3><a name="pnames_and_dnames"></a>MTZ Project Names and Dataset Names in CCP4i</h3>
+
+<p>The Project Name and Dataset Name used in data harvesting are part of
+a wider organisation of reflection data, see general description of the
+<a href="../../../../html/mtzformat.html">MTZ file format</a>. In brief,
+columns in MTZ files are grouped according to datasets, which in turn are
+grouped according to the crystal from which they were taken. Crystals belong
+to particular projects. This formal structure is thus used in two distinct
+ways:
+<ol>
+<li>To identify the origin of the various columns of data in the MTZ file,
+for example MAD data where columns for each separate wavelength can be grouped 
+together as one dataset. This is very necessary if certain manipulations, such as
+scaling, are to be performed consistently on the data.</li>
+<li>To carry the default project and dataset names which will be used as 
+identifiers for the automated data harvesting. </li>
+</ol></p>
+<p>Depending on the context, CCP4i may refer to Project and Dataset Names
+only, or may refer to Project, Crystal and Dataset Names.</p>
+
+<h3><a name="creating_new_mtzs"></a>Creating New MTZs in CCP4i</h3>
+
+<p>There are three tasks in the CCP4 Interface which import reflection data into MTZ format:
+<ul>
+<li>Import Scaled Data (running Scalepack2mtz or Dtrek2mtz program)</li>
+<li>Import Unscaled Data (running Combat program)</li>
+<li>Convert to/modify/extend MTZ (running f2mtz, cif2mtz or na4tomtz program)</li>
+</ul>
+In addition, in the 'Edit MTZ Datasets' task (program CAD), 
+the Project, Crystal and Dataset names can be adjusted.</p>
+
+<p>In all of these tasks you are required to enter Crystal, Project and Dataset names.
+Your choices are important, as these names will define the data structure held
+in the MTZ file. If you intend to merge the MTZ file with another, then
+consider what names are already being used in the other file. For example,
+should the new datasets belong to an existing crystal?</p>
+
+<p>By default the project name will be the same as the CCP4i project name though 
+this is not essential. This is different from the way the CCP4 programs themselves 
+handle defaults for the project, crystal and dataset names (see, for instance, 
+Scalepack2mtz <a href="../../../../html/scalepack2mtz.html#name" target="_PROGDOC">
+NAME keyword</a>).</p>
+
+<h3><a name="data_harvesting_in_ccp4i"></a>Data Harvesting in CCP4i</h3>
+
+<p>Data harvesting is implemented for five different stages in the structure solution 
+process and might be performed for the following tasks:</p>
+<p><table border="1">
+<tr><th align="left">Program function</th><th align="left">Interface Task(s)</th></tr>
+<tr>
+<td>Integrating images (<a href="../../../../html/mosflm.html" target="_PROGDOC">Mosflm</a>)</td>
+<td>Integrate Images</td>
+</tr>
+<tr>
+<td>Scaling data (<a href="../../../../html/scala.html" target="_PROGDOC">Scala</a>)</td>
+<td>Scale Experimental Intensities</td>
+</tr>
+<tr>
+<td>Converting intensities to SFs (<a href="../../../../html/truncate.html" target="_PROGDOC">Truncate</a>)</td>
+<td><li>Import Scaled Denzo Data  (optional)<br />
+<li>Scale Experimental Intensities (optional)<br />
+<li>Convert Intensities to SFs<br />
+<li>Convert to/modify/extend MTZ (optional for some formats)</td>
+</tr>
+<tr>
+<td>Final round of refinement of heavy atom positions
+(<a href="../../../../html/mlphare.html" target="_PROGDOC">Mlphare</a>)</td>
+<td>Run Mlphare</td>
+</tr>
+<tr>
+<td>Final round of refinement (<a href="../../../../html/refmac.html" target="_PROGDOC">Refmac</a>)</td>
+<td>Run Refmac</td>
+</tr>
+</table></p>
+<p>For each task which might involve harvesting, there is a folder
+in the task window, usually immediately below the Files folder, where you can 
+change the destination for harvest files and change the Project or Dataset Names.
+For the Mosflm task, it is necessary to define Project, Crystal and Dataset Names
+for the newly-created MTZ file, whether or not a harvesting file is to be produced.
+For the other tasks, it is possible to enter an alternative Project or Dataset name 
+to override the ones obtained from the MTZ file.</p>
+
+<p>In addition to the dataset information, the task interfaces give four
+options for controlling output of harvest files:
+<dl>
+<dt>Create harvest file in project harvesting directory
+<dd>The harvest file is placed in a subdirectory "DepositFiles" of the
+project directory corresponding to the currently selected  CCP4i project.
+This option allows the user to organise the harvesting files according
+to CCP4i projects. This works by CCP4i temporarily re-setting the
+environment variable HARVESTHOME.
+
+<dt>Create harvest file in central harvesting directory
+<dd>The harvest file is placed in a subdirectory "DepositFiles" of the directory 
+defined by the environment variable HARVESTHOME. This may be defined for your 
+installation in the ccp4.setup file. If HARVESTHOME is not set in the
+environment, then HOME is used. This option acts as a central location for
+a user or group.
+
+<dt>Use current working directory
+<dd>This corresponds to the program keyword USECWD (see above), where in
+the context of CCP4i the current working directory is the project directory
+(note: <em>not</em> the "DepositFiles" subdirectory thereof).
+
+<dt>Do not create harvest file
+<dd>Do not create any harvest files. This corresponds to the program 
+keyword NOHARVEST (see above).
+</dl>
+
+<!-- There was no documentation on harvesting in the programmer's section - pjx
+<h4><a name="implementation"></a>Implementation</h4>
+
+<p>See <a href="../programmers/harvest.html" target="_PROGRAMMERSDOCS">Implementing Data Harvesting</a>.</p>
+-->
+
+<h4><a name="preferences"></a>Preferences</h4>
+
+<p>CCP4i allows for the automatic setting of certain
+<a href="preferences.html#data_harvesting" target="_self">preferences</a> for 
+data harvesting, via the CCP4i Preferences window (accessed from the menu on the
+right-hand side of the Main Window). The default option for controlling output 
+of harvest files (see above) can be set. The harvest directories can be
+made private, corresponding to the program keyword PRIVATE, and the maximum
+width of an output row can be set, corresponding to the program keyword RSIZE 
+(see above).</p>
+
+<table border="0">
+<tr><td>
+<a href="preferences.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="maps.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="../index.html" target="_top">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td></tr>
+</table>
+
+</body>
+</html>

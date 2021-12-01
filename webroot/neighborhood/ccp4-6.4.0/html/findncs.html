@@ -1,0 +1,536 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>CCP4 Program Suite : findncs</TITLE>
+</HEAD>
+<BODY>
+
+<!-- ::INDEX_INFO::FINDNCS::Supported::MULTIPLE ISOMORPHOUS REPLACEMENT::detect NCS operations automatically from heavy atom sites:::::::: -->
+
+<H1>FINDNCS (CCP4: Supported Program)</H1>
+<H2>NAME</H2>
+<B>findncs </B>
+- detect NCS operations automatically from heavy atom sites
+
+<H2>SYNOPSIS</H2>
+
+<P><B>findncs</B> <BR>
+[<A HREF="#keywords">Keyworded input</A>] </P>
+
+<H2><A NAME="description"></A>DESCRIPTION</H2>
+
+<PRE>
+ ================================================
+              F  I  N  D  N  C  S
+ Detecting NCS relations from heavy atoms sites
+            Version 1.1      Sep-30-1997         
+ ================================================
+</PRE>
+
+<dl>
+<dt> Author: 
+<dd>       <A HREF="http://bioinfo1.mbfys.lu.se/~guoguang/index.html"><b>Guoguang Lu</b></A>
+<dt><dd>		Department of Molecular Biophysics
+<dt><dd>           	Lund University
+<dt><dd>		Box 124, 221 00, Lund, Sweden
+<dt> E-mail:	
+<dd> <A href="mailto:Guoguang.Lu@mbfys.lu.se">Guoguang.Lu@mbfys.lu.se</A> 
+
+<dt> Contents:	<dd> <A HREF="#introduction">Introduction</A>
+<dt>		<dd> <A HREF="#examples">Example command File</A>
+<dt>		<dd> <A HREF="#keywords">Key Word Commands</A>
+<dt>		<dd> <A HREF="#conventions">Conventions and Example output</A>
+<dt>		<dd> <A HREF="#faq">Frequently Asked Questions</A>
+<dt>		<dd> <A HREF="#acknowledgement">Acknowledgement</A>
+
+</dl>
+
+<H2><A NAME="references"></A>REFERENCES</H2>
+
+<OL>
+<P><!-- KEEP startreferencelist --></P>
+
+<LI> Lu, G. (1999) FINDNCS: A program to detect non-crystallographic
+	        symmetries in protein crystals from heavy-atom sites 
+		J. Appl. Cryst. <b>32</b> 365. </LI>
+<!-- KEEP endreferencelist -->
+</OL>
+
+<b><h2><A NAME="introduction">Introduction</A></h2></b>
+
+FINDNCS is a program which automatically finds Non-Crystallographic
+Symmetry (NCS) operations from heavy atom sites, in order to facilitate
+applying averaging technique in the MIR/MAD procedure. The program outputs 
+NCS operations (a rotation matrix and translation vector), RMS, polar angles 
+and screw distance, matching sites and other useful information for users. 
+Optionally, the program can also generate some files so that NCS operations 
+can be displayed by the O program automatically.
+<p>
+The program requires at least 6 heavy atom sites for each NCS
+one operations unit <EM>i.e.</EM> at least 3 sites for each NCS asymmetric unit
+(which can be a protein monomer, dimer, trimer or even higher oligomer).
+Once the coordinates of the sites were input, they were extended
+by crystallographic symmetry and lattice repetition. Then the program
+systematically searches whether a group of sites can match another group of
+sites by an NCS operation. There are a number of criteria to choose one NCS operation 
+among crystallographic symmetric related ones:
+<OL>
+<LI>Number of matching sites is maximum</LI>
+<LI>Screw distance of the NCS operation is minimum</LI>
+<LI>Center of the two group sites are closest</LI>
+<LI>Radius of the group of atoms are minimum</LI>
+</OL>
+Once all the independent NCS have been found, they are ranked 
+by these criteria. 
+<p>
+In some cases, for example, when the number of sites is low enough (less 
+than 20), the space group is simple (such as triclinic, monoclinic, R3, P3),
+and/or the NCS relations are regular (like 222 tetramer 2-fold dimer and
+so on) users can run the program fully automatically and accept the suggestions 
+from the output. However, if users have high symmetry, many HA sites or
+many protein molecules with non-regular NCS relations, they have to 
+follow the instructions in this manual to find the NCS step by step. 
+Alternatively, users can also define the search range (which includes 
+the entire oligomer of the protein) themselves using knowledge from the 
+solvent flattening map. Otherwise, it might take long CPU time and or 
+the results are too complicated to understand. For details, please read 
+through <b><A HREF="#keywords">Key Word Command</a></b> and <b><A HREF="#faq">Frequently Asked Questions</a></b> of this document.
+
+
+<b><h2><A NAME="examples">Examples</a></h2></b>
+
+<H3>UNIX example script found in $CEXAM/unix/runnable/</H3>
+
+<LI><A HREF="../examples/unix/runnable/findncs.exam">findncs.exam</A></LI>
+
+<b><h2><A NAME="keywords">Key Word Commands</a></h2></b>
+
+General: Each line which starts with "!" or "#" will be ignored. The possible keywords are:
+<blockquote>
+<A HREF="#cell"><B>CELL</B></A>, <A HREF="#compound"><B>COMPOUND</B></A>,
+<A HREF="#disp"><B>DISP</B></A>, <A HREF="#error"><B>ERROR</B></A>,
+<A HREF="#frclim"><B>FRCLIM</B></A>, <A HREF="#fsite"><B>FSITE</B></A>,
+<A HREF="#list"><B>LIST</B></A>, <A HREF="#maxncs"><B>MAXNCS</B></A>,
+<A HREF="#minmatch"><B>MINMATCH</B></A>, <A HREF="#site"><B>SITE</B></A>,
+<A HREF="#spacegroup"><B>SPACEGROUP</B></A>, <A HREF="#sphere"><B>SPHERE</B></A>,
+<A HREF="#xyzlim"><B>XYZLIM</B></A>
+</blockquote>
+
+<H3><A NAME="cell"></A>CELL &lt;a&gt; &lt;b&gt; &lt;c&gt; &lt;alpha&gt;
+&lt;beta&gt; &lt;gamma&gt; </H3>
+
+It is necessary to specify cell dimensions when the
+coordinates of the HA sites are in the fractional system or the HA sites 
+have not been
+put into a correct asymmetric unit. This command must be given before 
+SPACEGROUP, SITE and FSITE commands.
+
+<H3><A NAME="spacegroup"></A>SPAcegroup  &lt;NAME&gt; </H3>   
+Space group name or number,  <EM>e.g.</EM> P212121 or 19. 
+If this command is not present, the program will not operate
+crystallographic symmetry and so it only works properly when you already
+put the HA sites in a correct asymmetric unit.
+
+<H3><A NAME="error"></A>ERRor	&lt;error&gt; 	</H3>	
+Estimated error of heavy atom site.
+If the distance between two sites after a NCS operation is less than this 
+value, the program will think these two sites join the NCS. I recommend 
+to start with 1/2 of the resolution used by difference PATTERSON/FOURIER 
+which solved the HA sites. 
+
+<H3><A NAME="maxncs"></A>MAXNCS &lt;maxncs&gt; </H3> 
+Example MAXNCS 20  [default: all the solutions] 
+Maximum number of NCSs output in the final output files. If the command 
+is not present, the program will output all the ranked solutions. 
+Usually (I think in more than 99% cases), the solution(s) with highest 
+rank are the correct one. 
+
+<H3><A NAME="compound"></A>COMPound &lt;compound&gt;	</H3>
+Default compound name.
+The compound name of given sites followed this by command will be assumed to
+come from this compound unless otherwise specified.
+The name to let the program distinguish HA sites from different
+compound. If two heavy atoms (even from different compound) can bind same 
+site of  different NCS related protein molecules but are given different 
+compound name, the program will not  use them to calculate NCS operations 
+In this case, opportunity to find the correct NCS might be missed. But on the 
+other hand, if two sites come from different compound by are not given the 
+same, it might give a lot of false &quot;noise&quot; and so it will take longer CPU time
+to find the correct solution.
+
+<H3><A NAME="fsite"></A>FSITE  &lt;fx&gt; &lt;fy&gt; &lt;fz&gt;  [&lt;compound&gt;] </H3> 
+Fraction coordinates and compound name
+<pre>
+	example: fsite   0.755   0.282   0.146 
+	     or	 fsite   0.689   0.467   0.299   PCMB 
+</pre>
+if the compound name is not given, the program will assume the  
+name is the same as the default name from <A HREF="#compound">COMPOUND</A>. CELL command must be 
+given before this command. 
+
+<H3><A NAME="site"></A>SITE   &lt;x&gt; &lt;y&gt; &lt;z&gt; [&lt;compound&gt;]</H3>
+Orthogonal coordinates and compound name
+<pre>
+	examples	site -13.752  16.271  27.267	
+</pre>
+if the compound name is not given, the program will assume the 
+name is the same as the default name from <A HREF="#compound">COMPOUND</A>. See
+<A HREF="#convention_orthogonal_system">convention of the orthogonal system</A>. If the coordinates are already
+put into the correct asymmetric unit, user does not have to give cell
+dimension and space group.
+
+<H3><A NAME="frclim"></A>FRCLIM &lt;xfrclow&gt; &lt;xfrchigh&gt; &lt;yfrclow&gt; &lt;yfrchigh&gt; 
+&lt;zfrclow&gt; &lt;zfrchigh&gt;</H3>
+Fractional xyz limit for search ranges
+<pre>
+	example -1. 1.  -1. 1.  -1. 1.
+</pre> 
+By default, the program extends HA sites to 8 unit cells (XYZ from -1. 
+to 1.), to make sure that the search range includes the entire protein
+molecule. However, if users have many crystallographic operations,
+(like cubic, hexagonal or tetragonal), it is extremely time consuming
+to find out in such a range and there are a lot of chances to have
+&quot;noise&quot; (false NCS). So, users have to determine a smaller search 
+range themselves (see <A HREF="#faq4a">FAQ 4.a</A>). 
+This command can be repeated.
+See also <A HREF="#xyzlim">XYZLIM</A> and <A HREF="#sphere">SPHEre</A>
+
+<H3><A NAME="xyzlim"></A>XYZLIM &lt;xlow&gt; &lt;xhigh&gt; &lt;ylow&gt; &lt;yhigh&gt; &lt;zlow&gt; &lt;zhigh&gt;</H3>
+Orthogonal xyz limit for search ranges
+<pre>
+     example -10 50  -100  40  -20  60
+</pre>
+This command can be repeated; see <A HREF="#frclim">FRCLIM</A> 
+
+<H3><A NAME="sphere"></A>SPHEre &lt;cenx&gt; &lt;ceny&gt; &lt;cenz&gt; &lt;radius&gt;</H3> 
+Search sphere.
+Sites which are located inside a sphere with given center position and 
+radius will be used for NCS search.
+This command can be repeated. See <A HREF="#frclim">FRCLIM</A>.
+
+<H3><A NAME="disp"></A>DISP  &lt;maxdisp&gt;  &lt;axislength&gt; </H3> 
+&lt;MAXDISP&gt; maximum number of sites for graphics displaying,
+&lt;axislength&gt;  length of the axis displayed by the O program.
+This command is for generating PDB files and certain files 
+used by the O program (Jones et al 1990) to automatically display the
+results in graphics. For details see <A HREF="#faq3">FAQ 3</A>.
+
+<H3><A NAME="minmatch"></A>MINMATCH &lt;minmatch&gt;</H3> 
+Minimum site match number.
+If you have many sites or crystallographic symmetry operations, program
+will find many false NCS. This command will make the output much
+cleaner and can also speed up the calculation.
+
+<H3><A NAME="list"></A>LIST &lt;yes&gt; | &lt;no&gt; </H3> 
+If yes, some detailed information will be output before the final solution found out.
+
+<b><h2><A NAME="conventions">Conventions and example output</a></h2></b>
+
+<pre>
+<A NAME="convention_orthogonal_system"></A> The program uses following convention for orthogonal system
+                             X is in A direction
+                             Y is in AB plane
+                             Z is perpendicular to AB plane
+
+ Each NCS operation can be described as that an object
+ rotate kappa degree about a certain axis, then move a
+  screwing distance along the direction of this axis
+
+ In the following for each possible NCS, the program provides:
+ Matching pairs: number of matching pairs by the possible NCS solutions
+                  is ranked by this number
+ Matching members: the ID number of each site (from input order before
+                   crystallographic operation)
+ RMS:  root mean square deviation of the superimposed sites
+ Screw: the screwing distance
+ Radii: average distance between center and all joining site
+ Polar angles:  they describes the NCS axis as follow
+  psi is the angle between Z and NCS axis
+  phi is the angle between X and image of NCS axis XY plane
+  kappa is the rotation angle. 180=2fold, 90=4-old ... so on
+  the polar angle definition is same as in the POLARRFN program
+ Center: center position of all the joining sites, this
+        can help to find out if two axis interact each other
+</pre>
+
+ <b>Example</b>
+
+<pre>
+ Maximum number of NCS operations to be output          10
+ Space Group  >>> P21                      4
+ Symmetric operation ----      Total:   2      Rotation:  2
+           8 sites were read in
+          16 sites after symmetry operations
+         116 sites are extended to maximum cells
+
+ Building a distance matrix......
+ Looking for NCS matches......
+
+ Total  285 NCS operations have been found
+ Maximum atom number           6
+ generating unit cell frame for O...
+----------------------------------------------------------------------
+ NCS1    with matching pairs           6
+  1  2  3  4  5  7
+  4  3  2  1  7  5
+ NCS matrix:
+    -0.99584     0.08831     0.02261
+     0.08831     0.87302     0.47961
+     0.02261     0.47961    -0.87719
+    65.24355   -19.55399    64.35049
+RMS: 0.929     Screw:    0.00     Radii:   41.20
+Polar angle:   75.65   87.30  180.00     &   104.35  -92.70 -180.00
+Center:   32.07  -21.44   29.19
+
+----------------------------------------------------------------------
+ NCS2    with matching pairs           6
+  2  3  4  5  7  8
+  3  2  8  7  5  4
+ NCS matrix:
+    -0.98548    -0.15782    -0.06262
+    -0.15782     0.71543     0.68063
+    -0.06262     0.68063    -0.72995
+   -39.70554   -30.00050    66.40594
+RMS: 0.993     Screw:    0.00     Radii:   54.58
+Polar angle:  111.56  -84.74  180.00     &    68.44   95.26 -180.00
+Center:  -21.63    4.36   40.89
+
+----------------------------------------------------------------------
+ NCS3    with matching pairs           6
+  2  3  4  5  6  7
+  3  2  6  7  4  5
+ NCS matrix:
+    -0.99408     0.10813     0.01057
+     0.10813     0.97522     0.19301
+     0.01057     0.19301    -0.98114
+    67.17181    -9.37817    58.34059
+RMS: 1.197     Screw:    0.00     Radii:   40.59
+Polar angle:   84.43   86.87  180.00     &    95.57  -93.13 -180.00
+Center:   32.69  -21.11   27.57
+
+----------------------------------------------------------------------
+ NCS4    with matching pairs           5
+  2  4  6  7  8
+  4  2  7  6  3
+ NCS matrix:
+     0.88325     0.04691     0.46656
+    -0.05447    -0.97798     0.20146
+     0.46574    -0.20335    -0.86124
+   -38.24167    57.20192    92.85443
+RMS: 0.948     Screw:  -14.65     Radii:   36.55
+Polar angle:   75.94   -0.12  167.96     &   104.06  179.88 -167.96
+Center:  -22.16   21.90   50.91
+
+----------------------------------------------------------------------
+ NCS5    with matching pairs           5
+  1  2  4  6  8
+  8  4  2  7  1
+ NCS matrix:
+    -0.99553     0.01697    -0.09289
+     0.01986    -0.92409    -0.38165
+    -0.09232    -0.38179     0.91963
+    51.18448   -21.65644    -2.32794
+RMS: 1.292     Screw:    0.48     Radii:   56.42
+Polar angle:  168.44   76.36  179.92     &    11.56 -103.64 -179.92
+Center:   25.93   -9.40   -8.48
+.....
+CPU time:     1 min 20.5 sec
+</pre>
+
+
+<b><h2><A NAME="faq">Frequently Asked Questions</a></h2></b>
+
+<b><A NAME="faq1"></A>1) If I can find NCS real operation from heavy atom sites manually,
+is it sure the program can find it too?</b><br>
+Yes!
+<p>
+<b><A NAME="faq2"></A>2) Can I directly use the NCS matrix from FINDNCS in averaging programs?</b><br>
+It depends on the circumstance of protein oligomers. For example,
+if you only have a dimer AB in crystallography asymmetric unit (asu), the 
+program can easily find the NCS from A to B (or B to A). However, if you have
+tetramer ABCD, the program will give you the NCS matrix A_to_B, A_to_C,
+A_to_D, B_to_C, B_to_D and C_to_D, with total 6 matrices while in
+most averaging programs you probably only need first 3 matrix. However, your 
+tetramer is in 222 symmetry, A_to_B/D_to_C should be the same matrix, so 
+is A_to_C/B_to_D, A_to_D/B_to_C. The program in this case will only
+output 3 matrix which you can use in the averaging program.
+<p>
+Sometimes the program does not output the NCS which you want, for
+example biologically, ABCD is the tetramer biologically, the program can
+give NCS A_to_B and A'_to_F' where A' and F' are crystallographically 
+equivalent to A and F. You can find it when you try to make the mask
+before averaging. You can use <A HREF="#sphere">SPHERE</A> and <A HREF="#xyzlim">XYZLIM</A> or <A HREF="#frclim">FRCLIM</A>.
+<p>
+Although FINDNCS does not always give you the exact NCS operation required
+by averaging programs, it is still much much faster to find out the correct
+NCS using the program as a tool than find NCS by hand. 
+<p>
+<b><A NAME="faq2a"></A>2.a) How should I analyse the output of FINDNCS?</b><br>
+Look at the graphics using the outpdb files and O files.<br>
+>From the log output.<br>
+For example, you find the following output shows a dimer of 2-fold
+symmetry. The joining sites 1-fit-4 and 2-fit-3.... after the 180 deg NCS 
+operation. (only in two fold symmetry, site 1 fit 4 and while 4 also fit 1
+in the same NCS)
+<pre>
+----------------------------------------------------------------------
+ NCS1    with matching pairs          12
+  1  2  3  4  5  6  7  8  9 10 11 12
+  4  3  2  1  8  7  6  5 12 11 10  9
+ NCS matrix: 
+    -1.00000    -0.00061     0.00025
+    -0.00061     0.70840    -0.70581
+     0.00025    -0.70581    -0.70840
+     0.74407    -0.21214    -0.51413
+RMS: 0.091     Screw:    0.00     Radii:   30.48
+Polar angle:   67.55  -89.98  180.00     &   112.45   90.02 -180.00
+Center:    0.37   -0.01   -0.30
+If you find the following NCS in the same time,
+----------------------------------------------------------------------
+ NCS2    with matching pairs          12
+  1  2  3  4  5  6  7  8  9 10 11 12
+  2  1  4  3  6  5  8  7 10  9 12 11
+ NCS matrix: 
+....
+RMS: 0.210     Screw:    0.00     Radii:   30.48
+Polar angle:  157.55  -89.46  180.00     &    22.45   90.54 -180.00
+Center:    0.37   -0.01   -0.30
+
+----------------------------------------------------------------------
+ NCS3    with matching pairs          12
+  1  2  3  4  5  6  7  8  9 10 11 12
+  3  4  1  2  7  8  5  6 11 12  9 10
+ NCS matrix: 
+....
+RMS: 0.210     Screw:    0.00     Radii:   30.48
+Polar angle:   89.82    0.10  180.00     &    90.18 -179.90 -180.00
+Center:    0.37   -0.01   -0.30
+</pre>
+>From the matching site number, you can find this is a perfect 222 NCS
+symmetry only from the output. Of course it will be much easier to understand 
+if you look at graphics using the PDB files (and O files if you use O).
+
+<p>
+<b><A NAME="faq3"></A>3) How to display the results by graphics?</b><br>
+<p>
+If the <A HREF="#disp">DISPLAY</A> command is present, the program will generate some files for
+graphics display. First, it generates a PDB file ncsall.pdb which
+include all the sites within the search range. After NCSs have been
+found, the program will generate ncs1.pdb ncs2.pdb ..... which
+includes sites joining operations of NCS1, NCS2 ... and so on. You can
+use any graphics program to display them.
+<p>
+In the case you use O and/or RAVE:<br>
+The program also generates a file called ncs.ofm which include NCS
+operators, and vectors which can be used by the O program. Then program
+will make an O macro file called oncs.mac (together with ncs1.mac, ncs2.mac...). 
+If users run O under the same directory and type @oncs.mac, there will be 
+a group of commands appearing in menu bar (@ncs1.mac, @ncs2.mac). If
+you want to display first NCS operations found by FINDNCS, click
+@ncs1.mac the O program will display a axis and the sites which join the
+NCS in yellow and  sites superimposed by this NCS. 
+After running @oncs.mac The NCS matrix is stored as <br>
+.lsq_rt_ncs1
+.lsq_rt_ncs2
+....
+If you have bones, you can display as two objects (<EM>e.g.</EM> SKEL and SKEL1)
+If you want to see how the 1st NCS works type:<br>
+lsq_obj ncs1 SKEL to see how it is superimpose to SKEL1
+If you have a electron density call map1, you can use command:<br>
+lsq_rt_obj .lsq_rt_ncs1 map1 to superimpose this map.
+If you  edit the file oncs.mac to take out  .lsq_rt_ncs1... to a new file,
+it can be directly used by the RAVE packages.
+<p>
+
+<b><A NAME="faq4"></A>4) What should I do in the case the program takes an intolerable CPU time?</b><br>
+The time of the program is proportional to N*N*N*N*(N-1), where N 
+is the total number of search sites after crystallographic operations. If 
+this number is more than 300, the calculation will become very slow (10 hours
+in a DEC-alpha for 310 atoms, so about 300 hours for 620 atoms). If users 
+use an automatic mode for XYZ limit (8 unit cells XYZ from -1 to 1), this 
+number can be found in the following line<br>
+        736 sites are extended to maximum cells
+<p>
+In this case users have to use smaller search range defined by commands
+<A HREF="#frclim">FRCLIM</A>, <A HREF="#xyzlim">XYZLIM</A> or <A HREF="#sphere">SPHERE</A>. (The sites number inside selected range can be
+found in the line:
+         148 sites are inside the selection ranges	)<br>
+Increasing <A HREF="#minmatch">MINMATCH</A> is also the way to substantially 
+decrease the CPU time when too many possible solutions are found. If the 
+program output is something like this<br>
+Solution: 1000    Max match:   16<br>
+i1,i2,i3,j1,j2,j3   1  83  91  57 115  67     CPU time:   103.0 s<br>
+Solution: 2000    Max match:   16<br>
+i1,i2,i3,j1,j2,j3   4  47  76  58  36  85     CPU time:   379.2 s<br>
+You find out that the maximum matching number is 16 so setting minmatch to 6 
+should not hurt anything.
+<p>
+<b><A NAME="faq4a"></A>4.a) How should I define the search range?</b><br>
+The idea of defining a search range is to include at least one entire
+protein oligomer so the program would not miss the correct NCS. If a search 
+range includes  8 crystallographic ASU homogeneously in XYZ directions, I think
+(not proved) an entire protein oligomer won't be missed
+in more than 95% cases.
+<p>
+It does not matter if the search range includes more than one
+entire protein oligomer. (The program should be able to recognize
+the crystallographic symmetric equivalent NCSs by finding the joining sites
+of these NCSs are crystallographic equivalent too.) However, too big a
+search range might cause many sites to be searched and slow down the
+search. It is not very practical if the sites inside the range are
+more than 300.
+<p>
+There are several ways you can decide the search range.
+<ul>
+<li>According the knowledge of ASU in a particular space group. <BR>
+It is quite complicated to find a search range for a certain 
+spacegroup to guarantee an entire protein oligomer is included . 
+At this point, the author has not been clear for all the spacegroups<BR>
+I only recommend for some individual cases :<BR>
+ --In triclinic, monoclinic, P3x, and R3 space groups, user can use
+    the default search range of the program.<BR>
+ -- Space group P2x2x2x, (-0.5,1. -0.5.1, -0.5,1)<BR>
+ -- Space group P4x2x2, (0. 1.  0. 1.  0. 1)<BR>
+Klas Anderson pointed out that the search should be performed according 
+to the corresponding Cheshire group of the space
+group. This is tabulated by Hirschfeld Acta Cryst. A (1968) and 
+in Int. Tables of Cryst. (I have not checked myself)
+If any one has more knowledge about this, please tell me.
+<li>Use <A HREF="#list">LIST yes</A> and <A HREF="#disp">DISPLAY</A> Option <br>
+You can use default search range first. The &quot;LIST yes&quot; would list 
+all the NCS it finds. Since there are a lot of repetitions in the default
+search range, the correct one must appear after the program running 
+for a while (10-60 minutes CPU perhaps). If your log file is
+called findncs.log, you can type the command:<br>
+"grep MATCH findncs.log | sort +6" and you will get something like
+<pre>
+ MATCH #           3 with matching pairs           5
+ MATCH #           4 with matching pairs           5
+ MATCH #          15 with matching pairs           5
+  ........
+ MATCH #        1585 with matching pairs          12
+ MATCH #        1569 with matching pairs          13
+ MATCH #         681 with matching pairs          14
+ MATCH #        1070 with matching pairs          14
+</pre>
+Now you know the best match so far is MATCH 681. You open the file
+findncs.log and find MATCH 681 and you can find NCS there. The atom
+file ncsall.pdb has been generated and you can use graphics to see what
+this NCS looks like and choose the search range round the joining
+sites.
+<li>According the bones of the electron density or solvent flattening mask<BR>
+Even if you don't want to use averaging technique, you have to look at
+the electron density and bones and decide which crystallographic ASU you
+are going to use. This ASU should certainly include at least one protein
+oligomer. You do not have to operation the heavy atom sites to this ASU.
+If you just express the range by <A HREF="#xyzlim">XYZLIM</A>, <A HREF="#frclim">FRCLIM</A> or <A HREF="#sphere">SPHERE</A>, the program
+should find out the NCS very quickly. 
+</ul>
+
+<b><h2><A NAME="acknowledgement">Acknowledgement</a></h2></b>
+The author appreciates Professors <b>Gunter Schneider</b> and <b>Ylva Lindqvist</b>
+for pointing out the possible impact and encouraging me to write the
+program, Drs. <b>Cristofer Enroth</b> and <b>Ylva Lindqvist</b> for
+providing test examples.
+
+</body></html>

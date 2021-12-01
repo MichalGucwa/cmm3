@@ -1,0 +1,493 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>CCP4 Program Suite</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.01Gold (X11; I; OSF1 V4.0 alpha) [Netscape]">
+</HEAD>
+<BODY>
+
+<P><!-- ::INDEX_INFO::PDBSET::Supported::Coordinate file manipulations::various useful manipulations on coordinate files:::::::: --></P>
+
+<H1>PDBSET (CCP4: Supported Program)</H1>
+
+<H2>NAME</H2>
+
+<P><B>pdbset </B> - various useful manipulations on coordinate files </P>
+
+<H2>SYNOPSIS</H2>
+
+<P><B>pdbset XYZIN </B><I>foo_in.pdb </I><B>XYZOUT </B><I>foo_out.pdb</I>
+<BR>
+[<A HREF="#keywords">Keyworded input</A>] </P>
+
+<P>Note that PDBSET should work with mmCIF files as well as PDB files.</P>
+
+<H2><A NAME="keywords"></A>KEYWORDED INPUT</H2>
+
+<P>The available keywords are:
+<blockquote>
+<A HREF="#bfactor"><B>BFACTOR</B></A>, <A HREF="#cell"><B>CELL</B></A>,
+<A HREF="#chain"><B>CHAIN</B></A>, <A HREF="#com"><B>COM</B></A>, <A HREF="#element"><B>ELEMENT</B></A>,
+<A HREF="#exclude"><B>EXCLUDE</B></A>, <A HREF="#occupancy"><B>OCCUPANCY</B></A>, <A HREF="#orthogonalization"><B>ORTHOGONALIZATION</B></A>,
+<A HREF="#output"><B>OUTPUT</B></A>, <A HREF="#pick"><B>PICK</B></A>, <A HREF="#remark"><B>REMARK</B></A>,
+<A HREF="#renumber"><B>RENUMBER</B></A>, <A HREF="#reorthogonalize"><B>REORTHOGONALIZE</B></A>,
+<A HREF="#replace"><B>REPLACE</B></A>, <A HREF="#rotate"><B>ROTATE</B></A>, <A HREF="#select"><B>SELECT</B></A>,
+<A HREF="#sequence"><B>SEQUENCE</B></A>, <A HREF="#shift"><B>SHIFT</B></A>, <A HREF="#spacegroup"><B>SPACEGROUP</B></A>,
+<A HREF="#symgen"><B>SYMGEN</B></A>, <A HREF="#transform"><B>TRANSFORM</B></A>, <A HREF="#utob"><B>UTOB</B></A>,
+<A HREF="#xplor"><B>XPLOR</B></A>, <A HREF="#noise"><B>NOISE</B></A>,
+<A HREF="#atren"><B>ATRENUMBER</B></A>
+</blockquote> </P>
+
+<P>In the description below, optional items are in [], alternatives are
+separated by |, keywords are in uppercase, parameters (<I>i.e.</I> numbers)
+are in lowercase. The input itself is case-insensitive for keywords (but
+parameters <I>e.g.</I> chain IDs must of course be the correct case). In
+the output file, the chain ID is always uppercase. </P>
+
+<DL>
+<DT>(always)</DT>
+
+<DD>Divide residue ID into chain ID + residue number (if it begins with
+a non-digit) (for output from O). This is ALWAYS done, so the output file
+always has a valid numerical residue number.</DD>
+</DL>
+
+<H3><A NAME="cell"></A>CELL a b c [alpha beta gamma]</H3>
+
+<P>Read cell dimensions and make CRYST1 &amp; SCALE header records. These
+will replace any CRYST1 &amp; SCALE lines already present in file. The
+CRYST1 line should have the spacegroup in it, so a <A HREF="#spacegroup">SPACEGROUP</A> command is
+recommended. Note that if the <A HREF="#transform">TRANSFORM</A> or <A HREF="#shift">SHIFT</A> cards are
+present and the input PDB file contains CRYST1 and SCALE cards, the transformation operation will 
+take place using the original cell dimensions. If the user wishes to perform the transformation operation
+using the new cell dimensions then two separate runs of the program are required.</P>
+
+<H3><A NAME="orthogonalization"></A>ORTHOGONALIZATION (or NCODE) orthogonalization_code</H3>
+
+<P>Define code to generate orthogonalization matrix from input cell. This
+is not normally required, and only has an effect if a <A HREF="#cell">CELL</A> command is also
+given. </P>
+
+<PRE>     Code :-  
+        = 1  axes along a, c* x a, c*  (Brookhaven standard, default)
+        = 2  axes along b, a* x b, a*
+        = 3  axes along c, b* x c, b*
+        = 4  axes along a+b, c* x (a+b), c*
+        = 5  axes along a*, c x a*, c       ( Rollett )
+        = 6  axes along a, b*, a x b*
+        = 7  axes along a*, b, a* x b   (TNT convention, 
+                                         probably not very useful here
+                                         since TNT has its own converter
+                                         program)
+</PRE>
+
+<H3><A NAME="spacegroup"></A>SPACEGROUP spacegroup_name</H3>
+
+<P>Read spacegroup name (not essential, but put into CRYST1 line on output)
+</P>
+
+<H3><A NAME="symgen"></A>SYMGEN Spacegroup_name | Spacegroup_number | Symmetry_operation
+| NCS</H3>
+
+<P>Generate chains with these symmetry operations applied. If the operations
+are given explicitly, several SYMGEN commands may be given. The identity
+operation must be specified explicitly if required. Use the <A HREF="#chain">CHAIN</A> command
+to rename them. Note that, except for NCS, these symmetry operations apply
+to fractional coordinates, so the orthogonalization operation must be known
+to the program, either from CRYST1 and/or CELL lines in the input coordinate
+file, or from a <A HREF="#cell">CELL</A> command. If the keyword NCS is given, then a series
+of <A HREF="#transform">TRANSFORM</A> commands should be given to define the non-crystallographic
+symmetry operations to be used.</P>
+
+<p><i>NB:</i> if supplying individual symmetry operations, these must be in the
+form found in the file <i>symop.lib</i>, e.g.
+<PRE>
+SYMGEN -X,Y,-Z 
+SYMGEN 1/2+X,1/2+Y,Z
+</PRE>
+Elements within each operation are separated by commas. To supply multiple operations
+on a single line, separate each pair of operations by an asterisk, e.g.
+<PRE>
+SYMGEN -X,Y,-Z * 1/2+X,1/2+Y,Z
+</PRE>
+
+<H3><A NAME="renumber"></A>RENUMBER [INCREMENT] start|increment [residue
+range] [CHAIN old_chain [TO new_chain]]</H3>
+
+<P>Renumber or add constant to residue numbers in given range. The residue
+range is given as 1st_residue_number [TO] last_residue_number. If the <A HREF="#chain">CHAIN</A>
+keyword is present, the renumbering applies only to this chain. The option
+TO new_chain causes the chain identifier to be changed. Note that renumbering
+is done after chain renaming specified by the CHAIN command, so the chain
+specified here (old_chain) is the chain ID after any renaming. <EM>N.B.</EM> there
+is NO check that different RENUMBER commands are mutually exclusive. To
+avoid problems with recursive renumbering, if more than one RENUMBER command
+would apply to a residue, only the first will be done. <BR>
+(Defaults all residues, all chains).</P>
+
+<PRE>     <I>e.g.</I> RENUMBER 35                ! renumber all residues, starting from 35
+          RENUMBER INCREMENT -5  102 TO 110 CHAIN C  ! subtract 5 from
+                                     ! residues 102 to 110 in chain C
+          RENUMBER 101 1 TO 78 CHAIN A TO B  
+               ! renumber residues 1 to 78 in chain A from 101 (to 178),
+               ! changing the chain identifier to B
+</PRE>
+
+<H3><A NAME="chain"></A>CHAIN [SYMMETRY Nsym] [old_chain] new_chain</H3>
+
+<P>Change chain ID to given value. If only one value given, change all
+chains to this value. If SYMMETRY keyword given, this applies to this symmetry
+operation only. A series of CHAIN commands may be given. </P>
+
+<PRE>    <I>e.g.</I> CHAIN Q                ! change all chains to Q
+         CHAIN SYMMETRY 2 A B   ! change chain generated from chain A
+                                !  by symmetry operation 2 to B
+</PRE>
+
+<H3><A NAME="bfactor"></A>BFACTOR [subkey] B_reset (B_reset2)</H3>
+
+<P>Set B-factor (default 20.0).<BR>
+Subkeys: </P>
+
+<BLOCKQUOTE>
+<DL>
+<DT><A NAME="bfactor_always"></A>ALWAYS (default) </DT>
+
+<DD>Reset all B-factors to B_reset </DD>
+
+<DT><A NAME="bfactor_default"></A>ZEROS </DT>
+
+<DD>Reset B-factor to B_reset only if B-factor= 0.0 </DD>
+
+<DT><A NAME="bfactor_minimum"></A>MINIMUM </DT>
+
+<DD>Reset B-factor to B_reset only if B-factor is less than B_reset </DD>
+
+<DT><A NAME="bfactor_maximum"></A>MAXIMUM </DT>
+
+<DD>Reset  B-factor to B_reset only if B-factor is greater than B_reset </DD>
+
+<DT><A NAME="bfactor_range"></A>RANGE </DT>
+
+<DD>Truncate B-factors to the given range. 
+    If B-factor is less than B_reset,  B-factor = B_reset;  
+if B-factor is greater than B_reset2,  B-factor = B_reset.
+</DD>
+
+<DT><A NAME="bfactor_average"></A>AVERAGE </DT>
+
+<DD> Average B-factors from the main chain (N CA C O atoms) and side chain of a residue
+and reset B-factor to B_average-mainchain or B_average-sidechain as appropriate.
+</DD>
+</DL>
+</BLOCKQUOTE>
+
+<H3><A NAME="occupancy"></A>OCCUPANCY [subkey] Occ_reset (Occ_reset2) </H3>
+
+<P>Set occupancy (default 1.0).<BR>
+Subkeys: </P>
+
+<BLOCKQUOTE>
+<DL>
+<DT><A NAME="occupancy_always"></A>ALWAYS (default) </DT>
+
+<DD>Reset all occupancies to Occ_reset </DD>
+
+<DT><A NAME="occupancy_default"></A>ZERO </DT>
+
+<DD>Reset ZERO occupancies to Occ_reset </DD>
+
+<DT><A NAME="occupancy_minimum"></A>MINIMUM </DT>
+
+<DD>Reset occupancy to Occ_reset if occupancy less than Occ_reset. </DD>
+
+<DT><A NAME="occupancy_rest"></A>RESET </DT>
+
+<DD>Reset occupancy to 0 if occupancy less than Occ_reset , and  to 1.0 if
+occupancy greater than Occ_reset2. </DD>
+</DL>
+</BLOCKQUOTE>
+
+<H3><A NAME="select"></A>SELECT [subkeys]</H3>
+
+<P>Subkeys: </P>
+
+<BLOCKQUOTE>
+<DL>
+<DT><A NAME="select_chain"></A>CHAIN </DT>
+
+<DD>Select only specified chain(s). <BR>
+<I>e.g.</I> SELECT CHAIN C ! select only chain C </DD>
+
+<DT><A NAME="select_occupancy"></A>OCCUPANCY [&lt;minimum_occupancy&gt;]</DT>
+
+<DD>Select only atoms with occupancy .gt. minimum_occupancy [ default =
+0.0]. This can be used to strip out dummy atoms with zero occupancy </DD>
+
+<DT><A NAME="select_bfactor"></A>BFACTOR [&lt;maximum_B&gt;]</DT>
+
+<DD>Select only atoms with Bfactor less than &lt;maximum_B&gt; [default
+= 99.0] </DD>
+</DL>
+</BLOCKQUOTE>
+
+<H3><A NAME="rotate"></A>ROTATE [INVERT] [MATRIX|EULER|POLAR] values</H3>
+
+<P>Define rotational transformation, either as MATRIX (this keyword may
+be omitted) followed by 9 numbers (r11 r12 r13 r21 r22 r23 r31 r32 r33),
+by keyword EULER followed by Eulerian angles alpha, beta, gamma (as in <A HREF="almn.html">ALMN</A>),
+or by keyword POLAR followed by polar angles omega, phi, kappa (as in <A HREF="polarrfn.html">POLARRFN</A>).
+This transformation will be applied to all atoms. The <A HREF="#shift">SHIFT</A> command may
+be used to define a translation in addition. The transformation defined
+by ROTATE &amp; SHIFT, or by <A HREF="#transform">TRANSFORM</A>, is applied after any <A HREF="#symgen">SYMGEN</A> operation.
+Multiple definitions of ROTATE or TRANSFORM, or of SHIFT will NOT be concatenated:
+only the last will be effective. </P>
+
+<P>The subkey INVERT causes the inverse transformation to be applied.
+Note that an INVERT instruction if present will apply to both ROTATE &amp;
+SHIFT. </P>
+
+<H3><A NAME="shift"></A>SHIFT [INVERT] [FRACTIONAL] tx ty tz</H3>
+
+<P>Define translation transformation (added AFTER rotation). If the keyword
+FRACTIONAL is present, the translation is assumed to be in fractional coordinates,
+otherwise orthogonal Angstroms. The subkey INVERT causes the inverse transformation
+to be applied. Note that an INVERT instruction if present will apply to
+both ROTATE &amp; SHIFT.</P>
+
+<H3><A NAME="transform"></A>TRANSFORM [INVERT] [FRACTIONAL] r11 r12 r13
+r21 r22 r23 r31 r32 r33 tx ty tz<br>
+TRANSFORM [INVERT] ODB [O_database_filename]<br>
+TRANSFORM [INVERT]  FILE [filename]</H3>
+
+<P>Define transformation, equivalent to ROTATE MATRIX + SHIFT. If the
+keyword FRACTIONAL is present, the translation is assumed to be in fractional
+coordinates, otherwise orthogonal Angstroms. The subkey ODB causes the
+transformation to be read from a file in the format of an O datablock transformation.
+The subkey FILE reads the transformation from a formatted file containing a 3x3 matrix 
+followed by a translation vector. The subkey INVERT causes the inverse transformation
+to be applied.</P>
+
+<P>If a <A HREF="#symgen">SYMGEN</A> NCS command is given before TRANSFORM commands,
+these are collected together to generate multiple NCS-symmetry related chains.</P>
+
+<H3><A NAME="remark"></A>REMARK anything</H3>
+
+<P>Just gets echoed to output coordinate file.</P>
+
+<H3><A NAME="xplor"></A>XPLOR [subkeys]</H3>
+
+<P>The input file is assumed to come from Xplor; the following operations
+are then done:- </P>
+
+<OL>
+<LI>All hydrogens are removed, unless subkeyword HYDROGEN is present.<BR>
+<EM>N.B.</EM>: it is possible that not all sidechain hydrogens will be removed under
+this option. To avoid the problem, use the X-plor option select=(not hydrogen)
+at the end of whatever X-plor job you run (thanks Salam Al-Karadaghi).</LI>
+
+<LI>Dummy atoms (X .gt. 9000) are removed.</LI>
+
+<LI>The segment identifier (columns 73-76) is used as the CHAIN name for
+any chain renaming (etc) commands: thus in this case references to chains
+in other commands may have up to 4 characters and are case-sensitive. Unless
+renamed, the first character of the segment identifier is put in the chain
+ID and made uppercase. </LI>
+
+<LI>The residue number is read correctly for numbers .ge. 1000.</LI>
+</OL>
+
+<H3><A NAME="pick"></A>PICK atom1 atom2 . . .</H3>
+
+<P>Define atom names to be included: all other atoms will be omitted -
+<I>e.g.</I> PICK CA to choose C-alpha only. Note that the atomname is case-sensitive.
+</P>
+
+<H3><A NAME="sequence"></A>SEQUENCE [PDB|SINGLE] [sequence file name]</H3>
+
+<P>Write out sequence to a file (default file name SEQUENCE). This can
+be edited to give a sequence for Xplor or O, etc. If the keyword PDB is
+present, the sequence is written in PDB SEQRES format, split by chains.
+If SINGLE is given, the sequence is written in single-letter code.</P>
+
+<P>This function also writes out the estimated molecular weight based on
+the sequence. Note that this may differ from the value obtained by
+summing the weights of all the atoms in the input PDB file.</P>
+
+<H3><A NAME="output"></A>OUTPUT [PDB | CIF | XPLOR]</H3>
+
+<P>Set output options. The default is to output a file (XYZOUT) in the
+same format as the input (XYZIN).</P>
+
+<BLOCKQUOTE>
+<DL>
+<DT><A NAME="output_pdb"></A>PDB </DT>
+<DD>Output a PDB file.</DD>
+
+<DT><A NAME="output_cif"></A>CIF </DT>
+<DD>Output an mmCIF file.</DD>
+
+<DT><A NAME="output_xplor"></A>XPLOR </DT>
+<DD>Duplicate the chain ID as an Xplor segid, to make the file suitable
+for direct input into Xplor. </DD>
+</DL>
+</BLOCKQUOTE>
+
+<H3><A NAME="utob"></A>UTOB</H3>
+
+<P>Convert Us on input file to B (B = 8 pi**2 u**2).</P>
+
+<H3><A NAME="element"></A>ELEMENT &lt;E1&gt; &lt;E2&gt; . . .</H3>
+
+<P>Define list of 2-character element names to be left-justified in atomnames,
+<I>e.g.</I> MG, FE, ZN. Note that the element name is case-sensitive. The
+PDB convention defines the first 2 characters of the atomname as the element
+name, but Xplor &amp; O put them in the wrong place. CA is NOT accepted,
+as this conflicts with Calpha: you will have to decide what to do with
+these yourself.</P>
+
+<H3><A NAME="reorthogonalize"></A>REORTHOGONALIZE [[FROM] &lt;ncode_in&gt;]
+[TO] &lt;ncode_out&gt;</H3>
+
+<P>Change orthogonalization convention for coordinates by converting to
+fractional in the input convention (FROM) and reorthogonalizing in the
+output convention (TO). If the FROM Ncode is omitted, the orthogonalization
+will be taken from the input (PDB) file as SCALEn lines, or the default
+of Ncode = 1 will be used. If the cell is not present in the input file,
+a <A HREF="#cell">CELL</A> command must be given here. &lt;ncode_out&gt; is compulsory. See
+<A HREF="#orthogonalization">above</A> for Ncodes. </P>
+
+<H3><A NAME="replace"></A>REPLACE RESIDUE &lt;old_residue_type&gt; BY &lt;new_residue_type&gt;</H3>
+
+<P>Globally replace residue type, <I>e.g.</I> REPLACE RESIDUE CYS BY CYH.
+Useful for renaming according to dictionary conventions of different programs.
+The residue names will be right-justified before use to allow for single
+character names. <BR>
+<I>e.g.</I> replace residue C by CYT.</P>
+
+<H3>REPLACE ATOM &lt;atom_name&gt; BY &lt;new_atom_name&gt; [IN &lt;residue_type&gt;]
+</H3>
+
+<P>Replace atom name by new one, optionally only in specified residue
+name. Note that replace tests are done in the order given, so an IN &lt;residue_type&gt;
+command must allow for previous REPLACE RESIDUE commands. Note also that
+leading spaces must be given in atom names <I>e.g.</I> </P>
+
+<PRE>REPLACE ATOM &quot; O&quot; BY &quot; OW&quot; IN HOH</PRE>
+
+<H3><A NAME="exclude"></A>EXCLUDE [subkeys]</H3>
+
+<P>Exclude some things, depending on subkey: </P>
+
+<BLOCKQUOTE>
+<DL>
+<DT>SIDE </DT>
+
+<DD>Exclude all non protein and side chain atoms past CB <EM>i.e.</EM> create a POLYALA model. <EM>N.B.</EM> the residue names are NOT changed.</DD>
+
+<DT>WATer or HOH</DT>
+
+<DD>Exclude residues labelled WAT or HOH.</DD>
+
+<DT>HYDROGENS </DT>
+
+<DD>Exclude hydrogen atoms (as for the <A HREF="#xplor">XPLOR</A> option) </DD>
+
+<DT>HEADERS </DT>
+
+<DD>Exclude all lines except ATOM &amp; HETATM lines. The default is to
+copy them from the input file. </DD>
+</DL>
+</BLOCKQUOTE>
+
+<H3><A NAME="com"></A>COM</H3>
+
+<P>Will calculate the centre of mass and maximum distance from it of the
+coordinates output. This may be useful for determining the rotation function
+integration radius (not done by default since it requires an intermediate
+file).</P>
+
+<H3><A NAME="noise"></A>NOISE [maximum_shift] [subkeys]</H3>
+<p>Introduce random shifts into atom positions in orthogonal coordinates.
+
+<table noborder>
+<tr valign="TOP"><td>maximum_shift<td>maximum shift (Angs) <br>
+              defaults to 0.2 Angs, fails if greater than 0.5 Angs
+<tr valign="TOP"><td colspan=2><b>Subkeys:</b>
+<tr valign="TOP"><td>CHAIN <td>act on only specified chain(s) <br>
+              eg &nbsp <tt>   NOISE 0.1 CHAIN C </tt> &nbsp  select only chain C
+<tr valign="TOP"><td>BFACTOR   [&lt;minimum_B&gt] <td>
+              act on only atoms with B-factor greater than &lt;minimum_B&gt
+<tr valign="TOP"><td>PICK   <td>act on only specified atom names <br>
+              eg &nbsp <tt> NOISE 0.1 PICK CA </tt> &nbsp to choose C-alpha only <br>
+              Note that the atomname is case-sensitive 
+</table>
+
+<H3><A NAME="atren"></A>ATRENUMBER</H3>
+
+<p>ATomRENUMBERing: discards the atom numbers from the input file and writes out
+new sequential atom numbers. This can be used to renumber atoms in PDB files
+where atom records have been removed without "correcting" the atom numbers.</p>
+
+<H2>AUTHOR</H2>
+
+<P>Phil Evans, MRC LMB, Cambridge, September 1992 </P>
+
+<H2><A NAME="examples"></A>EXAMPLES</H2>
+
+<PRE>
+########################  Convert PDB file to mmCIF format
+#!/bin/csh -f
+#
+pdbset xyzin toxd.pdb xyzout toxd.cif &lt;&lt; eof-1
+output cif
+end
+eof-1
+
+########################  Take output from O into a form suitable for refinement
+#!/bin/csh -f
+#
+pdbset xyzin bst_113m.pdb xyzout temp1.pdb &lt;&lt; eof-1
+cell    132.02  115.21   96.20   90.00   90.00   90.00
+spacegroup P212121
+eof-1
+
+###################  Take output from Xplor into a form suitable for refinement
+#!/bin/csh -f
+#
+pdbset xyzin bst_113m.pdb xyzout temp1.pdb &lt;&lt; eof-1
+cell    132.02  115.21   96.20   90.00   90.00   90.00
+spacegroup P212121
+xplor
+eof-1
+
+
+
+######################## Expand dimer to tetramer, rename chains, transform
+#!/bin/csh -f
+#
+#  Make tetramer from dimer
+#
+pdbset xyzin ecrproducts268.pdb xyzout ecrprodpqrtet.pdb &lt;&lt;eof-1
+remark  Tetramer generated from AB dimer
+remark   rotated to pqr frame
+remark
+! Generate other dimer by z-dyad in P21212
+symgen  x,y,z
+symgen -x,-y,z
+! Rename chains in second dimer: V &amp; W are water chains
+chain symmetry 2   A C
+chain symmetry 2   B D
+chain symmetry 2   V X
+chain symmetry 2   W Y
+! transform to molecular frame
+transform -
+  0.87831   0.47808   0  -
+    0         0     -1.  -
+ -0.47808   0.87831   0  -
+ 0.0  -2.713  0.0
+eof-1
+</PRE>
+
+</BODY>
+</HTML>

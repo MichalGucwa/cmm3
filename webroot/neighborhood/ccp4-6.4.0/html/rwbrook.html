@@ -1,0 +1,1237 @@
+<html>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 draft//EN">
+<HEAD><TITLE>CCP4 Program Suite: rwbrook</title></head>
+<body>
+
+<!-- ::INDEX_INFO::RWBROOK::Library::::Library Subroutines for handling the co-ordinate working format:::::::: -->
+
+<h1>RWBROOK: (CCP4: Library)</h1>
+<h2> NAME</h2>
+<b> rwbrook</b>
+- Library Subroutines for handling the co-ordinate working format
+
+<h2><a name="newlibrary"</h2>NOTE ON NEW VERSION</H2>
+
+From CCP4 5.0, co-ordinates are handled by the MMDB C++ class library.
+MMDB provides an interface to Fortran (see the source file 
+<tt>mmdb_rwbrook.cpp</tt>). This is wrapped by a thin version
+of <tt>rwbrook.f</tt> which is intended to be backwardly-compatible
+with the previous Fortran-only version of <tt>rwbrook.f</tt>.
+Existing Fortran applications should be able to link with the
+new <tt>rwbrook.f</tt> with no changes.
+<p>
+In practice, there are some minor changes to how <tt>rwbrook.f</tt>
+behaves:
+<ol>
+<li><b>XYZADVANCE and ANISOU records.</b><br>
+The original <tt>rwbrook.f</tt> returned data from an ANISOU line in
+a separate call to XYZADVANCE/XYZATOM/XYZCOORD. Applications needed
+to check whether returned data was from an ATOM line or an ANISOU line.
+The new <tt>rwbrook.f</tt> returns all data for an atom in one call,
+including the anisotropic U if an ANISOU line followed the ATOM line.
+The old checks in applications can be removed, although in the normal
+formulation it is safe to leave them since they check for zero x, y and z
+values as well.
+</li>
+</ol>
+
+<h2><a name="description"> DESCRIPTION</A></H2>
+This document describes the library routines that handle co-ordinate files
+e.g. reading and writing plus extraction of data to application programs.
+The current mechanism is that the each identified line is read from the file
+and the data placed in an internal buffer. Routines then extract the data from 
+the buffer and pass it to the application program. The current format that is 
+in use is based on the PDB version 2.1 draft format, see
+<a href="pdbformat.html">separate description</a>.
+<p> 
+Authors: John W. Campbell and Adam C. Ralph
+
+<h2><a name="contents">CONTENTS</a></h2>
+<ol>
+<li><a href="#part2int">INTRODUCTION</a></li>
+<li><a href="#part2sub">THE SUBROUTINES</a></li>
+<li><a href="#part2exa">EXAMPLES OF USING THE LIBRARY ROUTINES</a></li>
+<li><a href="#part2com">COMMON BLOCKS USED BY THE SUBROUTINES</a></li>
+<li><a href="#part2des">DESCRIPTION OF INDIVIDUAL SUBROUTINES:</a></li>
+<p>
+<table>
+<tr><td>XYZINIT      <td>initialises COMMON blocks must be called first.
+<tr><td>XYZOPEN      <td>opens co-ordinate file (by calling XYZOPEN2)
+<tr><td>XYZOPEN2     <td>opens co-ordinate file with option to disable checks
+                          for CRYST and SCALE cards
+<tr><td>XYZCLOSE     <td>closes co-ordinate file
+<tr><td>XYZADVANCE   <td>reads/writes data from/to file to/from internal 
+                          buffer.
+<tr><td>XYZATOM      <td>extracts various data items from internal buffer
+                          e.g. atom name, residue name.
+<tr><td>XYZCOORD     <td>extracts x, y, z, occupancy and B from internal 
+                          buffer
+<tr><td>XYZREWD      <td>rewinds file to beginning
+<tr><td>XYZBKSP      <td>backspaces a line in the file
+<tr><td>PDBREAD           <td>reads data items from PDB file.
+<tr><td>RBFROR            <td>generates the various orthogonalising matrices
+<tr><td>RBRINV            <td>invert 4*4 matrices for conversion between 
+                          fractional and orthogonal axes
+<tr><td>RBFRAC2      <td>calc transformation matrices between orthogonal and 
+                          fractional coordinates
+<tr><td>RBRORF            <td>fill or return RF and Ro matrice
+<tr><td>RBFRO1            <td>duplicate of rbfror with a different call
+<tr><td>CVFRAC2      <td>Convert between orthogonal and fractional 
+                          coordinates and vice-versa
+<tr><td>CVANISOB     <td>convert between anisotropic orthogonal Us to
+                          crystallographic bs and vice-versa
+<tr><td>RBRCEL            <td>Returns Reciprocal cell dimensions, and 
+                          reciprocal unit cell volume
+<tr><td>RBCELL            <td>Returns cell dimensions, and unit cell  volume
+<tr><td>WBCELL            <td>Writes CRYST1 and SCALEn cards to output file.
+<tr><td>RWNOHEAD          <td>Suppress writing of CRYST1 and SCALEn cards to
+                          output file by XYZADVANCE or WBCELL
+<tr><td>RES3TO1           <td>Find 3 character residue name from 1 character 
+                          code and vice versa 
+<tr><td>RBRECIP           <td>calculates 4SIN**2THETA/L**2
+<tr><td>WREMARK           <td>write line to output file
+<tr><td>SFREAD2      <td>matches atomic structure factor with inputted 
+                         element id.
+<tr><td>RWBFIN       <td>copies remaining unread part of file to output.
+<tr><td>RBSPGRP      <td>stores a spacegroup name in common.
+<tr><td>WBSPGRP      <td>retrieves the spacegroup name from common.
+<tr><td>             <td>
+<tr><td>             <td>
+<tr><td>RBINIT       <td>Now obsolete, initialises various COMMON blocks and
+                         rewinds file.
+<tr><td>RBROOK       <td>Now obsolete, reads ATOM/HETATM card.
+<tr><td>WBROOK       <td>Now obsolete, writes ATOM/HETATM card.
+<tr><td>RBFRAC       <td>Now obsolete, similar function to RBFRAC2 but 
+                         with different number of arguments
+<tr><td>CVFRAC       <td>Now obsolete, similar function to CVFRAC2 but 
+                         with different number of arguments
+<tr><td>SFREAD       <td>Now obsolete, similar function to SFREAD2 but 
+                         with different number of arguments
+
+</table>
+</ol>
+
+<!-- This is the start of the Part 2 ordered list -->
+<ol>
+
+<h2><li><a name="part2int">INTRODUCTION</a></h2>
+This part describes how to use the RWBROOK libraries to handle co-ordinate 
+data. It will not be a complete account of all the possible instances that
+may arise but all the routines are described <a href="#part2des"> below</a>. 
+<p>
+It may seem a bit strange that simple functions such as CLOSE and REWIND 
+are operated through a specific subroutine. In the future the working format 
+may change, however it is hoped that procedures set out in this part will be 
+independent of the format. 
+<p>
+The old subroutines have been kept to ensure backwards compatibility. The 
+compatibility is not absolute however, for instance XYZOPEN or XYZOPEN2 
+should still be used to open the co-ordinate file. Also, RWBROOK and WBROOK 
+should only be used with orthogonal co-ordinates and not fractional ones.
+</li>
+
+<h2><li><a name="part2sub">THE SUBROUTINES</A></h2>
+Firstly, the various COMMON blocks must be initialised before reading and 
+writing of files occurs (the COMMON blocks are described 
+<a href="#part2com">below</a>. This is done using <a href="#xyzinit">
+XYZINIT</a>, it is called once from the top of the program.
+<p>
+All co-ordinate files should be opened with <a href="#xyzopen">XYZOPEN</a> 
+or in special cases <a href="#xyzopen2">XYZOPEN2</a>. 
+The FORTRAN channel number can be assigned automatically. If this is done then
+it is best that all other files have their channel numbers assigned 
+automatically as well. CCPDPN has been altered to make this easy.
+<p>
+It is also good practice to close all opened files before the program 
+terminates normally. <a href="#xyzclose">XYZCLOSE</a> is the subroutine 
+that will close the co-ordinate file.
+<p>
+The header information from the file is read when the file is opened. This
+includes the cell, orthogonalisation matrices (and in the future the symmetry).
+These are then stored in COMMON blocks which then should be extracted by 
+subroutine calls rather than inclusion of the COMMON blocks in the main 
+program.
+<p>
+If the cell is  present in the file then the matrices for converting between 
+fractional coordinates and orthogonal coordinates in the standard setting 
+will  be  calculated. If the orthogonalisation matrix is present in the file 
+then the co-ordinates need not be in a standard setting.
+<p>
+<a href="#xyzadvance">XYZADVANCE</a> has a dual purpose in that it 
+reads/writes data from/to the file into/out of an internal buffer. If the 
+record name is recognised then the data is stored in the buffer. Otherwise 
+the line is ignored but could be echoed to an output file (see the second 
+example). <a href="#xyzatom">XYZATOM</a> and 
+<a href="#xyzcoord">XYZCOORD</a> then extract the data from the buffer and 
+pass it to the calling program.
+</li>
+
+<h2><li><a name="part2exa"> EXAMPLE OF USING THE LIBRARY ROUTINES</A></H2>
+
+This example simply reads a PDB file assigned on XYZIN. There is no output 
+file.
+<pre> 
+C PROGRAM TO READ BROOKHAVEN FILE
+C ===============================
+C
+      REAL X,Y,Z,OCC,BISO,U(6),CELL(6)
+      INTEGER IFAIL,ISER,IRS,IXYZIN,IZ,N
+      CHARACTER*4 ATNAM,RESNAM,RESNO,SEGID,ID
+      CHARACTER*1 CHNNAM,ALTCOD,INSCOD
+
+      EXTERNAL RBCELL,XYZADVANCE,XYZATOM,XYZCLOSE,XYZCOORD,
+     +         XYZINIT,XYZOPEN
+C
+C INITIALISATION CALL
+C
+      CALL XYZINIT
+C
+C OPEN FILE
+C
+      IFAIL = 0
+      IXYZIN = 0
+      CALL XYZOPEN('XYZIN','INPUT',' ',IXYZIN,IFAIL)
+C
+C READ COORDINATE RECORDS
+C
+      N = 0
+10    CALL XYZADVANCE(IXYZIN,0,0,*10,*100)
+      CALL XYZATOM(IXYZIN,ISER,ATNAM,RESNAM,CHNNAM,IRS,
+     +          RESNO,INSCOD,ALTCOD,SEGID,IZ,ID)
+      CALL XYZCOORD(IXYZIN,'O','U',X,Y,Z,OCC,BISO,U)
+C
+      N = N + 1
+        .
+        .
+        process data
+        .
+        .
+      GO TO 10
+C
+C END OF FILE REACHED
+C
+100   CALL XYZCLOSE(IXYZIN)
+      WRITE(6,FMT='(A,I5,A)') ' There are ',N,
+     +                        ' atoms in the file'
+      CALL RBCELL(CELL,VOL)
+      WRITE(6,FMT='(A,3F9.2,3F12.3)') ' The cell is ',CELL
+      END
+</PRE>
+<p>
+Here is a further example which reads and writes a file. A set of coordinates 
+are read in and processed. The input file is then re-read and an  output  file
+is created with the updated coordinate data. Notice that all the header 
+records plus any REMARK cards will be echoed to the output file because of 
+the second call to XYZADVANCE.
+<pre>
+C PROGRAM TO READ AND UPDATE A BROOKHAVEN COORDINATE FILE
+C =======================================================
+C
+C SPECIFICATION STATEMENTS
+C
+      REAL XX,YY,ZZ,OCC,BISO
+      INTEGER IFAIL,ISER,IRESN,IXYZIN,IXYZOUT,IZ,N,NMAX
+      CHARACTER*4 ATNM,RESNM
+      CHARACTER*4 ATNAM(1000),RESNAM(1000),RESNO,SEGID,ID
+      CHARACTER*1 CHNNAM,ALTCOD,INSCOD
+      REAL X(1000),Y(1000),Z(1000),U(6)
+
+      EXTERNAL XYZADVANCE,XYZATOM,XYZCLOSE,XYZCOORD,XYZINIT,
+     +         XYZOPEN,XYZREWD
+C
+C INITIALISE FOR READING AND OPEN FILES
+C
+      CALL XYZINIT
+      IFAIL = 0
+      IXYZIN = 0
+      IXYZOUT = 0
+      CALL XYZOPEN('XYZIN','INPUT',' ',IXYZIN,IFAIL)
+      CALL XYZOPEN('XYZOUT','OUTPUT',' ',IXYZOUT,IFAIL)
+C
+C READ COORDINATES AND STORE THEM
+C
+      N=0
+10    N=N+1
+      CALL XYZADVANCE(IXYZIN,0,0,*10,*100)
+      CALL XYZCOORD(IXYZIN,'O','U',X(N),Y(N),Z(N),OCC,BISO,U)
+      CALL XYZATOM(IXYZIN,ISER,ATNM,RESNM,CHNNAM,
+     +         IRESN,RESNO,INSCOD,ALTCOD,SEGID,IZ,ID)
+      ATNAM(N) = ATNM
+      RESNAM(N) = RESNM
+      GO TO 10
+C
+C REFINE COORDINATES
+C
+100   NMAX=N-1
+      CALL XYZREWD(IXYZIN)
+        .
+        .
+        refine coordinate values
+        .
+        .
+C
+C WRITE UPDATED COORDINATE FILE
+C
+150   CALL XYZADVANCE(IXYZIN,IXYZOUT,0,*200,*200)
+      CALL XYZATOM(IXYZIN,ISER,ATNM,RESNM,CHNNAM,IRESN,
+     +         RESNO,INSCOD,ALTCOD,SEGID,IZ,ID)
+      CALL XYZCOORD(IXYZIN,'O','U',XX,YY,ZZ,OCC,B,U)
+C
+C RESET DATA ITEMS AND WRITE TO OUTPUT FILE
+C
+      CALL XYZATOM(IXYZOUT,ISER,ATNAM(N),RESNAM(N),CHNNAM,
+     +      IRES,RESNO,INSCOD,ALTCOD,SEGID,IZ,ID)
+      CALL XYZCOORD(IXYZOUT,'O','U',X(N),Y(N),Z(N),OCC,B,U)
+      CALL XYZADVANCE(IXYZOUT,0,0,*200,*200)
+      GOTO 150
+
+200   CALL XYZCLOSE(IXYZIN)
+      CALL XYZCLOSE(IXYZOUT)
+      END
+</pre> 
+</li>
+
+<h2><li><a name="part2com">COMMON BLOCKS USED BY THE SUBROUTINES</a></h2>
+The following common blocks are used to pass information between  the
+subroutines and to hold the contents of the last record read from an  input
+file via XYZADVANCE:
+<pre> 
+  INTEGER MAXFILESOPEN,FILESOPEN,TYPE,UNIT
+  CHARACTER*80 LOGUNIT
+  COMMON /RBRKAA/ FILESOPEN,LOGUNIT(MAXFILESOPEN),
+                  UNIT(MAXFILESOPEN),TYPE(MAXFILESOPEN)
+
+  MAXFILESOPEN maximum number of files that can be open at any
+               one time, = 10.
+  FILESOPEN    no. of current coordinate files open.
+  LOGUNIT      logical name of file
+  UNIT         if the file is PDB then the unit is the physical
+               channel opened. If CIF then is related to blocks.
+  TYPE         indicates whether PDB (1,-1) or CIF (2,-2). If
+               negative then file is output file.
+
+
+
+  LOGICAL IFCRYS,IFSCAL,IFEND,MATRIX
+  COMMON /RBRKXX/ IFCRYS,IFSCAL,IFEND,ITYP,MATRIX
+
+  IFCRYS       Flag set to .TRUE. if CRYST1 card read, 
+               otherwise .FALSE.
+  IFSCAL       Flag set to .TRUE. if SCALE cards read, 
+               otherwise .FALSE.
+  ITYP         Type of last card read.
+               =0, No card read.
+               =1, 'CRYST1'
+               =2, 'SCALE'
+               =3, 'TER'
+               =4, 'ATOM'
+               =5, 'HETATM'
+               =6, 'ANISOU'
+  MATRIX       Flag set to .TRUE. if orthogonalising 
+               and fractionalising matrices set, otherwise 
+               .FALSE.
+  IFHDOUT      Flag set to .TRUE. if header records written out.
+               otherwise .FALSE.
+
+
+  CHARACTER*1 BROOK,WBROOK,WBROOK1
+  COMMON /RBRKYY/ BROOK(80),WBROOK(80),WBROOK1(80)
+ 
+  BROOK        Internal buffer for holding data from input 
+               file.
+  WBROOK       Internal buffer for holding data for output
+               file.
+  WBROOK1      Additional buffer for holding data for the 
+               output file (specifically for ANISOU card).  
+
+
+ 
+  REAL CELL,RR,VOL,CELLAS
+  COMMON /RBRKZZ/ CELL(6),RR(3,3,5),VOL,CELLAS(6)
+
+  CELL         Array holding cell dimensions read from 
+               CRYST1 card if read (check IFCRYS)
+  RR           Array holding some common orthogonalisation
+               matrices calculated if CRYST1 cards was read.
+               (See description of NCODE in common ORTHOG)
+  VOL          Unit cell volume
+  CELLAS       Reciprocal cell
+
+
+ 
+  INTEGER NCODE,IBRKFL
+  REAL RF,RO
+  COMMON /ORTHOG/ RO(4,4),RF(4,4),NCODE,IBRKFL
+ 
+  RO           Orthogonalising matrix (only set if CRYST1 or
+               SCALE cards read (check the flag MATRIX)
+  RF           Fractionalising matrix (only set if CRYST1 or
+               SCALE cards read (check the flag MATRIX)
+  NCODE        Flag indicating setting found, =0 if not
+               recognised.
+               =1, a // XO,  c* // ZO (Standard Brookhaven)
+               =2, b // XO,  a* // ZO
+               =3, c // XO,  b* // ZO
+               =4, Hexagonal a + b // XO, c* // ZO
+               =5, a* // XO, c // ZO (Rollett)
+
+
+
+  REAL AC
+  COMMON /RBREC/ AC(6)
+
+  AC           Useful values for calculating d*.
+
+
+
+  CHARACTER*11 BRKSPGRP
+  COMMON /RBRKSPGRP/BRKSPGRP
+
+  BRKSPGRP     Holds spacegroup name supplied from the s/r
+               RBSPGRP.
+</pre>
+</li>
+  
+<h2><li><a name="part2des"> DESCRIPTION OF INDIVIDUAL ROUTINES:</a></h2>
+<pre>
+      <a name="xyzinit">SUBROUTINE</a> XYZINIT()
+C     =========================
+C
+C_BEGIN_XYZINIT
+C
+C	This subroutine initialises the common block RBRKAA ready for reading
+C and writing coordinate files. Also, the common blocks associated with 
+C storing the header information are initialised. It should be called only 
+C once from the top of the program.
+C
+C Parameters:
+C
+C       NONE
+C
+C COMMONS:
+C
+C         /RBRKAA/ FILESOPEN,LOGUNIT(MAXFILESOPEN),UNIT(MAXFILESOPEN),
+C                  TYPE(MAXFILESOPEN)
+C
+C           FILESOPEN       no. of current coordinate files open.
+C           LOGUNIT          logical name of file
+C           UNIT            if the file is PDB then the unit is the physical
+C                           channel opened. If CIF then is related to blocks.
+C           TYPE            indicates whether PDB (1,-1) or CIF (2,-2). If
+C                           negative then file is output file.
+C
+C_END_XYZINIT
+C
+
+
+
+      <a name="xyzopen">SUBROUTINE</a> XYZOPEN(LOGNAM,RWSTAT,FILTYP,IUNIT,IFAIL)
+C     ==========================================================
+C
+C_BEGIN_XYZOPEN
+C
+C
+C      Calls XYZOPEN2 which has an extra parameter for ignoring
+C      Symmetry and Cryst cards
+C
+C Parameters:
+C
+C         LOGNAM (I)   CHARACTER*(*) but maximum of eight? The logical unit 
+C                                    to which the file is assigned
+C         RWSTAT (I)   CHARACTER*(*) if 'INPUT' then file is read only
+C                                    if 'OUTPUT' then file is an output file.
+C         FILTYP (I)   CHARACTER*(*) if 'CIF' then the file type is treated as
+C                                    CIF. If 'PDB' then the file type is 
+C                                    treated as PDB. If blank then file type is
+C                                    automatically determined for input files 
+C                                    and for output file the file type will be
+C                                    the same as the first file opened or 
+C                                    defaulted to PDB.
+C         IUNIT  (I/O) INTEGER       If zero then unit is decided else
+C                                    file opened on that unit
+C                                    checked against previous data if
+C                                    applicable. NOT used with output files.
+C         IFAIL  (I/O) INTEGER       On input    = 0 stop on failure 
+C                                                = 1 continue on failure
+C
+C                                    On output   unchanged if OK
+C                                                = -1  if error
+C
+C
+C_END_XYZOPEN
+C
+
+      <a name="xyzopen2">SUBROUTINE</a> XYZOPEN2(LOGNAM,RWSTAT,FILTYP,IUNIT,IFAIL,ICRYST)
+C     =====================================================
+C
+C_BEGIN_XYZOPEN2
+C
+C      Opens a coordinate file for input or output. The channel number can
+C be determined automatically or set on input. The header info.
+C is also read: cell, orthog. matrix and symmetry.
+C This is a version of XYZOPEN with an extra argument to flag whether or
+C not the CRYST and SCALE cards are required.
+C
+C Parameters:
+C
+C         LOGNAM (I)   CHARACTER*(*) but maximum of eight? The logical unit 
+C                                    to which the file is assigned
+C         RWSTAT (I)   CHARACTER*(*) if 'INPUT' then file is read only
+C                                    if 'OUTPUT' then file is an output file.
+C         FILTYP (I)   CHARACTER*(*) if 'CIF' then the file type is treated as
+C                                    CIF. If 'PDB' then the file type is 
+C                                    treated as PDB. If blank then file type is
+C                                    automatically determined for input files 
+C                                    and for output file the file type will be
+C                                    the same as the first file opened or 
+C                                    defaulted to PDB.
+C         IUNIT  (I/O) INTEGER       If zero then unit is decided else
+C		  	             file opened on that unit
+C                                    checked against previous data if 
+C                                    applicable. NOT used with output files.
+C         IFAIL  (I/O) INTEGER       On input    = 0 stop on failure 
+C                                                = 1 continue on failure
+C
+C                                    On output   unchanged if OK
+C                                                = -1  if error
+C
+C         ICRYST (I/O) INTEGER       If zero, then check for and use CRYST
+C                                    and SCALE cards in input PDB.
+C                                    If one, ignore these cards even if
+C                                    present.
+C
+C
+C_END_XYZOPEN2
+
+
+      <a name="xyzclose">SUBROUTINE</a> XYZCLOSE(IUNIT)
+C     ================================
+C
+C_BEGIN_XYZCLOSE
+C
+C	This subroutine closes a coordinate file.
+C
+C Parameters:
+C
+C         IUNIT  (I)   INTEGER    Unit number for file
+C
+C_END_XYZCLOSE
+C
+
+
+
+      <a name="xyzadvance">SUBROUTINE</a> XYZADVANCE(IUNIT,IOUT,ITER,*,*)
+C     ==================================================
+C
+C_BEGIN_XYZADVANCE
+C
+C       This subroutine reads recognised data lines into a buffer. Optionally,
+C if the card is unrecognised (eg REMARK) then the line can be echoed to an
+C output file.
+C
+C Parameters:
+C
+C       IUNIT  (I) Channel number of the input coordinate file
+C
+C      These arguments are not relevant for output files.
+C        IOUT (I) Logical unit number to which non-atom/hetatm/anisou records
+C                 are to be written (may be blank if reading only)
+C        ITER (I) FLAG =1, return if 'ter' card found (via return 1)
+C                      =0, do not return when 'ter' card found
+C      RETURN 1   Return on TER card if ITER=1
+C      RETURN 2   Return on end of file.
+C
+C_END_XYZADVANCE
+C
+
+
+
+
+      <a name="xyzatom">SUBROUTINE</a> XYZATOM(IUNIT,ISER,ATNAM,RESNAM,CHNNAM,IRESN,
+     *RESNO,INSCOD,ALTCOD,SEGID,IZ,ID)
+C     ==============================================================
+C
+C_BEGIN_XYZATOM
+C
+C	This subroutine reads or writes the atom name, residue name, 
+C chain name etc. into the buffer. XYZADVANCE actually advances a line 
+C or atom. The character strings have undefined length in order to make 
+C change easier. However, these data items will be strictly defined in 
+C the working format.
+C
+C Parameters:
+C
+C       IUNIT  (I)  Logical unit of the input coordinate file
+C        ISER (I/O) Atom serial number
+C       ATNAM (I/O) Atom name        (left justified)
+C      RESNAM (I/O) Residue name     
+C      CHNNAM (I/O) Chain name       
+C       IRESN (I/O) Residue number as an integer
+C       RESNO  (O)  Residue number as character, NOT used for output file
+C      INSCOD (I/O) The insertion code
+C      ALTCOD (I/O) The alternate conformation code.
+C       SEGID (I/O) Segid is here to complete PDB standard.
+C          IZ  (O)  Atomic number (returned as 7 from ambiguous atoms),
+C                   NOT used for output file
+C          ID (I/O) Atomic ID related to atomic number (element symbol
+C                   right justified), plus the ionic state +2, +3 etc..
+C
+C_END_XYZATOM
+C     
+
+
+
+
+      <a name="xyzcoord">SUBROUTINE</a> XYZCOORD(IUNIT,XFLAG,BFLAG,X,Y,Z,OCC,BISO,B)
+C     =============================================================
+C
+C_BEGIN_XYZCOORD
+C
+C	This subroutine reads or writes x, y, z, occupancy and b from/to 
+C the internal buffer. The buffer is updated from the file by 
+C XYZADVANCE. The coordinates can be input/output (to the subroutine) 
+C as orthogonal or fractional. The anisotropic temperature factors can be 
+C input/output as orthogonal Us or as crystallographic bs. These are 
+C defined below;
+C T(aniso) = U(11)*H**2 + U(22)*K**2 + 2*U(12)*H*K + ...
+C where H,K,L are orthogonal reciprocal lattice indices.
+C T(aniso) = b(11)*h**2 + b(22)*k**2 + b(33)*k**2 + b(12)*h*k ...    and
+C Biso     = 8*PI**2 (U(11) + U(22) + U(33)) / 3.0
+C
+C Parameters:
+C
+C       IUNIT  (I)  Channel number of the input coordinate file
+C       XFLAG  (I)  For input file
+C                     ='F' will get fractional coords. 
+C                     ='O' will get orthogonal coords.
+C                   For output file
+C                     ='F' passed coordinates are fractional
+C                     ='O' passed coordinates are orthogonal
+C       BFLAG  (I)  For input file
+C                     ='B' will get crystallographic bs
+C                     ='U' will get orthogonal Us.
+C                   For output file
+C                     ='B' have crystallographic bs
+C                     ='U' have othogonal Us
+C           X (I/O) Coordinates (orthogonal angstrom coordinates as
+C           Y (I/O)     "        stored)
+C           Z (I/O)     "
+C         OCC (I/O) Occupancy
+C        BISO  (O)  Isotropic temperature factor, NOT used for output file.
+C        B(6) (I/O) Anisotropic temperature factor, unless only B(1) defined.
+C
+C_END_XYZCOORD
+C     
+
+
+
+
+      <a name="xyzrewd">SUBROUTINE</A> XYZREWD(IUNIT)
+C     ===============================
+C
+C_BEGIN_XYZREWD
+C
+C       This routine resets pointer to the beginning of the file ie.
+C rewind the file.
+C
+C Parameters:
+C
+C      IUNIT  (I) INTEGER  Channel number for file.
+C
+C_END_XYZREWD
+C
+
+
+
+
+      <a name="xyzbksp">SUBROUTINE</a> XYZBKSP(IUNIT)
+C     ===============================
+C
+C_BEGIN_XYZBKSP
+C
+C       This routine is the opposite to XYZADVANCE in that it retreats
+C one atom ie. backspacing.
+C
+C Parameters:
+C
+C      IUNIT  (I) INTEGER  Channel number for file.
+C
+C_END_XYZBKSP
+C
+
+
+
+
+      <a name="pdbread">SUBROUTINE</a> PDBREAD(ISER,ATNAM,RESNAM,CHNNAM,IRESN,RESNO,
+     *X,Y,Z,OCC,B,IZ,SEGID,ID)
+C     ========================================================
+C
+C_BEGIN_PDBREAD
+C
+C      The subroutine PDBREAD is used to read coordinates from a Brookhaven
+C format coordinate file. This routine should not be used stand alone 
+C but through XYZADVANCE.
+C 
+C Parameters
+C
+C        ISER (O) Atom serial number
+C       ATNAM (O) Atom name        (character*4 left justified)
+C      RESNAM (O) Residue name     (character*4)
+C      CHNNAM (O) Chain name       (character*1)
+C       IRESN (O) Residue number as an integer
+C       RESNO (O) Residue number   (character*4 or character*5)
+C                 If character*5 then the 5th character will be the
+C                 insertion code.
+C           X (O) Coordinates (orthogonal angstrom coordinates as
+C           Y (O)     "        stored)
+C           Z (O)     "
+C         OCC (O) Occupancy
+C        B(6) (O) Temperature factor
+C          IZ (O) Atomic number (returned as 7 from ambiguous atoms)
+C          ID (O) Atomic ID related to atomic number + ionic state. 
+C                 (character*4)
+C
+C  COMMON BLOCKS
+C
+C  COMMON /RBRKXX/IFCRYS,IFSCAL,ITYP,MATRIX
+C
+C      IFCRYS   .TRUE. IF 'CRYST1' CARD READ,  OTHERWISE .FALSE.
+C      IFSCAL   .TRUE. IF 'SCALE' CARDS READ, OTHERWISE .FALSE.
+C       ITYP    TYPE OF LAST CARD READ =1, 'CRYST1'
+C                                      =2, 'SCALE'
+C                                      =3, 'TER'
+C                                      =4, 'ATOM'
+C                                      =5, 'HETATM'
+C     MATRIX    .TRUE. IF FRACT/ORTHOG MATRICES CALCULATED
+C               .FALSE. IF NOT
+C
+C  COMMON /RBRKYY/BROOK(80)
+C
+C      BROOK    CHARACTER*1 ARRAY WHICH IS THE BUFFER FOR PDB FILES
+C
+C      COMMON/RBRKZZ/CELL(6),RR(3,3,6),VOL,CELLAS(6)
+C
+C       CELL    CELL DIMENSIONS FROM 'CRYST1' CARD IF READ
+C               (CHECK IFCRYS)
+C         RR    STANDARD ORTHOGONALISING MATRICES CALCULATED IF THE
+C               'CRYST1' CARD WAS READ (CHECK IFCRYS)
+C
+C  COMMON /ORTHOG/RO(4,4),RF(4,4),NCODE
+C
+C        RO    ORTHOGONALISING MATRIX (ONLY SET IF 'CRYST1' OR 'SCALE'
+C              CARDS PRESENT - CHECK 'MATRIX' FLAG)
+C        RF    FRACTIONALISING MATRIX (ONLY SET IF 'CRYST1' OR 'SCALE'
+C              CARDS PRESENT - CHECK 'MATRIX' FLAG)
+C     NCODE    FLAG INDICATING SETTING FOUND, 0 IF NOT ONE THAT WAS
+C              RECOGNISED
+C
+C_END_PDBREAD
+C
+
+
+
+
+      <a name="rbfrac2">SUBROUTINE</a> RBFRAC2(A,B,C,AL,BE,GA,ARGNCODE)
+C     ================================================
+C
+C_BEGIN_RBFRAC2
+C
+C
+C This subroutine is used to calculate the default transformation
+C matrices between orthogonal angstrom and fractional coordinates
+C
+C
+C PARAMETERS
+C
+C    A,B,C,AL,BE,GA (I) (REAL)     CELL PARAMETERS IN ANGSTROMS AND DEGREES
+C    ARGNCODE       (I) (INTEGER)  ORTHOGONALISATION CODE 1-6
+C
+C_END_RBFRAC2
+C
+
+
+
+
+      <a name="rbrorf">SUBROUTINE</a> RBRORF(ROO,RFF)
+C     =======================
+C
+C_BEGIN_RBRORF
+C
+C      SUBROUTINE RBRORF(ROO,RFF)
+C
+C     Subroutine to  fill or return RF (fractionalising) and Ro
+C     (orthogonalising) matrices. 
+C
+C PARAMETERS
+C
+C          ROO (I) (REAL(4,4))  4*4 MATRIX TO BE INVERTED
+C          RFF (O) (REAL(4,4))  INVERSE MATRIX
+C
+C common blocks
+C
+C      COMMON /RBRKXX/IFCRYS,IFSCAL,ITYP,MATRIX
+C      COMMON /ORTHOG/RO(4,4),RF(4,4),NCODE
+C
+C_END_RBRORF
+
+
+
+
+      <a name="rbrinv">SUBROUTINE</a> RBRINV(A,AI)
+C     =======================
+C
+C_BEGIN_RBRINV
+C
+C      SUBROUTINE RBRINV(A,AI)
+C
+C
+C Subroutine to invert 4*4 matrices for conversion between
+C fractional and orthogonal axes. 
+C
+C
+C PARAMETERS
+C
+C           A (I) (REAL(4,4))  4*4 MATRIX TO BE INVERTED
+C          AI (O) (REAL(4,4))  INVERSE MATRIX
+C
+C_END_RBRINV
+C
+
+
+
+
+      <a name="rbfror">SUBROUTINE</a> RBFROR
+C     =================
+C
+C_BEGIN_RBFROR
+C
+C      SUBROUTINE RBFROR
+C
+C THIS SUBROUTINE CALCULATES MATRICES FOR STANDARD ORTHOGONALISATIONS
+c   and cell volume
+C
+C  this generates the various orthogonalising matrices
+C     ' NCODE =1 -  ORTHOG AXES ARE DEFINED TO HAVE'
+C                    A PARALLEL TO XO   CSTAR PARALLEL TO ZO'
+C     ' NCODE =2 -  ORTHOG AXES ARE DEFINED TO HAVE'
+C     '               B PARALLEL TO XO   ASTAR PARALLEL TO ZO'
+C     ' NCODE =3 -  ORTHOG AXES ARE DEFINED TO HAVE'
+C     '               C PARALLEL TO XO   BSTAR PARALLEL TO ZO'
+C     ' NCODE =4 -  ORTHOG AXES ARE DEFINED TO HAVE'
+C     '         HEX A+B PARALLEL TO XO   CSTAR PARALLEL TO ZO'
+C     ' NCODE =5 -  ORTHOG AXES ARE DEFINED TO HAVE'
+C     '           ASTAR PARALLEL TO XO       C PARALLEL TO ZO'
+C     ' NCODE =6 -  ORTHOG AXES ARE DEFINED TO HAVE'
+C                    A  PARALLEL TO XO   BSTAR PARALLEL TO YO'
+C
+C   SET UP MATRICES TO ORTHOGONALISE H K L AND X Y Z FOR THIS CELL.
+C
+C Common Blocks
+C
+C      COMMON/RBRKZZ/CELL(6),RR(3,3,6),VOL,CELLAS(6)
+C      COMMON /RBREC/AC(6)
+C
+C_END_RBFROR
+C
+
+
+
+
+      <a name="rbfro1">SUBROUTINE</a> RBFRO1(CEL,VOLL,RRR)
+C     ===============================
+C
+C_BEGIN_RBFRO1
+C
+C      SUBROUTINE RBFRO1(CEL,VOLL,RRR)
+C
+C---- This subroutine is a duplicate of rbfror with a different call.
+C
+C PARAMETERS
+C
+C   CEL  (I) (REAL(6))     Cell dimensions
+C   VOLL (O) (REAL)        Cell volume
+C   RRR  (O) (REAL(3,3,6)) Standard orthogonisational matrices
+C
+C_END_RBFRO1
+C
+
+
+
+
+      <a name="cvfrac2">SUBROUTINE</a> CVFRAC2(X,Y,Z,XX,YY,ZZ,IFLAG)
+C     =============================================
+C
+C_BEGIN_CVFRAC2
+C
+C      This subroutine is used to convert between the stored  orthogonal  and
+C fractional coordinates using the  matrices  set  up  in  the  common  block
+C /ORTHOG/ by the subroutine XYZOPEN. If no matrices have been set up then the
+C program will stop with an error message.
+C                                         
+C Call:  CALL CVFRAC2(X,Y,Z,XX,YY,ZZ,IFLAG)
+C                                             
+C Arguments:
+C            
+C       X (I)   (REAL)  Input coordinates.
+C       Y (I)   (REAL)       "
+C       Z (I)   (REAL)       "
+C      XX (O)   (REAL)  Output coordinates.
+C      YY (O)   (REAL)       "
+C      ZZ (O)   (REAL)       "
+C   IFLAG (I) (INTEGER)  Flag =0, Convert coordinates from fractional to orthogonal
+C                             =1, Convert coordinates from orthogonal to fractional
+C
+C_END_CVFRAC2
+C
+
+
+
+
+      <a name="cvanisob">SUBROUTINE</a> CVANISOB(B,IFLAG)
+C     =================================
+C
+C_BEGIN_CVANISOB
+C
+C      This subroutine is used to convert between crystallographic bs and 
+C orthogonal Us. The orthogonal matrices are required, if no matrices have 
+C been set up then the program will stop with an error message. The 
+C temperature factors are defined below;
+C T(anisoU) = U(1,1)*H**2 + U(2,2)*K**2 + U(1,2)*H*K + ... 
+C where H,K,L represent the orthogonal representation of the Miller indices
+C T(anisob) = b(1,1)*h**2 + b(2,2)*k**2 + b(1,2)*h*k + ...
+C thus  U = A * B * AT / (2 * pi**2)  where A is the orthogonalisation matrix
+C
+C Arguments:
+C            
+C    B(6) (I/O  (REAL)  Input coordinates.
+C   IFLAG (I) (INTEGER)  Flag =0, Convert coordinates from fract. to orthog.
+C                             =1, Convert coordinates from orthog. to fract.
+C
+C_END_CVFRAC
+C
+
+
+
+
+      <a name="rbcell">SUBROUTINE</a> RBCELL(CELLD,CVOL)
+C     ============================
+C
+C_BEGIN_RBCELL
+C
+C      SUBROUTINE RBCELL(CELLD,CVOL)
+C
+C Returns cell dimensions and unit cell  volume.
+C
+C PARAMETERS
+C     CELLD (O)  (REAL(6))  cell dimensions
+C     CVOL (O)  (REAL)     cell volume
+C
+C Common blocks
+C
+C      COMMON/RBRKZZ/CELL(6),RR(3,3,6),VOL,CELLAS(6)
+C
+C_END_RBCELL
+C
+
+
+
+
+      <a name="rbrcel">SUBROUTINE</a> RBRCEL(RCEL,RVOL)
+C     ============================
+C
+C_BEGIN_RBRCEL
+C
+C      SUBROUTINE RBRCEL(RCEL,RVOL)
+C
+C THIS SUBROUTINE RETURNS Reciprocal cell dimensions, and reciprocal
+C                       unit cell  volume.
+C
+C PARAMETERS
+C     RCEL (O)  (REAL(6)) reciprocal cell dimensions
+C     RVOL (O)  (REAL)    reciprocal cell volume
+C
+C Common blocks
+C
+C      COMMON/RBRKZZ/CELL(6),RR(3,3,6),VOL,CELLAS(6)
+C
+C_END_RBRCEL
+C
+
+
+
+
+      <a name="res3to1">SUBROUTINE</a> RES3TO1(RESNM3,RESNM1)
+C     ================================
+C
+C_BEGIN_RES3TO1
+C
+C      SUBROUTINE RES3TO1(RESNM3,RESNM1)
+C
+C       FIND 3 CHARACTER RESIDUE NAME FROM 1 CHARACTER CODE OR
+C       FIND 1 CHARACTER RESIDUE NAME FROM 3 CHARACTER CODE.
+C       SUBROUTINE IS CALLED WITH EITHER RESNM3 OR RESNM1 PREVIOUSLY 
+C       ASSIGNED, AND THE OTHER IS ASSIGNED  HERE.
+C 
+C Parameters
+C
+C   RESNM3 (I/O)  CHAR*4    3 character residue name
+C   RESNM1 (I/O)  CHAR*1    1 character residue name
+C
+C_END_RES3TO1
+C
+
+
+
+
+        <a name="rbrecip">SUBROUTINE</a> RBRECIP(IH,IK,IL,S)
+C       ==============================
+C
+C_BEGIN_BRECIP
+C
+C        SUBROUTINE RBRECIP(IH,IK,IL,S)
+C
+C---- This subroutine calculates 4SIN**2/L**2
+C
+C PARAMETERS
+C         IH,IK,IL (I) (INTEGER)  reflection indices
+C                S (O) (REAL)     4SIN**2/L**2
+C
+C_END_BRECIP
+C
+
+
+
+
+      <a name="sfread2">SUBROUTINE</a> SFREAD2(ID,NG,A,B,C,IWT,IELEC,CU,MO,Ifail)
+C     ==========================================================
+C
+C  Inputs: ID     atom identifier
+C          This should match an atom type in the atomsf.lib
+C          If an atom is identified as NE2+ say, characters are 
+C          subtracted from the ID till a match is found, or there are 
+C          no characters left. 
+C          EG: Routine tests first NE2+, then NE2, then NE, then N.
+C            All matching checks UPPER CASE strings.
+C
+C          NG     num. of gaussian approximations (2 or 5 (default))
+C          IFILFF  .TRUE. if want to open the library file assigned
+C                 to ATOMSF (default `atomsf.lib')
+C
+C  Output: A(4)   coefficient for structure factor calculation
+C          B(4)   coefficient for structure factor calculation
+C          C      coefficient for structure factor calculation
+C          IWT    atomic weight
+C          IELEC  number of electrons
+C          CU(2)  delta F' and delta F'' for Cu
+C          MO(2)  delta F' and delta F'' for Mo
+C          Ifail  = -1 if atom not found at all
+C                 =  0 OK
+C                 =  1 for two gaussian case that does not exist
+C
+
+
+
+
+        <a name="wbcell">SUBROUTINE</a> WBCELL(IUNIT,ARGCELL,ARGNCODE)
+C       ===============================================
+C
+C_BEGIN_WBCELL
+C
+C   This subroutine writes out the cell and orthogonalisation matrices, to 
+C the output file. If the input parameters are null then the cell etc. are
+C taken from the COMMON blocks.
+C
+C PARAMETERS
+C            IUNIT (I) (INTEGER)   Channel number for output file.
+CC       ARGCELL(6) (I) (REAL)      crystallographic cell taken from COMMON
+C                                  if cell = 0
+C         ARGNCODE (I) (INTEGER)   NCODE number taken from COMMON if NCODE=0
+C
+C_END_WBCELL
+C
+
+
+
+
+        <a name="wremark">SUBROUTINE</a> WREMARK(IUNIT,LINE)
+C       ====================================
+C
+C_BEGIN_WREMARK
+C
+C	This subroutine writes a line to the output file. Its main use is for 
+C REMARK statements in PDB.
+C
+C Parameters:
+C
+C            IUNIT (I) (CHARACTER*(*))  Channel number
+C             LINE (I) (CHARACTER*(*))  line to be written, best
+C                                       if declared as *80
+C
+C_END_WREMARK
+C
+
+
+
+      <a name="rwbfin">SUBROUTINE</a> RWBFIN(IUN,IOUT)
+C     ===========================
+C
+C_BEGIN_RWBFIN
+C
+C       This subroutine copies remaining lines straight from input to
+C output.
+C
+C_END_RWBFIN
+C
+
+
+
+      <a name="rbspgrp">SUBROUTINE</a> RBSPGRP(SPGRP)
+C     ============================
+C
+C_BEGIN_RBSPGRP
+C
+C      SUBROUTINE SUBROUTINE RBSPGRP(SPGRP)
+C
+C Returns spacegroup from pdb
+C
+C PARAMETERS
+C     SPGRP (O) (CHARACTER*11) 
+C
+C Common blocks
+C
+C      COMMON /RBRKSPGRP/BRKSPGRP
+C
+C_END_RBSPGRP
+C
+
+
+
+      <a name="wbspgrp">SUBROUTINE</a> WBSPGRP(SPGRP)
+C     =============================
+C
+C_BEGIN_WBSPGRP
+C
+C      SUBROUTINE WBSPGRP(SPGRP)
+C
+C Sets the internal spacegroup of a pdb file
+C
+C PARAMETERS
+C     SPGRP (I) (CHARACTER*11)
+C
+C Common Blocks
+C
+C      COMMON /RBRKSPGRP/BRKSPGRP
+C
+C_END_WBSPGRP
+C
+</pre>
+These routines are now obsolete but are here to maintain backwards 
+compatibility with the version of RWBROOK that was in version 3.2 of CCP4.
+<pre>
+      SUBROUTINE RBINIT(IUNIT)
+C     ========================
+C
+C_BEGIN_RBINIT
+C
+C      This routine is obsolete and should be removed. Initialises various
+C COMMON block variables and rewinds the file.
+C
+C_END_RBINIT
+C
+
+
+
+
+      SUBROUTINE RBROOK(IUNIT,ISER,ATNAM,RESNAM,CHNNAM,IRESN,RESNO,IS,
+     *X,Y,Z,OCC,B,IZ,IOUT,MSG1,MSG2,ITER,*,*)
+C     ================================================================
+C
+C_BEGIN_RBROOK
+C
+C      This subroutine is obsolete and should be removed. May be
+C PROBLEM in that routine returns orthogonal coordinates and not fractional
+C ones. It presents a combination of XYZADVANCE, XYZATOM and XYZCOORD. The 
+C arguments IS, MSG1 and MSG2 are redundant
+C
+C_END_RBROOK
+C
+
+
+
+
+      SUBROUTINE WBROOK(IUNIT,ISER,ATNAM,RESNAM,CHNNAM,IRESN,IS,
+     *X,Y,Z,OCC,B,IZ)
+C     ================================================================
+C
+C_BEGIN_RBROOK
+C
+C      This subroutine is obsolete and should be removed. May be
+C PROBLEM in that routine does not cater for IS.
+C
+C_END_RBROOK
+C
+
+
+
+
+
+      SUBROUTINE RBFRAC(A,B,C,AL,BE,GA,MSG)
+C     =====================================
+C
+C_BEGIN_RBFRAC
+C
+C       This routine is obsolete and should be removed. The argument
+C MSG is redundant.
+C
+C_END_RBFRAC
+C
+
+
+
+
+      SUBROUTINE CVFRAC(X,Y,Z,XX,YY,ZZ,IFLAG,MSG)
+C     ===========================================
+C
+C_BEGIN_CVFRAC
+C
+C       Another silly obsolete routine that really should be deleted.
+C MSG value is in fact useless. Library output controlled by CCPERR.
+C
+C_END_CVFRAC
+C
+
+
+
+
+      SUBROUTINE SFREAD(ID,NG,A,B,C,IWT,IELEC,CU,MO,IFAIL,IFILFF)
+C     ===========================================================
+C
+C_BEGIN_SFREAD
+C
+C       Obsolete routine should be deleted. IFILFF not used.
+C
+C_END_SFREAD
+C
+
+
+
+      SUBROUTINE RWNOHEAD()
+C     =====================
+C
+C_BEGIN_RWNOHEAD
+C
+C	This subroutine resets the logical variable IFHDOUT in the RWBROOK
+C     common block RBRKXX, and should be called once before either
+C     XYZADVANCE or WBCELL in order to prevent those routines from writing
+C     headers to an output pdb file.
+C     Effectively we are fooling the library that the header has already
+C     been written.
+C
+C_END_RWNOHEAD
+C
+</pre>
+</li>
+</ol>
+
+</body>
+</html>

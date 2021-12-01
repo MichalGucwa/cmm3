@@ -1,0 +1,55 @@
+#!/bin/sh 
+#  Alternative program of Phils.
+#  Alternative inputs - PDB,fractional or phare_ml
+# Examples
+# 1)   Input fractional sites 
+#   Free format:   Occup   x y z b
+#
+# 2)Input PHARE fractional sites 
+#ATOM   AU    0.177  0.104 -0.114  9.92
+#ATOM   AU    0.218  0.138 -0.105  4.88
+#ATOM   HG    0.180  0.294  0.089 13.41
+#ATOM   I     0.491  0.370  0.487  8.40
+#
+# 3) PDB - usual sort of stuff CRYSTAL/SCALEi coordinates.
+#
+set -e
+
+havecs				\
+XYZIN $CEXAM/data/sites.frc		\
+XYZOUT $CCP4_SCR/sites.pdb		\
+UVWOUT $CCP4_SCR/sitesuvw.pdb		\
+<< 'END-havecs' 
+19                                                 ! true space group
+PHARE                                              ! input format
+73.530   39.060   23.150  90.00  90.00  90.00    1 ! cell + ncode
+152  96  64                                 ! grid (for convertion purposes)
+0 76 0 48 0 32                                     ! asymmetric unit in grids
+END-havecs
+#
+havecs				\
+XYZIN $CCP4_SCR/sites.pdb		\
+UVWOUT $CCP4_SCR/sitesuvw.pdb		\
+XYZOUT $CCP4_SCR/more_sites.pdb \
+<< 'END-havecs' 
+19    ! Space Group 
+pdb   ! Input format   (no need for cell as defined in PDB file)
+152  96  64   !   Grid
+0 76 0 48 0 32
+END-havecs
+#
+exit
+#   This example does not run
+havecs				\
+XYZIN $CEXAM/data/sites.frc		\
+XYZOUT $CCP4_SCR/sites.pdb		\
+UVWOUT $CCP4_SCR/sitesuvw.pdb		\
+<< 'END-havecs' 
+154    ! Space Group 
+FRC    ! Input format
+77.8 77.8 82.5 90 90 120  1   ! cell
+SM         #   needed if FRC input....
+78 78 84
+0 77 0 77 0 42
+END-havecs
+#

@@ -1,0 +1,69 @@
+#! /bin/sh
+
+set -e
+
+if test $# -ne 2; then echo "$0: missing argument"; exit 1;fi
+
+# find awk executable
+for myawk in nawk gawk awk
+do
+  test -f $myawk && break
+done
+
+# Process amore tabling log to derive a sensible integration limit and
+# model cell.
+# Use it like this:
+# eval `amore-sphere <mtz file> <tabling log>`
+# and it will set environment variable `radius' to a suitable argument for
+# CLMN SPHERE variable and `box' to a suitable argument for GENERATE CELL.
+# NB assumes only one table is made by the tabling step.
+
+mtzdmp $1 -s -n 0 | cat $2 - | $myawk '
+BEGIN {pi=3.14159; dr=pi/180.0}	# degrees/radians conversion
+
+# First set to the molecular radius to 75% of minimum box dimension.
+# (Ian Tickle suggestion after David Blow observation for the spherical case)
+
+# For model box calculation:
+/ *Minimal Box/ {abox=$4; bbox=$5; cbox=$6;
+                 radius=abox
+                 if (bbox<radius) radius=bbox
+                 if (cbox<radius) radius=cbox
+                 radius=0.75*radius }
+/ *Resolution Limit for Interpolation/ {resol=$6} # used later
+
+# Then we have to reset the radius if necessary according to the a.u. volume:
+# sphere_vol < au_vol and radius < cell_lengths
+# (EJD says that should be cell_lengths/2 and amore consequently gives
+# a warning)
+
+/Number of Symmetry Operations =/ {nsymm = $NF}
+/\* Cell Dimensions :/ {
+  getline; getline;		# look 2 lines down
+  a=$1; b=$2; c=$3;
+  alpha=$4*dr; beta=$5*dr; gamma=$6*dr; # angles in rads
+  sum=(alpha+beta+gamma)/2.0;
+  v=sqrt(sin(sum-alpha) * sin(sum-beta) * sin(sum-gamma) *sin(sum));
+  v=a*b*c*v*2.0			# cell volume
+}
+
+END {
+  if (radius == "" || v == "" || nsymm == "") {
+    system("echo " "amore-sphere: Failed to find info for sphere arithmetic 1>&2")
+    exit 1}
+	if (abox == "" || bbox == "" || cbox == "") {
+    system("echo " prog ": Failed to find info for cell arithmetic 1>&2")
+    exit 1}
+	v=v/nsymm;			# a.u. volume
+  vol=4.0*pi*(radius^3)/3.0	# sphere volume
+  # reduce sphere radius so vol<v
+  if (vol>v) {radius=0.95*radius*(v/vol)^(0.3333333)}
+  print "radius=" radius
+	# Navaza says use for model CELL dimensions:
+	#   minimal_box_length+integration_radius+resolution
+	# EJD says cell should be cubic always...
+	add=radius+resol
+	print "box=\"" abox+add , bbox+add , cbox+add , "\""
+}
+'
+#

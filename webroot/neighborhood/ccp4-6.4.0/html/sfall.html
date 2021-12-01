@@ -1,0 +1,1729 @@
+<html>
+	<head>
+		<title>CCP4 Program Suite</title></head>
+	<body>
+		<!-- ::INDEX_INFO::SFALL::Supported::Model Refinement::Structure factor calculation and X-ray refinement using forward and reverse FFT:::::::: -->
+		<H1>
+			SFALL (CCP4: Supported Program)</H1>
+		<H2>
+			NAME</H2>
+		<b>sfall </b>- Structure factor calculation and X-ray refinement using forward 
+		and reverse FFT
+		<H2>
+			SYNOPSIS</H2>
+		<b>sfall</b> [ <b>XYZIN</b> <i>foo.brk</i> ] [ <b>MAPIN</b> <i>foo.map</i> ] [ <b>HKLIN</b>
+		<i>foo.mtz</i> ] [ <b>MAPOUT</b> <i>foo_out.map</i> ] [ <b>HKLOUT</b> <i>foo_out.mtz</i>
+		] [ <b>XYZOUT</b> <i>foo_out.brk</i> ] [ <b>GRADMAT</b> <i>foo.sfmat</i> ]
+		<br>
+		[<A HREF="#keywords">Keyworded input</A>]
+		<H2>CONTENTS</H2>
+		<OL>
+			<LI>
+				<a href="#description">DESCRIPTION</a>
+		<OL>
+			<LI>
+				<a href="#files_generate_atom_map">Generate atom map</a>
+			<LI>
+				<a href="#files_calculate_structure_factors">Calculate structure factors</a>
+			<LI>
+				<a href="#files_generate_x_ray_gradients">Generate X-ray gradients for refinement</a>
+			<LI>
+				<a href="#space_groups">Space Groups</a></LI>
+		</OL>
+		<LI>
+			<a href="#keywords">KEYWORDED INPUT</a>
+		<LI>
+			<a href="#memory_allocation">MEMORY ALLOCATION</a>
+		<LI>
+			<a href="#files">INPUT AND OUTPUT FILES</a>
+			<OL>
+		<LI>
+			<a href="#notes_on_formfactors">Notes on Formfactors</a>
+		<LI>
+			<a href="#notes_on_xyzin">Notes on XYZIN, Atom names, etc</a>
+		<LI>
+			<a href="#notes_on_hklin">Notes on HKLIN</a>
+		<LI>
+			<a href="#notes_on_mapin">Notes on MAPIN</a>
+		<LI>
+			<a href="#output_from_structure_factor_calculation">Output from Structure Factor 
+				Calculation</a>
+		<LI>
+			<a href="#notes_on_xyzout">Notes on XYZOUT</a>
+		<LI>
+			<a href="#notes_on_hklout">Notes on HKLOUT</a>
+		<LI>
+			<a href="#notes_on_mapout">Notes on MAPOUT</a>
+		<LI>
+			<a href="#notes_on_gradmat">Output from the Gradients Calculation - notes on 
+				GRADMAT</a>
+		<LI>
+			<a href="#output_from_calculation_optimum_shifts">Output from the Calculation of 
+				the Optimum Shifts</a>
+		<LI>
+			<a href="#notes_on_stepsize">Notes on stepsize</a></LI>
+		</OL>
+		<LI>
+			<a href="#common_problems">COMMON PROBLEMS</a>
+		<LI>
+			<a href="#examples">EXAMPLES</a>
+			<OL>
+		<LI>
+			<a href="#example_calculate_map_from_atom_coordinates">Calculate map from atom 
+				coordinates</a>
+		<LI>
+			<a href="#example_read_coordinates_to_calculate_structure_factors">Read in 
+				coordinates to calculate structure factors</a>
+		<LI>
+			<a href="#example_read_map_to_calculate_structure_factors">Read in map to calculate 
+				structure factors</a>
+		<LI>
+			<a href="#example_iteration_cycles">Iteration cycles to do back-transformation and 
+				phase combination cycles in solvent flattening procedure</a>
+		<LI>
+			<a href="#example_unrestrained_refinement">Unrestrained refinement</a>
+		<LI>
+			<a href="#example_prolsq_refinement_cycles">Prolsq refinement cycles</a>
+		Please note: PROLSQ is no longer available as refinement program in the CCP4 
+		Suite.
+		<LI>
+			<a href="#example_unix_runnable">Simple Runnable Examples</a></LI>
+		</OL>
+		<LI>
+			<a href="#authors">AUTHORS</a>
+		<LI>
+			<a href="#function">PROGRAM FUNCTION</a>
+			<OL>
+		<LI>
+			<a href="#modelling_electron_density">Modelling of the electron density and 
+				calculation of structure factors</a>
+		<LI>
+			<a href="#calculation_gradients">Calculation of the gradients</a>
+		<LI>
+			<a href="#normal_matrix">The Normal Matrix</a>
+		<LI>
+			<a href="#calculation_shifts">Calculation of the shifts</a></LI>
+		</OL>
+		<LI>
+			<a href="#references">REFERENCES</a>
+		<LI>
+			<a href="#see_also">SEE ALSO</a></LI>
+		</OL>
+		<H2>
+			<A NAME="description"></A>DESCRIPTION</H2>
+		This program calculates structure factors and X-ray gradients for refinement 
+		using inverse and forward fast Fourier techniques.
+		<P>
+		If coordinates are input, it builds an `atom map' on a suitable grid over the 
+		asymmetric unit of the spacegroup. Atomic density is distributed as a Gaussian 
+		centred on the atom position. The value of the Gaussian depends on the distance 
+		from the atom centre, the atom type, and temperature factor. Its value is 
+		calculated at each grid point within a given radius for each atom, and the 
+		values are summed to give an `atom map'. This `map' can then be used for an 
+		inverse fast Fourier transform, which gives the structure factor. It is 
+		important that the grid is fine enough to sample the atomic Gaussians 
+		accurately - the accuracy of the structure factor estimates depends on this. I 
+		recommend using a grid which gives a sampling of ~0.5Å.
+		<P>
+		X-ray gradients are estimated by `differential synthesis'. A difference map is 
+		calculated, and this is convoluted with the atomic density.
+		<P>
+			By default, SFALL scales Fobs to Fcalc. This then lets you do maps on (or close 
+			to) an absolute scale if the map comes from coordinates. If you are 
+			back-transforming a map, <EM>e.g.</EM> in solvent-flattening or averaging, then 
+			the map isn't on an absolute scale anyway, and so this scaling is not 
+			particularly sensible (although not usually harmful). Note that in iterative 
+			procedures, the Fobs you bring in to SFALL on each cycle should be the original 
+			Fobs, not the one carried through from the previous cycle (which may have been 
+			scaled, selected, or otherwise corrupted). In this case, it is probably more 
+			sensible to use the NOSCALE option in SFALL, then either (i) use <A HREF="sigmaa.html">
+				SIGMAA</A> to generate Partial or Combined Fourier coefficients for the 
+			next map (if you want to weight them); or (ii) use <A HREF="rstats.html">RSTATS</A>
+		to scale Fcalc to Fobs.
+		<P>
+			For a description of the original method see [<A HREF="#reference1">1</A>
+		]. A modification in calculating the gradients suggested by Alain Lifchitz is 
+		used.
+		<P>
+			A list of <A HREF="#common_problems">common problems</A> (with possible 
+			solutions) can now be found below.
+			<H3>
+				<A NAME="files_generate_atom_map"></A>1) Generate atom map
+			</H3>
+		<P>
+		Input:
+		<P>
+			i) XYZIN
+			<dl>
+				<dt>
+					<dd>
+						Coordinates (Brookhaven format with CRYST1 and SCALEi lines).</dd>
+			</dl>
+		<P>
+		Output:
+		<P>
+			i) MAPOUT
+			<dl>
+				<dt>
+					<dd>
+						Atom map. Various modifications can be made to this map: <blockquote> <dt>a)<dd>
+									The `solvent' map. This map has zero at all points where there is atomic 
+									density, and a constant value for all points where there was no atomic density. 
+									It is used for calculating structure factors for `bulk solvent' (see <A HREF="icoefl.html">
+										ICOEFL</A> for ideas on using this); or for use as a mask. <dt>b)
+										<dd>
+											A tagged `atom map' where each grid point is tagged with a flag to say which 
+											residue, or which atom number, contributed most to it. This is used for 
+											analysing map correlations, and real space R-factors.</dd></blockquote>
+					</dd>
+			</dl>
+			<BLOCKQUOTE></BLOCKQUOTE>
+			<H3>
+				<A NAME="files_calculate_structure_factors"></A>2) Calculate structure factors</H3>
+		<P>
+			By default a scale factor is calculated between Fobs and Fc and is applied to 
+			the output Fobs. If this is not wanted then the keyword <A HREF="#noscale">NOSCALE</A>
+		must be used.
+		<P>
+		Input:
+		<P>
+			i) either coordinates or a map (compulsory)
+			<dl>
+				<dt>
+					<dd>
+						If map is input it can be `truncated' to eliminate very high or low density.</dd>
+			</dl>
+		<P>
+			ii) <A NAME="files_calculate_structure_factors_hklin"></A>HKLIN (optional)
+			<dl>
+				<dt>
+					<dd>
+						This must contain: H K L FP SIGFP [ FREE FPART PHIP ...]
+						<br>
+						It MUST be sorted on h k l, and be in the CCP4 chosen asymmetric unit. See <A HREF="#notes_on_hklin">
+							NOTES ON HKLIN</A> for further details. <dt>
+							<dd>
+								The FREE value is generated by FREERFLAG or in X-PLOR and transferred to MTZ 
+								format using <A HREF="f2mtz.html">F2MTZ</A>. See the <A HREF="freerflag.html">FREERFLAG</A>
+								documentation. (Note that X-PLOR 3.1 only assigns flags of 0 or 1.) The keyword 
+								FREERFLAG allows reflections with a given FREE value to be excluded from 
+								refinement and Fc calculations. <dt>
+									<dd>
+										IF FPART and PHIP have been assigned, the structure factor output will equal 
+										the scaled FPART vector plus the contribution calculated from the input plus 
+										the scaled FPART vector.</dd>
+			</dl>
+		<P>
+		Output:
+		<P>
+			i) HKLOUT containing: H K L ... FC PHIC (WANGWT)
+			<dl>
+				<dt>
+					<dd>
+						(If you are preparing the 'averaged map' for generating the Wang envelope, 
+						(flagged by keyword <A HREF="#avmode">AVMODE</A>) the WANGWT will be calculated 
+						as well as the structure factor modified for use in solvent flattening.)</dd>
+			</dl>
+		<P>
+			ii) MAPOUT - The atom `map' (optional).
+			<dl>
+				<dt>
+					<dd>
+						You can also keep the atom map if you want to.</dd>
+			</dl>
+			<H3>
+				<A NAME="files_generate_x_ray_gradients"></A>3) Generate X-ray gradients for 
+				refinement</H3>
+		<P>
+		These are used for minimisation of X-ray differences between FP and FC. This 
+		calculation uses the forward FFT.
+		<P>
+		Input:
+		<P>
+			i) XYZIN
+			<dl>
+				<dt>
+					<dd>
+						Coordinates (Brookhaven format with header).</dd>
+			</dl>
+		<P>
+			ii) HKLIN
+			<dl>
+				<dt>
+					<dd>
+						Containing: H K L FP SIGFP [ FREE ]
+						<br>
+						When FREE is assigned then a subset of reflections is excluded from the 
+						gradient calculation (see <A HREF="#files_calculate_structure_factors_hklin">above</A>
+						for details). Hence the agreement between them and Fc plays no part of the 
+						refinement procedure. The Free R factor calculated for these reflections is a 
+						useful indicator of the quality of the refinement [<A HREF="#reference4">4</A>]. 
+						It must be stressed that during a particular refinement procedure only one 
+						freeR set of reflections should be used. It is meaningless to change the freeR 
+						set in the middle of refinement. However, with several freeR sets, it is 
+						possible to compare the same refinement procedure against different freeR sets. 
+						It is still possible for all the freeR sets to be unsuitable <EM>e.g.</EM> if 
+						the NCS and the crystal symmetry are related, as they often are, there may be 
+						special relationships between classes of reflections, and this may mean that 
+						the FREE set is not truly independent of the other observations.</dd>
+			</dl>
+		<P>
+		Output:
+		<P>
+			i) XYZOUT
+			<dl>
+				<dt>
+					<dd>
+						A coordinate file in which the least squares shifts have been applied.</dd>
+			</dl>
+		<P>
+			ii) GRADMAT
+			<dl>
+				<dt>
+					<dd>
+						A direct access file containing information about the X-ray gradients, ready 
+						for input into PROLSQ (no longer available in the CCP4 Suite).</dd>
+			</dl>
+		<P>
+			Further details of the specification of input and output files is given in 
+			section <A HREF="#files">INPUT AND OUTPUT FILES</A>
+		.
+		<P>
+			See description of keyword <A HREF="#mode">MODE</A> and <A HREF="#examples">examples</A>
+			for uses for the various options.
+			<H3>
+				<A NAME="space_groups"></A>Space Groups</H3>
+			SFALL has special subroutines to handle the following spacegroups:
+			<pre>
+
+  P1                  P21(4)               P21212(1018 - alt. origin)   
+  P212121(19)         P4122/P4322(91/95)   P41212/P43212 (92/96)      
+  P31/P32(144/145)    P3/R3(143/146)       P3121/P3221(152/154) 
+  P61/P65 (169/170)
+
+</pre>
+			It is possible to use the P1 version (or any suitable lower symmetry) for the 
+			calculations. In particular, any non-primitive spacegroup can be run in the 
+			appropriate primitive one. See keyword <A HREF="#sfsgroup">SFSGROUP</A>
+		for details.
+		<P>
+			BUT BEWARE: To use SFSG P1 you must have your reflections sorted with l&gt;=0. 
+			This is NOT the default for P3121/P3221 or P6i22. You would be sensible to run <A HREF="cad.html">
+				CAD</A> with the keyword: <A HREF="cad.html#outlim">`OUTLIM SPACEGROUP P1'</A>
+		before calculating structure factors.
+		<P>
+			The crystal symmetry will be used to generate atom positions from a unique 
+			molecule. See <A HREF="#notes_on_hklin">NOTES ON HKLIN</A> for special 
+			requirements for the HKLIN file when using a lower symmetry version.
+			<H2>
+				<A NAME="keywords"></A>KEYWORDED INPUT</H2>
+		All input is keyworded. Only the first 4 characters of a keyword are 
+		significant. The keyworded records can be in any order.
+		<P>
+		Anything on a line after an ! or # is ignored and lines can be continued by 
+		using a minus sign.
+		<P>
+			The possible keywords are:
+			<dl>
+				<dt>Compulsory <BLOCKQUOTE> <A HREF="#mode"><B>MODE</B></A> </BLOCKQUOTE><dt>Optional <BLOCKQUOTE>
+							<A HREF="#avmode"><B>AVMODE</B></A>, <A HREF="#badd"><B>BADD</B></A>, <A HREF="#bins">
+								<B>BINS</B></A>, <A HREF="#breset"><B>BRESET</B></A>, <A HREF="#cell"><B>CELL</B></A>,
+							<A HREF="#chain"><B>CHAIN</B></A>, <A HREF="#eden"><B>EDEN</B></A>, <A HREF="#end"><B>END</B></A>,
+							<A HREF="#formfactor"><B>FORMFACTOR</B></A>, <A HREF="#freerflag"><B>FREERFLAG</B></A>,
+							<A HREF="#grid"><B>GRID</B></A>, <A HREF="#h2obg"><B>H2OBG</B></A>, <A HREF="#labin">
+								<B>LABIN</B></A>, <A HREF="#labout"><B>LABOUT</B></A>, <A HREF="#name"><B>NAME</B></A>,
+							<A HREF="#noscale"><B>NOSCALE</B></A>, <A HREF="#omit"><B>OMIT</B></A>, <A HREF="#ratio">
+								<B>RATIO</B></A>, <A HREF="#resolution"><B>RESOLUTION</B></A>, <A HREF="#rmsshift">
+								<B>RMSSHIFT</B></A>, <A HREF="#rscb"><B>RSCB</B></A>, <A HREF="#scale"><B>SCALE</B></A>,
+							<A HREF="#sfsgroup"><B>SFSGROUP</B></A>, <A HREF="#sigma"><B>SIGMA</B></A>, <A HREF="#stepsize">
+								<B>STEPSIZE</B></A>, <A HREF="#symmetry"><B>SYMMETRY</B></A>, <A HREF="#title"><B>TITLE</B></A>,
+							<A HREF="#truncate"><B>TRUNCATE</B></A>, <A HREF="#vdwr"><B>VDWR</B></A>, <A HREF="#verbose">
+								<B>VERBOSE</B></A>, <A HREF="#weight"><B>WEIGHT</B></A>.<BR>
+							<BR>
+							<EM>N.B. Some of these are compulsory for some MODEs.</EM> </BLOCKQUOTE></dt>
+			</dl>
+		<P>
+			<H2>
+				DESCRIPTION OF KEYWORDS</H2>
+			<H3>
+				<A NAME="mode"></A>MODE [ ATMMAP ... | SFCALC ... | SFREF ... ]</H3>
+			This keyword controls the course of the calculation.
+			<dl>
+				<dt><A NAME="mode_atmmap"></A>ATMMAP [ RESMOD ] [ ATMMOD ] [ SOLVMAP ]<dd>
+						Calculating `atom maps' from coordinates. The map extends over the asymmetric 
+						unit of the appropriate space group (which may be different from the true 
+						spacegroup, see keyword <A HREF="#sfsgroup">SFSGROUP</A> for possible groups). <EM>N.B.</EM>
+						XYZIN and MAPOUT must be assigned. <dt>
+							<dd>
+								Subsidiary keywords: <blockquote> <dt><A NAME="mode_atmmap_resmod"></A>RESMOD<dd>
+											output `atom map' values tagged by a residue number flag. <dt><A NAME="mode_atmmap_atmmod">
+												</A>ATMMOD
+												<dd>
+													output `atom map' values tagged by a atom number flag. <dt><A NAME="mode_atmmap_solvmap">
+														</A>SOLVMAP
+														<dd>
+															output `solvent map' with value specified by the H2OBG keyword (default=0.03) 
+															at all points not occupied by atom density. All points occupied by atom density 
+															set to 0.0.</dd></blockquote>
+							</dd>
+			</dl>
+			<BLOCKQUOTE></BLOCKQUOTE>
+			<dl>
+				<dt><A NAME="mode_sfcalc"></A>SFCALC ...<dd>
+						Structure factor calculation. <dt>
+							<dd>
+								Subsidiary keywords: <blockquote> <dt><A NAME="mode_sfcalc_xyzin_mapin"></A>XYZIN or 
+										MAPIN (one essential)<dd>
+											Define input type, either coordinates or a map. <EM>N.B.</EM> XYZIN or MAPIN 
+											must be assigned. <dt>followed by:<dd>
+													<dt><A NAME="mode_sfcalc_hklin"></A>HKLIN (optional)<dd>
+															Only reflections which exist in the HKLIN file are output to HKLOUT. The output 
+															FC PHIC are appended to input H K L FP SIGFP... See keywords <A HREF="#labin">LABIN</A>
+															and <A HREF="#labout">LABOUT</A> for further details.<br>
+															<EM>N.B.</EM> HKLIN and HKLOUT must be assigned. See <A HREF="#notes_on_hklin">NOTES 
+																ON HKLIN</A> for the requirements placed on the HKLIN file. <dt><A NAME="mode_sfcalc_atmmap_solvmap">
+																</A>ATMMAP or SOLVMAP (optional)<dd>
+																	Either an `atom map' or a `solvent map' is output. The map extends over the 
+																	asymmetric unit of the space group used in the structure factor calculation 
+																	(see keyword <A HREF="#sfsgroup">SFSGROUP</A>). Note that for non-primitive 
+																	space groups, only density for symmetry mates corresponding to primitive 
+																	symmetry operations is output; use <A HREF="#mode_atmmap">MODE ATMMAP</A> to 
+																	obtain a complete map. <EM>N.B.</EM> MAPOUT must be assigned.</dd></blockquote>
+							</dd>
+			</dl>
+			<BLOCKQUOTE></BLOCKQUOTE>
+			<dl>
+				<dt><A NAME="mode_sfref"></A>SFREF<dd>
+						Coordinate and/or B-factor refinement; will calculate least squares gradient 
+						and shifts. <EM>N.B.</EM> XYZIN and HKLIN must be assigned. <dt>
+							<dd>
+								Subsidiary keywords: <blockquote> <dt><A NAME="mode_sfref_mapin"></A>MAPIN<dd>
+											(This option is exceedingly unlikely to be needed.) Gradients will be taken 
+											from an input difference map. Usually this difference map is generated 
+											internally from the structure factors calculated from the atomic coordinates. 
+											However, in some special situations, <EM>e.g.</EM> if you had averaged a 
+											difference map earlier, you may want to input it rather than use the internally 
+											generated one. <dt><A NAME="mode_sfref_restrained"></A>RESTRAINED
+												<dd>
+													Atom parameter gradients calculated from the fit of the X-ray data are output 
+													to GRADMAT, to be combined with geometric restraints calculated by <A HREF="protin.html">
+														PROTIN</A> and PROLSQ (no longer available in the CCP4 Suite). <dt><A NAME="mode_sfref_unrestrained">
+														</A>UNRESTRAINED
+														<dd>
+															Parameter shifts to be applied without restraints; a file will be written to 
+															XYZOUT. <dt>
+																<dd>
+																	If followed by: <blockquote> <dt><A NAME="mode_sfref_unrestrained_xyz"></A>XYZ<dd>
+																				refinement of the X Y and Z parameters will be done. <dt><A NAME="mode_sfref_unrestrained_xyzb">
+																					</A>XYZB<dd>
+																						refinement of the XYZ and B parameters will be done. <dt><A NAME="mode_sfref_unrestrained_b">
+																							</A>B<dd>
+																								refinement of the B parameters will be done.</dd></blockquote>
+																</dd></blockquote>
+							</dd>
+			</dl>
+			<BLOCKQUOTE></BLOCKQUOTE>Only possible with the UNRESTRAINED option. <BLOCKQUOTE></BLOCKQUOTE>
+			<dl>
+				<dt>Example 1: MODE ATMMAP<dd>
+						An electron density map is created from the atomic coordinates. <dt>Example 2: MODE 
+							ATMMAP RESMOD<dd>
+								An electron density map is created from the atomic coordinates with an extra 
+								residue identifying flag added to the atomic density; this is 100*IRES+MCHFLG 
+								(If there are several chains in your protein you will need to describe the 
+								chain limits using the keyword <A HREF="#chain">CHAIN</A> to avoid the same 
+								flag being given to atoms from different chains). This allows <A HREF="overlapmap.html">
+									OVERLAPMAP</A> to analyse the correlation coefficient between 2 maps or the 
+								`real space R-Factor' for contributions from each residue. <dt>Example 3: MODE 
+									ATMMAP ATMMOD<dd>
+										An electron density map is created from the atomic coordinates with an extra 
+										atom identifying flag added to the atomic density; this is 100*atom_number. 
+										This allows <A HREF="overlapmap.html">OVERLAPMAP</A> to analyse the correlation 
+										coefficient between 2 maps or the `real space R-Factor' for contributions from 
+										each atom (This was used to see if the hydrogen or deuterium atoms in a neutron 
+										study could be distinguished in the electron density map). <dt>Example 4: MODE 
+											SFCALC XYZIN HKLIN [ ATMMAP ]<dd>
+												A structure factor calculation is performed using the input coordinates. HKLIN 
+												is read, and the FP are scaled to FC. HKLOUT contains at least H K L scaled_FP 
+												scaled_SIGFP FC PHIC
+												<br>
+												(You can output unscaled FP by using the keyword <A HREF="#noscale">NOSCALE</A>). 
+												An R-factor is calculated. If keyword <A HREF="#mode_atmmap">ATMMAP</A> is 
+												given the electron density map created from the atomic coordinates is saved on 
+												MAPOUT. <dt>Example 5: MODE SFCALC MAPIN HKLIN<dd>
+														A structure factor calculation is performed using the input map. The map MUST 
+														cover the asymmetric unit expected for the <A HREF="#sfsgroup">SFSGROUP</A>. 
+														This will be true if you have calculated the map using <A HREF="fft.html">FFT</A>
+														with the <A HREF="fft.html#fftspacegroup">FFTSPACEGROUP</A> the same as the 
+														SFSGROUP and have NOT reset the AXIS order. Details are given <A HREF="#notes_on_mapin">
+															below</A>. HKLIN is read, and the FP are scaled to FC. HKLOUT contains at 
+														least H K L scaled_FP scaled_SIGFP FC PHIC
+														<br>
+														(You can output unscaled FP by setting keyword <A HREF="#noscale">NOSCALE</A>). 
+														An R-factor is calculated. <dt>Example 6: MODE SFCALC XYZIN (ATMMAP)<dd>
+																A structure factor calculation is performed using the input coordinates. Since 
+																no HKLIN is read, the <A HREF="#symmetry">SYMMETRY</A> you wish to use for the 
+																structure will have to be given. The default is to use the symmetry of the <A HREF="#sfsgroup">
+																	SFSGROUP</A>. Output HKLOUT containing h k l FC PHIC (WANGWT if <A HREF="#avmode">
+																	AVMODE</A> set) for all reflections within the requested resolution limits. <dt>
+																	<dd>
+																		If keyword <A HREF="#mode_atmmap">ATMMAP</A> is given the electron density map 
+																		created from the atomic coordinates is saved on MAPOUT. <dt>Example 7: MODE SFCALC 
+																			MAPIN<dd>
+																				A structure factor calculation is performed using the input map. The map MUST 
+																				cover the asymmetric unit expected for the <A HREF="#sfsgroup">SFSGROUP</A>. 
+																				This will be true if you have calculated the map using <A HREF="fft.html">FFT</A>
+																				with the <A HREF="fft.html#fftspacegroup">FFTSPACEGROUP</A> the same as the <A HREF="#sfsgroup">
+																					SFSGROUP</A> and have NOT reset the AXIS order. <dt>Example 8: MODE SFREF XYZ 
+																					(or XYZB) RESTRAINED<dd>
+																						Used for restrained refinement of XYZ coordinates or XYZ coordinates and B 
+																						factors. It is used in conjunction with <A HREF="protin.html">PROTIN</A> and 
+																						PROLSQ (no longer available in the CCP4 Suite). First a structure factor 
+																						calculation is done, the FP scaled and an R-factor calculated. Then the program 
+																						calculates the normal matrix and gradient contributions for the parameters to 
+																						be refined. Gradients of atomic shifts are output to GRADMAT. Reference: R. 
+																						Agarwal, A. Lifchitz, J. Konnert, W.A Hendrickson [<A HREF="#reference6">6</A>].
+																						<dt>Example 9: MODE SFREF XYZ (or XYZB or B) UNRESTRAINED<dd>
+																								Used for unrestrained refinement of XYZ coordinates or XYZ coordinates and B 
+																								factors or Bfactors alone. First a structure factor calculation is done, the FP 
+																								scaled and an R-factor calculated. Then the program calculates the normal 
+																								matrix, gradient contributions and shifts for the parameters to be refined. The 
+																								shifts are analysed using arguments from <A HREF="#stepsize">STEPSIZE</A>, <A HREF="#ratio">
+																									RATIO</A> and a set of modified coordinates output to XYZOUT. Reference: R. 
+																								Agarwal, A. Lifchitz [<A HREF="#reference6">6</A>].</dd>
+			</dl>
+			<H3>
+				<A NAME="sfsgroup"></A>SFSGROUP &lt;sfsgroup&gt;</H3>
+		&lt;sfsgroup&gt; is the spacegroup number or name of the spacegroup used for 
+		the calculation. You don't normally need to specify this as a sensible default 
+		will be used (the highest symmetry one the program can use which is compatible 
+		with your data) as printed in the output.
+		<P>
+			<EM>N.B.</EM> - This IS NOT NECESSARILY the spacegroup of your structure. <EM>E.g.</EM>
+		, you may well be calculating structure factors in P1 for a structure with 
+		spacegroup F43212. The program will check whether the requested 
+		&lt;sfsgroup&gt; is compatible with your data.
+		<P>
+		The possibilities for &lt;sfsgroup&gt; are: P1, P21 (4), P21212 (1018 - 
+		alternative origin), P212121 (19), P4122/P4322 (91/95), P41212/P43212 (92/96), 
+		P31/P32 (144/145), P3/R3 (143/146), P3121/P3221 (152/154), P61/P65 (169/170).
+		<P>
+			Any spacegroup can be run in an appropriate one whose symmetry operators are a 
+			subset of the one of interest (P1 can always be used as long as the hkl data 
+			are sorted with l&gt;=0). By judiciously shifting origins many spacegroups 
+			become supergroups. $CLIBD/symop.lib contains the modified symmetry operators 
+			for some spacegroups. You may move the origin of your coordinates with <A HREF="pdbset.html">
+				PDBSET</A>. For example:
+			<dl>
+				<dt>
+					<dd>
+						SYMGEN X + 1/4, Y + 1/4, Z</dd>
+			</dl>
+			<H3>
+				<A NAME="labin"></A>LABIN &lt;program label&gt;=&lt;file label&gt; ...</H3>
+		Note: This is essential for all refinement and if HKLIN is assigned for a 
+		structure factor calculation.
+		<P>
+			The following labels can be assigned.
+			<pre>
+
+         H     K     L     FP    SIGFP   FREE   FPART   PHIP  
+         PHIP  F0    F1    F2    F3      F4     F5      F6   
+         F7    F8    F9    F10   F11     F12    F13     F14
+         F15   F16   F17   F18   F19      
+
+</pre>
+			Assignments for FP and SIGFP are always required. If the free R flag is 
+			assigned to FREE, a subset of reflections can be excluded from the calculation 
+			or refinement. See the keyword <A HREF="#freerflag">FREERFLAG</A>. If you wish 
+			to add a known FPART to the structure factors, assign FPART and PHIP. This is 
+			useful if you want to calculate hydrogen contributions, add in an anisotropic 
+			heavy atom, add in a bulk solvent correction, which has been calculated 
+			somewhere else. The FPART can be scaled relative to the FC by inputting a <A HREF="#scale">
+				SCALE</A>
+		.
+		<P>
+			If you wish to copy some but not all the other columns from your input to your 
+			output file, you may assign F0 F1 ... F19. These will be transcribed to the 
+			output file. If you want to copy everything over, use <A HREF="#labout_allin">ALLIN</A>
+			on the LABOUT line.
+			<H3>
+				<A NAME="labout"></A>LABOUT &lt;program label&gt;=&lt;file label&gt; ... [ 
+				ALLIN ]</H3>
+			&lt;program labels&gt; can be given for FC PHIC (and WANGWT, if required).
+			<br>
+			Any column assigned on LABIN will be automatically copied to the output file. 
+			Note that attempting to reassign any of the labels specified on LABIN will 
+			cause label assignment errors.
+			<br>
+			<A NAME="labout_allin"></A>ALLIN will copy all columns in the input file to the 
+			output file.
+			<br>
+			Beware: the program may get confused if a file label included in ALLIN is the 
+			same as a program label.
+			<H2><A NAME="keywords_optional"></A> OPTIONAL KEYWORDS:</H2>
+			<H3>
+				<A NAME="avmode"></A>AVMODE [ RADIUS &lt;radius&gt; ] [ WEIGHT &lt;modewt&gt; ]</H3>
+		When you are preparing the 'averaged map' for generating the Wang envelope, 
+		this sets the radius of the map sphere and the type of weighting.
+		<P>
+			Subsidiary keywords:
+			<dl>
+				<dt><A NAME="avmode_radius"></A>RADIUS &lt;radius&gt;<dd>
+						Specify the &lt;radius&gt; of the averaging sphere (angstroms) <dt><A NAME="avmode_weight">
+							</A>WEIGHT &lt;modewt&gt;<dd>
+								<blockquote> <dt>&lt;modewt&gt; = 1<dd>
+											Use weighting scheme w=1-(r/R) (Wang's method) <dt>&lt;modewt&gt; = 2<dd>
+													Use weighting scheme w=1-(r/R)**2</dd> </blockquote>
+							</dd>
+			</dl>
+			<H3>
+				<A NAME="badd"></A>BADD &lt;badd&gt;</H3>
+			A parameter added to all atomic B values. It will smear the Gaussians used to 
+			generate the atomic density over a larger volume. L.Ten Eyck suggests this 
+			should allow a coarser sampling grid. G. Bricogne is sceptical and certainly it 
+			introduces serious errors into the B12 coenzyme structure factors at 1Å 
+			resolution (ref Hugh Savage). EJD shares the scepticism. The default value 
+			(0.0) gives reasonable results for most problems.
+			<H3>
+				<A NAME="bins"></A>BINS &lt;nbins&gt;</H3>
+			&lt;nbins&gt; (default 50) is the number of bins for the analysis of R-factor 
+			v. resolution. Ranges of 4sin**2/Lambda**2 are of width 1.0/&lt;nbins&gt;. For 
+			high resolution data this needs to be reset.
+			<H3>
+				<A NAME="breset"></A>BRESET &lt;bmin&gt;</H3>
+			B-factors less than &lt;bmin&gt; (default bmin=5.0) are set equal to 
+			&lt;bmin&gt;. For high resolution data this needs to be reset. If you have data 
+			with low B factor, be aware that an implicit BRESET with a value of2.0 is 
+			performed by sfall. If you want to avoid it, specify BRESET 0.0 explicitly.
+			<H3>
+				<A NAME="cell"></A>CELL &lt;a&gt; &lt;b&gt; &lt;c&gt; [ &lt;alpha&gt; 
+				&lt;beta&gt; &lt;gamma&gt; ]</H3>
+			Input cell parameters explicitly. This is checked against the cell read from 
+			the MTZ file and that read from the PDB file. The program will continue with a 
+			warning if there is a small inconsistency and stop if there is a serious one. 
+			&lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt; default to 90 degrees. If HKLIN is 
+                        assigned the cell constants will be picked up from there, otherwise you may 
+                        need to supply them yourself, for example with MODE ATMMAP and an input PDB
+                        with missing or incorrect CRYST1 record.
+			<H3>
+				<A NAME="chain"></A>CHAIN &lt;chnlab&gt; &lt;iresn&gt; &lt;iresc&gt;</H3>
+			Only needed for <A HREF="#mode_atmmap_resmod">MODE ATMMAP RESMOD</A> if your 
+			coordinate file has more than one chain. You will need one CHAIN card for each 
+			chain.
+			<dl>
+				<dt>&lt;chnlab&gt;<dd>
+						single character label (<EM>e.g.</EM> A) <dt>&lt;iresn&gt;<dd>
+								first residue number <dt>&lt;iresc&gt;<dd>
+										last residue number</dd>
+			</dl>
+			<H3>
+				<A NAME="eden"></A>EDEN &lt;escale&gt; &lt;cmp&gt; &lt;cmn&gt;</H3>
+			Done for Cecil Tate. The input map is scaled by:
+			<br>
+			xscal=escale/nx*ny*nz
+			<br>
+			and truncated.
+			<pre>
+if density(x,y,z)&lt;0
+       density(x,y,z)=xscal*cmn*tanh(density(x,y,z)/cmn))
+if density(x,y,z)&gt;0
+       density(x,y,z)=xscal*cmp*tanh(density(x,y,z)/cmp))
+</pre>
+			<H3>
+				<A NAME="end"></A>END</H3>
+			This ends input.
+			<H3>
+				<A NAME="formfactor"></A>FORMFACTOR [ NEUTRON | NGAUSS &lt;ngauss&gt; ] 
+				&lt;atnam1&gt; &lt;atnam2&gt; ...</H3>
+			See the <A HREF="#notes_on_formfactors">NOTES ON FORMFACTORS</A>
+		.
+		<P>
+			SFALL has hardcoded X-ray and neutron formfactors available for atom types H C 
+			N O S. (Default CuKa X-ray formfactors.) Other atom types are tabulated in 
+			$CLIBD/atomsf.lib (X-ray) and $CLIBD/atomsf_neutron.lib (neutron). If your atom 
+			identifier is not recognised (<EM>i.e.</EM>
+		it is not C, N, O, or S) the program will read atomsf.lib and take the FIRST 
+		table which matches your atom ID. This may not be satisfactory if your atom 
+		type is Fe+3, say, and you may wish to specify the formfactor yourself.
+		<P>
+			Subsidiary keywords:
+			<dl>
+				<dt><A NAME="formfactor_neutron"></A>NEUTRON<dd>
+						Use neutron formfactors. Remember to assign ATOMSF $CLIBD/atomsf_neutron.lib to 
+						read the correct library of formfactors.</dd>
+			</dl>
+		<P>
+			or
+			<dl>
+				<dt><A NAME="formfactor_ngauss"></A>NGAUSS &lt;ngauss&gt;<dd>
+						&lt;ngauss&gt; (default 5) is the number of Gaussian terms requested for the 
+						default atoms H C N O S. The only possible values are 2 or 5. <dt>&lt;atnam1&gt; 
+							&lt;atnam2&gt; ...
+							<dd>
+								Atom names for any other atom types used in XYZIN. The atom names MUST exactly 
+								match the entries in ATOMSF library.</dd>
+			</dl>
+		<P>
+			Example:
+			<pre>
+   FORM NEUTRON   P Co+3 D
+   FORM NGAUSS 5  Fe+3
+</pre>
+			<H3>
+				<A NAME="freerflag"></A>FREERFLAG &lt;freeflag&gt;</H3>
+			Reflections where the value of the column FREE, taken from the MTZ file, equals 
+			&lt;freeflag&gt; (default 0) are omitted from the refinement or FC calculation 
+			and their R-factor is monitored separately. If you do not wish a free-R set to 
+			be used don't assign FREE.
+			<H3>
+				<A NAME="grid"></A>GRID &lt;nx&gt; &lt;ny&gt; &lt;nz&gt;</H3>
+			&lt;nx&gt;, &lt;ny&gt;, &lt;nz&gt; are integers giving the number of divisions 
+			along each whole unit cell edge. The atomic density is sampled on this grid, so 
+			if it is too coarse you will introduce errors into the structure factor 
+			calculation. These default to values near to celledge*2, which defines a grid 
+			spacing of 0.5Å. Different spacegroups have special requirements for 
+			factorisation. No prime factors higher than 19 are permitted (The `atom map' 
+			generated on this grid has the asymmetric unit defined for this spacegroup. See <A HREF="#grid_table">
+				table below</A>
+		.).
+		<P>
+			The following general restrictions must be observed:
+			<pre>
+                  &lt;nx&gt; &gt;= 2 * HMAX + 1
+                  &lt;ny&gt; &gt;= 2 * KMAX + 1
+                  &lt;nz&gt; &gt;= 2 * LMAX + 1
+</pre>
+			<A NAME="grid_table"></A>In addition there are further space group dependent 
+			conditions as follows (where `n' is an integer, <EM>i.e.</EM> &lt;nz&gt; must 
+			be even, for instance):
+			<pre>
+                          &lt;nx&gt;     &lt;ny&gt;     &lt;nz&gt;
+             P1            -        2n       2n
+             P21           2n       4n       2n
+             P21212        4n       4n       4n
+             P21212a       ''       ''       ''
+             P212121       ''       ''       ''
+             P4122/P4322   4n       4n       8n
+             P41212/P43212 ''       ''       ''
+             P31/P32       6n       6n       6n
+             P3/R3         ''       ''       ''
+             P3121/p3221   ''       ''       ''
+             P61/P65       6n       6n      12n
+</pre>
+			<H3>
+				<A NAME="h2obg"></A>H2OBG &lt;h2obg&gt;</H3>
+			Bulk water scattering to fill in all empty regions. &lt;h2obg&gt; (default 0.0) 
+			is the value which will fill the SOLVMAP. <A HREF="icoefl.html">ICOEFL</A> uses 
+			this.
+			<H3>
+				<A NAME="name"></A>NAME PROJECT &lt;pname&gt; CRYSTAL &lt;xname&gt; DATASET 
+				&lt;dname&gt;</H3>
+			When a new MTZ file is being created, i.e. for MODE SFCALC with no HKLIN 
+			assigned, this keyword is used to set up an appropriate project/crystal/dataset 
+			for the output MTZ file. This is strongly recommended, otherwise the LABOUT 
+			columns will be assigned to a default dataset with meaningless (for you) names.
+			<H3>
+				<A NAME="noscale"></A>NOSCALE</H3>
+			Scale between FP and FC is calculated but not applied to output FP and SIGFP.
+			<H3>
+				<A NAME="omit"></A>OMIT &lt;th&gt;</H3>
+			Reflections are not included in the refinement if mod(Fo/Fc)&gt;&lt;th&gt; or 
+			mod(Fc/Fo)&gt;&lt;th&gt;. This provides a means of excluding data with bad 
+			agreement from the refinement and it should be used with care (Default: 1000).
+			<H3>
+				<A NAME="ratio"></A>RATIO &lt;ratio&gt;</H3>
+			Large xyz and B shifts are truncated to &lt;ratio&gt;*rms shift. This is only 
+			used for <A HREF="#mode_sfref_unrestrained">UNRESTRAINED</A>
+		refinement.
+		<P>
+			At the beginning of a refinement, the value of ratio should be kept fairly low 
+			(1.5 - 2.0) as shifts tend to be large when the errors in the parameters are 
+			large. When most atoms are well refined, then the ratio may be increased to 3 
+			or 4, to allow for the refinement of these atoms which are poorly placed.
+			<H3>
+				<A NAME="resolution"></A>RESOLUTION &lt;dmin&gt; [ &lt;dmax&gt; ]</H3>
+			&lt;dmin&gt;, &lt;dmax&gt; (default 1, 1000) are resolution limits in Angstroms 
+			(or in 4*sin**2/l**2 if both are &lt;1.0. They can be given in either order. If 
+			only one value is given, it is assumed to be the high resolution cutoff. The <A HREF="#mode_sfcalc">
+				SFCALC</A> option outputs FC for all reflections to the outer limit (You 
+			usually calculate SFs to make maps and it is best to calculate all SFs and then 
+			limit resolution <EM>etc.</EM> in <A HREF="fft.html#resolution">FFT</A>
+		).
+		<P>
+			Default values are overwritten from HKLIN to include all reflections.
+			<H3>
+				<A NAME="rmsshift"></A>RMSSHIFT [XYZ] &lt;rmsxyz&gt; [B] &lt;rmsb&gt;</H3>
+			The shifts are scaled to limit the rms XYZ shift and B shift to be equal to the 
+			set value, or to the calculated one, whichever is smaller. Only useful during 
+			unrestrained refinement. Equivalent to setting <A HREF="#stepsize">STEPSIZE</A>. 
+			If RMSSHIFT is given STEPSIZE will be ignored. Default values: 0.0 0.0.
+			<H3>
+				<A NAME="rscb"></A>RSCB &lt;dsmin&gt; &lt;dsmax&gt;</H3>
+		in Angstroms (either order) or 4s**2/lambda**2. Default values: 4.5Å and 1.0Å.
+		<P>
+		If appropriate the program refines the value of the scale and overall B value 
+		to fit &lt;Fo**2&gt; to &lt;Fc**2&gt; using reflections within this resolution 
+		range. The default resolution range is chosen to use only those reflections 
+		where the &lt;Fo**2&gt; distribution fit Wilson statistics reasonably well. A 
+		standard protein distribution shows a sharp 5Å dip, which can distort the scale 
+		factors. &lt;Fc**2&gt; is often unrealistically high for low resolution data, 
+		until the solvent is adequately modelled. The lack of `solvent contrast' causes 
+		this.
+		<P>
+		Users are often worried because they get lower R-Factors if this scale is 
+		fitted for all data. This does not necessarily mean such a scale is more 
+		correct!
+		<P>
+			The default HKLOUT will have:
+			<dl>
+				<dt>
+					<dd>
+						H K L Scale*FP Scale*SIGFP ... FC*exp(-overall_B*ss) PHIC</dd>
+			</dl>
+		<P>
+			If <A HREF="#noscale">NOSCALE</A> is specified HKLOUT will have:
+			<dl>
+				<dt>
+					<dd>
+						H K L FP SIGFP ... FC*exp(-overall_B*ss) PHIC</dd>
+			</dl>
+		<P>
+			After the end of each structure factor calculation a new scale factor is 
+			calculated from the following expression, where SCNEW is the new scale factor 
+			and SCALE is the previous scale factor.
+			<pre>
+                   Sum {(SCALE * Fcalc) * (Fobs)}
+  SCNEW = SCALE *  --------------------------------------
+                   Sum {(SCALE * Fcalc) * (SCALE * Fcalc)}
+
+</pre>
+			<H3>
+				<A NAME="scale"></A>SCALE [FPART] &lt;scale&gt; &lt;bov&gt;</H3>
+		These parameters are applied to the Fpart as 
+		&lt;scale&gt;*exp(-&lt;bov&gt;*ssq/ll) (Defaults: &lt;scale&gt;=1, 
+		&lt;bov&gt;=0).
+		<P>
+			Some structure factor outputs (notably SHELX) include an Fcalc scaled as 
+			10*absolute. SFALL calculates FC on the absolute scale. If you wanted to 
+			combine these values you would need
+			<br>
+			SCALE FPART 0.1
+			<H3>
+				<A NAME="sigma"></A>SIGMA &lt;sigma&gt;</H3>
+			Data with Fobs &lt; sigma * sd(Fobs) will not be included in refinement 
+			calculations. This cutoff has no effect on structure factor calculations. Do 
+			not be alarmed when your R-Factor appears to be higher for them than when you 
+			are refining; you will have more reflections in the structure factor sum. 
+			Default value: -1.0, <EM>i.e.</EM> no cutoff.
+			<H3>
+				<A NAME="stepsize"></A>STEPSIZE &lt;szo&gt; &lt;szb&gt; &lt;szfrc&gt;</H3>
+			This is only used during <A HREF="#mode_sfref_unrestrained">UNRESTRAINED</A> refinement. 
+			XYZ shifts are multiplied by &lt;szo&gt;, B shifts are multiplied by 
+			&lt;szb&gt;. &lt;szfrac&gt; is the fractional change in step size above which a 
+			second calculation is done. NOT used if <A HREF="#rmsshift">RMSSHIFT</A>
+		is given. Default values: 1.0 1.0 0.3.
+		<P>
+			The program tries to estimate these using an algorithm of R. Agarwal's. See <A HREF="#notes_on_stepsize">
+				NOTES ON STEPSIZE</A>
+		.
+		<P>
+			If you are doing unrestrained refinement, structure factor calculation will be 
+			repeated if abs(initial step - optimum step)/(initial step).
+			<H3>
+				<A NAME="symmetry"></A>SYMMETRY &lt;sg&gt;
+			</H3>
+			(Defaults to the symmetry of the <A HREF="#sfsgroup">SFSGROUP</A>). &lt;sg&gt; 
+			is the spacegroup number or name. If HKLIN is assigned the symmetry will be 
+			picked up from the MTZ file header and should NOT be specified with this 
+			keyword. If HKLIN is not assigned you may need to give this. See <A HREF="#examples">
+				examples</A> below.
+			<H3>
+				<A NAME="title"></A>TITLE &lt;title&gt;</H3>
+			Title (up to 80 characters) used on the printer output. The title information 
+			after the keyword is used as a heading for map sections and also as title 
+			information for the output reflection data file if present.
+			<H3>
+				<A NAME="truncate"></A>TRUNCATE &lt;rhmin&gt; &lt;rhmax&gt;</H3>
+			The input map is truncated - all values &lt;&lt;rhmin&gt; are set to 
+			&lt;rhmin&gt;, and all values &gt;&lt;rhmax&gt; set to &lt;rhmax&gt;. This 
+			should be used for the solvent flattening procedure.
+			<H3>
+				<A NAME="vdwr"></A>VDWR &lt;dlim&gt;</H3>
+		&lt;dlim&gt; helps specify the maximum radius for which an atom is considered 
+		to contribute to the electron density while building the `atom map'. The 
+		initial value is modified by a factor Sqrt(B+25)/2PI to "spread" the density 
+		for atoms with high B factors. Default: 2.5.
+		<P>
+			The speed and accuracy of the calculation depend to some extent on the values 
+			chosen. For 1.5Å data a value of 2.5 is sufficient (a maximum value of 3.0 is 
+			allowed). For neutron data, or for atoms with low B values, it could safely be 
+			reset to 1Å.
+			<H3>
+				<A NAME="verbose"></A>VERBOSE</H3>
+			Lots and lots of output - useful if debugging. Please note that this may 
+			produce a message telling you that atom names have been set to ZZZ or residue 
+			names to DUM if you have non-standard names. This is not important as the 
+			atomic number is determined from the original atom type. See <A HREF="#notes_on_formfactors">
+				Notes on Formfactors</A> and <A HREF="#notes_on_xyzin">Notes on Atom Names</A>
+			below.
+			<H3>
+				<A NAME="weight"></A>WEIGHT &lt;w&gt;</H3>
+			The weight (default 0.0) applied to each structure factor is given by
+			<br>
+			(2sintheta/lambda)**&lt;w&gt;
+			<br>
+			(See [<A HREF="#reference1">1</A>]). At the beginning of the refinement use 
+			&lt;w&gt;=-1.5 or -1.0 to put most weight on the low angle data. As the 
+			refinement proceeds increase &lt;w&gt; to 0.0 (But actually we never use 
+			it...).
+			<H2>
+				<A NAME="memory_allocation"></A>MEMORY ALLOCATION</H2>
+			The program allocates a large work array, whose size may be changed from the 
+			default by setting the logical name MEMSIZE to an appropriate integer value. 
+			The current value is printed in the output (look for `Memory allocation'). 
+			There are other dimensions which can currently only be changed by recompilation 
+			and the error messages are currently not very clear about changing the MEMSIZE.
+			<H2>
+				<A NAME="files"></A>INPUT AND OUTPUT FILES</H2>
+		The following input and output files are used by the program (in addition to 
+		some scratch files which are deleted at the end of program execution):
+		<P>
+			Input Files:
+			<dl>
+				<dt>XYZIN<dd>
+						Input Coordinates File (Brookhaven format) <dt>HKLIN<dd>
+								Input Reflection Data File (MTZ format) <dt>MAPIN<dd>
+										Input Map File (standard map file format)</dd>
+			</dl>
+		<P>
+			Output Files:
+			<dl>
+				<dt>XYZOUT<dd>
+						Output Coordinate File (Brookhaven format) <dt>HKLOUT<dd>
+								Output reflection data file in standard MTZ format <dt>MAPOUT<dd>
+										Output map file (Standard map file format) <dt>GRADMAT<dd>
+												Output matrix file for Hendrickson Konnert program 
+												<!--(See program documentation of <A HREF=prolsq.html>PROLSQ</A>
+for details of the format of this file)--></dd>
+			</dl>
+		<P>
+			The files used in a single run of the program depend on the options requested 
+			via the data control keywords.
+			<H3>
+				<A NAME="notes_on_formfactors"></A>NOTES ON FORMFACTORS</H3>
+		The form factors are read from the file assigned to ATOMSF. This defaults to 
+		$CLIBD/atomsf.lib. Coefficients for analytical approximation to the scattering 
+		factors for atom identifier at a given resolution sintheta/lambda (=S) are 
+		given as:
+		<P>
+			<pre>
+    a1*exp(-b1*s*s) + a2*exp(-b2*s*s) - 2 Gaussian approximation
+                                                 (<A HREF="#reference1">Agarwal, 1978</A>)
+or as:
+
+    a1*exp(-b1*s*s) + a2*exp(-b2*s*s) + a3*exp(-b3*s*s) 
+                                   + a4*exp(-b4*s*s) +  c
+                                      - 5 Gaussian approximation
+</pre>
+			See [<A HREF="#reference2">2</A>] pp. 99-101 (Table 2.2B) or [<A HREF="#reference5">5</A>] 
+			p. 500ff, table 6.1.1.4 for values a1-a4, b1-b4, c for X-rays. For neutron 
+			scattering see [<A HREF="#reference2">2</A>
+		] pp. 99-101 (Table 2.2B).
+		<P>
+			The atom name can be used to assign a formfactor to it.
+			<dl>
+				<dt>WARNING 1)<dd>
+						The program distinguishes CA - the metal - from CA - main chain atom in a 
+						protein by its position on the coordinate line... And older versions of FRODO 
+						get this wrong! The rules on defining atom names are the same as those used by 
+						PDB. The chemical symbol is specified in columns 13 and 14 and the symbol is 
+						RIGHT justified.
+						<pre>
+                 0        1
+<EM>e.g.</EM>    column   1   5    0  34
+                 ATOM  ...   ZN            is Zinc
+                 ATOM  ...    U            is Uranium
+</pre>
+					</dd>
+			</dl>
+		<P>
+			For the common atom types the program includes tables for form factors for the 
+			required value of <A HREF="#formfactor_ngauss">NGAUSS</A>
+		. They are C N O H and S. All others must be read from the library files 
+		atomsf.lib or atomsf_neutron.lib which are automatically assigned. These 
+		contain tables of formfactors for every known atom (Kim Henrick monument).
+		<P>
+		atomsf.lib contains the five Gaussian form for X-ray data and the two Gaussian 
+		form for atoms H C N O and S. Unless you are working at very high resolution 
+		(&gt;1.5Å) the two Gaussian approximations are adequate and speed up the 
+		calculations somewhat.
+		<P>
+			atomsf_neutron.lib has the constant value needed for neutron scattering.
+			<H3>
+				<A NAME="notes_on_xyzin"></A>NOTES ON XYZIN, ATOM NAMES ETC.</H3>
+		Coordinates are assigned to XYZIN in Brookhaven format.
+		<P>
+		The CRYST1 card (which gives the cell dimensions) and the SCALEi cards (which 
+		give the required transform for turning the coordinates into fractional ones) 
+		should be included in XYZIN.
+		<P>
+			Cell parameters from the HKLIN file or <A HREF="#cell">CELL</A>
+		keyword (if either are present) will be used in the absence of CRYST1 and 
+		SCALEi cards, but in all cases the results of omitting the cards are somewhat 
+		unpredictable - in some cases the program may fail, in others it may proceed 
+		but using random or inappropriate values for the cell parameters.
+		<P>
+		If an atom has occupancy set =0.0 it will be copied to the output file if 
+		appropriate, but not used in the calculation. This means it is easy to exclude 
+		suspect atoms from any calculation without deleting them from the file.
+		<P>
+		The program does not make use of anisotropic U factors in the calculation of 
+		electron density and structure factors, and so ANISOU records are ignored.
+		<P>
+			Example of part of XYZIN:
+			<pre>
+
+REMARK 2ZN refined coordinates
+CRYST1   82.500   82.500   34.000  90.00  90.00 120.0 1       R3
+SCALE1       0.01212   0.00700   0.00000        0.00000
+SCALE2       0.00000   0.01400   0.00000        0.00000
+SCALE3       0.00000   0.00000   0.02941        0.00000
+ATOM      1  N   GLY A 201  1   -8.863  16.944  14.289  1.00 21.88
+ .................................
+ATOM    826  CA  ALA D 130  4   -5.022  21.709 -11.876  1.00 15.58
+ATOM    830 CA   WAT A 249  1   -0.002  -0.004   7.891  0.33 10.40
+ATOM    831 ZN2  WAT A 249  1    0.000   0.000  -8.039  0.33 11.00
+ATOM    832  OW1 WAT A 249  1    0.000   0.000  -8.039  0.00 11.00
+ .................................
+
+Atom 1 is Nitrogen, 826 is Carbon, 830 is Calcium, 831 is Zinc and
+832 is Oxygen.
+
+</pre>
+			<H3>
+				<A NAME="notes_on_hklin"></A>NOTES ON HKLIN</H3>
+		List of H K L .. FP SIGFP ( FPART PHIP F0 .. F19 )
+		<P>
+			An MTZ file with column labels corresponding to H K L .. FP SIGFP [FREE FPART 
+			PHIP F0 .. F19]. The header will contain the cell dimensions and spacegroup of 
+			the structure (if you want to change these, use <A HREF="mtzutils.html">MTZUTILS</A>
+		).
+		<P>
+			For <A HREF="#mode_sfcalc">SFCALC</A> this file MUST BE SORTED on h k l (<EM>i.e.</EM>
+			so h is the slowest varying index, then k and l is the fastest), and be within 
+			the asymmetric unit expected by the program; see <A HREF="#limits_for_indices">below</A>
+			for expected limits (<A HREF="cad.html">CAD</A> will reorder your file if 
+			necessary). It is sensible to do this if your data has not been processed by 
+			CCP4 programs. XDS, MADNESS etc. sometimes have different default asymmetric 
+			units to the CCP4 suite.
+			<pre>
+  # an example of sorting native data and checking for correct 
+  # asymmetric unit
+  cad  HKLIN1 $CEXAM/toxd/toxd HKLOUT toxd_sorted &lt;&lt;EOF
+  TITLE  Toxd data sorted - default symmetry P212121
+  LABIN FILE 1 E1=FTOXD3 E2=SIGFTOXD3
+  CTYPE FILE 1 E1=F  E2=Q
+  EOF
+</pre>
+		<P>
+			For <A HREF="#mode_sfref">SFREF</A> this file MUST BE SORTED on h k l (<EM>i.e.</EM>
+			so h is the slowest varying index, then k and l is the fastest), and be 
+			extended if necessary to cover the whole asymmetric unit expected by the 
+			program for the SF spacegroup; see <A HREF="#limits_for_indices">below</A> for 
+			expected limits. If you are working at a lower symmetry than optimal the data 
+			must have been extended and sorted (<A HREF="cad.html">CAD</A> will do this 
+			too). There is a reason - sorting data is quite slow, and you will probably use 
+			this file many times during the course of a refinement.
+			<pre>
+  # an example of extending and sorting native data to P1 +-h,+-k,+l
+  cad HKLIN1 $CEXAM/toxd/toxd HKLOUT toxd_p1  &lt;&lt; EOF
+  OUTLIM SPACEGROUP P1
+  TITLE  Toxd data extended to P1 cell
+  LABIN FILE 1 E1=FTOXD3 E2=SIGFTOXD3
+  CTYPE FILE 1 E1=F  E2=Q
+  EOF
+</pre>
+		<P>
+		The agreement factor analysis is carried out against the values of FP. Sigma 
+		values are assumed to be in column SIGFP.
+		<P>
+			IF FPART and PHIP have been defined, the FC vector equals the FPART vector plus 
+			the FC contribution calculated from the input. FPART can be scaled by entering 
+			a suitable value on the <A HREF="#scale">SCALE</A>
+		input.
+		<P>
+			Other columns in the input file can be copied to the output file by assigning 
+			them to F0= F1= ... Or all columns can be copied over if the <A HREF="#labout_allin">
+				ALLIN</A> subkeyword is given in LABOUT.<br>
+			<I>Note however that if the input file contains columns with labels that match the 
+				program labels then SFALL will stop with a fatal error.</I>
+		<P>
+			<A NAME="limits_for_indices"></A>Limits for Indices for the various space 
+			groups (these are the same as those used in the data reduction programs and 
+			FFT):
+			<pre>
+
+     P1          h k l : l &gt;= 0
+                 h k 0 : h &gt;= 0
+                 0 k 0 : k &gt;= 0
+     P21         h k l : k &gt;= 0, l &gt;= 0
+                 h k 0 : h &gt;= 0
+     P21212      h k l : h &gt;= 0, k &gt;= 0, l &gt;= 0
+     P212121     h k l : h &gt;= 0, k &gt;= 0, l &gt;= 0
+     P41212      h k l : h &gt;= 0, k &gt;= 0, l &gt;= 0, h &gt;= k
+     (+ other tetragonal)
+     P31/P32     h k l : h &gt;= 0, k &gt; 0
+                 0 0 l : l &gt; 0
+     P3/R3       h k l : h &gt;= 0, k &gt; 0
+                 0 0 l : l &gt; 0
+     P3121/P3221 h k l : h &gt;= 0, k &gt;= 0, k &lt;= h   (all l)
+                 h h l : l &gt;= 0
+     P61/P65     h k l : h &gt;= 0, k &gt;= 0, k &lt;= h   (all l)
+                 h h l : l &gt;= 0
+
+</pre>
+			<H3>
+				<A NAME="notes_on_mapin"></A>NOTES ON MAPIN</H3>
+		A standard MAP file. The header will contain the cell dimensions and spacegroup 
+		of the structure.
+		<P>
+		If you wish to generate structure factors from a input map it is essential that 
+		the map is in an appropriate format for the SFALL spacegroup you request.
+		<P>
+		Common errors are:
+		<P>
+		1) using a different grid for the FFT calculation and the SFALL calculation. 
+		FATAL!
+		<P>
+		2) Changing the axis order in the FFT calculation - both have the same defaults 
+		for the same spacegroup! FATAL!
+		<P>
+		3) Choosing a different asymmetric unit for the FFT and the SFALL calculation. 
+		You must make sure your map has the one which covers the SFALL requirements. 
+		There is no flexibility here.
+		<P>
+			<A NAME="limits_for_axes"></A>Limits for axes for the various space groups 
+			(these are the same as those used as defaults in <A HREF="fft.html">FFT</A>
+		):
+		<P>
+			<blockquote> In space group P1, P21 and P21212a, 'b' is taken as the unique axis.
+				<P>
+					In space group P21212a, 1/4 is subtracted from the X and Y values of the 
+					equivalent positions given in <A HREF="#reference5">International Tables</A>.</P>
+			</blockquote>
+			<pre>
+ 
+                   X1     X2     X3     Range of X3  Axis order
+ 
+       P1          Z      X      Y      0 to Y         Z X Y
+       P21         Z      X      Y      0 to Y/2-1     Z X Y
+       P21212a     Z      X      Y      0 to Y/4       Z X Y
+       P212121     X      Y      Z      0 to Z/4       Y X Z
+       P4122       X      Y      Z      0 to Z/8       Y X Z
+       P41212      X      Y      Z      0 to Z/8       Y X Z
+       P4322       X      Y      Z      0 to Z/8       Y X Z
+       P43212      X      Y      Z      0 to Z/8       Y X Z
+       P31         X      Y      Z      0 to Z/3-1     Y X Z
+       P32         X      Y      Z      0 to Z/3-1     Y X Z
+       P3          X      Y      Z      0 to Z-1     Y X Z
+       R3          X      Y      Z      0 to Z/3-1     Y X Z
+       P3121       X      Y      Z      0 to Z/6       Y X Z
+       P3221       X      Y      Z      0 to Z/6       Y X Z
+       P61         X      Y      Z      0 to Z/6-1     Y X Z
+       P65         X      Y      Z      0 to Z/6-1     Y X Z
+</pre>
+			<H3>
+				<A NAME="output_from_structure_factor_calculation"></A>OUTPUT from Structure 
+				Factor Calculation</H3>
+			Note: The logfile has been flagged with <A HREF="xloggraph.html">XLOGGRAPH</A> symbols 
+			to allow selected output to be displayed on an Xterminal.
+			<dl>
+				<dt>(a)<dd>
+						The limits of the box used in modelling the electron density. <dt>(b)<dd>
+								A list, with coordinates, of the first 10 atoms included in generating the 
+								model electron density map. <dt>(c)<dd>
+										The number of atoms input, the number of atoms in the sorted list of atoms, and 
+										the number of atoms used in generating the electron density. <dt>(d)<dd>
+												The minimum, average and maximum values of the temperature factors for the 
+												atoms. <dt>(e)<dd>
+														Minimum and maximum electron density values are printed for each section of the 
+														generated density. The number of slabs used depends on the space allocated for 
+														the work arrays in the program. <dt>(f)<dd>
+																The number of reflections used and the number of reflections on file. <dt>(g)<dd>
+																		Old and new scale factors (with an overall temperature factor BOV if 
+																		temperature factor dependent re-scaling was applied). <dt>(h)<dd>
+																				A structure factor summary table in ranges of 4sin**2theta/lambda**2 giving, 
+																				for each range, the number of reflections, the average values of Fobs and 
+																				Fcalc, the reliability index and an average value of the weighted errors. <dt>(i)<dd>
+																						The overall reliability index after re-scaling.</dd>
+			</dl>
+			<H3>
+				<A NAME="notes_on_xyzout"></A>NOTES ON XYZOUT</H3>
+		Coordinates in Brookhaven format with the XYZ or B shifts applied - output of 
+		unrestrained refinement.
+		<P>
+			The proportion of the shift to be applied can be modified (see the description 
+			of keyword <A HREF="#stepsize">STEPSIZE</A>
+		).
+		<P>
+			If an input atom has occupancy of 0.0 it will be copied to the output file.
+			<H3>
+				<A NAME="notes_on_hklout"></A>NOTES ON HKLOUT</H3>
+			The output file contains FC and PHIC only for those reflections which exist in 
+			the HKLIN file, even if the structure factor calculation has covered more of 
+			reciprocal space. The list will include ALL reflections in HKLIN within the 
+			outer resolution limit. There is no inner resolution cutoff, or sigma cutoff. 
+			Hence there may well be more reflections included than during refinement and 
+			your R-factor may well be higher than the one output during refinement. All 
+			columns specified in LABIN will be written to HKLOUT. If <A HREF="#labout_allin">ALLIN</A>
+		is specified then all input columns will be in HKLOUT.
+		<P>
+			If no HKLIN has been assigned the program outputs a list of H K L FC PHIC for 
+			all possible reflections within the reciprocal asymmetric unit for the <A HREF="#sfsgroup">
+				SFSGROUP</A>
+		that are within the requested resolution limits.
+		<P>
+			FC and PHIC can be modified for use in solvent flattening (see keyword <A HREF="#avmode">
+				AVMODE</A>).
+			<H3>
+				<A NAME="notes_on_mapout"></A>NOTES ON MAPOUT</H3>
+			Several types of maps can be output - see keyword <A HREF="#mode">MODE</A> for 
+			how to produce each one.
+			<dl>
+				<dt>a)<dd>
+						The `atom map'. All density assigned at each grid point due to a neighbouring 
+						atom. <dt>b)
+							<dd>
+								The `atom map' modified to include a residue flag for each main chain and side 
+								chain atom which has contributed most to this grid point. This allows the map 
+								correlation program to produce a set of correlations residue by residue between 
+								an ideal map (the `atom map') and any other map - part of real space R-factor 
+								stuff. <dt>c)<dd>
+										The `atom map' modified to include an atom number flag. This can be used to 
+										look at hydrogen density in a neutron map. <dt>d)<dd>
+												A `solvent map' with zero at all points within the protein and some constant 
+												(H2obg) at all other points. This is a step on the way to adding in bulk 
+												solvent to calculated structure factors.</dd>
+			</dl>
+			<H3>
+				<A NAME="notes_on_gradmat"></A>OUTPUT from the Gradients Calculation - NOTES ON 
+				GRADMAT</H3>
+			A direct access file of gradient information is output ready for input to 
+			PROLSQ (no longer available in the CCP4 Suite). The following items are output 
+			in this section:
+			<dl>
+				<dt>(a)<dd>
+						The value of the minimisation function (PII). Plus the number of reflections 
+						included in the calculation of PII. <dt>(b)<dd>
+								The average and peak values of the gradients and shifts. <dt>(c)<dd>
+										The slope of the search direction and the initial step size used in the 
+										quadratic approximation to find the optimum step size. <dt>(d)<dd>
+												For unrestrained refinement a table of estimated error against B-factor is 
+												given. For each temperature range there is the number of atoms and the 
+												estimated error (standard deviation).</dd>
+			</dl>
+			<H3>
+				<A NAME="output_from_calculation_optimum_shifts"></A>OUTPUT from the 
+				Calculation of the Optimum Shifts</H3>
+			This section gives PII (minimisation function) values, relative slopes, 
+			calculated optimum step sizes and, when determined, the actual step size used 
+			in applying the shifts.
+			<H3>
+				<A NAME="notes_on_stepsize"></A>NOTES ON STEPSIZE</H3>
+			R. Agarwal attempted to estimate the best step size to use during <A HREF="#mode_sfref_unrestrained">
+				UNRESTRAINED</A> refinement. A displacement of the form alphaDelta(u), 
+			which minimises the minimisation function of the least squares P(u + 
+			alphaDelta(u)), will be the optimum where alpha is the optimum step size. As P 
+			as a function of alpha approximates to a quadratic function, it is possible to 
+			calculate the optimum step size, alphaopt, from the values of P(alpha) at alpha 
+			= 0 and alpha = alpha1 and from the slope of P(alpha) at alpha = 0. The initial 
+			step size alpha1 used in the calculation is chosen as 1.0 or the value input in 
+			the control data. If the fractional change in step size is greater than SZFRC 
+			(by default 0.3) then a second calculation is done with alpha1 taken as the 
+			optimum step size just calculated.
+			<H2>
+				<A NAME="common_problems"></A>COMMON PROBLEMS</H2>
+			<OL>
+				<LI>
+					<i>Problem:</i> Warning after opening the input reflection file HKLIN about the 
+					sort order not being H K L.
+					<p>
+						<i>Solution:</i> This may not crash the program (sometimes it does) but even so 
+						some of the output may be unreliable if the reflections in HKLIN have not been 
+						sorted with h as the slowest, k as the intermediate, and l as the fastest 
+						varying index. See <A HREF="#notes_on_hklin">NOTES ON HKLIN</A>
+					above for the requirements placed on HKLIN.<p></p>
+				<LI>
+					<i>Problem:</i> Program stops with the message:<br>
+					<tt>MTZ file label duplicates program label name</tt>
+					<p>
+						<i>Solution:</i> SFALL should warn you before stopping, which labels are 
+						duplicated, e.g.:
+						<pre>
+ Warning: this may fail!
+ This column label FC         is also a program label
+</pre>
+						The suggested workaround at present is to rename the offending file labels, for 
+						example using a utility program such as <a href="sftools.html">SFTOOLS</a>
+					, before rerunning the program.<p></p>
+				<LI>
+					<i>Problem:</i> No conversion from orthogonal to fractional atom co-ordinates 
+					(ie listed fractional co-ordinates have no value, or the same values as the 
+					orthogonal co-ordinates).
+					<p>
+						<i>or</i>
+					<p>
+						<i>Problem:</i> Program stops with the message:<br>
+						<tt>**** No Cell Input to subroutine rbfro1?? ****</tt><br>
+					after reading in XYZIN.
+					<p>
+						<i>Solution:</i> Check that CRYST1 and SCALE cards are present in the input 
+						co-ordinate file XYZIN.(See <A HREF="#notes_on_xyzin">NOTES ON XYZIN</A>
+					above).<p></p>
+				<LI>
+					<i>Problem:</i> Program crashes or stops after reporting statistics on B's in <A HREF="#mode_sfcalc">
+						MODE SFCALC</A>. (May also occur in other MODEs for the same reason.)
+					<p>
+						<i>Solution:</i> Check that the input reflection file has the correct 
+						asymmetric unit and that the reflections have been sorted so that h is the 
+						slowest changing index, k is the next, and l varies the fastest. (See <A HREF="#notes_on_hklin">
+							NOTES ON HKLIN</A>
+					above). Nb: the program should now generate an explicit error message 
+					suggesting that this is the problem.<p></p>
+				<LI>
+					<i>Problem:</i> Program fails after printing the title and the line "Chain 
+					Names - First Residue - Last Residue - serial Kcount" (possibly also with error 
+					messages concerning array sizes).
+					<p>
+						<i>Solution:</i> You may have to increase the value of MEMSIZE (see <A HREF="#memory_allocation">
+							MEMORY ALLOCATION</A> above). <EM>N.B.</EM>
+					: the program should now generate an explicit error message suggesting that 
+					this is the problem.<p></p>
+				<LI>
+					Common problems associated with the input map can be found in the section <a href="#notes_on_mapin">
+						NOTES ON MAPIN</a>.</LI>
+			</OL>
+			<H2>
+				<A NAME="examples"></A>EXAMPLES</H2>
+			<H3>
+				<A NAME="example_calculate_map_from_atom_coordinates"></A>Calculate map from 
+				atom coordinates</H3>
+			<pre>
+sfall 
+XYZIN  /f/scratch/swift/pa_model1_2.pdb 
+XYZOUT  $SCRATCH/junk.pdb 
+MAPOUT $SCRATCH/junk.map  
+&lt;&lt; END-sfall
+TITL Phasing on initial PA structure (refined twice)
+GRID 52 64 76
+MODE ATMMAP
+RESO 30 2.1 
+BINS  60
+RSCB 5.0 2.1
+SFSG 1
+END 
+END-sfall
+</pre>
+			<H3>
+				<A NAME="example_read_coordinates_to_calculate_structure_factors"></A>Read in 
+				coordinates to calculate structure factors</H3>
+			<pre>
+sfall 
+HKLIN $SCRATCH/pt2_pt4_shhg2_os2_nat.mtz 
+HKLOUT $SCRATCH/pa_model1_2_phase.mtz   
+XYZIN  /f/scratch/swift/pa_model1_2.pdb 
+&lt;&lt; END-sfall
+TITL Phasing on initial PA structure (refined twice)
+GRID 52 64 76
+MODE SFCALC XYZIN HKLIN
+RESO 30 2.1 
+BINS  60
+RSCB 5.0 2.1
+SFSG 1
+LABI FP=F_V4 SIGFP=SIGF_V4 FREE=FreeRflag
+LABO FC=FC PHIC=AC
+END 
+END-sfall
+</pre>
+			<H3>
+				<A NAME="example_read_map_to_calculate_structure_factors"></A>Read in map to 
+				calculate structure factors</H3>
+			<pre>
+sfall 
+HKLIN $SCRATCH/pt2_pt4_shhg2_os2_nat.mtz 
+HKLOUT $SCRATCH/pa_model1_2_phase.mtz 
+MAPIN $SCRATCH/junk.map  
+&lt;&lt; END-sfall
+TITL Phasing on initial PA structure (refined twice)
+GRID 52 64 76
+MODE SFCALC MAPIN HKLIN
+RESO 30 2.1 
+BINS  60
+RSCB 8.0 2.1
+SFSG 1
+LABI FP=F_V4 SIGFP=SIGF_V4
+LABO FC=FC PHIC=AC
+END 
+END-sfall
+</pre>
+			<H3>
+				<A NAME="example_iteration_cycles"></A>Iteration_cycles to do the 
+				back-transformation and phase combination cycles in solvent flattening 
+				procedure</H3>
+			<pre>
+#   - back-transform map with sfall to obtain Fcs and phases, scale 
+#     and calculate R-factor
+#   - combine the phases with sigmaa
+#   - run fft to calculate a new map with Fobs and combined phases as
+#     input to flatmap
+#
+sfall     HKLIN ../mtz/fvb18_sigmaa.mtz     
+                HKLOUT fvb_flat_14.mtz              
+                MAPIN  fvb_flattened_14.map       
+                &lt;&lt; EOF-sfall
+titl back transformation for cyc 14
+mode SFCALC MAPIN HKLIN
+grid 104 128 160
+reso 200.0  3.0 
+BINS 40
+rscb 10.0 3.0
+sfsg  19
+AVMODE RADIUS 8
+badd 0
+FORM NGAUSS 5  C H N O S
+LABI FP=fvb_Fnp SIGFP=fvb_SIGFnp - 
+F0=PHIB_I3 F1=FOM_I3  -
+F2=A F3=B F4=C F5=D 
+LABO   FC=FCWANG  PHIC=PHICWANG WANGWT=WC8
+END
+EOF-sfall
+</pre>
+			<H3>
+				<A NAME="example_unrestrained_refinement"></A>Unrestrained refinement</H3>
+			<pre>
+sfall      
+HKLIN ../data/taka_fx_trunc.mtz    
+XYZIN ../data/takaxp_model8_b.pdb 
+XYZOUT $SCRATCH/junk.pdb 
+&lt;&lt; END-sfall 
+TITL TAKAXP_MODEL8_9 SFS 
+GRID 104 136 264
+MODE SFREF XYZ UNRESTRAINED
+FREE 3.0
+RESO 20 2.1 60
+RSCB 8.0 2.1
+SFSG 19
+FORM NGAU 2 Ca Cr Fe+2 P 
+LABI FP=FP SIGFP=SIGFP FREE=FreeRflag
+END-sfall
+</pre>
+			<H3>
+				<A NAME="example_prolsq_refinement_cycles"></A>Prolsq refinement cycles</H3>
+			<pre>
+#!/bin/csh -f
+#
+#          REFINE consists of sfall, protin and prolsq
+#
+set LastCycle=146
+set Number_of_Cycles=8
+set CycleCounter=0
+#
+Begin:
+#
+@ CurrentCycle=$LastCycle + 1
+#
+#    ========== SFALL ==========
+#
+set DATE=`date`
+echo ' *************************** '$CurrentCycle' **************' 
+echo '    '
+echo ' Running SFALL for Cycle Number :' $CurrentCycle' on '$DATE
+echo '    ' 
+echo ' *************************** '$CurrentCycle' **************'
+#
+sfall    HKLIN   s91a.mtz 
+        XYZIN   s91a_cyc${LastCycle}.brk 
+        GRADMAT s91a_GRADMAT${CurrentCycle}.tmp 
+        &lt;&lt; END-sfall
+TITL Barnase s91a Mutant
+MODE SFREF XYZB RESTRAINED  ! for prolsq
+GRID 90 90 120       !div CELL by these should give .=. 0.7 A
+BINS 60
+RESO 10 2.2        !last no. is nstep
+RATI 3             !truncate xyz and B shrifts to RATI*RMS
+BADD 0             !smear the gaussians to gen atomic density [10.0]
+RSCB 4 1.5         !limits for refining scale and B, same as RESO ?
+SFSG 145      ! fft space group
+LABIN FP=S91A_F SIGFP=S91A_SIGF FREE=FreeRflag
+END
+END-sfall
+#
+/bin/rm ${SCRATCH}s91a_junk.brk ${SCRATCH}sfall*
+#
+#    ========== PROTIN ==========
+#
+set DATE=`date`
+echo ' *************************** '$CurrentCycle' **************'
+echo '    '
+echo ' Running PROTIN for Cycle Number :' $CurrentCycle' on '$DATE 
+echo ' Running PROTIN for Cycle Number :' $CurrentCycle' on '$DATE
+echo '    ' 
+echo ' *************************** '$CurrentCycle' **************'
+#
+protin XYZIN      s91a_cyc${LastCycle}.brk 
+       PROTOUT    s91a_protout.out 
+       PROTCOUNTS s91a_protcounts.out 
+       DICTPROTN  ${LIBD}protin.dict
+       &lt;&lt; END-protin
+TITLE Barnase Ser91 -&gt; Ala
+SYMMETRY 145
+!
+CHNNAME ID A CHNTYP  1 ROFFSET 0
+CHNNAME ID B CHNTYP  2 ROFFSET 0
+CHNNAME ID C CHNTYP  3 ROFFSET 0
+chnname id E chntyp  4 roffset 0
+!
+CHNTYP  1    NTER 3   VAL 3     CTER 110 ARG 2 
+CHNTYP  2    NTER 3   VAL 3     CTER 110 ARG 2 
+CHNTYP  3    NTER 2   GLN 3     CTER 110 ARG 2 
+chntyp  4    wat
+!
+LIST  FEW          ![few]/some (for &gt;20A)/all
+PEPP  5            !no. of atoms restrained to be in a plane [5]
+VDWR 1 CPR  8 3.4
+END
+END-protin
+#
+#    ========== PROLSQ ==========
+#
+set DATE=`date`
+echo ' *************************** '$CurrentCycle' **************' 
+echo '    ' 
+echo ' Running PROLSQ for Cycle Number :' $CurrentCycle' on '$DATE 
+echo '    ' 
+echo ' *************************** '$CurrentCycle' **************' 
+#
+prolsq XYZIN      s91a_cyc${LastCycle}.brk 
+       PROTOUT    s91a_protout.out 
+       PROTCOUNTS s91a_protcounts.out 
+       GRADMAT    s91a_GRADMAT${CurrentCycle}.tmp 
+       XYZOUT     s91a_cyc${CurrentCycle}.brk 
+       &lt;&lt; END-prol
+TITLE    Barnase s91a Mutant
+CGCYCLES 20  100 1 !max no. cyc for conjugate gradient soln [50]
+ORIGIN 0 0 0           !origin constraint flags
+RESOLUTION 10 2.2      !select Fobs
+OUTPUT XYZ             !o/p XYZ(.brk)/SF(.mtz)/SHIFTS(shifts file)
+RTEST -1 1 1 1 1 1 1 1       !-1 -&gt; +1 when R factor .=25%
+NOUPDATE                    !not update atomic coord in PROTIN o/p file
+MATRIX .30 .85 .85          !1st param adjusts SF/geom contribution
+                            !start=.08;.12;.2;.25;.3;.35; final=.08
+                            !2nd&amp;3rd:shift factors for position and B
+BATOM                       !(+) when refining indiv B
+!
+!               ***** Restraints *****
+DISTANCE     1 0.02 0.04 0.05 0.01 0.1 
+PLANE        1 0.02
+CHIRAL       1 0.12 
+TEMPERATURE  1.0 1.0 1.5 1.5 2.0 0.1   !start
+!TEMPERATURE  1.0 1.5 2.0 2.0 2.5 3.0  !when R factor &lt;25%
+HOLD         0.1 1.0 0.1
+!TORSION      1 20 20 30 50            !when R factor &gt;25%
+TORSION      1 10 10 15 45            !when R factor &lt;25%
+VANDERWAAL   1 0.2 -0.3 0.0 -0.2 0.0
+!
+!                ***** Monitor *****
+MONITOR  DISTAN 3. VANDERWAAL .5  TORSION 3 
+MONITOR  PLANE 3 CHIRAL 3 !for R factor&lt;25%
+END     
+END-prol
+#
+Cleanup:
+#
+/bin/rm s91a_protout.out s91a_protcounts.out s91a_GRADMAT${CurrentCycle}.tmp 
+#
+@ CycleCounter=$CycleCounter + 1
+@ LastCycle=$LastCycle + 1
+#
+#    Test to see whether Number_of_cycles done
+#
+if ($CycleCounter&lt;$Number_of_Cycles) goto Begin
+#
+</pre>
+			<H3>
+				<A NAME="example_unix_runnable"></A>Simple Runnable Examples</H3>
+			<LI>
+				examples/unix/runnable/<A HREF="../examples/unix/runnable/sfall.exam">sfall.exam</A>
+				<H2><A NAME="authors"></A> AUTHORS</H2>
+				Eleanor Dodson and Ted Baker, based on a program by Ramesh Agarwal and Neil 
+				Isaacs. Documented for the Daresbury Laboratory protein crystallography system 
+				by John Campbell.
+				<H2>
+					<A NAME="function"></A>PROGRAM FUNCTION</H2>
+				The program is based on a least-squares refinement technique using fast Fourier 
+				transform (FFT) methods as devised by Ramesh Agarwal. His paper [<A HREF="#reference1">1</A>
+		] on the technique should be studied to get a detailed understanding of the 
+		method and only a broad description of the method is given in this section.
+		<P>
+			The program may be used for
+			<OL TYPE="a">
+				<LI>
+				calculating and outputting the matrix and gradient terms required by the 
+				restrained least squares refinement program PROLSQ (no longer available in the 
+				CCP4 Suite). The calculated shifts can be applied directly to the atomic 
+				coordinates/B-factor, unrestrained refinement.
+				<LI>
+					The generation and calculation of an electron density map from an input set of 
+					atomic coordinates and its transformation, using FFT techniques, to obtain a 
+					set of calculated structure factors. The program SFALL is used to calculate 
+					structure factors from an electron density map using Fast Fourier Transform 
+					techniques. Whenever possible, the crystallographic symmetry is exploited to 
+					increase the efficiency of the calculation. Care must be taken by the user to 
+					ensure that the map has been calculated on a sufficiently fine grid if 
+					significant errors in the calculated structure factors are to be avoided. As a 
+					rough rule a grid size of approximately three times the maximum index of the 
+					data in each direction is appropriate. The use of the Fast Fourier Transform in 
+					structure factor calculations for large molecules has been described and 
+					discussed by L.F. Ten Eyck [<A HREF="#reference3">3</A>].
+				<LI>
+					The calculation of structure factors from an electron density map. The same 
+					cautionary measures must be applied as those explained in (b).</LI>
+			</OL>
+			<H3>
+				<A NAME="modelling_electron_density"></A>Modelling of the Electron Density and 
+				Calculation of Structure Factors</H3>
+			The contribution of an atom to a structure factor is the product of an atomic 
+			form factor function and a Gaussian temperature factor function. If the form 
+			factor function is approximated by a sum of Gaussian functions, then this 
+			contribution may be represented by the sum of Gaussian terms and so may the 
+			modelled electron density. The amount of computation required in setting up the 
+			electron density map is proportional to the number of Gaussian terms used in 
+			approximating the form factor. The use of a two term Gaussian is probably 
+			adequate in most cases where the resolution of the data does not extend beyond 
+			1.5Å. The program does, however, allow for the input of other numbers of terms. 
+			Non default atoms defined in <A HREF="#formfactor">FORMFACTOR</A>
+		are usually represented as five Gaussians since heavy atom scattering factors 
+		are more complex.
+		<P>
+			Tables of coefficients for a five term Gaussian approximation to the atomic 
+			form factors are given in the International Tables for X-ray Crystallography 
+			Vol.IV [<A HREF="#reference2">2</A>]. Some values for two and one term Gaussian 
+			approximations are given in the <A HREF="#reference1">Agarwal paper</A>
+		.
+		<P><A NAME="atom_radius"></A> The radius of the atoms (beyond which the electron 
+			density is considered to be negligible) is also required in the calculation. 
+			The value for this radius must be chosen to balance the requirements of 
+			accuracy (large radius) and speed (small radius). The tables below indicate the 
+			radii required for carbon atoms, for different temperature factors (Bm), to 
+			give a given fractional loss of electron density (DeltaZm/Zm).
+			<pre>
+
+                    DeltaZm/Zm     0.02     0.01     0.005
+Two term Gaussian         Bm
+                           5       1.89     2.06     2.22
+                          10       2.02     2.21     2.38
+                          20       2.26     2.47     2.68
+ 
+More values are given in the <A HREF="#reference1">Agarwal paper</A>.
+</pre>
+		<P>
+		The electron density map is built up using the contributions from each atom 
+		within, or near (within the atom radius) to, the part of the map being 
+		calculated. A three dimensional FFT of the electron density map is used to 
+		calculate the structure factors. In this calculation the space group symmetries 
+		are used whenever possible.
+		<P>
+			If the sampling grid is too coarse, significant errors may occur in the 
+			calculation of the structure factors. These errors may be reduced [<A HREF="#reference3">3</A>] 
+			either by using a finer grid for the calculation or by adding an artificial 
+			extra temperature factor to all the atoms when modelling the density (not 
+			recommended). This factor has also to be taken into account when the calculated 
+			structure factors are compared with the observed structure factors.
+			<H3>
+				<A NAME="calculation_gradients"></A>Calculation of the Gradients</H3>
+			The gradients are calculated by convoluting a modified difference density 
+			function with the electron densities of the individual atoms being refined. The 
+			density function is calculated by calculating the Fourier transform (again 
+			using the FFT) of a difference function based on the weighted values of the 
+			errors in the structure factors. A three dimensional difference FFT is 
+			calculated and convoluted with the derivatives of the atomic density for x y 
+			and z, or B. The convolution is carried out by summing, over all the grid 
+			points enclosed by the atom (radius defined as described <A HREF="#atom_radius">above</A>), 
+			the product of the electron density of the atom and the value of the modified 
+			difference density function. Thus, the calculation of the gradients is similar 
+			to the calculation of the structure factors with the steps being reversed.
+			<H3>
+				<A NAME="normal_matrix"></A>The Normal Matrix</H3>
+			Only the diagonal terms (interacting between parameters of the same atom) are 
+			calculated for the normal matrix. The method described by <A HREF="#reference1">Agarwal</A>
+		is used but is generalised to allow for a variable number of terms in the 
+		Gaussian approximations to the atomic form factors. Also the function A'xx(bi) 
+		is tabulated for each value of bi from 1 to 150 and the nearest values, rather 
+		than interpolated values, are selected from the table when forming the diagonal 
+		terms of the matrix.
+		<P>
+			A set of terms, H, is only calculated for one parameter as the other diagonal 
+			terms may be calculated to a good degree of accuracy from this initial set. An 
+			inverse matrix is set up for calculating the orthogonalised contributions of 
+			the gradient.
+			<H3>
+				<A NAME="calculation_shifts"></A>Calculation of the Shifts</H3>
+			The shifts, calculated as described above, may not in fact be the optimum ones 
+			to use due to the approximate nature and the non-linearity of the method used. 
+			In practice, it is unwise to apply large shifts as these may give rise to 
+			instability in the refinement or to `oscillating atoms' and thus provision is 
+			made to truncate the larger shifts. The program allows for the input of a 
+			ratio, <A HREF="#ratio">RATIO</A>, which may be used to truncate the maximum 
+			value of a shift to
+			<pre>
+      RATIO * r.m.s. value of the shifts
+</pre>
+		At the beginning of a refinement, the value of RATIO should be kept fairly low 
+		(1.5-2.0) as shifts tend to be large when the errors in the parameters are 
+		large. When most atoms are well refined, then the ratio may be increased to 3 
+		or 4, to allow for the refinement of these atoms which are poorly placed.
+		<P>
+			Even these truncated shifts may not be the optimum shifts to be applied. A 
+			displacement of the form alphaDelta(u), which minimises the minimisation 
+			function of the least squares P(u + alphaDelta(u)), will be the optimum where 
+			alpha is the optimum step size. As P as a function of alpha approximates to a 
+			quadratic function, it is possible to calculate the optimum step size, 
+			alphaopt, from the values of P(alpha) at alpha = 0 and alpha = alpha1 and from 
+			the slope of P(alpha) at alpha = 0. The initial step size alpha1 used in the 
+			calculation is chosen as 1.0 or the value input in the control data. If the 
+			fractional change in step size is greater than SZFRC (by default 0.3) then a 
+			second calculation is done with alpha1 taken as the optimum step size just 
+			calculated.
+			<H2><A NAME="references"></A> REFERENCES</H2>
+			<ol>
+				<!-- KEEP startreferencelist -->
+				<li>
+					<A NAME="reference1"></A>
+				Agarwal, R.C., Acta Cryst., (1978), A34, 791-809.
+				<li>
+					<A NAME="reference2"></A>
+				International Tables for X-ray Crystallography, Vol.IV, (1974), Kynoch Press.
+				<li>
+					<A NAME="reference3"></A>
+				Ten Eyck, L.F., Acta Cryst., (1977), A33, 486.
+				<li>
+					<A NAME="reference4"></A>
+				Bruenger, A.T., Nature 355, 472-4 (1992)
+				<li>
+					<A NAME="reference5"></A>
+				International Tables for Crystallography, vol. C, (1995), Kluwer.
+				<li>
+					<A NAME="reference6"></A>"Refinement of protein structures", Proceedings of the 
+					Daresbury Study Weekend 15-16 November, 1980 (Compiled by P.S. Machin, J.W. 
+					Campbell and M. Elder). 
+					<!-- KEEP endreferencelist --></li>
+			</ol>
+			<H2><A NAME="see_also"></A> SEE ALSO</H2>
+			<A HREF="cad.html">cad</A>, <A HREF="freerflag.html">freerflag</A>, <A HREF="fft.html">
+				fft</A>, <A HREF="icoefl.html">icoefl</A>, <A HREF="mtzutils.html">mtzutils</A>,
+			<A HREF="overlapmap.html">overlapmap</A>, <A HREF="pdbset.html">pdbset</A>, <A HREF="prolsq.html">
+				prolsq</A> (no longer available in the CCP4 Suite), <A HREF="protin.html">protin</A>,
+			<A HREF="sigmaa.html">sigmaa</A>, watersearch (1), <A HREF="xloggraph.html">xloggraph</A>
+		, X-PLOR manual</LI>
+	</body>
+</html>

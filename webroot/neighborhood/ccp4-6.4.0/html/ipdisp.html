@@ -1,0 +1,594 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::IPDISP::Deprecated::Plotting / Graphics::displays images from a variety of (crystallographic) sources::X-Windows tool:::::: -->
+
+<H1> IPDISP (CCP4: Deprecated Program)</H1>
+<H2> NAME</H2>
+<b>ipdisp </b>
+- X-Windows tool, displays images from a variety of (crystallographic) sources.
+<H2> SYNOPSIS</H2>
+<b>ipdisp  </b>
+[<A HREF="#options">option</A>]
+<H2> <A NAME="description"></A>DESCRIPTION</H2>
+
+<p><FONT COLOR="#FF0000">Use <a href="idiffdisp.html">idiffdisp</a> instead.</FONT></p>
+
+<p>This program allows the display of images from a variety of sources.
+The primary assumption is that the image file consists either of a
+known (currently MAR) format, or of an array of pixel values expressed
+as unsigned short integers (integer*2), with an optional header (which
+is ignored except for MAR images): this second class includes unpacked
+images from most detector systems. The image file is described in a
+so-called spdfil, which is specified on the command line.
+</p>
+<p>
+Historically, this program was a stand-alone version of a display
+level from Madnes, so follows a few Madnes ideas.
+</p>
+<P> 
+The program is run by
+<pre>
+
+        ipdisp  <a href="#options">[option]</a>
+
+Examples:
+        ipdisp my_image.mar2000
+
+        ipdisp -Mo -f image.img
+
+        ipdisp -M -t image_###.img -d 120 -w 0.88
+
+</pre>
+The first [option] defines the appropriate image type, and may be
+followed by options to set an image filename and to set parameters 
+which may otherwise be set interactively from the screen menu. In the
+case of Mar IP files with extensions of the form ".marXXXX" (where
+XXXX is a number eg 2000), the filename name itself (or template name
+following -t) is sufficient
+
+<h3>Contents:</h3>
+
+<ol>
+ <li><a href="#options">Options for ipdisp</a>
+ <li><a href="#display_window">Description of the display window</a>
+ <li><a href="#details">Details of the display window</a>
+     <ol>
+       <li><a href="#display_parameters">Display parameter area</a>
+       <li><a href="#output_area">Output area</a>
+       <li><a href="#main_menu">Main menu</a>
+       <li><a href="#image_display">Image display area</a>
+     </ol>
+  <li><a href="#descript_spdfils">Description of spatial distortion files (spdfils)</a>
+     <ol>
+       <li><a href="#data_items">Description of data items</a>
+       <li><a href="#create_spdfil">Creating or customising spdfils</a>
+     </ol>
+  <li><a href="#list_of_spdfils">List of distributed spdfils</a>
+</ol>
+
+<a name="options"></a>
+<H2>Options for ipdisp</H2>
+
+Optional input (as alternative to interactive input):
+<pre>
+
+      -h    gives a list of the  image type options
+      -s    defines spdfil; not needed if one of the above options is given
+      -f    image filename: if this is given, it will be displayed immediately
+      -t    template name
+      -i    image increment (nearly always = 1,the default)
+      -d    detector distance (mm)
+      -a    swing angle theta (degrees)
+      -w    wavelength (A)
+
+</pre>
+<P>
+If the filename or template name have extensions of the form
+".marXXXX", the type will be set automatically and the distance and
+wavelength will be read from the header.</P>
+<p>
+The following define the image type (ie which spdfil to read) - if
+used, they MUST come before any other option: either version may be
+used for unix, only the second for VMS ( in which case only the first
+two characters are needed):
+</P>
+<pre>
+
+      -ab -AB      2x2 ADSC scanned binned mode
+      -a  -A       2x2 ADSC scanned
+      -m  -MAr     MAR  scanner (small plate, SGI)
+      -mc -MC      MAR  CCD scanner 130mm
+      -md -MD      MAR  CCD scanner 165mm
+      -M  -BMar    MAR  scanner (large plate, SGI, squashed data)
+      -Mo -BOmar   MAR  scanner (large plate, SGI, original format with overflow)
+      -V  -MVaxmar MAR  scanner (large plate, Vax)
+      -v  -MVax    MAR  scanner (small plate, Vax)
+      -r  -R       RAXIS II scanner
+      -rc -RC      RAXIS II scanner (coarse scan)
+      -r4 -R4      RAXIS 4 scanner (100 micron scan)
+      -pf -PF      Photon Factory Weissenberg plate
+      -c  -C       Mac Science 2500x2500
+      -d3 -D3      MAC Science DIP2030
+      -d4 -D4      MAC Science DIP2040
+      -dc -DC      D2AM CCD scanner
+
+[Obsolete?
+      -e  -EMbl    EMBL scanner (prototype) 
+      -g  -GEl     gel
+      -o  -OLmb    Optronics film scan (LMB scan size)
+      -O  -OOlmb   Optronics film scan (LMB scan size, original file)
+      -y  -Ylmb    Molecular Dynamics off-line scanner at LMB
+      -Y  -BYlmb   Molecular Dynamics large scanner at LMB
+      -z  -XLmb    Molecular Dynamics small scanner at LMB
+      -i2 -TIffgel TIFF file translated from a GEL file]
+
+      or the spdfil filename can be given (full path not needed).
+
+</pre>
+The complete list of supported detectors and their associated spdfils is given
+below (see <a href="#list_of_spdfils">"List of distributed
+spdfils"</a>) (see the ipdisp script or COM file on VMS for details)
+
+<a name="display_window"></a>
+<H2>DISPLAY WINDOW</H2>
+
+The display window is divided into 4 main areas: <A HREF="#display_parameters">Display Parameter
+area</A>, <A HREF="#output_area">Output area</A>, <A HREF="#main_menu">Main menu</A>, <A HREF="#image_display">Image display area</A>.
+<P> 
+The left mouse button is the main pointer, the middle button
+is used on the image area to control the magnify window, the right
+button for sub-menu options in the image area
+<dl>
+<dt> 1) <a href="#display_parameters">Display parameters</a><dd>
+This allows a number of parameters affecting the display &amp;
+other options to be changed. Yes/No toggles can be changed by
+clicking the left mouse button on the Yes/No button. Numbers can be
+changed by clicking on the number with the left button, then typing
+the number, terminated by &lt;cr&gt;
+<dt> 2) <a href="#output_area">Output area</a><dd>
+This area reports the results of clicking on the image, etc.
+No input is accepted
+<dt> 3) <a href="#main_menu">Main menu</a><dd>
+Click left button to select an option
+<dt> 4) <a href="#image_display">Image display area</a><dd>
+In the window area, the left mouse button can be used to
+select a rectangle by dragging. The average value, rms deviation &amp;
+number of points are reported in the <A HREF="#output_area">Output area</A>. A selected rectangle
+may be zoomed to fill the display area by the menu option Zoom:
+click Zoom again to restore the full image.
+</dl>
+<P> 
+The middle mouse button controls the magnify window (top
+left). Clicking the middle button on the magnify window toggles a double
+size display. Clicking the middle button on the image display freezes
+the magnify window, allowing pixels in the magnify window to be picked
+(but not rectangles).
+<P> 
+The top right panel contains:-
+<OL>
+<LI>Min &amp; Max image values for the grey level scaling
+(equivalent to <A HREF="#display_scale">Scale low &amp; high</A> in the parameter area, but less
+permanent)</LI>
+<LI>cursor position in pixels (REVERSED in order, <EM>i.e.</EM> x==Zms,
+y==Yms). In zoomed images, this is the pixel position in the ZOOMED
+image, not in the whole image. See output area after clicking for
+<A HREF="#output_last_pixel">correct pixel values in the whole image</A>.</LI>
+<LI>Overlay On/Off/Offset menu, toggles display of circle and
+spot overlays (right button to select)</LI>
+<LI>Contrast slider: controls display contrast (left button)</LI>
+<LI>Colour table selection: probably only Black on white &
+White on black are useful (<EM>N.B.</EM> &quot;Yellow if &gt;Max&quot; option makes pixels
+yellow if they are greater than scale-high (=Max) value)</LI>
+<LI>Mag menu: controls magnification in magnify window</LI>
+<LI>PS button: sends image to a Postscript file (after a
+little dialogue)</LI>
+</OL>
+
+<a name="details">
+<H2> DETAILS</H2>
+
+<a name="display_parameters"></a>
+<h3>1) Display parameter area</h3>
+<OL>
+<LI><A NAME="display_signed_image"></A>Signed image: raw images are Unsigned (=No, default).
+Selecting Yes will set negatives = 0 for the displayed image (but
+picked values are still correct)</LI>
+<LI><A NAME="display_scale"></A>Scale low, high: define scaling range, <EM>i.e.</EM> the values of an
+image pixel to be displayed as white or black. The first image
+displayed will be scaled automatically, and the range may also be
+recalculated with the Scale image option in the menu, but you may
+wish to change this. These numbers are exactly equivalent to the
+Min/Max numbers on the image panel, but numbers set here will carry
+over to all images. Use <A HREF="#main_current">Current image</A> option to redisplay image with
+altered scaling.</LI>
+<LI><A NAME="display_pick"></A>Pick area: controls number of pixels displayed by <A HREF="#main_pick">Pick</A></LI>
+<LI><A NAME="display_whole_range"></A>Whole range: not relevant at present</LI>
+<LI><A NAME="display_add"></A>Add: controls the <A HREF="#main_add_images">Add images</A> &amp; <A HREF="#main_overlay_images">Overlay images</A> options,
+but these parameters are also prompted for by these options. Define
+first image number &amp; number of images to add together or overlay.</LI>
+<LI><A NAME="display_distance"></A>Distance, Theta, Wavelength: these must be set before
+resolution or measure calculations are sensible</LI>
+<LI><A NAME="display_beam"></A>Beam pixel Y, Z: these are the pixel coordinates of the
+main beam along fast &amp; slow directions. Normally they will be picked
+up from the spdfil (which should be edited for your site), but they
+can be changed here. Click on the beam centre to get the <A HREF="#output_pixel_coord">pixel
+coordinates</A> in the output area, then click on menu item <A HREF="#main_set_main_beam">Set Main Beam</A>,
+or alternatively type them in to these slots.</LI>
+<LI><A NAME="display_outer_circle"></A>Outer circle: define resolution for the outer circle drawn by the
+<A HREF="#main_circles">Circles</A> option. Default to edge of detector. The <A HREF="#output_circle_resolution">actual resolutions of the
+circles</A> are given in the output area.</LI>
+</OL>
+
+<a name="output_area"></a>
+<h3>2) Output area</h3>
+<OL>
+<LI><A NAME="output_last_pixel"></A>Pixel: last pixel hit (Yms, Zms) or 1st corner of rectangle</LI>
+<LI><A NAME="output_pixel_coord"></A>Pixel coordinates expressed in Mosflm scanner frame in
+mm (as in the BEAM command to Mosflm)</LI>
+<LI><A NAME="output_resolution"></A>Resolution: of last pixel hit (in Angstrom)</LI>
+<LI><A NAME="output_spacing"></A>Spacing: result of <A HREF="#main_measure">Measure</A> option</LI>
+<LI><A NAME="output_average"></A>Average, RMS, number: average, RMS deviation &amp; number of pixels in
+the last selected rectangle</LI>
+<LI><A NAME="output_zoom"></A>Zoom factor: if <A HREF="#main_zoom">Zoom</A> option used</LI>
+<LI><A NAME="output_circle_resolution"></A>Circle resolution: resolution of circles drawn by <A HREF="#main_circles">Circles</A> option</LI>
+</OL>
+
+<a name="main_menu"></a>
+<h3>(3) Main menu</h3>
+<OL>
+<LI><A NAME="main_current"></A>Current image: display whatever is in the current image array. Also
+useful for redrawing image if <A HREF="#display_scale">Scale High &amp; low</A> are changed</LI>
+<LI><A NAME="main_read_file"></A>Read file: give name of file to be read &amp; displayed</LI>
+<LI><A NAME="main_read_image"></A>Read image: give image number to be displayed. The file name will be
+constructed using the template</LI>
+<LI><A NAME="main_read_next_image"></A>Read next image: increment the image number by the image
+increment (normally = +1), display next image in series</LI>
+<LI><A NAME="main_read_prev_image"></A>Read prev image: decrement image number, display previous image</LI>
+<LI><A NAME="main_set_template"></A>Set template: set filename template, as in Madnes (<EM>i.e.</EM>
+filename with # characters which will be replaced by an image
+number). Must be done before <A HREF="#main_read_image">Read image</A>, <A HREF="#main_add_images">Add images</A>, or <A HREF="#main_overlay_images">Overlay
+images</A> options can be used.</LI>
+<LI><A NAME="main_scale_image"></A>Scale image: set high &amp; low image values to display as black or
+white. You may need to change the scale limits to improve the appearance the
+display.</LI>
+<LI><A NAME="main_add_images"></A>Add images: add together a series of images (actually average them).
+You may wish to subtract a dark image from the sum. The <A HREF="#main_write_image">Write image</A> option may
+be used to save the result.</LI>
+<LI><A NAME="main_overlay_images"></A>Overlay images: for a series of images, choose the largest
+value at each pixel. The <A HREF="#main_write_image">Write image</A> option may be used to save the
+result.</LI>
+<LI><A NAME="main_correct_image"></A>Correct image: apply various corrections (not usually useful). Click
+off the sub-menu to cancel</LI>
+<LI><A NAME="main_write_image"></A>Write image: write the current image to disk. Useful with
+<A HREF="#main_add_images">Add</A> or <A HREF="#main_overlay_images">Overlay</A>.  The written image can be read back by ipdisp but may not
+be acceptable to other programs like mosflm.</LI>
+<LI><A NAME="main_set_main_beam"></A>Set Main Beam: set main beam pixel coordinates to last
+picked point, replace values in parameter table.</LI>
+<LI><A NAME="main_fit_circle"></A>Fit circle: click on a series of points defining a circle
+centred on the main beam (<EM>e.g.</EM> a powder ring), then click this menu
+option again to fit a circle to the points. Determines the centre and
+radius of the best-fitting circle, allowing for a scale factor between
+the pixel size in the 2 directions. If the result is accepted, the
+main beam position is set to the centre of the circle, and the pixel
+size in the Yms (==Yc) direction is changed. Useful for determining
+main beam position from powder rings (<EM>e.g.</EM> wax).
+<EM>N.B.</EM> this fit is done in pixel coordinates multiplied by the pixel
+size: it does not take into account any spatial distortion (<EM>e.g.</EM> Roff &amp;
+Toff), nor of detector tilt (theta)</LI>
+<LI><A NAME="main_pick"></A>Pick: toggle display of figure field around picked point on image.</LI>
+<LI><A NAME="main_measure"></A>Measure: toggle measurement of reciprocal lattice spacing. Pick two
+spots on a reciprocal lattice row (left button), then type number of orders, &amp;
+the <A HREF="#output_spacing">lattice spacing</A> is output in the Output area. Beware skew cells, this gives
+you 1/a* etc, not a!</LI>
+<LI><A NAME="main_circles"></A>Circles: toggle display of resolution circles. The <A HREF="#display_outer_circle">resolution of the
+outer circle</A> is defined in the parameter table, the <A HREF="#output_circle_resolution">resolutions of all the
+circles</A> is given in the output area. Note that for the Fast, the display is
+distorted (pixels are displayed as if they were square), so the circles are not
+circular.</LI>
+<LI><A NAME="main_zoom"></A>Zoom: zoom a part of the image. Select an area by dragging a
+rectangle on the image (left button), then click Zoom. A square area enclosing
+the selected rectangle will be displayed. Zooming may be repeated. To restore
+full image, click Zoom when no rectangle is selected.</LI>
+<LI><A NAME="main_exit"></A>Exit: exit program</LI>
+</OL>
+
+<a name="image_display"></a>
+<h3>4) Image display area</h3>
+<blockquote>
+This is 800 x 800 pixels.  Large images are sampled as
+necessary (<EM>e.g.</EM> 1 in 2, 1 in 3, or 1 in 4) on reading in.  Use of <A HREF="#main_zoom">Zoom</A>
+allows the display of all data pixels for a part of any larger image.
+</blockquote>
+
+
+<a name="descript_spdfils"></a>
+<h2>Description of Spatial Distortion Files (spdfils)</h2>
+
+<p>The spatial distortion files (spdfil for short) contain information
+which characterises the image file which is to be viewed - in turn these
+characteristics are determined by 1. detector, 2. collection
+software/hardware, 3. site specific setup.</p>
+
+<p>The spdfils are short text files which can be viewed e.g. using the unix
+command 'more'. A typical spdfil will contain several lines of comments
+and two lines of data. The data lines look like:</p>
+
+<pre>
+# IMGTYP   NHEAD   LRECL NPIXEL NPXREC    IMGDRC   ENDED
+#.......#.......#.......#.......#.......#.......#.......
+RAX            1    1024     950     950    +y+x  litend
+#
+#  YPXMAX    ZPXMAX    YBEAM     ZBEAM    YPXSIZ     ZPXSIZ      ROFF    TOFF
+#.........#.........#.........#.........#.........#.........#.........#.........
+    950.       950.    425.0     425.0     0.2034    0.210     0.0       0.0
+</pre>
+
+<p>Lines beginning with # are comments and are ignored by IPDISP when
+reading the file. The following sections describe the meaning of the different
+items in the data lines, and how to customise existing spdfils or create new
+ones.</p>
+
+<a name="data_items"></a>
+<h3>Descriptions of spdfil data items</h3>
+
+<p><b>Line 1:  imgtyp, nhead, lrecl, npixel, npxrec, imgdrc, ended</b></p>
+
+<p>These entries have the following fixed fortran format:  (A8, 4I8, 2A8), <EM>i.e.</EM>
+imgtyp (string, 8 character field), nhead/lrecl/npixel/npxrec (integers, each
+with an 8 character field), imgdrc/ended (strings, each with 8 character field).</p>
+
+<dl>
+<dt>IMGTYP
+      <dd>Image type, eg 'MAR', EMBL', 'RAX', 'MLDS', 'GEL' etc. Only used
+for reference purposes for the user.
+<dt>NHEAD
+      <dd>number of header records. (1 for MAR, 0 otherwise?)
+<dt>LRECL
+      <dd>record length (may be longer than real size; mustn't be smaller 
+than NPIXEL)
+<dt>NPIXEL
+      <dd>number of pixels to read from each record; this corresponds to
+the number of pixels along the 'fast' axis.
+<dt>NPXREC
+      <dd>number of records to read; this corresponds to the number
+of pixels along the 'slow' axis.
+<dt>IMGDRC
+      <dd>image direction; string of the form <EM>e.g.</EM> -x+y which corresponds to
+the mosflm convention for the order and direction of the axes stored in
+the image file.
+<dt>ENDED
+      <dd>endedness of machine that wrote the image file:
+<ol><li>'litend' (little-ended, ie least significant bit written
+first - this is the default) (Vax- or PC-like)
+    <li>'bigend' (big-ended, ie most significant bit written first) (SGI,
+ESV, Sun, etc)
+</ol>
+This may also contain the string sqt (eg 'bigsqt') indicating squashed
+data above 32767, or ovf (<EM>e.g.</EM> 'bigovf') indicating Mar-style overflow
+table.
+</dl>
+
+<p><b>Line 2: YPXMAX, ZPXMAX, YBEAM, ZBEAM, YPXSIZ, ZPXSIZ, ROFF, TOFF</b></p>
+
+<p>These entries have the following fixed fortran format:  (8F10.4) <EM>i.e.</EM>
+each of the entries are reals with a 10 character field and 4 decimal places.</p>
+
+<dl>
+<dt>YPXMAX
+      <dd>maximum usable pixel along Yms (<EM>i.e.</EM> fast axis)
+<dt>ZPXMAX
+      <dd>maximum usable pixel along Zms (<EM>i.e.</EM> slow axis)
+<dt>YBEAM
+      <dd>Yms coordinate of main beam (<EM>i.e.</EM> along fast axis, guess at
+YPXMAX/2)
+<dt>ZBEAM
+      <dd>Zms coordinate of main beam (<E>i.e.</EM> along slow axis, guess at
+ZPXMAX/2)
+<dt>YPXSIZ
+      <dd>pixel size in mm along Yms
+<dt>ZPXSIZ
+      <dd>pixel size in mm along Zms
+<dt>ROFF
+      <dd>radial offset correction
+<dt>TOFF
+      <dd>tangential offset correction
+</dl>
+
+<p>Of these, NPIXEL, NPXREC, YPXSIZ and ZPXSIZ are detector properties.
+IMGDRC, ENDED are collection characteristics. YBEAM and ZBEAM are site specific.</p>
+
+<p>ROFF and TOFF are corrections to do with scanning errors (the detectors are
+scanned in a spiral and the data are then converted to a rectangular grid for
+storage in the image file - these are corrections for the case when the spiral
+is off-centre ... they should in any case be small so set them both to zero if
+you don't have any better estimates).
+
+<a name="create_spdfil"></a>
+<h3>Creating or customising spdfils</h3>
+
+<p> Customisation may be necessary to correct for the alignment of the
+main beam (YBEAM, ZBEAM), or if the detector operates in different scan
+modes or with different pixel resolutions (NPIXEL, NPXREC, YPXSIZ,
+ZPXSIZ). New detectors may require that you write your own spdfil, with
+the caveat that some recent detectors (<EM>e.g.</EM> Mar345) write the image file
+in a <i>packed</i> format, which IPDISP cannot read without coding changes.
+In these cases it is not sufficient to write a new spdfil.</p>
+
+<p><EM>e.g.</EM> ADSC Quantum-4 CCD has an active area of 2304x2304 pixels with
+pixels being 81.6x81.6 microns. This gives IMGTYP = 'ADSC' (used only for
+reference), NPIXEL and NPXREC = 2304 and YPXSIZ and ZPXSIX = 0.0816.</p>
+
+<p>Then: NRECL should be at least as big as NPIXEL (should be okay if they
+are equal). YPXMAX and ZPXMAX can be set equal to NPIXEL and NPXREC
+respectively, as defaults (not sure what these do).</p>
+
+<p>YBEAM and ZBEAM together define the position of the main beam, and
+ideally this would be at the centre of the image, <EM>i.e.</EM> YBEAM = (YPXMAX/2) 
+and ZBEAM = (ZPXMAX/2). In fact this is unlikely to be exactly true for a
+real experimental setup, and these numbers will have to be adjusted
+slightly. This can be done either by editing the spdfil or from within
+IPDISP. Similarly, ROFF and TOFF are corrections for the deviation for
+ideality of the radial scan, and are setup-specific. Default to 0.0.</p>
+
+<p>IPDISP will look for the spdfils in the directory $CCP4/x-windows/ipdisp
+If you wish to have them elsewhere, you will have to edit the ipdisp script.</p>
+
+<a name="list_of_spdfils"></a>
+<h2>List of distributed spdfils</h2>
+
+<p>This is the complete list of spdfils available at present; not all spdfils
+have associated ipdisp options. Not all detectors are represented
+and it will be necessary to create new spdfils for these (see above).
+Otherwise MOSFLM will view images from most detectors, <EM>e.g.</EM> Mar345.</p>
+
+<table border=0>
+<tr>
+  <th align=left>Unix
+  <th align=left>Unix/VAX
+  <th align=left>Spdfil name
+  <th align=left>Detector
+<tr>
+  <td>-Y
+  <td>-BYlmb
+  <td>spdfil.Mld
+  <td>LMB Molecular Dynamics scanner, 1400x1400 pixel scan
+<tr>
+  <td>-Mo
+  <td>-BOmar
+  <td>spdfil.Sbigmar
+  <td>MAR scanner (large plate, SGI, original format with overflow)
+<tr>
+  <td>-z
+  <td>-ZLmb
+  <td>spdfil.Smld
+  <td>LMB Molecular Dynamics scanner, 512x456 pixel scan
+<tr>
+  <td>-ab
+  <td>-AB
+  <td>spdfil.adsc_binned
+  <td>2x2 ADSC scanned binned mode (*)
+<tr>
+  <td>-a
+  <td>-A
+  <td>spdfil.adsc_unbinned
+  <td>2x2 ADSC scanned (*)
+<tr>
+  <td>-M
+  <td>-BMar
+  <td>spdfil.bigmar
+  <td>MAR scanner (large plate, SGI, squashed data)
+<tr>
+  <td>-V
+  <td>-BVaxmar
+  <td>spdfil.bigvax
+  <td>MAR scanner (large plate, Vax)
+<tr>
+  <td>-o
+  <td>-OLmb
+  <td>spdfil.film
+  <td>Optronics film scan (LMB scan size)
+<tr>
+  <td>-O
+  <td>-OOlmb
+  <td>spdfil.film2560
+  <td>Optronics film scan (LMB scan size, original file)
+<tr>
+  <td>-g
+  <td>-GEl
+  <td>spdfil.gel
+  <td>gel
+<tr>
+  <td>-i2
+  <td>-TIffgel
+  <td>spdfil.lcl
+  <td>TIFF file translated from a GEL file
+<tr>
+  <td>-e
+  <td>-EMbl
+  <td>spdfil.lmb
+  <td>EMBL scanner (prototype)
+<tr>
+  <td>-m
+  <td>-MAr
+  <td>spdfil.mar
+  <td>MAR scanner (small plate, SGI)
+<tr>
+  <td>-mc
+  <td>-MCcd
+  <td>spdfil.marccd
+  <td>130mm MAR CCD scanner (*)
+<tr>
+  <td>-md
+  <td>-MD
+  <td>spdfil.marccd165
+  <td>165mm MAR CCD scanner (*)
+<tr>
+  <td>-v
+  <td>-MVax
+  <td>spdfil.marvax
+  <td>MAR scanner (small plate, Vax)
+<tr>
+  <td>-c
+  <td>-C
+  <td>spdfil.mcs
+  <td>Mac Science 2500x2500
+<tr>
+  <td>-d3
+  <td>-D3
+  <td>spdfil.dip2030
+  <td>Mac Science DIP2030 (*)
+<tr>
+  <td>-d4
+  <td>-D4
+  <td>spdfil.dip2040
+  <td>Mac Science DIP2040 (*)
+<tr>
+  <td>-y
+  <td>-YLmb
+  <td>spdfil.mld
+  <td>LMB Molecular Dynamics off-line scanner, 700x700 pixel scan
+<tr>
+  <td>-pf
+  <td>-PF
+  <td>spdfil.pf
+  <td>Photon Factory Weissenberg plate
+<tr>
+  <td>-r
+  <td>-R
+  <td>spdfil.rax
+  <td>RAXIS II scanner
+<tr>
+  <td>-r4
+  <td>-R4
+  <td>spdfil.rax4100
+  <td>RAXIS 4 scanner with 100 micron scan (*)
+<tr>
+  <td>-rc
+  <td>-RC
+  <td>spdfil.raxc
+  <td>RAXIS II scanner (coarse scan)
+<tr>
+  <td>-dc
+  <td>-DC
+  <td>spdfil.d2amccd
+  <td>D2AM CCD scanner (*)
+</table>
+
+<p>
+Files for Mar345-style images, loaded automatically by ipdisp script:-
+<p>
+spdfil.mar1200, spdfil.mar1600, spdfil.mar1800, spdfil.mar2000,
+spdfil.mar2300, spdfil.mar2400, spdfil.mar3000, spdfil.mar3450
+</p>
+
+<p><EM>N.B.</EM>: spdfils marked with (*) are new and have not been widely tested. 
+Thanks to
+Dave Lawson for the RAXIS 4 spdfil, Sean McSweeney for the Mar CCD and ADSC
+spdfils, Jean-Luc Ferrer for the D2AM CCD spdfil, and to Atsushi Nakagawa 
+for the MAC science DIP2030 and DIP2040 spdfils.</p>
+
+<H2>AUTHOR</H2>
+Phil Evans, MRC LMB, Cambridge
+</body></html>

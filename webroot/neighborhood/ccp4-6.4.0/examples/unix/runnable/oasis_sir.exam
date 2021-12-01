@@ -1,0 +1,51 @@
+#!/bin/sh
+
+set -e
+
+# bug # 3192 - run-all examples produce harvest files - well to counteract
+# this here set HARVESTHOME to somewhere in $CCP4_SCR
+
+HARVESTHOME=$CCP4_SCR
+export HARVESTHOME
+
+# Calculate phases from refined model for later comparison
+
+sfall hklin $CEXAM/rnase/rnase25.mtz xyzin $CEXAM/rnase/rnase.pdb \
+      hklout $CCP4_SCR/rnase_mod.mtz <<EOF
+mode sfcalc xyzin hklin
+labi FP=FPTNCD25 SIGFP=SIGFPTNCD25
+labo allin
+EOF
+
+# Use sftools to calculate isomorphous difference
+
+sftools <<EOF
+read $CCP4_SCR/rnase_mod.mtz
+calc D col DIFFPTNCD25 = col FPTNCD25 col FNAT -
+calc Q col SIGDIFFPTNCD25 = col SIGFPTNCD25 2 ** col SIGFNAT 2 ** + 0.5 **
+write $CCP4_SCR/rnase_sir.mtz
+y
+exit
+EOF
+
+oasis hklin $CCP4_SCR/rnase_sir.mtz hklout $CCP4_SCR/rnase_phase.mtz <<eof
+LABIN FP=FNAT SIGFP=SIGFNAT DANO=DIFFPTNCD25 SIGDANO=SIGDIFFPTNCD25 PHIC=PHIC
+TIT   SIR phasing using Pt derivative
+CON   C  3720   N  976   O  1272   S  32 PT 20
+KMI   0.10
+CYC   1
+POS
+  PT  1  0.567   0.829   0.018    0.416   30.0
+  PT  2  0.842   0.945   0.467    0.335   30.0
+  PT  3  0.103   0.940   0.194    0.310   30.0
+  PT  4  0.190   0.006   0.744    0.282   30.0
+  PT  5  0.047   0.852   0.277    0.179   30.0
+SIR
+eof
+
+dm hklin $CCP4_SCR/rnase_phase.mtz hklout $CCP4_SCR/rnase_dm.mtz <<EOF
+SOLC 0.464
+MODE SOLV HIST MULT
+NCYCLE AUTO
+LABIN FP=FP SIGFP=SIGFP PHIO=PHIB FOMO=FOM
+EOF

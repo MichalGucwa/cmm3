@@ -1,0 +1,131 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#======================================================================
+#
+# mapave script
+#
+#======================================================================
+
+  source [SearchPath TOP utils map_utils.tcl ]
+
+#----------------------------------------------------------------
+# Run FFT to generate map
+#----------------------------------------------------------------
+
+  if [StringSame $MAPAVE_INPUT MTZ ] {
+
+    set CELL_MAP [GetTmpFileName -ext map ]
+    set IFXYZLIM 1
+    set XYZLIM_1 0.0
+    set XYZLIM_2 1.0
+    set XYZLIM_3 0.0
+    set XYZLIM_4 1.0
+    set XYZLIM_5 0.0
+    set XYZLIM_6 1.0
+    set SPACE_GROUP P1
+
+    CreateComScript  fft fft_script
+    set cmd "[BinPath fft] HKLIN \"$HKLIN\" MAPOUT \"$CELL_MAP\""
+
+    set status [Execute $cmd $fft_script program_status report ]
+
+#----------------------------------------------------------------
+# Run mapmask to expand map to unit cell
+#----------------------------------------------------------------
+
+  } elseif [StringSame $MAPAVE_INPUT ASYM_MAP ]  {
+  
+    set CELL_MAP [GetTmpFileName -ext map]
+    set cmd "[BinPath mapmask] MAPIN \"$MAPIN\" MAPOUT \"$CELL_MAP\""
+
+    WriteComFile  mapmask_script "XYZLIM 0.0 1.0 0.0 1.0 0.0 1.0"
+
+    set status [Execute $cmd $mapmask_script program_status report ]
+
+  } else {
+
+     set CELL_MAP $MAPIN
+
+  }
+
+#---------------------------------------------------------------
+# Mapdump Find the map grid - needed if maprot input does not 
+# have MSKIN or WRKIN
+#---------------------------------------------------------------
+
+  if { [StringSame $MAPAVE_MODE CORRELATION CORRELATION_MASK ]  } {
+    set IFXYZLIM 1
+    set IFCELL 1
+    set IFGRID 1
+    set SPACE_GROUP 1
+
+    if { $GRID_1 == "" || $CELL_1 == "" } {
+
+      GetMapHeader $CELL_MAP space_group cell xyzlim grid axes
+      if { $GRID_1 == "" } {
+        for { set n 3 } { $n >= 1 } { incr n -1 } {
+          set GRID_[subst $n] [lindex $grid [expr $n -1]]
+        }
+      }
+      if { $CELL_1 == "" } {
+        for { set n 6 } { $n >= 1 } { incr n -1 } {
+          set CELL_[subst $n] [lindex $cell [expr $n -1]]
+        }
+      }
+    }
+  } else {
+    set IFXYZLIM 0
+    set SPACE_GROUP ""
+  }
+
+#----------------------------------------------------------------
+# Run maprot to generate output averaged map
+#----------------------------------------------------------------
+
+  CreateComScript maprot maprot_script
+  set cmd "[BinPath maprot] MAPIN \"$CELL_MAP\""
+  if [StringSame $MAPAVE_MODE GRAPHICS AVERAGED] {append cmd " MSKIN $MSKIN"}
+  if [StringSame $MAPAVE_MODE AVERAGED] {
+    append cmd " MAPOUT \"$MAPOUT\""
+  } else {
+    append cmd " WRKOUT \"$MAPOUT\""
+  }
+  set status [Execute $cmd $maprot_script $LOG_FILE program_status report ]
+
+
+#----------------------------------------------------------------
+# Correlation mask mode - use Mapmask to make mask and optionally
+# Ncsmask to clean up the mask
+#----------------------------------------------------------------
+
+  if [regexp CORRELATION_MASK $MAPAVE_MODE] {
+
+    set MSKTMP [GetTmpFileName -ext msk]
+
+    set cmd "[BinPath mapmask] MAPIN \"$MAPOUT\" MSKOUT \"$MSKTMP\""
+
+    WriteComFile mapmask_script "MASK VOLUME $VOLUME"
+
+    set status [Execute $cmd $mapmask_script $LOG_FILE program_status report ]
+
+    if {  $IFPEAK } {
+
+       set cmd "[BinPath ncsmask] MSKIN \"$MSKTMP\" MSKOUT \"$MSKOUT\""
+
+       WriteComFile ncsmask_script "peak $PEAK"
+     
+       set status [Execute $cmd $ncsmask_script \
+		$LOG_FILE program_status report ]
+
+    } else {
+       MoveFile $MSKTMP $MSKOUT
+    }
+
+  }

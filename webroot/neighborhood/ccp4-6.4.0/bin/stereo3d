@@ -1,0 +1,160 @@
+#!/bin/sh
+#
+#	Raster3D utility script "stereo3d" V3.0
+#       =======================================
+#
+# Ethan A Merritt - December 2010
+#
+# Renders a single Raster3D scene description as a side-by-side stereo pair.
+# By default this version of the stereo3d script uses a shear operation to 
+# make the left/right images.  The -angsep option causes it to use angular 
+# separation instead. In this case the angular separation is pre-set to 
+# +/- 2.5 degrees.  If you want some other value you can edit the script.
+# Neither shear nor rotation is perfect; relative weak points are shown
+# in this table:
+#                               shear           rotation
+#                               -----           --------
+#    Z-clipping                 OK              serious problem
+#    specular highlights        OK              minor problem
+#    Bounding planes            bad             OK
+#    shadows                    bad (fixable?)  OK
+#
+#
+# Requires:
+#	ImageMagick utilities identify, mogrify, and montage.
+# 	sed (previous versions used awk/nawk).
+# This script was tested using ImageMagick version 6.6.1
+#
+# Usage:
+#	stereo3d [-angsep] [-border] [-png  [out.png]] < infile.r3d > outfile.png
+#
+# Temporary files:
+#	Scratch files are put in $TMPDIR, if it exists, else in /tmp
+#
+
+#
+# Construct base name for scratch files
+#
+if [ "$TMPDIR" ]; then
+    tmp=$TMPDIR/$$
+elif [ -d /usr/tmp ]; then
+    tmp=/usr/tmp/$$
+else
+    tmp=/tmp/$$
+fi
+# echo "DEBUG scratch files to $tmp"  1>&2
+
+#
+# Parse command line options
+#
+unset STEREOBORDER
+unset outfile
+unset img
+mode=
+previous=
+render_options=
+normal_options=
+
+for option in $*
+do
+if   [ "$option" = "-border" ]; then STEREOBORDER=1; 
+elif [ "$option" = "-png"    ]; then img=png; 
+elif [ "$option" = "-tiff"   ]; then img=tiff; 
+elif [ "$option" = "-angsep" ]; then mode="-ang 2.5"; 
+else
+    if [ "$previous" = "-tiff" ] || [ "$previous" = "-png" ] ; then
+    	outfile="$option"
+	if [ `echo "$option" | sed -e 's/\(.\).*/\1/'` != "-" ]; then
+	    outfile="$option"
+	fi
+    elif [ "$previous" = "-size" ] ; then
+    	normal_options="${normal_options} -size $option"
+    	render_options="${render_options} $option"
+    else
+	render_options="${render_options} $option"
+    fi
+fi
+previous="$option"
+done
+
+if [ "$img" != "tiff" ]; then
+    img=png
+fi
+
+if [ "$outfile" ]; then
+    echo "stereo3d: $img output to $outfile" 1>&2
+else
+    echo "stereo3d: $img output to stdout" 1>&2
+fi
+
+#
+# Call normal3d to create left/right pair of input descriptions
+# Default is to use a shear operation to create stereo effect
+# -angsep selects angular separation instead
+
+if normal3d -stereo ${tmp} -expand $mode ${normal_options} > ${tmp}_stereo3d.tmp 
+then
+    echo "stereo3d: normal3d seems to be OK" 1>&2
+else
+    echo "stereo3d: normal3d failed" 1>&2
+    exit -1
+fi
+
+echo "@${tmp}_stereo3d.tmp" >> ${tmp}_left.r3d
+echo "@${tmp}_stereo3d.tmp" >> ${tmp}_right.r3d
+
+#
+# Render left and right panels separately
+# Old code (without label processing) was
+#    render -tiff left.tiff  < left.r3d
+#    render -tiff right.tiff < right.r3d
+#
+# echo " normal3d options $normal_options" 1>&2
+# echo " render options $render_options" 1>&2
+echo "stereo3d: rendering left eye view" 1>&2
+render ${render_options} -${img} < ${tmp}_left.r3d  > ${tmp}_left.${img} 2> /dev/null  \
+         || mv ${tmp}_render.${img}  ${tmp}_left.${img}  
+echo "stereo3d: rendering right eye view" 1>&2
+render ${render_options} -${img} < ${tmp}_right.r3d > ${tmp}_right.${img} 2> /dev/null \
+         || mv ${tmp}_render.${img}  ${tmp}_right.${img}
+#
+# Find image size
+IMAGESIZE=`identify ${tmp}_left.${img} | sed -e 's/.* \([0-9]*x[0-9]*\).*/\1/'`
+WIDTH=`echo $IMAGESIZE | sed -e 's/x.*//'`
+HEIGHT=`echo $IMAGESIZE | sed -e 's/.*x//'`
+IMAGESIZE=`echo "$WIDTH x $HEIGHT" | sed -e 's/ //g'`
+
+#
+echo "stereo3d: joining left and right images" 1>&2
+if [ "$STEREOBORDER" ]; then
+   montage +frame +label -background black -geometry $IMAGESIZE+2+0! -scenes 0 ${tmp}_left.${img} ${tmp}_right.${img} ${tmp}_stereo3d.${img}
+else
+   montage +frame +label -background white -geometry $IMAGESIZE+0+0! -scenes 0 ${tmp}_left.${img} ${tmp}_right.${img} ${tmp}_stereo3d.${img}
+fi
+#
+# This next bit is only necessary because ImageMagick _always_ writes a label
+# field at the bottom of the picture. Even with a font size of 0, you still get
+# two extra rows of pixels at the bottom. So we crop back to the original height.
+#
+if [ "$STEREOBORDER" ]; then
+   echo "stereo3d: adding border" 1>&2
+   NEWWIDTH=`identify ${tmp}_stereo3d.${img} | sed -e 's/.* \([0-9]*\)x[0-9]*.*/\1/'`
+   IMAGESIZE=`echo "$NEWWIDTH x $HEIGHT" | sed -e 's/ //g'`
+   mogrify -crop $IMAGESIZE+0+0 -bordercolor black -border 2x4 ${tmp}_stereo3d.${img}
+fi
+echo "Stereo image size $IMAGESIZE" 1>&2
+
+#
+# output to explicit file or to stdout
+#
+if [ "$outfile" ]; then
+   mv  ${tmp}_stereo3d.${img} $outfile
+else
+   cat ${tmp}_stereo3d.${img}
+fi
+
+#
+# clean up
+#
+rm -f ${tmp}_left.r3d ${tmp}_right.r3d ${tmp}_stereo3d.tmp
+rm -f ${tmp}_left.${img} ${tmp}_right.${img} ${tmp}_stereo3d.${img}

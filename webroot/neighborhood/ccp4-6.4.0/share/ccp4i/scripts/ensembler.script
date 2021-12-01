@@ -1,0 +1,43 @@
+#======================================================================
+#
+# ensembler.script
+#
+#======================================================================
+
+set OUTPUT_FILE_ROOT "[SetOutputFileRoot]"
+set OUTPUT_FOLDER [ file dirname $OUTPUT_FILE_ROOT ]
+set OUTPUT_ROOT [ file tail $OUTPUT_FILE_ROOT ]
+
+set cmd "[BinPath phaser.ensembler] --stdin"
+        
+set config_atoms ""
+
+for { set j 1 } { $j <= $CONFIG_NATOMS } { incr j } {
+    lappend config_atoms $CONFIG_ATOM_NAME($j)
+}
+        
+set CONFIG_ATOMS [ join $config_atoms "," ]
+
+CreateComScript ensembler ensembler_script
+
+set status [Execute $cmd $ensembler_script program_status report]
+
+switch $OUTPUT_STYLE {
+    "merged" {
+        set pdbout [ format "%s_merged.pdb" $OUTPUT_ROOT ]
+        set pdbfile [ file join $OUTPUT_FOLDER $pdbout ]
+
+        if { [ file exists $pdbfile ] } {
+            AddOutputFile $pdbfile
+        }
+    }
+    "separate" {
+        set template [ format "%s_*.pdb" $OUTPUT_ROOT ]
+        set outfiles [ glob -directory $OUTPUT_FOLDER $template ]
+
+        foreach j $outfiles {
+            AddOutputFile $j
+        }
+    }
+}
+

@@ -1,0 +1,115 @@
+#!/bin/sh
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#  proplot.scr
+#  -----------
+#  Shell script for running pplot program
+#  Roman Laskowski, August 1992
+#  sh version from the csh one, Dave Love 5/8/94
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+set -e
+# Check that exactly two parameters have been entered
+if test $# -ne 2 -a $# -ne 3; then
+  echo ' '
+  echo '*** ERROR. Correct usage is:'
+  echo ' '
+  echo '              proplot  filename  [chain]  resolution'
+  echo ' '
+  echo ' '
+  echo '       where  filename    = the coordinates file in Brookhaven format'
+  echo '              [chain]     = an optional one-letter chain-ID'
+  echo '              resolution  = a real number giving the resolution'
+  echo '                            of the structure'
+  echo ' '
+  echo 'For example:-'
+  echo ' '
+  echo '              proplot  /data/pdb/p1amt.pdb  A  1.5'
+  echo ' '
+	exit 1
+fi
+echo ' '
+echo ' '
+echo 'Stereochemical quality plots'
+echo '----------------------------'
+echo ' '
+filename=$1
+echo 'Coordinates file:   [' $filename ']'
+echo ' '
+if test $# -eq 2; then
+  chain=' '
+  resolution=$2
+else
+  chain=$2
+  resolution=$3
+  echo 'Chain:              [' $chain ']'
+  echo ' '
+fi
+echo 'Resolution:          ' $resolution
+echo ' '
+#-------------#
+# T P L O T   #
+#-------------#
+test ! -f prodata && ln -s $CINCL/procheck.dat prodata
+test ! -f procheck.prm && cp $CINCL/procheck.prm .
+echo ' ' > tplot.log
+echo 'Phi-psi and chi1-chi2 distributions' >> tplot.log
+echo '-----------------------------------' >> tplot.log
+echo ' ' >> tplot.log
+echo ' '
+echo 'Phi-psi and chi1-chi2 distributions'
+echo ' '
+tplot >> tplot.log << EOD
+$filename
+$chain
+$resolution
+N
+EOD
+echo ' '
+grep "*" tplot.log || true
+echo ' '
+echo '..................................................................'
+#-------------#
+# P P L O T   #
+#-------------#
+echo ' ' > pplot.log
+echo 'Plots and residue-by-residue listing' >> pplot.log
+echo '------------------------------------' >> pplot.log
+echo ' ' >> pplot.log
+echo ' '
+echo 'Stereochemical quality plots and residue-by-residue listing'
+echo ' '
+pplot >> pplot.log << EOD
+$filename
+$chain
+$resolution
+EOD
+echo ' '
+grep "*" pplot.log || true
+echo ' '
+echo '..................................................................'
+#-------------#
+# B P L O T   #
+#-------------#
+echo ' ' > bplot.log
+echo 'Main-chain bond-lengths and angles, and planar groups' >> bplot.log
+echo '-----------------------------------------------------' >> bplot.log
+echo ' ' >> bplot.log
+echo ' '
+echo 'Main-chain bond-lengths and angles, and planar groups'
+echo ' '
+probplot >> bplot.log << EOD
+$filename
+$chain
+$resolution
+EOD
+echo ' '
+grep "*" bplot.log || true
+echo ' '
+echo '..................................................................'
+#
+# Tidy up at end
+# --------------
+rm prodata
+rm ps.number
+#
+

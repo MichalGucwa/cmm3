@@ -1,0 +1,1070 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4 Program Suite : sfcheck</title>
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX64 6.2 IP19)
+ [Netscape]" />
+</head>
+<body>
+
+<!-- ::INDEX_INFO::SFCHECK::Supported::Model Analysis::program for assessing the agreement between the atomic model and X-ray data:::::::: -->
+
+<h1>SFCHECK (CCP4: Supported Program)</h1>
+
+<h2>NAME</h2>
+<b>sfcheck</b>
+- A program for assessing the agreement between the atomic model and X-ray data.
+
+<H2>SYNOPSIS</H2>
+
+<P><B>sfcheck</B> [<B>HKLIN</B> <I>in.mtz</I>] [<B>XYZIN</B> <I>in.pdb</I>]
+  [<B>HKLOUT</B> <I>out.mtz</I>] [<B>MAPOUT</B> <I>map.ccp4</I>]
+<BR>
+  [<B>PATH_OUT</B> <I>path_out</I>] [<B>PATH_SCR</B> <I>path_scr</I>]
+<BR>
+<a href="#Keywords">[Keyworded input]</a> </P>
+
+<h2>Version  7.0.4 (05.12.2004) - Features</h2>  
+ 
+        A program for assessing the agreement between the atomic 
+        model and X-ray data or EM map(
+  <img src="images/new.gif" alt="new" width="30" height="20"</img> 
+). The program requires one or two input 
+        files, with the coordinates of the model (in PDB or CIF or 
+        BLANC format) and structure factors (in CIF or PDB or BLANC 
+        or MTZ format) or EM (ccp4 format), and runs completely automatically,
+        gives information about R-factor, correlation, Luzzati plot,
+        Wilson plot, Boverall, pseudo-translation, twinning test ...,
+        local error estimation by residues. Sfcheck
+        can compute omit phases and use these instead of phases of model.
+        For output Sfcheck generates a PostScript file.
+        Sfcheck can also create output CIF file 
+        with omit phases or with detwinned data. When input file is EM map
+        program can create new mirror or/and scaled map. 
+
+<hr>
+
+<h2>CONTENTS</h2>
+<ul>
+<li><a href="#Reference"><b>Reference</b></a>
+<li><a href="#Installation"><b>Installation</b></a>
+  <img src="images/new.gif" alt="new" width="30" height="20"</img> 
+<li><a href="#new_style"><b>New style to use</b></a>
+  <img src="images/new.gif" alt="new" width="30" height="20"</img> 
+<li><a href="#Output info"><b>Output information produced by SFCHECK</b></a>
+<li><a href="#Local error estimation"><b>Local error estimation</b></a>
+<li><a href="#Omit procedure"><b>Omit procedure</b></a>
+<li><a href="#Partional information"><b>Partional information</b></a>
+<li><a href="#Twinning test"><b>Twinning test</b></a>
+<li><a<li><a href="#Keywords"><b>Keywords</b></a>
+<li><a href="#Output files"><b>Output files</b></a>
+<li><a href="#redirection"><b>How to redirect output and scratch files</b></a>
+<li><a href="#CCP4"><b>SFCHECK version for CCP4</b></a>
+<li><a href="#batch_examples"><b>Command (batch) file examples</b></a>
+<li><a href="#File formats"><b>File formats</b></a>
+<li><a href="#Memory control"><b>Memory control</b></a>
+<li><a href="#Appendix"><b>Appendix</b></a>
+</ul>
+
+<hr>
+<a name="Reference"></a><h2>Reference</h2>
+
+<pre>
+   Authors:      A.A.Vagin, J.Richelle, S.J.Wodak. 
+                email: <a href="mailto:alexei@ysbl.york.ac.uk">alexei&#64;ysbl.york.ac.uk</a>
+    A.A.Vaguine, J.Richelle, S.J.Wodak. SFCHECK: a unified set of 
+    procedure for evaluating the quality of macromolecular structure-factor
+    data and their agreement with atomic model.
+    Acta Cryst.(1999). D55, 191-205
+
+</pre>
+<a name="Installation"></a><h2>Installation</h2>
+
+<pre>
+     Copy file <b>sfcheck.tar.gz</b>
+
+          and uncompress it (`gunzip sfcheck.tar.gz')  
+</pre>
+
+<pre>
+    After untaring `sfcheck.tar' , you will get a sfcheck directory,
+    with src, doc  and bin subdirectory. To build the executable,
+    go in src and then you have to option
+</pre>
+
+<p>
+After untaring `sfcheck.tar' (command: tar xvf sfcheck.tar)
+you will get a sfcheck directory, with src, doc and bin
+subdirectory.
+To build the executable, go to src and then you will have
+following options:</p>
+<dl>
+<dt><b>sfcheck.setup</b></dt>
+<dd>the executable (sfcheck) will finish up in the bin
+directory; providing the full pathname (.../sfcheck/bin/sfcheck)
+one can execute it from anywhere without having to define an
+environmental variable. CCP4 version (which can read MTZ file )
+will be prepared if ccp4 is installed</dd>
+
+<dt><b>sfcheck.setup linux</b></dt>
+<dd>Linux and Mac distribution</dd>
+
+<dt><b>Or if you like:</b></dt>
+<dt>1. set MR_LIBRARY = '/ccp4-5.2/lib/libccp4f.a  /ccp4-5.2/lib/libccp4c.a'</dt>
+<dd> define libraries (without ccp4: MR_LIBRARY = 'sfch_dummy.o')</dd>
+<dt>2. set MR_FORT = (  f77  -O2 )</dt>
+<dd> define compiler with options</dd>
+<dt>3.make all MR_LIBRARY="$MR_LIBRARY" MR_FORT="$MR_FORT" </dt>
+
+<dt><b>sfcheck for Fortran 90 with memory allocation:</b></dt>
+<dd>in main_sfcheck_ccp4.f:</dd>
+<dt>comment line:</dt>
+<dd>      REAL      POOL(MEMORY)</dd>
+<dt>uncomment lines:</dt>
+<dd>C      REAL, ALLOCATABLE :: POOL(:)   </dd>
+<dd>C      VERS = 'M'</dd>
+<dd>C      IF(.NOT.ALLOCATED(POOL)) ALLOCATE(POOL(MEMORY_IN),STAT=ISTAT)</dd>
+<dd>C      DEALLOCATE(POOL)   </dd>
+<dt>for ccp4 version, CCP4 must be prepared with the same compiler</dt>
+     
+     
+</dl>
+
+
+<p> Also you can download binaries (executable files): 
+</p>
+<p>
+( all with memory allocation option)
+</p>
+
+<p>
+<b>sfcheck_sgi.gz</b><br /> 
+</p>
+
+<p>
+<b>sfcheck_alpha.gz</b><br /> 
+</p>
+
+<p>
+<b>sfcheck_linux.gz</b><br /> 
+</p>
+
+<h2><a name="new_style" id="nw_style"></a>New style to use</h2>
+
+<pre>
+
+You can use this version as previous one:
+
+1. by command (batch) file
+2. interactively
+3. by ccp4i
+
+New style to use:
+
+ You can use program by command string with options (without any keywords):
+
+  sfcheck -f file_sf_mtz_or_cif_or_map  -m model_pdb_or_cif
+          -out out    -nomit Nomit
+          -mem Nm     -na Na
+          -scl map_scale_factor  -map  -invert
+          -h             -r
+          -po path_out -ps path_scrath
+          -lf label_F  -lsf label_sigF
+          -li label_I  -lsi label_sigI
+          -lfree label_free_flag
+
+     h      = help and information about mtz labels
+     r      = rest some special files(.dst,...)
+     out    = y - see nomit option
+              a - program creates CIFile (sfcheck.hkl)
+                  with anisothermal corrected Fobs
+              u - CIFile with detwinned data
+     map    = extract density map will be created (sfcheck_ext.map)
+              or new map if input was map (sfcheck.map).
+              Useful to prepare mirror or/and scaled map
+     invert = mirror map will be used 
+     nomit  = number of cycles of omit procedure.
+              2 is a good choice.It takes time
+              if OUT = Y, program creates CIFile (sfcheck.hkl)
+              with omit phases
+     Nm     = memory request in Mb (for f90 only)
+     Na     = maximal number of atoms in the model
+     label_* = labels for mtz_file
+
+
+     For example:
+
+        sfcheck -f file.mtz
+
+            or
+
+        sfcheck -m file.pdb
+
+            or
+
+        sfcheck -f file.mtz  -m file.pdb
+
+            or
+
+        sfcheck -f file.mtz  -m file.pdb -nomit 2 -map  -out y
+
+            or
+            
+        sfcheck -f file.mtz -lf FP -lsf SIGFP
+
+            or
+
+        sfcheck -f file.mtz -h
+
+</pre>
+
+<a name="Output info"></a><h2> Output information produced by SFCHECK</h2>
+
+<pre>
+    1.<b>Crystal:</b> 
+        cell parameters and space group
+ 
+    2.<b>Model:</b> 
+        number of atoms
+        number of water molecules
+        solvent content  
+        &lt;B&gt; for model
+        Matthews coefficient and corresponding solvent %
+        reported resolution 
+        reported R-factor
+ 
+    3.<b>Refinement:</b>
+        refinement program
+        resolution range for refinement
+        reported sigma cut-off for refinement
+        reported R-factor
+        reported Rfree
+ 
+    4.<b>Structure factors:</b>
+        number of reflections
+        number of reflections with I &gt; sigma
+        number of reflections with I &gt; 3sigma
+        resolution range
+        completeness
+        R-standard (sum(sigma)/sum(F))
+        Wilson plot (amplitudes vs. resolution)
+        overall B-factor by Patterson origin peak and by Wilson plot
+        optical resolution 
+        expected minimal error in coordinates
+        Anisotropic distribution of Structure Factors -ratio of Eigenvalues 
+ 
+    5.<b>Model vs. structure factors:</b>
+        R-factor
+        Correlation coefficient
+        R-factor for reported resolution range and sigma cut-off
+        Rfree    
+        Luzzati plot (R-factor vs. resolution)
+        coordinate error from Luzzati plot
+        expected maximal error in coordinates
+        DPI
+        Patterson scaling   - scale, Badd
+        Anisothermal scaling - betas: b11,b22,b33,b12,b13,b23
+        Solvent correction - Ks,Bs
+ 
+    <b>Optical resolution</b>
+ 
+      Optical resolution is defined as an expected minimum distance
+      between two resolved peaks in the electron density map.
+
+      With a single-Gaussian approximation of the shape of atomic peak
+      the minimum distance between two resolved peaks is twice the standard 
+      deviation "sigma" or the width of atomic peak W (W = 2 sigma).
+      Expected width of atomic peak W is computed as
+
+       W = sqrt ( 2 (sigma_patt<sup>2</sup> + sigma_res<sup>2</sup>) )
+
+       where  sigma_patt - standard deviation of the Gaussian corresponded 
+                         to the Patterson origin peak. 
+
+            sigma_res  - standard deviation of the Gaussian corresponded
+                         to the origin peak of spherical interference function
+                         which is Fourier transform of the sphere in 
+                         the reciprocal space with radius 1/d_min.
+
+                         sigma_res = 0.356 d_min.         
+                        
+                         d_min is minimum d-spacing, "nominal resolution".
+
+      The "expected optical resolution for complete data set" is  
+      calculated as above but using all reflections, with values for
+      missing reflection being the average value in the corresponding
+      resolution shell.
+      Plot of Optical resolution for an atom with B=0 demonstrates
+      behaviour of the part of Optical resolution corresponded on the 
+      series termination.
+
+      (for the proof see <a href="#Appendix"><b>Appendix</b></a>)
+  
+    <b>Patterson scaling</b>
+ 
+      Scaling in SFCHECK is based on the Patterson origin peak which is
+      approximated as a gaussian. Compared to the conventional scaling 
+      by the Wilson plot, this method is particularly advantageous when
+      only low resolution data are available.
+      The program gives overall B-factors estimated by both methods.
+ 
+    <b>Low resolution cut-off</b>
+ 
+      Disordered solvent contributes to diffraction at low resolution.
+      However, removing of low resolution data from calculations results
+      in a series termination effect which is noticeable in the electron
+      density at the surface of the molecule. To reduce the influence of
+      low resolution terms, SFCHECK applies the "soft" low resolution 
+      cut-off to structure factors according to the formula:
+ 
+        Fnew = Fold (1-exp(-Boff*s<sup>2</sup>)) , where Boff = 2dmax<sup>2</sup>
+  
+      Program uses Boff = 256
+ 
+    <b>Scaling</b>
+      
+      Program scales Fobs and Fcalc by the Patterson origin peak using all
+      data applying Boff.
+      First, computes Boveralls for observed and calculated amplitudes.
+      Second, makes the width of the calculated peak equal to the 
+      observed, i.e. computes an additional thermal factor Badd:
+        
+            Badd = Boverall_obs - Boverall_calc
+  
+      Third, computes the scale factor for Fcalc:
+ 
+                                  sum(Fobs<sup>2</sup>*(1-exp(-Boff*s<sup>2</sup>)))
+            scale = sqrt ( --------------------------------------------- )
+                           sum(Fcalc<sup>2</sup>*exp(-Badd*s<sup>2</sup>)*(1-exp(-Boff*s<sup>2</sup>)))
+ 
+      Finally we have:
+ 
+            Fcalc_scaled = Fcalc * scale * exp(-Badd*s<sup>2</sup>)   
+ 
+      The program computes R-factor and Correlation coefficient for all
+      data applying the soft low resolution cut-off as described above. 
+      The program also computes R-factor and Correlation coefficient for
+      the reported resolution range and reported sigma cut-off without
+      applying Boff. If the Fobs file contains reflections marked with
+      the Rfree flag, the program computes Rfree.
+  
+    <b>Completeness</b> 
+ 
+      Missing data are restored by using the average values of 
+      intensities for the corresponding resolution shell.
+      The program produces a plot of completeness vs. resolution and
+      a plot of the average radial completeness in polar coordinates
+      theta and phi.
+ 
+    <b>Expected minimal error</b>  
+ 
+      The minimal coordinate error is estimated using experimental 
+      sigmas(F). The standard deviation of atomic coordinates is 
+      
+         sig_min(r) = sqrt(3)*sigma(slope)/curvature
+ 
+              where  sigma(slope) is a slope of electron density in the 
+                                  x direction ( along A).             
+                     curvature is an average curvature of the electron 
+                                  density in the atomic peak center.
+         
+      and computed as:
+  
+       sigma(slope) = (2pi*sqrt(sum(h<sup>2</sup>*(sigF)<sup>2</sup>)))/(VOL*A)
+ 
+                     VOL - volume of cell
+                     A   - cell parameter
+                     h   - Miller index        
+                     summation over all reflections
+ 
+                    ( Cruickshank,D.W.J. (1949) Acta.Cryst 2, 65.) 
+ 
+       curvature  = (2pi<sup>2</sup>*sum(h<sup>2</sup>*F))/(VOL*A<sup>2</sup>)
+         
+                    ( Murshudov et al., (1997) Acta.Cryst D532, 240.) 
+  
+      If there is no experimental sigma for observed data, the program
+      uses  sigma = Fobs * 0.04 for all reflections.
+            
+    <b>Expected maximal error</b>
+ 
+      Expected maximal error in coordinates is estimated  by the difference
+      between !Fobs! and !Fcalc!:
+ 
+       sig_max(r) = sqrt(3)*sigma(slope)/curvature
+ 
+       sigma(slope) = (2pi*sqrt(sum(h<sup>2</sup>*(Fobs-Fcalc)<sup>2</sup>)))/(VOL*A)
+ 
+       curvature  = (2pi<sup>2</sup>*sum(h<sup>2</sup>*F))/(VOL*A<sup>2</sup>)
+  
+      For missing reflections the program uses the average value of 
+      sigma(Fobs) for the corresponding resolution shell instead 
+      of (Fobs-Fcalc).
+ 
+    <b>DPI - diffraction-data precision indicator</b>
+      
+      The Cruickshank's method of estimation of coordinate error.
+                   ( the Refinement of Macromolecular structure Proceeding
+                     of CCP4 Study weekend. pp11-22 1996)
+                 
+        sig(x) = sqr(Natoms/(Nobs-4Natoms)) C-1/3 dmin Rfact
+ 
+                where  C     - fractional completeness.
+                       Rfact - conventional crystallographic R-factor
+                       Nobs  - number of reflections 
+                       Dmin  - maximal resolution
+        
+       If Rfree flags are specified, the program uses the Murshudov's approach 
+       to calculate DPI: 
+                   (Newsletter on protein crystallography., Daresbury
+                    Laboratory, (1997) 33, pp 25-30.)
+ 
+        sig(x) = sqr(Natoms/Nobs) C-1/3 dmin Rfree
+    
+    <b>Luzzati plot (R-factor vs. resolution)</b>
+ 
+       Program computes the average radial error &lt;delta&gt; in coordinates 
+       by Luzzati plot.
+                          &lt;delta(r)&gt; = 1.6 sig(x)
+ 
+    <b>Solvent content</b>  
+ 
+       Solvent content is the fraction of the unit cell volume not occupied
+       by the model. The model consists of ALL atoms present in the coordinate 
+       file.
+ 
+ 
+    <b>Residual factor Rmerge</b> 
+ 
+                            sum_i (sum_j |Ij - &lt;I&gt;|)
+                Rmerge(I) = --------------------------
+                                 sum_i (sum_j (&lt;I&gt;))
+ 
+                Ij  = the intensity of the jth observation of reflection i
+                &lt;I&gt; = the mean of the intensities of all observations of
+                       reflection i
+ 
+                sum_i is taken over all reflections
+                sum_j is taken over all observations of each reflection
+</pre>
+ 
+<a name="Local error estimation"></a><h2> Local error estimation</h2>
+ 
+<pre>
+    Local error estimation (plotted for each residue, for the backbone
+    and for the side chain):
+       1. Amplitude of displacement of atoms from electron density
+       2. Density correlation coefficient
+       3. Density index 
+       4. B-factor
+       5. Index of connectivity
+ 
+    <b>Displacement</b>
+ 
+      Displacement of atoms from electron density is estimated from the
+      difference (Fobs - Fcal) map. The displacement vector is the ratio of
+      the gradient of difference density to the curvature. The amplitude of
+      the displacement vector is an indicator of the positional error.
+ 
+    <b>Correlation coefficient</b>
+ 
+      The density correlation coefficient is calculated for each residue
+      from atomic densities of (2Fobs-Fcalc) map - "Robs" and the model
+      map (Fcalc) - "Rcalc" :
+ 
+      D_corr =  &lt;Robs&gt;&lt;Rcalc&gt;/sqrt(&lt;Robs<sup>2</sup>&gt;&lt;Rcalc<sup>2</sup>&gt;)
+ 
+          where &lt;Robs&gt; is the mean of "obsereved" densities of atoms of residue
+                (backbone or side chain).
+  
+                &lt;Rcalc&gt; is the mean of "calculateded" densities of atoms of 
+                residue.
+ 
+          Value of density for some atom from map R(x) is:
+ 
+                   sum_i ( R(xi) * Ratom(xi - xa) )
+          Dens =  ---------------------------------- 
+                       sum_i ( Ratom(xi - xa) ) 
+ 
+            where  Ratom(x) is atomic electron density for x-th point of grid.
+                   xa - vector of the centre of atom.
+                   xi - vector of the i-th point of grid.
+                   Sum is taken over all grid points which have distance
+                   from the centre of atom less than Radius_limit.
+                   For all atoms Radius_limit = 2.5 A.
+ 
+    <b>Index of density and index of connectivity</b>
+ 
+      The index of connectivity is the product of the (2Fobs-Fcal) electron 
+      density values for the backbone atoms N, CA and C, i.e. the geometric
+      mean value for these atoms. Low values of this index indicate breaks 
+      in the backbone electron density which may be due to flexibility of 
+      the chain or incorrect tracing.  The index of density is a similar 
+      indicator which is calculated for all atoms of a given residue.
+</pre> 
+ 
+<a name="Omit procedure"></a><h2>Omit procedure</h2>
+
+<pre> 
+      An omit map is a way to reduce the model bias in the electron
+      density calculated with model phases. SFCHECK produces the so
+      called total omit map by an automatic procedure. First, the
+      initial (Fobs, PHImodel) map is divided into N boxes. For each
+      box, the electron density in it is set to zero and new phases are
+      calculated from this modified map. A new map is calculated using
+      these phases and Fobs. This map contains the omit map for the
+      given box which is stored until the procedure is repeated for
+      all boxes. At the end, all the boxes with omit maps compose
+      the total omit map. Phases calculated from the total omit map
+      are combined with the initial phases. The whole procedure may
+      be repeated (keyword NOMIT). Note: it is time consuming!
+      Program can create output file with omit phases (see keyword OUT)
+</pre>
+ 
+ 
+<a name="Partional information"></a><h2>Partional information</h2>
+
+<pre> 
+      Program can use only one input file of coordinates or structure 
+      factors. In this case program gives information derived from
+      input file without local estimation.
+</pre>
+
+<a name="Twinning test"></a><h3>Twinning test</h3>
+
+<pre> 
+     Program checks for merohedral twinning.
+
+     Perfect twinning test: &lt;I<sup>2</sup>&gt;/&lt;I&gt;<sup>2</sup> 
+
+     Also (if it's possible)
+     Program will compute Partial Twinning test:
+
+          H = !I(h1)-I(h2)!/(I(h1)+I(h2))
+        
+     Alpha (twinning fraction) = 1/2 - &lt;H&gt;
+
+     If  0.05 &lt;Alpha&lt; 0.45 program can create output file
+     with detwinned data (see keyword OUT)
+</pre>
+
+<a name="Keywords"></a><h2>Keywords</h2>
+
+<p>It is easy to use SFCHECK interactively, but can be used in batch.
+The best and easiest way to prepare a command file is to run SFCHECK once 
+by dialogue. If a <em>sfcheck.log</em> file was assigned (first request), 
+the program creates a command (batch) file (<em>sfcheck.bat</em>) 
+automatically.</p>
+<p>See some <a href="#batch_examples">command (batch) file examples</a>.</p>
+
+  All keywords must be preceded by an 
+  underscore (<em>e.g.</em> _DOC). The available keywords are:</p>
+
+<blockquote>
+
+<h3>First keyword always must be defined:</h3>
+<a href="#doc"><b>DOC</b></a><br>
+
+<h3>One or both of these keywords must be defined:</h3>
+<a href="#file_c"><b>FILE_C</b></a><br>
+<a href="#file_f"><b>FILE_F</b></a>
+
+<h3>Other keywords</h3>
+
+<a href="#nomit"><b>NOMIT</b></a>
+<a href="#out"><b>OUT</b></a>
+<a href="#map"><b>MAP</b></a>
+<a href="#path_scr"><b>PATH_SCR</b></a>
+<a href="#test"><b>TEST</b></a>
+<a href="#scl"><b>SCL</b></a>
+<a href="#inver"><b>INVER</b></a>
+
+
+</blockquote>
+
+<p>To get started with SFCHECK interactively, 
+you first have to answer this question:
+</p>
+
+<ol>
+
+<li><a name="doc" id="doc"></a><p>Do you want to have FILE-DOCUMENT 
+    <em>sfcheck.log</em>? &lt; N | Y &gt;</p>
+    <p>_DOC:</p>
+    <p>Default: &lt;N&gt;</p>
+  <dl>
+  <dt>N</dt><dd>do not produce DOC-file</dd>
+  <dt>Y</dt><dd>produce DOC-file</dd>
+  </dl>
+
+  <p>The DOC-file contains the protocol of the running of the program. 
+     With the DOC-file, the program creates a command (batch) file: 
+     <em>sfcheck.bat</em>.</p>
+
+  <p>Also you can use this keyword DOC to redirect output files:</p>
+
+  <pre>
+    sfcheck.log
+    sfcheck.bat
+    sfchek_XXX.ps
+    sfcheck.hkl
+    sfcheck_ext.map
+    sfcheck.map
+  </pre>
+
+  <p> to special directory ( _DOC  Y&gt;path or _DOC  &gt;path). Examples:</p>
+  <pre>
+
+  _DOC  Y&gt;/y/people/alexei/
+    or
+  _DOC   &gt;/y/people/alexei/
+
+</pre>
+</li>
+</ol>
+
+<h3><a name="file_c" id="file_c"></a>FILE_C &lt;file&gt;</h3>
+    <p>Default: &lt; &gt;</p>
+    <dl>
+    <dt></dt><dd>
+the name of the input file with the model coordinates
+    (allowed formats: PDB, CIF or BLANC),
+    </dd>
+    </dl>
+
+<h3><a name="file_f" id="file_f"></a>FILE_F &lt;file&gt;</h3>
+    <p>Default: &lt; &gt;</p>
+    <dl>
+    <dt></dt><dd>
+   the name of the input file with Fobs 
+  (allowed formats: ASCII (CIF or PDB) or BLANC or MTZ) or
+  EM map (ccp4 format).
+  <p>When using an MTZ file, 
+    <a href="#CCP4">MTZ keywords</a> must be used 
+    (or program will use default values).</p>
+    </dd>
+    </dl>
+
+<h2><a name="keywords_other" id="keywords_other"></a>Other keywords</h2>
+
+<h3><a name="nomit" id="nomit"></a>NOMIT &lt;nmon&gt;</h3>
+    <p>Default: &lt;0&gt;</p>
+    <p>&lt;nomit&gt; is the number of cycles of omit procedure.
+       2 is good choice.</p>
+
+<h3><a name="out" id="out"></a>OUT &lt;N | Y | U | A&gt;</h3>
+    <p>Default: &lt;N&gt;</p>
+    <dl>
+    <dt>A</dt><dd>create new CIFile (sfcheck.hkl)
+             with anisothermal corrected Fobs</dd>
+    <dt>Y</dt><dd>create new CIFile with Fobs and omit phases</dd>
+    <dt>U</dt><dd>new CIFile with detwinned data</dd>
+    </dl>
+<h3><a name="map" id="map"></a>MAP &lt;N | Y&gt;</h3>
+    <p>Default: &lt;N&gt;</p>
+    <dl>
+    <dt>Y</dt><dd>extract density (around model) map will be created
+                  (sfcheck_ext.map) or new map if input was map (sfcheck.map)
+    </dd>
+    </dl>
+ 
+<h3><a name="path_scr" id="path_scr"></a>PATH_SCR &lt;path&gt;</h3>
+    <p>Default: &lt; &gt;</p>
+    <dl>
+    <dt>path</dt><dd> path to scratch file directory</dd>
+    </dl>
+
+<h3><a name="scl" id="scl"></a>SCL &lt;scale&gt;</h3>
+    <p>Default: &lt;1 &gt;</p>
+    <dl>
+    <dt></dt><dd> map scale factor</dd>
+    </dl>
+
+<h3><a name="inver" id="inver"></a>INVER &lt;N | Y&gt;</h3>
+    <p>Default: &lt;N&gt;</p>
+    <dl>
+    <dt>Y</dt><dd>Y - mirror map will be used</dd>
+    </dl>
+
+<h3><a name="test" id="test"></a>TEST &lt;N | Y&gt;</h3>
+    <p>Default: &lt;N&gt;</p>
+    <dl>
+    <dt>Y</dt><dd> not delete some special files</dd>
+    </dl>
+
+<a name="Output files"></a><h2>Output files</h2>
+
+<pre>
+ 
+       The output information is represented in the PostScript file:
+ 
+           sfcheck_&lt;identifier&gt;.ps
+           sfcheck_map.ps (if input was map)
+  
+       A simple ASCII version of this file is in:
+ 
+           sfcheck.log 
+  
+       Also the program can create:
+ 
+           a new formatted CIFile of Fobs: sfcheck.hkl (keyword OUT)
+ 
+           a file of density around model:   sfcheck_ext.map (keyword MAP) 
+           /CCP4 format for CCP4 distribution or BLANC format/
+           a  new map if input was map:    sfcheck.map
+ 
+       Some other files will not be deleted if keyword TEST = Y.
+       These files have internal format of the BLANC program 
+       suite (see file README by ftp from anonymous @ftp.ysbl.york.ac.uk) 
+       and can be used by programs of this suite.
+ 
+           sfcheck_fob.dat     - BLANC_Fobserved_file 
+           sfcheck_ph.dat      - BLANC_phases of the model
+           sfcheck_omit_ph.dat - BLANC_omit_phases
+           sfcheck_detwin.dat  - BLANC_detwinned_Fobs
+</pre>
+
+<a name="redirection" id="redirection"></a><h2>
+How to redirect output and scratch files</b></h2>
+
+
+<p> You can use keyword <a href="#path_src"><b>PATH_SCR</b></a>
+to redirect all scratch files to special directory.Example:
+</p>
+
+<pre>
+  _PATH_SCR  /y/people/alexei/
+</pre>
+
+<p>  You can use keyword <a href="#doc"><b>DOC</b></a>
+to redirect output files:</p>
+<pre>
+
+   sfcheck_&lt;identifier&gt;.ps
+   sfcheck.hkl
+   sfcheck_ext.map
+   sfcheck.map
+
+ and also (if keyword TEST = Y )
+
+   sfcheck_fob.dat
+   sfcheck_ph.dat
+   sfcheck_omit_ph.dat
+   sfcheck_detwin.dat
+
+</pre>
+<p> to special directory.Examples:</p>
+<pre>
+
+_DOC  Y&gt;path
+ or
+_DOC   &gt;path
+
+</pre>
+
+
+
+<a name="CCP4"></a><h2>SFCHECK version for CCP4</h2>
+
+<pre>
+ 
+     You can have CCP4 version of SFCHECK which can read MTZ file
+     or EM map (format CCP4) and create file with extract density 
+     around model or new mirror or/and scaled map (format CCP4). 
+  
+  1. This possibility uses CCP4 libraries. 
+     You must make setup CCP4 before.
+
+  2. Keywords for reading MTZ file.
+
+        
+           Next keywords are necessary only for MTZ file
+      
+        F               - label of F or F(+)')
+        SIGF            - label of sigma F or sigma F(+)')
+        F-              - label of F(+)')
+        SIGF-           - label of sigma F(-)')
+        FREE            - label of Free_flag')
+        I               - label of I or I(+)')
+        SIGI            - label of sigma I or  sigma I(+)')
+        I-              - label of I(-)')
+        SIGI-           - label of sigma I(-)')
+</pre>
+
+<a name="batch_examples" id="batch_examples"></a>
+<h2>Command (batch) file examples</h2>
+
+<pre>
+
+# --------------------------------
+sfcheck &lt;&lt;stop
+# --------------------------------
+#
+_DOC  Y
+#
+_FILE_C  model.pdb
+_FILE_F fobs.cif
+#
+#
+_END
+stop
+</pre>
+
+<h3>BATCH example for omit procedure :</h3>
+
+<pre>
+
+  In this case all output files will be in directory: /y/people/alexei/
+  and all scratch files will be created in directory: /y/people/alexei/work/
+
+# --------------------------------
+sfcheck &lt;&lt;stop
+# --------------------------------
+#
+_DOC  &gt;/y/people/alexei/ 
+#
+_FILE_C  model.pdb
+_FILE_F fobs.cif
+#
+#
+_NOMIT 2
+_OUT   Y
+_path_scr /y/people/alexei/work/
+_END
+stop
+</pre>
+
+<h3>BATCH example with MTZ file:</h3>
+
+<pre>
+  In this case coordinate file isn't used.
+# --------------------------------
+sfcheck &lt;&lt;stop
+# --------------------------------
+#
+_DOC  Y
+#
+_FILE_C  
+_FILE_F p1.mtz
+#
+_F     FO
+_SIGF  SDFO
+_END
+stop
+</pre>
+
+
+<a name="File formats"></a><h2> File formats</h2>
+
+<pre>
+
+     1. Input PDB_file of coordinates
+
+        Input PDB_file of coordinates must contain the CRYST1 card with
+        the unit cell and the space group name.
+        Program can use the information from HEADER,SCALE,MTRIX,REMARK cards.
+
+     2. Input formatted file of structure factors
+
+        This file of structure factors must be in PDB-format or CIFile
+        which contains indices and structure factors or intensities.
+        (also simple formatted file with "h,k,l,!F!,sig(F)" or "h,k,l,!F!" 
+        and without titles is acceptable)
+        The best is CIFile.
+
+        A. Example of a CIfile of structure factor amplitudes:
+
+          data_structure_9ins
+          _entry.id  9ins  
+          _struct.title ' insuline 9ins' 
+          _cell.length_a      100.000
+          _cell_length_b      100.000
+          _cell.length_c      100.000
+          _cell.angle_alpha    90.000
+          _cell.angle_beta     90.000
+          _cell.angle_gamma    90.000
+          _symmetry.space_group_name_H-M  'P 1 21 1'
+          loop_
+          _refln.index_h
+          _refln.index_k
+          _refln.index_l
+          _refln.F_meas_au
+          _refln.F_meas_au_sigma
+             2  3   4    12.3   1.2
+            -2 -3  -4    11.4   1.1
+           . . . . . . . . . . . . .
+C
+                or just:
+
+          data_structure_9ins
+          loop_
+          _refln.index_h
+          _refln.index_k
+          _refln.index_l
+          _refln.F_meas_au
+          _refln.F_meas_au_sigma
+             2  3   4    12.3   1.2
+            -2 -3  -4    11.4   1.1
+            . . . . . . . . . . . . .
+
+           For intensities use:
+
+           _refln.intensity_meas 
+           _refln.intensity_sigma 
+
+        B. Example of a PDB file of structure factor amplitudes:
+
+        HEADER   R2SARSF   15-JAN-91
+        COMPND   RIBONUCLEASE SA (E.C.3.1.4.8) COMPLEX WITH 3'-*GUANYLIC ACID 
+        SOURCE   (STREPTOMYCES $AUREOFACIENS)
+        AUTHOR   J.SEVCIK,E.J.DODSON,G.G.DODSON
+        CRYST1  64.900   78.320   38.790  90.00  90.00  90.00 P 21 21 21    8
+        CONTNT   H,K,L,S,FOBS,SIGMA(FOBS)
+        FORMAT   (2(I3,2I4,2F7.0,F6.0,9X))
+        COORDS   2SAR
+        REMARK  1 TWO REFLECTIONS PER RECORD.
+        REMARK  2 DMIN=1.85, DMAX=16.28
+        CHKSUM  1 MIN H=0,MAX H=34,MIN K=0,MAX K=41,MIN L=0,MAX L=20
+        CHKSUM  2 TOTAL NUMBER OF REFLECTIONS=17346
+        CHKSUM  3 TOTAL NUMBER OF REFLECTION RECORDS=8673
+        CHKSUM  4 SUM OF FOBS=0.235499E+07
+          0   0   3     60      9    16           0   0   4    106    307    25
+          0   0   5    166     23    20           0   0   6    239    657    52
+          0   0   7    326      0    38           0   0   8    425    511    40
+        . . . . . . . . . . . . . . . . . . . . . .
+
+        C. Example of a simple formatted file of structure factor amplitudes 
+           which is assumed to contain H,K,L,F,sig(F):
+                    
+             2  3   4    12.3   1.2
+            -2 -3  -4    11.4   1.1
+            . . . . . . . . . . . . .
+
+            or without sig(F):
+
+             2  3   4    12.3  
+            -2 -3  -4    11.4  
+            . . . . . . . . . 
+
+       The length of file records must not exceed 80 characters.
+       The format of the records is free, e.g. data must be separated by
+       blanks. (be careful - some PDB files do not satisfy this rule)  
+       The program uses the information about cell parameters and space
+       group from the coordinate file and ignores such information in
+       the structure factor file.
+</pre>
+
+<a name="Memory control"></a><h2>Memory control</h2>
+
+<pre>
+      Memory control parameters ( in main_sfcheck_ccp4.f ):
+                       
+C 
+          MEMORY - memory for densities, gradients, coordinates, ...
+          PARAMETER ( MEMORY=5000000)
+          REAL      POOL(MEMORY)
+C
+          NCRDMAX - maximal number of coordinates
+          PARAMETER ( NCRDMAX=200000)
+C
+          IPRSYM - maximal number of symmetry operators
+          PARAMETER ( IPRSYM=96    )
+          INTEGER*2 ISYM(5,3,IPRSYM)
+C 
+          ISYM    - integer*2 array for cryst.symmetry operators 
+          IPRSYM  - dimension of integer*2 array ISYM(5,3,IPRSYM)
+                    maximal number of cryst.symmetry operators.
+C
+          MEMORY  - dimension array POOL. 
+C
+                 MEMORY = MAPMAX + (NCRDMAX/2)*5 , where MAPMAX - maximal
+                                                   size of XY-section (NX*NY)
+</pre>
+
+<a name="Appendix"></a><h2>Appendix</h2>
+
+<pre>
+
+  Estimation of the width of atomic peak by the Patterson origin peak.
+
+  Fourier transform of atomic Gaussian:
+
+            1
+         ---------------      exp( -r<sup>2</sup>/(2 sigma_four<sup>2</sup>) )
+         (2pi sigma_four)<sup>2/3</sup>
+   
+             where sigma_four is standard deviation of Gaussian.
+
+ is also Gaussian:
+
+                 B s<sup>2</sup>
+          exp( - ----- )     where B = 8pi<sup>2</sup> sigma_four<sup>2</sup>  
+                  4
+
+Patterson function which calculated as Fourier transform of reciprocal 
+space Gaussian in square:
+
+                 2 B s<sup>2</sup>
+          exp( - ------- )     
+                  4
+
+ is also Gaussian with standard deviation (for infinite fourier series) 
+
+                            2B
+          sigma_patt_0<sup>2</sup> = ----  = 2 sigma_four<sup>2</sup>
+                           8pi<sup>2</sup> 
+
+ Effect of series termination of Fourier transform can be considered
+ as the product in the reciprocal space infinite number of 
+ Fourier coefficients and the sphere with radius 1/d_min, where
+ d_min is minimum d-spacing. The product in the reciprocal space 
+ corresponds to the convolution in the Patterson space.
+ Fourier image of sphere is the spherical interference 
+ function T(r) (Int.Tables,1993,vol B,p247):
+ 
+           3 ( sin(x) - x cos(x) )
+   T(r) = -------------------------  where x = 2pi r (1/d_min)
+                     x<sup>3</sup>
+    
+ Using Taylor's expansion the origin peak of function T(r)
+ can be approximated by Gaussian:
+
+                      r<sup>2</sup>
+          exp( - ------------- )    
+                 2 sigma_res<sup>2</sup>
+
+                    where sigma_res is standard deviation of Gaussian.   
+
+                          sigma_res = ( d_min *sqrt(5) )/ 2pi = 0.356 * d_min  
+  
+ This result is identical to the optical definition of resolution
+ (Blundell,1976), (James,1948)
+ as twice the distance from maximum to the first zero of image 
+ of a point source. In 3-dimensional case the coordinate of the first
+ zero is 0.715 d_min ~ 2 sigma_res.
+
+ Standard deviation 'sigma' of Gaussian which is product of two Gaussians with
+ standard deviations sigma_1 and sigma_2 is
+
+    sigma<sup>2</sup> = sigma_1<sup>2</sup> + sigma_2<sup>2</sup>
+
+Therefore the standard deviation of Patterson origin peak with finite
+Fourier series is
+
+    sigma_patt<sup>2</sup> = sigma_patt_0<sup>2</sup> + sigma_res<sup>2</sup>
+
+Standard deviation of expected atomic peak for finite Fourier series is
+
+    sigma_four<sup>2</sup> = sigma_patt_0<sup>2</sup>/2 + sigma_res<sup>2</sup> =
+
+                 = sigma_patt<sup>2</sup>/2  + sigma_res<sup>2</sup>/2
+      
+ Finally, expected width of atomic peak is:
+
+  W = 2 sigma_four = sqrt ( 2 ( sigma_patt<sup>2</sup> + sigma_res<sup>2</sup>) )
+</pre>
+
+<hr>
+</body>
+</html>
+

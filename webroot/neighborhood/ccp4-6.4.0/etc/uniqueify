@@ -1,0 +1,237 @@
+#! /bin/sh
+
+# From the MTZ file which is the first file argument, create another with
+# unique reflections and a column of free R flags.  Output is to file named 
+# by the second file argument, else input with \`-unique' appended to its
+# basename. Systematic absences are omitted from the output file unless
+# the -s switch is specified. If free R flags are already present in
+# the input file, use the -f <label> switch. If no free R flags are present
+# then the fraction of reflections to be flagged with each indicator
+# can be specified with the -p <fraction> switch (default 0.05).
+
+# (This is Dave Love's interpretation of EJD's policy of adding
+# reflections to complete the dataset generally, Nov. '95.  It depends
+# on the current implementation of missing data values.)
+# Modified by Martyn Winn to use cad rather than mtzutils. Added
+# -s, -f <label> and -p <fraction> switches.
+
+set -e
+
+if test $# -lt 1 ; then
+  cat 1>&2 <<+
+Usage: `basename $0` [-s] [-f <label> | -p <fraction>] <input file>[.mtz] [<output file>]
+
+ From the MTZ file which is the first file argument, create another with
+ unique reflections and a column of free R flags.  Output is to file named 
+ by the second file argument, else input with \`-unique' appended to its
+ basename. Systematic absences are omitted from the output file unless
+ the -s switch is specified. If free R flags are already present in
+ the input file, use the -f <label> switch. If no free R flags are present
+ then the fraction of reflections to be flagged with each indicator
+ can be specified with the -p <fraction> switch (default 0.05).
++
+  exit 1
+fi
+
+# read switches
+
+param=true
+conflict=false
+SYSABS=" "
+FREER=false
+FREELABEL=" "
+FRACT=0.05
+
+while ($param); do
+
+  case $1 in
+#
+# -s switch to keep systematic absences in mtz file
+#
+    "-s") SYSABS="SYSAB_KEEP"
+          echo "Systematic absences will be kept." 1>&2
+          shift ;;
+#
+# -f switch if freerflag column already present
+#
+     "-f") if ($conflict); then
+              echo "-f switch incompatible with -p switch." 1>&2
+              echo "Cannot specify FREERFRAC for existing Free-R column." 1>&2
+              exit 1
+           fi
+           FREER=true
+           conflict=true
+           shift 
+           FREELABEL=$1
+           echo "Free-R flag column $FREELABEL is present." 1>&2
+           shift ;;
+#
+# -p switch to specify FREERFRAC (new Free-R column only)
+#
+     "-p") if ($conflict); then
+              echo "-p switch incompatible with -f switch." 1>&2
+              echo "Cannot specify FREERFRAC for existing Free-R column." 1>&2
+              exit 1
+           fi
+           conflict=true
+           shift 
+           FRACT=$1
+           echo "Free-R flag column generated with FREERFRAC ${FRACT}." 1>&2
+           shift ;;
+#
+# no more parameters
+#
+     *) param=false ;;
+   esac
+
+done
+
+BASE=`basename $1 .mtz`
+
+case $# in
+1) OUT=$BASE-unique.mtz;logfile=$BASE-unique.log ;;
+2) OUT=$2;logfile=`basename $2 .mtz`.log ;;
+*) cat 1>&2 <<+
+Wrong number of parameters!!
+
+Usage: `basename $0` [-s] [-f <label> | -p <fraction>] <input file>[.mtz] [<output file>]
++
+  exit 1;;
+esac
+
+logfiletmp=$logfile
+i=0
+while [ -f $logfiletmp ]
+do
+  i=`expr $i + 1`
+  logfiletmp="${logfile}_${i}"
+done
+logfile=$logfiletmp
+echo "Program output directed to $logfile" 1>&2
+
+# Don't use $BASE since might have strange file suffix
+if [ ! -r $1 ]; then
+  if [ ! -r $1.mtz ]; then
+    echo "$1 not found" 1>&2
+    exit 1
+  fi
+fi
+
+echo "Input file: $1 --- Output file: $OUT" 1>&2
+
+temp1=$CCP4_SCR/uniq$$.mtz
+temp2=$CCP4_SCR/uniq2$$.mtz
+temp3=$CCP4_SCR/uniq3$$.mtz
+
+# find awk executable
+for myawk in nawk gawk awk
+do
+    test -f $myawk && break
+done
+
+# extract first crystal name from the input file
+xname=`mtzdmp $1 -n 0 | $myawk '                  
+/\* Dataset ID/ {
+  getline; getline; getline;	# look 3 lines down
+  print $1
+  }'
+`
+
+# extract first dataset name from the input file
+dname=`mtzdmp $1 -n 0 | $myawk '                  
+/\* Dataset ID/ {
+  getline; getline; getline; getline;	# look 4 lines down
+  print $1
+  }'
+`
+
+# From the input, extract what `unique' needs and then feed it:
+mtzdmp $1 -n 0 |                # info from the input file
+$myawk '                        # awk the right bits out
+BEGIN { {ORS=""} }
+# Process the file to get the information we need and write the
+# the keywords
+/\* Cell Dimensions :/ {  
+  getline; getline;             # look 2 lines down
+  print "CELL", $0, "\n"
+  } 
+/\* Space group = / {
+  print "SYMMETRY"
+  i = 5
+  while ( $i !~/number/ ) {
+    print "", $i
+    i++
+    }
+  print "\n"
+  }
+/\*  Resolution Range :/ {
+  getline; getline
+  print "RESOLUTION", $6, "\n" # high res. only; most accurate in Aangstroems
+  print "LABOUT F=FUNI SIGF=SIGFUNI\n"
+  }
+' |
+unique hklout $temp1 > $logfile # with CELL, SYMMETRY, RESOLUTION, LABOUT already input
+
+if ($FREER); then
+
+#
+#   Add this list to your existing F and SIGF and FREE
+#
+cad HKLIN2 $temp1 HKLIN1 $1 HKLOUT $temp2  << eof  >> $logfile
+$SYSABS
+LABI FILE 1  ALLIN
+LABI FILE 2  E1=FUNI E2=SIGFUNI
+XNAME FILE 2  E1=$xname E2=$xname
+DNAME FILE 2  E1=$dname E2=$dname
+END
+eof
+
+#
+#  Extend FREE flags for extra hkl
+#
+freerflag HKLIN $temp2 HKLOUT $temp3 <<+  >> $logfile
+COMPLETE FREE=$FREELABEL
+END
++
+
+#
+#  mtzutils to get rid of useless UNIQUE labels, FUNI and SIGFUNI
+#
+mtzutils HKLIN $temp3 HKLOUT $OUT << eof >> $logfile
+EXCLUDE FUNI SIGFUNI
+eof
+
+else
+
+#
+# Assign FreeR flags to these indices
+# 
+freerflag HKLIN $temp1 HKLOUT $temp2 <<+ >> $logfile
+FREERFRAC $FRACT
+END
++
+
+#
+# Use cad to append these FreeR flags to the real data.
+#
+cad HKLIN2 $temp2 HKLIN1 $1 HKLOUT $temp3 << + >> $logfile
+$SYSABS
+LABI FILE 1  ALLIN
+LABI FILE 2  E1=FreeR_flag
+XNAME FILE 2  E1=$xname
+DNAME FILE 2  E1=$dname
+END
++
+
+#
+# Ensure FreeR flags assigned to every reflection.
+#
+freerflag HKLIN $temp3 HKLOUT $OUT << + >> $logfile
+COMPLETE FREE=FreeR_flag
+END
++
+
+fi
+
+rm -f $temp1 $temp2 $temp3
+#

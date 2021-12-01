@@ -1,0 +1,203 @@
+#!/usr/bin/env ccp4-python
+
+import sys
+from CCP4pipeline import Control
+
+keywords = """
+<key name="title"        text default="buccaneer auto-build"></key>
+<key name="mtzin"        text compulsory>Input MTZ (post density mod)</key>
+<key name="seqin"        text compulsory>Input sequence file</key>
+<key name="pdbin"        text>Initial model to extend</key>
+<key name="pdbin-mr"     text>MR model to provide chain IDs</key>
+<key name="pdbin-sequence-prior" text></key>
+<key name="pdbout"       text default="buccaneer.pdb"></key>
+<key name="colin-fo"     text list compulsory>Observed F/sigma</key>
+<key name="colin-hl"     text list>HL coeffs</key>
+<key name="colin-phifom" text list>PHI/FOM</key>
+<key name="colin-fc"     text list>Initial map coeffs scaled to F</key>
+<key name="colin-free"   text list>Free-R flag</key>
+<key name="cycles"       int default="5">Number of build/refine cycles</key>
+<key name="jobs"         int>Number of CPUs to use</key>
+<key name="buccaneer-anisotropy-correction" bool></key>
+<key name="buccaneer-build-semet"           bool></key>
+<key name="buccaneer-fix-position"          bool></key>
+<key name="buccaneer-fast"                  bool></key>
+<key name="buccaneer-new-residue-name"         text default="UNK"  ></key>
+<key name="buccaneer-resolution"               float default="2.0" ></key>
+<key name="buccaneer-1st-cycles"               int default="3"     ></key>
+<key name="buccaneer-1st-correlation-mode"     bool default="false"></key>
+<key name="buccaneer-1st-sequence-reliability" float default="0.95"></key>
+<key name="buccaneer-nth-cycles"               int default="2"     ></key>
+<key name="buccaneer-nth-correlation-mode"     bool default="true" ></key>
+<key name="buccaneer-nth-sequence-reliability" float default="0.95"></key>
+<key name="mtzin-ref"     text>Reference data</key>
+<key name="colin-ref-fo"  text list>Reference data</key>
+<key name="colin-ref-hl"  text list>Reference data</key>
+<key name="pdbin-ref"     text list>Reference data</key>
+<key name="refmac-twin"   bool default="false"></key>
+<key name="refmac-mlhl"   bool default="true" ></key>
+<key name="refmac-weight" float></key>
+<key name="refmac-colin-hl"     text list>HL coeffs</key>
+<key name="prefix"        text default="buccaneer/"></key>
+<key name="verbose"       int></key>
+<key name="buccaneer-keyword" text multiple></key>
+<key name="refmac-keyword"    text multiple></key>
+"""
+
+#
+# Buccaneer script template (1st cycle)
+#
+
+buccaneer_1st = ( 'cbuccaneer', '-stdin', '''
+title  <=title>
+
+<if pdbin-ref>pdbin-ref <=pdbin-ref></if>
+<if mtzin-ref>mtzin-ref <=mtzin-ref></if>
+<if colin-ref-fo>colin-ref-fo <=colin-ref-fo></if>
+<if colin-ref-hl>colin-ref-hl <=colin-ref-hl></if>
+
+seqin <=seqin>
+
+mtzin <=mtzin>
+colin-fo <=colin-fo>
+<if colin-hl    >colin-hl     <=colin-hl    ></if>
+<if colin-phifom>colin-phifom <=colin-phifom></if>
+<if colin-fc    >colin-fc     <=colin-fc    ></if>
+<if colin-free  >colin-free   <=colin-free  ></if>
+
+<if pdbin>pdbin <=pdbin></if>
+<if pdbin-mr>pdbin-mr <=pdbin-mr></if>
+<if pdbin-sequence-prior>pdbin-sequence-prior <=pdbin-sequence-prior></if>
+
+pdbout <=build-pdbout>
+
+<if buccaneer-anisotropy-correction>anisotropy-correction</if>
+<if buccaneer-fix-position         >fix-position</if>
+<if buccaneer-build-semet          >build-semet</if>
+
+<if buccaneer-fast>fast</if>
+
+cycles <=buccaneer-1st-cycles>
+sequence-reliability <=buccaneer-1st-sequence-reliability>
+<if buccaneer-1st-correlation-mode="1">correlation-mode</if>
+
+new-residue-name <=buccaneer-new-residue-name>
+
+resolution <=buccaneer-resolution>
+
+<if jobs>jobs <=jobs></if>
+<if verbose>verbose <=verbose></if>
+
+<foreach buccaneer-keyword><=.>
+</foreach>
+''' )
+
+#
+# Buccaneer script template (nth cycle)
+#
+
+buccaneer_nth = ( 'cbuccaneer', '-stdin', '''
+title  <=title>
+
+<if pdbin-ref>pdbin-ref <=pdbin-ref></if>
+<if mtzin-ref>mtzin-ref <=mtzin-ref></if>
+<if colin-ref-fo>colin-ref-fo <=colin-ref-fo></if>
+<if colin-ref-hl>colin-ref-hl <=colin-ref-hl></if>
+
+seqin <=seqin>
+
+mtzin <=refine-mtzout>
+colin-fo <=colin-fo>
+colin-hl HLACOMB,HLBCOMB,HLCCOMB,HLDCOMB
+colin-fc FWT,PHWT
+<if colin-free  >colin-free   <=colin-free  ></if>
+
+pdbin <=refine-pdbout>
+<if pdbin-mr>pdbin-mr <=pdbin-mr></if>
+<if pdbin-sequence-prior>pdbin-sequence-prior <=pdbin-sequence-prior></if>
+
+pdbout <=build-pdbout>
+
+<if buccaneer-anisotropy-correction>anisotropy-correction</if>
+<if buccaneer-fix-position         >fix-position</if>
+<if buccaneer-build-semet          >build-semet</if>
+
+<if buccaneer-fast>fast</if>
+
+cycles <=buccaneer-nth-cycles>
+sequence-reliability <=buccaneer-nth-sequence-reliability>
+<if buccaneer-nth-correlation-mode="1">correlation-mode</if>
+
+new-residue-name <=buccaneer-new-residue-name>
+
+resolution <=buccaneer-resolution>
+
+<if jobs>jobs <=jobs></if>
+<if verbose>verbose <=verbose></if>
+
+<foreach buccaneer-keyword><=.>
+</foreach>
+''' )
+
+#
+# Refmac script template
+#
+
+refmac_all = ( 'refmac5', '''
+HKLIN  <=mtzin>         XYZIN  <=build-pdbout>
+HKLOUT <=refine-mtzout> XYZOUT <=refine-pdbout>
+''', '''
+title  <=title>
+ncyc 10
+labin -
+  <if refmac-mlhl="1"> -
+    <if colin-hl> -
+      HLA=<=colin-hl/list[1]> HLB=<=colin-hl/list[2]> -
+      HLC=<=colin-hl/list[3]> HLD=<=colin-hl/list[4]> -
+    </if> -
+    <if colin-phifom> -
+      PHIB=<=colin-phifom/list[1]> FOM=<=colin-phifom/list[2]> -
+    </if> -
+    <if refmac-colin-hl> -
+      HLA=<=refmac-colin-hl/list[1]> HLB=<=refmac-colin-hl/list[2]> -
+      HLC=<=refmac-colin-hl/list[3]> HLD=<=refmac-colin-hl/list[4]> -
+    </if> -
+  </if> -
+  <if colin-free>FREE=<=colin-free/list[1]></if> -
+  FP=<=colin-fo/list[1]> SIGFP=<=colin-fo/list[2]>
+<if    (refmac-weight)>weight MATRIX <=refmac-weight></if>
+<if not(refmac-weight)>weight AUTO            </if>
+<if refmac-twin="1">twin</if>
+make check NONE
+make hydrogen NO hout NO peptide NO cispeptide YES ssbridge YES symmetry YES sugar YES connectivity NO link NO
+refi type REST PHASE resi MLKF meth CGMAT bref ISOT
+scal type SIMP LSSC ANISO EXPE
+solvent YES VDWProb 1.4 IONProb 0.8 RSHRink 0.8
+PHOUT
+PNAME buccaneer
+DNAME buccaneer
+<foreach refmac-keyword><=.>
+</foreach>
+END
+''' )
+
+#
+# Pipeline control program
+#
+
+control = Control()
+control.parse_input( keywords )
+print control.display_params( "buccaneer-pipeline v1.5" )
+
+prefix = control.xml.get( "prefix" )
+if ( prefix[-1:] == "/" ): control.mkdir( prefix )
+control.xml.set( "build-pdbout", prefix+"build.pdb" )
+control.xml.set( "refine-pdbout", prefix+"refine.pdb" )
+control.xml.set( "refine-mtzout", prefix+"refine.mtz" )
+
+control.run_program_template( buccaneer_1st )
+control.run_program_template( refmac_all )
+for i in range( 1, int(control.xml.get("cycles")) ):
+  control.run_program_template( buccaneer_nth )
+  control.run_program_template( refmac_all )
+control.copy( control.xml.get("refine-pdbout"), control.xml.get("pdbout") )

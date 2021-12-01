@@ -1,0 +1,1081 @@
+<html>
+<head><title>CCP4 Program Suite: library</title></head>
+<body>
+
+<!-- ::INDEX_INFO::LIBRARY::Library::::low-level C subroutine library:::::::: -->
+
+<H1> LIBRARY (CCP4: Library)</H1>
+
+<H2> NAME</H2>
+
+<b>library </b> - the CCP4 C subroutine library
+
+<H2>DESCRIPTION</H2>
+
+<p><tt><b>library.c</b></tt> is a set of low-level C routines used by
+<tt><a href="ccplib.html">ccplib</a></tt> and 
+<tt><a href="diskio.html">diskio</a></tt>. There is also a header file
+<tt><b>library.h</b></tt> which should be included in any C program which
+uses CCP4 routines, as this contains code for dealing with platform
+dependencies.
+
+<H2>CONTENTS</H2>
+
+<ul>
+  <li><a href="#library.h">Notes on the header file <tt>library.h</tt></a>
+     <ul><li><a href="#comments">Comments on platform dependencies</a>
+         <li><a href="#assumptions">Assumptions</a>
+         <li><a href="#identification">Platform identification</a>
+         <li><a href="#implementation">Practical implementation for different platforms</a>
+         <li><a href="#file-mode">File mode definitions</a>
+         <li><a href="#converting-formats">Converting foreign binary number formats</a>
+         <li><a href="#machine-stamps">Machine stamps</a>
+     </ul>
+  <li><a href="#library.c">Notes on routines in <tt>library.c</tt></a>
+      <ul><li><a href="#descriptions">Description of routines in <tt>library.c</tt></a>
+      </ul>
+</ul>
+
+<a name="library.h"></a><H2><u>Notes on the header file library.h</u></H2>
+<p>
+This was a part of library.c but has been split off so it can be used
+with other c programs in the suite.
+
+<a name="comments"></a><H3>Comments on platform dependencies</H3>
+
+<p>There are several platform dependencies in the code which we need to
+get right:
+<ul>
+ <li><b>Fortran/C conventions</b> The calling conventions for C from
+        Fortran vary from compiler to compiler;
+ <li><b>Header files etc.</b> We can't assume everything has ANSI C
+        or POSIX libraries;
+ <li><b>Real number format</b> for the transparent binary i/o;
+ <li><b>Special things</b> The putenv/setenv call isn't defined in
+        the current standards.
+</ul>
+
+<a name="assumptions"></a><H3>Assumptions</H3>
+
+<p>It is assumed that a Fortran <tt>INTEGER</tt> corresponds to a C 
+<tt>int</tt>, and that a Fortran <tt>REAL</tt> corresponds to a C
+<tt>float</tt>.
+
+<p>Also, the identity of certain calling conventions is only
+guaranteed if the routines have only a single Fortran
+<tt>CHARACTER</tt>-type argument - since in some cases the length of each
+such argument is given after it in the parameter list, and in other cases
+they are all collected at the end of the list.
+
+<p>Apart from the possibility of using the Netlib <tt>f2c</tt>
+compiler we currently assume that each system uses the vendor-supplied
+Fortran compiler.
+
+<p>This is for IBM Unix systems - RS/6000 models, at least.
+The compiler can append "_" (underscore character) to external names, but we
+assume the default where this doesn't happen.  See <tt>configure</tt> for the
+enforcement of this.
+
+<a name="identification"></a><H3>Platform Identification</H3>
+
+<p>The <i>guarded code</i> in library.h is executed when we've identified
+the platform, so each type of system we know about should cause KNOWN_MACHINE
+to be defined; it will also define CALL_LIKE_<i>something</i>, depending
+on the calling conventions used by that system. For example:
+
+<pre>
+#if defined (sgi)
+#  define KNOWN_MACHINE
+#  define CALL_LIKE_SUN 1
+#endif
+</pre>
+
+<p>Thus if you know system <i>foo</i> has the same Fortran calling
+convention as that used by the native Sun compiler, then define
+CALL_LIKE_SUN and you won't need to examine the definitions of the
+interface functions below. Note that further tests on the system type may be
+necessary, for example to get the include files right.
+
+<p>The calling conventions for the major platforms supported by CCP4
+are given below:
+
+<p>
+<table border=1>
+<tr><th>CALL_LIKE_    <th>Systems
+<tr><td>HPUX          <td>AIX, HPUX
+<tr><td>SUN           <td>Alliant, Convex, ESV, SGI, Sun, Ultrix, OSF1, Linux, LinuxPPC
+<tr><td>STARDENT      <td>Ardent/Titan/Stardent
+<tr><td>VMS           <td>VMS
+<tr><td>MVS           <td>Microsoft Visual Studio (NT)
+</table>
+
+<a name="implementation"></a><H3>Practical implementation for different platforms</H3>
+
+<p>Once the KNOWN_MACHINE and CALL_LIKE_<i>something</i> variables have
+been defined, the correct calling conventions are invoked in library.c
+by the presence of code of the form
+
+<pre>
+...
+#if CALL_LIKE_HPUX
+  void copen (int *iunit, char *filename, int *istat, int Lfilename);
+#endif
+#if CALL_LIKE_STARDENT
+  void COPEN (int *iunit, struct Str_Desc *filename, int *istat);
+#endif
+#if defined (VMS)
+  void COPEN (int *iunit, struct dsc$descriptor_s *filename, int *istat);
+#endif
+#if CALL_LIKE_SUN
+  void copen_ (int *iunit, char *filename, int *istat, int Lfilename);
+#endif
+...
+</pre>
+
+<p>Examine the source code for more exact details of how this works in practice.
+
+<a name="file-mode"></a><h3>File mode definitions </h3>                                  
+
+<p>
+  Here are the definitions of the <tt>diskio </tt> modes, specifying the   
+  type of data transfer: bytes, half-words, integers, reals,           
+  half(integer)-word complex and complex, respectively:                
+</p>                                                                       
+<table noborder>
+ <tr valign="TOP"> <td>define <td>BYTE  <td>0
+ <tr valign="TOP"> <td>define <td>INT16 <td>1
+ <tr valign="TOP"> <td>define <td>INT32 <td>6
+ <tr valign="TOP"> <td>define <td>FLOAT32 <td>2
+ <tr valign="TOP"> <td>define <td>COMP32  <td>3
+ <tr valign="TOP"> <td>define <td>COMP64  <td>4
+</table>
+
+<a name="converting-formats"></a><h3>Converting foreign binary number formats</h3>
+
+<p>
+  The library is intended to allow the binary file formats <i>MTZ</i> 
+  and <i>map</i> files to be read satisfactorily if they were      
+  written on another platform.  Such files are always written in the     
+  <em> native </em> real or integer number format with a <i>machine      
+  stamp</i> in the file to identify the formats involved.  Then, if        
+  necessary, conversion is done from the foreign format to native when   
+  the file is read.  There is thus only a significant overhead for files 
+  imported from platforms with different number formats; locally-written files 
+  are read back optimally and there is no write overhead. 
+<p>
+  When converting from foreign to native formats we're potentially faced 
+  with a combinatorial explosion---currently combinations of ieee 
+  little-endian, ieee big-endian, VAX and Convex native 
+  formats.  (This applies only to real number formats---fortunately 
+  everything we're interested in has twos complement integers.)  Thus we
+  first make sure that the format is converted to canonical form (which 
+  we choose as big-endian ieee) and then, if 
+  necessary, to the native format in a separate stage.  
+<p>
+  The basic idea of this is due to David Wild (EMBL, Hamburg, 1991).    
+  His original, partially-functional implementation used code from the  
+  HDF 3.1 distribution.  This re-write is by Dave Love, very      
+  loosely based on HDF3.3, but doing the conversion in-place.  It works 
+  for the full set of relevant systems and no longer has MTZ- and       
+  map-specific code in copen.  (HDF stuff can be found on         
+    ftp.ncsa.uiuc.edu) 
+
+<a name="machine-stamps"></a><H3>Machine stamps</H3> 
+
+<p>
+  The <em>machine stamp</em> is a 32-bit quantity containing a set of four
+  `nibbles' (half-bytes)---only half the space is used.  Each nibble is 
+  a number specifying the representation of (in C terms) <tt>double</tt> (<i>d</i>)     
+  , <tt>float</tt> (<i>f</i>), <tt>int</tt> (<i>i</i>) and <tt>unsigned char</tt> (<i>c</i>)    
+  types.  Thus each stamp is of the form <tt>0xdfic0000</tt>.  The
+  values for the floating point nibbles may be taken from the list (following HDF):    
+<table noborder>
+  <tr valign="TOP"> <td>1 <td>Big-endian ieee                                    
+  <tr valign="TOP"> <td>2 <td>VAX
+  <tr valign="TOP"> <td>3 <td>Cray
+  <tr valign="TOP"> <td>4 <td>Little-endian ieee
+  <tr valign="TOP"> <td>5 <td>Convex native 
+  <tr valign="TOP"> <td>6 <td>Fijitsu VP
+</table>
+<p>The Cray isn't relevant to us because it's not a 32-bit machine     
+  and we don't currently have a use for the Fujitsu one, which isn't 
+  implemented here.  We ignore the possibility of 
+  non-ascii characters which might need 
+  converting e.g., from ebcdic, so <i>c</i> is 
+  always 1; also <i>f</i> and <i>d</i> are the same (as per Fortran).  See the 
+  HDF code for character code possibilities.
+<p>
+  Here are the tags for different formats as used in the code. 
+<table noborder>
+  <tr valign="TOP" colspan=3> <td>class info codes for int
+  <tr valign="TOP"><td>DFNTI_MBO <td>1 <td>Motorola byte order 2's compl
+  <tr valign="TOP"><td>DFNTI_IBO <td>4 <td>Intel byte order 2's compl 
+  <tr valign="TOP" colspan=3> <td>class info codes for float
+  <tr valign="TOP"><td>DFNTF_BEIEEE <td>1 <td>big endian IEEE (canonical)
+  <tr valign="TOP"><td>FNTF_VAX     <td>2 <td>Vax format 
+  <tr valign="TOP"><td>DFNTF_CONVEXNATIVE <td>5  <td>Convex native floats
+  <tr valign="TOP"><td>DFNTF_LEIEEE <td>4 <td> little-endian IEEE format
+</table>
+<p>Following are definitions.  Note  that some of the symbols 
+   tested here to determine the machine type might need to be qualified  
+   in the future where they don't necessarily determine the architecture.
+   Only <em>nativeFT</em> and <em>nativeIT</em>, which determine the 
+   native real and integer formats, are set. 
+<pre>
+#if defined (VAX) || defined (vax) /* gcc seems to use vax */
+#  define NATIVEFT DFNTF_VAX
+#  define NATIVEIT DFNTI_IBO
+#endif
+</pre>
+<p> Here are the possibilities for little-endian ieee.  (The 
+  MIPS compilers define MIPSEL or MIPSEB depending on the 
+  mode in which the chip operates.)  The architectures covered here 
+  include some DECstations, i860 and  
+  Intel chips like PCs and Alpha (sometimes!).
+<pre>
+#if defined(MIPSEL) || defined(alliant) || defined(i386) || defined(i860)
+#  define NATIVEIT DFNTI_IBO
+#  define NATIVEFT DFNTF_LEIEEE
+#endif
+</pre>
+<p>   Machines using the powerPC chip.
+   Specifically, this has been tried on PowerMacs running LinuxPPC, which  
+   appears to be big-endian. But in principle the powerPC chip can support 
+   both big-endian and little-endian OS's under software control. The      
+   symbol "powerpc" appears in gcc-2.8.1/config/rs6000/linux.h and appears 
+   to distinguish LinuxPPC from other OS's for this chip. 
+<pre>                 
+#if defined (powerpc)
+#  define NATIVEIT DFNTI_MBO
+#  define NATIVEFT DFNTF_BEIEEE
+#endif
+</pre>
+<p>Alpha VMS is a pain: compiler switches can force 
+  VAX or ieee number formats.  Thus if we know it's an Alpha,
+  we have to check for VMS and then what sort of VMS numbers.  [OSF and 
+  OpenVMS define <i>__alpha</i>, OpenVMS, only <i>__ALPHA</i>.
+<pre>
+#ifdef __alpha
+#  ifdef VMS
+#    if __IEEE_FLOAT == 1
+#      define NATIVEFT DFNTF_LEIEEE
+#    else
+#      define NATIVEFT DFNTF_VAX
+#    endif
+#  else                       /* assume OSF/1 */
+#    define NATIVEFT DFNTF_LEIEEE
+#  endif
+#  define NATIVEIT DFNTI_IBO
+#endif
+</pre>
+<p>Big-endian ieee includes SGI machines,
+   HP machines (68k-based or RISC), RS/6000 and all 
+   Suns except the obsolete i386-based ones.  
+   (Apollo}s are also apparently in this category.)
+<pre>
+#if defined(MIPSEB) || defined(__hpux) || defined(_AIX) || defined(m68k) || 
+  defined(mc68000) || defined(sparc) || defined (__sparc__)
+#  define NATIVEIT DFNTI_MBO
+#  define NATIVEFT DFNTF_BEIEEE
+#endif
+</pre>
+<p>Convex}s can operate in either native or ieee mode: 
+<pre>
+#if defined(__convex__) || defined(__convexc__)
+#  define NATIVEIT DFNTI_MBO
+#  ifdef _IEEE_FLOAT_
+#    define NATIVEFT DFNTF_BEIEEE
+#  else
+#    ifdef _CONVEX_FLOAT_
+#      define NATIVEFT DFNTF_CONVEXNATIVE
+#    else
+#error "Can't determine Convex floating point type. Use native compiler"
+#    endif
+#  endif
+#endif
+#ifndef NATIVEFT
+#error "Can't determine machine number format"
+#endif
+</pre>
+
+
+<a name="library.c"></a><H2><u>Notes on routines in library.c</u></H2>
+
+<p>This file contains the lowest level routines for the CCP4 Program
+Suite, mainly for i/o (as required by the <tt>diskio</tt> routines) and
+bit-twiddling.
+<p>
+The following routines are defined:
+<p>
+<table border=1>
+<tr><th>Routine       <th>Purpose
+<tr><td colspan=2><b>Internal routines </b>
+<tr><td><a href="#flength">flength</a>	      
+    <td> return length of string less trailing blanks
+<tr><td><a href="#fatal">fatal</a>         
+    <td> interface to ccperr
+<tr><td><a href="#cqprint">cqprint</a>	      
+    <td>prints a message to FORTAN i/o
+<tr><td><a href="#file_fatal">file_fatal</a>  
+    <td>reports fatal error
+<tr><td colspan=2><b>FP conversion routines</b>
+<tr><td><a href="#vax_convex">vaxF2ieeeF</a>    <td>VAX(double) &lt;-&gt ieee(float)
+<tr><td><a href="#vax_convex">ieeeF2vaxF</a>    <td>ieee(double) &lt;-&gt VAX(float)
+<tr><td><a href="#vax_convex">convexF2ieeeF</a> <td>Convex(double) &lt;-&gt ieee(float)
+<tr><td><a href="#vax_convex">ieeeF2convexF</a> <td>ieee(double) &lt;-&gt Convex(float)
+<tr><td colspan=2><b>Miscellaneous routines </b>
+<tr><td><a href="#ustenv">ustenv</a>      
+    <td> set an environment variable
+<tr><td><a href="#cunlink">cunlink</a>      
+    <td>unlinks file from directory
+<tr><td><a href="#hgetlimits">hgetlimits</a>
+    <td>get int and float limits
+<tr><td><a href="#cmkdir">cmkdir</a>
+    <td>wrap around for mkdir function
+<tr><td><a href="#cchmod">cchmod</a>	 
+    <td> wrap around for chmod function
+<tr><td colspan=2><b>Dynamic memory allocation</b>
+<tr><td><a href="#ccpal1">ccpal1</a>
+    <td>calls routine with array arguments
+<tr><td><a href="#ccp4malloc">ccp4malloc</a>
+    <td>wrap around for malloc function
+<tr><td><a href="#ccp4realloc">ccp4realloc</a>
+    <td>wrap around for realloc function
+<tr><td><a href="#ccp4calloc">ccp4calloc</a>
+    <td>wrap around for calloc
+<tr><td colspan=2><b>Disk i/o routines</b>
+<tr><td><a href="#copen">copen</a>	  
+    <td> open random access file using fopen
+<tr><td><a href="#qrarch">qrarch</a>	  
+    <td> set up diskio number translation
+<tr><td><a href="#qwarch">qwarch</a>	  
+    <td> write `machine stamp' to diskio file
+<tr><td><a href="#qclose">qclose</a>	  
+    <td> shut random access file using fclose
+<tr><td><a href="#qmode">qmode</a>	  
+    <td> change size of item in file ops.
+<tr><td><a href="#qread">qread</a>	   
+   <td> fread from random access file
+<tr><td><a href="#qreadc">qreadc</a>	   
+    <td> fread byte characters from random access file
+<tr><td><a href="#qwrite">qwrite</a>	   
+   <td> fwrite to random access file
+<tr><td><a href="#qwritc">qwritc</a>	  
+    <td> fwrite byte characters to random access file
+<tr><td><a href="#qseek">qseek</a>	  
+    <td> fseek within random access file
+<tr><td><a href="#qback">qback</a>	  
+    <td> backspace within random access file
+<tr><td><a href="#qskip">qskip</a>	  
+    <td> skip forward within random access file
+<tr><td><a href="#cqinq">cqinq</a>	 
+    <td> inquire file status on the given stream
+<tr><td><a href="#qlocate">qlocate</a>	  
+    <td> current position within random access file
+<tr><td colspan=2><b>Magic numbers</b>
+<tr><td><a href="#qnan">qnan</a>	
+    <td>sets NaN
+<tr><td><a href="#cisnan">cisnan</a>	  
+    <td>checks for NaN
+<tr><td><a href="#ccpbml">ccpbml</a>
+    <td>absent data test for mtzlib	
+<tr><td><a href="#ccpwrg">ccpwrg</a>		 
+    <td>updates MTZ column ranges
+<tr><td colspan=2><b>Missing system support </b>
+<tr><td>idate/idate_		 <td>AIX, F2C, G77
+<tr><td>ierrno/ierrno_		 <td>HPUX, AIX, F2C, G77
+<tr><td>itime/itime_		 <td>HPUX, AIX, F2C, G77
+<tr><td>etime/etime_		 <td>HPUX, AIX, F2C, G77
+<tr><td>exit_                    <td>F2C, G77
+<tr><td>time_			 <td>F2C, G77
+<tr><td>getpid_			 <td>F2C, G77
+<tr><td>isatty/isatty_		 <td>HPUX, AIX, F2C, G77
+<tr><td>gerror_			 <td>F2C, G77
+<tr><td>ibset_			 <td>F2C, G77
+<tr><td>ibclr_			 <td>F2C, G77
+<tr><td>btest_			 <td>F2C, G77
+</table>
+
+<a name="descriptions"></a><H2>Routine Descriptions</H2>
+
+<p><a name="internal"></a><H3>Internal Routines.</H3>
+<dl>
+<dt><a name="flength"></a><H3>flength</H3>
+    <dd><tt>static size_t flength (char *s, int len) </tt>
+    <p>Returns the length (units size_t) of a character string s[len] with the
+      trailing blanks removed.
+ 
+<p>
+<dt><a name="fatal"></a><H3>fatal</H3>
+    <dd><tt>static void fatal (char *message) </tt>
+    <p>Interface to CCPERR which avoids mixing FORTRAN and C code.
+
+<p>
+<dt><a name="cqprint"></a><H3>cqprint</H3>
+    <dd><tt>static void cqprint (char *message) </tt>
+    <p>prints a non-fatal message using the Fortran i/o.
+
+<p>
+<dt><a name="file_fatal"></a><H3>file_fatal</H3>
+    <dd><tt>static void file_fatal (char *message, char *file)</tt>
+    <p>reports a fatal error with a given file.  Calls <a href="#fatal">fatal</a>.
+
+</dl>
+
+<a name="vax_convex"></a><H3>Floating-point conversion routines.</H3>
+These conversion routines are based on HDF, but do the
+conversion in-place.  They do the obvious conversion between VAX,
+IEEE and Convex formats implied by the routine names. 
+<dl>
+<dt><a name="vaxF2ieeeF"></a><H3>vaxF2ieeeF</H3>
+    <dd><tt>static void vaxF2ieeeF(union float_uint_uchar buffer[], int size)</tt>
+    
+<p>
+<dt><a name="ieeeF2vaxF"></a><H3>ieeeF2vaxF</H3>
+    <dd><tt>static void ieeeF2vaxF(union float_uint_uchar buffer[], int size)</tt>
+
+</dl>
+<p>The Convex format is like the VAX with a different byte order.  
+   Convex does provide ieee native ieee conversion routines, 
+   but we need convexF2ieeeF anyhow.          
+
+<dl>
+<dt><a name="convexF2ieeeF"></a><H3>convexF2ieeeF</H3>
+    <dd><tt>static void convexF2ieeeF(union float_uint_uchar buffer[], int size)</tt>
+    
+<p>
+<dt><a name="ieeeF2convexF"></a><H3>ieeeF2convexF</H3>
+    <dd><tt>static void ieeeF2convexF(union float_uint_uchar buffer[], int size)</tt>
+
+</dl>
+    
+<H3>Miscellaneous routines.</H3>
+<dl>
+<dt><a name="usetenv"></a><H3>ustenv</H3>
+    <dd><table noborder>
+     <tr valign="TOP"><td><tt>CALL_LIKE_HPUX:  </tt>
+                      <td><tt>void ustenv (char *string, int *result, int Lstr)</tt>
+     <tr valign="TOP"><td><tt>CALL_LIKE_STARDENT:  </tt>
+                      <td><tt>void USTENV (struct Str_Desc *string, int *result) </tt>
+     <tr valign="TOP"><td><tt>CALL_LIKE_SUN:  </tt>
+                      <td>void ustenv_ (char *string, int *result, int Lstr)
+     <tr valign="TOP"><td><tt>CALL_LIKE_MVS:  </tt>
+                      <td><tt>void __stdcall USTENV (char *string, int *result, int Lstr)
+                          </tt>
+    </table>
+    <p>This sets an environment variable <tt>var</tt> to <tt>val</tt>, where the 
+       argument <tt>string == 'var=val'</tt>. <br>This is for use by the "logical name" 
+       mechanism for specifying file connexions.  Note that a VMS version is supplied 
+       in vms.for and that there is no standard way of setting and environment 
+       variable.  In a minimal posix system it might be necessary to twiddle the 
+       environment strings explicitly.
+
+
+<p>
+<dt><a name="culink"></a><H3>cunlink</H3>
+    <dd><table noborder>
+     <tr valign="TOP"><td><tt>CALL_LIKE_HPUX </tt>
+                      <td><tt>void cunlink (char *filename, int Lfilename) </tt>
+     <tr valign="TOP"><td><tt>CALL_LIKE_STARDENT </tt>
+                      <td><tt>void CUNLINK (struct Str_Desc *filename) </tt>
+     <tr valign="TOP"><td><tt>(VMS) </tt>
+                      <td><tt>void CUNLINK (struct dsc$descriptor_s *filename) </tt>
+     <tr valign="TOP"><td><tt>CALL_LIKE_SUN
+                      <td><tt>void cunlink_ (char *filename, int Lfilename) </tt>
+     <tr valign="TOP"><td><tt>CALL_LIKE_MVS </tt>
+                      <td><tt>void __stdcall CUNLINK (char *filename, int Lfilename) </tt>
+     </table>
+    <p>This unlinks <tt>filename</tt> from the directory.  It's intended for
+       use with scratch files, so that they can be hidden when opened but still 
+       be available as long as they remain connected (see CCPOPN).
+       This functionality doesn't seem to exist in VMS.  Failure to   
+       unlink isn't fatal (it's been observed, apparently spuriously).
+
+<p>
+<dt><a name="hgetlimits"></a><H3>hgetlimits</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>CALL_LIKE_HPUX </tt>
+	 <td><tt>void hgetlimits (int *IValueNotDet, float *ValueNotDet) </tt>
+        <tr valign="TOP"><td><tt>(VMS) </tt>
+	 <td><tt>void HGETLIMITS (int *IValueNotDet, float *ValueNotDet) </tt>
+        <tr valign="TOP"><td><tt>CALL_LIKE_STARDENT </tt>
+	 <td><tt>void HGETLIMITS (int *IValueNotDet, float *ValueNotDet) </tt>
+        <tr valign="TOP"><td><tt>CALL_LIKE_SUN </tt>
+	 <td><tt>void hgetlimits_ (int *IValueNotDet, float *ValueNotDet) </tt>
+        <tr valign="TOP"><td><tt>CALL_LIKE_MVS </tt>
+	 <td><tt>void __stdcall HGETLIMITS (int *IValueNotDet, float *ValueNotDet) </tt>
+        </table>
+        <p>Returns largest int and largest float as defined in <i>limits.h</i> 
+	   and <i>float.h</i> 
+
+<p>
+<dt><a name="cmkdir"></a><H3>cmkdir</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>CALL_LIKE_HPUX </tt>
+	 <td><tt>void cmkdir (const char *path, const char *cmode, int *result, 
+	  int Lpath, int Lmode) </tt>
+        <tr valign="TOP"><td><tt>(VMS) </tt>
+	 <td><tt>void CMKDIR (struct dsc$descriptor_s *path, 
+	  struct dsc$descriptor_s *cmode, int *result) </tt>
+        <tr valign="TOP"><td><tt>CALL_LIKE_STARDENT </tt>
+	 <td><tt>void CMKDIR (struct Str_Desc *path, struct Str_Desc *cmode, 
+	  int *result) </tt>
+        <tr valign="TOP"><td><tt>CALL_LIKE_SUN </tt>
+	 <td><tt>void cmkdir_ (const char *path, const char *cmode, int *result, 
+	  int Lpath, int Lmode) </tt>
+        <tr valign="TOP"><td><tt>CALL_LIKE_MVS </tt>
+	 <td><tt>void __stdcall CMKDIR (const char *path, int Lpath, 
+	  const char *cmode, int Lmode, int *result) </tt>
+        </table>
+        <p>Wrap-around for mkdir function. Returns 0 if successful, 1 if directory 
+	   already exists, and -1 if other error
+
+<p>
+<dt><a name="cchmod"></a><H3>cchmod</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>CALL_LIKE_HPUX </tt>
+	 <td><tt>void cchmod (const char *path, const char *cmode, int *result, 
+	  int Lpath, int Lmode) </tt>
+        <tr valign="TOP"><td><tt>(VMS) </tt>
+	 <td><tt>void CCHMOD (struct dsc$descriptor_s *path, 
+	  struct dsc$descriptor_s *cmode, int *result) </tt>
+        <tr valign="TOP"><td><tt>CALL_LIKE_STARDENT </tt>
+	 <td><tt>void CCHMOD (struct Str_Desc *path, struct Str_Desc *cmode, 
+	  int *result) </tt>
+        <tr valign="TOP"><td><tt>CALL_LIKE_SUN </tt>
+	 <td><tt>void cchmod_ (const char *path, const char *cmode, int *result, 
+	  int Lpath, int Lmode) </tt>
+        <tr valign="TOP"><td><tt>CALL_LIKE_MVS </tt>
+	 <td><tt>void __stdcall CCHMOD (const char *path, int Lpath, 
+	  const char *cmode, int Lmode, int *result) </tt>
+        </table>
+        <p>Wrap around for chmod function.
+
+</dl>
+
+<H3>Dynamic memory allocation</H3>
+<p>It's nice to be able to determine array sizes at run time to avoid
+   messy recompilation.  The only way effectively to get dynamic     
+   allocation in Fortran77 reasonably portably is to do the allocation, 
+   e.g.\ in C, and invoke the Fortran routine passed as a parameter with 
+   pointers to the allocated memory which it will treat as arrays.  If we
+   want to allow more than one array, it's more tricky.     
+
+<dl>
+<dt><a name="ccpal1"></a><H3>ccpal1</H3>
+    <dd><table noborder>
+     <tr valign="TOP"><td><tt>CALL_LIKE_HPUX </tt>
+        <td><tt>void ccpal1 (void (* routne), int *n, int type[], int length[]) </tt>
+     <tr valign="TOP"><td><tt>(VMS) || CALL_LIKE_STARDENT </tt>
+        <td><tt>void CCPAL1 (void (* routne) (), int *n, int type[], int length[]) </tt>
+     <tr valign="TOP"><td><tt>CALL_LIKE_SUN </tt>
+        <td><tt>void ccpal1_ (void (* routne) (), int *n, int type[], int length[]) </tt>
+     <tr valign="TOP"><td><tt>CALL_LIKE_MVS </tt>
+        <td><tt>void __stdcall CCPAL1 (void (* routne) (), int *n, int type[], int length[]) </tt>
+     </table>
+    <p> Arranges to call subroutine <tt>routne</tt> with <tt>n</tt> array
+       arguments.  Each has a type indicated by <tt>type(i)</tt> and a length
+       given by <tt>length(i)</tt>.  <tt>type</tt> is an integer array with    
+       values 1, 2, 3, 4 indicating INTEGER, REAL, DOUBLE PRECISION and COMPLEX
+       respectively.  It's not immediately clear what all the Fortran/C	       
+       conventions are for passing CHARACTER arrays, so we'll arrange a  
+       higher-level interface and have types here just numeric.  The     
+       Fortran (CCPALC) will also do argument validation.  Also the rules 
+       for passing external routines as arguments aren't clear--assume       
+       the obvious way.                                                       
+    <p>                                                                    
+       There's a VMS Fortran version of this, although the code here    
+       does work fine in VMS\@.                                               
+    <p>                                                                    
+       NB: there's a possibility of a hook here to use memory-mapped files on
+       systems with the capability and insufficient VM.                    
+    <p>                                                                    
+       Under protest, this now allocates zeroed storage for where programs   
+       make bad assumptions.                                               
+
+<p>
+<dt><a name="ccp4malloc"></a><H3>ccp4malloc</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>void *ccp4malloc(size_t size) </tt>
+        </table>
+        <p>This is a wrapper for the malloc function, which adds some
+	   error trapping
+
+<p>
+<dt><a name="ccp4realloc"></a><H3>ccp4realloc</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>void *ccp4realloc(void *ptr, size_t size) </tt>
+        </table>
+        <p>This is a wrapper for the realloc function, which adds some
+	   error trapping
+
+<p>
+<dt><a name="ccp4calloc"></a><H3>ccp4calloc</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>void *ccp4calloc(size_t nelem , size_t elsize) </tt>
+        </table>
+        <p>This is a wrapper for the calloc function, which adds some
+	   error trapping
+</dl>
+
+<H3>Diskio Routines.</H3>
+
+<dl>
+<dt><a name="copen"></a><H3>copen</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>CALL_LIKE_HPUX </tt>
+	 <td><tt>void copen (int *iunit, char *filename, int *istat, int Lfilename) </tt>
+	<tr valign="TOP"><td><tt>CALL_LIKE_STARDENT </tt>
+	 <td><tt>void COPEN (int *iunit, struct Str_Desc *filename, int *istat) </tt>
+	<tr valign="TOP"><td><tt>(VMS) </tt>
+	 <td><tt>void COPEN (int *iunit, struct dsc$descriptor_s *filename, int *istat) </tt>
+	<tr valign="TOP"><td><tt>CALL_LIKE_SUN </tt>
+	 <td><tt>void copen_ (int *iunit, char *filename, int *istat, int Lfilename) </tt>
+	<tr valign="TOP"><td><tt>CALL_LIKE_MVS </tt>
+	 <td><tt>void __stdcall COPEN (int *iunit, char *filename, int Lfilename, int *istat) </tt>
+	</table>
+    <p>Opens <tt>filename</tt> on diskio stream <tt>iunit</tt>.  <tt>istat</tt>
+       corresponds to the open mode given to <i>qopen</i>, from which <i>copen</i>
+       is always called--see <a href="./diskio.html#qopen">diskio</a> documentation. 
+     
+<dt><a name="qrarch"></a><H3>qrarch</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>CALL_LIKE_HPUX</tt>
+	 <td><tt>void qrarch (int *iunit, int *ipos, int *ireslt)</tt>
+	<tr valign="TOP"><td><tt>CALL_LIKE_STARDENT || (VMS)
+	 <td><tt>void QRARCH (int *iunit, int *ipos, int *ireslt)</tt>
+	<tr valign="TOP"><td><tt>CALL_LIKE_SUN
+	 <td><tt>void qrarch_ (int *iunit, int *ipos, int *ireslt)</tt>
+	<tr valign="TOP"><td><tt>CALL_LIKE_MVS
+	 <td><tt>void __stdcall QRARCH (int *iunit, int *ipos, int *ireslt)</tt>
+        </table>
+        <p>For binary files with a well-determined structure in terms of   
+	   float's and int's we may want to set up the connected stream to  
+	   do transparent reading of files written on a machine with a different  
+	   architecture.  This is currently the case for map files and 
+	   MTZ files and this routine is called from <i>mtzlib</i> and       
+	   <i>maplib</i>.                                                          
+	<p><i>qrarch</i> reads the "machine stamp" at word <tt>ipos</tt>   
+	   for the diskio file on stream <tt>iunit</tt> and sets up the appropriate 
+	   bit-twiddling for subsequent qreadi's on that stream.  The           
+	   information read from the file is returned in <tt>ireslt</tt> in the     
+	   form <tt>fileFT+16*fileIT</tt>.  If the stamp is zero    
+	   (as it would be for files written with a previous version of the       
+	   library) we assume the file is in native format and needs no           
+	   conversion in <a href="#qread">qread</a>; in this case <tt>ireslt</tt> 
+	   will be zero and   
+	   the caller can issue a warning.  <tt>Iconvert</tt> and <tt>Fconvert</tt> are
+	   used by <i>qread</i> to determine the type of conversion (if any) to be   
+	   applied to integers and reals.                                         
+        <p>Extra feature: logical/environment variable <tt>CONVERT_FROM</tt> may be set 
+	   to one of <tt>BEIEEE</tt>, <tt>LEIEEE</tt>, <tt>VAX</tt> or 
+	   <tt>CONVEXNATIVE</tt> to avoid reading the 
+	   machine stamp and assume the file is from the stipulated architecture  
+	   for all input MTZ and map files for which qrarch is called.        
+	<p>N.B.: leaves the stream positioned just after the machine stamp.       
+
+<p>
+<dt><a name="qwarch"></a><H3>qwarch</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>CALL_LIKE_HPUX </tt>
+	 <td><tt>void qwarch (int *iunit, int *ipos) </tt>
+	<tr valign="TOP"><td><tt>CALL_LIKE_STARDENT || (VMS) </tt>
+	 <td><tt>void QWARCH (int *iunit, int *ipos) </tt>
+	<tr valign="TOP"><td><tt>CALL_LIKE_SUN </tt>
+	 <td><tt>void qwarch_ (int *iunit, int *ipos) </tt>
+	<tr valign="TOP"><td><tt>CALL_LIKE_MVS </tt>
+	 <td><tt>void __stdcall QWARCH (int *iunit, int *ipos) </tt>
+        </table>
+	<p>This is the complement of <a href="#qrarch">qrarch</a>, writing the native 
+	   machine architecture information ("machine stamp") to diskio stream     
+	   <tt>iunit</tt> at word <tt>ipos</tt>.  Currently called           
+	   from <i>mtzlib</i> and <i>maplib</i>.                                   
+	<p>The machine stamp in <tt>mtstring</tt> is four nibbles in order, indicating
+	   complex and real format (must both be the same), integer format and   
+	   character format (currently irrelevant).  The last two bytes of       
+	   <tt>mtstring</tt> are currently unused and always zero.                    
+	<p>N.B.: leaves the stream positioned just after the machine stamp.
+
+<p>
+<dt><a name="qclose"></a><H3>qclose</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>CALL_LIKE_HPUX </tt>
+	 <td><tt>void qclose (int *iunit) </tt>
+	<tr valign="TOP"><td><tt>(VMS) || CALL_LIKE_STARDENT </tt>
+	 <td><tt>void QCLOSE (int *iunit) </tt>
+	<tr valign="TOP"><td><tt>CALL_LIKE_SUN </tt>
+	 <td><tt>void qclose_ (int *iunit) </tt>
+	<tr valign="TOP"><td><tt>CALL_LIKE_MVS </tt>
+	 <td><tt>void __stdcall QCLOSE (int *iunit) </tt>
+        </table>
+        <p>Closes the file open on diskio stream <tt>iunit</tt>.
+
+<p>
+<dt><a name="qmode"></a><H3>qmode</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>CALL_LIKE_HPUX </tt>
+	 <td><tt>void qmode (int *iunit, int *mode, int *size) </tt>
+	<tr valign="TOP"><td><tt>(VMS) || CALL_LIKE_STARDENT </tt>
+	 <td><tt>void QMODE (int *iunit, int *mode, int *size) </tt>
+	<tr valign="TOP"><td><tt>CALL_LIKE_SUN </tt>
+	 <td><tt>void qmode_ (int *iunit, int *mode, int *size)</tt> 
+	<tr valign="TOP"><td><tt>CALL_LIKE_MVS </tt>
+	 <td><tt>void __stdcall QMODE (int *iunit, int *mode, int *size) </tt>
+        </table>
+        <p>Changes the diskio "access mode" for stream <tt>iunit</tt> to
+	   <tt>mode</tt>.  The resulting size in bytes of items for transfer is
+	   returned as <tt>size</tt>.
+
+<p>
+<dt><a name="qread"></a><H3>qread</H3>
+    <dd><table noborder>
+     <tr valign="TOP"><td><tt>CALL_LIKE_HPUX </tt>
+      <td><tt>void qread (int *iunit, uint8 * buffer, int *nitems, int *result) </tt>
+     <tr valign="TOP"><td><tt>(VMS) || (stardent) </tt>
+      <td><tt>void QREAD (int *iunit, uint8 * buffer, int *nitems, int *result) </tt>
+     <tr valign="TOP"><td><tt>CALL_LIKE_SUN </tt>
+      <td><tt>void qread_ (int *iunit, uint8 * buffer, int *nitems, int *result) </tt>
+     <tr valign="TOP"><td><tt>CALL_LIKE_MVS </tt>
+      <td><tt>void __stdcall QREAD (int *iunit, uint8 * buffer, int *nitems, int *result) </tt>
+        </table>
+        <p>Reads <tt>nitems</tt> in the current mode (set by <a href="#qmode">qmode</a>
+	   ) from diskio stream <tt>iunit</tt> previously opened by 
+	   <a href="./diskio.html#qqopen">qqopen</a>
+	   (<a href="copen">copen</a>) and returns <tt>result </tt> which is 
+	   0 on success, or -1 at EOF.
+	<p>It aborts on an i/o error.
+	<p>Numbers written in a foreign format will be translated if necessary if 
+	   the stream is connected to an MTZ or map file.            
+
+<p>
+<dt><a name="qreadc"></a><H3>qreadc</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>CALL_LIKE_HPUX </tt>
+	 <td><tt>void qreadc (int *iunit, char * buffer, int *result, int Lbuffer) </tt>
+        <tr valign="TOP"><td><tt>VMS </tt>
+	 <td><tt>  void QREADC (int *iunit, struct dsc$descriptor_s *buffer, int *result) </tt>
+        <tr valign="TOP"><td><tt>CALL_LIKE_STARDENT </tt>
+	 <td><tt>  void QREADC (int *iunit, struct Str_Desc *buffer, int *result) </tt>
+        <tr valign="TOP"><td><tt>CALL_LIKE_SUN </tt>
+	 <td><tt>  void qreadc_ (int *iunit, char * buffer, int *result, int Lbuffer) </tt>
+        <tr valign="TOP"><td><tt>CALL_LIKE_MVS </tt>
+	 <td><tt>  void __stdcall QREADC (int *iunit, char * buffer, int *result, int Lbuffer) </tt>
+        </table>
+        <p>Fills CHARACTER buffer in byte mode from diskio stream
+	   <tt>iunit</tt> previously opened by <a href="./diskio.html#qqopen">qqopen</a>
+	   (<a href="copen">copen</a>) and returns
+	   <tt>result</tt> which is the number of items read or 0 on failure. 
+	<p>Call it with a character substring if necessary to control the number 
+	   of bytes read.     
+
+<p>
+<dt><a name="qwrite"></a><H3>qwrite</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>CALL_LIKE_HP </tt>
+	 <td><tt>void qwrite (int *iunit, uint8 * buffer, int *nitems)  </tt>
+	<tr valign="TOP"><td><tt>(VMS) || CALL_LIKE_STARDENT </tt>
+	 <td><tt>void QWRITE (int *iunit, uint8 * buffer, int *nitems) </tt>
+	<tr valign="TOP"><td><tt>CALL_LIKE_SUN </tt>
+	 <td><tt>void qwrite_ (int *iunit, uint8 * buffer, int *nitems) </tt>
+	<tr valign="TOP"><td><tt>CALL_LIKE_MVS </tt>
+	 <td><tt>void __stdcall QWRITE (int *iunit, uint8 * buffer, int *nitems) </tt>
+        </table>
+        <p>This writes <tt>nitems</tt> items from <tt>buffer</tt> to 
+	   opened stream <tt>iunit</tt> using the current mode.
+
+<p>
+<dt><a name=""></a><H3>qwritc</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>CALL_LIKE_HPUX </tt>
+	 <td><tt>void qwritc (int *iunit, char * buffer, int Lbuffer) </tt>
+	<tr valign="TOP"><td><tt>(VMS) </tt>
+	 <td><tt>void QWRITC (int *iunit, struct dsc$descriptor_s *buffer) </tt>
+	<tr valign="TOP"><td><tt>CALL_LIKE_STARDENT </tt>
+	 <td><tt>void QWRITC (int *iunit, struct Str_Desc *buffer) </tt>
+	<tr valign="TOP"><td><tt>CALL_LIKE_SUN </tt>
+	 <td><tt>void qwritc_ (int *iunit, char * buffer, int Lbuffer) </tt>
+	<tr valign="TOP"><td><tt>CALL_LIKE_MVS </tt>
+	 <td><tt>void __stdcall QWRITC (int *iunit, char * buffer, int Lbuffer) </tt>
+        </table>
+        <p>Writes CHARACTER*(*) <tt>buffer</tt> to opened stream <tt>iunit</tt> in 
+	   byte mode.
+
+<p>
+<dt><a name="qseek"></a><H3>qseek</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>CALL_LIKE_HPUX </tt>
+	 <td><tt>void qseek (int *iunit, int *irec, int *iel, int *lrecl) </tt>
+	<tr valign="TOP"><td><tt>(VMS) || CALL_LIKE_STARDENT </tt>
+	 <td><tt>void QSEEK (int *iunit, int *irec, int *iel, int *lrecl) </tt>
+	<tr valign="TOP"><td><tt>CALL_LIKE_SUN </tt>
+	 <td><tt>void qseek_ (int *iunit, int *irec, int *iel, int *lrecl) </tt>
+	<tr valign="TOP"><td><tt>CALL_LIKE_MVS </tt>
+	 <td><tt>void __stdcall QSEEK (int *iunit, int *irec, int *iel, int *lrecl) </tt>
+        </table>
+        <p>Seeks to element <tt>iel</tt> in record <tt>irec</tt> in diskio stream 
+	   <tt>iunit</tt> whose record length is <tt>lrecl</tt>.
+
+<p>
+<dt><a name="qback"></a><H3>qback</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>CALL_LIKE_HPUX </tt>
+	 <td><tt>  void qback (int *iunit, int *lrecl) </tt>
+        <tr valign="TOP"><td><tt>(VMS) || CALL_LIKE_STARDENT </tt>
+	 <td><tt>  void QBACK (int *iunit, int *lrecl) </tt>
+        <tr valign="TOP"><td><tt>CALL_LIKE_SUN </tt>
+	 <td><tt>  void qback_ (int *iunit, int *lrecl) </tt>
+        <tr valign="TOP"><td><tt>CALL_LIKE_MVS </tt>
+	 <td><tt>  void __stdcall QBACK (int *iunit, int *lrecl) </tt>
+        </table>
+        <p>Backspaces one record, of length <tt>lrecl</tt> on diskio stream 
+	   <tt>iunit</tt>.
+
+<p>
+<dt><a name="cqinq"></a><H3>cqinq</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>CALL_LIKE_HPUX </tt>
+	 <td><tt>void cqinq (int *istrm, char *filnam, int *length, int len_filnam) </tt>
+        <tr valign="TOP"><td><tt>CALL_LIKE_STARDENT </tt>
+	 <td><tt>void CQINQ (int *istrm, struct Str_Desc *filnam, int *length) </tt>
+        <tr valign="TOP"><td><tt>(VMS) </tt>
+	 <td><tt>void CQINQ (int *istrm, struct dsc$descriptor_s *filnam, int *length) </tt>
+        <tr valign="TOP"><td><tt>CALL_LIKE_SUN </tt>
+	 <td><tt>void cqinq_ (int *istrm, char *filnam, int *length, int len_filnam) </tt>
+        <tr valign="TOP"><td><tt>CALL_LIKE_MVS </tt>
+	 <td><tt>void __stdcall CQINQ (int *istrm, char *filnam, int len_filnam, int *length) </tt>
+        </table>
+        <p>Returns the name <tt>filnam</tt> and <tt>length</tt> of the file (if any)
+	   open on diskio stream <tt>istrm</tt>.
+
+<p>
+<dt><a name="qlocate"></a><H3>qlocate</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>CALL_LIKE_HPUX </tt>
+	 <td><tt>void qlocate (int *iunit, int *locate) </tt>
+        <tr valign="TOP"><td><tt>(VMS) || CALL_LIKE_STARDENT </tt>
+	 <td><tt>void QLOCATE (int *iunit, int *locate) </tt>
+        <tr valign="TOP"><td><tt>CALL_LIKE_SUN </tt>
+	 <td><tt>void qlocate_ (int *iunit, int *locate) </tt>
+        <tr valign="TOP"><td><tt>CALL_LIKE_MVS </tt>
+	 <td><tt>void __stdcall QLOCATE (int *iunit, int *locate) </tt>
+        </table>
+        <p>Returns the current position <tt>locate</tt> in the diskio stream 
+	   <tt>iunit</tt>.
+
+</dl>
+
+<H3>`Magic' numbers</H3>
+
+<p>When an erroneous result occurs, for instance a floating point exception,    
+   it is useful to give it a special value--a "magic number"--possibly in   
+   addition to a special value, like a negative one.        
+   Using such a number in a calculation (by mistake, through ignoring the   
+   value) should not allow one to get half-sensible        
+   results as one might if this number was -9999 or some such. 
+
+<p>The obvious tactic with ieee arithmetic is to use a <tt>NaN</tt>       
+   value in such situations.  Things may be set up so that we either get    
+   an exception on using it in arithmetic or it silently propagates to all  
+   values using it and its presence is indicated by a NaN in the output.    
+<p>We need to provide a means of setting the magic number and checking      
+   whether a given value is such.  These are architecture-dependent         
+   bit-level operations, hence their presence in the C code. 
+<p>The suite doesn't currently use these routines, but should do soon.
+
+<dl>
+<dt><a name="qnan"></a><H3>qnan</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>CALL_LIKE_HPUX </tt>
+	 <td><tt>void qnan (union float_uint_uchar *realnum) </tt>
+        <tr valign="TOP"><td><tt>(VMS) || CALL_LIKE_STARDENT </tt>
+	 <td><tt>void QNAN (union float_uint_uchar *realnum) </tt>
+        <tr valign="TOP"><td><tt>CALL_LIKE_SUN </tt>
+	 <td><tt>void qnan_ (union float_uint_uchar *realnum) </tt>
+        <tr valign="TOP"><td><tt>CALL_LIKE_MVS </tt>
+	 <td><tt>void __stdcall QNAN (union float_uint_uchar *realnum) </tt>
+        </table>
+        <p>Sets a value to NaN.
+	<p>We have a choice of NaN values in ieee arithmetic. 
+	   0xfffa5a5a is the one used by the MIPS compilers as an
+	   undefined value.  Note the hex constant is the same for both byte sexes! 
+
+<p>
+<dt><a name="cisnan"></a><H3>cisnan</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>CALL_LIKE_HPUX </tt>
+	 <td><tt>int cisnan (union float_uint_uchar *realnum) </tt>
+        <tr valign="TOP"><td><tt>(VMS) || CALL_LIKE_STARDENT </tt>
+	 <td><tt>int CISNAN (union float_uint_uchar *realnum) </tt>
+        <tr valign="TOP"><td><tt>CALL_LIKE_SUN </tt>
+	 <td><tt>int cisnan_ (union float_uint_uchar *realnum) </tt>
+        <tr valign="TOP"><td><tt>CALL_LIKE_MVS </tt>
+	 <td><tt>int __stdcall CISNAN (union float_uint_uchar *realnum) </tt>
+        </table>
+        <p>integer (logical) function cisnan tests whether its argument
+	  is a NaN.  We have to do this by writing a C     
+	  int-valued procedure and testing the returned value in the calling
+	  function so that we don't have to assume how it represents logical 
+	  values.  The diskio library library provides the                 
+	  trivial interface <a href="./diskio.html#qisnan">qisnan</a>.
+
+<dt><a name="ccpbml"></a><H3>ccpbml</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>CALL_LIKE_HPUX </tt>
+         <td><tt>void ccpbml (int *ncols, union float_uint_uchar cols[]) </tt>
+        <tr valign="TOP"><td><tt>(VMS) || CALL_LIKE_STARDENT </tt>
+         <td><tt>void CCPBML (int *ncols, union float_uint_uchar cols[]) </tt>
+        <tr valign="TOP"><td><tt>CALL_LIKE_SUN </tt>
+         <td><tt>void ccpbml_ (int *ncols, union float_uint_uchar cols[]) </tt>
+        <tr valign="TOP"><td><tt>CALL_LIKE_MVS </tt>
+         <td><tt>void __stdcall CCPBML (int *ncols, union float_uint_uchar cols[]) </tt>
+        </table>
+        <p>Absent data test for <tt> mtzlib</tt>.<br>
+	   In mtzlib there's a fudge for BIOMOL-convention absence     
+	   flags, which are re-written to zeroes.  To do the real number       
+	   comparison, though, it's necessary to do a qnan-type test first.
+	   We don't want to call qnan (which calls cisnan) on every    
+	   number in the data file, so the tests are amortised in this routine 
+	   which deals with a whole array <tt>cols</tt> of length <tt>ncols</tt>.
+
+<p>
+<dt><a name="ccpwrg"></a><H3>ccpwrg</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>CALL_LIKE_HPUX
+         <td><tt>void ccpwrg (int *ncols, union float_uint_uchar cols[], 
+	  float wminmax[]) </tt>
+        <tr valign="TOP"><td><tt>(VMS) || CALL_LIKE_STARDENT </tt>
+         <td><tt>void CCPWRG (int *ncols, union float_uint_uchar cols[], 
+	  float wminmax[]) </tt>
+        <tr valign="TOP"><td><tt>CALL_LIKE_SUN </tt>
+         <td><tt>void ccpwrg_ (int *ncols, union float_uint_uchar cols[], 
+	  float wminmax[]) </tt>
+        <tr valign="TOP"><td><tt>CALL_LIKE_MVS </tt>
+         <td><tt>void __stdcall CCPWRG (int *ncols, union float_uint_uchar cols[],
+	  float wminmax[]) </tt>
+        </table>
+        <p>For updating MTZ column ranges. <br>
+	   This is a similar fudge to ccpbml to avoid QISNAN calls in  
+	   updating the MTZ column ranges in <tt>mtzlib</tt>.  Note that wminmax
+	   actually indexes a 3-D Fortran array with the first                   
+	   dimension range of 2, indicating minimum and maximum values respectively.
+
+</dl>
+
+
+
+<H3>Missing system support</H3>
+
+<p>Routines often found in <tt>libU77.a</tt> or somesuch are missing
+   on some systems, eg HPUX, AIX, and F2C and G77.
+
+<dl>
+<dt><a name="idate"></a><H3>idate</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>AIX </tt>
+         <td><tt>void idate (int iarray) </tt>
+        <tr valign="TOP"><td><tt>F2C || G77 </tt>
+         <td><tt>int idate_ (int *iarray) </tt>
+        </table>
+        <p>Returns date in dd/mm/yy format from localtime(). 
+
+<p>
+<dt><a name="ierrno"></a><H3>ierrno</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>HPUX || AIX </tt>
+         <td><tt>int ierrno () </tt>
+        <tr valign="TOP"><td><tt>F2C || G77 </tt>
+         <td><tt>int ierrno_ () </tt>
+        </table>
+        <p>
+
+<p>
+<dt><a name="itime"></a><H3>itime</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>HPUX || AIX </tt>
+         <td><tt>void itime (int array) </tt>
+        <tr valign="TOP"><td><tt>F2C || G77 </tt>
+         <td><tt>int itime_ (int *array) </tt>
+        </table>
+        <p>
+
+<p>
+<dt><a name="etime"></a><H3>etime</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>HPUX || AIX </tt>
+         <td><tt>float etime (float tarray) </tt>
+        <tr valign="TOP"><td><tt>F2C || G77 </tt>
+         <td><tt>doublereal etime_ (float *tarray) </tt>
+        </table>
+        <p>
+
+<p>
+<dt><a name="exit_"></a><H3>exit_</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>F2C || G77 </tt>
+         <td><tt>int exit_ (int *status) </tt>
+        </table>
+        <p>
+
+<p>
+<dt><a name="time_"></a><H3>time_</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>F2C || G77 </tt>
+         <td><tt>int time_ () </tt>
+        </table>
+        <p>
+
+<p>
+<dt><a name="isatty_"></a><H3>getpid_</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>F2C || G77 </tt>
+         <td><tt>int getpid_ () </tt>
+        </table>
+        <p>
+<p>
+<dt><a name="isatty_"></a><H3>isatty</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>F2C || G77 </tt>
+         <td><tt>int isatty_ (int *lunit) </tt>
+        <tr valign="TOP"><td><tt>CALL_LIKE_MVS </tt>
+         <td><tt>int __stdcall ISATTY (int *lunit) </tt>
+        </table>
+        <p>
+
+<p>
+<dt><a name="gerror_"></a><H3>gerror_</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>F2C || G77 </tt>
+         <td><tt>int gerror_ (char *str, int Lstr) </tt>
+        </table>
+        <p>
+
+<p>
+<dt><a name="ibset_"></a><H3>ibset_</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>F2C || G77 </tt>
+         <td><tt>int ibset_ (int *a, int *b) </tt>
+        </table>
+        <p>
+
+<p>
+<dt><a name="ibclr_"></a><H3>ibclr_</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>F2C || G77 </tt>
+         <td><tt>int ibclr_ (int *a, int *b) </tt>
+        </table>
+        <p>
+
+<p>
+<dt><a name="btest_"></a><H3>btest_</H3>
+    <dd><table noborder>
+        <tr valign="TOP"><td><tt>F2C || G77 </tt>
+         <td><tt>int btest_ (int *a, int *b) </tt>
+        </table>
+        <p>
+
+</dl>
+
+
+<hr>
+</body>
+</html>

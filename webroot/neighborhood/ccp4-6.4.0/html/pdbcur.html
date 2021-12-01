@@ -1,0 +1,455 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::PDBCUR::Supported::Coordinate file manipulations::various useful manipulations on coordinate files:::::::: -->
+
+<H1> PDBCUR (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>pdbcur </b>
+- a curation tool providing various analyses and manipulations of PDB files
+<p>
+<H2> SYNOPSIS</H2>
+<b>pdbcur xyzin</b>
+<i>foo_in.pdb</i>
+<b>xyzout</b>
+<i>foo_out.pdb</i>
+<br>
+ [Key-worded input file]
+<p>
+
+<H2> DESCRIPTION</H2>
+
+<tt>pdbcur</tt> provides various functions for analysing and manipulating
+the contents of PDB files. The program is written using the new MMDB
+library for coordinate data, and thus works with a hierarchical view
+of the atomic model. This hierarchy is visible for example in the
+<a href="#atom_selection">atom selection syntax</a> used. 
+<p>
+The program works on each keyword in turn. Therefore, the behaviour
+of a keyword <em>may</em> depend on what keywords have been previously
+applied, and how they have updated the model. In complex cases, it
+may be better to perform several runs of <tt>pdbcur</tt>.
+
+<H2> INPUT AND OUTPUT FILES</H2>
+<H3> XYZIN</H3>
+Input coordinate file.
+
+<H3> XYZOUT</H3>
+Output coordinate file.
+
+<H2> KEYWORDED INPUT</H2>
+
+<h3><a name="summarise">summarise   </a></h3>
+Summarise the contents of the coordinate file. For each chain in each model, 
+the following information is listed:
+<ul>
+<li>The total number of residues
+<li>The set of residue ranges
+<li>The number of residues which have alternative conformations
+<li>The amino acid composition
+</ul>
+
+<h3><a name="delsolvent">delsolvent </a></h3>
+<p>Delete all solvent residues from all chains and all
+models. The list of residues identified as "solvent" is
+kept in $CCP4/lib/src/mmdb/mmdb_tables.cpp as array
+StdSolventName, and is currently "ADE", "CYT", "GUA", 
+"INO", "THY", "URA", "WAT", "HOH", "TIP", "H2O", "DOD", 
+"MOH".</p>
+<p>If a chain has both
+protein and solvent, only solvent gets removed. If a chain
+becomes empty after removal of solvent, it gets removed.</p>
+
+<h3><a name="delhydrogen">delhydrogen </a></h3>
+Delete all hydrogens in the model. This is simple wrapper
+to delatom.
+
+<h3><a name="mostprob">mostprob [ &lt;altID&gt; ] </a></h3>
+Keep only the most probable alternate conformation, i.e.
+that with the highest occupancy, irrespective of ordering
+and altID label. Other conformations are deleted from the
+model. For the kept atoms, the occupancy is set to 1.0
+and the altID removed. Note that the resetting of occupancies
+renders a subsequent 'cutocc' keyword ineffective.
+<p>
+If there are two conformations with occupancy of 0.5, then
+the conformation with alternate ID &lt;altID&gt; is kept.
+If this parameter is not given, it defaults to "A". Note that
+this only applies to equal dual conformers - for unequal
+conformers, that with the highest occupancy is kept, as explained
+above.
+<p>
+This option is useful for switching back and forth between single 
+and multiple conformers during refinement to check the validity of 
+the model, and for generating single models for simulation or
+modelling.
+
+<h3><a name="cutocc">cutocc      {cutoff}</a></h3>
+Delete all atoms with an occupancy less than or equal
+to {cutoff}. The default cutoff is 0.0, i.e. specifying
+cutocc with no arguments removes all atoms with zero
+occupancy.
+
+<h3><a name="cutocc">noanisou </a></h3>
+Removes all the ANISOU records from the coordinate file.
+
+<h3><a name="renchain">renchain    {selection of chain(s)}    'new chain ID'</a></h3>
+Example:  renchain  /*/A 'B' <br>
+Quotations are optional and are useful for designation 'no chain ID'. <br>
+Examples:
+<ul>
+<li>rename A to 'no chain ID': renchain A ''
+<li>rename 'no chain ID' to B: renchain /*// B
+</ul>
+
+<h3><a name="renresidue">renresidue  {selection of residue(s)}  'new residue name'</a></h3>
+Example:  renresidue  (ALA) 'AL1' 
+
+<h3><a name="renatom">renatom     {selection of atom(s)}  'new 4-letter atom name'</a></h3>
+Example:  renatom  CA[C] ' CC '
+
+<h3><a name="renelement">renelement  {selection of atom(s)}  'new element name'</a></h3>
+Example:  renelement  CA[C] 'AL'
+
+<h3><a name="delmodel">delmodel    {selection of model(s)}</a></h3>
+Deletes the specified model(s). <br>
+Example (delete model #1):                delmodel /1 <br>
+Example (delete all models with chain A): delmodel /*/A
+
+<h3><a name="delchain">delchain    {selection of chain(s)}</a></h3>
+Deletes the specified chain(s). <br>
+Example (delete chain A in all models):   delchain A <br>
+Example (delete chain A in 1st model):    delchain /1/A
+
+<h3><a name="delresidue">delresidue  {selection of residue(s)}</a></h3>
+Deletes the specified residue(s). <br>
+Example (delete residues 33 to 120):      delresidue  33-120
+
+<h3><a name="delatom">delatom     {selection of atom(s)}</a></h3>
+Deletes the specified atom(s). <br>
+Example (delete all C-gamma atoms):       delatom CG[C]
+
+<h3><a name="deldist">deldist  &lt;x&gt; &lt;y&gt; &lt;z&gt; &lt;R&gt; </a></h3>
+Deletes atoms within R angstrom of x,y,z. <br>
+Example:   deldist 32.1 45.6 -0.4 10.0
+
+<h3><a name="lvmodel">lvmodel     {selection of model(s)}</a></h3>
+Leaves the specified model(s), everything else is deleted. <br>
+Example (leave only model #1):            lvmodel /1 <br>
+Example (leave all models with chain A):  lvmodel /*/A
+
+<h3><a name="lvchain">lvchain     {selection of chain(s)}</a></h3>
+Leaves the specified chain(s), everything else is deleted. <br>
+Example (leave chains A in all models):    lvchain A <br>
+Example (leave only chain A in 1st model): lvchain /1/A
+
+<h3><a name="lvresidue">lvresidue   {selection of residue(s)}</a></h3>
+Leaves the specified residue(s), everything else is deleted. <br>
+Example (leave residues 33.A to 120.B): lvresidue 33.A-120.B
+
+<h3><a name="lvatom">lvatom      {selection of atom(s)}</a></h3>
+Leaves the specified atom(s), everything else is deleted. <br>
+Example (leave only C-alpha atoms):       lvatom "CA[C]:*" <br>
+Note the use of * to get all alternative conformations, since the
+default for atom-level selection is a blank alt loc indicator
+only, see <a href="#atom_selection">atom selection syntax</a>.
+
+<h3><a name="lvdist">lvdist  &lt;x&gt; &lt;y&gt; &lt;z&gt; &lt;R&gt; </a></h3>
+Leaves atoms within R angstrom of x,y,z; everything else is deleted. <br>
+Example:   lvdist 32.1 45.6 -0.4 10.0
+
+<h3><a name="write">write       {PDB|CIF|BIN}</a></h3>
+Writes 'xyzout' as a PDB, mmCIF or MMDB BINary
+file. By default, the file is written in the format
+of input file.
+
+<h3><a name="genter">genter  </a></h3>    
+No parameters; this keyword generates PDB 'TER' cards.
+
+<h3><a name="sernum">sernum      </a></h3>
+No parameters; this keyword generates correct atom
+serial numbers.
+
+<h3><a name="mvsolvent">mvsolvent   </a></h3>
+No parameters; moves solvent chains to the end of models.
+
+<h3><a name="symmetry">symmetry  &lt;spgname&gt;  </a></h3>
+Input of the space group symmetry name, e.g. 'P 21 21 21'
+(without quotation marks, spaces _are_ significant, case sensitive).
+This parameter is mandatory if coordinate file does not
+specify the space group symmetry.
+
+<h3><a name="geometry">geometry &lt;a&gt; &lt;b&gt; &lt;c&gt; &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt;</a></h3>
+Input of the unit cell dimensions (space-separated
+real numbers). This parameter is mandatory if coordinate
+file does not specify the cell parameters.
+
+<h3><a name="genunit">genunit     </a></h3>
+Generating a unit cell as defined by crystallographic
+information given in coordinate file or set up with
+keywords 'symmetry' and 'geometry'. Chains generated
+by identity operation retain their names, all other
+are renamed as c_n, where c is the chain's original
+name, and n is the number of symmetry operation in
+the space group used (starting from 0 for identity
+operation on). In order to comply with PDB standards,
+the chains are then to be renamed using renchain
+command, e.g.  renchain A_2 H . The chains may be
+assigned automatically generated 1-character names
+using the command  mkchainIDs .
+<p>
+Example: rnase.pdb contains 2 chains A and B.
+Generate a unit cell, space group P 21 21 21, 4
+symmetry operations, and assign chain IDs C,D,E for
+chain A transformed by operations #1,2,3, and IDs
+F,G,H for chain B transformed by the same operations.
+Chains A and B transformed by 0th operation (identity)
+retain their IDs:
+<pre>
+
+pdbcur xyzin rnase.pdb xyzout ucell.pdb &lt;&lt;eof
+? symm P 21 21 21
+? genu
+? renc A_1 C
+? renc A_2 D
+? renc A_3 E
+? renc B_1 F
+? renc B_2 G
+? renc B_3 H
+? eof
+
+</pre>
+
+<h3><a name="symop">symop  X,Y,Z 'old chain ID' 'new chain ID' 'old ID' 'new ID' ...</a></h3>
+Declares (but does not apply) a symmetry operation.
+The symmetry operations for each X,Y,Z fractional
+coordinates must be written without spaces.
+   Pairs 'old chain ID' - 'new chain ID' specify how
+the chains should be renamed after operation. This
+input is not mandatory. If no renaming is specified,
+the newly generated chains will be renamed automatically
+(see keyword symcommit).
+<p>
+   Example:  symop  Y+1/2,X-1/2,Z  A S  B R  <br>
+(declare symmetry transformation x=Y+1/2, y=X-1/2, z=Z
+with renaming chain A to S and B to R.
+
+<h3><a name="symcommit">symcommit   </a></h3>
+No parameters. <br>
+Applies all symmetry operations declared since
+last symcommit statement. First operation (normally
+identity) will be applied to the existing set of
+coordinates, all other will be applied to the
+duplicates of the coordinates, and the results
+are merged.
+<p>
+   The newly generated chains are named as C_n,
+where C is the original chain name, and n is the
+symmetry operation number. Symmetry operations
+are numbered as they appear in symop statements,
+from 0 on; however the very first one is applied
+to the existing chains, which are not renamed in
+this case.
+<p>
+   Example:
+<pre>
+
+pdbcur xyzin rnase.pdb xyzout rnase1.pdb &lt;&lt;eof
+? symop  X,Y,Z
+? symop  Y+1/2,X-1/2,Z
+? symcommit
+? eof
+
+</pre>
+
+just adds two chains named A_1 and B_1, obtained
+according to the rule Y+1/2,X-1/2,Z from chains
+A and B, to the existing file.
+
+<h3><a name="mkchainIDs">mkchainIDs  </a></h3>
+Automatically generates 1-character chain IDs after
+applying symmetry operations. The IDs are generated
+such that they use all available letters starting
+from A, and a chain is not renamed if its name is
+already a 1-character one.
+<p>
+The following example
+<pre>
+
+pdbcur xyzin rnase.pdb xyzout ucell.pdb &lt;&lt;eof
+? symm P 21 21 21
+? genu
+? mkch
+? eof
+
+</pre>
+produces exactly the same result as that given for
+keyword GENUNIT, because the original chains are named
+sequentially as A,B (not G,I, for example).
+
+<h3><a name="rotate">rotate      {selection of atoms} alpha beta gamma x y z</a></h3>
+<h3><a name="rotate">rotate      {selection of atoms} alpha beta gamma center</a></h3>
+Euler rotation of selected atoms through angles alpha,
+beta and gamma (degrees) as applied to the initial
+Z-axis, new Y-axis and newest Z-axis, correspondingly.
+The rotation center is given by either orthogonal
+coordinates x, y and z or by keyword 'center' for
+specifying the mass center of the selected atoms.
+<p>
+   Examples:
+<pre>
+
+ 1. 90-degree rotation of chain A about Z-axis in
+    original coordinate system:
+    rotate   A   90 0 0   0 0 0
+ 2. 60-degree rotation of chains A and B about Y-axis
+    in the coordinate system of their mass center:
+    rotate 'A,B'  0 60 0   center
+
+</pre>
+
+<h3><a name="translate">translate   {selection of atoms} frac tx ty tz</a></h3>
+<h3><a name="translate">translate   {selection of atoms} orth tx ty tz</a></h3>
+
+Translate selected atoms through tx ty tz, which can be
+in fractional or orthogonal coordinates, depending on
+subkeyword 'frac' or 'orth'.
+
+<h3><a name="vrotate">vrotate     {selection of atoms} alpha vx vy vz   x y z</a></h3>
+<h3><a name="vrotate">vrotate     {selection of atoms} alpha vx vy vz   center</a></h3>
+<h3><a name="vrotate">vrotate     {selection of atoms} alpha atom1 atom2</a></h3>
+Rotation of selected atoms through angle alpha (degrees)
+about a vector given by direction (vx,vy,vz) from the
+rotation center (given as x,y,z or by keyword 'center'
+for the mass center of the selected atoms). The vector
+may also be specified by two atoms atom1 and atom2
+represented in the mmdb selection notation.
+<p>
+   Examples:
+<pre>
+
+ 1. 90-degree rotation of chain A about Z-axis in
+    original coordinate system:
+    vrotate  A   90  0 0 1   0 0 0
+ 2. 60-degree rotation of chains A and B about Y-axis
+    in the coordinate system of their mass center:
+    vrotate 'A,B'  60  0 1 0  center
+ 3. 45-degree rotation of all atoms about vector connecting
+    C-alpha atoms of residues 20.A of chain A and 55
+    of chain B:
+    vrotate /*/*/*/* 45  /1/A/20.A/CA[C] /1/B/55/CA[C]
+    or, if there is only one model in the PDB file:
+    vrotate *  45  A/20.A/CA[C] B/55/CA[C]
+
+</pre>
+
+<h2><a name="atom_selection">ATOM SELECTION SYNTAX</a></h2>
+
+Specification of the selection sets:
+<dl>
+<dt><em>either</em> 
+<dd> /mdl/chn/s1.i1-s2.i2/at[el]:aloc
+<dt><em>or</em> 
+<dd> /mdl/chn/*(res).ic/at[el]:aloc
+</dl>
+<p>
+where no spaces are allowed. The slashes separate the
+hierarchical levels of models, chains, residues and atoms.
+<p>
+Notations:
+<pre>
+
+ mdl   - the model's serial number or 0 or '*' for any model
+         (default).
+ chn   - the chain ID or list of chain IDs like 'A,B,C' or
+         '*' for any chain (default).
+ s1,s2 - the starting and ending residue sequence numbers
+         or '*' for any sequence number (default).
+ i1,i2 - the residues insertion codes or '*' for any
+         insertion code. If the sequence number other than  
+         '*' is specified, then insertion code defaults to ""
+         (no insertion code), otherwise the default is '*'.
+ res   - residue name or list of residue names like 'ALA,SER'
+         or '*' for any residue name (default)
+ at    - atom name or list of atom names like 'CA,N1,O' or
+         '*' for any atom name (default)
+ el    - chemical element name or list of chemical element
+         names like 'C,N,O', or '*' for any chemical element
+         name (default)
+ aloc  - the alternative location indicator or list of
+         alternative locations like 'A,B,C', or '*' for any
+         alternate location. If the atom name and chemical
+         element name is specified (both may be '*'), then
+         the alternative location indicator defaults to ""
+         (no alternate location), otherwise the default is
+          '*'.
+
+</pre>
+Values for chain IDs, residue names, atom names, chemical element
+names and alternative location indicators may be negated by
+prefix '!'. For example, '!A,B,C' for the list of chain names
+means 'any chain ID but A,B,C'.
+<p>
+Generally, any hierarchical element as well as the selection
+code may be omitted, in which case it is replaced for
+default (see above). This makes the following examples valid:
+<pre>
+
+ *                   select all atoms
+ /1                  select all atoms in model 1
+ A,B                 select all atoms in chains A and B in
+                     all models
+ /*/1,2              select all atoms in chains 1 and 2 in
+                     all models. Note that you must use this 
+                     format with numerical chain identifiers
+ /1//                select all atoms in chain without chainID
+                     in model 1
+ /*/,A,B/            select all atoms in chain without chainID,
+                     chain A and B in all models
+ 33-120              select all atoms in residues 33. to 120.
+                     in all chains and models
+ A/33.A-120.B        select all atoms in residues 33.A to
+                     120.B in chain A only, in all models
+ A/33.-120.A/[C]     select all carbons in residues 33. to
+                     120.A in chain A, in all models
+ CA[C]               select all C-alphas in all
+                     models/chains/residues
+ A//[C]              select all carbons in chain A, in all models
+ (!ALA,SER)          select all atoms in any residues but
+                     ALA and SER, in all models/chains
+ /1/A/(GLU)/CA[C]    select all C-alphas in GLU residues of
+                     chain A, model 1
+ /1/A/*(GLU)./CA[C}: same as above
+ [C]:,A              select all carbons without alternative
+                     location indicator and carbons in alternate
+                     location A
+
+</pre>
+ NOTE: if a selection contains comma(s), the selection sentence must
+be embraced by quotation marks, which indicate to the input parser that
+the sentence is a single input parameter rather than a set of comma-
+separated arguments.
+
+<H2> PROGRAM OUTPUT</H2>
+
+The program currently gives a short summary of the operations carried
+out.
+
+<h2>EXAMPLES</h2>
+
+<h3><A NAME="example"></A>Runnable example</h3>
+
+<a href="../examples/unix/runnable/pdbcur.exam">pdbcur.exam</a>
+
+<H2> SEE ALSO</H2>
+
+<a href="ncont.html">ncont</a> - MMDB application for finding contacts. <br>
+<a href="pdbset.html">pdbset</a> - traditional PDB utility program.
+
+<H2> AUTHORS</H2>
+
+Eugene Krissinel, European Bioinformatics Institute, Cambridge, UK.<br>
+Martyn Winn, Daresbury Laboratory, UK - some additional keywords.
+
+</body></html>

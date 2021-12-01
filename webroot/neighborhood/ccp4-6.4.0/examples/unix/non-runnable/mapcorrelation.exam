@@ -1,0 +1,133 @@
+#!/bin/csh -f
+#
+# Generate real-space correlation function, with multiple chains
+#
+
+
+#  Set working directory
+cd $scr0
+# Set store directory
+set saved = $ss3/pfk/bst
+
+
+set  cycle = 126	# cycle number for constructing file names etc
+
+set coords = ${saved}/bst	# base name for coordinate files, name will be 
+ 			#  'coords'_cyclenumber
+set coords_file = ${coords}_${cycle}
+
+set fobs   = bst_F	# name of Fobs file: this never changes
+
+
+#goto resmap
+#goto overlap
+
+sfall hklin ${saved}/$fobs xyzin ${coords_file}.pdb  \
+	 hklout ${fobs}_fc${cycle} << eof-1
+title BST PFK, Fobs from T9/T10 (IP), Fc from cycle $cycle 
+grid 140 120 100
+bins 40
+resolution  10 2.6
+rscb         4 2.6
+mode  sfcalc hklin xyzin
+sfsgrp p212121
+ngauss 2
+form ngauss 2  P
+labin FP=FT SIGFP=SIGFT
+labout  FC=FC PHIC=PHIC
+end
+eof-1
+
+
+
+#
+# 2Fo-Fc map
+#
+fftbig hklin ${fobs}_fc${cycle}  mapout c${cycle}_2fo-fc <<EOF-fft
+TITLE  BST PFK, Fobs from T9/T10 (IP), Fc from cycle $cycle 
+GRID   140 120 100
+AXIS   Y X Z
+XYZLIM 0 1 0 1 0 .25
+LABIN  F1=FT SIG1=SIGFT F2=FC SIG2=FC PHI=PHIC
+SCALE  F1 2.0
+EOF-fft
+ 
+#
+# Fc map
+#
+fcmap:
+fftbig hklin ${fobs}_fc${cycle}  mapout c${cycle}_fc <<EOF-fft2
+TITLE  BST PFK, Fobs from T9/T10 (IP), Fc from cycle $cycle 
+GRID   140 120 100
+AXIS   Y X Z
+XYZLIM 0 1 0 1 0 .25
+LABIN  F1=FC SIG1=FC PHI=PHIC
+EOF-fft2
+ 
+
+
+resmap:
+sfall  xyzin ${coords_file}.pdb  mapout c${cycle}_res << EOF-sfrk
+title BST PFK residue map chain I
+grid 140 120 100
+bins 40
+resolution  10 2.6
+chain  A 1 319
+chain  B 1 319
+chain  C 1 319
+chain  D 1 319
+chain  I 1 110
+chain  J 1 111
+chain  K 1 114
+chain  L 1 112
+mode  atmmap resmod
+symmetry P212121
+sfsg p212121
+ngauss 2
+form ngauss 2  P
+end
+EOF-sfrk
+
+
+overlap:
+overlapmap mapin1  c${cycle}_2fo-fc mapin2 c${cycle}_fc \
+       mapin3 c${cycle}_res <<eof-2
+correlate residue
+chain  A 1 319
+chain  B 1 319
+chain  C 1 319
+chain  D 1 319
+chain  I 1 110
+chain  J 1 111
+chain  K 1 114
+chain  L 1 112
+eof-2
+
+
+exit
+
+
+
+
+resmap:
+sfall  xyzin ${coords_file}_I.pdb  mapout c${cycle}_res_I << EOF-sfrk
+title BST PFK residue map chain I
+grid 140 120 100
+bins 40
+resolution  10 2.6
+mode  atmmap resmod
+symmetry P212121
+sfsg p212121
+ngauss 2
+form ngauss 2  P
+end
+EOF-sfrk
+
+
+overlap:
+overlapmap mapin1  c${cycle}_2fo-fc mapin2 c${cycle}_fc mapin3 c${cycle}_res_I <<eof-2
+correlate residue
+eof-2
+
+
+exit

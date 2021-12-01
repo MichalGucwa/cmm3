@@ -1,0 +1,183 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<!-- headlinks removed -->
+	<link rel="shortcut icon" href="../../../../misc/favicon.ico"/>
+    <title>Using Electron Density as a Model - Phaserwiki</title>
+    <style type="text/css">/*<![CDATA[*/ @import "../../../../skins/offline/main.css"; /*]]>*/</style>
+    <link rel="stylesheet" type="text/css" media="print" href="../../../../skins/common/commonPrint.css" />
+    <!--[if lt IE 5.5000]><style type="text/css">@import "../../../../skins/monobook/IE50Fixes.css";</style><![endif]-->
+    <!--[if IE 5.5000]><style type="text/css">@import "../../../../skins/monobook/IE55Fixes.css";</style><![endif]-->
+    <!--[if IE 6]><style type="text/css">@import "../../../../skins/monobook/IE60Fixes.css";</style><![endif]-->
+    <!--[if IE]><script type="text/javascript" src="../../../../skins/common/IEFixes.js"></script>
+    <meta http-equiv="imagetoolbar" content="no" /><![endif]-->
+    <script type="text/javascript" src="../../../../skins/common/wikibits.js"></script>
+    <script type="text/javascript" src="../../../../skins/offline/md5.js"></script>
+    <script type="text/javascript" src="../../../../skins/offline/utf8.js"></script>
+    <script type="text/javascript" src="../../../../skins/offline/lookup.js"></script>
+    <script type="text/javascript" src="../../../../raw/gen.js"></script>                  </head>
+  <body
+    class="ns-0 ns-subject page-Using_Electron_Density_as_a_Model">
+    <div id="globalWrapper">
+      <div id="column-content">
+	<div id="content">
+	  <a name="top" id="contentTop"></a>
+	        <h1 class="firstHeading">Using Electron Density as a Model</h1>
+	  <div id="bodyContent">
+	    <h3 id="siteSub">From Phaserwiki</h3>
+	    <div id="contentSub"></div>
+	    	    	    <!-- start content -->
+	    <p>When Phaser uses a PDB file as a model for molecular replacement, it computes electron density in a large cell from which a finely-sampled molecular transform is calculated. This finely-sampled molecular transform can be interpolated to get structure factors for the model in any arbitrary orientation. Similarly, Phaser can use structure factors representing electron density. Because of the need for a finely-sampled molecular transform, the density must be placed in a large cell prior to structure factor calculation.
+</p><p>The electron density can be obtained from a crystallographic experiment, or from electron microscopy. Here we give instructions for density coming from a crystallographic experiment. Note that, even though it should be possible to do much of this through the ccp4i interface using the "Map Cutting" task, there is a (documented) bug in the program maprot, which leads to incorrect results when the extent of the mask in any direction is greater than the corresponding cell edge. The procedure below uses a workaround suggested by Kevin Cowtan.
+</p><p>NB: If you are using unpatched versions of CCP4 5.0 through 5.0.2, this procedure may fail. You can find patches for bugs in the programs <a href="http://www.ccp4.ac.uk/problems.php#5.0.2-maprot" class="external text" title="http://www.ccp4.ac.uk/problems.php#5.0.2-maprot" rel="nofollow">maprot</a> and <a href="http://www.ccp4.ac.uk/problems.php#5.0.2-mapmask" class="external text" title="http://www.ccp4.ac.uk/problems.php#5.0.2-mapmask" rel="nofollow">mapmask</a> on the Problems pages of the CCP4 website, courtesy of Martyn Winn.
+</p><p>The mask in the following procedure defines two things: the volume containing the density to be used as a model, and the unit cell into which that density is to be placed for calculation of a finely-sampled molecular transform. The cell should extend at least 2.5 times the extent of the mask in each direction.
+</p><p>If you have non-crystallographic symmetry, you may be able to define a mask using a local correlation map, for instance in the CCP4 program maprot. Then it will be necessary to change the cell to the desired one for the molecular transform, using the programs mapmask (change the mask to a map and eventually back again) and maprot (change the cell of the intermediate map).
+</p><p>Often, as in the example below, the mask can be defined as the union of a set of spheres around positions specified in a PDB file, either a small number of large spheres, or a large number of small spheres centred on skeleton atoms. The first step in the procedure sets the space group in the input PDB file to P1 and the cell to the desired size. To get the cell dimensions, you can take the limits of xyz coordinates for atoms in the PDB file, add twice the sphere radius to get the extents for the mask, then multiply by 2.5. You will need to remember the mask extents and the coordinates of the centre of the mask, to be given as input to Phaser when you use the MTZ file.
+</p>
+<pre>   pdbset XYZIN mask.pdb XYZOUT $CCP4_SCR/mask_targetcell.pdb &lt;&lt; end-pdbset &gt; cutout.log
+   SPACEGROUP 1
+   CELL 108.0 140.0 108.0 90. 90. 90.
+   END
+   end-pdbset
+</pre>
+<p>Now make a mask from the PDB file, which will have the cell and symmetry that was just set. Choose a grid suitable for eventual back-transformation of the density, at least as fine as dmin/3. To make sfall happy, the number of grid points should be divisible by 2 and should not contain prime factors greater than 19. Set the radius for the spheres you are using around the atomic positions. Note that there is also a program called ncsmask in the XtalView suite. By referring to "$CBIN/ncsmask" you can avoid any possible name conflicts, but if you are running this from the ccp4i interface you will either want to make sure that CCP4 programs come before XtalView programs in your path, or configure the ccp4i interface to give the full path for ncsmask. (How to do this is discussed in the <a href="../../../../articles/f/a/q/FAQ_1fe9.html" title="FAQ"> FAQ</a>, in the context of how to make sure ccp4i finds the right version of Phaser.)
+</p>
+<pre>   $CBIN/ncsmask XYZIN $CCP4_SCR/mask_targetcell.pdb MSKOUT $CCP4_SCR/mask_targetcell.msk &lt;&lt; end-ncsmask &gt;&gt; cutout.log
+   GRID 120 150 120
+   RADIUS 4.0
+   PEAK 1
+   end-ncsmask
+   /bin/rm $CCP4_SCR/mask_targetcell.pdb
+</pre>
+<p>Take an input map containing your desired density, covering at least the asymmetric unit, and extend to cover exactly one unit cell.
+</p>
+<pre>   mapmask MAPIN input.map MAPOUT $CCP4_SCR/onecell.map &lt;&lt; end-mapmask &gt;&gt; cutout.log
+   XYZLIM CELL
+   end-mapmask
+</pre>
+<p>Cut out the density from the original cell, put it into a box matching the mask and its cell.
+</p>
+<pre>   maprot MAPIN $CCP4_SCR/onecell.map MSKIN $CCP4_SCR/mask_targetcell.msk \
+       WRKOUT $CCP4_SCR/masked_targetcell.map &lt;&lt; end-maprot &gt;&gt; cutout.log
+   MODE FROM
+   SYMMETRY WORK 1
+   AVERAGE
+   ROTATE EULER 0 0 0
+   TRANSLATE 0 0 0
+   end-maprot
+   /bin/rm $CCP4_SCR/onecell.map $CCP4_SCR/mask_targetcell.msk
+</pre>
+<p>Shuffle the masked density into a map covering the full unit cell.
+</p>
+<pre>   mapmask MAPIN $CCP4_SCR/masked_targetcell.map \
+       MAPOUT $CCP4_SCR/masked_fullcell.map &lt;&lt; end-mapmask2 &gt;&gt; cutout.log
+   XYZLIM CELL
+   PAD 0.0
+   end-mapmask2
+   /bin/rm $CCP4_SCR/masked_targetcell.map
+</pre>
+<p>Finally, back-transform the map to get finely-sampled molecular transform structure factors. Set the resolution equal to that used in computing the original input map.
+</p>
+<pre>   sfall HKLOUT masked_density.mtz MAPIN $CCP4_SCR/masked_fullcell.map &lt;&lt; end-sfall &gt;&gt; cutout.log
+   LABOUT FC=FC_mask PHIC=PHIC_mask
+   MODE SFCALC MAPIN
+   RESOLUTION 2.8
+   END
+   end-sfall
+   /bin/rm $CCP4_SCR/masked_fullcell.map
+</pre>
+<p>That's it! Now you can use the MTZ file as HKLIn in the ENSEMBLE command of Phaser. Choose a value of RMS to give a falloff in the Sigma(A) values similar to the falloff of the figures of merit (see the section of the documentation describing the formula for Sigma(A)). Alternatively, give a value of 1Å for a map of reasonable quality, or 1.5Å for a poorer map. It is essential to give the correct coordinates for the centre of the mask used to cut out density, in order for the molecular transform interpolation to work correctly.
+</p>
+<!-- 
+NewPP limit report
+Preprocessor node count: 1/1000000
+Post-expand include size: 0/2097152 bytes
+Template argument size: 0/2097152 bytes
+Expensive parser function count: 0/100
+-->
+<div class="printfooter">
+</div>
+	    	    <!-- end content -->
+	    <div class="visualClear"></div>
+	  </div>
+	</div>
+      </div>
+      <div id="column-one">
+	<div class="portlet" id="p-logo">
+            <a style="background-image: url(../../../../misc/PhaserwikiLogo.png);"
+	    href="http://www.phaser.cimr.cam.ac.uk/index.php/Phaser_Crystallographic_Software"
+	    title="Phaser Crystallographic Software"></a>
+	</div>
+	<script type="text/javascript"> if (window.isMSIE55) fixalpha(); </script>
+		<div class='portlet' id='p-site'>
+	  <h5>site</h5>
+	  <div class='pBody'>
+	    <ul>
+	    	      <li id="n-Home"><a href="../../../../index.html">Home</a></li>
+	     	      <li id="n-News"><a href="../../../../articles/n/e/w/News.html">News</a></li>
+	     	      <li id="n-Events"><a href="../../../../articles/e/v/e/Events.html">Events</a></li>
+	     	      <li id="n-Downloads"><a href="../../../../articles/d/o/w/Downloads.html">Downloads</a></li>
+	     	    </ul>
+	  </div>
+	</div>
+		<div class='portlet' id='p-documentation'>
+	  <h5>documentation</h5>
+	  <div class='pBody'>
+	    <ul>
+	    	      <li id="n-Manuals"><a href="../../../../articles/m/a/n/Manuals.html">Manuals</a></li>
+	     	      <li id="n-MR-Phasing"><a href="../../../../articles/m/o/l/Molecular_Replacement_a23a.html">MR Phasing</a></li>
+	     	      <li id="n-SAD-Phasing"><a href="../../../../articles/e/x/p/Experimental_Phasing_5400.html">SAD Phasing</a></li>
+	     	      <li id="n-Keyword-Examples"><a href="../../../../articles/m/r/_/MR_using_keyword_input_9c88.html">Keyword Examples</a></li>
+	     	      <li id="n-Python-Examples"><a href="../../../../articles/p/y/t/Python_Example_Scripts_7723.html">Python Examples</a></li>
+	     	      <li id="n-Tutorials"><a href="../../../../articles/t/u/t/Tutorials.html">Tutorials</a></li>
+	     	      <li id="n-FAQ"><a href="../../../../articles/f/a/q/FAQ_1fe9.html">FAQ</a></li>
+	     	      <li id="n-Top-Ten-Tips"><a href="../../../../articles/t/o/p/Top_Ten_Tips_3fcd.html">Top Ten Tips</a></li>
+	     	      <li id="n-Bugs"><a href="../../../../articles/b/u/g/Bugs.html">Bugs</a></li>
+	     	      <li id="n-Publications"><a href="../../../../articles/p/u/b/Publications.html">Publications</a></li>
+	     	      <li id="n-View-SVN"><a href="../../../../articles/s/v/n/SVN_Repository_93a5.html">View SVN</a></li>
+	     	    </ul>
+	  </div>
+	</div>
+		<div class='portlet' id='p-other'>
+	  <h5>other</h5>
+	  <div class='pBody'>
+	    <ul>
+	    	      <li id="n-Contact"><a href="../../../../articles/c/o/n/Contact.html">Contact</a></li>
+	     	      <li id="n-Developers"><a href="../../../../articles/d/e/v/Developers.html">Developers</a></li>
+	     	      <li id="n-Licences"><a href="../../../../articles/l/i/c/Licences.html">Licences</a></li>
+	     	      <li id="n-External-Links"><a href="../../../../articles/e/x/t/External_Links_ff0e.html">External Links</a></li>
+	     	      <li id="n-Help"><a href="../../../../articles/c/o/n/Help%7EContents_22de.html">Help</a></li>
+	     	    </ul>
+	  </div>
+	</div>
+	<!--
+	<div id="p-search" class="portlet">
+	  <h5><label for="searchInput">Search</label></h5>
+	  <div id="searchBody" class="pBody">
+	    <form action="javascript:goToStatic(3)" id="searchform"><div>
+	      <input id="searchInput" name="search" type="text"
+	        accesskey="f" value="" />
+	      <input type='submit' name="go" class="searchButton" id="searchGoButton"
+	        value="Go" />
+	    </div></form>
+	  </div>
+	</div>
+-->
+	      </div><!-- end of the left (by default at least) column -->
+      <div class="visualClear"></div>
+      <div id="footer">
+<!--
+    <div id="f-poweredbyico"><a href="http://www.mediawiki.org/"><img src="../../../../skins/common/images/poweredby_mediawiki_88x31.png" alt="Powered by MediaWiki" /></a></div>	-->
+<!-- date DATE Date -->
+	<ul id="f-list">
+	   Static <a href="http://www.phaser.cimr.cam.ac.uk/index.php/Phaser_Crystallographic_Software">Phaserwiki</a> 
+Thu Jul 25 23:20:16 BST 2013
+<!--
+	            </li>
+	  	  <li id="f-credits">This page was last modified 13:06, 30 June 2009 by <a href="../../../../articles/w/i/k/User%7EWikiSysop_5eaf.html" title="User:WikiSysop">WikiSysop</a>. </li>	  	  <li id="f-about"><a href="../../../../articles/a/b/o/Phaserwiki%7EAbout_932f.html" title="Phaserwiki:About">About Phaserwiki</a></li>	  	  -->
+	</ul>
+      </div>
+    </div>
+  </body>
+</html>

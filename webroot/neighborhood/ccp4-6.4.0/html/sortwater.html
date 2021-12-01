@@ -1,0 +1,113 @@
+<html>
+<head><title>CCP4 Program Suite : sortwater</title></head>
+<body>
+
+<!-- ::INDEX_INFO::SORTWATER::Supported::Coordinate file manipulations::sort waters by the protein chain to which they "belong":::::::: -->
+
+<H1> SORTWATER (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>sortwater </b>
+- sort waters by the protein chain to which they &quot;belong&quot;
+<H2> SYNOPSIS</H2>
+<b>sortwater</b>
+<b>xyzin</b>
+<i>input.brk</i>
+<b>xyzout</b>
+<i>output.brk</i>
+<br>
+  <a href="#keywords">[Keyworded input]</a>
+
+<H2><A NAME="description"></A> DESCRIPTION</H2>
+This is a program to sort waters by the protein chain to which
+they &quot;belong&quot;, in the case of a protein with several equivalent
+subunits related by non-crystallographic symmetry (and possibly
+crystallographic symmetry as well).  The program reads a coordinate
+file (Brookhaven format) containing several protein chains with
+different chain identifier characters, and water molecules. Each water
+is allocated to the protein chain which has the nearest [non-carbon]
+atom, using crystallographic symmetry if necessary, consistent with
+non-crystallographic symmetry. Waters may be reallocated to different
+protein chains so that two waters related by non-crystallographic
+symmetry are not in the same chain. The waters are written out to a
+file (XYZOUT) in the same format as the input file. Water atoms
+related by non-crystallographic symmetry will be given the same
+residue number, but different chain identifiers. Duplicate waters
+(after applying symmetry operators) are removed.
+<p>
+Note that there will always be ambiguities in waters close to
+subunit interfaces, so the program may make mistakes.
+
+<H2><a name="keywords"></a>KEYWORDED INPUT</H2>
+The allowed keywords are:
+<BLOCKQUOTE>
+<a href="#carbon"><B>CARBON</B></a>,
+<a href="#chains"><B>CHAINS</B></a>,
+<a href="#distance"><B>DISTANCE</B></a>,
+<a href="#ncs"><B>NCS</B></a>,
+<a href="#symmetry"><B>SYMMETRY</B></a>,
+<a href="#verbose"><B>VERBOSE</B></a>,
+<a href="#water"><B>WATER</B></a>,
+<a href="#wchains"><B>WCHAINS</B></a>.
+</BLOCKQUOTE>
+
+<h3><a name="chains"></a>CHAINS &lt;protein_chain_names&gt;</h3>
+Define all chain IDs of &quot;protein&quot; (<EM>i.e.</EM> non-water) chains.
+
+<h3><a name="wchains"></a>WCHAINS  &lt;water_chain_names&gt;</h3>
+Define chain names for water chains to correspond to &quot;protein&quot;
+chains in output file (irrespective of input water chain names).
+There must be the same number of water chains defined as &quot;protein&quot;
+chains, but the same water chain may be assigned to more than one
+protein chain, provided that they are not related by
+non-crystallographic symmetry.
+
+<h3><a name="symmetry"></a>SYMMETRY &lt;space_group_name&gt;|&lt;space_group_number&gt;|symmetry</h3>
+Define crystallographic symmetry.
+
+<h3><a name="water"></a>WATER &lt;water_residue_name&gt; [&lt;water_atom_name&gt;]</h3>
+Residue name for waters [default HOH], and atom name [default O].
+
+<h3><a name="carbon"></a>CARBON  [&quot;Yes&quot;|&quot;No&quot;]</h3>
+No: store only non-carbon non-water atoms for contact checking (.true.) [default]<br>
+Yes: store all atoms (.false.).
+
+<h3><a name="distance"></a>DISTANCE [&lt;maximum_similarity_distance&gt;] 
+[&lt;maximum_distance_from_protein&gt;]</h3>
+Maximum distance between putative NCS-related waters to accept [default 2.0]<br>
+maximum distance from non-water atom to accept as belonging to chain [default 6.0].
+
+<h3><a name="ncs"></a>NCS &lt;Chain1&gt; &lt;Chain2&gt; [ "ODB"  &lt;O_operator_filename&gt;
+| MATRIX &lt;r11&gt; &lt;r12&gt; &lt;r13&gt; &lt;r21&gt; &lt;r22&gt; &lt;r23&gt; 
+&lt;r31&gt; &lt;r32&gt; &lt;r33&gt; &lt;t1&gt; &lt;t2&gt; &lt;t3&gt;
+| IDENTITY ] [ SAME &lt;Chain3&gt; &lt;Chain4&gt; ] </h3>
+
+Define NCS operator to transform chain with ID &quot;Chain1&quot; to &quot;Chain2&quot;.
+<p>
+<A NAME="ncs_matrix"></A>Operators may be given as the filename of an O data block, or as
+12 numbers following the keyword MATRIX (note the ODB file contains
+the transposed matrix).
+<p>
+<A NAME="ncs_same"></A>The keyword SAME defines the transformation from &quot;Chain3&quot; to &quot;Chain4&quot;
+as being the same as that for &quot;Chain1&quot; to &quot;Chain2&quot;. This may be put
+at the end of a line defining an operator.
+<p>
+Implied operators will be generated automatically (<EM>e.g.</EM> B-&gt;A from A-&gt;B,
+and A-&gt;C from A-&gt;B & B-&gt;C).
+
+<h3><a name="verbose"></a>VERBOSE</h3>
+Set verbose printing flag.
+
+<H2><A NAME="examples"></A> EXAMPLES</H2>
+A very simple runnable unix example script can be found in $CEXAM/unix/runnable/
+<ul>
+<li><a href="../examples/unix/runnable/sortwater.exam">sortwater.exam</a>
+</ul>
+A more involved non-runnable unix example script is in $CEXAM/unix/non-runnable/
+<ul>
+<li><a href="../examples/unix/non-runnable/sortwater.exam">sortwater.exam</a> 
+</ul>
+
+<H2> AUTHOR</H2>
+Phil Evans, MRC LMB, January 1995
+
+</body></html>

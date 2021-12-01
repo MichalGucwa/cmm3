@@ -1,0 +1,89 @@
+#!/bin/sh
+#
+set -e
+
+#
+#  SCULPTOR:  model editing for MR
+#
+
+# run 1 - try to get close to chainsaw options
+#         main difference seems to be that it keeps CG1 and CG2 if
+#         both available
+
+phaser.sculptor --stdin <<eof
+input {
+   model {
+     file_name = $CEXAM/data/1a80_A.pdb
+   }
+   alignment {
+     file_name = $CEXAM/data/1mzr_1a80.pir
+   }
+}
+output {
+  job_title = Chainsaw-like run
+  folder = $CCP4_SCR
+  root = sculpt_run1
+}
+macromolecule {
+  deletion {
+    use = gap
+  }
+  polishing {
+    use = None
+  }
+  pruning {
+    use = schwarzenbacher
+  }
+  bfactor {
+    use = original
+  }
+  renumber {
+    use = target
+  }
+  rename = True
+}
+eof
+
+# run 2 - try some different options
+
+phaser.sculptor --stdin <<eof
+input {
+   model {
+     file_name = $CEXAM/data/1a80_A.pdb
+   }
+   alignment {
+     file_name = $CEXAM/data/1mzr_1a80.pir
+   }
+}
+output {
+  job_title = second run
+  folder = $CCP4_SCR
+  root = sculpt_run2
+}
+macromolecule {
+  deletion {
+    use = threshold_based_similarity
+    threshold_based_similarity {
+      threshold = -0.1
+    }
+  }
+  polishing {
+    use = remove_short
+  }
+  pruning {
+    use = similarity
+  }
+  bfactor {
+    use = asa
+    asa {
+      factor = 2
+      precision = 960
+      probe_radius = 1.4
+    }
+  }
+  renumber {
+    use = target
+  }
+  rename = True
+}
+eof

@@ -1,0 +1,423 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::POLARRFN::Supported::Molecular Replacement::fast rotation function that works in polar angles:::::::: -->
+
+<H1> POLARRFN (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>polarrfn </b>
+- fast rotation function that works in polar angles, updated to work with up to the 100th order of the spherical harmonics
+<H2> SYNOPSIS</H2>
+<b>polarrfn hklin</b>
+<i>foo_in_Fobs.mtz </i>
+<b>hklin2</b>
+<i>foo_in_Fmodel.mtz </i>
+<b>mapin</b>
+<i>bar.map</i>
+<b>mapout </b>
+<i>foo.map</i>
+<b>PLOT</b>
+<i>fred.plt</i>
+<br>
+ [<A HREF="#keywords">Keyworded input</A>]
+<H2> <A NAME="description"></A>DESCRIPTION</H2>
+
+This is a fast rotation function that works in polar angles, written by
+W. Kabsch. The program produces sections of constant rotation angle kappa for
+different axis directions defined by omega (angle from pole) and phi (angle
+around equator). The direction cosines of the axis is given by:
+<pre>
+        (  sin omega  cos phi  )
+        (  sin omega  sin phi  )
+        (     cos omega        )
+</pre>                
+<P> 
+These sections may be plotted as stereograms (<A HREF="#plot">PLOT</A> option). 
+For example, the kappa = 180 section can be used to identify 2-fold axes in
+a self-rotation function.
+<P>
+The program searches for peaks in the rotation function (<A HREF="#find">FIND</A>
+option), and these are listed in the log output in both polar and Eulerian angles. 
+For each peak, peaks related by crystallographic symmetry are also listed.
+If the peak, or one of its symmetry relations, corresponds to the identity
+operation (i.e. zero rotation), then this is indicated by "Origin peak" in the 
+output. For a self-rotation function, peaks corresponding to genuine non-crystallographic
+symmetry will appear after the origin peaks.
+<P> 
+Options are provided in the program for writing the calculated rotation function
+to a map file, that can be read by the program on another occasion for
+plotting, peak searching etc (options <A HREF="#map">MAP</A>, <A HREF="#read">READ</A>). 
+The results of the first stage
+of the calculation (<A HREF="almn.html">ALMN</A>) may also be saved for subsequent rotation function
+summations on different grids (<A HREF="#save">SAVE</A>, <A HREF="#sum">SUM</A>). A list of peaks may be read in,
+and all symmetry related peaks generated (option <A HREF="#peak">PEAK</A>).
+<P> 
+Compared to the Crowther program (<A HREF="almn.html">ALMN</A>), this program is a little
+slower but a self rotation function in polar angles is easier to understand.
+This program can also be used to calculate a small part of the rotation
+function on a fine grid (down to 1 degree steps). However, the crystal symmetry
+is expressed less fully in polar angle space than in Eulerian angle space, so
+for cross-rotation functions the Eulerian program is normally more appropriate.
+<P>
+This version of POLARRFN was modified for CCP4 5.0 to use up to the 100th
+order of spherical harmonics (previously 30). This allows a larger radius 
+of integration and/or a higher resolution cutoff to be used.</P>
+
+<H2> <A NAME="keywords"></A>KEYWORDED INPUT</H2>
+Only the first 4 letters of each keyword are necessary. All input is free
+format. Most data cards are optional. The various data control lines are
+identified by keywords, those available being:
+<blockquote>
+<A HREF="#cross"><B>CROSS</B></A>, <A HREF="#crystal"><B>CRYSTAL</B></A>,
+<A HREF="#end"><B>END</B></A>, <A HREF="#find"><B>FIND</B></A>,
+<A HREF="#join"><B>JOIN</B></A>, <A HREF="#labin"><B>LABIN</B></A>,
+<A HREF="#limits"><B>LIMITS</B></A>, <A HREF="#map"><B>MAP</B></A>,
+<A HREF="#maxord"><B>MAXORD</B></A>,
+<A HREF="#noprint"><B>NOPRINT</B></A>, <A HREF="#peak"><B>PEAK</B></A>,
+<A HREF="#plot"><B>PLOT</B></A>, <A HREF="#read"><B>READ</B></A>,
+<A HREF="#resolution"><B>RESOLUTION</B></A>, <A HREF="#save"><B>SAVE</B></A>,
+<A HREF="#self"><B>SELF</B></A>, <A HREF="#sum"><B>SUM</B></A>, <A HREF="#title"><B>TITLE</B></A>
+</blockquote>
+The following keywords are compulsory:
+SELF/CROSS, CRYSTAL, LABIN.
+<H3> <A NAME="title"></A>TITLE  &lt;title&gt;</H3>
+The rest of the line is taken as a title.
+<H3> <A NAME="self"></A>SELF     &lt;arad&gt;   &lt;eps&gt;</H3>
+Set flag for self rotation (cf CROSS)
+<dl>
+<dt> &lt;arad&gt;<dd>
+integration radius in Patterson space  (default 20&#197;)
+<dt> &lt;eps&gt;<dd>
+Radius (Angstrom) of sphere within which the
+Patterson is removed.  Default  Eps set = 0.7*&lt;resmax&gt;.
+</dl>
+<H3> <A NAME="cross"></A>CROSS     &lt;arad&gt;   &lt;eps&gt;</H3>
+Set flag for cross rotation (cf SELF)
+<dl>
+<dt> &lt;arad&gt;<dd>
+integration radius in Patterson space  (default 20&#197;)
+<dt> &lt;eps&gt;<dd>
+Radius (Angstrom) of sphere within which the
+Patterson is removed.  Default  Eps set = 0.7*&lt;resmax&gt;.
+</dl>
+<H3> <A NAME="resolution"></A>RESOLUTION    &lt;resmin&gt; &lt;resmax&gt;</H3>
+Read resolution limits in &#197;, in either order. If only one treat 
+as high resolution limit. Note that because of the limit of 100 in the order of
+the spherical harmonics in this version, the high resolution limit cannot be numerically
+less than the integration radius (arad) / 17.4: if it is, the program resets &lt;resmax&gt;
+to &lt;arad&gt; / 17.4 .
+<H3> <A NAME="crystal"></A>CRYSTAL 
+FILE  &lt;nfile&gt; ORTH  &lt;ncode&gt; BFAC  &lt;badd&gt; FLIMITS &lt;fmin&gt; &lt;fmax&gt;  
+[CELL  SYMMETRY]</H3>
+<P> 
+This card is COMPULSORY for each hklin set (one for self-rotation,
+two for cross-rotation). The first subkeyword FILE (or NUMBER) indicates
+whether this CRYSTAL card refers to crystal 1 or to crystal 2.
+<dl>
+<dt> FILE<dd>
+followed by crystal number &lt;nfile&gt;.  This sets the crystal number, 1 or
+2 (default 1).  The syntax is any one of FILE 1 or FILE 2.
+<dt> ORTH<dd>
+followed by orthogonalisation code &lt;ncode&gt; (default 1).  If the <A HREF="#peak">PEAK</A>
+option is used ORTH should be given.  Ncode defaults to 1 if
+unspecified.
+<pre>
+            ncode      orthogonalisation code for this crystal
+                  = 1, orthogonal x y z  along  a,c*xa,c*  (Brookhaven, default)
+                  = 2                           b,a*xb,a*
+                  = 3                           c,b*xc,b*
+                  = 4                           a+b,c*x(a+b),c*
+                  = 5                           a*,cxa*,c   (Rollett)
+</pre>
+<dt> BFAC<dd>
+followed by temperature factor &lt;badd&gt; (default = 0).  This can be used
+to sharpen the data (<EM>e.g.</EM>&nbsp;=&nbsp;-20).  Fused = Finput * exp(-badd*ssq/lsq).
+A better alternative is to use normalised amplitudes (from the program <A HREF="ecalc.html">ECALC</A>),
+in which case the BFAC option must NOT be used.
+<dt> FLIMITS<dd>
+followed by &lt;fmin&gt; and &lt;fmax&gt; (defaults to no cutoffs).
+These tests are done after application of the temperature
+factor, but before squaring to intensities.
+<dt> SYMMETRY<dd>
+followed by symmetry operation or crystal space group name
+or number. Default: take from MTZ file.
+<dt> CELL<dd>
+followed by cell dimensions. Default: take from MTZ file.
+</dl>
+<H3> <A NAME="labin"></A>LABIN &lt;data assignments&gt;</H3>
+LABIN   FILE &lt;nfile&gt;  F=&lt;label&gt; SIGF=&lt;label2&gt;
+<br>
+File column data assignments for F, SIGF . If you use the output from <A HREF="ecalc.html">ECALC</A>
+(recommended), set F=E and SIGF=SIGE .
+<P> 
+FILE sets the crystal number, 1 or 2 (default 1).
+The syntax is any one of FILE 1   or  FILE 2.
+<H3> <A NAME="limits"></A>LIMITS &lt;iphi1&gt; &lt;iphi2&gt; &lt;nphi&gt; &lt;iomega1&gt; &lt;iomega2&gt; &lt;nomega&gt; &lt;ikappa1&gt; &lt;ikappa2&gt; &lt;nkappa&gt;</H3>
+<EM>i.e.</EM> limits and steps on phi, omega, kappa
+<pre>
+      iphi1 iomega1 ikappa1   start points in degrees
+      iphi2 iomega2 ikappa2   stop  points in degrees
+      nphi  nomega  nkappa    intervals in degrees
+</pre>
+The default start & stop points are 0 & 180 which covers the basic asymmetric unit for the
+self-rotation function; the default step size is set numerically equal to the high resolution
+cutoff of the data, or that specified by the <A HREF="#resolution">RESOLUTION</A> keyword,
+whichever is numerically the greater.  It is recommended to omit specification of the angle
+limits, at least for self-rotation functions.
+<H3><A NAME="noprint"></A>[NO]PRINT  &lt;lprint&gt;</H3>
+Switch on or off printing of map as a figure-field in the logfile, and
+set print threshold LPRINT. The rotation function is scaled to a
+maximum of 100. Values less than 0 are printed as ' -' and values
+between 0 and LPRINT are printed as ' .'. NOPRINT (= PRINT 0)
+suppresses printing of the figure-field. The default is to print the
+map (PRINT +1), except in the case of the <A HREF="#read">READ</A> option, for which the
+default is NOPRINT.
+<H3> <A NAME="map"></A>MAP</H3>
+Write rotation function to a map file. This may be read back later
+for plotting, peak searching, <EM>etc.</EM> using the <A HREF="#read">READ</A> option.
+<H3> <A NAME="maxord"></A>MAXORD  &lt;maxord&gt;</H3>
+This is primarily for test purposes, and should not normally be set.  If you set MAXORD 30,
+you should get the same result as the original 30-order version, all else being equal. This
+will have the effect of placing a numerically greater limit on the high resolution cutoff. Note
+however that the old version does not set the default angle step equal to the high resolution
+cutoff of the data, and it does not take the latter into account when determining the
+maximum order to be used.  What this means in practice is that to get the same result you
+should set the resolution cutoffs and angular steps explicitly, as the default values used by
+the two versions of the program are likely to be different.
+<H3> <A NAME="plot"></A>PLOT &lt;cstart&gt; &lt;cint&gt; [ NOTITLE ]</H3>
+Plot rotation function as a stereographic projection of each kappa
+section. These sections have omega = 0 or 180 at the centre, 
+omega = 90 around the edge, and phi as marked around the periphery.
+<dl>
+<dt> &lt;cstart&gt;<dd>
+contour start level (default = 10)
+<dt> &lt;cint&gt;<dd>
+contour interval (default = 10)
+</dl>
+It is recommended to set the interval equal to the RMS deviation of the map, and the start
+level to twice this (this means you have to run the program twice, the first time to get
+the value of the RMS deviation printed near the end of the log file and then again to get
+the correctly contoured plot).
+<P> 
+If the keyword NOTITLE is present, the maps are plotted with no
+labels or titles: this may be useful for publication purposes.
+The plots are not normally useful if a small part of the function is
+being calculated.
+<H3> <A NAME="join"></A>JOIN  &lt;kappa&gt; &lt;omega1&gt; &lt;phi1&gt; &lt;omega2&gt; &lt;phi2&gt;  [DASHED [&lt;repeat&gt; &lt;dash&gt;]]</H3>
+Draw arc connecting two peaks at (omega1,phi1) and (omega2,phi2) on
+section kappa.
+<P> 
+If the keyword DASHED is present, the arc will be dashed with repeat
+and dash length as specified (in multiples of the radius of the stereogram).
+Default values for &lt;repeat&gt; and &lt;dash&gt; are 0.05, 0.025.
+Up to 30 JOIN commands may be given.
+<P> 
+Warning: this option is primarily intended for self-rotation functions,
+and probably will not work sensibly if the kappa sections are split
+into two sections or half sections.
+<H3> <A NAME="find"></A>FIND  &lt;peak&gt; &lt;maxpeak&gt; [RMS]  [OUTPUT &lt;filename&gt;]</H3>
+Read peak threshold and maximum number of peaks.
+Peak searching may be suppressed by <A HREF="#peak">PEAK</A> 0 0.
+<P> 
+Note that although the program attempts to interpolate the positions
+of peaks, this may not be very accurate in regions where the peaks
+are very spread out (kappa near 0) or on the edges of the map.
+<dl>
+<dt> &lt;peak&gt;<dd>
+threshold for peaks (default = 10). 
+<dt> &lt;maxpeak&gt;<dd>
+maximum number of peaks to find (default = 10)<BR>
+Up to &lt;maxpeak&gt; peaks above &lt;peak&gt; will be found, 
+and all symmetry related peaks generated
+</dl>
+<P> 
+If the keyword RMS is present, then the peak threshold is
+&lt;peak&gt; * RMS density, otherwise &lt;peak&gt; is the absolute threshold 
+in the scaled map.
+<P> 
+If the keyword OUTPUT is present, the unique peaks will be
+output to a file whose name may also be given (default filename
+or logical name PEAKS). The keyword RMS must precede OUTPUT if
+both are present.
+<H3> <A NAME="read">READ</A>  &lt;kappa1&gt; &lt;kappa2&gt;</H3>
+Instead of calculating a rotation function, read a previously calculated
+one (written out using the <A HREF="#map">MAP</A> flag). Sections &lt;kappa1&gt; to &lt;kappa2&gt; will
+be processed (if no values are given, the whole map will be used),
+printed (if <A HREF="#print">PRINT</A> is on, NOPRINT is default), plotted (if a PLOT card 
+is present) and searched for peaks (see FIND).
+<H3> <A NAME="save"></A>SAVE [ &lt;fname&gt; ]</H3>
+save output from first stage of rotation (calculation of Almn 
+coefficients for each crystal) in files &lt;fname&gt;1.dat and &lt;fname&gt;2.dat.
+&lt;fname&gt; defaults to 'COEFFS'. These files can be used to save time on a 
+later run of the program (see SUM card) to calculate a rotation
+function on a different grid (e.g. on a fine grid around a peak). 
+<H3> <A NAME="sum"></A>SUM [ &lt;fname&gt; ]</H3>
+read Almn coefficients from files generated in a previous run of the
+program with the SAVE option. The files are &lt;fname&gt;1.dat and &lt;fname&gt;2.dat
+&lt;fname&gt; defaults to 'COEFFS'
+<H3> <A NAME="peak"></A>PEAK [ MATRICES ]</H3>
+read a list of peak positions (omega, phi, kappa in degrees) from
+subsequent lines, terminated by blank line, 'END' or end of file.
+The program will not calculate a rotation function, but will generate
+all symmetry related peaks from the peaks given, and print out the
+corresponding matrices. This option requires cards SELF or CROSS,
+CRYSTAL or CELL, and SYMMETRY (ie the number of crystals, their
+symmetry and orthogonalisation codes must be defined). If the keyword
+MATRICES is present, the rotation matrices corresponding to each
+peak will be printed.
+<H3> <A NAME="end"></A>END</H3>
+Terminates input. If present must be the last card.
+<H2> <A NAME="note_on_symmetry"></A>A NOTE ON SYMMETRY AND ASYMMETRIC UNITS</H2>
+The polar angles omega, phi, kappa have an intrinsic symmetry operation
+180-omega, 180+phi, -kappa by definition. This gives an asymmetric unit in the
+absence of other symmetry of omega 0 to 180, phi  0 to 360,   kappa  0 to 180.
+Additional symmetry relations between omega and phi for a given kappa are
+created in self rotation functions, and by parallel dyad axes in the two
+crystals (ie any dyad axis in a self rotation function). These are as follows
+<ol>
+<li>
+Self-rotation function, and also kappa=180 in all cases:
+<br>
+      kappa = -kappa, hence  180-omega, 180+phi
+<li>
+dyad axes in both crystals parallel to orthogonal x axes (after any
+permutation produced by the orthogonalisation code NCODE):
+<br>
+      180 - omega, -phi
+<li>
+dyad axes parallel to orthogonal y axes:
+<br>
+      180 - omega,  180 - phi
+<li>
+dyad axes parallel to orthogonal z axes:
+<br>
+      omega, 180 + phi
+</ol>
+<P> 
+If more than one of these symmetries is present, additional symmetry is
+generate by their combination. The asymmetric units required are given in the
+following table:
+<pre>
+
+Symmetry                            Asymmetric unit
+--------                           omega   phi  kappa
+
+      no symmetry                   180    360   180
+
+1.   180 - omega, 180 + phi          90    360   180
+                                 or 180    180   180
+
+2.   180 - omega, -phi               90    360   180
+                                 or 180    180   180
+
+3.   180 - omega, 180 - phi          90    360   180
+                                 or 180    -90)  180
+                                        to +90)
+
+4.   omega, 180 + phi               180    180   180
+</pre>
+<P>  
+In the program, the PLOT option will always try to plot a complete stereogram
+of all kappa sections. In the absence of symmetry, each kappa section is split
+into two hemispheres, omega 0 to 90 and omega 90 to 180. For symmetries 1, 2 
+and 3, only the hemisphere omega 0 to 90 is plotted. For symmetry 4, the two
+quarter spheres phi 0 to 180 for omega 0 to 90 and omega 90 to 180 are plotted
+together in the same circle. The PLOT option is not normally useful if only a
+small part of the asymmetric unit is calculated.
+<H2> <A NAME="files"></A>INPUT AND OUTPUT FILES</H2>
+<dl>
+<dt> HKLIN<dd>
+Input amplitudes for crystal 1, or for sole crystal in the case of
+self-rotation function.
+<dt> HKLIN2<dd>
+Input amplitudes for crystal 2, for cross-rotation function.
+<dt> MAPIN<dd>
+Input map for <A href="#read">READ</A> option. 
+<dt> MAPOUT<dd>
+Output map containing rotation function, for <A href="#map">MAP</A> option. 
+<dt> PLOT<dd>
+Plotter output containing stereographic projection of each kappa
+section, for <A href="#plot">PLOT</A> option. 
+<dt> COEFFS1<dd>
+Almn coefficients for crystal 1. Default created as scratch file.
+<dt> COEFFS2<dd>
+Almn coefficients for crystal 2. Default created as scratch file.
+</dl>
+<P> 
+
+<H2> <A NAME="examples"></A>EXAMPLES</H2>
+<H3> Self-rotation</H3>
+<pre>
+polarrfn hklin tpfktrunc.mtz 
+             mapout tself.map 
+             plot self.plt 
+             &lt;&lt; eof
+TITLE T-PFK self-rotation  R=29A, 5 - 7 A
+SELF 29
+RESOLUTION 7 5
+CRYSTAL FILE 1  ORTH 1  BFAC -20  SYMMETRY P21
+LABIN FILE 1 F=FP SIGF=SIGFP 
+MAP
+PLOT 10 10
+FIND 2 20 RMS OUTPUT peaks.dat
+eof
+
+
+#!/bin/csh -f
+#
+#  Self-rotation function
+#
+set resolution = 15 3
+set radius = 20
+set u1af = {$scr0}/u1afobs_fc117
+
+#  Calculate whole map, & search for peaks
+polarrfn hklin {$u1af} mapout u1aself &lt;&lt; eof-1
+title U1A Self-Rotation function, resolution ${resolution} radius ${radius}
+self  ${radius}
+resolution  ${resolution}
+crystal  file 1 bfac -20 
+labin  file 1  F=FP SIGF=SIGFP
+map
+find  5 100
+eof-1
+
+# Now plot just the kappa = 180 deg section
+plot:
+polarrfn hklin {$u1af} mapin u1aself plot u1aself &lt;&lt; eof-2
+title U1A Self-Rotation function, resolution ${resolution} radius ${radius}
+self  ${radius}
+resolution  ${resolution}
+crystal  file 1 bfac -20 
+labin  file 1  F=FP SIGF=SIGFP
+read 180 180
+plot  10 10
+eof-2
+</pre>
+<H3> Cross rotation</H3>
+<pre>
+polarrfn hklin  tpfktrunc 
+             hklin2 uniqsfpfk.mtz
+             mapout tcross.map 
+             &lt;&lt; eof
+TITLE T-PFK cross-rotation  R=29A, 5 - 7 A
+CROSS 29
+RESOLUTION 7 5
+CRYSTAL FILE 1  ORTH 1  BFAC -20  SYMMETRY 4
+LABIN FILE 1 F=FP SIGF=SIGFP 
+CRYSTAL FILE 2  ORTH 1  BFAC -20  SYMMETRY 1
+LABIN FILE 2 F=FC SIGF=FC
+LIMITS 0 180 5 0 360 5 0 180 5
+MAP
+FIND 10 20
+eof
+</pre>
+<H2> AUTHORS</H2>
+<pre>
+Author:    W. Kabsch
+
+Contacts:  Phil Evans   (pre@mrc-lmb.cam.ac.uk)
+           Ian Tickle   (i.tickle@astex-technology.com)    
+</pre>
+</body></html>

@@ -1,0 +1,156 @@
+#!/usr/bin/python
+# Python script 
+#
+# last updated Aug 26 2009
+
+import os, os.path, sys
+import glob, re, shutil
+import math
+import string
+import fpformat
+import time
+import select, fcntl, subprocess
+import socket
+if not os.environ.has_key("BALBES_ROOT"):
+    print "balbes.setup is not sourced. Re-install BALBES and don't "
+    print "forget do what setup.py reminds you to do"
+    sys.exit() 
+
+# modules (XML DOM) related to handle XML style files
+xml_path1= os.path.join(os.getenv("BALBES_ROOT"),"PyXML-0.8.4","xml","dom")
+xml_path2= os.path.join(os.getenv("BALBES_ROOT"),"PyXML-0.8.4","xml","dom","ext")
+xml_path3= os.path.join(os.getenv("BALBES_ROOT"),"PyXML-0.8.4","xml","dom","ext","reader")
+sys.path.append(xml_path1)
+sys.path.append(xml_path2)
+sys.path.append(xml_path3)
+
+from StripXml import StripXml
+import PyExpat
+from xml.parsers.expat  import ExpatError
+
+# modules defined for structural hierachy
+py_path= os.path.join(os.getenv("BALBES_ROOT"),"bin_py")
+sys.path.append(py_path)
+
+from baseClasses                import CExeCode
+
+from Managers                   import CGlobalManager
+from CheckSG                    import CheckSG
+from MultipleProc               import CSGMultProcess 
+
+from UtilitiesClasses           import getResNum
+
+from ArpLink                    import ArpJobManager 
+
+class COneBalbesJob( CExeCode):
+    def __init__( self, path_obj): 
+       
+        CExeCode.__init__(self, path_obj)
+       
+        self._cmdline  = ""
+
+        self.log_name  = ""
+ 
+        self.paraDict = path_obj
+
+
+    def controller( self, t_argvs): 
+
+        self.bestSol   = {}
+        # self.log_name  = self.paraDict["out_root_path"] + "solv.log"
+        self._cmdline  = "%s/bin_py/balbes_core "%os.getenv("BALBES_ROOT") 
+        for a_argv in  t_argvs[1:]:
+            self._cmdline  += a_argv + "  "
+ 
+        self.execute()
+
+        if not self.exitCode:
+            self.setBestSol() 
+           
+        
+    def setBestSol( self, ): 
+
+         job_file_name = self.paraDict["out_root_path"]  + "/results/Process_information.txt"
+         err_str = ""
+
+         if os.path.isfile(job_file_name):
+             job_file = open(job_file_name, "r")
+             l = 0
+             s = 0
+             for line in job_file.readlines():
+                 if line.find("RESOLUTIN_MAX") != -1 :
+                     line_strs = line.strip().split("|")
+                     self.bestSol['resol_high'] = float(line_strs[2].strip())
+                 if line.find("RESOLUTIN_MIN") != -1 :
+                     line_strs = line.strip().split("|")
+                     self.bestSol['resol_low'] = float(line_strs[2].strip())
+                 if line.find("SPACE GROUP") != -1 :
+                     line_strs = line.strip().split("|")
+                     self.bestSol['sg'] = line_strs[2].strip()
+                 if line.find("SOLUTION SUMMARY") != -1 :
+                     s = 1
+                 if line.find("ITS PDB FILE") != -1 :
+                     line_strs = line.strip().split("|")
+                     self.bestSol['pdb'] =  self.paraDict["out_root_path"] + "/" + line_strs[2].strip()
+                     if os.path.isfile(self.bestSol['pdb']):
+                         self.bestSol['n_res'] = getResNum(self.bestSol['pdb'], err_str)
+                     else :
+                         err_str+= "unable to find the file %s \n"%self.bestSol['pdb']
+
+                 if line.find("ITS MTZ FILE") != -1 :
+                     line_strs = line.strip().split("|")
+                     self.bestSol['mtz'] =   self.paraDict["out_root_path"]  + "/" + line_strs[2].strip()
+                 if s == 1 and line.find("R_ini") != -1 :
+                     line_strs = line.strip().split("|")
+                     Rs     = line_strs[2].strip().split("/")
+                     Rfrees = line_strs[4].strip().split("/")
+                     self.bestSol['R_ini'] = float(Rs[0])
+                     self.bestSol['R_fin'] = float(Rs[-1])
+                     self.bestSol['Rf_ini'] = float(Rfrees[0])
+                     self.bestSol['Rf_fin'] = float(Rfrees[-1])
+             if err_str:
+                 print err_str   
+
+#--------------------------------------------------
+#
+#   __main__ part starts from here
+#
+#--------------------------------------------------
+
+
+gManager = CGlobalManager(sys.argv)
+
+if gManager.gParaDict.has_key('checksg'):
+    
+    # implement check multiple space group here.
+    #summary of the job for the web server, like "Process_information.txt" in balbes
+    gManager.gParaDict['checksginfo'] = gManager.gParaDict['out_root_path'] + "/SGjobsummary.txt"
+    gManager.gParaDict['checksgend']  = gManager.gParaDict['out_root_path'] + "/SGjobfinish.txt"
+
+    gManager.gParaDict['joblist']   = {}
+    gManager.gParaDict['solutions'] = {}
+   
+    SG_RE = CheckSG(gManager.gParaDict['infile_mtz'], gManager.gParaDict['out_root_path'])
+    multipleSGJobs = CSGMultProcess()
+    multipleSGJobs.controller(gManager.gParaDict, SG_RE)
+   
+else:
+    oneBalbesJob = COneBalbesJob(gManager.gParaDict)
+    oneBalbesJob.controller(sys.argv)
+    oneBalbesJob.setBestSol()
+
+if gManager.gParaDict.has_key('arp'):
+    gManager.gParaDict['best_sol'] = {}
+    if gManager.gParaDict.has_key('checksg'):
+        if multipleSGJobs.bestSol:
+           gManager.gParaDict['best_sol'] = multipleSGJobs.bestSol
+    else:
+        if oneBalbesJob.bestSol:
+           gManager.gParaDict['best_sol'] = oneBalbesJob.bestSol
+
+    if gManager.gParaDict['best_sol']:
+        linkArp = ArpJobManager()
+        linkArp.submitJob(gManager.gParaDict)
+    else:
+        print "No suggest solution is sent to ARP/wARP server"
+

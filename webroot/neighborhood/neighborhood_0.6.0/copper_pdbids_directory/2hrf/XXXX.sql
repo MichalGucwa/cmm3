@@ -1,0 +1,1 @@
+INSERT INTO usages (sessionid,usagetype,test_data,crystal_contact,pdbfileid,filename,ip,browser_id) VALUES ('2hrf',2,FALSE,FALSE,567,'/var/www/html/csgid/app/webroot/neighborhood_temp/2hrf/pdb2hrf.ent','172.25.56.123',0);

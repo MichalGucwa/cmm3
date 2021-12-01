@@ -1,0 +1,51 @@
+#!/bin/sh -f
+#
+#
+echo '                                                                      '
+echo '----------------------------------------------------------------------'
+echo '                                                                      '
+echo '                 TOP  -- Internet version                             '
+echo '           for searching homologous structures in database            '
+echo '                                                                      '
+echo '----------------------------------------------------------------------'
+echo '                                                                      '
+# first check if you have SEARCH.PARM in your directory
+if test ! -e SEARCH.PARM ; then  
+   cp $CLIBD'/SEARCH.PARM' . 
+   echo copy $CLIBD'/SEARCH.PARM' here
+   echo ' '
+fi
+#  if no arguments given, ask where is the probe protein
+if test $# -lt 1 ;  then
+  echo ' '
+  echo "File name or PDB code for the probe structure: "
+  echo -n "(examples: xxx.pdb or 2cnd@pdb) "
+  mol1=$<
+else
+  mol1=$1
+fi
+
+while test `echo $mol1 | grep "/" | wc -l` -gt 0 ; do
+mol1l=`echo $mol1 | cut -f 2- -d '/'`
+mol1=$mol1l
+done
+mol1l=$mol1
+mol1n=`echo $mol1l | cut -f 1 -d '.'`
+
+echo PDB file name: $mol1
+echo Molecule ID:   $mol1n
+echo ' '
+#
+# Now you can run TOP
+sitecmd=`grep -i SITE SEARCH.PARM `
+sitename=`echo $sitecmd | cut -f 2- -d ' ' `
+echo $sitecmd > topsearch.inp
+echo Web site of the database: $sitename
+#
+echo mol1 $mol1 >> topsearch.inp
+tail +2 SEARCH.PARM >> topsearch.inp
+topp < topsearch.inp > topsearch_$mol1n.log
+grep Str topsearch_$mol1n.log | sort +3 -4 > strdiv_$mol1n.lis
+echo " The list of structure diversity is:" strdiv_$mol1n.lis
+grep Top topsearch_$mol1n.log | sort +3 -4 > topdiv_$mol1n.lis
+echo " The list of topology diversity is:" topdiv_$mol1n.lis

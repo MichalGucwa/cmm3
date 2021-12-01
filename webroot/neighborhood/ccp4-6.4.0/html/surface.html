@@ -1,0 +1,432 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::SURFACE::Supported::Model Analysis::surface accessibility program and for preparing input file to program volume:::::::: -->
+
+<H1> SURFACE (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>surface </b>
+- surface accessibility program and for preparing input file to program volume.
+<H2> SYNOPSIS</H2>
+<b>surface xyzin1</b> <i>foo_in1.pdb</i>
+[<b>xyzin2</b> <i>foo_in2.pdb</i>]
+<b>xyzout</b> <i>foo_out3.rad</i>
+<br>
+<A HREF="#keywords">[Keyworded input]</A>
+
+<H2><A NAME="description"></A> DESCRIPTION</H2> 
+
+For each atom in a list, the accessibility program is designed to find
+the surface area in square Angstroms that is accessible to a probe
+sphere of a radius specified by the user. The program requires atom
+identification data and crystallographic coordinates from an input
+file. This will normally be in Brookhaven PDB format, but the program
+will also accept the output file from the Konnert-Hendrickson
+refinement program, or a file produced internally during operation of
+this program (see <A HREF="#format">FORMAT</A>). The program
+can be easily modified to accept other formats. 
+<p>
+Atom types are
+identified through residue and atom names. Van der Waals radii are
+assigned to each atom on the basis of atom type. The values are listed
+in the subroutines RADASNCHC and RADASNRICH (see <A HREF="#vdwr">VDWR</A>).
+The data statements in that program can
+easily be changed by the user if a different set of standard values
+is wanted.  Any atoms that cannot be identified by this subroutine
+are assigned a default radius of 1.80 Angstroms. The radius of the
+spherical probe may be assigned any value in the range 0.0 to 9.9 (see
+<A HREF="#probe">PROBE</A>).  Adjustments to the source
+program must be made to accommodate values outside of this range. A
+water molecule is commonly assumed to have a radius of 1.40 Angstroms.
+A flag system can be used to include or exclude atoms from the
+accessibility calculation.
+<p>
+The output of the program is a file containing all of the input data
+for each atom, the assigned Van der Waals radii, certain internal
+flags indicating the atoms included in the calculation, the accessible
+area, the contact area, and the fractional area (not yet implemented).
+The accessible area is the area in square Angstroms units of the locus
+of the center of the probe. The contact area is the area in square
+angstroms on the Van der Waals surface of an atom that can be
+contacted by a sphere of the given probe radius. The algorithm of
+<a href="#reference1">Lee and Richards (1971)</A> is used to calculate
+the accessible area.
+<p>
+[NOTE: The initial part of this program may be used to prepare an output
+file to be used as input into the <A HREF="volume.html">VOLUME</a> program.]
+
+<h2><A NAME="files"></A>INPUT AND OUTPUT FILES</h2>
+<h3>Input files</h3>
+<dl>
+<dt>XYZIN1, XYZIN2
+<dd>Input files of atom and coordinate data. These would normally
+be in PDB format ('PDB'), although 'WAH', 'RAD' and 'CHA' are
+also possible (see <A HREF="#format">FORMAT</A>). Normally
+only XYZIN1 is used; use the <A HREF="#nfiles">NFILES keyword</A> to
+specify two input files.
+</dl>
+
+<ul>
+<li>PDB FORMATTED FILES - Header information is typed on the screen record 
+by record until a line beginning with the word &quot;ATOM&nbsp;&nbsp;&quot; or &quot;HETATM&quot; is found.
+When the program assigns Van der Waals radii to the atoms an 
+intermediate file is first created, containing only those lines
+that have the &quot;ATOM&nbsp;&nbsp;&quot; or &quot;HETATM&quot; keyword in the first six columns.
+The program then reads the intermediate file line
+by line assigning Van der Waals radii according to atom name and 
+residue type.
+
+<li>WAH FORMATTED FILES - The format is the same as the standard output 
+file from KONNERT - HENDRICKSON refinement. It is assumed that no 
+header information or remarks are included in these files.
+
+<li>RAD FORMATTED FILES - These files are the standard output files of 
+this program. It is generally recommended that when you work on a given
+molecular structure that the accessibility calculation first be 
+performed on the entire structure. This way you will have an output 
+file that can be used as a reference file when different subsets are
+calculated. You can also use this standard output file as the input 
+file for future accessibility calculations on any SUBSET specified by
+the flags. Since the Van der Waals radii have already been assigned and
+are included in the file time can be save by skipping over the radius
+assignment section. Also no intermediate file is needed as in the case
+of PDB files. The time expended creating and reading from this
+file is then eliminated. It is also useful as a reference when subsets
+are calculated. You can then compare subset accessibility to the 
+reference (entire molecule) accessibility. A further advantage is that
+if you want to assign special values to atoms or define a subset that
+can not be created easily within the program you can edit this 
+reference file. An example might be that you want to change the Van der
+Waals radii of a few individual atoms of a given atom name and residue 
+type while leaving all the rest at the value assigned in the program.
+This would have to be done by editing or creating a file of the &quot;RAD&quot;
+format with all the particular values you desire. When this file in 
+&quot;RAD&quot; FORMAT is read the Van der Waals radius indicated for each atom 
+is accepted without regard to atom name or residue type.  This is 
+particularly useful when only a few atoms have been assigned default 
+radii because the radius assignment program wasn't prepared for the 
+particular residue type or atom name.
+</ul>
+
+<h3>Output file</h3>
+<dl>
+<dt>XYZOUT
+<dd>This is a formatted ASCII file 
+(1X,I2,1X,I5,1X,I2,1X,I2,1X,2A4,1X,I3,3F8.3,2F5.2,2F6.1,1X,F4.2)
+with the following columns:
+<pre>
+     KEY(I)     = flag for accessibility calculation.
+     I          = integer counter
+     NUMCHN(I)  = chain number if more than one peptide.
+     NUMFIL(I)  = file number if more than one protein is listed.
+     ATM(I)     = atom designation. Up to 4 characters (uses PDB convention).
+     RES3(I)    = residue designation (three letter code).
+     SEQNUM(I)  = sequence number of residue.
+     X(I)       = X coordinate of atom.
+     Y(I)       = Y coordinate of atom.
+     Z(I)       = Z coordinate of atom.
+     RVDW(I)    = Van der Waals radius of atom.
+     RCOV(I)    = covalent radius of atom.
+     AAREA      = accessible area of atom.
+     CAREA      = contact area of atom.
+     FRCACC     = fractional accessibility of atom (not yet implemented).
+</pre>
+This is a 'RAD' format file that can be used as input to this program.
+It can also be used as input to the <A HREF="volume.html">VOLUME</a> program.
+</dl>
+
+<h2><A NAME="keywords">KEYWORDED INPUT</A></h2>
+<P>Available keywords are:
+<BLOCKQUOTE>
+<A HREF="#allatm"><B>ALLATM</B></A>,
+<A HREF="#subset_atom"><B>ATOM</B></A>,
+<A HREF="#subset_calculate"><B>CALCULATE</B></A>,
+<A HREF="#subset_chain"><B>CHAIN</B></A>,
+<A HREF="#subset_done"><B>DONE</B></A>,
+<A HREF="#subset_file"><B>FILE</B></A>,
+<A HREF="#format"><B>FORMAT</B></A>,
+<A HREF="#subset_include"><B>INCLUDE</B></A>,
+<A HREF="#next"><B>NEXT</B></A>,
+<A HREF="#nfiles"><B>NFILES</B></A>,
+<A HREF="#subset_omit"><B>OMIT</B></A>,
+<A HREF="#preset"><B>PRESET</B></A>,
+<A HREF="#probe"><B>PROBE</B></A>,
+<A HREF="#rerun"><B>RERUN</B></A>,
+<A HREF="#reset"><B>RESET</B></A>,
+<A HREF="#subset_residue"><B>RESIDUE</B></A>,
+<A HREF="#run"><B>RUN</B></A>,
+<A HREF="#subset_serial"><B>SERIAL</B></A>,
+<A HREF="#skip"><B>SKIP</B></A>,
+<A HREF="#stop"><B>STOP</B></A>,
+<A HREF="#subset"><B>SUBSET</B></A>,
+<A HREF="#vdwr"><B>VDWR</B></A>,
+<A HREF="#subset_zone"><B>ZONE</B></A>,
+<A HREF="#zstep"><B>ZSTEP</B></A>.
+</BLOCKQUOTE>
+The order of the keywords is important. It is advisable to read the whole
+of this document first.
+
+<P><i>Except within the first set, keywords must be entered in the
+order described in this section. The first set of keywords is:</i>
+
+<h3><A NAME="nfiles"></A>NFILES &lt;nfiles&gt;</h3>
+Number of input files (default=1, maximum=2).
+
+<h3><A NAME="format"></A>FORMAT &lt;file&gt; &lt;format&gt;</h3>
+Specify format of input file number &lt;file&gt;. Possible values
+of &lt;format&gt; are PDB, WAH, CHA or RAD. The default is for all
+input files to have the Brookhaven PDB format, &lt;format&gt; = PDB.
+
+<h3><A NAME="probe"></A>PROBE &lt;probe&gt;</h3>
+&lt;probe&gt; between 0.0 and 9.9 (default 1.40).
+The PROBE RADIUS is the radius of the sphere for which the
+Van der Waals surface of each atom flagged  0 will be tested. It is
+ordinarily assumed that you will be testing for accessibility to water.
+We use a standard radius of 1.40 Angstroms for water so this is the 
+default value. If you want to change the probe radius because you are
+testing accessibility to something other than water or have a different
+value for water this is where to make the change.
+
+<h3><A NAME="zstep"></A>ZSTEP &lt;zstep&gt;</h3>
+&lt;zstep&gt; between 0.1 and 1.0 (default 0.25).
+The ZSTEP value will determine the accuracy of the accessibility
+calculation. The program finds a given atom for which the accessibility is to
+be calculated. Then it finds all the neighboring atoms (rejecting or
+including according to <A HREF="#flag">FLAG value</A>), and sequentially slices through
+the effective spheres of the set of atoms along the z axis. The circle 
+of intersection of the atom for which the accessibility is being calculated is
+analyzed to see what arc length of this circle is overlapped by the
+intersecting circles of neighboring atoms. The arc distance that 
+remains is then considered to be accessible to the <A HREF="#probe">PROBE</A>. The total 
+accessibility is calculated by simply summing the arc
+distances for all the slices through the particular atom of interest
+and multiplying by the distance between the slices. This distance is
+designated by the variable ZSTEP. The smaller the ZSTEP the more slices
+and the greater the accuracy (also the more computer time). Since
+the smallest Van der Waals radii are of the order of 1.10 Angstroms
+and the probe will usually be 1.40 Angstroms the diameter of the 
+smallest effective sphere = 2.0 x (1.40 + 1.10) = 5.0 Angstroms.
+With a ZSTEP of 0.25 this would give 20 slices through the sphere.
+This is acceptable for most of the conditions for which this program 
+will be utilized. We recommend that the ZSTEP value be no less than 
+0.10 and no greater than 0.50 for the reasons of program time and 
+diminished accuracy respectively.
+
+<h3><A NAME="vdwr"></A>VDWR CHC | RICH</h3>
+Sets USECHC or USERIC (default USECHC = .TRUE. and USERIC = .FALSE.). <br>
+Assign van der Waals radii to atoms based on atom name
+and residue name. iflag(i,4) is set to negative if atom
+is not found or residue is not found. If the residue
+type is not found and the atom is a main chain atom:
+&quot;C&nbsp;&nbsp;&nbsp;&quot;, &quot;N&nbsp;&nbsp;&nbsp;&quot;, &quot;O&nbsp;&nbsp;&nbsp;&quot;,
+&quot;CA&nbsp;&nbsp;&quot;, the radius will be assigned
+to either the original code  values (RICH) or 
+the Cyrus values (CHC) (see <A HREF="#reference2">reference [2]</A>).
+
+<h3><A NAME="skip"></A>SKIP</h3>
+Toggles DOCALC off (default DOCALC = .TRUE.).
+The output file will have the same format either way but one contains area
+data and the other only dummy entries in those columns. If areas are
+not needed, then that calculation can be avoided. Unlike the area
+output file, which lists information for only those atoms for which the area
+was calculated, the output file when DOCALC = .FALSE. is entered contains 
+all the atoms read from the input file(s). The flags indicating <A HREF="#subset_omit">OMIT</A>, <A HREF="#subset_include">INCLUDE</A>
+or <A HREF="#subset_calculate">CALCULATE</A> remain intact if you want to specify subsets of atoms for
+the VOLUME calculation.
+
+<p>
+<i>This first set of keywords should be terminated with one of the following
+three keywords:</i>
+
+<h3><A NAME="run"></A>RUN</h3>
+Do a calculation. The program reads the input
+file(s), stores all the data into arrays and assigns the Van der Waals
+radii. The number of atoms that have been read into the arrays will be
+printed. If any atoms have not been found in the radius assignment
+subroutine, the data associated with that atom will be displayed with
+an annotation as to whether the RESIDUE NAME or ATOM NAME was not
+found. If you are concerned because atoms have been assigned default
+radii you should determine why the atom names or the residue names
+were not found and try to correct the problem. This may mean editing
+the subroutine responsible for assigning radii to include a new
+RESIDUE TYPE or ATOM NAME. It may also mean that the format of your
+input file was not aligned with the expected format. 
+
+<h3><A NAME="rerun"></A>RERUN</h3>
+It is assumed that the input files have been read on a previous
+run, and van der Waals radii assigned. A new calculation on this
+data is started.
+
+<h3><A NAME="stop"></A>STOP</h3>
+Stop and finish.
+    
+<p>
+<A NAME="flag"></A><i>If everything is satisfactory, then the program moves to a second 
+set of keywords.</i><BR> To allow flexibility and to reduce and eliminate unnecessary
+repetition of calculations a flag system is utilized. Every atom is
+assigned an integer FLAG value of -1, 0, or 1 with the following
+meanings:
+<dl>
+<dt>-1 <dd>the atom is completely ignored during the accessibility
+calculation. This would be the same as omitting the particular atom
+from the input coordinate file.
+
+<dt>0 <dd>the area is to be calculated for this atom. The surrounding
+consists of all other atoms flagged either &quot;0&quot; or &quot;+1&quot;.
+
+<dt>1 <dd>the atom is considered part of the protein environment but no
+area calculations will be performed on this atom.
+</dl>
+
+The program will loop through the atoms until an atom has a flag
+value 0. The program then finds all those atoms with a value of 0 or 1 that
+fall within the 'touching' distance of the atom for which the calculation is
+being performed. This distance will vary with the Van der Waals radii
+and probe radius chosen.
+
+<p>
+<i>There are three keywords for assigning flags:</i>
+
+<h3><A NAME="allatm"></A>ALLATM</h3>
+Calculate the accessible surface of all atoms read into
+the data arrays.
+
+<h3><A NAME="preset"></A>PRESET</h3>
+Only available if the input file(s) were of 'RAD' format.
+This will take the flag values from the first column of this 
+file and create the indicated subsets based on the standard 
+flag values.
+
+<h3><A NAME="subset"></A>SUBSET</h3>
+Define a subset of atoms. If you have an interest in a particular
+group of atoms, they can be specified rather than producing lengthy
+output files and taking up unnecessary program run time. 
+FLAGS can be used for finding changes in the accessibility of the
+protein upon the removal of substrate(s) or upon deletion of a section
+of the protein. They may also be used if you only have an interest in
+the accessibility of certain RESIDUE types or ATOM types and do not
+wish to waste time doing the calculation for all atoms in the
+coordinate list. This option is designed to handle a few of the most
+logical flag assignments. If you have something that cannot be handled
+by the SUBSET flag setting subroutine, you can create your own
+file and set the flags as you wish. The file should then be in the 'RAD' 
+format and you should use the <A HREF="#preset">PRESET</A> keyword.
+
+<p>
+<i>If you choose the SUBSET option, then the following keywords can be used.</i><BR>
+First define the flag value to be assigned with one of:
+
+<p><A NAME="subset_omit"></A><b>OMIT</b> Assign flag of -1
+<p><A NAME="subset_include"></A><b>INCL</b> Assign flag of  1
+<p><A NAME="subset_calculate"></A><b>CALC</b> Assign flag of  0
+<p><A NAME="subset_done"></A><b>DONE</b> No more flag assignments, proceed to next step in program.
+
+<p>
+<i>If one of the first three options is entered you can choose one
+of six different ways to specify what atoms are to be assigned 
+that particular flag:</i>
+
+<p><A NAME="subset_file"></A><b>FILE</b>
+Assign flag if atom came from one of two input files.
+This is not available if only one input file was read.
+
+<p><A NAME="subset_chain"></A><b>CHAI(N)</b>
+Assign flag to an atom if it has the chain number 
+specified. Many times a molecule will consist of two 
+separate chains that are identified in the coordinate list.
+Two monomers in an asymmetric unit or two subunits in a
+dimer are usually identified separately.
+
+<p><A NAME="subset_zone"></A><b>ZONE</b>
+Assign flag based on a range of the sequence number. 
+Any atom that has a sequence number greater than or 
+equal to the starting value entered or less than or equal to
+the ending value specified will be assigned the designated
+flag. Repeat this operation for as many sequence
+pairs as required. Entering the same number twice will 
+result in the flag assignment to the single residue 
+specified.
+
+<p><A NAME="subset_residue"></A><b>RESI(DUE)</b>
+Assign flag to an atom if the residue name is the same 
+as the one specified. For instance in a protein you may only
+be interested in calculating the accessibility of histidine
+residues. If you enter the standard three letter notation 
+&quot;HIS&quot; all histidines will be assigned the flag value.
+
+<p><A NAME="subset_atom"></A><b>ATOM</b>
+Assign flag to an atom if the atom name is the same as the
+one specified. This is the same as the &quot;RESI&quot;
+option, except that atom types are identified.
+
+<p><A NAME="subset_serial"></A><b>SERI(AL)</b>
+Assign flag based on a range of serial numbers of atoms
+in the coordinate list. An atom of serial number equal to
+or greater than the starting value entered or less than or
+equal to the ending value entered will be assigned the
+designated flag. Repeat through as many serial number pairs
+as required. Entering the same number twice will result in
+the flag assignment to the single atom specified.
+
+<p>
+If you have more than one input file you will be asked for the
+file number for which flags are to be set.
+
+<p>
+The ORDER OF OPERATION in setting FLAGS is very important. Any
+operation that is performed will overwrite the previous flag value
+assigned to an atom. For example if a zone from 1 to 20 is assigned a
+FLAG of -1 by using the &quot;OMIT&quot; flag and the &quot;ZONE&quot; operation, and then
+the &quot;CALC&quot; flag is set to a ZONE from 5 to 10.  The end result would
+be that the ZONE from 1 to 4 is OMITTED, the ZONE from 5 to 10 is
+CALCULATED and the ZONE from 11 to 20 is OMITTED.  If &quot;CALC&quot; was first
+called for the ZONE from 5 to 10 and the &quot;OMIT&quot; was called for ZONE 1
+to 10 all the atoms associated with residues 1 to 10 would be OMITTED.
+
+<p>
+<i>Having set the flags, one of the following two keywords
+should be entered:</i>
+
+<h3><A NAME="reset"></A>RESET</h3>
+Reset the flags with one of the above three keywords (for interactive use).
+
+<h3><A NAME="next"></A>NEXT</h3>
+Do calculation, and then return to the first set of keywords.
+>From there, you can <A HREF="#rerun">RERUN</A> the calculation, or <A HREF="#stop">STOP</A>.
+
+<H2><a name="examples">EXAMPLES</a></H2>
+
+<h3>Unix examples script found in $CEXAM/unix/runnable/</h3>
+
+<ul>
+<li><a href="../examples/unix/runnable/surface.exam">surface.exam</a> - 
+example of accessible surface area calculation. <br>
+<li><a href="../examples/unix/runnable/surface_rnase.exam">surface_rnase.exam</a> - 
+example with two accessible area calculations in a single run. <br>
+<li><a href="../examples/unix/runnable/surface-volume-calc">surface-volume-calc</a> - 
+example of preparing input to program VOLUME.
+</ul>
+
+<H2> SEE ALSO</H2>
+<A HREF="volume.html">volume</A>, <A HREF="areaimol.html">areaimol</A>
+
+<H2><A NAME="references"></A>REFERENCES</H2>
+
+<OL>
+<P><!-- KEEP startreferencelist --></P>
+
+<LI><A NAME="reference1"></A>B.Lee and F.M.Richards, <i>J.Mol.Biol.</i>, <b>55</b>, 379 - 400 (1971)</LI>
+<LI><A NAME="reference2"></A>Chothia (1975), &quot;Structural Invariants in 
+Protein Folding&quot;, <i>Nature</i> <b>254</b>: 304-308</LI>
+
+<!-- KEEP endreferencelist -->
+</OL>
+
+<H2> AUTHORS</H2>
+Author: Mark D. Handschumacher and F.M. Richards. <br>
+Original and earlier versions produced by: B. Lee, F.M. Richards, 
+T.J. Richmond and J.B. Matthew. <br>
+This CCP4 version (partially keyworded) is from Kim Henrick.
+
+</body></html>

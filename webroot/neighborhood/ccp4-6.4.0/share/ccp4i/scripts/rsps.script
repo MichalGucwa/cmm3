@@ -1,0 +1,66 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#======================================================================
+#
+# rsps script
+#
+#======================================================================
+
+# Set scorefile (maps of scoring) file names
+  if [StringSame $RSPS_INPUT SCAN] {
+    set HARKER_SCORFILE [GetTmpFileName -ext map] }
+  if [StringSame $RSPS_MODE CROSSPEAKS] {
+    set xfile [file root $XPEAKSFIL]
+    set ext [file extension $XPEAKSFIL]
+    for { set n 1 } { $n <= $N_CROSS_PEAKS } { incr n } {
+      set CROSS_SCORFILE($n) [GetTmpFileName -ext map]
+      set XPEAKSFILS($n) $xfile; append XPEAKSFILS($n) "_$n" $ext
+      AddOutputFile $XPEAKSFILS($n) PROJECT
+    }
+  }
+
+  set tmp_log_file [GetTmpFileName -ext log]
+
+  CreateComScript rsps rsps_script -nocontinue
+  set status [Execute [BinPath rsps] $rsps_script program_status report \
+			-copy_log $tmp_log_file ]
+
+
+# Read the log file and create HA files
+
+  if { [ReadFile $tmp_log_file log_text -split ] } {
+    set outfiles AddOutputFile
+    set ifcoords 0
+    set nha 0
+    foreach line $log_text {
+      if { $ifcoords > 3 } {
+        if { [llength $line ] < 1 } { 
+          WriteFile $ha_file $ha_text
+          append outfiles " $ha_file PROJECT"
+          set ifcoords 0
+        } else {
+          append ha_text "ATOM  Ha" \
+			"  [lrange $line 1 3]"  "  1.0  0.0  BFAC 20.0\n"
+        }
+      } elseif { $ifcoords > 0 } {
+        incr ifcoords
+      } elseif { [regexp "SET NUMBER" $line] } {
+          incr nha; set ha_file  [SetOutputFileRoot]_$nha.ha
+          set ha_text ""
+          OpenFile $ha_file f w
+          WriteIdentifier $f "HA $nha" PROJECT {} JOB_ID {}
+          CloseFile $f
+          incr ifcoords
+      }
+    }
+    if { $nha > 0 } { eval "$outfiles" }
+  }
+
+  DeleteFile $tmp_log_file

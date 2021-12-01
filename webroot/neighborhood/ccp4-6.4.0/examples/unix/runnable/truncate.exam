@@ -1,0 +1,37 @@
+#!/bin/sh 
+#
+# Run truncate after scala to give F's from intensities
+# 
+set -e
+
+# bug # 3192 - run-all examples produce harvest files - well to counteract
+# this here set HARVESTHOME to somewhere in $CCP4_SCR
+
+HARVESTHOME=$CCP4_SCR
+export HARVESTHOME
+
+if test ! -f $CCP4_SCR/aucn_mrg.mtz; then
+  echo '! run scala.exam first' 1>&2
+  exit 1
+fi
+#
+truncate hklin $CCP4_SCR/aucn_mrg.mtz \
+   hklout $CCP4_SCR/aucn_trn.mtz <<EOF-trunc
+title DMSO red aucn2 Data - mosflm
+truncate yes
+nresidue 745
+labout  F=FP SIGF=SIGFP
+EOF-trunc
+#
+
+# Second example of running TRUNCATE on Fs. You might
+# do this if you already have Fs but want to look at the
+# output graphs of TRUNCATE
+
+truncate hklin $CEXAM/rnase/rnase18.mtz <<EOF
+title Analysis of rnase data
+labin F=FNAT SIGF=SIGFNAT
+nresidue 192
+EOF
+
+

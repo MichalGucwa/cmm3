@@ -1,0 +1,96 @@
+<html>
+<head>
+<title>SQLite for dbCCP4i: installation notes</title>
+</head>
+
+<body>
+
+<!-- CVS_Id: $Id: SQLite_setup.html,v 1.9 2008/08/12 10:48:16 pjx Exp $ -->
+
+<h1>SQLite for dbCCP4i: installation notes</h1>
+
+<p>These are notes on how to install SQLite and the Python interface to
+use the SQLite backend for dbCCP4i.</p>
+
+<h2>Packages to be installed</h2>
+
+<p>Obtain the SQLite package from the <b>SQLite download page:</b></p>
+<ul>
+<li><a href="http://www.sqlite.org/download.html">http://www.sqlite.org/download.html</a></li>
+</ul>
+
+<p>Obtain the Python DB-API interface for SQLite from <b>pysqlite download page:</b></p>
+<ul>
+<li><a href="http://initd.org/tracker/pysqlite">http://initd.org/tracker/pysqlite</a></li>
+</ul>
+
+<p>There is also a <b>pysqlite installation guide</b> at:</p>
+<ul>
+<li><a href="http://initd.org/pub/software/pysqlite/doc/install-source.html">http://initd.org/pub/software/pysqlite/doc/install-source.html</a></li>
+</ul>
+
+<h2>Installation procedure for Linux (ad hoc)</h2>
+
+<p>Pysqlite requires the installation of the SQLite libraries (version 3.3.2 or
+better). I downloaded the source code of the source tree for SQLite version 3.3.4
+from
+<a href="http://www.sqlite.org/download.html">http://www.sqlite.org/download.html</a>.
+The installation instructions in the README file suggested that I should do the
+following:</p>
+
+<ol>
+<li>Unpack the targz file (into the sqlite-3.3.4 directory)</li>
+<li>Make a new directory parallel to this to perform the build in (e.g. mkdir
+    build-sqlite-3.3.4)</li>
+<li>Change to this directory and execute the sqlite configure (e.g.
+    ../sqlite-3.3.4/configure)
+<li>Note that the default install location is /usr/local/ - you can over-ride
+    this using the --prefix=... configure flag (I used this to install in a local
+    area). You can also use the --with-tcl=... configure flag to set the location
+    of the Tcl installation (I didn't do this).
+<li>Run make/make install to build and install.
+</ol>
+
+<p>For the Python bindings, Python 2.3 or better is required (in addition to having
+SQLite installed).</p>
+
+<p>I downloaded pysqlite 2.1.3. As SQLite is installed in a non-standard location
+I had to edit the setup.cfg file to point to where the header files and libraries
+have been installed. Then I ran "python setup.py build" from the pysqlite-2.1.3
+directory, but go the following error:</p>
+
+<pre>
+[pjx@ccp4t pysqlite-2.1.3]$ python setup.py build
+
+---------------------------------------------------------------------------
+This script requires setuptools version 0.6a9 to run (even to display
+help).  I will attempt to download it for you (from
+http://cheeseshop.python.org/packages/2.3/s/setuptools/), but
+you may need to enable firewall access for this script first.
+I will start the download in 15 seconds.
+---------------------------------------------------------------------------
+Downloading http://cheeseshop.python.org/packages/2.3/s/setuptools/setuptools-0.6a9-py2.3.egg
+Traceback (most recent call last):
+  File "setup.py", line 27, in ?
+    use_setuptools()
+  File "/home/pjx/PACKAGES/pysqlite-2.1.3/ez_setup.py", line 84, in use_setuptools
+    import setuptools; setuptools.bootstrap_install_from = egg
+OverflowError: signed integer is greater than maximum
+</pre>
+
+<p>Try 2.0.7 instead ... however this gave the same errors. The following link
+<a href="http://peak.telecommunity.com/DevCenter/setuptools">http://peak.telecommunity.com/DevCenter/setuptools</a> gives a clue - it suggests that the minimum Python
+version for setuptools on 64-bit platforms is 2.4.</p>
+
+<p>I downloaded Python 2.4.3 from 
+<a href="http://www.python.org/download/">http://www.python.org/download/</a> and
+installed in a local area, then tried the 2.1.3 version of pysqlite - this time
+it appeared to compile without problems. I ran "python setup.py install" to
+install in the same area as the SQLite installation.</p>
+
+<p>I then ran the tests as recommended in the installation document. Because I
+have installed everything in non-standard places, I needed to add the bin and lib
+directories to my PATH and LD_LIBRARY_PATH enviroment variables respectively.</p>
+
+</body>
+</html>

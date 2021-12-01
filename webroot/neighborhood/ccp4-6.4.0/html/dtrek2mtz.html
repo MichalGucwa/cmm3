@@ -1,0 +1,135 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::DTREK2MTZ::Supported::Data Processing and Reduction::converts d*trek scalemerge output into MTZ format:::::::: -->
+
+<H1> DTREK2MTZ (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>dtrek2mtz </b>
+- converts d*trek scalemerge output into MTZ format.
+<H2> SYNOPSIS</H2>
+<b>dtrek2mtz</b>
+<b>HKLIN</b>
+<i>foo.dat</i>
+<b>HKLOUT</b>
+<i>foo.mtz</i><br>
+[<A HREF="#keywords">Keyworded input</A>]
+<H2><A NAME="description"></A> DESCRIPTION</H2>
+This program converts merged data from d*trek into an MTZ format. 
+After the conversion use 
+<A HREF="truncate.html">TRUNCATE</A> to convert the Is into Fs. 
+Finally, <A HREF="cad.html">CAD</A> (or <A HREF="sortmtz">sortmtz</A>)
+should be run to sort the data and put it
+into the correct asymmetric unit for CCP4.
+<p>
+Assumption: if I+ and I- are on separate lines, then I- appears first.
+This assumption is checked and a count of the failure of the assumption
+is output AND I+/I- are swapped.  BUT if this happens, you should
+be very wary of the result mtz file since d*TREK designates I+ and I-
+properly.
+<p>
+These are converted to the weighted means Imean and SigImean
+<pre>
+  Imean = (I+/SIGI+  +  I-/SIGI-) / (1/SIGI+  +  1/SIGI-)
+  SigImean = 1 / (1/SIGI+  +  1/SIGI-)
+</pre>
+
+<H4><A NAME="data_harvesting"></A> MTZ datasets and Data Harvesting</H4>
+Columns in MTZ files are organised into projects, crystals and datasets. 
+This information is used in subsequent processing to make sensible
+decisions based on which dataset a column belongs to. Project, crystal
+and dataset names should be assigned using the <A HREF="#name">NAME</A> 
+keyword. These will be written to the 
+output MTZ file, and be inherited by subsequent programs.
+<A HREF="harvesting.html">Data harvesting</A> also uses the 
+project and dataset names to write out appropriate harvest files for
+deposition.
+
+<H2><A NAME="files"></A> INPUT/OUTPUT FILES</H2>
+<dl>
+<dt><A NAME="hklin"></A> HKLIN<dd>
+is the input ASCII reflection list file from d*trek. The d*TREK reflection list 
+file usually starts like this:
+<pre>
+    nNumIntCols nNumFloatCols nNumStringCols
+    column_names
+    ...
+    4   0   3 51178.9  2796.6 
+</pre>
+In the absence of
+anomalous data there should be 5 columns H, K, L, I and SIGI, and with
+anomalous data there should be 7 columns H, K, L, I+, SIGI+, I- and SIGI-.
+<dt><A NAME="hklout"></A> HKLOUT<dd>
+is the output MTZ file containing labels H, K, L, IMEAN, SIGIMEAN and if
+anomalous data is present I(+), SIGI(+), I(-), SIGI(-) as well.
+</dl>
+<H2><A NAME="keywords"></A> KEYWORDED INPUT</H2>
+<P>Available keywords are:
+<BLOCKQUOTE>
+<A HREF="#anomalous"><B>ANOMALOUS</B></A>, <A HREF="#cell"><B>CELL</B></A>,
+<A HREF="#end"><B>END</B></A>,
+<A HREF="#monitor"><B>MONITOR</B></A>, <A HREF="#name"><B>NAME</B></A>,
+<A HREF="#reject"><B>REJECT</B></A>, <A HREF="#resolution"><B>RESOLUTION</B></A>,
+<A HREF="#scale"><B>SCALE</B></A>, <A HREF="#symmetry"><B>SYMMETRY</B></A>,
+<A HREF="#title"><B>TITLE</B></A></P>, <A HREF="#wavel"><B>WAVE</B></A>
+</BLOCKQUOTE>
+
+<H3> <A NAME="name"></A>NAME PROJECT &lt;pname&gt; CRYSTAL &lt;xname&gt; DATASET &lt;dname&gt;</H3>
+[Note that the keywords PNAME &lt;pname&gt;, XNAME &lt;xname&gt; and DNAME &lt;dname&gt;
+are also available, but the NAME keyword is preferred.]
+<p>
+Specify the project, crystal and dataset names for the output MTZ file.
+It is strongly recommended
+that this information is given. Otherwise, the default project, crystal and 
+dataset names are "unknown", "unknown" and "unknown&lt;ddmmyy&gt;" respectively
+(where &lt;ddmmyy&gt; is the date, with no spaces).
+<p>
+The project-name specifies a particular structure solution project, the
+crystal name specifies a physical crystal contributing to that project, 
+and the dataset-name specifies a particular dataset obtained from that
+crystal. All three should be given.
+
+<H3><A NAME="cell"></A>CELL  &lt;a&gt; &lt;b&gt; &lt;c&gt; [ &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt; ]</H3>
+The cell dimensions in Angstroms and degrees.<p>
+If the d*trek reflection list file does not include
+the cell dimensions, then this keyword is <em>compulsory</em>. 
+The angles default to 90 degrees. 
+
+<H3><A NAME="anomalous"></A>ANOMALOUS  YES | NO</H3>
+Specify whether or not input file contains anomalous data.
+Defaults to YES.
+<H3><A NAME="monitor"></A>MONITOR &lt;nmon&gt;</H3>
+Monitors the &lt;nmon&gt;th reflection and writes it to the output stream. The 
+default is every 1000th reflection.
+<H3><A NAME="reject"></A>REJECT &lt;h k l&gt;</H3>
+If specified then the specific hkl will not be written to the MTZ file.
+<H3><A NAME="resolution"></A>RESOLUTION &lt;maxres&gt; &lt;minres&gt;</H3>
+If specified then the all reflections outside the range will be excluded from
+the MTZ file. The limits can be given in either order and in Angstrom or 
+SineSquared(theta)/lambdaSquared units. The default is that all reflections 
+are output.
+<H3><A NAME="scale"></A> SCALE &lt;scale&gt;</H3>
+All intensities and their sigmas will be scaled by &lt;scale&gt;. The default is 
+1.0.
+<H3><A NAME="symmetry"></A>SYMMETRY &lt;SG name|SG number&gt;</H3>
+If the d*trek reflection list file does not include the spacegroup,
+then this keyword is <em>compulsory</em> and can be given as the space 
+group name or number.
+<H3><A NAME="title"></A>TITLE &lt;string&gt;</H3>
+This title will become the title/history in the MTZ file.
+<H3><A NAME="wavel"></A>WAVE &lt;wavelength&gt;</H3>
+The wavelength associated with this data. (Will become compulsory)
+<H3><A NAME="end"></A> END</H3>
+Terminates the keyword input. Must be last keyword.
+
+<H2> SEE ALSO</H2>
+ <A HREF="scalepack2mtz.html">scalepack2mtz</A>,
+ <A HREF="cad.html">cad</A>,
+ <A HREF="truncate.html">truncate</A>,
+<A HREF="harvesting.html">Data Harvesting</A>.
+
+<h2> AUTHOR</h2>
+J. W. Pflugrath (Dec. 1999) Modified from SCALEPACK2MTZ
+
+</body></html>

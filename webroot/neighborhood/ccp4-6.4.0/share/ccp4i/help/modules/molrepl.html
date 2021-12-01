@@ -1,0 +1,898 @@
+<!DOCTYPE html
+                     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                     "DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<title>CCP4 Interface: Molecular Replacement Module</title>
+<link rel="stylesheet" type="text/css" href="../ccp4idocs.css" title="CCP4i" />
+<link rev="made" href="mailto:mgwt@ysbl.york.ac.uk" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta name="AUTHOR" content="Maria, Liz, Peter" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="2"><img src="../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logotitle">Molecular Replacement Module</td></tr>
+</table>
+<br />
+<table border="0">
+<tr><td>
+<a href="improvement.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="exptphase.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="../index.html" target="_top">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td></tr>
+</table>
+
+<dl>
+<dt><a href="#overview" target="_self">Module Overview</a></dt>
+<dt></dt>
+</dl>
+
+<dl>
+<dt><font color="#cc3333"><strong>Tasks in this module:</strong></font></dt>
+</dl>
+<dl>
+<dt><strong><em>Analysis</em></strong></dt>
+<dd><a href="#matthews" target="_self">Cell Content Analysis</a></dd>
+<dd><a href="#mr_analyse" target="_self">Analyse Data for MR
+(Patterson)</a></dd>
+<dd><a href="#polarrfn" target="_self">Self Rotation Function in polar coordinates</a></dd>
+<dd><a href="#molrep_srfn" target="_self">Self Rotation Function using Molrep</a></dd>
+</dl>
+<dl>
+<dt><strong><em>Model Generation</em></strong></dt>
+<dd><a href="#chainsaw" target="_self">Create Search Model - Chainsaw</a></dd>
+<dd><a href="#modeller" target="_self">Edit Protein Structure - Modeller</a>
+<dl>
+<dd><a href="#modeller_sequence_alignment" target="_self">Sequence Alignment</a></dd>
+<dd><a href="#modeller_building_models" target="_self">Building Models</a></dd>
+<dd><a href="#modeller_post_processing" target="_self">Post-Processing of the MODELLER Model</a></dd>
+</dl>
+</dd>
+</dl>
+<dl>
+<dt><a href="#phaser_MR" target="_self">Phaser - likelihood-based MR</a></dt>
+</dl>
+<dl>
+<dt><a href="#molrep" target="_self">MOLREP - automated Molecular Replacement</a></dt>
+</dl>
+<dl>
+<dt><a href="#mrbump" target="_self">MrBUMP - automated Molecular Replacement
+using Bulk Model Preparation</a></dt>
+</dl>
+<dl>
+<dt><a href="#balbes" target="_self">Balbes - automated Molecular Replacement system</a></dt>
+</dl>
+<dl>
+<dt><strong><em>AMoRe Suite</em></strong></dt>
+<dd><a href="#amore_overview" target="_self">Overview - How to Run a Simple AMoRe Job</a></dd>
+<dd><a href="#mr_database" target="_self">AMoRe Model Database</a>
+<dl>
+<dd><a href="#models_molecules" target="_self">Trial Models and Molecules</a></dd>
+</dl>
+</dd>
+<dd><a href="#mr_map" target="_self">Create Input Structure Factors from Model</a></dd>
+<dd><a href="#amore" target="_self">Amore Molecular Replacement</a>
+<dl>
+<dd><a href="#amore_functions" target="_self">AMoRe Functions</a>
+<dl>
+<dd><a href="#sorting_and_tabling" target="_self">Sorting and Tabling Functions (SORTFUN and TABFUN)</a></dd>
+<dd><a href="#rotation_function" target="_self">Rotation Function (ROTFUN)</a></dd>
+<dd><a href="#translation_function" target="_self">Translation Function (TRAFUN)</a></dd>
+<dd><a href="#fitting" target="_self">Rigid Body Refine Fitting Function (FITFUN)</a></dd></dd>
+<dd><a href="#multiple_molecules" target="_self">Solving Structures with Multiple
+Molecules in the Asymmetric Unit</a></dd>
+</dl>
+<dd><a href="#memory" target="_self">AMoRe Memory Allocation</a></dd>
+</dl>
+</dd>
+<dd><a href="#mr_edit" target="_self">Edit AMoRe Solution File</a></dd>
+<dd><a href="#mr_solution" target="_self">Build AMoRe Output Model</a></dd>
+</dl>
+<dl>
+<dt><strong><em>Utilities</em></strong></dt>
+<dd><a href="#pdbset" target="_self">Edit PDB Model File</a></dd>
+<dd><a href="#superpose" target="_self">Superpose Coordinates</a></dd>
+<dd><a href="#get_prot" target="_self">Import/Edit Protein Sequence</a></dd>
+<dd><a href="#clustalw" target="_self">Sequence Alignment - ClustalW</a></dd>
+</dl>
+
+<dl>
+<dt><font color="#cc3333"><strong>Specialist Help</strong></font> is available on:</dt>
+<dd><a href="appendices/molreptheory.html" target="_APPENDIX">MOLREPTheory</a> - theory
+of Molecular Replacement in general, and the MOLREP program in particular</dd>
+</dl>
+
+<p>The layout of each task window, <em>i.e.</em> the number of folders present,
+and whether these folders are open or closed by default, depends on the choices
+made in the <strong>Protocol</strong> folder of the task (see
+<a href="../general/intro.html#task_window_format" target="_self">Introduction</a>). Although
+certain folders are closed by default, there are specific reasons why you should
+or may want to look at them. These reasons are described in the Task Window
+Layout sections below.</p>
+
+<hr>
+
+<h3><a name="overview"></a>Module Overview</h3>
+
+<p>This module provides interfaces to a number of CCP4 Molecular Replacement
+programs: 
+<a href="../../../../html/phaser.html" target="_PROGDOC">Phaser</a>,
+<a href="../../../../html/molrep.html" target="_PROGDOC">Molrep</a> and
+<a href="../../../../html/amore.html" target="_PROGDOC">AMoRe</a>. There are
+also interfaces to two automated packages:
+<a href="../../../../html/mrbump_doc.html" target="_PROGDOC">MrBUMP</a> and 
+<a href="../../../../html/balbes.html" target="_PROGDOC">Balbes</a>.</p>
+
+<p>The list of tasks begins with a set of analysis tasks (grouped into the
+"Analysis" folder) which it may be useful to run. <strong>Cell Content
+Analysis</strong> gives an estimate of the number of molecules in the
+asymmetric unit, and thus the number of molecules that the MR procedure should
+search for. <strong>Analyse Data for MR</strong> calculates a native Patterson
+to check for pseudo-translation, and in addition compares the Wilson B factor
+with the average B factor of the search model. <strong>Self RF in
+polars</strong> and <strong>Self RF using Molrep</strong> enable calculations
+of a self-rotation function (where the native Patterson is compared with
+itself)  giving the rotational component of any non-crystallographic symmetry.</p>
+
+<p>These are followed by a set of tasks providing tools for generating
+molecular replacement trial models: 
+<a href="../../../../html/chainsaw.html" target="_PROGDOC">Chainsaw</a> (part
+of the CCP4 suite) and Modeller (an external package).</p>
+
+<p>There are then tasks for running Phaser, Molrep, MrBUMP and Balbes, and
+a set of tasks for running AMoRe. These programs and packages can be seen
+as alternatives to one another, but you may need to try more than one to
+obtain a clear solution. The MrBUMP and Balbes packages are able to run
+Phaser and Molrep as part of an automated pipeline so might be the best
+place to start when beginning a new molecular replacement problem.</p>
+
+<p>The tasks for AMoRe are based around a Model Database containing one or
+more search models together with files and solutions generated by Amore for
+each model. The Model Database is accessed via the <strong>Amore Model
+Database</strong> task, launched from the task list or from other Amore tasks.</p>
+
+<p>Finally there is a set of utility tasks for manipulating and analysing
+coordinates and sequences, which may be useful during the molecular replacement
+process.</p>
+
+<hr />
+
+<h3><a name="matthews"></a>Cell Content Analysis</h3>
+
+<p>The program MATTHEWS_COEF, through the Cell Content Analysis task, can
+provide an estimate of the number of molecules in the asymmetric unit,
+and thus the number of molecules to search for in MR. It requires an
+MTZ file, and a fairly accurate estimate of the molecular weight of
+the protein (which can be obtained from the program
+<a href="../../../../html/rwcontents.html"
+target="_PROGDOC">RWCONTENTS</a>, for example). The Matthews number is
+usually between 1.66+ and 4.0+ corresponding to protein contents of
+75% to 30% but proteins with higher solvent contents will give higher
+values.<p>
+
+</p>This analysis may not be conclusive in determining the number of
+molecules in the asymmetric unit, so the probabilities from the
+Matthews coefficient paper of Kantardjieff and Rupp are also printed
+if a high resolution limit is input: P(reso) is the probability using
+the input high resolution limit and P(tot) is the probability across
+all resolution ranges. This gives the probability of a particular
+Matthews coefficient based upon the high resolution limit.</p>
+
+<h4><a name="matthews_layout"></a>Matthews - Task Window Layout</h4>
+
+<p>The solvent content information will appear in the 'solvent analysis'
+field upon clicking <tt>Run Now</tt>. The Interface displays a table
+with values of the percentage of solvent in the unit cell, as well as
+the corresponding Matthews coefficient and the probabilities based on
+the input resolution limit, for a range of numbers of molecules in the
+asymmetric unit. The highest probability P(tot) gives a strong
+indication of the preferred solution.</p>
+
+<p>See Stage 1 of the
+<a href="../../../examples/tutorial/html/mr-tutorial.html" target="_TUTORIALS">
+MR tutorial</a>.</p>
+
+<p>See program documentation:
+<a href="../../../../html/matthews_coef.html" target="_PROGDOC">MATTHEWS_COEF</a>.</p>
+
+<h3><a name="mr_analyse"></a>Analyse Data for MR</h3>
+
+<p>Before running a molecular replacement program it is advisable to look a little 
+at the data. This task will:</p>
+
+<ol>
+<li><p>Check native Patterson map for large peaks which indicate pseudo-translation.</p>
+<p>The task will run the FFT program to generate a native Patterson
+map and then run PEAKMAX to list the largest peaks to the .log
+file. You should be concerned if any non-origin peak is more than,
+say, 0.15 fraction of the origin peak, as this might suggest there is
+pseudo-translation present in the unit cell. The <a href="#molrep"
+target="_self">Molrep</a> program has an option to handle
+pseudo-translation.</p>
+<p>See also the <a href="#polarrfn" target="_self">Self RF in polars</a>
+task for finding rotational non-crystallographic symmetry.</p></li>
+
+<li><p>Compare the Wilson B factor with the average model B factor.</p>
+<p>The task will run the Wilson program to determine the Wilson B factor
+from the data, and the program BAVERAGE to determine the average
+model B factor. The difference between these values is BADD which can
+be used in the AMoRe interface.</p></li>
+</ol>
+
+<p>See Stage 2 of the
+<a href="../../../examples/tutorial/html/mr-tutorial.html" target="_TUTORIALS">
+MR tutorial</a>.</p>
+
+<p>See program documentation:
+<a href="../../../../html/fft.html" target="_PROGDOC">FFT</a>,
+<a href="../../../../html/wilson.html" target="_PROGDOC">WILSON</a>,
+<a href="../../../../html/baverage.html" target="_PROGDOC">BAVERAGE</a></p>
+
+<h3><a name="polarrfn"></a>Self Rotation Function in polar coordinates</h3>
+
+<p>This task provides an interface to the self-rotation functionality
+of the program <a href="../../../../html/polarrfn.html" target="_PROGDOC">POLARRFN</a>
+(the command-line program will also calculate a cross-rotation function).
+You should supply an MTZ file holding the observed data. By default, a
+plotfile is produced containing stereographic projections of each kappa section.
+This is the easiest way to view the results, for example the kappa = 180 section 
+can be used to identify 2-fold axes. Optionally, the rotation function can
+be output as a CCP4-format map file.</p> 
+
+<p>The interface allows one to set a number of other parameters (see the
+<a href="../../../../html/polarrfn.html" target="_PROGDOC">polarrfn documentation</a>),
+although in general the defaults can be accepted. Note that because of the limit 
+of 100 in the order of the spherical harmonics in the program, the high resolution 
+limit cannot be numerically less than the integration radius (arad) / 17.4: if it is, 
+the program resets &lt;resmax&gt; to &lt;arad&gt; / 17.4.</p> 
+
+<p>See also the <a href="#mr_analyse" target="_self">Analyse Data for MR</a>
+task for finding pure translational non-crystallographic symmetry.</p>
+
+<h3><a name="molrep_srfn"></a>Self Rotation Function using Molrep</h3>
+
+<p>This task provides access to the Self Rotation Function generation of
+<a href="../../../../html/polarrfn.html" target="_PROGDOC">MOLREP</a>. It can be
+viewed as an alternative to the <a href="#self_rf">Self Rotation in polar
+coordinates</a> task.</p>
+
+<h3><a name="chainsaw"></a>Create Search Model - Chainsaw</h3>
+
+<p>This task provides an interface to the program Chainsaw. Input a
+template PDB file, e.g. from a homology search, and an alignment file
+of the template sequence against the target sequence in one of a variety
+of formats.</p>
+
+<p>See program documentation:
+<a href="../../../../html/chainsaw.html" target="_PROGDOC">CHAINSAW</a></p>
+
+<h3><a name="modeller"></a>Edit Protein Structure / Convert Protein Sequence - MODELLER</h3>
+
+<p>This task uses a non-CCP4 program MODELLER which is available from Andrej Sali (see
+<a href="http://www.salilab.org" target="_EXTERNAL">Andrej Sali Lab</a>)
+and see <a href="../general/configure.html#running_modeller" target="_PROGRAMMERSDOCS">installation
+notes on MODELLER</a>. Note that the program is Unix/Linux specific.</p>
+
+<p>The CCP4i task has been tested against version 6 of Modeller. The latest
+release of Modeller (at the time of writing) is 7v7. Feedback on compatibility
+problems should be sent to <a href="mailto:ccp4@dl.ac.uk">us</a>.</p>
+
+<p>The input to this program is the structure of one or more homologs and the sequence of
+the protein for which you require a structure.  
+MODELLER can produce a model which is, as closely as possible, identical to the input structure
+with changed residues generated with geometrically reasonable coordinates but this structure is
+liable to be energetically unreasonable due to close contacts. MODELLER can also refine this
+structure with restraints which aim to keep the structure close to the input homolog structures.
+Where homolog and model sequence are similar the structures are liable to remain closely similar
+but regions of low homology, in particular loops, can change significantly.</p>
+
+<p>If you are doing molecular replacement you could use homology modelling in two different ways:</p>
+<ol>
+<li>To generate one or more models which are input to the molecular replacement program.
+In this case you will probably want to delete uncertain regions of loops or possibly side chains.
+In cases where molecular replacement is not going well you could also try generating multiple
+refined models (which will have some variation on the original homolog model) and input each of
+these to the molecular replacement program.</li>
+<li>To convert the structure to the new sequence after a molecular replacement solution has been
+found. This should save time on work usually done using a graphics program. In this case it is
+better not to refine the model.</li>
+</ol>
+
+<h4><a name="modeller_sequence_alignment"></a>Sequence Alignment</h4>
+
+<p>The quality of any output structure is hugely dependent on the quality of the alignment.
+MODELLER can do the necessary sequence alignment of the sequence and homolog structures but you
+are strongly recommended to review and possibly amend the alignment produced. You should also be
+sceptical of the exact sequence alignment output by any sequence database search. The database
+search uses protocols designed for speed rather than accuracy in low homology regions. An experienced
+crystallographer looking at the homolog structure with a graphics program will probably make a better
+assessment of sequence alignment.</p>
+
+<p>The alignment file format used by MODELLER is not particularly simple (see MODELLER documentation
+on Alignment File Format) and it is probably easiest to run the CCP4i task with the sequence file and
+homolog structures as input and let this generate the alignment file (extension .ali) which you can
+then edit and use as input if necessary.</p>
+
+<p>CCP4i expects the sequence to be input in a simple file with one letter amino acid code.
+It does not expect any extra titles or comments - beware if you have these in the file then they may
+be interpreted as sequence code. The line length is not fixed and any spaces or characters outside of
+the range A-Z will be ignored so it should be possible to cut and paste a sequence into a file without
+necessarily removing all gaps or extra characters.</p>
+
+<h4><a name="modeller_building_models"></a>Building Models</h4>
+
+<p>The CCP4i interface has the option to produce a model which has no refinement, fast refinement or
+full refinement. Only in the latter case is there an option to generate more than one model.
+Beware that after full refinement the position of the model may have drifted from the position
+of the input homolog structure.</p>
+
+<p>After refinement a graph file (extension .graph) is produced which contains a plot of restraint
+violations versus residue number; this is MODELLER's assessment of the quality of the model. Large
+values of restraint violation are bad; they usually correspond to regions of insertions or deletions
+in the alignment or significant differences in the sequences.</p>
+
+<h4><a name="modeller_post_processing"></a>Post-Processing of the MODELLER Model</h4>
+
+<p>After refinement MODELLER puts the restraint violation in the Bvalues column of the output PDB file.
+The CCP4i script will, by default, replace these with Bvalues that the user can set in the task interface.</p>
+
+<p>The CCP4i script can do some post processing of the output MODELLER model to edit either</p>
+<ol type="a">
+<li>poor regions of the model as determined by the restraint violation parameter output by MODELLER</li>
+<li>side chains of residues which have been mutated</li>
+</ol>
+
+<p>These regions can be either deleted (the mutated residues being converted to glycine or alanine)
+or the occupancies can be set to zero.</p>
+
+<h3><a name="phaser_MR"></a>Phaser - likelihood-based MR</h3>
+
+<p>This task provides an interface to the maximum likelihood
+MR program Phaser. Note that the task button may be greyed-out if
+the program has not been installed. </p>
+
+<p>First choose the mode in the Protocol folder. Typically, one would start with
+the default mode "automated search", which combines most of the remaining modes.
+Only if there are problems, or a more detailed search is required, would the
+other modes be run separately.  </p>
+
+<p>See program documentation:
+<a href="../../../../html/phaser.html" target="_PROGDOC">PHASER</a></p>
+
+<h3><a name="molrep"></a>MOLREP - auto MR</h3>
+
+<p>This a fully automated molecular replacement program which will attempt to find
+the number of molecules expected in the asymmetric unit as entered by the user.
+A PDB file for the best solution is output. It is also possible to run the program
+for just rotation or translation function; the rotation solutions are output to a file
+(given the extention <em>.mr</em>) and this can be used as input to a subsequent run
+of the translation function. When the .mr file is used as input, any lines beginning
+with a &quot;#&quot; character are ignored. When the .mr file is viewed within CCP4i,
+clicking on any line in the file will add or remove a &quot;#&quot; from the beginning
+of the line (see also <a href="#edit_amore_solution_file" target="_self">Edit MR Solution File</a>).
+Note that the format of this file is different from the format of .mr files output by AMoRe.</p>
+
+<p>Molrep has other functions to do a self rotation function, search for a model in a
+phased map or an approach to fitting two molecules.</p>
+
+<p>For the background theory of MOLREP, see
+<a href="appendices/molreptheory.html" target="_self">MOLREP theory</a>.</p>
+<p>See program documentation:
+<a href="../../../../html/molrep.html" target="_PROGDOC">MOLREP</a></p>
+
+<p>See Stage 3 of the
+<a href="../../../examples/tutorial/html/mr-tutorial.html" target="_TUTORIALS">
+MR tutorial</a>.</p>
+
+<h3><a name="mrbump"></a>MrBUMP - automated Molecular Replacement using Bulk
+Model Preparation</h3>
+
+<p>MrBUMP performs automated search model generation and automated molecular
+replacement, and has three main parts:</p>
+
+<ol>
+<li>For a given target sequence, automated discovery of chains, domains and
+    multimers that are possible templates for molecular replacement search models</li>
+<li>Preparation of actual search models using a variety of structure editing
+    techniques</li>
+<li>Running molecular replacement using these search models and testing whether
+    the resulting solutions will refine.</li>
+</ol>
+
+<p>Note that MrBUMP makes a number of calls to web-based applications. If your
+sequence information is in any way sensitive, it is recommended that you use
+the option to run the fasta search locally rather than via the OCA web
+application.</p>
+
+<p>See program documentation:
+<a href="../../../../html/mrbump_doc.html" target="_PROGDOC">MrBUMP</a></p>
+
+<h3><a name="balbes"></a>Balbes</h3>
+
+<p>BALBES is a system for solving protein structures using x-ray
+crystallographic data. Molecular Replacement (MR) is its core scientific
+method. BALBES aims to integrate all components, necessary for finding a
+solution structure by MR, into one system. It consists of a database,
+scientific programs and a python pipeline. The system is automated so that
+it needs no user's intervention when running complicated combination of jobs
+such as model searching, molecular replacement and refinement.</p>
+
+<p>See the <a href="http://www.ysbl.york.ac.uk/~fei/balbes/">BALBES website</a>
+for documentation including running the program through the CCP4i
+interface.</p>
+
+<h3><a name="amore_overview"></a><a name="amore"></a>AMORE Overview - How to Run a Simple AMoRe Job</h3>
+
+<p>The Molecular Replacement module uses a database to store information on the
+trial models used in a project. If you use only one trial model, this may seem
+unnecessarily complicated, but if you need to use multiple trial models you will
+appreciate the database.</p>
+
+<p>To run a simple AMoRe job, click on the AMoRe task in the module menu.
+The task window for AMoRe and a task window which interfaces to the AMoRe
+model database will appear. You will need to enter the following information
+on your trial model in the database:</p>
+
+<ul>
+<li>a unique one-word name (this will be used to generate filenames, so
+choose something short and distinctive)</li>
+<li>the name of the coordinate file containing the trial model</li>
+</ul>
+
+<p>All other filenames for intermediate files will be generated automatically
+from the model name.</p>
+
+<p>It is possible to use a map as the trial structure in AMoRe - see
+<a href="#mr_map" target="_self">below</a>.</p>
+
+<p>In the AMoRe task window, the protocol section has two menus for you
+to select a trial model from the database (if there is only one model in
+the database this will be set automatically) and the mode of running
+AMoRe. Usually you should keep the default <tt>auto-AMoRe</tt> for a start-to-finish
+run of the program. You will need to select the MTZ file containing
+the experimental data.</p>
+
+<p>The first step in an AMoRe run is to move the trial coordinates to an
+optimal position centered on the origin; these coordinates are saved
+to a file. AMoRe then reports its best solutions in terms of transformations
+(Euler angles and translations) to be applied to the optimised, origin
+shifted, coordinates. These solutions are listed in the log file but also
+extracted into solution files (with file extension <strong>.mr</strong>).
+Solution files will be created for each of the rotation, translation and fitting
+stages of the AMoRe run, and the final file will have a name
+<strong><em>projectname</em>_<em>jobid</em>_fit_<em>model</em>.mr</strong>
+where <em>projectname</em> is the name of the project, <em>jobid</em> is the
+job number and <em>model</em> is the name of the trial model.</p>
+
+<p>The Molecular Replacement task <a href="#mr_solution" target="_self">Build AMoRe Output Model</a>
+will apply the transformations
+stored in a solution file to the optimised coordinates and will also do some simple
+checks on the quality of a model - checking whether there is overlap between
+molecules in adjacent asymmetric units. You will need to select the solution
+file output by your AMoRe run.</p>
+
+<h4><a name="models_molecules"></a>Trial Models and Molecules</h4>
+
+<p>In AMoRe, the words 'model' and 'molecule' are used with
+very specific meanings.</p>
+
+<p>In the context of AMoRe a 'molecule' is the structural element which
+can be treated as a rigid body in molecular replacement. It may be anything
+from a structural domain which is not even a whole chain, to a multi-chain
+protein.</p>
+
+<p>A trial 'model' is the initial set of test coordinates which are taken
+from another solved crystal structure or NMR structure. This coordinate
+set may have been processed in some way to make it more suitable for use
+in molecular replacement - for example loop regions could have been excised.
+It is possible (and may be advisable) to generate multiple models from
+one input coordinate set by different processing (for example different
+degrees of severity in excising loop regions or applying some homology modelling
+to try to make the model more like the expected structure in the experimental
+data).</p>
+
+<p>In the simplest case Molecular Replacement can be used to find one
+rotation/translation
+solution to map a model onto the experimental structure. If this is your
+case, you can skip some of the following discussion and you can ignore
+the part of the Interface referring to 'known' molecule(s). You should
+(at least for a first try) use the <tt>auto-AMoRe</tt> option which will run through
+all the AMoRe functions automatically.</p>
+
+<p>The non-simple cases are:</p>
+
+<ul>
+<li>If a crystal has non-crystallographic symmetry, there will be multiple
+copies of the basic structural element (<em>i.e.</em> 'molecule') in the asymmetric
+unit which can all be found using one model.</li>
+
+<li>If the experimental structure contains multiple proteins or it is a
+multi-domain protein, it may be necessary to use models based on coordinate
+sets from two or more different protein structures.</li>
+
+<li>Even if you have a coordinate set for a structure very similar to that
+expected in your experimental structure, it may be necessary to split a
+multi-domain protein into two or more models to allow for the possibility
+of different inter-domain relations between crystal structures.</li>
+</ul>
+
+<h3><a name="mr_map"></a><a name="sfall"></a>Create Input SFs from Model</h3>
+
+<p>Alternative to inputting coordinates for model structures to AMoRe, some
+crystallographers prefer to input a map calculated from the coordinates,
+usually a sharpened E-map (that is a map generated using the normalised
+structure amplitudes rather than the SFs). The MR 'Create Input SFs from Model'
+task will create an MTZ file containing the appropriate Es or SFs and phis
+for a map to input to AMoRe. The name and coordinate file for the model
+must have been entered in the 'AMoRe Model Database' before running this task.</p>
+
+<p>The task requires to know the cell parameters and resolution range -
+these can be read from an MTZ file such as the file containing the
+experimental data. This MTZ file is not used in any other way by the
+task.</p>
+
+<h3><a name="mr_database"></a>AMoRe Model Database</h3>
+
+<p>To simplify running AMoRe, the Interface keeps a database of the models
+used for the molecular replacement. These models may be either variants
+of the same initial coordinate set which have been processed differently
+(for example with different loop regions excised) or they may be from different
+coordinate sets in cases where the experimental structure is made up of
+more than one 'molecule'. The contents of the database are displayed in
+a separate window which is opened when you select the AMoRe task. The key
+data you must input to the database is a name for each model and the name
+of either the coordinate file containing the model or an MTZ file
+containing SFs or Es for the model. The model name you enter will
+be used in menus and as part of filenames, so keep it short and distinct.</p>
+
+<p>When AMoRe is run, some information will be automatically extracted from
+the log file and loaded into the database. This is visible in the 'AMoRe
+Details' folder. The information stored here currently is the name of transformed
+coordinate files, SF table files and details from the initial Tabling
+function (TABFUN) which are used by subsequent AMoRe functions.</p>
+
+<h3><a name="radius"></a>The Rotation Function Radius and Model Cell</h3>
+
+<p>Probably the most important parameter in an AMoRe run is the radius
+used by the rotation function. There is debate about the best value
+to use and for tricky problems it is always worth trying a range of values.
+The Interface script will automatically generate a reasonable value for
+the radius from the parameters output by the TABFUN stage. The Tabling
+function moves the trial model to an optimal position and orientation and
+reports to the log file the size of an enclosing box for the model. The
+Interface calculates the search radius as:</p>
+<a name="search_radius"></a>
+<p>the minimum of</p>
+
+<p>0.75 * (the minimum axis length of the model enclosing box)</p>
+
+<p>and</p>
+
+<p>0.5 * (the minimum crystal cell axis)</p>
+
+<p>This search radius is saved in the MR Database for this model and will
+be used by default in future AMoRe runs. It is also used in the calculation
+of the model cell, in the case of an <tt>auto-AMoRe</tt> run, as follows:</p>
+
+<blockquote>
+a<sub>model</sub> = a<sub>tabfun-minimal-box</sub> + radius + 5.0<br />
+b<sub>model</sub> = b<sub>tabfun-minimal-box</sub> + radius + 5.0<br />
+c<sub>model</sub> = c<sub>tabfun-minimal-box</sub> + radius + 5.0
+</blockquote>
+
+<p>where <tt>radius</tt> is the search radius as determined <a href="#search_radius" target="_self">above</a>.
+<tt>tabfun-minimal-box</tt> is the Minimal Box output in the logfile of the TABFUN stage.
+5.0 is chosen as a nominal value for the resolution.</p>
+
+<h3><a name="solution_files"></a>Solution Files</h3>
+
+<h4>Molecular Replacement (.mr) Files</h4>
+
+<p>When AMoRe performs the rotation function, translation function or rigid body
+refinement (fitting function), it outputs the final result to the log file in lines which begin
+with the keyword SOLUTION (or some recognisable variation on it).
+The key data on the line are three Euler angles which are the rotation
+part of the solution and three fractional shifts which are the translation
+part of the solution.</p>
+
+<p>It is often necessary to recycle these solutions as input into the next
+stage in AMoRe or to use them to generate well-positioned models. To simplify
+the recycling, the Interface automatically extracts the SOLUTION lines
+from the log file and saves them to a 'Solution File' which is put in the
+user's project directory and has a name like
+<strong><em>projectname</em>_<em>jobid</em>_<em>mode</em>_<em>model</em>.mr</strong>
+where <em>projectname</em> is the name of the project, <em>jobid</em> is the
+job number, <em>mode</em> is either <strong>rot</strong>, <strong>tran</strong> or
+<strong>fit</strong>, depending on which stage these are the solutions for, and
+<em>model</em> is the name of the model this solution applies to. These MR files
+are analogous to the
+<a href="exptphase.html#solution_files" target="_self">HA files</a> of the
+Experimental Phasing module.</p>
+
+<p>The solution file from the translation function will also include the
+alternative, lower scoring, translation solutions which are usually given
+the label SOLUT_1, SOLUT_2 in the log file. These solutions will be 'commented
+out' in the solution file which means that the lines containing these solutions
+will begin with a '<tt>#</tt>' character and they will not be read or used by default.</p>
+
+<p>For subsequent AMoRe runs you should select which solution files to
+use as input and these will be edited into the input command file (any
+specification of the model number or the FIX keyword will be handled
+automatically). You do NOT need to edit the solution file in any way.</p>
+
+<p><a name="mr_edit"></a>If you do not want to use all of
+the solutions in a solution file, then
+some lines from the file can be 'commented out' - that is a '<tt>#</tt>' character
+is placed at the beginning of the line so the rest of the line is then
+ignored by any program reading the file. The easiest way to edit a solution
+file is using the 'Edit MR Solution File' task. This task displays
+the contents of a solution file and you just need to click on a line to
+either add or remove the <tt>#</tt> at the beginning of the line.</p>
+
+<p>You can access the 'Edit AMoRe Solution File' task in the conventional
+way from the task menu on the main CCP4i window or you can click on the
+'<strong><tt>View</tt></strong>' button on the file selection line for
+a solution file.</p>
+
+<p>By creating and using solution files automatically, the Interface simplifies
+running AMoRe and reduces the risk of errors, but there may be one or two
+tricks that you can do running AMoRe conventionally with scripts which
+you can not do easily with the Interface. There are a couple of ways to
+work round this:</p>
+
+<ul>
+<li>Create or edit the solution file you need external to the Interface</li>
+
+<li>Use the 'Run and View Com File' option to look at and edit the AMoRe
+command script</li>
+</ul>
+
+<p>Please let <a href="mailto:ccp4gui@dl.ac.uk">us</a> know if you find any serious limitation
+which is liable to affect other users, and we will try to fix it.</p>
+
+<h3><a name="amore_functions"></a>AMoRe Functions</h3>
+
+<p>The AMoRe process is split into functions which are described in the
+<a href="../../../../html/amore.html" target="_PROGDOC">AMoRe program documentation</a> but they are described here briefly from the
+point of view of someone using the Interface:</p>
+
+<h4><a name="sorting_and_tabling"></a>Sorting and Tabling Functions (SORTFUN and TABFUN)</h4>
+
+<p>The Interface treats the AMoRe Sorting and Tabling functions together.
+The purpose of these functions is to process the input model and experimental
+data into a form which is most convenient for AMoRe, which is a packed hkl
+file of the experimental data and SF table file of the inverse Fourier
+transform of the model.</p>
+
+<p>The Sorting function produces a packed hkl file from structure factors
+(read from an input MTZ) and can also produce a SF table file. The
+Tabling function will produce a SF table file from coordinates. So
+the input experimental data is processed by the Sorting function and the
+model data is processed by either the Sorting or Tabling function depending
+on whether it is in the form of a map or atom coordinates. The choice of
+processing step is handled automatically by the Interface.</p>
+
+<p>When the Interface runs AMoRe, it will automatically run the Sorting and
+Tabling if the necessary SF table files do not exist but, provided you
+do not delete these files, the script will skip these functions for all
+subsequent AMoRe runs. This saves some time but beware the SF table files
+are large.</p>
+
+<p>The Tabling function also moves the input coordinates to an optimal
+position centered on the origin and these optimised coordinates are saved
+in an output coordinate file. All the subsequent solutions output by AMoRe
+are transformations which should be applied to these optimised coordinates.
+The AMoRe interface has a 'get origin shifted model' option to recreate
+the optimised model coordinate file if you inadvertently delete it.</p>
+
+<h4><a name="rotation_function"></a>Rotation Function (ROTFUN)</h4>
+
+<p>The rotation function is applied to one input model which is represented
+by an SF table file. The rotation function solutions are a list of rotations
+(no translation component) which are written to the log file and also to
+a solution file
+<strong><em>projectname</em>_<em>jobid</em>_rot_<em>model</em>.mr</strong>.
+There will normally be multiple solutions and all of these solutions should be
+tested with the translation function.</p>
+
+<h4><a name="translation_function"></a>Translation Function (TRAFUN)</h4>
+
+<p>The translation function is applied to one input model which is represented
+by an SF table file and rotation function solution(s) for the SAME model.</p>
+
+<p>The output from the translation function is a list of transformations
+with both rotation and translation components - the rotation component is
+carried over, without change, from the rotation function solution. The
+solutions are extracted from the log file to a solution file called
+<strong><em>projectname</em>_<em>jobid</em>_tran_<em>model</em>.mr</strong>
+which will list the one 'best' translation solution for each input rotation
+solution. It will also list, 'commented out', the alternative, poorer,
+solutions.</p>
+
+<h4><a name="fitting"></a>Rigid Body Refine Fitting Function (FITFUN)</h4>
+
+<p>The FITFUN stage will refine the rotation and translation solution
+for one or more molecules simultaneously. The input is usually the solutions
+from the translation function.</p>
+
+<p>If you have only one molecule in your asymmetric unit, the solution
+file from the translation stage should be input into the refinement. Each
+of the solutions from the translation function will be refined in turn and
+output to a final solution file
+<strong><em>projectname</em>_<em>jobid</em>_fit_<em>model</em>.mr</strong>.</p>
+
+<h4><a name="multiple_molecules"></a>Solving Structures with Multiple Molecules in the Asymmetric Unit</h4>
+
+<p>The usual procedure for solving an experimental structure containing
+more than one molecule, is to try to find a good solution for one molecule
+and then treat it as 'known' while you try to find the solution for the
+next molecule. Of course there may be more than one candidate for the solution
+of the 'known' molecule in which case the procedure will have to be repeated
+for all candidates.</p>
+
+<p><a name="interface_to_known_molecules"></a>If you have already determined the positions of some 'known' molecule(s)
+within your crystal then, in the <strong>translation function</strong>, they
+should be specified and they will be treated as fixed by the translation function.
+For each 'known' molecule you must specify the name of the model and a
+solution file containing both rotation and translation solutions (<em>i.e.</em>
+the solution file must be from the translation function). Only one solution
+will be taken from each solution file. The first solution not commented
+out in the file will be used. If you know the position of two, or more,
+molecules based on the same model, you should specify two or more solution
+files for the model.</p>
+
+<p><strong>Rigid body refinement (FITFUN)</strong> is applied to one or more input model(s) for
+which initial rotation and translation solutions must be specified. This
+function will refine those input solutions. To simplify the interface, the
+molecules are considered to be one 'test' molecule for which you can specify
+multiple alternative solutions and one or more 'known' molecules for which
+you can only specify one input solution. This is only a convention of the
+Interface; within AMoRe the refinement treats 'known' and 'test' molecules
+identically - they are refined simultaneously. If there are more than one
+solutions for the 'test' molecule defined in the solution file, AMoRe
+will do multiple refinement runs. The starting position of the 'test' molecule
+will differ for each refinement run but the starting position of the 'known'
+molecules will be the same for all runs. The final, refined position of
+the 'known' molecules will almost certainly be different for each run.</p>
+
+<p>The interface to specify the 'known' molecules is identical to that
+for the <a href="#interface_to_known_molecules" target="_self">translation function</a>. For each selected solution
+file, one solution will be read from the file. For the 'test' molecule
+all uncommented solutions will be read from the solution file. The output
+from the fitting function is just one solution file
+<strong><em>projectname</em>_<em>jobid</em>_fit_<em>model</em>.mr</strong>
+where <em>model</em> is the name of the test model.</p>
+
+<p>It is possible to use <tt>auto-AMoRe</tt>, which will run the rotation, translation
+and fitting functions automatically, for structures with multiple molecules.
+The <tt>auto-AMoRe</tt> will attempt to find a solution for one model. If you already
+have one or more 'known' molecules, you should enter them in the interface.</p>
+
+<p><em>Beware: if you have a case of NCS symmetry and 'know' one or more
+solutions, these solutions are liable to be found again.</em></p>
+
+<h3><a name="memory"></a>AMoRe Memory Allocation</h3>
+
+<p>AMoRe requires large amounts of memory to hold the maps in core. If
+your version of AMoRe is not built with large enough default arrays,
+the AMoRe log file reports that there is insufficient memory (though not
+in a very helpful fashion!). You should open the 'Memory Allocation' folder
+at the bottom of the AMoRe window and enter (some guess at)
+the appropriate memory allocation. Alternatively you can enter the parameters
+in the 'Memory Allocation' folder in the MR Database window and they will
+be used to update the parameters in the current AMoRe window and saved
+and used for all future AMoRe runs. See also
+<a href="../../../../html/amore.html#memory_allocation" target="_PROGDOC">Memory Allocation</a> in the
+AMoRe program documentation.</p>
+
+<h3><a name="mr_solution"></a>Build AMoRe Output Model</h3>
+
+<p>AMoRe will only output the transformations which need to be applied
+to the initial coordinates, but will not generate a model with the transformations
+applied. The 'Build AMoRe Output Model' task will generate a coordinate file
+with the input model(s) transformed to best fit in the experimental model.</p>
+
+<p>The input to this task is a solution file from the AMoRe fitting function.
+The solution file will contain a list of the models used in the fitting
+function. These are listed on the line beginning:</p>
+
+<pre>
+#CCP4I SCRIPT SOL fit
+</pre>
+
+<p>The Interface will look up the name of the coordinate file for the model
+in the database and these will be shown in the task window so you should
+not need to enter them. The task will put appropriate cell and symmetry
+information for the experimental structure into the coordinate file. The
+easiest way to provide this information is to give the name of the experimental
+data MTZ file from which the parameters can be extracted. The different
+'molecules' in the structure are identified by different chain names: A,B,C
+<em>etc.</em>.</p>
+
+<p>This model is useful for testing the quality of the packing for the
+solution. This task will run the
+<a href="../../../../html/distang.html" target="_PROGDOC">DISTANG</a> program to
+list bad contacts between 'molecules'. You should look at the output log file
+for a listing of contacts.</p>
+
+<p>See program documentation:
+<a href="../../../../html/amore.html" target="_PROGDOC">AMoRe</a>,
+<a href="../../../../html/distang.html" target="_PROGDOC">DISTANG</a></p>
+
+<h3><a name="pdbset"></a>Edit PDB Model File - Pdbset</h3>
+
+<p>The task runs with a choice of PDBCUR or PDBSET as the underlying program,
+and can be used to perform various manipulations on coordinate files.</p>
+
+<p>See program documentation:
+<a href="../../../../html/pdbset.html" target="_PROGDOC">PDBSET</a>,
+<a href="../../../../html/pdbcur.html" target="_PROGDOC">PDBCUR</a></p>
+
+<h3><a name="superpose"></a>Superpose Coordinates</h3>
+
+<p>This provides several approaches to superposing molecules:</p>
+<ol type="a">
+<li>Using the Secondary Structure Matching (SSM) algorithm (using the SUPERPOSE program)</li>
+<li>Superposing atoms and/or residues specified by the user (using the LSQKAB program)</li>
+<li>Finding the best fit of secondary structure elements (using the TOPP program)
+</ol>
+
+<p>See program documentation:
+<a href="../../../../html/superpose.html" target="_PROGDOC">SUPERPOSE</a>,
+<a href="../../../../html/lsqkab.html" target="_PROGDOC">LSQKAB</a>,
+<a href="../../../../html/topp.html" target="_PROGDOC">TOPP</a></p>
+
+<h3><a name="get_prot"></a>Import/Edit Protein Sequence</h3><p>The Import/Edit Protein Sequence Task is used for importing and manipulating protein 
+sequences obtained from the SwissProt database at the EBI (alternative database sources
+can be specified in <a href="../general/configure.html#sequence_database">Configure Interface</a>). 
+Enter the SwissProt code of the protein sequence to be
+viewed and a summary view of the protein sequence appears in the Current Sequence window, with
+a full detailed view in the View Full Sequence Entry window. The Editing window contains editing
+tools to manipulate the protein sequence in the Current Sequence window. Enter the search string,
+click the <tt>Search For...</tt> button and if the search string is present in the protein
+sequence, it is highlighted. This section of the protein sequence can then be deleted, mutated
+into another specified sequence or amino acids can be inserted after this section. The changed
+sequence can then be saved in a file of your specification for future viewing and editing.</p>
+
+<p>This program is the first CCP4i program to connect to a database over the internet in order
+to download a requested file. If you use a proxy server, please remember to set this 
+in <a href="../general/configure.html#proxy">Configure Interface</a> before running CCP4i.</p>
+
+<p>See full program documentation:
+<a href="../../../../html/get_prot.html" target="_PROGDOC">GET_PROT</a></p>
+
+<h3><a name="clustalw"></a>Sequence Alignment - ClustalW</h3>
+
+<p>Interface to run the ClustalW program. (See the full Program Documentation
+for the <a href="../../../../html/clustalw.html">ClustalW Interface</a> for more
+information).<em>N.B. ClustalW is not distributed as part of CCP4 and needs to
+be obtained separately</em>.</p>
+
+<hr />
+<p>See also
+$CDOC/Mol_repl_itickle_tut.bath.ps, and
+<a href="http://px.cryst.bbk.ac.uk/03/sample/molrep.htm" target="_EXTERNAL">
+Molecular Replacement (Birkbeck)</a></p>
+
+<table border="0" width="100%">
+<tr><td>
+<a href="improvement.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="exptphase.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="../index.html" target="_top">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td>
+<td align="right"><a href="http://validator.w3.org/" target="_EXTERNAL">Valid XHTML 1.0!</a>
+<a href="http://jigsaw.w3.org/css-validator/" target="_EXTERNAL">Valid CSS!</a></td></tr>
+</table>
+
+</body>
+</html>

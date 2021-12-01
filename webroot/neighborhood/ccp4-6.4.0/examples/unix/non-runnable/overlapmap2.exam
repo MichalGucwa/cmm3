@@ -1,0 +1,233 @@
+## Another example in mapcorrelate.com ----
+#  Calculations leading up to map correlations.
+# Need two maps, and if you want to tabulate the results 
+# residue by residue, a third "map" output by sfall which 
+# flags each grid point with the residue which makes the 
+# largest contribution to it.
+#  Warning. All grids MUST BE THE SAME!!
+#  It is probably sensible if you want results tabulated according
+# to residue to make this a fine grid, the sfall one should be OK.
+#  Here is a set of command filesto check the map correlation of 
+# a structure after refinement to the MIR map,
+#  and to work out real space R factors.
+#  For map correlation we use 1) The MIR map ( should be SQUASHed map)
+#                             2) An "FC" map 
+#               and           3) the sfall RESMOD map.
+
+#  For Real space R factors we also need the FO map phased by the PHIcalc.
+
+#!/bin/csh -f
+#goto fft
+########################################################################
+#  Generate atom map for final coordinates
+########################################################################
+sfall    			\
+xyzin cellulase_1stapril.pdb \
+               mapout $SCRATCH/endob_res_last.map \
+<< 'END-sfrkall' 
+TITL EndoB Cellulase Sf's with mlphare data 
+GRID 144 152 144 
+MODE ATMMAP RESMOD
+SYMM 4
+NGAU 2
+END
+'END-sfrkall'
+########################################################################
+#  Generate atom map for original coordinates
+########################################################################
+sfall    			\
+xyzin cell_build2.pdb \
+               mapout $SCRATCH/endob_res_first.map \
+<< 'END-sfrkall' 
+TITL EndoB Cellulase Sf's with mlphare data 
+GRID 144 152 144 
+MODE ATMMAP RESMOD
+SYMM 4
+NGAU 2
+END
+'END-sfrkall'
+#
+########################################################################
+#  Calculate sfs for first coordinates - Add on to mir   file
+########################################################################
+sfall    			\
+xyzin cell_build2.pdb \
+               hklin $SCRATCH/endob_mir.mtz    \
+               hklout $SCRATCH/endob_mir_sffirst.mtz    \
+<< 'END-sfrkall' 
+TITL EndoB Cellulase Sf's with mlphare data 
+GRID 144 152 144 
+MODE SFCALC XYZIN HKLIN
+RESO 20.0 1.5 40
+RSCB 5.0 1.5
+BRESET 1.5
+BINS 20
+SFSG 4
+NGAU 2
+BADD 0
+LABO ALLIN FC=FC_first PHIC=AC_first
+LABI FP=F_NAT_W SIGFP=SIG_NAT_W
+END
+'END-sfrkall'
+#
+#exit 
+########################################################################
+#  Calculate sfs for final coordinates - Add on to mir + sffirst  file
+########################################################################
+sfall    			\
+xyzin cellulase_1stapril.pdb \
+               hklin $SCRATCH/endob_mir_sffirst.mtz    \
+               hklout $SCRATCH/endob_mir_sffirst_sflast.mtz    \
+<< 'END-sfrkall' 
+TITL EndoB Cellulase Sf's with mlphare data 
+GRID 144 152 144 
+MODE SFCALC XYZIN HKLIN
+RESO 20.0 1.5 40
+RSCB 5.0 1.5
+BRESET 1.5
+BINS 20
+SFSG 4
+NGAU 2
+BADD 0
+LABO ALLIN FC=FC_last PHIC=AC_last
+LABI FP=F_NAT_W SIGFP=SIG_NAT_W
+END
+'END-sfrkall'
+#
+# Calculate maps:
+#  For real space R factor I need Fo and Fc maps..
+# Fo map phased on original coordinates.
+#
+########################################################################
+# Fo map from original coordintes.  ( used forReal Space R factor)
+########################################################################
+fft:
+fft    			\
+               mapout $SCRATCH/endob_fofirst.map    \
+               hklin $SCRATCH/endob_mir_sffirst_sflast.mtz    \
+<< 'END-fft' 
+TITL EndoB Cellulase  1.6A FOfirst map
+GRID 144 152 144 
+XYZLIM 0 143 0 75 0 143
+RESO 20.0 3.0
+LABI F1=F_NAT_W PHI=AC_first
+END
+'END-fft'
+#
+#
+########################################################################
+# Fo map from final coordintes.  ( used forReal Space R factor)
+########################################################################
+#
+fft    			\
+               mapout $SCRATCH/endob_folast.map    \
+               hklin $SCRATCH/endob_mir_sffirst_sflast.mtz    \
+<< 'END-fft' 
+TITL EndoB Cellulase  1.6A FOlast  map
+GRID 144 152 144 
+XYZLIM 0 143 0 75 0 143
+RESO 20.0 3.0
+LABI F1=F_NAT_W PHI=AC_last
+END
+'END-fft'
+#
+########################################################################
+# Fc map from original coordintes.  ( used forReal Space R factor and mir 
+#                                      map correlation)
+########################################################################
+#
+fft    			\
+               mapout $SCRATCH/endob_fcfirst.map    \
+               hklin $SCRATCH/endob_mir_sffirst_sflast.mtz    \
+<< 'END-fft' 
+TITL EndoB Cellulase  1.6A FCfirst map
+GRID 144 152 144 
+XYZLIM 0 143 0 75 0 143
+RESO 20.0 3.0
+LABI F1=FC_first PHI=AC_first
+END
+'END-fft'
+#
+#
+########################################################################
+# Fc map from final coordintes.
+########################################################################
+#
+fft    			\
+               mapout $SCRATCH/endob_fclast.map    \
+               hklin $SCRATCH/endob_mir_sffirst_sflast.mtz    \
+<< 'END-fft' 
+TITL EndoB Cellulase  1.6A FClast  map
+GRID 144 152 144 
+XYZLIM 0 143 0 75 0 143
+RESO 20.0 3.0
+LABI F1=FC_last PHI=AC_last
+END
+'END-fft'
+fft2:
+########################################################################
+#  mir map
+########################################################################
+fft    			\
+               mapout $SCRATCH/endob_fomir.map    \
+               hklin $SCRATCH/endob_mir_sffirst_sflast.mtz    \
+<< 'END-fft' 
+TITL EndoB Cellulase  2.5A Mir map
+GRID 144 152 144 
+XYZLIM 0 143 0 75 0 143
+RESO 20.0 3.0
+LABI F1=F_NAT_W PHI=PHI_MIR_W W=FOM_MIR_W
+END
+'END-fft'
+#
+#
+#
+
+#!/bin/csh -f
+########################################################################
+#  Correlation residue by residue of original coordinates with mir map
+########################################################################
+overlapmap    			\
+               mapin1 $SCRATCH/endob_fomir.map    \
+               mapin2 $SCRATCH/endob_fcfirst.map    \
+               mapin3 $SCRATCH/endob_res_first.map \
+<< 'END-fft' 
+CORR RESI 
+END
+'END-fft'
+#
+########################################################################
+#  Real space R factor residue by residue of original coordinates 
+########################################################################
+overlapmap    			\
+               mapin1 $SCRATCH/endob_fofirst.map    \
+               mapin2 $SCRATCH/endob_fcfirst.map    \
+               mapin3 $SCRATCH/endob_res_first.map \
+<< 'END-fft' 
+REAL SPACE 
+END
+'END-fft'
+#
+########################################################################
+#  Correlation residue by residue of final coordinates with mir map
+########################################################################
+overlapmap    			\
+               mapin1 $SCRATCH/endob_fomir.map    \
+               mapin2 $SCRATCH/endob_fclast.map    \
+               mapin3 $SCRATCH/endob_res_last.map \
+<< 'END-fft' 
+CORR RESI 
+END
+'END-fft'
+#
+########################################################################
+#  Real space R factor residue by residue of final coordinates 
+########################################################################
+overlapmap    			\
+               mapin1 $SCRATCH/endob_folast.map    \
+               mapin2 $SCRATCH/endob_fclast.map    \
+               mapin3 $SCRATCH/endob_res_last.map \
+<< 'END-fft' 
+REAL SPACE 
+END
+'END-fft'

@@ -1,0 +1,80 @@
+#!/bin/sh 
+# chef-complete.exam
+# 
+# A complete run-all script which will follow on from scala-complete.exam
+# and run chef and doser on the resulting unmerged data file. This will
+# not tell us a great deal, but it is a better example than the old 
+# one...
+# 
+
+set -e
+
+# first check that the input reflection file exists
+
+if test ! -f ${CCP4_SCR}/sc-exam-scale-unmerged.mtz; then
+  echo '! run scala-complete.exam procedure first'
+  exit 1
+fi
+
+# then run doser with this - doses come from a xia2 run with this data
+# set (from doser.in)
+
+doser \
+hklin ${CCP4_SCR}/sc-exam-scale-unmerged.mtz \
+hklout ${CCP4_SCR}/sc-exam-scale-doser.mtz << EOF-doser
+ batch 1 dose 15.000000 time 1157028766.000000
+batch 2 dose 45.000000 time 1157028811.000000
+batch 3 dose 75.000000 time 1157028854.000000
+batch 4 dose 105.000000 time 1157028899.000000
+batch 5 dose 135.000000 time 1157028943.000000
+batch 6 dose 165.000000 time 1157028987.000000
+batch 7 dose 195.000000 time 1157029030.000000
+batch 8 dose 225.000000 time 1157029074.000000
+batch 9 dose 255.000000 time 1157029117.000000
+batch 10 dose 285.000000 time 1157029161.000000
+batch 11 dose 315.000000 time 1157029205.000000
+batch 12 dose 345.000000 time 1157029249.000000
+batch 13 dose 375.000000 time 1157029293.000000
+batch 14 dose 405.000000 time 1157029337.000000
+batch 15 dose 435.000000 time 1157029381.000000
+batch 16 dose 465.000000 time 1157029424.000000
+batch 17 dose 495.000000 time 1157029467.000000
+batch 18 dose 525.000000 time 1157029510.000000
+batch 19 dose 555.000000 time 1157029553.000000
+batch 20 dose 585.000000 time 1157029597.000000
+batch 21 dose 615.000000 time 1157029640.000000
+batch 22 dose 645.000000 time 1157029683.000000
+batch 23 dose 675.000000 time 1157029727.000000
+batch 24 dose 705.000000 time 1157029771.000000
+batch 25 dose 735.000000 time 1157029815.000000
+batch 26 dose 765.000000 time 1157029859.000000
+batch 27 dose 795.000000 time 1157029904.000000
+batch 28 dose 825.000000 time 1157029947.000000
+batch 29 dose 855.000000 time 1157029990.000000
+batch 30 dose 885.000000 time 1157030035.000000
+batch 31 dose 915.000000 time 1157030079.000000
+batch 32 dose 945.000000 time 1157030123.000000
+batch 33 dose 975.000000 time 1157030167.000000
+batch 34 dose 1005.000000 time 1157030211.000000
+batch 35 dose 1035.000000 time 1157030255.000000
+batch 36 dose 1065.000000 time 1157030299.000000
+batch 37 dose 1095.000000 time 1157030342.000000
+batch 38 dose 1125.000000 time 1157030385.000000
+batch 39 dose 1155.000000 time 1157030430.000000
+batch 40 dose 1185.000000 time 1157030474.000000
+batch 41 dose 1215.000000 time 1157030517.000000
+batch 42 dose 1245.000000 time 1157030561.000000
+batch 43 dose 1275.000000 time 1157030605.000000
+batch 44 dose 1305.000000 time 1157030649.000000
+batch 45 dose 1335.000000 time 1157030693.000000
+EOF-doser
+
+chef hklin1 ${CCP4_SCR}/sc-exam-scale-doser.mtz << EOF-chef
+labin BASE = DOSE
+print comp rdcu
+range width 60 max 1500
+end
+EOF-chef
+
+
+

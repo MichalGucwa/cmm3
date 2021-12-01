@@ -1,0 +1,265 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4I Documentation for Programmers: Core Documentation</title>
+<link rel="stylesheet" type="text/css" href="../../ccp4idocs.css" title="CCP4i" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+</head>
+<body>
+<H2>CCP4i Documentation for Programmers: Core Documentation</H2>
+<H3>Contents</H3>
+<h3>General Utility Windows (src/util_windows.tcl)</h3>
+<a name="General_Utility_Windows"><h3> General Utility Windows </h3> 
+<p> These are a collection of 'super-widgets' to display stuff like warning messages and for some simple user input.  Most of these widgets block input to all other ccp4i windows until the user has closed this widget.  Programmers should be careful when using these that they do not create two blocking windows simultaneously - it usually freezes the interface.  The WarningMessage function does test if a warning message window is already open and appends to it if possible.<p>
+<p> The Tcl 'grab' command is used to grab the input focus for the window.  The use of this command does seem to cause occasional error messages when running ccp4i - but the interface usually seems to continue without problems.  Once the window has grabbed the focus then the Tcl code is blocked by a vwait command - ccp4i will not process the user input until the user clicks an option to close the window.  The 'close' command will call a procedure such as warning_message_command which releases the 'grab' and sets the vwait parameter (e.g. warning_message_flag) which allows the main procedure (eg. WarningMessage) to continue and exit.<p>
+<a name="WarningMessage" ><h4><font color="#CC3333">WarningMessage</font> <em>Output a 'warning' message to the user - the one default action is 'Dismiss' to close the window.</em></h4> 
+<p><em>Argument list:  &lt;message&gt; &lt;args&gt;</em></p>
+<p><strong>message</strong>  Text string to be displayed.<p>
+<p><strong>-help</strong><em>  help_file</em><p>
+<p>Link a help button in the warning message window to this html file.<p>
+<p><strong>-title</strong><em>  title</em><p>
+<p>A title for the warning message window<p>
+<p><strong>-nostop</strong><p>
+<p>Do not block the procedure waiting for user input - this is probably not a good idea<p>
+<p><strong>-transient</strong><em>  delay</em><p>
+<p>If there is no user input close the window after a given delay (delay in seconds)<p>
+<p><strong>-button</strong><em>  button_text</em><p>
+<p>Set the text of the 'Dismiss' button to button_text<p>
+<p><strong>-command</strong><em>  command</em><p>
+<p>When the user clicks the 'Dismiss' button then issue the command<p>
+<p><strong>-centre</strong><em>  window</em><p>
+<p>Centre the WarningMessage on the named window (otherwise centring is relative to the screen)<p>
+<p><strong>-nograb</strong><p>
+<p>Disable grabbing of the input focus for the window<p>
+<p><strong>-image</strong><em>  imagefile</em><p>
+<p>Display an image at the top of the WarningMessage window<p>
+<p><strong>-font</strong><em>  fontname</em><p>
+<p>Display the message text using the specified font<p>
+<p><strong>-color</strong><em>  color</em><p>
+<p>Display the message text using the specified color<p>
+<a name="warning_message_command" ><h4><font color="#CC3333">warning_message_command</font> <em>Handler for exit button on the warning message window</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;returntext&gt;</em></p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>returntext</strong>  The command from the action button<p>
+<a name="ChooseOptionDialog" ><h4><font color="#CC3333">ChooseOptionDialog</font> <em>Give user multiple choice  with one button per option</em></h4> 
+<p><em>Argument list:  &lt;title&gt; &lt;icon&gt; &lt;message&gt; &lt;options&gt; &lt;args&gt;</em></p>
+<p>The window contains a message text and any number of buttons (4 is probably the reasonable maximum) - clicking a button will make the user's choice and close the dialog box. The text from the button clicked by the user is returned by the procedure.<p>
+<p>The items in the input list of options are displayed right to left.<p>
+<p><strong>title</strong>  Title for the window<p>
+<p><strong>icon</strong>  Name for the window icon<p>
+<p><strong>message</strong>  Text message to appear in the window<p>
+<p><strong>options</strong>  A list of the text strings to appear in the buttons.<p>
+<p><strong>help</strong><em>  help_file</em><p>
+<p>Link a help button in the warning message window to this html file.<p>
+<p><strong>parent</strong><em>  parent_window_array</em><p>
+<p>The arrayname of the parent task interface.  If that task interface window is closed by the user then this window will also be closed automatically.<p>
+<p><strong>-default</strong><em>  n</em><p>
+<p>Set the  n'th item in the list of options as the default<p>
+<p><strong>mode</strong><em>  mode</em><p>
+<p>button or listbox (default button)  The options can be listed in a listbox (not certain this is functional)<p>
+<p><strong>-height</strong><em>  height</em><p>
+<p>Height of listbox (number of lines)<p>
+<p><strong>-width</strong><em>  width</em><p>
+<p>Width of listbox (number of characters)<p>
+<a name="choose_opt_command" ><h4><font color="#CC3333">choose_opt_command</font> <em>Handler for action buttons on the choose option window</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;returntext&gt;</em></p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>returntext</strong>  The command from the action button<p>
+<a name="choose_opt_sel" ><h4><font color="#CC3333">choose_opt_sel</font> <em>handler for listbox selection in ChooseOptionDialog listbox mode</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;lb&gt; &lt;y&gt;</em></p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>lb</strong>  Tk id of listbox widget<p>
+<p><strong>y</strong>  Position of mouse pick in listbox<p>
+<a name="InputParamDialog" ><h4><font color="#CC3333">InputParamDialog</font> <em>Present user dialog box with simple list of variables to edit</em></h4> 
+<p><em>Argument list:  &lt;title&gt; &lt;icon&gt; &lt;arrayname&gt; &lt;entry_list&gt; &lt;args&gt;</em></p>
+<p>The dialog box is laid out with one variable per line. Each line has  a label to define the parameter and a input widget for the user to enter a value or edit the default value.  The input default parameters should be defined in a global array (usually this will be a task interface array) and the output values are returned in the array.<p>
+<p>The user has the options to exit the dialog box with 'OK' (the procedure returns 1)  or 'Quit' (the procedure returns 0 and returns the variables in the array are unaltered).<p>
+<p><strong>title</strong>  Title for the window<p>
+<p><strong>icon</strong>  Name for the window icon<p>
+<p><strong>arrayname</strong>  Name of array containing the input/output parameter values<p>
+<p><strong>entry_list</strong>  A list with one item for each variable - each item is a list: the name of the element in the array, the text to appear in the label, the parameter type (optional, default is _text).<p>
+<a name="EditComFile" ><h4><font color="#CC3333">EditComFile</font> <em>Display a program command script and command line for user to edit</em></h4> 
+<p><em>Argument list:  &lt;comlineVar&gt; &lt;file&gt;</em></p>
+<p>This procedure is run as part of the ccp4i graphical main process if this process receives a request from a run process which is running a script.    The command line is passed to (and returned from) this procedure explicitly but the command script is in a file which is read and then overwritten by the updated script if the user edits the script.<p>
+<p><strong>comlineVar</strong>  Input/Output The text of the program command line<p>
+<p><strong>file</strong>  Name of the file containing the file script<p>
+<a name="handle_edit_com_file" ><h4><font color="#CC3333">handle_edit_com_file</font> <em>Handler for action button in EditComFile</em></h4> 
+<p><em>Argument list:  &lt;mode&gt;</em></p>
+<p>The EditComFile script will continue from the vwait command after edit_com_file_status is changed.<p>
+<p><strong>mode</strong>  The action mode - dependent on which button was clicked<p>
+<a name="Code_for_Uniqueify__Harvesting_and_HKL_Rejects"><h3> Code for Uniqueify, Harvesting and HKL Rejects </h3> 
+<p>The same interface to either Uniqueify of Harvesting appear in several task windows so they are defined in the following procedures. For examples see scalepack2mtz (Uniqueify and HKL rejects) and truncate (harvesting).  The def file and com files for the task also need to be modified, for example, for harvesting:<p>
+<p>The taskname.def file for the task should contain the line<p>
+<p>@ [FileJoin [GetEnvPath CCP4I_TOP] tasks harvest.def]<p>
+<p>to initialise parameters defined in harvest.def. And the taskname.com file should contain<p>
+<p>AT { [FileJoin [GetEnvPath CCP4I_TOP] templates harvest.com ] }<p>
+<p>which will interpret the parameters into the program script.<p>
+<a name="UniqueifyFrame1" ><h4><font color="#CC3333">UniqueifyFrame1</font> <em>Uniqueify interface - a fragment of several task interfaces</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt;</em></p>
+<p>See scalepack2mtz for example of use<p>
+<p><strong>arrayname</strong>  Name of task interface array<p>
+<a name="UniqueifyFrame2" ><h4><font color="#CC3333">UniqueifyFrame2</font> <em>Uniqueify interface - a fragment of several task interfaces</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>See scalepack2mtz for example of use<p>
+<a name="SetHarvestParams" ><h4><font color="#CC3333">SetHarvestParams</font> <em>Initialise parameters for tasks which interface to harvesting mechanism</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;filename&gt; &lt;mode&gt;</em></p>
+<p>This is called at the beginning of **_task_window procedure (with mode=init) to initialise the harvest mode and PNAME if they are not already setor in the **_run procedure (with mode=run) to check the user entered values are consistent with MTZ contents.<p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>filename</strong>  Name of array element containing file name<p>
+<p><strong>mode</strong>  Mode, valid values init or run<p>
+<a name="util_set_harvesthome" ><h4><font color="#CC3333">util_set_harvesthome</font> <em>Set the HARVESTHOME environmental variable</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt;</em></p>
+<p>This is called to set the harvesting directory to be either the project harvesting directory, or a central harvesting directory, as specified by the user<p>
+<p><strong>arrayname</strong>  Name of the data array<p>
+<a name="util_fix_harvestnames" ><h4><font color="#CC3333">util_fix_harvestnames</font> <em>Call RemoveMetaChars to ensure valid project/crystal/dataset names.</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt;</em></p>
+<p>The call to RemoveMetaChars replaces e.g. spaces with underscores.<p>
+<p><strong>arrayname</strong>  Name of the data array<p>
+<a name="CreateHarvestLine" ><h4><font color="#CC3333">CreateHarvestLine</font> <em>Draw the three line interface to dataset/harvesting commands</em></h4> 
+<p><em>Argument list:  &lt;lineVar&gt; &lt;args&gt;</em></p>
+<p><strong>lineVar</strong>  Returned. The Tk line id for the final line.<p>
+<p><strong>-noha</strong><p>
+<p>do not draw the harvesting mode line<p>
+<p><strong>-dnam</strong><p>
+<p> always draw the pname/xname/dname lines (eg scalepack2mtz)<p>
+<a name="UpdateHarvestMTZ" ><h4><font color="#CC3333">UpdateHarvestMTZ</font> <em>Fill in default project and dataset name when the user selects MTZ</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;filename&gt;</em></p>
+<p>This command should be added as an argument to CreateInputFile command for the input MTZ file in form:<p>
+<p>-command "UpdateHarvestMTZ $arrayname HKLIN"<p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>filename</strong>  array element containing the name of the MTZ file<p>
+<a name="HklRejects" ><h4><font color="#CC3333">HklRejects</font> <em>Define one line of extending frame for rejects in combat/scalepack2mtz/d*trek</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;i&gt;</em></p>
+<p><strong>arrayname</strong>  Name of task interface array<p>
+<p><strong>i</strong>  Counter for extending frame<p>
+<h3>File Selection Window (src/fileselect.tcl)</h3>
+<a name="File_Selection_Window"><h3> File Selection Window </h3> 
+<p>The procedures in fileselect.tcl control the display of the file selection window.  The window can be significantly customised by the application programmer.<p>
+<p>File types, extensions and viewers are defined in etc/types.def<p>
+<a name="SelectFile" ><h4><font color="#CC3333">SelectFile</font> <em>Open a file selection window</em></h4> 
+<p><em>Argument list:  &lt;fileoutVar&gt; &lt;args&gt;</em></p>
+<a href=../../../help/programmers/SelectFile.html>See Programmers Documentation</a><a name="fileselectDefdir" ><h4><font color="#CC3333">fileselectDefdir</font> <em>Update file list when user changes the default directory alias</em></h4> 
+<p><em>Argument list:  &lt;defdir&gt; &lt;dir&gt;</em></p>
+<p><strong>defdir</strong>  The array element for the default directory alias<p>
+<p><strong>dir</strong>  The array element for the file name<p>
+<a name="fileselectFilter" ><h4><font color="#CC3333">fileselectFilter</font> <em>Handle user changing the filetype selection filter</em></h4> 
+<p><em>Argument list: None</em></p>
+<a name="fileselectViewers" ><h4><font color="#CC3333">fileselectViewers</font> <em>Set up the menu to allow user to select a viewer for a given file type.</em></h4> 
+<p><em>Argument list: None</em></p>
+<a name="fileselectList" ><h4><font color="#CC3333">fileselectList</font> <em>Update list of directories and files visible to user</em></h4> 
+<p><em>Argument list:  &lt;dir&gt; &lt;input_files&gt; &lt;args&gt;</em></p>
+<p><strong>dir</strong>  The currently selected directory<p>
+<p><strong>input_files</strong>  (Optional). Predefined list of files to be displayed.<p>
+<p><strong>-drive</strong><p>
+<p>Displays the list of drives when reaching the top of directory tree under windows<p>
+<a name="fileselectOK" ><h4><font color="#CC3333">fileselectOK</font> <em>Handle user selection of a file or directory</em></h4> 
+<p><em>Argument list:  &lt;args&gt;</em></p>
+<p>User has selected a file or directory from the lists, or has hit return in the text input widget or has clicked OK button.  This procedure checks the input is sensible and updates text input widget, file and directory lists. If the input is appropriate then fileselect(DONE) is set to true (1).  This variable is being 'watched' by a tkwait command and when it changes control returns to the SelectFile procedure which closes the file selection window.<p>
+<p><strong>-finish</strong><p>
+<p>Exit the file selection window if the input is OK.<p>
+<a name="fileselectCancel" ><h4><font color="#CC3333">fileselectCancel</font> <em>Handle user clicking the cancel button.</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>Sets the fileselect(DONE) variable which causes control to pass to FileSelect procedure and to close file selection window.<p>
+<a name="fileselectClick" ><h4><font color="#CC3333">fileselectClick</font> <em>Take the file item the user clicked on in listbox</em></h4> 
+<p><em>Argument list:  &lt;lb&gt; &lt;y&gt;</em></p>
+<p><strong>lb</strong>  listbox id<p>
+<p><strong>y</strong>  Y position of click in listbox<p>
+<a name="dirselectClick" ><h4><font color="#CC3333">dirselectClick</font> <em>Take the directory item the user clicked on</em></h4> 
+<p><em>Argument list:  &lt;lb&gt; &lt;y&gt;</em></p>
+<p><strong>lb</strong>  listbox id<p>
+<p><strong>y</strong>  Y position of click in listbox<p>
+<a name="fileselectTake" ><h4><font color="#CC3333">fileselectTake</font> <em>Take the currently selected list item</em></h4> 
+<p><em>Argument list:  &lt;lb&gt;</em></p>
+<p><strong>lb</strong>  listbox id<p>
+<a name="fileselectComplete" ><h4><font color="#CC3333">fileselectComplete</font> <em>Do file name completion for the file name in the input text widget</em></h4> 
+<p><em>Argument list: None</em></p>
+<a name="up_directory" ><h4><font color="#CC3333">up_directory</font> <em>Handle user selection of the 'go up a directory' widget</em></h4> 
+<p><em>Argument list: None</em></p>
+<a name="sort_files" ><h4><font color="#CC3333">sort_files</font> <em>Sort list of files by criteria of date or name</em></h4> 
+<p><em>Argument list:  &lt;mode&gt; &lt;filelist&gt;</em></p>
+<p>Return a sorted list of files - just the filename without the path<p>
+<p><strong>mode</strong>  The sort mode: date or name<p>
+<p><strong>filelist</strong>  List of files, must be full path name of the files<p>
+<a name="compare_date" ><h4><font color="#CC3333">compare_date</font> <em>The sorting procedure for the Tcl lsort command sorting by date</em></h4> 
+<p><em>Argument list:  &lt;a&gt; &lt;b&gt;</em></p>
+<a name="display_file_list" ><h4><font color="#CC3333">display_file_list</font> <em>Put list of files into display listbox</em></h4> 
+<p><em>Argument list:  &lt;w&gt; &lt;mode&gt; &lt;file_list&gt;</em></p>
+<p><strong>w</strong>  Listbox widget id<p>
+<p><strong>mode</strong>  List mode: name or details<p>
+<p><strong>file_list</strong>  List of files<p>
+<a name="fileselectIsDirectory" ><h4><font color="#CC3333">fileselectIsDirectory</font> <em>Check if file is a directory by looking it up in the cache</em></h4> 
+<p><em>Argument list:  &lt;filename&gt;</em></p>
+<p><strong>filename</strong>  Name of the file being checked<p>
+<a name="fileselectFileMtime" ><h4><font color="#CC3333">fileselectFileMtime</font> <em>Get the mtime attribute of a file</em></h4> 
+<p><em>Argument list:  &lt;filename&gt;</em></p>
+<p>This function wraps file mtime and caches the value that it gets for each file, so that subsequent queries do not need to go via calls to the file system.<p>
+<p><strong>filename</strong>  Name of the file being examined<p>
+<h3>Projects and Directories Interface (src/directories.tcl)</h3>
+<a name="Projects_and_Directories_Interface"><h3> Projects and Directories Interface </h3> 
+<p>This is the interface which is found under the 'Projects and Directories' button.<p>
+<p>The window maintains a variable menu called PROJECT_MENU which is a list of the currently defined projects from which the user can select the current project.<p>
+<p>The complications with this window come mostly from the requirement to keep up to date the current project database and the menus listing the defined projects and aliases which appear on every file selection line. These are not updated until the user exits the window.<p>
+<a name="directories" ><h4><font color="#CC3333">directories</font> <em>Initialise interface if user open the 'Directories' window stand alone.</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>This will be used for user command 'ccp4i -d'<p>
+<a name="check_directory_alias" ><h4><font color="#CC3333">check_directory_alias</font> <em>Check  that user input project or directory alias is unique</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;param&gt; &lt;counter&gt;</em></p>
+<p>Also ensure that it does not contain unallowed characters<p>
+<p><strong>arrayname</strong>  Name of the data array (probably 'directories')<p>
+<p><strong>param</strong>  Name of the parameter to check (probably PROJECT or ALIAS)<p>
+<p><strong>counter</strong>  The counter for the parameter<p>
+<a name="DefineDirectory" ><h4><font color="#CC3333">DefineDirectory</font> <em>Create the graphics for defining one directory</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;counter&gt;</em></p>
+<p>Part of the CreateExtendingFrame mechanism<p>
+<p><strong>arrayname</strong>  Name of the data array (probably 'directories')<p>
+<p><strong>counter</strong>  Counter for number of directories<p>
+<a name="DefineProject" ><h4><font color="#CC3333">DefineProject</font> <em>Create the graphics for defining one project</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;counter&gt;</em></p>
+<p>Part of the CreateExtendingFrame mechanism<p>
+<p><strong>arrayname</strong>  Name of the data array (probably 'directories')<p>
+<p><strong>counter</strong>  Counter for number of projects<p>
+<a name="undo_DefineProject" ><h4><font color="#CC3333">undo_DefineProject</font> <em>Handler when user removes project definition from the extending frame list</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;counter&gt;</em></p>
+<p>Procedure found automatically by the extending frames edit<p>
+<p><strong>arrayname</strong>  Name of the task array<p>
+<p><strong>counter</strong>  The updated number of projects<p>
+<a name="Directories" ><h4><font color="#CC3333">Directories</font> <em>Draw the 'Projects and Directories' window</em></h4> 
+<p><em>Argument list:  &lt;mode&gt; &lt;edit&gt;</em></p>
+<p>The initialisation stuff should probably be part of an autoconf procedure rather than here<p>
+<p><strong>mode</strong>  Default is edit, or init mode which will set some initial defaults.<p>
+<a name="populate_directories_window" ><h4><font color="#CC3333">populate_directories_window</font> <em>Populate the parameters of the Directories window</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt;</em></p>
+<p>Internal procedure to be called when setting up the Directories and ProjectDirs window (procedure Directories).<p>
+<p><strong>arrayname</strong>  Name of the array associated with the Directories window<p>
+<a name="InitialiseCCP4ITemp" ><h4><font color="#CC3333">InitialiseCCP4ITemp</font> <em>Initialise the CCP4i TEMPORARY data directory </em></h4> 
+<p><em>Argument list: None</em></p>
+<a name="apply_directories" ><h4><font color="#CC3333">apply_directories</font> <em>Handle updates on applying the changes in the window</em></h4> 
+<p><em>Argument list:  &lt;mode&gt; &lt;arrayname&gt; &lt;w&gt;</em></p>
+<p>Invokes DbChangeFile which updates the project database if necessary and update_defdir_menu which updates the directory alias menu which appears in all file selection lines.<p>
+<p><strong>mode</strong>  One of quit, apply or save<p>
+<p><strong>arrayname</strong>  Name of the array with the directories data<p>
+<p><strong>w</strong>  The name of the directories window<p>
+<a name="apply_directories_init" ><h4><font color="#CC3333">apply_directories_init</font> <em>Apply user changes to the projects for a new user</em></h4> 
+<p><em>Argument list:  &lt;mode&gt; &lt;arrayname&gt; &lt;w&gt;</em></p>
+<p>This is a specialised version of apply_directories which is used when a user sets up their projects on the first run of CCP4i. Subsequently the code in the main body of apply_directories will be used.<p>
+<p><strong>mode</strong>  One of quit, apply or save<p>
+<p><strong>arrayname</strong>  Name of the array with the directories data<p>
+<p><strong>w</strong>  The name of the directories window<p>
+<a name="directories_update_window" ><h4><font color="#CC3333">directories_update_window</font> <em>Update, redraw or exit the directories window</em></h4> 
+<p><em>Argument list:  &lt;mode&gt; &lt;arrayname&gt; &lt;w&gt; &lt;redraw&gt; &lt;0&gt;</em></p>
+<p>This command is invoked to update the directories window after changes have been applied, or to close it.<p>
+<p>If the redraw flag is set to a non-zero value then this will force the directories window to be destroyed and regenerated from scratch. Otherwise the window is just updated.<p>
+<p><strong>mode</strong>  One of quit, apply or save<p>
+<p><strong>arrayname</strong>  Name of the array with the directories data<p>
+<p><strong>w</strong>  The name of the directories window<p>
+<p><strong>redraw</strong>  (Optional) Completely redraw the window rather just updating it.<p>
+<a name="make_one_word" ><h4><font color="#CC3333">make_one_word</font> <em>Force all project and directory aliases to be one word</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;var&gt;</em></p>
+<p>And remove disallowed characters<p>
+<p><strong>arrayname</strong>  Name of the data array (probably 'directories')<p>
+<p><strong>var</strong>  Name of the array element containing the alias<p>
+<a name="init_mg_directories" ><h4><font color="#CC3333">init_mg_directories</font> <em>Invoked on MG startup to ensure MG_CURRENT_PROJECT parameter exists</em></h4> 
+<p><em>Argument list: None</em></p>
+</body>
+</html>
+

@@ -1,0 +1,435 @@
+<!DOCTYPE html
+                     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                     "DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<title>CCP4 Interface: Data Reduction Module</title>
+<link rel="stylesheet" type="text/css" href="../ccp4idocs.css" title="CCP4i" />
+<link rev="made" href="mailto:mgwt@ysbl.york.ac.uk" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta name="AUTHOR" content="Maria, Liz, Peter" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="2"><img src="../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logotitle">Data Reduction Module</td></tr>
+</table>
+<br />
+<table border="0">
+<tr><td>
+<a href="exptphase.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="../general/preferences.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="../index.html" target="_top">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td></tr>
+</table>
+
+<dl>
+<dt><font color="#cc3333"><strong>Background information</strong></font> is
+available on: <a href="#mtzfiles" target="_self">MTZ Files</a></dt>
+</dl>
+<dl>
+<dt><font color="#cc3333"><strong>Tasks in this module:</strong></font></dt>
+</dl>
+<dl>
+<dt><strong><em>Data Processing using Mosflm</em></strong></dt>
+<dd><a href="#imosflm" target="_self">Run iMosflm</a></dd>
+<dd><a href="#mosflm" target="_self">Run Mosflm in batch</a></dd>
+</dl>
+<dl>
+<dt><strong><em>Import Integrated Data</em></strong></dt>
+<dd><a href="#pointless" target="_self">Import Unmerged Data - Pointless</a></dd>
+<dd><a href="#combat" target="_self">Import Unmerged Data - Combat</a></dd>
+<dd><a href="#scalepack2mtz" target="_self">Import Merged Data</a></dd>
+</dl>
+<dl>
+<dt><a href="#pointless1" target="_self">Find or Match Laue Group - Pointless</a></dt>
+</dl>
+<dl>
+<dt><a href="#scala" target="_self">Scale and Merge Intensities - Scala</a></dt>
+<dd><a href="#scala_layout" target="_self">Scala - Task Window Layout</a></dd>
+<dd><a href="#scala_datasets" target="_self">Scala - Datasets and Output Files</a></dd>
+</dl>
+<dl>
+<dt><strong><em>Utilities</em></strong></dt>
+<dd><a href="#truncate" target="_self">Convert Intensities to Structure Factors - Truncate</a>
+<dl>
+<dd><a href="#truncate_layout" target="_self">Truncate - Task Window Layout</a></dd>
+</dl>
+</dd>
+<dd><a href="#detwin" target="_self">Treat Twinned Data - Detwin</a></dd>
+<dd><a href="#sortmtz" target="_self">Sort/Modify/Combine MTZ Files - Sortmtz/Rebatch/Reindex</a></dd>
+</dl>
+<dl>
+<dt><strong><em>Automated Data Processing</em></strong></dt>
+<dd><a href="#xia2" target="_self">XIA2 automated data processing</a></dd>
+</dl>
+<dl>
+<dt><strong><em>Check Data Quality</em></strong></dt>
+<dd><a href="#truncate_anl" target="_self">Analysis with ctruncate</a></dd>
+<dd><a href="#sfcheck_anl" target="_self">Analysis with sfcheck</a></dd>
+</dl>
+
+<dl>
+<dt><font color="#cc3333"><strong>Specialist Help</strong></font> is available on:</dt>
+<dd><a href="../../../../html/reindexing.html" target="_APPENDIX">Reindexing</a></dd>
+<dd><a href="../../../../html/twinning.html" target="_APPENDIX">Twinning</a></dd>
+<dd><a href="../../../../html/freerunique.html" target="_APPENDIX">FreerUnique</a></dd>
+</dl>
+
+<p>The layout of each task window, <em>i.e.</em> the number of folders present,
+and whether these folders are open or closed by default, depends on the choices
+made in the <strong>Protocol</strong> folder of the task (see
+<a href="../general/intro.html#task_window_format" target="_self">Introduction</a>). Although
+certain folders are closed by default, there are specific reasons why you should
+or may want to look at them. These reasons are described in the Task Window
+Layout sections below.</p>
+
+<h3><a name="mtzfiles"></a>MTZ Files</h3>
+
+<p>Data which has not been scaled and merged is stored in a
+<a href="../../../../html/mtzlib.html" target="_PROGDOC">'multi-record' MTZ file</a>. The
+multi-record file contains several columns which do not
+appear in a standard MTZ file, for example M/ISYM and BATCH. The Scala program does the 
+scaling and merging of data and outputs a standard MTZ file. Data imported from Mosflm 
+is in a 'multi-record' MTZ format but any other imported unscaled data will need to be 
+converted to the MTZ multi-record format. Imported scaled and merged data is converted 
+directly to standard MTZ format.</p>
+
+<p>Data columns within the standard MTZ file are labelled with a 'project', 'crystal' 
+and 'dataset' names. These names should be used to distinguish data from native or derivative 
+structures within the MTZ file. When importing data or converting to the standard MTZ format
+you will be required to provide a project/crystal/dataset names for the data. You are strongly recommended 
+to use this facility carefully, both to help you keep your data organised but also because
+some 'down-stream' programs such as
+<a href="exptphase.html#scaleit" target="_self">SCALEIT</a> (<strong>Scale Datasets</strong>
+in the <strong>Experimental Phasing</strong> module) require that input MTZ files have
+consistent dataset naming.</p>
+
+<h3><a name="imosflm"></a>Start iMosflm - Interactive Interface to Integrate Images using MOSFLM</h3>
+
+<p>Users should initially process their experimental diffraction images using
+MOSFLM interactively, using the iMosflm interface. Subsequently the program can
+be run in "batch" mode using the appropriate CCP4i task interface below.</p>
+
+<p>See the <a href="http://www.mrc-lmb.cam.ac.uk/harry/imosflm/" target="_PROGDOC">iMOSFLM website</a> for documentation.</p>
+
+<h3><a name="mosflm"></a>Integrate Images in batch with MOSFLM</h3>
+
+<p>Once the initial parameters have been determined interactively, MOSFLM can write out a command (.sav) file which can be used to
+run the rest of the image integration procedure non-interactively (<em>i.e.</em> 'in batch').
+This has the advantage that it can be much quicker than using the MOSFLM interface.</p>
+
+<p>The CCP4i Integrate Images interface is populated by reading in the .sav file
+produced by using the interactive iMOSFLM interface, via the <tt>Take parameters
+from command file</tt> button. It may also be necessary to specify the location of the
+image files, and the name of the MOSFLM matrix (.mat) file.</p>
+
+<p><em>Note that it is not possible (or desirable) to set up the Integrate Images task
+interface completely by hand.</em></p>
+
+<p>The output of this task is an MTZ file which can be fed into the
+<a href="#scala" target="_self">Scale and Merge Intensities</a> task.</p>
+
+<p>See program documentation:
+<a href="../../../../html/mosflm.html" target="_PROGDOC">MOSFLM</a></p>
+
+<h3><a name="combat"></a><a name="pointless"></a>Importing Unmerged Data using Pointless or Combat</h3>
+
+<p>The most common imported unmerged data is probably from Mosflm which is already in the
+multi-record MTZ format and so can be used directly in the
+<a href="#scala" target="_self">Scale and Merge Intensities</a> task (see
+also the <a href="#sortmtz" target="_self">Sort/Modify/Combine MTZ Files</a> task
+for possible intermediate steps). But other 
+formats, such as from Denzo and XDS, can be imported through the <strong>Import Unmerged 
+Data</strong> task and 
+then used in <strong>Scale and Merge Intensities</strong>.</p> 
+
+<p>The Crystal, Project and Dataset names should be set, as for the <strong><tt>Import 
+Merged Data</tt></strong> task described below.</p>
+
+<p>It is also possible to <a href="mtz_utils.html#import" target="_self">'import' standard MTZ
+format files</a> for conversion to the multi-record format.</p>
+
+<p>The "XDS ASCII from Correct" option is designed for unscaled and unmerged
+data from the "Correct" stage of XDS. However, it will also work with scaled but
+unmerged data from XSCALE, with the proviso that oscillation range information is 
+added to the header of the XDS file first.</p>
+
+<p>See program documentation:
+<a href="../../../../html/pointless.html" target="_PROGDOC">Pointless</a>,
+<a href="../../../../html/combat.html" target="_PROGDOC">Combat</a>.</p>
+
+<h3><a name="scalepack2mtz"></a><a name="dtrek2mtz"></a>Import Merged Data from Denzo and d*TREK</h3>
+
+<p>Data from Denzo/Scalepack or d*TREK are usually already scaled and merged. 
+In this case, the 
+files must be converted to standard MTZ format, structure factors generated from the
+intensities (see <a href="#truncate" target="_self">below</a>), and the data passed 
+through the 'uniqueify' process (see <a href="#uniqueify" target="_self">below</a>). 
+All these steps can be performed from the <strong><tt>Import Merged Data</tt></strong>
+task interface.</p>
+
+<p>When importing data, and creating a new MTZ file, it is important
+to set sensible names for the Crystal, Project and Dataset. These will
+be used to set a data structure for reflection information, and also
+to control Data Harvesting (see the Data Harvesting 
+<a href="../general/harvesting.html">page</a> for background details).
+The crystal name should identify the physical crystal used, and the
+dataset should identify a dataset taken from a physical crystal (e.g. a
+MAD experiment may take 3 datasets from a crystal at different wavelengths).
+The project may correspond to the CCP4i project, but does not have to.
+The <strong><tt>Import Merged Data</tt></strong> task contains a folder to set 
+these names. If Truncate is to be run, then this folder will also include options 
+for data harvesting.</p>
+
+<p>See program documentation:
+<a href="../../../../html/scalepack2mtz.html" target="_PROGDOC">SCALEPACK2MTZ</a>,
+<a href="../../../../html/dtrek2mtz.html" target="_PROGDOC">dTREK2MTZ</a>.</p>
+
+<h3><a name="pointless1"></a>Find or Match Laue Group - Pointless</h3>
+
+<p>The pointless program will attempt to determine the possible Laue group of
+reflection data by analysing a test dataset. The input reflection data
+must be <strong>unmerged</strong> data.</p>
+
+<p>Optionally the data can be reindexed into the "best" spacegroup and output
+to a second MTZ file.</p>
+
+<p>See program documentation:
+<a href="../../../../html/pointless.html" target="_PROGDOC">Pointless</a></p>
+
+<h3><a name="scala"></a>Scale and Merge Intensities - Scala</h3>
+
+<p>The Interface for Scala is quite large. Many of the options are
+only needed if detailed optimisation of the scaling is required. For this, the
+program documentation of
+<a href="../../../../html/scala.html#scaling_options" target="_PROGDOC">Scala</a>
+gives numerous hints, which will be incorporated in the Task Window Layout section
+<a href="#scala_layout" target="_self">below</a>.</p>
+
+<p>By default, data which has been scaled and merged by Scala is then converted from
+intensities to structure factures (see <a href="#truncate" target="_self">below</a>) and
+usually passed through the Uniqueify process (see <a href="#uniqueify" target="_self">below</a>).
+The data is then in a standard MTZ format and suitable for input to molecular replacement or
+experimental phasing.</p>
+
+<p>It is possible to produce output reflection files in Scalepack format, which
+are then suitable for input into (for example) the SHELX or SOLVE packages.</p> 
+
+<p>Scala is one of the <a href="../../../../html/harvesting.html"
+target="_PROGDOC">Data Harvesting</a> programs.
+See <a href="../general/harvesting.html" target="_self">Data Harvesting in CCP4i</a>.</p>
+
+<h4><a name="scala_layout"></a>Scala - Task Window Layout</h4>
+
+<p>Features to look out for in the Scala Task are:</p>
+
+<table border="1">
+<tr><th>Folder title</th><th>Importance</th><th>Comment</th></tr>
+<tr><td rowspan="4">Protocol</td>
+    <td>Customise Scala Process</td>
+    <td>Select this to access the option for outputting reflections in Scalepack
+        format (suitable for input into SHELX or SOLVE)</td>
+</tr>
+<tr>
+    <td>Run Truncate</td>
+    <td>Request this to get structure factor amplitudes output in addition to the
+        scaled intensities</td>
+</tr>
+<tr>
+    <td>Output a single MTZ file</td>
+    <td><em>Only available when running Truncate</em>. If there are several
+        output datasets then by default there will be one output file for each
+        dataset (see <a href="#scala_datasets" target="_self">below</a>).<br />
+        This option runs <a href="mtz_utils.html#cad" target="_self">CAD</a> to collect all the data into a single output
+        file</td>
+</tr>
+<tr>
+    <td>Ensure unique data &amp; add Free R column</td>
+    <td>Runs the <a href="#uniqueify" target="_self">Uniqueify</a> procedure - if there are multiple output files
+        then the Free R assigned to the first file will be copied to the
+        rest</td>
+</tr>
+<tr><td rowspan="2">Convert to SFs &amp; Wilson Plot</td>
+    <td>Estimated number of residues in the asymmetric unit</td>
+    <td>program will not work without some description of cell contents</td>
+</tr>
+<tr>
+    <td>Use [...] as identifier to append to column labels</td>
+    <td><em>Only available when running Truncate</em>. By default the output dataset
+        name will be appended to the MTZ column labels output by <a href="#truncate" target="_self">Truncate</a>.
+        Alternatively the user can choose to set their own identifiers for each
+        dataset</td>
+</tr>
+<tr><td rowspan="2">Define Output Datasets</td>
+    <td>&nbsp;</td>
+    <td>Lists the dataset definitions which are passed to the output file. The
+        exact contents of this folder depend on the dataset information contained
+        in the input file, and the particular mode that Scala is being run in -
+        see <a href="#scala_datasets" target="_self">below</a></td>
+</tr>
+<tr>
+    <td>Project name and dataset name</td>
+    <td>facilitate data harvesting at every stage</td>
+</tr>
+</table>
+
+<p>See program documentation:
+<a href="../../../../html/scala.html" target="_PROGDOC">Scala</a></p>
+
+<h4><a name="scala_datasets"></a>Scala - Datasets and Output Files</h4>
+
+<p>Scala deals with batch MTZ files based on the <b>dataset</b> information which
+is contained in the input file. In the default mode dataset information present
+in the input file is automatically carried through to the output file. If dataset
+information is absent then it is necessary to define it before running the task.</p>
+
+<p>If the Scala job is split into several runs (&quot;multi-runs&quot;) then it is possible
+to (re)assign the output of each run to an output dataset. In this case several output
+datasets can be defined and these are not dependent on the input datasets.</p>
+
+<p>Scala will produce separate output MTZ files for each output dataset, however
+these can also be merged automatically into a single file after running Truncate on
+each to generate structure amplitudes. The table below summarises the output files
+from the Scala task based on the protocol used in running the task.</p>
+
+<table border="1">
+<tr><th>Number of Input Datasets</th><th>Multi-runs</th><th>Merge after Truncate</th><th>Output</th></tr>
+<tr><td>None/One</td><td>No</td><td>N/A</td><td>Single MTZ file</td></tr>
+<tr><td>None/One</td><td>Yes</td><td>No</td><td>One MTZ file for each output dataset</td></tr>
+<tr><td>None/One</td><td>Yes</td><td>Yes</td><td>Single MTZ file containing all output datasets</td></tr>
+<tr><td>Two or more</td><td>No</td><td>No</td><td>One MTZ file for each input dataset</td></tr>
+<tr><td>Two or more</td><td>No</td><td>Yes</td><td>Single MTZ file containing all output datasets</td></tr>
+<tr><td>Two or more</td><td>Yes</td><td>No</td><td>One MTZ file for each output dataset</td></tr>
+<tr><td>Two or more</td><td>Yes</td><td>Yes</td><td>Single MTZ file containing all output datasets</td></tr>
+</table>
+
+<h3><a name="truncate"></a>Convert Intensities to Structure Factors - Truncate</h3>
+
+<p>The program Truncate is used to obtain structure factor amplitudes from
+intensities. This conversion is performed by default when importing merged data or
+running <a href="#scala" target="_self">Scala</a> (<strong>Scale and Merge Intensities</strong>).
+There is an explicit interface to the Truncate program which includes some less commonly used options.
+By default, if you use this task interface then the data will also be passed through
+the Uniqueify process (see <a href="#uniqueify" target="_self">below</a>).</p>
+
+<p>Truncate is one of the <a href="../../../../html/harvesting.html" 
+target="_PROGDOC">Data Harvesting</a> programs. 
+See <a href="../general/harvesting.html" target="_self">Data Harvesting in CCP4i</a>.</p>
+
+<p>See program documentation:
+<a href="../../../../html/truncate.html" target="_PROGDOC">Truncate</a>,
+<a href="../../../../html/ctruncate.html" target="_PROGDOC">Ctruncate</a></p>
+
+<h4><a name="truncate_layout"></a>Truncate - Task Window Layout</h4>
+
+<p>Features to look out for in the Truncate Task are:</p>
+
+<table border="1">
+<tr><th>Folder title</th><th>Importance</th><th>Comment</th></tr>
+<tr><td>Required Parameters</td><td>Define unit cell contents</td><td>program will not
+work without some description of cell contents</td></tr>
+<tr><td>Log File Output</td><td>Draw Wilson plot to file</td><td>default throughInterface YES, compare
+<a href="../../../../html/truncate.html#plot" target="_PROGDOC">PLOT OFF</a></td></tr>
+<tr><td>Data Harvesting</td><td>Create harvest file and assign project and dataset names</td>
+<td>facilitate data harvesting at every stage; default for harvesting may be
+re-set through <strong>Preferences</strong> button in the menu on the right-hand side
+of the Main Window</td></tr>
+<tr><td>Infrequently Used Parameters</td><td>Use French&amp;Wilson truncate protocol to generate SFs</td>
+<td>default YES, see
+<a href="../../../../html/truncate.html#description" target="_PROGDOC">description</a></td></tr>
+</table>
+
+<p>See program documentation:
+<a href="../../../../html/truncate.html" target="_PROGDOC">Truncate</a></p>
+
+<h3><a name="detwin"></a>Treat Twinned Data - Detwin</h3>
+
+<p>The detwin program will either analyse the data to determine the twinning fraction or
+generate detwinned data.</p>
+
+<p>See program documentation:
+<a href="../../../../html/detwin.html" target="_PROGDOC">Detwin</a></p>
+
+<p>See also the teaching document on:
+<a href="../../../../html/twinning.html" target="_APPENDIX">Twinning</a>.</p>
+
+<h3><a name="sortmtz"></a>Sort/Modify/Combine MTZ Files</h3>
+
+<p>There are some editing functions which you may need to apply to multi-record MTZ files 
+prior to scaling - particularly changing the space group or reindexing might be necessary
+if the initial reflection indexing is suspect.
+There is also an option to reset the batch numbers for sets of reflections. This should only
+be necessary if they were wrongly or not recorded at the time of data collection or if
+you suspect that some sets of reflections need special treatment by 
+<strong>Scale and Merge Intensities</strong> and need identifying as a separate batch.</p>
+<p>This task will also combine several multi-record MTZ files into one multi-record 
+MTZ file for input to the <strong>Scale and Merge Intensities</strong> task.
+The output file will be sorted as required.</p>
+
+<p>Note that there is an option in the <strong>Reflection Data Utilities</strong> to
+<a href="mtz_utils.html#reindex" target="_self">reindex standard MTZ files</a>.</p>
+
+<p>See program documentation:
+<a href="../../../../html/sortmtz.html" target="_PROGDOC">Sortmtz</a>,
+<a href="../../../../html/reindex.html" target="_PROGDOC">REINDEX</a>,
+<a href="../../../../html/rebatch.html" target="_PROGDOC">Rebatch</a>.</p>
+
+<p>See also the teaching document on:
+<a href="../../../../html/reindexing.html" target="_APPENDIX">Reindexing</a>.</p>
+
+<h3><a name="xia2"></a>Automated Data Processing with XIA2</h3>
+
+<p>xia2 is an automated data reduction system which works from raw diffraction
+data plus minimal information about the diffraction experiment. Given a set of
+images it will perform data processing and scaling with minimal user
+intervention.</p>
+
+<p>See program documentation:
+<a href="../../../../html/xia2.html" target="_PROGDOC">Xia2</a></p>
+
+<h3><a name="truncate_anl"></a>Check Data Quality with Ctruncate</h3>
+
+<p>After performing data reduction it is a good idea to check the quality of
+the data before proceeding with the next steps in the structure solution
+process. This interface provides easy access to the data analysis functions
+in the Ctruncate program.</p>
+
+<p>See program documentation:
+<a href="../../../../html/ctruncate.html" target="_PROGDOC">Ctruncate</a></p>
+
+<h3><a name="sfcheck_anl"></a>Check Data Quality with Sfcheck</h3>
+
+<p>After performing data reduction it is a good idea to check the quality of
+the data before proceeding with the next steps in the structure solution
+process. This interface provides easy access to the data analysis functions
+in the Sfcheck program.</p>
+
+<p>See program documentation:
+<a href="../../../../html/sfcheck.html" target="_PROGDOC">Sfcheck</a></p>
+
+<p>See also: <a href="mtz_utils.html#import" target="_self">Convert to MTZ &amp; Standardise</a>
+and the teaching document
+<a href="../../../../html/freerunique.html" target="_APPENDIX">FreerUnique</a>.</p>
+
+<table border="0" width="100%">
+<tr><td>
+<a href="exptphase.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="../general/preferences.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="../index.html" target="_top">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td>
+<td align="right"><a href="http://validator.w3.org/" target="_EXTERNAL">Valid XHTML 1.0!</a>
+<a href="http://jigsaw.w3.org/css-validator/" target="_EXTERNAL">Valid CSS!</a></td></tr>
+</table>
+
+</body>
+</html>

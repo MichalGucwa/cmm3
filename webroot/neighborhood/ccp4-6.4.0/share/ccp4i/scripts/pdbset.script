@@ -1,0 +1,47 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#===========================================================================
+#
+# pdbset.script
+#
+#===========================================================================
+
+#===========================================================================
+#
+# run pdbcur
+#
+#===========================================================================
+if [ StringSame $TASK_PRG PDBCUR ] {
+
+  CreateComScript pdbcur pdbcur_script 
+
+  set status [Execute "pdbcur XYZIN \"$XYZIN\" XYZOUT \"$XYZOUT\"" \
+                $pdbcur_script $LOG_FILE program_status report]
+
+} else {
+
+#===========================================================================
+#
+# run pdbset
+#
+#===========================================================================
+  if { $NRENUMBER > 0 } {
+  for { set n 1 } { $n <= $NRENUMBER } { incr n } {
+    if { $RENUMBER_CHAIN($n) == {} && $RENUMBER_NEW_CHAIN($n) != {} } {
+      set RENUMBER_CHAIN($n) "\" \""
+    }
+  } }
+      
+  CreateComScript pdbset pdbset_script
+
+  set status [Execute "[BinPath pdbset] XYZIN \"$XYZIN\" XYZOUT \"$XYZOUT\""  \
+                  $pdbset_script program_status report ]
+
+}

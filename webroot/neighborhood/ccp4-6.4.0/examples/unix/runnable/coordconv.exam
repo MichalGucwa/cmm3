@@ -1,0 +1,54 @@
+#!/bin/sh
+#   Program to change coordinate formats.
+#   PDBSET does some of these functions.
+#   Takes PDB to fractional - often useful for heavy atom coordinates.
+#    Adds CRYSTAL and SCALEi cards for various NCODEs to PDB.
+#    SHELX to PDB - XPLOR to/from PDB etc....
+
+set -e
+
+#
+#  Add CRYSTL and SCALEi cards to a PDB filewhere they are missing.
+#
+coordconv    				\
+XYZOUT $CCP4_SCR/toxd_orth1.pdb  \
+XYZIN $CEXAM/toxd/toxd.pdb        \
+<< END-convrnxp
+INPUT PDB ORTH 1 
+OUTPUT PDB ORTH 1
+CELL  73.58   38.73   23.19   90.00   90.00   90.00
+END
+END-convrnxp
+#
+#  Output fractional coordinates.
+#
+coordconv    				\
+XYZOUT $CCP4_SCR/toxd.frc  \
+XYZIN $CEXAM/toxd/toxd.pdb        \
+<< END-convrnxp
+INPUT PDB 
+OUTPUT FRAC
+END
+END-convrnxp
+#
+#
+coordconv    				\
+XYZIN $CCP4_SCR/toxd.frc  \
+XYZOUT $CCP4_SCR/toxd.pdb  \
+<< END-convrnxp
+INPUT FRAC 
+OUTPUT PDB ORTH 1
+CELL  73.58   38.73   23.19   90.00   90.00   90.00
+END
+END-convrnxp
+#
+coordconv    				\
+XYZIN $CCP4_SCR/toxd.frc  \
+XYZOUT $CCP4_SCR/toxd-coord.xpl  \
+<< END-convrnxp 
+INPUT FRAC    ! or INPUT SHELX-S
+OUTPUT XPL
+CELL  73.58   38.73   23.19   90.00   90.00   90.00
+END
+END-convrnxp
+#

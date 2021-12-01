@@ -1,0 +1,158 @@
+#!/bin/sh
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#  procheck_comp.scr
+#  -----------------
+#  Shell script for running PROCHECK comparisons on aligned
+#  structures
+#  Roman Laskowski, November 1994
+#  Current version: PROCHECK v.3.3, Feb 1995
+#  Bourne shell version, Dave Love 23/2/95
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+set -e
+
+if [ $# != 1 ]; then
+  echo ' '
+  echo '*** ERROR. Correct usage is:'
+  echo ' '
+#  echo '           procheck_comp  filelist  [alignment]'
+  echo '           procheck_comp  filelist '
+  echo ' '
+  echo ' '
+  echo '    where  filelist     = file containing list of structures'
+  echo '                          to be compared'
+#  echo '           [alignment]  = alignments file (optional) - not yet'
+#  echo '                          implemented'
+  echo ' '
+  echo 'For example:-'
+  echo ' '
+#  echo '           procheck_comp globins.list globins.align'
+  echo '           procheck_comp globins.list'
+  echo ' '
+else
+  echo ' '
+  echo ' '
+  echo 'PROCHECK_COMP. PROCHECK v.3.3 (Feb 1995)'
+  echo '----------------------------------------'
+  echo ' '
+  filelist=$1
+  echo 'Coordinates file:   [' $filelist ']'
+  echo ' '
+  if [ $# = 1 ]; then
+    alignment=' '
+    echo ' '
+#    echo '* No alignment file supplied. Comparison will be based on residue numbers'
+    echo ' '
+  else
+    alignment=$2
+    echo 'Alignment file:    [' $alignment ']'
+    echo ' '
+  fi
+  echo ' '
+  ensemb_name='%'$filelist
+#
+# If the file-list exists, then do the business
+#
+if [ -r $filelist ]; then
+
+    #-------------#
+    # C L E A N   #
+    #-------------#
+    echo 'CLEAN - Clean-up program' > clean.log
+    echo '------------------------' >> clean.log
+    echo ' ' >> clean.log
+    echo 'Running clean-up on file: '$filelist
+    echo ' '
+    if [ ! -f resdefs.dat ]; then
+      ln -s $CINCL/resdefs.data resdefs.dat
+    fi
+    proclean >> clean.log << EOD
+$ensemb_name
+EOD
+    grep "*" clean.log || true
+    echo ' '
+    echo '.................................................................'
+    #-------------#
+    # S E C S T R #
+    #-------------#
+    echo ' ' > secstr.log
+    echo 'SECSTR - Secondary structure assignment' >> secstr.log
+    echo '---------------------------------------' >> secstr.log
+    echo ' ' >> secstr.log
+    echo ' '
+    echo 'Secondary structure assignment'
+    echo ' '
+    secstr >> secstr.log << EOD
+$ensemb_name
+EOD
+    grep "*" secstr.log || true
+    echo ' '
+    echo '..................................................................'
+    #-------------#
+    # R M S D E V #
+    #-------------#
+    echo ' ' > rmsdev.log
+    echo 'RMSDEV - RMS deviations for ensemble' >> rmsdev.log
+    echo '------------------------------------' >> rmsdev.log
+    echo ' ' >> rmsdev.log
+    echo ' '
+    echo 'RMS deviations for ensemble'
+    echo ' '
+    rmsdev >> rmsdev.log << EOD
+$ensemb_name
+EOD
+    grep "*" rmsdev.log || true
+    echo ' '
+    echo '..................................................................'
+    #-------------#
+    # T P L O T   #
+    #-------------#
+    [ -f prodata ] || ln -s $CINCL/procheck.dat prodata
+    [ -f procheck_comp.prm ] || cp $CINCL/procheck_comp.prm .
+    echo ' ' > tplot.log
+    echo 'Phi-psi and chi1-chi2 distributions' >> tplot.log
+    echo '-----------------------------------' >> tplot.log
+    echo ' ' >> tplot.log
+    echo ' '
+    echo 'Phi-psi and chi1-chi2 distributions'
+    echo ' '
+    tplot >> tplot.log << EOD
+$ensemb_name
+
+0.0
+Y
+EOD
+    echo ' '
+    grep "*" tplot.log || true
+    echo ' '
+    echo '..................................................................'
+    #-------------#
+    # M P L O T   #
+    #-------------#
+    echo ' ' > mplot.log
+    echo 'Dihedral angle distribution plots and quality plots' >> mplot.log
+    echo '---------------------------------------------------' >> mplot.log
+    echo ' ' >> mplot.log
+    echo ' '
+    echo 'Dihedral angle distributions and quality plots'
+    echo ' '
+    mplot >> mplot.log << EOD
+$ensemb_name
+
+EOD
+    echo ' '
+    grep "*" mplot.log || true
+    echo ' '
+    echo '..................................................................'
+  #
+  # Tidy up at end
+  # --------------
+    rm -f prodata
+    rm -f resdefs.dat
+    rm -f ps.number
+else
+    echo 'File not found: '$filelist
+fi
+fi
+#

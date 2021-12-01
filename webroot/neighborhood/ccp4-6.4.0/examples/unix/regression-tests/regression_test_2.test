@@ -1,0 +1,193 @@
+#!/bin/sh
+set -e
+
+# bug # 3192 - run-all examples produce harvest files - well to counteract
+# this here set HARVESTHOME to somewhere in $CCP4_SCR
+
+HARVESTHOME=$CCP4_SCR
+export HARVESTHOME
+
+cd $CCP4_SCR
+
+#
+# run freerflag
+#
+freerflag HKLIN $CEXAM/tutorial/data/gere_peak.mtz HKLOUT $CCP4_SCR/gere_peak_$$.mtz <<+
+FREERFRAC  0.05
++
+
+#
+# run phaser
+#
+
+phaser <<+
+TITLE [No title given]
+MODE EP_AUTO
+HKLIN $CCP4_SCR/gere_peak_$$.mtz
+ROOT gere_phaser_$$
+LLGCOMPLETE NCYC 50
+LLGCOMPLETE COMPLETE ON
+LLGCOMPLETE SCATTERER Se
+ATOM CHANGE BFACTOR WILSON ON
+ATOM CRYSTAL gere ELEMENT Se &
+    FRAC 0.567606 0.19651 0.117643 &
+    OCC 1.0
+ATOM CRYSTAL gere ELEMENT Se &
+    FRAC 0.637982 0.0428475 0.217668 &
+    OCC 1.0
+ATOM CRYSTAL gere ELEMENT Se &
+    FRAC 0.469871 0.255659 0.23827 &
+    OCC 1.0
+ATOM CRYSTAL gere ELEMENT Se &
+    FRAC 0.49385 0.188126 0.41977 &
+    OCC 1.0
+ATOM CRYSTAL gere ELEMENT Se &
+    FRAC 0.794401 0.401274 0.137605 &
+    OCC 1.0
+ATOM CRYSTAL gere ELEMENT Se &
+    FRAC 0.716238 0.238362 0.0869784 &
+    OCC 1.0
+ATOM CRYSTAL gere ELEMENT Se &
+    FRAC 0.259739 0.00855349 0.239787 &
+    OCC 1.0
+ATOM CRYSTAL gere ELEMENT Se &
+    FRAC 0.343637 0.168551 0.319304 &
+    OCC 1.0
+ATOM CRYSTAL gere ELEMENT Se &
+    FRAC 0.173773 0.928 0.391003 &
+    OCC 1.0
+ATOM CRYSTAL gere ELEMENT Se &
+    FRAC 0.179076 0.0804735 0.520765 &
+    OCC 1.0
+ATOM CRYSTAL gere ELEMENT Se &
+    FRAC 0.926494 0.231291 0.18954 &
+    OCC 1.0
+CRYSTAL gere DATASET peak &
+    LABIN Fpos = F_peak(+) SIGFpos = SIGF_peak(+) &
+    Fneg = F_peak(-) SIGFneg = SIGF_peak(-)
+SCATTERING TYPE Se FP = -4.0 FDP = 4.0 FIX EDGE
+COMPOSITION PROTEIN SEQUENCE $CEXAM/data/gere.seq NUMBER 6
+WAVELENGTH 0.978
++
+
+#
+# run dm 
+#
+
+dm hklin $CCP4_SCR/gere_phaser_$$.1.mtz hklout $CCP4_SCR/gere_phaser_dm_$$.mtz <<+ 
+mode SOLV HIST AVER
+combine PERT
+scheme ALL
+ncycles AUTO
+solc 0.31
+average -
+    REFI
+rota EULER -
+    0.0 0.0 0.0
+tran 0.0 0.0 0.0
+average -
+    REFI
+rota EULER -
+    -60.0505 87.0344 -119.071
+tran 96.3165 52.3549 -2.07883
+average -
+    REFI
+rota EULER -
+    -55.097 137.17 -33.3136
+tran 124.957 8.70207 55.7661
+average -
+    REFI
+rota EULER -
+    123.504 48.8422 -41.4429
+tran 22.9769 -51.2425 52.6721
+average -
+    REFI
+rota EULER -
+    34.5718 75.9769 -164.376
+tran 4.35152 21.9137 -27.8829
+average -
+    REFI
+rota EULER -
+    -150.559 114.464 81.2349
+tran 76.1239 73.4224 14.3897
+LABIN FP=F_peak SIGFP=SIGF_peak PHIO=PHIB FOMO=FOM HLA=HLA HLB=HLB HLC=HLC HLD=HLD
+LABOUT PHIDM=PHIDM FOMDM=WDM HLADM=HLADM HLBDM=HLBDM HLCDM=HLCDM HLDDM=HLDDM
++
+
+#
+# run buccaneer 
+#
+
+python $CBIN/ccp4_pipeline_simple << eof | tee $CCP4_SCR/buccaneer_$$.log
+%loop-cyc 3
+%copy-pre $CCP4_SCR/gere_phaser_dm_$$.mtz $CCP4_SCR/temporary_refmac_$$.mtz
+%copy-post $CCP4_SCR/temporary_refmac_$$.pdb $CCP4_SCR/gere_phaser_dm_buc_$$.pdb
+%prgm-loop buccaneer cbuccaneer %exit
+%prgm-loop refmac refmac5 %exit
+buccaneer %arg -stdin
+buccaneer title buccaneer_refmac_test
+buccaneer pdbin-ref $CLIBD/reference_structures/reference-1tqw.pdb
+buccaneer mtzin-ref $CLIBD/reference_structures/reference-1tqw.mtz
+buccaneer seqin-wrk $CEXAM/data/gere.seq
+buccaneer mtzin-wrk $CCP4_SCR/temporary_refmac_$$.mtz
+buccaneer colin-wrk-fo /*/*/[F_peak,SIGF_peak]
+buccaneer colin-wrk-free /*/*/[FreeR_flag]
+buccaneer:0 colin-wrk-hl /*/*/[HLADM,HLBDM,HLCDM,HLDDM]
+buccaneer:1-* colin-wrk-phifom /*/*/[PHCOMB,FOM]
+buccaneer:1-* pdbin-wrk $CCP4_SCR/temporary_refmac_$$.pdb
+buccaneer pdbout-wrk $CCP4_SCR/temporary_buccaneer_$$.pdb
+buccaneer find
+buccaneer grow
+buccaneer join
+buccaneer link
+buccaneer sequence
+buccaneer correct
+buccaneer filter
+buccaneer ncsbuild
+buccaneer prune
+buccaneer rebuild
+buccaneer:0 cycles 3
+buccaneer:0 sequence-reliability 0.95
+buccaneer:1-* cycles 1
+buccaneer:1-* correlation-mode
+buccaneer:1-* sequence-reliability 0.95
+buccaneer new-residue-name UNK
+buccaneer resolution 2.0
+refmac %arg HKLIN $CCP4_SCR/gere_phaser_dm_$$.mtz
+refmac %arg XYZIN $CCP4_SCR/temporary_buccaneer_$$.pdb
+refmac %arg HKLOUT $CCP4_SCR/temporary_refmac_$$.mtz
+refmac %arg XYZOUT $CCP4_SCR/temporary_refmac_$$.pdb
+refmac title [No title given]
+refmac weight MATRIX 0.1
+refmac labin -
+refmac HLA=HLADM HLB=HLBDM HLC=HLCDM HLD=HLDDM -
+refmac FREE=FreeR_flag -
+refmac FP=F_peak SIGFP=SIGF_peak
+refmac make check NONE
+refmac make hydrogen YES hout NO peptide NO cispeptide YES ssbridge YES symmetry YES sugar YES connectivity NO link NO
+refmac refi type REST PHASE SCBL 1.0 BBLU 0.0 resi MLKF meth CGMAT bref ISOT
+refmac ncyc 10
+refmac scal type SIMP LSSC ANISO EXPE
+refmac solvent YES VDWProb 1.4 IONProb 0.8 RSHRink 0.8
+refmac monitor MEDIUM torsion 10.0 distance 10.0 angle 10.0 plane 10.0 chiral 10.0 bfactor 10.0 bsphere 10.0 rbond 10.0 ncsr 10.0
+refmac labout FC=FC FWT=FWT PHIC=PHIC PHWT=PHWT DELFWT=DELFWT PHDELWT=PHDELWT FOM=FOM PHCOMB=PHCOMB
+refmac PNAME buccaneer
+refmac DNAME buccaneer
+refmac RSIZE 80
+refmac END
+eof
+
+#
+# test the answers
+#
+seqr=`awk 'BEGIN{seq=0}/residues were seque/{seq=$1}END{print seq}' $CCP4_SCR/buccaneer_$$.log`
+free=`awk 'BEGIN{fr=0}/Free R factor/{fr=int(100*$5)}END{print fr}' $CCP4_SCR/buccaneer_$$.log`
+echo
+echo "Final result:"
+echo -e "Buccaneer- Residues sequenced:\t $seqr \t(reference = 395, error < 275)"
+echo -e "Refmac5  - Free R factor     :\t $free \t(reference =  43, error >  45)"
+
+test $seqr -lt 275 && exit 1
+test $free -gt  45 && exit 1
+
+echo "SUCCESS"

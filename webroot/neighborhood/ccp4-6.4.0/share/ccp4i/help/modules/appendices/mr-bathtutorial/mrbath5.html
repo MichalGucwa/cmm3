@@ -1,0 +1,2226 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4 Interface: I. Tickle tutorial MR (continuation 5)</title>
+<link rel="stylesheet" type="text/css" href="../../../ccp4idocs.css" title="CCP4i" />
+<link rev="made" href="mailto:mgwt@yorvic.york.ac.uk" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta name="AUTHOR" content="Maria and Liz" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="2"><img src="../../../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logotitle">MR Tutorial Bath - Renin case study</td></tr>
+</table>
+
+<table class="bathbuttons" width="100%">
+<tr>
+<td><a href="mrbath4.html"><img src="back.gif" /></a></td>
+<td align="center"><a href="mrbath98.html">BACK TO INDEX</a></td>
+<td align="right"><a href="mrbath6.html"><img src="forward.gif" /></a></td>
+</tr>
+</table>
+
+<h1>5. Case study 2 - mouse renin</h1>
+
+<dl>
+<dt><strong>Target:</strong></dt>
+<dd>Mouse renin/inhibitor complex (space group P2<sub>1</sub>,</dd>
+<dd>4 molecules/asymmetric unit).</dd>
+<dt><strong>Model</strong>:</dt>
+<dd>Hexagonal pepsin (PDB code 5PEP).</dd>
+</dl>
+
+<h3>5.1 Rotation function (AMORE / ROTFUN) with <em>F</em>'s</h3>
+
+<h4>5.1.1. AMoRe SORTFUN</h4>
+
+<p>Convert the reflection data file into the internal format used by the AMORE program.</p>
+
+<pre>#
+amore  HKLIN mrenin  HKLPCK0 mrenin.hkl  &lt;&lt;EOD
+TITLE  ** packing h k l F for mouse renin crystal **
+SORT
+LABIN  FP=FPmrenin  SIGFP=SPmrenin
+EOD</pre>
+
+<h4>5.1.2. AMoRe TABFUN</h4>
+
+<p>Compute a molecular Fourier transform for use in structure factor calculation by interpolation.</p>
+
+<pre>#
+amore  XYZIN1 hexpep  XYZOUT1 hexpep_model  table1 hexpep.tab  &lt;&lt;EOD
+TITLE  Produce table for hexagonal pepsin model.
+TABFUN NOROTA                 ! No rotate for comparison.
+CRYST  CELL 78.34 117.76 85.88 90 101.18 90
+MODEL  1
+SAMPLE 1  RESO 2.8            ! Beyond native resolution for interpolation.
+EOD</pre>
+
+<h4>5.1.3. AMoRe ROTFUN GENERATE</h4>
+
+<p>Compute structure factor amplitudes for the search model in space group P1 in a large
+rectangular cell.</p>
+
+<h4>5.1.4. AMoRe ROTFUN CLMN</h4>
+
+<p>Compute spherical harmonic coefficients for the target and model Pattersons.</p>
+
+<h4>5.1.5. AMoRe ROTFUN CROSS</h4>
+
+<p>Compute the cross-RF.</p>
+
+<pre>#
+amore  HKLPCK0 mrenin.hkl  table1 hexpep.tab  HKLPCK1 hexpep.hkl  \
+       CLMN0 mrenin.clmn  CLMN1 hexpep.clmn  MAPOUT mrenin_rotfun  &lt;&lt;EOD
+ROTFUN
+TITLE  Generate HKLPCK1 from pepsin model.
+GENER  1  RESO 20 3  CELL 80 84 97
+CLMN   CRYST  RESO 20 3  SHARP -20  SPHERE 35
+CLMN   MODEL 1  RESO 20 3  SHARP -20  SPHERE 35
+ROTATE CROSS  MODEL 1  BMAX 90  NPIC 20               ! Beta = 0-90.
+EOD
+\rm mrenin_rotfun.map</pre>
+
+<p>Note that here the Rotation function uses the default orthogonalisation convention (ORTH 1,
+with <em>x</em> || <strong>a</strong> and <em>z</em> || <strong>c</strong><sup>*</sup>; this is also
+the standard PDB convention). Normally for monoclinic space
+groups the alternative convention (ORTH 3, with <em>x</em> || <strong>c</strong> and
+<em>z</em> || <strong>b</strong><sup>*</sup>) would be used as it takes
+advantage of the 2-fold symmetry about the <strong>b</strong> axis. However in the current version (3.1) of
+Amore, there is a bug in the translation function which gives incorrect results with ORTH 3.</p>
+
+<h5>Peak list from ROTFUN.</h5>
+<table class="bath4">
+<tr>
+<th></th><th></th>
+<th><a href="../chargifs/al.gif"><font face="symbol">a</font></a></th>
+<th><a href="../chargifs/be.gif"><font face="symbol">b</font></a></th>
+<th><a href="../chargifs/ga.gif"><font face="symbol">g</font></a></th>
+<th></th><th></th><th></th>
+<th><em>S</em></th>
+</tr>
+<tr>
+<th>SOLUTIONRC</th>
+<th>1</th>
+<th>74.87</th>
+<th>76.93</th>
+<th>346.67</th>
+<th>0.0000</th>
+<th>0.0000</th>
+<th>0.0000</th>
+<th>8.7</th>
+<th>0.0</th>
+<th>1</th>
+</tr>
+<tr>
+<th>SOLUTIONRC</th>
+<th>1</th>
+<th>68.82</th>
+<th>76.47</th>
+<th>346.99</th>
+<th>0.0000</th>
+<th>0.0000</th>
+<th>0.0000</th>
+<th>8.0</th>
+<th>0.0</th>
+<th>2</th>
+</tr>
+<tr>
+<th>SOLUTIONRC</th>
+<th>1</th>
+<th>246.92</th>
+<th>85.32</th>
+<th>8.87</th>
+<th>0.0000</th>
+<th>0.0000</th>
+<th>0.0000</th>
+<th>6.0</th>
+<th>0.0</th>
+<th>3</th>
+</tr>
+<tr>
+<th>SOLUTIONRC</th>
+<th>1</th>
+<th>244.00</th>
+<th>86.00</th>
+<th>8.50</th>
+<th>0.0000</th>
+<th>0.0000</th>
+<th>0.0000</th>
+<th>5.9</th>
+<th>0.0</th>
+<th>4</th>
+</tr>
+<tr>
+<td>SOLUTIONRC</td>
+<td>1</td>
+<td>329.77</td>
+<td>62.61</td>
+<td>22.31</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>5.2</td>
+<td>0.0</td>
+<td>5</td>
+</tr>
+<tr>
+<td>SOLUTIONRC</td>
+<td>1</td>
+<td>155.01</td>
+<td>67.65</td>
+<td>314.16</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>5.0</td>
+<td>0.0</td>
+<td>6</td>
+</tr>
+<tr>
+<td>SOLUTIONRC</td>
+<td>1</td>
+<td>298.57</td>
+<td>90.00</td>
+<td>194.00</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>4.9</td>
+<td>0.0</td>
+<td>7</td>
+</tr>
+<tr>
+<td>SOLUTIONRC</td>
+<td>1</td>
+<td>348.33</td>
+<td>76.05</td>
+<td>198.50</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>4.8</td>
+<td>0.0</td>
+<td>8</td>
+</tr>
+</table>
+
+<h5>Rotation function of mouse renin (<em>F</em>'s).</h5>
+
+<p>The table below shows values of
+<a href="../chargifs/deu.gif"><font face="symbol">D</font></a><em>S</em>/<a href="../chargifs/si.gif"><font
+face="symbol">s</font></a>
+for 2 peaks (the other 2 are related by the crystallographic 2-fold).</p>
+
+<table class="bath3" border="5">
+<tr>
+<td></td>
+<th colspan="2">Resolution limits = 20-3&#197;</th>
+<th colspan="2">Resolution limits = 8-3&#197;</th>
+</tr>
+<tr>
+<th>Radius/&#197;</th>
+<th colspan="2">B = -20&#197;&#178;</th>
+<th colspan="2">B = 0</th>
+</tr>
+<tr>
+<td>15</td>
+<td>0.79</td>
+<td>-0.54</td>
+<td>0.95</td>
+<td>-0.22</td>
+</tr>
+<tr>
+<td>20</td>
+<td>2.07</td>
+<td>0.37</td>
+<td>2.39</td>
+<td>0.81</td>
+</tr>
+<tr>
+<td>25</td>
+<td>1.92</td>
+<td>0.28</td>
+<td>2.44</td>
+<td>1.14</td>
+</tr>
+<tr>
+<td>30</td>
+<td>2.59</td>
+<td>0.58</td>
+<td>2.73</td>
+<td>1.27</td>
+</tr>
+<tr>
+<td>35</td>
+<td>3.14</td>
+<td>0.63</td>
+<td>3.08</td>
+<td>0.79</td>
+</tr>
+<tr>
+<td>40</td>
+<td>2.90</td>
+<td>0.43</td>
+<td>3.24</td>
+<td>1.05</td>
+</tr>
+</table>
+
+<h3>5.2 Rotation function (AMORE / ROTFUN) with <em>E</em>'s</h3>
+
+<h4>5.2.1. PDBSET</h4>
+
+<p>Modify the PDB header in the coordinate file.</p>
+
+<pre>#
+pdbset  XYZIN hexpep  XYZOUT hexpep_rfcell  &lt;&lt;EOD
+SPACEG P1
+CELL   80 84 97
+EOD</pre>
+
+<h4>5.2.2. SFALL</h4>
+
+<p>Compute structure factor amplitudes in space group P1 for the search model in a large
+rectangular cell.</p>
+
+<pre>#
+# Structure factors for hexagonal pepsin model in RF cell.
+#
+sfall  XYZIN hexpep_rfcell  HKLOUT hexpep_rfcell &lt;&lt;EOD
+MODE   SFCALC XYZIN
+SFSG   1
+SYMM   1
+RESO   20 3
+LABOUT PHIC=PC
+EOD</pre>
+
+<h4>5.2.3. ECALC</h4>
+
+<p>Normalise the observed and calculated amplitudes.</p>
+
+<pre>#
+ecalc  HKLIN mrenin  HKLOUT mrenin_ecalc  &lt;&lt;EOD
+TITLE  ** Ecalc for mouse renin crystal**
+LABIN  FP=FPmrenin  SIGFP=SPmrenin
+EOD
+
+# Calc E's for hexagonal pepsin model.
+#
+ecalc  HKLIN hexpep_rfcell  HKLOUT hexpep_ecalc  &lt;&lt;EOD
+TITLE  ** Ecalc for hexagonal pepsin model**
+LABIN  FP=FC
+EOD</pre>
+
+<h4>5.2.4. AMoRe SORTFUN</h4>
+
+<p>Convert the normalised observed and calculated reflection data files into the internal
+format used by the AMORE program.</p>
+
+<pre>#
+amore  HKLIN mrenin_ecalc  HKLPCK0 mrenin_ecalc.hkl  &lt;&lt;EOD
+TITLE  ** packing h k l E for mouse renin crystal **
+SORT
+LABIN  FP=E  SIGFP=E
+EOD
+
+amore  HKLIN hexpep_ecalc  HKLPCK0 hexpep_ecalc.hkl  &lt;&lt;EOD
+TITLE  ** packing h k l E for hexagonal pepsin model **
+SORT
+LABIN  FP=E  SIGFP=E
+EOD</pre>
+
+<h4>5.2.5. AMoRe ROTFUN CLMN</h4>
+
+<p>Compute spherical harmonic coefficients for the target and model Pattersons.</p>
+
+<h4>5.2.6. AMoRe ROTFUN CROSS</h4>
+
+<p>Compute the cross-RF.</p>
+
+<pre>#
+amore  HKLPCK0 mrenin_ecalc.hkl  HKLPCK1 hexpep_ecalc.hkl  \
+       CLMN0 mrenin_ecalc.clmn  CLMN1 hexpep_ecalc.clmn  \
+       MAPOUT mrenin_ecalc_rotfun  &lt;&lt;EOD
+ROTFUN
+TITLE  Rotation function with E's.
+CLMN   CRYST  ORTH 3  RESO 20 3  SPHERE 35            ! ORTH code 3.
+CLMN   MODEL 1  RESO 20 3  SPHERE 35
+ROTATE CROSS  MODEL 1  NPIC 20                        ! Beta = 0-180.
+EOD</pre>
+
+<h5>Peak list from ROTFUN.</h5>
+
+<table class="bath4">
+<tr>
+<th></th><th></th>
+<th><a href="../chargifs/al.gif"><font face="symbol">a</font></a></th>
+<th><a href="../chargifs/be.gif"><font face="symbol">b</font></a></th>
+<th><a href="../chargifs/ga.gif"><font face="symbol">g</font></a></th>
+<th></th><th></th><th></th>
+<th><em>S</em></th>
+</tr>
+<tr>
+<th>SOLUTIONRC</th>
+<th>1</th>
+<th>61.50</th>
+<th>20.45</th>
+<th>113.50</th>
+<th>0.00000</th>
+<th>0.00000</th>
+<th>0.00000</th>
+<th>9.9</th>
+<th>0.0</th>
+</tr>
+<tr>
+<th>SOLUTIONRC</th>
+<th>1</th>
+<th>67.98</th>
+<th>26.00</th>
+<th>107.67</th>
+<th>0.00000</th>
+<th>0.00000</th>
+<th>0.00000</th>
+<th>8.3</th>
+<th>0.0</th>
+</tr>
+<tr>
+<th>SOLUTIONRC</th>
+<th>1</th>
+<th>111.50</th>
+<th>156.50</th>
+<th>286.50</th>
+<th>0.00000</th>
+<th>0.00000</th>
+<th>0.00000</th>
+<th>6.0</th>
+<th>0.0</th>
+</tr>
+<tr>
+<th>SOLUTIONRC</th>
+<th>1</th>
+<th>116.00</th>
+<th>157.39</th>
+<th>293.50</th>
+<th>0.00000</th>
+<th>0.00000</th>
+<th>0.00000</th>
+<th>5.7</th>
+<th>0.0</th>
+</tr>
+<tr>
+<td>SOLUTIONRC</td>
+<td>1</td>
+<td>103.13</td>
+<td>88.06</td>
+<td>166.43</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>5.1</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>SOLUTIONRC</td>
+<td>1</td>
+<td>67.02</td>
+<td>105.44</td>
+<td>97.32</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>5.0</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>SOLUTIONRC</td>
+<td>1</td>
+<td>70.09</td>
+<td>116.84</td>
+<td>97.53</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>5.0</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>SOLUTIONRC</td>
+<td>1</td>
+<td>114.90</td>
+<td>8.17</td>
+<td>100.72</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>0.00000</td>
+<td>4.9</td>
+<td>0.0</td>
+</tr>
+</table>
+
+<p>Note that the Eulerian angles of the peaks obtained here are different from those obtained
+previously (see <a href="mrbath4.html#section4.1.5">section 4.1.5.</a>); this is because of the
+different orthogonalisation convention (ORTH 3) used.</p>
+
+<h5>Rotation function of mouse renin (<em>E</em>'s).</h5>
+
+<p>Signal (correct-background) and signal/noise are shown for 2 molecules (A and C). The other
+2 molecules (B and D) give resolved peaks only for radii &gt;= 35&#197;.</p>
+
+<table class="bath3" border="5">
+<tr>
+<th>Radius/&#197;</th>
+<th><a href="../chargifs/si.gif"><font face="symbol">s</font></a></th>
+<th><a href="../chargifs/deu.gif"><font face="symbol">D</font></a><em>S</em> (A)</th>
+<th><a href="../chargifs/deu.gif"><font face="symbol">D</font></a><em>S</em>/<a href="../chargifs/si.gif"><font
+face="symbol">s</font></a> (A)</th>
+<th><a href="../chargifs/deu.gif"><font face="symbol">D</font></a><em>S</em> (C)</th>
+<th><a href="../chargifs/deu.gif"><font face="symbol">D</font></a><em>S</em>/<a href="../chargifs/si.gif"><font
+face="symbol">s</font></a> (C)</th>
+</tr>
+<tr>
+<td>15</td>
+<td>3.3</td>
+<td>1.7</td>
+<td>0.5</td>
+<td>-5.0</td>
+<td>-1.5</td>
+</tr>
+<tr>
+<td>20</td>
+<td>2.2</td>
+<td>5.7</td>
+<td>2.5</td>
+<td>0.1</td>
+<td>0.0</td>
+</tr>
+<tr>
+<td>25</td>
+<td>1.7</td>
+<td>4.6</td>
+<td>2.8</td>
+<td>2.5</td>
+<td>0.5</td>
+</tr>
+<tr>
+<td>30</td>
+<td>1.3</td>
+<td>4.4</td>
+<td>3.4</td>
+<td>1.3</td>
+<td>1.0</td>
+</tr>
+<tr>
+<td>35</td>
+<td>1.1</td>
+<td>4.5</td>
+<td>4.1</td>
+<td>0.6</td>
+<td>0.6</td>
+</tr>
+<tr>
+<td>40</td>
+<td>0.9</td>
+<td>3.6</td>
+<td>4.1</td>
+<td>0.7</td>
+<td>0.8</td>
+</tr>
+</table>
+
+<h4>5.2.7. POLARRFN</h4>
+
+<p align="center"><a name="polar35.gif" id="polar35.gif"></a><img src="polar35.gif" /></p>
+
+<p>In the case of NCS, using <em>E</em>'s compute and plot the self-Rotation function in terms of
+spherical polar angles. Then compute again in terms of Euler angles, and check for consistency
+with the cross-RF. The self-Rotation function computed in terms of Euler angles is more
+accurate, but that computed in terms of spherical polars is better for visualisation.</p>
+
+<p>Note that the alternate orthogonalisation code (ORTH 3) for monoclinic space groups is used
+here. This gives a more easily interpretable self-Rotation function map, because the
+crystallographic 2-fold axis along <strong>b</strong> is then at
+<a href="../chargifs/om.gif"><font face="symbol">w</font></a> = 0&#176; (see
+<a href="mrbath2.html#section2.9">section 2.9.</a>), with <strong>c</strong> at
+(<a href="../chargifs/om.gif"><font face="symbol">w</font></a>,<a href="../chargifs/ph.gif"><font
+face="symbol">f</font></a>) = (90&#176;,0&#176;)
+and <strong>a*</strong> at (<a href="../chargifs/om.gif"><font face="symbol">w</font></a>,<a
+href="../chargifs/ph.gif"><font face="symbol">f</font></a>) = (90&#176;,90&#176;).</p>
+
+<pre>#
+polarrfn  HKLIN mrenin_ecalc  MAPOUT polarrfn  PLOT polarrfn  &lt;&lt;EOD
+TITLE  Self Rotation function (spherical polars) of Mouse Renin with E's, R=35
+SELF   35
+RESO   20 3
+CRYST  FILE 1  ORTH 3  SYMM P21
+LABIN  FILE 1  F=E  SIGF=E
+LIMITS 0 180 5  0 180 5  0 180 5                ! Same for all self-RF's.
+MAP
+NOPRIN
+PLOT   10 5
+FIND   2 20 RMS
+EOD
+
+if ($status) exit
+
+pltdev  -i polarrfn.plo  -sta 37
+
+
+#
+amore  HKLPCK0 mrenin_ecalc.hkl  CLMN0 mrenin_ecalc.clmn  -
+       MAPOUT mrenin_self  &lt;&lt;EOD
+ROTFUN
+TITLE  Self Rotation function (Euler angles) of Mouse Renin with E's, R=35
+ROTATE SELF  NPIC 20
+EOD
+
+if ($status) exit
+
+grep SOLUTIONRC mrenin_ecalc_rotfun.log &gt;! mrenin_ecalc_rotfun.pkl
+
+if ($status) exit
+
+rfcorr MAPIN mrenin_self  PEAKS mrenin_ecalc_rotfun.pkl  &lt;&lt;EOD
+TITLE  Mouse renin self/cross rotation function correlation.
+SPACEG P2
+ORTH   3
+CHI    180
+EOD</pre>
+
+<table class="bath1">
+<tr>
+<td>In the mouse renin case, the native Patterson demonstrates the existence of a NCS 2-fold
+parallel to the 2<sub>1</sub> axis:</td>
+</tr>
+<tr>
+<td><img src="mrenin.gif" /></td>
+</tr>
+</table>
+
+<h5>Output from RFCORR.</h5>
+
+<table class="bath4">
+<tr>
+<th>Peak</th><th>Alpha</th><th>Beta</th><th>Gamma</th>
+</tr>
+<tr>
+<th>1</th><th>61.50</th><th>20.45</th><th>113.50</th>
+</tr>
+<tr>
+<th>2</th><th>67.98</th><th>26.00</th><th>107.67</th>
+</tr>
+<tr>
+<th>3</th><th>111.50</th><th>156.50</th><th>286.50</th>
+</tr>
+<tr>
+<th>4</th><th>116.00</th><th>157.39</th><th>293.50</th>
+</tr>
+<tr>
+<td>5</td><td>103.13</td><td>88.06</td><td>166.43</td>
+</tr>
+<tr>
+<td>6</td><td>67.02</td><td>105.44</td><td>97.32</td>
+</tr>
+<tr>
+<td>7</td><td>70.09</td><td>116.84</td><td>97.53</td>
+</tr>
+<tr>
+<td>8</td><td>114.90</td><td>8.17</td><td>100.72</td>
+</tr>
+</table>
+
+<table class="bath1">
+<tr>
+<th>Serial</th>
+<th>#Peak</th>
+<th>#Peak(#Symm)</th>
+<th>Theta</th>
+<th>Phi</th>
+<th>Chi</th>
+<th>self-RF</th>
+</tr>
+<tr>
+<td>1</td>
+<td>3</td>
+<td>4 ( 2)</td>
+<td>2</td>
+<td>81</td>
+<td>179</td>
+<td>78.75</td>
+</tr>
+<tr>
+<td>2</td>
+<td>1</td>
+<td>2 ( 2)</td>
+<td>3</td>
+<td>87</td>
+<td>179</td>
+<td>51.59</td>
+</tr>
+<tr>
+<td>3</td>
+<td>2</td>
+<td>3 ( 2)</td>
+<td>90</td>
+<td>180</td>
+<td>179</td>
+<td>39.46</td>
+</tr>
+<tr>
+<td>4</td>
+<td>2</td>
+<td>3 ( 1)</td>
+<td>90</td>
+<td>90</td>
+<td>180</td>
+<td>39.46</td>
+</tr>
+<tr>
+<td>5</td>
+<td>1</td>
+<td>3 ( 2)</td>
+<td>90</td>
+<td>179</td>
+<td>174</td>
+<td>37.41</td>
+</tr>
+<tr>
+<td>6</td>
+<td>1</td>
+<td>3 ( 1)</td>
+<td>87</td>
+<td>89</td>
+<td>179</td>
+<td>37.41</td>
+</tr>
+<tr>
+<td>7</td>
+<td>1</td>
+<td>4 ( 1)</td>
+<td>89</td>
+<td>89</td>
+<td>179</td>
+<td>32.41</td>
+</tr>
+<tr>
+<td>8</td>
+<td>1</td>
+<td>4 ( 2)</td>
+<td>89</td>
+<td>179</td>
+<td>178</td>
+<td>32.41</td>
+</tr>
+<tr>
+<td>9</td>
+<td>2</td>
+<td>4 ( 2)</td>
+<td>90</td>
+<td>179</td>
+<td>176</td>
+<td>25.68</td>
+</tr>
+<tr>
+<td>10</td>
+<td>2</td>
+<td>4 ( 1)</td>
+<td>88</td>
+<td>89</td>
+<td>179</td>
+<td>25.68</td>
+</tr>
+</table>
+
+<table class="bath6">
+<tr>
+<th colspan="9">Inter-vector angles:</th>
+</tr>
+<tr>
+<th>Serial[i]</th>
+<th>Serial[j]<br />(Symm[j])</th>
+<th>Angle</th>
+<th>Serial[i]</th>
+<th>Serial[j]<br />(Symm[j])</th>
+<th>Angle</th>
+<th>Serial[i]</th>
+<th>Serial[j]<br />(Symm[j])</th>
+<th>Angle</th>
+</tr>
+<tr>
+<td>1</td>
+<td>2( 1)</td>
+<td>2</td>
+<td>1</td>
+<td>2( 2)</td>
+<td>5</td>
+<td>1</td>
+<td>3( 1)</td>
+<td>90</td>
+</tr>
+<tr>
+<td>1</td>
+<td>3( 2)</td>
+<td>90</td>
+<td>1</td>
+<td>4( 1)</td>
+<td>88</td>
+<td>1</td>
+<td>4( 2)</td>
+<td>89</td>
+</tr>
+<tr>
+<td>1</td>
+<td>5( 1)</td>
+<td>90</td>
+<td>1</td>
+<td>5( 2)</td>
+<td>89</td>
+<td>1</td>
+<td>6( 1)</td>
+<td>89</td>
+</tr>
+<tr>
+<td>1</td>
+<td>6( 2)</td>
+<td>86</td>
+<td>1</td>
+<td>7( 1)</td>
+<td>89</td>
+<td>1</td>
+<td>7( 2)</td>
+<td>87</td>
+</tr>
+<tr>
+<td>1</td>
+<td>8( 1)</td>
+<td>90</td>
+<td>1</td>
+<td>8( 2)</td>
+<td>89</td>
+<td>1</td>
+<td>9( 1)</td>
+<td>90</td>
+</tr>
+<tr>
+<td>1</td>
+<td>9( 2)</td>
+<td>89</td>
+<td>1</td>
+<td>10( 1)</td>
+<td>86</td>
+<td>1</td>
+<td>10( 2)</td>
+<td>90</td>
+</tr>
+<tr>
+<td>2</td>
+<td>3( 1)</td>
+<td>90</td>
+<td>2</td>
+<td>3( 2)</td>
+<td>90</td>
+<td>2</td>
+<td>4( 1)</td>
+<td>86</td>
+</tr>
+<tr>
+<td>2</td>
+<td>4( 2)</td>
+<td>87</td>
+<td>2</td>
+<td>5( 1)</td>
+<td>90</td>
+<td>2</td>
+<td>5( 2)</td>
+<td>90</td>
+</tr>
+<tr>
+<td>2</td>
+<td>6( 1)</td>
+<td>90</td>
+<td>2</td>
+<td>6( 2)</td>
+<td>84</td>
+<td>2</td>
+<td>7( 1)</td>
+<td>88</td>
+</tr>
+<tr>
+<td>2</td>
+<td>7( 2)</td>
+<td>86</td>
+<td>2</td>
+<td>8( 1)</td>
+<td>90</td>
+<td>2</td>
+<td>8( 2)</td>
+<td>89</td>
+</tr>
+<tr>
+<td>2</td>
+<td>9( 1)</td>
+<td>90</td>
+<td>2</td>
+<td>9( 2)</td>
+<td>89</td>
+<td>2</td>
+<td>10( 1)</td>
+<td>85</td>
+</tr>
+<tr>
+<td>2</td>
+<td>10( 2)</td>
+<td>89</td>
+<td>3</td>
+<td>4( 1)</td>
+<td>90</td>
+<td>3</td>
+<td>4( 2)</td>
+<td>90</td>
+</tr>
+<tr>
+<td>3</td>
+<td>5( 1)</td>
+<td>1</td>
+<td>3</td>
+<td>5( 2)</td>
+<td>1</td>
+<td>3</td>
+<td>6( 1)</td>
+<td>89</td>
+</tr>
+<tr>
+<td>3</td>
+<td>6( 2)</td>
+<td>89</td>
+<td>3</td>
+<td>7( 1)</td>
+<td>89</td>
+<td>3</td>
+<td>7( 2)</td>
+<td>89</td>
+</tr>
+<tr>
+<td>3</td>
+<td>8( 1)</td>
+<td>1</td>
+<td>3</td>
+<td>8( 2)</td>
+<td>1</td>
+<td>3</td>
+<td>9( 1)</td>
+<td>0</td>
+</tr>
+<tr>
+<td>3</td>
+<td>9( 2)</td>
+<td>1</td>
+<td>3</td>
+<td>10( 1)</td>
+<td>90</td>
+<td>3</td>
+<td>10( 2)</td>
+<td>90</td>
+</tr>
+<tr>
+<td>4</td>
+<td>5( 1)</td>
+<td>89</td>
+<td>4</td>
+<td>5( 2)</td>
+<td>89</td>
+<td>4</td>
+<td>6( 1)</td>
+<td>3</td>
+</tr>
+<tr>
+<td>4</td>
+<td>6( 2)</td>
+<td>2</td>
+<td>4</td>
+<td>7( 1)</td>
+<td>2</td>
+<td>4</td>
+<td>7( 2)</td>
+<td>1</td>
+</tr>
+<tr>
+<td>4</td>
+<td>8( 1)</td>
+<td>89</td>
+<td>4</td>
+<td>8( 2)</td>
+<td>89</td>
+<td>4</td>
+<td>9( 1)</td>
+<td>90</td>
+</tr>
+<tr>
+<td>4</td>
+<td>9( 2)</td>
+<td>90</td>
+<td>4</td>
+<td>10( 1)</td>
+<td>2</td>
+<td>4</td>
+<td>10( 2)</td>
+<td>3</td>
+</tr>
+<tr>
+<td>5</td>
+<td>6( 1)</td>
+<td>90</td>
+<td>5</td>
+<td>6( 2)</td>
+<td>90</td>
+<td>5</td>
+<td>7( 1)</td>
+<td>90</td>
+</tr>
+<tr>
+<td>5</td>
+<td>7( 2)</td>
+<td>90</td>
+<td>5</td>
+<td>8( 1)</td>
+<td>0</td>
+<td>5</td>
+<td>8( 2)</td>
+<td>1</td>
+</tr>
+<tr>
+<td>5</td>
+<td>9( 1)</td>
+<td>0</td>
+<td>5</td>
+<td>9( 2)</td>
+<td>1</td>
+<td>5</td>
+<td>10( 1)</td>
+<td>90</td>
+</tr>
+<tr>
+<td>5</td>
+<td>10( 2)</td>
+<td>90</td>
+<td>6</td>
+<td>7( 1)</td>
+<td>2</td>
+<td>6</td>
+<td>7( 2)</td>
+<td>4</td>
+</tr>
+<tr>
+<td>6</td>
+<td>8( 1)</td>
+<td>90</td>
+<td>6</td>
+<td>8( 2)</td>
+<td>90</td>
+<td>6</td>
+<td>9( 1)</td>
+<td>90</td>
+</tr>
+<tr>
+<td>6</td>
+<td>9( 2)</td>
+<td>90</td>
+<td>6</td>
+<td>10( 1)</td>
+<td>5</td>
+<td>6</td>
+<td>10( 2)</td>
+<td>1</td>
+</tr>
+<tr>
+<td>7</td>
+<td>8( 1)</td>
+<td>90</td>
+<td>7</td>
+<td>8( 2)</td>
+<td>90</td>
+<td>7</td>
+<td>9( 1)</td>
+<td>89</td>
+</tr>
+<tr>
+<td>7</td>
+<td>9( 2)</td>
+<td>89</td>
+<td>7</td>
+<td>10( 1)</td>
+<td>3</td>
+<td>7</td>
+<td>10( 2)</td>
+<td>1</td>
+</tr>
+<tr>
+<td>8</td>
+<td>9( 1)</td>
+<td>1</td>
+<td>8</td>
+<td>9( 2)</td>
+<td>1</td>
+<td>8</td>
+<td>10( 1)</td>
+<td>89</td>
+</tr>
+<tr>
+<td>8</td>
+<td>10( 2)</td>
+<td>89</td>
+<td>9</td>
+<td>10( 1)</td>
+<td>90</td>
+<td>9</td>
+<td>10( 2)</td>
+<td>90</td>
+</tr>
+</table>
+
+<h3>5.3. Translation function (AMORE / TRAFUN) with <em>F</em>'s</h3>
+
+<h4>5.3.1. AMoRe TRAFUN</h4>
+
+<p>For the best RF solutions, compute the TF.</p>
+
+<pre>#
+amore  HKLPCK0 mrenin.hkl  table1 hexpep.tab  MAPOUT mrenin_trafun  \
+       TRAING_NR 30000 &lt;&lt;EOD
+TRAFUN CB  RESO 20 3.5  PKLIM .25  NPIC 50
+TITLE  Translation function
+CRYST  SHARP -10
+SOLUTIONRC    1   74.87   76.93  346.67  0.0000  0.0000  0.0000  9.4  0.0   1
+SOLUTIONRC    1  111.18  103.53  166.99  0.0000  0.0000  0.0000  8.0  0.0   2
+SOLUTIONRC    1  246.92   85.32    8.87  0.0000  0.0000  0.0000  6.0  0.0   3
+SOLUTIONRC    1  296.00   94.00  188.50  0.0000  0.0000  0.0000  5.9  0.0   4
+EOD
+\rm mrenin_trafun.map</pre>
+
+<p>Note that a 2-fold crystallographic symmetry operator about the <strong>b</strong> axis (orthogonal <em>y</em> axis) has
+been applied to the Eulerian angles for molecules B and D (compare with the output from the
+Rotation function in <a href="mrbath4.html#section4.1.5">section 4.1.5.</a>). Although this is not essential,
+it is nevertheless convenient because it ensures that the set of protomer orientations chosen obeys the non-crystallographic
+222 symmetry of the tetramer.</p>
+
+<h5>Sample output from AMORE/TRAFUN.</h5>
+
+<table>
+<tr>
+<td>SOLUT_1</td>
+<td>1</td>
+<td>74.87</td>
+<td>76.93</td>
+<td>346.67</td>
+<td>0.4167</td>
+<td>0.0000</td>
+<td>0.4904</td>
+<td>11.1</td>
+<td>57.6</td>
+<td>1</td>
+</tr>
+<tr>
+<td>SOLUT_1</td>
+<td>1</td>
+<td>74.87</td>
+<td>76.93</td>
+<td>346.67</td>
+<td>0.3333</td>
+<td>0.0000</td>
+<td>0.2981</td>
+<td>10.3</td>
+<td>57.8</td>
+<td>4</td>
+</tr>
+<tr>
+<td>SOLUT_1</td>
+<td>1</td>
+<td>74.87</td>
+<td>76.93</td>
+<td>346.67</td>
+<td>0.0938</td>
+<td>0.0000</td>
+<td>0.4904</td>
+<td>9.8</td>
+<td>57.9</td>
+<td>6</td>
+</tr>
+<tr>
+<td></td>
+</tr>
+<tr>
+<td>SOLUT_2</td>
+<td>1</td>
+<td>111.18</td>
+<td>103.53</td>
+<td>166.99</td>
+<td>0.3958</td>
+<td>0.0000</td>
+<td>0.0096</td>
+<td>10.5</td>
+<td>57.8</td>
+<td>1</td>
+</tr>
+<tr>
+<td>SOLUT_2</td>
+<td>1</td>
+<td>111.18</td>
+<td>103.53</td>
+<td>166.99</td>
+<td>0.0104</td>
+<td>0.0000</td>
+<td>0.3462</td>
+<td>9.3</td>
+<td>58.4</td>
+<td>6</td>
+</tr>
+<tr>
+<td>SOLUT_2</td>
+<td>1</td>
+<td>111.18</td>
+<td>103.53</td>
+<td>166.99</td>
+<td>0.4896</td>
+<td>0.0000</td>
+<td>0.1923</td>
+<td>9.3</td>
+<td>58.1</td>
+<td>5</td>
+</tr>
+<tr>
+<td></td>
+</tr>
+<tr>
+<td>SOLUT_3</td>
+<td>1</td>
+<td>246.92</td>
+<td>85.32</td>
+<td>8.87</td>
+<td>0.0729</td>
+<td>0.0000</td>
+<td>0.0673</td>
+<td>9.0</td>
+<td>58.2</td>
+<td>2</td>
+</tr>
+<tr>
+<td>SOLUT_3</td>
+<td>1</td>
+<td>246.92</td>
+<td>85.32</td>
+<td>8.87</td>
+<td>0.4062</td>
+<td>0.0000</td>
+<td>0.0673</td>
+<td>9.0</td>
+<td>58.2</td>
+<td>1</td>
+</tr>
+<tr>
+<td>SOLUT_3</td>
+<td>1</td>
+<td>246.92</td>
+<td>85.32</td>
+<td>8.87</td>
+<td>0.3125</td>
+<td>0.0000</td>
+<td>0.1827</td>
+<td>8.5</td>
+<td>58.4</td>
+<td>6</td>
+</tr>
+<tr>
+<td></td>
+</tr>
+<tr>
+<td>SOLUT_4</td>
+<td>1</td>
+<td>296.00</td>
+<td>94.00</td>
+<td>188.50</td>
+<td>0.4271</td>
+<td>0.0000</td>
+<td>0.4327</td>
+<td>9.4</td>
+<td>58.0</td>
+<td>2</td>
+</tr>
+<tr>
+<td>SOLUT_4</td>
+<td>1</td>
+<td>296.00</td>
+<td>94.00</td>
+<td>188.50</td>
+<td>0.1875</td>
+<td>0.0000</td>
+<td>0.2404</td>
+<td>8.7</td>
+<td>58.5</td>
+<td>4</td>
+</tr>
+<tr>
+<td>SOLUT_4</td>
+<td>1</td>
+<td>296.00</td>
+<td>94.00</td>
+<td>188.50</td>
+<td>0.1875</td>
+<td>0.0000</td>
+<td>0.3077</td>
+<td>8.7</td>
+<td>58.2</td>
+<td>6</td>
+</tr>
+</table>
+
+<h5>Translation function of mouse renin (<em>F</em>'s).</h5>
+
+<table class="bath3" border="5">
+<tr>
+<td></td>
+<th colspan="2">Correlation coefficient</th>
+</tr>
+<tr>
+<th>Molecule</th>
+<th>Correct</th>
+<th>Background</th>
+</tr>
+<tr>
+<td>A</td>
+<td>0.111</td>
+<td>0.103</td>
+</tr>
+<tr>
+<td>B</td>
+<td>0.105</td>
+<td>0.093</td>
+</tr>
+<tr>
+<td>C</td>
+<td>0.090</td>
+<td>0.085</td>
+</tr>
+<tr>
+<td>D</td>
+<td>0.094</td>
+<td>0.087</td>
+</tr>
+</table>
+
+<h4>5.3.2. AMoRe TRAFUN 2</h4>
+
+<p>Fix the first molecule, compute the TF for the second; repeat for rest.</p>
+
+<pre>#
+amore  HKLPCK0 mrenin.hkl  table1 hexpep.tab  MAPOUT mrenin_trafun  \
+       TRAING_NR 30000 &lt;&lt;EOD
+TRAFUN CB  NMOL 2  RESO 20 3.5  PKLIM .25  NPIC 50
+TITLE  Translation function.  Fix A; find B.
+CRYST  SHARP -10
+SOLUT_1  FIX  1   74.87   76.93  346.67  0.4167  0.0000  0.4904 11.1 57.6   1
+SOLUTIONRC    1  111.18  103.53  166.99  0.0000  0.0000  0.0000  8.0  0.0   2
+EOD
+\rm mrenin_trafun.map
+
+
+#
+amore  HKLPCK0 mrenin.hkl  table1 hexpep.tab  MAPOUT mrenin_trafun  \
+       TRAING_NR 30000 &lt;&lt;EOD
+TRAFUN CB  NMOL 3  RESO 20 3.5  PKLIM .25  NPIC 50
+TITLE  Translation function.  Fix A and B; find D.
+CRYST  SHARP -10
+SOLUT_1  FIX  1   74.87   76.93  346.67  0.4167  0.0000  0.4904 11.1 57.6   1
+SOLUT_2  FIX  1  111.18  103.53  166.99  0.8984  0.0213  0.0080 18.8 56.0   1
+SOLUTIONRC    1  296.00   94.00  188.50  0.0000  0.0000  0.0000  5.9  0.0   4
+EOD
+\rm mrenin_trafun.map
+
+
+#
+amore  HKLPCK0 mrenin.hkl  table1 hexpep.tab  MAPOUT mrenin_trafun  \
+       TRAING_NR 30000 &lt;&lt;EOD
+TRAFUN CB  NMOL 4  RESO 20 3.5  PKLIM .25  NPIC 50
+TITLE  Translation function.  Fix A, B and D; find C.
+CRYST  SHARP -10
+SOLUT_1  FIX  1   74.87   76.93  346.67  0.4167  0.0000  0.4904 11.1 57.6   1
+SOLUT_2  FIX  1  111.18  103.53  166.99  0.8984  0.0213  0.0080 18.8 56.0   1
+SOLUT_3  FIX  1  296.00   94.00  188.50  0.4227  0.9769  0.9295 22.5 54.8   1
+SOLUTIONRC    1  246.92   85.32    8.87  0.0000  0.0000  0.0000  6.0  0.0   3
+EOD
+\rm mrenin_trafun.map</pre>
+
+<h4>5.3.3. AMoRe FITFUN</h4>
+
+<p>For the best TF solution(s), do rigid-body refinements and choose the solution with the
+highest correlation coefficient.</p>
+
+<pre>#
+amore  HKLPCK0 mrenin.hkl  table1 hexpep.tab  FITING_NR 50000  &lt;&lt;EOD
+FITFUN NMOL 4  RESO 20 3
+TITLE  Rigid body refinement.
+REFSOL AL BE GA X Y Z BF
+SOLUT_1       1   74.87   76.93  346.67  0.4167  0.0000  0.4904 11.1 57.6   1
+SOLUT_2       1  111.18  103.53  166.99  0.8984  0.0213  0.0080 18.8 56.0   1
+SOLUT_4       1  246.92   85.32    8.87  0.9038  0.0018  0.5704 27.4 54.3   1
+SOLUT_3       1  296.00   94.00  188.50  0.4227  0.9769  0.9295 22.5 54.8   1
+EOD
+</pre>
+
+<h5>Sample output from AMORE/FITFUN.</h5>
+
+<pre>  Scale, B-Fact, Correlation Coefficient, R-Fact
+    0.20040E+01    26.834    48.589    50.694
+    0.19908E+01    26.757    49.640    50.165
+    0.19851E+01    26.844    50.399    49.725
+    0.19806E+01    26.854    50.837    49.442
+
+ FINAL POSITIONS
+ SOLUTIONF     1   76.40   78.04  346.60  0.4206 -0.0007  0.4868 50.8 49.4   1
+ SOLUTIONF     1  113.07  102.95  167.52  0.8980  0.0245  0.0083 50.8 49.4   2
+ SOLUTIONF     1  250.63   85.32    8.82  0.9019  0.0022  0.5695 50.8 49.4   4
+ SOLUTIONF     1  297.49   93.18  188.39  0.4229  0.9768  0.9281 50.8 49.4   3
+</pre>
+
+<h4>5.3.4. PDBSET</h4>
+
+<p>Apply the optimised rotation matrix and translation vector to the model coordinates
+output by AMORE / TABFUN.</p>
+
+<pre>#
+pdbset XYZIN hexpep_model  XYZOUT mrenin_mola &lt;&lt;EOD
+SPACEG P21
+CHAIN  A
+ROTATE EULER   76.40   78.04  346.60
+SHIFT  FRACT  0.4206 -0.0007  0.4868
+EOD
+
+pdbset XYZIN hexpep_model  XYZOUT mrenin_molb &lt;&lt;EOD
+SPACEG P21
+CHAIN  B
+ROTATE EULER  113.07  102.95  167.52
+SHIFT  FRACT  0.8980  0.0245  0.0083
+EOD
+
+pdbset XYZIN hexpep_model  XYZOUT mrenin_molc &lt;&lt;EOD
+SPACEG P21
+CHAIN  C
+ROTATE EULER  250.63   85.32    8.82
+SHIFT  FRACT  0.9019  0.0022  0.5695
+EOD
+
+pdbset XYZIN hexpep_model  XYZOUT mrenin_mold &lt;&lt;EOD
+SPACEG P21
+CHAIN  D
+ROTATE EULER  297.49   93.18  188.39
+SHIFT  FRACT  0.4229  0.9768  0.9281
+EOD</pre>
+
+<h3>5.4 Translation function (TFFC / FFT) using <em>E</em>'s</h3>
+
+<h4>5.4.1. PDBSET</h4>
+
+<p>For each molecule in the asymmetric unit apply the appropriate rotation matrix,
+calculated from the Eulerian angles of the peak(s) in the RF, to the model coordinates. Also
+modify the PDB header in the coordinate file.</p>
+
+<pre>#
+pdbset XYZIN hexpep  XYZOUT hexpep_mola  &lt;&lt;EOD
+CELL   78.34 117.76 85.88 90 101.18 90
+SPACEG P1
+ORTHOG 3
+ROTATE EULER  61.50    20.45   113.50
+EOD
+
+pdbset XYZIN hexpep  XYZOUT hexpep_molb  &lt;&lt;EOD
+CELL   78.34 117.76 85.88 90 101.18 90
+SPACEG P1
+ORTHOG 3
+ROTATE EULER  247.98    26.00   107.67
+EOD
+
+pdbset XYZIN hexpep  XYZOUT hexpep_molc  &lt;&lt;EOD
+CELL   78.34 117.76 85.88 90 101.18 90
+SPACEG P1
+ORTHOG 3
+ROTATE EULER  111.50   156.50   286.50
+EOD
+
+pdbset XYZIN hexpep  XYZOUT hexpep_mold  &lt;&lt;EOD
+CELL   78.34 117.76 85.88 90 101.18 90
+SPACEG P1
+ORTHOG 3
+ROTATE EULER  296.00   157.39   293.50
+EOD</pre>
+
+<p>Again, note that a 2-fold crystallographic symmetry operator about the <strong>b</strong> axis (orthogonal <em>z</em>
+axis) has been applied to the Eulerian angles for molecules B and D (compare with the output
+from the Rotation function in section 4.2.6.), in order to ensure that the set of protomer
+orientations chosen obeys the non-crystallographic 222 symmetry of the tetramer.</p>
+
+<h4>5.4.2. SFALL</h4>
+
+<p>Calculate structure factor amplitudes and phases for each molecule in the asymmetric
+unit.</p>
+
+<pre>#
+# Structure factors for hexagonal pepsin models in TF cell.
+#
+sfall  XYZIN hexpep_mola  HKLOUT hexpep_mola  &lt;&lt;EOD
+MODE   SFCALC XYZIN
+SFSG   1
+SYMM   1
+RESO   20 3
+LABOUT PHIC=PC
+EOD
+
+sfall  XYZIN hexpep_molb  HKLOUT hexpep_molb  &lt;&lt;EOD
+MODE   SFCALC XYZIN
+SFSG   1
+SYMM   1
+RESO   20 3
+LABOUT PHIC=PC
+EOD
+
+sfall  XYZIN hexpep_molc  HKLOUT hexpep_molc  &lt;&lt;EOD
+MODE   SFCALC XYZIN
+SFSG   1
+SYMM   1
+RESO   20 3
+LABOUT PHIC=PC
+EOD
+
+sfall  XYZIN hexpep_mold  HKLOUT hexpep_mold  &lt;&lt;EOD
+MODE   SFCALC XYZIN
+SFSG   1
+SYMM   1
+RESO   20 3
+LABOUT PHIC=PC
+EOD</pre>
+
+<h4>5.4.3. CAD</h4>
+
+<p>Combine all the columns for the observed reflection data with those for the calculated
+molecules into a single file.</p>
+
+<pre>#
+cad    HKLIN1 mrenin  HKLIN2 hexpep_mola  HKLIN3 hexpep_molb  \
+       HKLIN4 hexpep_molc  HKLIN5 hexpep_mold  HKLOUT mrenin_cad  &lt;&lt;EOD
+RESO   OVER 20 3
+TITLE  COMBINING  mouse renin and rotated hexpep molecules A, B, C, D.
+LABIN  FILE 1  E1=FPmrenin E2=SPmrenin
+CTYPE  FILE 1  E1=F        E2=Q
+LABIN  FILE 2  E1=FC       E2=PC
+CTYPE  FILE 2  E1=U        E2=V
+LABOUT FILE 2  E1=FCA      E2=PCA
+LABIN  FILE 3  E1=FC       E2=PC
+CTYPE  FILE 3  E1=U        E2=V
+LABOUT FILE 3  E1=FCB      E2=PCB
+LABIN  FILE 4  E1=FC       E2=PC
+CTYPE  FILE 4  E1=U        E2=V
+LABOUT FILE 4  E1=FCC      E2=PCC
+LABIN  FILE 5  E1=FC       E2=PC
+CTYPE  FILE 5  E1=U        E2=V
+LABOUT FILE 5  E1=FCD      E2=PCD
+END
+EOD</pre>
+
+<h4>5.4.4. TFFC</h4>
+
+<p>Compute the Fourier coefficients for the Translation functions.</p>
+
+<pre>#
+tffc   HKLIN mrenin_cad  HKLOUT mrenin_mola  &lt;&lt;EOD
+TITLE  tffc on mouse renin
+RESO   20 3
+LABIN  FP=FPmrenin  SIGFP=SPmrenin
+NONCRY 4
+FIND   A
+EOD
+
+tffc   HKLIN mrenin_cad  HKLOUT mrenin_molb  &lt;&lt;EOD
+TITLE  tffc on mouse renin
+RESO   20 3
+LABIN  FP=FPmrenin  SIGFP=SPmrenin
+NONCRY 4
+FIND   B
+EOD
+
+tffc   HKLIN mrenin_cad  HKLOUT mrenin_molc  &lt;&lt;EOD
+TITLE  tffc on mouse renin
+RESO   20 3
+LABIN  FP=FPmrenin  SIGFP=SPmrenin
+NONCRY 4
+FIND   C
+EOD
+
+tffc   HKLIN mrenin_cad  HKLOUT mrenin_mold  &lt;&lt;EOD
+TITLE  tffc on mouse renin
+RESO   20 3
+LABIN  FP=FPmrenin  SIGFP=SPmrenin
+NONCRY 4
+FIND   D
+EOD</pre>
+
+<h4>5.4.5. FFT</h4>
+
+<p>Compute the Fourier transforms to get the Translation function maps.</p>
+
+<pre>#
+fft    HKLIN mrenin_mola  MAPOUT mrenin_mola  &lt;&lt;EOD
+TITLE  FFT of tffc map
+XYZLIM 0 .5  0 0  0 .5                    ! Limits for point group 2.
+GRID   160 240 180
+LABIN  A=A  B=B
+EOD
+
+fft    HKLIN mrenin_molb  MAPOUT mrenin_molb  &lt;&lt;EOD
+TITLE  FFT of tffc map
+XYZLIM 0 .5  0 0  0 .5
+GRID   160 240 180
+LABIN  A=A  B=B
+EOD
+
+fft    HKLIN mrenin_molc  MAPOUT mrenin_molc  &lt;&lt;EOD
+TITLE  FFT of tffc map
+XYZLIM 0 .5  0 0  0 .5
+GRID   160 240 180
+LABIN  A=A  B=B
+EOD
+
+fft    HKLIN mrenin_mold  MAPOUT mrenin_mold  &lt;&lt;EOD
+TITLE  FFT of tffc map
+XYZLIM 0 .5  0 0  0 .5
+GRID   160 240 180
+LABIN  A=A  B=B
+EOD</pre>
+
+<h4>5.4.6. MAPSIG</h4>
+
+<p>Search the Translation function map for peaks; one peak should stand out from the rest
+with relative signal/noise &gt; 1.</p>
+
+<pre>#
+mapsig MAPIN mrenin_mola  PEAK_LIST mrenin_mola.pkl  &lt;&lt;EOD
+EOD
+\rm mrenin_mola.mtz mrenin_mola.map</pre>
+
+<h5>Peak list.</h5>
+
+<table class="bath4">
+<tr>
+<th></th><th></th><th></th><th></th><th></th><th></th><th></th>
+<th><em>t</em><sub>x</sub></th>
+<th><em>t</em><sub>y</sub></th>
+<th><em>t</em><sub>z</sub></th>
+<th><em>S</em>/<a href="../chargifs/si.gif"><font face="symbol">s</font></a></th>
+</tr>
+<tr>
+<th>1</th>
+<th>27</th>
+<th>9</th>
+<th>15.0</th>
+<th>0.0</th>
+<th>31.0</th>
+<th>0.314</th>
+<th>0.094</th>
+<th>0.000</th>
+<th>0.172</th>
+<th>6.11</th>
+</tr>
+<tr>
+<td>2</td>
+<td>10</td>
+<td>6</td>
+<td>42.3</td>
+<td>0.0</td>
+<td>32.5</td>
+<td>0.210</td>
+<td>0.265</td>
+<td>0.000</td>
+<td>0.181</td>
+<td>4.09</td>
+</tr>
+<tr>
+<td>3</td>
+<td>41</td>
+<td>9</td>
+<td>1.4</td>
+<td>0.0</td>
+<td>8.8</td>
+<td>0.178</td>
+<td>0.009</td>
+<td>0.000</td>
+<td>0.049</td>
+<td>3.47</td>
+</tr>
+<tr>
+<td>4</td>
+<td>7</td>
+<td>7</td>
+<td>57.5</td>
+<td>0.0</td>
+<td>29.9</td>
+<td>0.189</td>
+<td>0.360</td>
+<td>0.000</td>
+<td>0.166</td>
+<td>3.67</td>
+</tr>
+</table>
+
+<pre>
+#
+mapsig MAPIN mrenin_molb  PEAK_LIST mrenin_molb.pkl  &lt;&lt;EOD
+EOD
+\rm mrenin_molb.mtz mrenin_molb.map</pre>
+
+<h5>Peak list.</h5>
+
+<table class="bath4">
+<tr>
+<th>1</th>
+<th>21</th>
+<th>9</th>
+<th>64.1</th>
+<th>0.0</th>
+<th>63.4</th>
+<th>0.346</th>
+<th>0.400</th>
+<th>0.000</th>
+<th>0.352</th>
+<th>7.04</th>
+</tr>
+<tr>
+<td>2</td>
+<td>6</td>
+<td>6</td>
+<td>50.7</td>
+<td>0.0</td>
+<td>69.3</td>
+<td>0.204</td>
+<td>0.317</td>
+<td>0.000</td>
+<td>0.385</td>
+<td>4.16</td>
+</tr>
+<tr>
+<td>3</td>
+<td>7</td>
+<td>7</td>
+<td>24.4</td>
+<td>0.0</td>
+<td>11.7</td>
+<td>0.181</td>
+<td>0.153</td>
+<td>0.000</td>
+<td>0.065</td>
+<td>3.68</td>
+</tr>
+<tr>
+<td>4</td>
+<td>11</td>
+<td>7</td>
+<td>36.5</td>
+<td>0.0</td>
+<td>61.8</td>
+<td>0.161</td>
+<td>0.228</td>
+<td>0.000</td>
+<td>0.343</td>
+<td>3.29</td>
+</tr>
+</table>
+
+<pre>
+#
+mapsig MAPIN mrenin_molc  PEAK_LIST mrenin_molc.pkl  &lt;&lt;EOD
+EOD
+\rm mrenin_molc.mtz mrenin_molc.map</pre>
+
+<h5>Peak list.</h5>
+
+<table class="bath4">
+<tr>
+<th>1</th>
+<th>30</th>
+<th>9</th>
+<th>1.9</th>
+<th>0.0</th>
+<th>48.6</th>
+<th>0.292</th>
+<th>0.012</th>
+<th>0.000</th>
+<th>0.270</th>
+<th>5.96</th>
+</tr>
+<tr>
+<td>2</td>
+<td>7</td>
+<td>7</td>
+<td>25.2</td>
+<td>0.0</td>
+<td>70.1</td>
+<td>0.169</td>
+<td>0.157</td>
+<td>0.000</td>
+<td>0.390</td>
+<td>3.45</td>
+</tr>
+<tr>
+<td>3</td>
+<td>10</td>
+<td>7</td>
+<td>78.5</td>
+<td>0.0</td>
+<td>7.5</td>
+<td>0.189</td>
+<td>0.491</td>
+<td>0.000</td>
+<td>0.042</td>
+<td>3.85</td>
+</tr>
+<tr>
+<td>4</td>
+<td>11</td>
+<td>8</td>
+<td>46.4</td>
+<td>0.0</td>
+<td>60.3</td>
+<td>0.167</td>
+<td>0.290</td>
+<td>0.000</td>
+<td>0.335</td>
+<td>3.39</td>
+</tr>
+</table>
+
+<pre>
+#
+mapsig MAPIN mrenin_mold  PEAK_LIST mrenin_mold.pkl  &lt;&lt;EOD
+EOD
+\rm mrenin_mold.mtz mrenin_mold.map</pre>
+
+<h5>Peak list.</h5>
+
+<table class="bath4">
+<tr>
+<th>1</th>
+<th>17</th>
+<th>8</th>
+<th>46.0</th>
+<th>0.0</th>
+<th>32.0</th>
+<th>0.305</th>
+<th>0.287</th>
+<th>0.000</th>
+<th>0.178</th>
+<th>6.03</th>
+</tr>
+<tr>
+<td>2</td>
+<td>11</td>
+<td>6</td>
+<td>76.2</td>
+<td>0.0</td>
+<td>73.5</td>
+<td>0.233</td>
+<td>0.476</td>
+<td>0.000</td>
+<td>0.408</td>
+<td>4.60</td>
+</tr>
+<tr>
+<td>3</td>
+<td>7</td>
+<td>7</td>
+<td>44.9</td>
+<td>0.0</td>
+<td>71.1</td>
+<td>0.197</td>
+<td>0.281</td>
+<td>0.000</td>
+<td>0.395</td>
+<td>3.90</td>
+</tr>
+<tr>
+<td>4</td>
+<td>27</td>
+<td>8</td>
+<td>73.2</td>
+<td>0.0</td>
+<td>32.5</td>
+<td>0.176</td>
+<td>0.458</td>
+<td>0.000</td>
+<td>0.181</td>
+<td>3.49</td>
+</tr>
+</table>
+
+<h4>5.4.7. TFFC, FFT, MAPSIG</h4>
+
+<p>In cases of non-crystallographic symmetry it is necessary to place all molecules relative
+to the same origin with non-crystallographic Translation functions.</p>
+
+<pre>#
+tffc   HKLIN mrenin_cad  HKLOUT mrenin_molca  &lt;&lt;EOD
+TITLE  tffc on mouse renin
+RESO   20 3
+LABIN  FP=FPmrenin  SIGFP=SPmrenin
+NONCRY 4
+PART
+VECT   C 0.012  0.000  0.270
+FIND   A
+EOD
+
+if ($status) exit
+
+fft    HKLIN mrenin_molca  MAPOUT mrenin_molca  &lt;&lt;EOD
+TITLE  FFT of tffc map
+XYZLIM 0 1  0 1  0 1                      ! Limits for NC-TF in P cell.
+GRID   160 240 180
+LABIN  A=A  B=B
+EOD
+
+if ($status) exit
+
+mapsig MAPIN mrenin_molca  PEAK_LIST mrenin_molca.pkl  &lt;&lt;EOD
+EOD
+\rm mrenin_molca.mtz mrenin_molca.map</pre>
+
+<h5>Peak list.</h5>
+<table class="bath4">
+
+<tr>
+<th></th><th></th><th></th><th></th><th></th><th></th><th></th>
+<th><em>t</em><sub>x</sub></th>
+<th><em>t</em><sub>y</sub></th>
+<th><em>t</em><sub>z</sub></th>
+<th><em>S</em>/<a href="../chargifs/si.gif"><font face="symbol">s</font></a></th>
+</tr>
+<tr>
+<th>1</th>
+<th>173</th>
+<th>27</th>
+<th>15.2</th>
+<th>109.0</th>
+<th>31.7</th>
+<th>1.026</th>
+<th>0.095</th>
+<th>0.454</th>
+<th>0.176</th>
+<th>9.07</th>
+</tr>
+<tr>
+<td>2</td>
+<td>41</td>
+<td>26</td>
+<td>27.0</td>
+<td>207.0</td>
+<td>133.0</td>
+<td>0.724</td>
+<td>0.169</td>
+<td>0.863</td>
+<td>0.739</td>
+<td>6.39</td>
+</tr>
+<tr>
+<td>3</td>
+<td>46</td>
+<td>26</td>
+<td>122.0</td>
+<td>222.0</td>
+<td>121.0</td>
+<td>0.683</td>
+<td>0.762</td>
+<td>0.925</td>
+<td>0.672</td>
+<td>6.03</td>
+</tr>
+<tr>
+<td>4</td>
+<td>33</td>
+<td>26</td>
+<td>68.0</td>
+<td>196.0</td>
+<td>156.0</td>
+<td>0.682</td>
+<td>0.425</td>
+<td>0.817</td>
+<td>0.867</td>
+<td>6.03</td>
+</tr>
+</table>
+
+<pre>
+#
+tffc   HKLIN mrenin_cad  HKLOUT mrenin_molcad  &lt;&lt;EOD
+TITLE  tffc on mouse renin
+RESO   20 3
+LABIN  FP=FPmrenin  SIGFP=SPmrenin
+NONCRY 4
+PART
+VECT   C 0.012  0.000  0.270
+VECT   A 0.095  0.454  0.176
+FIND   D
+EOD
+
+if ($status) exit
+
+fft    HKLIN mrenin_molcad  MAPOUT mrenin_molcad  &lt;&lt;EOD
+TITLE  FFT of tffc map
+XYZLIM 0 1  0 1  0 1
+GRID   160 240 180
+LABIN  A=A  B=B
+EOD
+
+if ($status) exit
+
+mapsig MAPIN mrenin_molcad  PEAK_LIST mrenin_molcad.pkl  &lt;&lt;EOD
+EOD
+\rm mrenin_molcad.mtz mrenin_molcad.map</pre>
+
+<h5>Peak list.</h5>
+
+<table class="bath4">
+<tr>
+<th>1</th>
+<th>188</th>
+<th>27</th>
+<th>46.1</th>
+<th>3.9</th>
+<th>32.4</th>
+<th>2.339</th>
+<th>0.288</th>
+<th>0.016</th>
+<th>0.180</th>
+<th>11.56</th>
+</tr>
+<tr>
+<td>2</td>
+<td>47</td>
+<td>26</td>
+<td>153.6</td>
+<td>123.0</td>
+<td>121.5</td>
+<td>1.697</td>
+<td>0.960</td>
+<td>0.513</td>
+<td>0.675</td>
+<td>8.39</td>
+</tr>
+<tr>
+<td>3</td>
+<td>151</td>
+<td>21</td>
+<td>152.8</td>
+<td>111.7</td>
+<td>123.3</td>
+<td>1.634</td>
+<td>0.955</td>
+<td>0.465</td>
+<td>0.685</td>
+<td>8.08</td>
+</tr>
+<tr>
+<td>4</td>
+<td>82</td>
+<td>27</td>
+<td>45.5</td>
+<td>230.2</td>
+<td>32.2</td>
+<td>1.507</td>
+<td>0.285</td>
+<td>0.959</td>
+<td>0.179</td>
+<td>7.45</td>
+</tr>
+</table>
+
+<pre>
+#
+tffc   HKLIN mrenin_cad  HKLOUT mrenin_molcadb  &lt;&lt;EOD
+TITLE  tffc on mouse renin
+RESO   20 3
+LABIN  FP=FPmrenin  SIGFP=SPmrenin
+NONCRY 4
+PART
+VECT   C 0.012  0.000  0.270
+VECT   A 0.095  0.454  0.176
+VECT   D 0.288  0.016  0.180
+EOD
+
+if ($status) exit
+
+fft    HKLIN mrenin_molcadb  MAPOUT mrenin_molcadb  &lt;&lt;EOD
+TITLE  FFT of tffc map
+XYZLIM 0 1  0 1  0 1
+GRID   160 240 180
+LABIN  A=A  B=B
+EOD
+
+if ($status) exit
+
+mapsig MAPIN mrenin_molcadb  PEAK_LIST mrenin_molcadb.pkl  &lt;&lt;EOD
+EOD
+\rm mrenin_molcadb.mtz mrenin_molcadb.map</pre>
+
+<h5>Peak list.</h5>
+
+<table class="bath4">
+<tr>
+<th></th><th></th><th></th><th></th><th></th><th></th><th></th>
+<th><em>t</em><sub>x</sub></th>
+<th><em>t</em><sub>y</sub></th>
+<th><em>t</em><sub>z</sub></th>
+<th><em>S</em>/<a href="../chargifs/si.gif"><font face="symbol">s</font></a></th>
+</tr>
+<tr>
+<th>1</th>
+<th>116</th>
+<th>27</th>
+<th>57.1</th>
+<th>114.7</th>
+<th>63.4</th>
+<th>2.479</th>
+<th>0.357</th>
+<th>0.478</th>
+<th>0.352</th>
+<th>8.77</th>
+</tr>
+<tr>
+<td>2</td>
+<td>23</td>
+<td>21</td>
+<td>19.0</td>
+<td>104.0</td>
+<td>111.0</td>
+<td>1.447</td>
+<td>0.119</td>
+<td>0.433</td>
+<td>0.617</td>
+<td>5.12</td>
+</tr>
+<tr>
+<td>3</td>
+<td>18</td>
+<td>18</td>
+<td>18.7</td>
+<td>111.2</td>
+<td>5.0</td>
+<td>1.425</td>
+<td>0.117</td>
+<td>0.463</td>
+<td>0.028</td>
+<td>5.04</td>
+</tr>
+<tr>
+<td>4</td>
+<td>16</td>
+<td>15</td>
+<td>142.3</td>
+<td>66.6</td>
+<td>169.4</td>
+<td>1.465</td>
+<td>0.889</td>
+<td>0.277</td>
+<td>0.941</td>
+<td>5.18</td>
+</tr>
+</table>
+
+<h5>Translation function of mouse renin (<em>E</em>'s).</h5>
+
+<table class="bath3" border="5">
+<tr>
+<th>Fix</th>
+<th>Find</th>
+<th><a href="../chargifs/deu.gif"><font face="symbol">D</font></a><em>S</em>/<A
+href="../chargifs/si.gif"><font face="symbol">s</font></a></th>
+</tr>
+<tr>
+<td>-</td>
+<td>A</td>
+<td>2.02</td>
+</tr>
+<tr>
+<td>-</td>
+<td>B</td>
+<td>0.49</td>
+</tr>
+<tr>
+<td>-</td>
+<td>C</td>
+<td>2.51</td>
+</tr>
+<tr>
+<td>-</td>
+<td>D</td>
+<td>1.43</td>
+</tr>
+<tr>
+<td>C</td>
+<td>A</td>
+<td>2.68</td>
+</tr>
+<tr>
+<td>CA</td>
+<td>D</td>
+<td>3.17</td>
+</tr>
+<tr>
+<td>CAD</td>
+<td>B</td>
+<td>3.65</td>
+</tr>
+</table>
+
+<p>Note that the fractional translation vectors obtained here are different from those obtained
+previously (<a href="mrbath4.html#section4.3.3">section 4.3.3.</a>) because the centroid of the
+model coordinates used had been shiftedto the origin.</p>
+
+<h4>5.4.8. PDBSET</h4>
+
+<p>Apply these translation vectors to the rotated model coordinates.</p>
+
+<pre>#
+pdbset XYZIN hexpep_mola  XYZOUT mrenin_mola &lt;&lt;EOD
+SPACEG P21
+CHAIN  A
+SHIFT  FRACT .095 -.546 .176
+EOD
+
+pdbset XYZIN hexpep_molb  XYZOUT mrenin_molb &lt;&lt;EOD
+SPACEG P21
+CHAIN  B
+SHIFT  FRACT .357 -.522 .352
+EOD
+
+pdbset XYZIN hexpep_molc  XYZOUT mrenin_molc &lt;&lt;EOD
+SPACEG P21
+CHAIN  C
+SHIFT  FRACT .012 1 .27
+EOD
+
+pdbset XYZIN hexpep_mold  XYZOUT mrenin_mold &lt;&lt;EOD
+SPACEG P21
+CHAIN  D
+SHIFT  FRACT .288 1.016 .18
+EOD</pre>
+
+<p>Note that unit cell shifts have been added to some of the fractional translation vectors in order
+to bring all 4 molecules together into a tetramer.</p>
+
+<table class="bathbuttons" width="100%">
+<tr>
+<td><a href="mrbath4.html"><img src="back.gif" /></a></td>
+<td align="center"><a href="mrbath98.html">BACK TO INDEX</a></td>
+<td align="right"><a href="mrbath6.html"><img src="forward.gif" /></a></td>
+</tr>
+</table>
+
+</body></html>

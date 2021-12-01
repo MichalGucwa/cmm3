@@ -1,0 +1,504 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+   <title>CCP4 Program Suite</title>
+   <meta name="generator" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+</head>
+<body>
+
+<!-- ::INDEX_INFO::COMBAT::Supported::Data Processing and Reduction::produces an MTZ file in multirecord form suitable for input to SCALA.:::::::: -->
+
+<h1>COMBAT (CCP4: Supported Program)</h1>
+<h2>NAME</h2>
+<p><b>combat</b>
+- produces an MTZ file in multirecord form suitable for input to SCALA.</p>
+
+<h2>SYNOPSIS</h2>
+
+<p><b>combat hklin</b> <i>foo.mtz</i> <b>hklout</b> <i>foo.mtz</i><br />
+[<a href="#keywords">Keyworded input</a>]</p>
+
+<h2><a name="description"></a>DESCRIPTION</h2>
+
+<p>COnvert to Multi BATch MTZ files. This program converts output from assorted data processing programs into a
+<a href="#files_output">multirecord MTZ file</a> suitable for input to the CCP4 scaling and merging
+programs (<a href="scale.html">SCALA</a> and <a href="truncate.html">TRUNCATE</a>).  Only <b>mosflm</b> writes such an MTZ file. The program is a replacement
+program for ROTAPREP which was replaced as it was very difficult to support.</p>
+
+<p>Input types accepted at present are: <a href="#datred_rigaku"><b>DATRED_RIGAKU</b></a>, <a href="#denzo"><b>DENZO</b></a>,
+<a href="#jims"><b>JIMS</b></a>, <a href="#mtzf"><b>MTZF</b></a>, <a href="#mtzi"><b>MTZI</b></a>, <a href="#muf"><b>MUF</b></a>, <a href="#mui"><b>MUI</b></a>, <a href="#raxisdump"><b>RAXISDUMP</b></a>, <a href="#saint"><b>SAINT</b></a>,
+<a href="#scal_nm2">various <b>SCALEPACK</b> options</a> , <a href="#texhkl"><b>TEXHKL</b></a>, <a href="#texsan"><b>TEXSAN</b></a>, <a href="#user"><b>USER</b></a>,
+<a href="#weiss"><b>WEISS</b></a>, <a href="#xdsascii"><b>XDSASCII</b></a>, 
+<a href="#xdsunique"><b>XDSUNIQUE</b></a>.</p>
+<p>Some of these are quite rare, but it seems sensible to keep them.
+It would be trivial to extend the program for any format.</p>
+
+<p>Warning: It is quite likely
+that the authors of processing programs will change their formats
+without telling CCP4. If you have any queries or knowledge of such changes please contact us.</p>
+
+<h4><a name="data_harvesting"></a>Datasets and Harvesting</h4>
+
+Datasets should be assigned project, crystal and dataset names, using
+the <a href="#name">NAME</a> keyword. These
+are written to the output MTZ file and are used in subsequent processing
+to categorise the data. The project and dataset names are also utilised
+for <a href="harvesting.html">Data Harvesting</a>. 
+
+<h2><a name="files"></a><a name="files_input"></a>INPUT FORMATS</h2>
+
+<p>The following arguments to the <a href="#input">INPUT</a> keyword are supported. The most commonly
+used arguments are those used to convert existing MTZ files, or options for DENZO/SCALEPACK
+outputs (keywords <a href="#scalepack"><b>SCALEPACK</b></a>, <a href="#scal_nm"><b>SCAL_NM</b></a>
+and <a href="#scal_nm2"><b>SCAL_NM2</b></a>). 
+These are described first. The items in the descriptions of the format have the following interpretations:</p>
+
+<DL>
+<DT>h k l</DT>
+
+<DD> Miller indices (possibly unique ones); </DD>
+
+<DT>F sigF</DT>
+
+<DD> Measured structure factor amplitude and its standard deviation; </DD>
+
+<DT>I sigI</DT>
+
+<DD> Measured intensity and its standard deviation; </DD>
+
+<DT>delI sigdelI</DT>
+
+<DD> Anomalous intensity difference and its standard deviation; </DD>
+
+<DT>ident / ibatch</DT>
+
+<DD> Batch number or equivalent; </DD>
+
+<DT>mpart / fpart</DT>
+
+<DD> Partiality flag (in some convention). </DD>
+</DL>
+
+<H3><A NAME="mtzi"></A>MTZI </H3>
+
+<P>Standard MTZ file containing h k l I sigI or h k l I+ sigI+ I- sigI-. It is possible to 
+read in
+a standard MTZ format file and produce a `multirecord'
+MTZ file. You should <strong>only</strong> use merged data as a
+<A HREF="scala.html#run_reference">reference `batch' for SCALA</A>.</P>
+
+<H3><A NAME="mtzf"></A>MTZF </H3>
+
+<P>Standard MTZ file containing either h k l F sigF or h k l F(+)
+sigF(+) F(-) sigF(-). It is possible to read such an MTZ format file
+and produce a `multirecord' MTZ file. You should <strong>only</strong>
+use merged data as a <A HREF="scala.html#run_reference">reference
+`batch' for SCALA</A>. This is probably most useful for producing test
+data from Fcalc</P>
+
+<H3><A NAME="scalepack"></A>SCALEPACK</H3>
+
+<p>Output from <B>SCALEPACK</B> [<TT>h k l  I SigI  or h k l I+ SigI+ I- SigI-</TT>]
+in format (3i4,4f8.0).</P>
+
+<P><EM>N.B.</EM>
+Run <A HREF="scalepack2mtz.html"><B>SCALEPACK2MTZ</B></A> to generate an MTZ file
+containing  h k l I sigI or h k l I+ sigI+ I- sigI- then input this as MTZI.</P>
+
+<H3><A NAME="scal_nm2"></A>SCAL_NM2</H3>
+
+<P>Output from <B>SCALEPACK</B> option <B>NOMERGE original indices</B> 
+[<TT>h k l h0 k0 l0 ibatch I SigI</TT>] in format (6I4,i6,7x,2f8.0). Scales have been 
+applied and partials summed. The Friedel pairs are separate in this
+case. </P>
+
+<H3><A NAME="scal_nm"></A>SCAL_NM</H3>
+
+<P>Output from <B>SCALEPACK</B> option <B>NOMERGE no partials</B> [<TT>h k l ibatch
+isym I SigI (Fpart)</TT>] in format (4i4,i3,2f8.0,f7.2). Scales have been applied
+and partials summed. The Friedel pairs are separate in this case. </P>
+
+<H3><A NAME="datred_rigaku"></A>DATRED_RIGAKU</H3>
+
+<P>[<TT>h k l F sigF</TT>] in format (3i4,4f8.1). </P>
+
+<H3><A NAME="jims"></A>JIMS</H3>
+
+<P><B>MADNES for050</B> files.<BR>
+[<TT>h k l I sigI</TT>] in format (3i5,2f10.2). </P>
+
+<H3><A NAME="mui"></A>MUI</H3>
+
+<P>For <I>intensities</I> output from the <B>XENTRONICS</B> and <B>XENGEN</B>
+data processing packages.<BR>[format (3i4, 1x, F6.4, 6(1x,f8.2), 1x, i2).]
+</P>
+
+<H3><A NAME="muf"></A>MUF</H3>
+
+<P>For <I>amplitudes</I> output from the <B>XENTRONICS</B> and <B>XENGEN</B>
+data processing packages.<BR> [format (3i4, 1x, F6.4, 6(1x,f8.2), 1x, i2).]
+</P>
+
+<H3><A NAME="raxisdump"></A>RAXISDUMP</H3>
+
+<P>Output from Raxis READBF of mergefile.<BR>[<TT>mpart h k l I sigI ibatch</TT>] in
+format (21x, I4, 4x, 3i4, 8x, 2f10.3, i4). </P>
+
+<DL>
+<DD>Note: if you use the `log' file produced under unix rather than the
+`output' file you may need to change the format to eat an extra space, <EM>i.e.</EM>
+start it with `22x'. Note also that you may find alternative processing
+packages to be better than the Raxis software. </DD>
+</DL>
+
+<H3><A NAME="denzo"></A>DENZO</H3>
+
+<p><em>This option may cause serious trouble further down the line. Do not use
+unless you know exactly what you are doing.</em></p>
+
+<P>Concatenated output files from <B>DENZO</B>. These contain HEADER blocks
+and reflection data. [<TT>h k l fsqp I sigI fpart phi</TT>] in format (3I4, 2X, 2F8.0,
+7X, F6.0, 6X, 2F7.0, 14X, 2F6.0) </P>
+
+<P> Care is needed when doing this, since no post-refinement has been done.
+We now prefer to run <B>SCALEPACK</B> to refine the cell and orientation,
+then <EM>either</EM> run DENZO again to re-integrate the images without re-refining
+the cell <EM>etc.</EM> (however there may still be problems with partiality flags), <EM>or</EM>
+output an unmerged file from scalepack (see keywords <A HREF="#scal_nm">SCAL_NM</A> and <A HREF="#scal_nm2">SCAL_NM2</A>).
+<DL>
+<DD><EM>N.B.</EM> If using the commercialised Denzo identified like: </DD>
+
+<PRE>  HKL data processing system Version 1.0 FT1.31 Rev1.4
+</PRE>
+
+<P>you need to use the Denzo command </P>
+
+<PRE>  film york output file &lt;filename&gt;
+</PRE>
+
+<P>to produce a suitable format for `combat'. The `york' output can also
+be read into `scalepack' with </P>
+
+<PRE>  format denzo_york1
+</PRE>
+</DL>
+
+<H3><A NAME="saint"></A>SAINT</H3>
+
+<P>Output from SAINT, one batch only (not fully tested).</P>
+
+<H3><A NAME="texsan"></A>TEXSAN</H3>
+
+<P>Output from <B>TEXSAN</B> data processing package for Rigaku diffractometer.<BR>
+[<TT>h k l ident I sigI</TT>] in format (3i4, i3, 5x, f8.1, f7.1). </P>
+
+<H3><A NAME="texhkl"></A>TEXHKL</H3>
+
+<P>Output from <B>TEXSAN</B> data processing package for Rigaku diffractometer.<BR>
+[<TT>h k l I sigI scale</TT>] in format (3x, 3i4, 2F10.2, 29x, F7.4). </P>
+
+<H3><A NAME="user"></A>USER</H3>
+
+<P>ASCII data file in a user-defined format, see <A HREF="#label">LABEL</A> and <A HREF="#format">FORMAT</A> keywords.
+</P>
+
+<H3><A NAME="weiss"></A>WEISS</H3>
+
+<P>Output from the <B>WEISS</B> data processing package for Japanese Weissenberg
+data. [<TT>h k l mpart I sigI ident</TT>] in format (5x, 4i4, 2f8.2, i10). </P>
+
+<H3><A NAME="xdsascii"></A>XDSASCII</H3>
+
+<P>Output from Kabsch's <B>XDS</B> data processing package in the standard 
+text file <B>XDS_ASCII.HKL</B> from the <B>CORRECT</B> stage.
+<P>
+In the XDS file, a negative sign is attached to SIGMA(IOBS) to indicate a MISFIT 
+(IOBS is incompatible with symmetry equivalent reflection intensities). These
+reflections are kept in the MTZ output on the assumption that SCALA will deal
+appropriately with them.
+<p>
+This option may work with output from <B>XSCALE</B> where the reflections
+have been scaled but not merged ( MERGE=FALSE ). However, the resulting MTZ
+file will likely be missing information that <a href="scala.html">SCALA</a>
+needs (depending on the scaling options chosen). You might get this to work by 
+simplifying the scaling model in SCALA, or by adding records to the header 
+of the XDS_ASCII.HKL file, such as OSCILLATION_RANGE.
+<p>
+This option will not work with merged output from <B>XSCALE</B> ( MERGE=TRUE ).
+The program <a href="f2mtz.html">F2MTZ</a> should be used.
+
+<H3><A NAME="xdsunique"></A>XDSUNIQUE</H3>
+
+<P>Output from older versions of Kabsch's <B>XDS</B> data processing package (or the MAR
+Research version) in the standard text file <B>UNIQUE.HKL</B> from the
+CORRECT stage. [The output of the <B>MARSCALE</B> program (and possibly
+the original <B>XSCALE</B>) can also be put in this form, although there
+is probably no reason to prefer these to <A HREF="scala.html"><B>scala</B></A>]. 
+This file contains
+symmetry averaged reflection intensities and anomalous differences after
+scaling.<BR> [<TT>h k l I sigI delI sigdelI</TT>] in format (3I5, 4E12.4) </P>
+
+<P>Since UNIQUE output is scaled and merged, it is sensible to use 
+<A HREF="f2mtz.html">f2mtz</A> to produce an MTZ file for direct input to 
+<A HREF="truncate.html">truncate</A>.
+
+<H2><A NAME="files_output"></A>DESCRIPTION OF THE OUTPUT MTZ FILE</H2>
+
+<P>The output file has the column labels: </P>
+
+<DL>
+<DT>H K L</DT>
+
+<DD> Miller indices. </DD>
+
+<DT>M/ISYM</DT>
+
+<DD> 256*M + ISYM, where the partiality flag M=0 for fully recorded reflexions
+and M=1 for partials, and ISYM is the symmetry number defined as follows. 
+For I+ of a Friedel pair, ISYM = 2*isymop - 1; for I- of a Friedel pair, 
+ISYM = 2*isymop, where "isymop" is the number of the symmetry operator used
+to place the reflection in the asymmetric unit.</DD>
+
+<DT>BATCH</DT>
+
+<DD> Batch (serial) number for this film/image. </DD>
+
+<DT>I, sigI</DT>
+
+<DD> Corrected integrated intensity and its standard deviation. </DD>
+
+<DT>IPR, sigIPR</DT>
+
+<DD> is meant to be corrected profile-fitted intensity and SD. Here IPR
+and sigIPR are set equal to I and sigI if there is no appropriate information
+input. </DD>
+
+<DT>FRACTIONCALC</DT>
+
+<DD> This is the calculated partial fraction of a spot (&gt;0.5 if partial 
+more than half present). For most inputs FRACTIONCALC is a dummy set to 3.0
+or 0.5 for a partial. </DD>
+
+<DT>XDET, YDET, ROT</DT>
+
+<DD> Detector position and PHI angle. This information is available for
+<a href="#xdsascii"><b>XDSASCII</b></a>, 
+<A HREF="#denzo">DENZO</A> &amp; <A HREF="#saint">SAINT</A> only. </DD>
+</DL>
+
+<H2><A NAME="keywords"></A>KEYWORDED INPUT</H2>
+
+<P>Available keywords are:
+<blockquote>
+<A HREF="#addbatch"><B>ADDBATCH</B></A>, <A HREF="#batch"><B>BATCH</B></A>,
+<A HREF="#cell"><B>CELL</B></A>, <A HREF="#detector"><B>DETECTOR</B></A>,
+<A HREF="#wavelength"><B>WAVELENGTH</B></A>,<A HREF="#end"><B>END</B></A>,
+<A HREF="#format"><B>FORMAT</B></A>, <A HREF="#input"><B>INPUT</B></A>,
+<A HREF="#label"><B>LABEL</B></A>, <A HREF="#labin"><B>LABIN</B></A>,
+<A HREF="#monitor"><B>MONITOR</B></A>, <A HREF="#name"><B>NAME</B></A>,
+<A HREF="#phirange"><B>PHIRANGE</B></A>,
+<A HREF="#reindex"><B>REINDEX</B></A>, <A HREF="#reject"><B>REJECT</B></A>,
+<A HREF="#resolution"><B>RESOLUTION</B></A>, <A HREF="#scale"><B>SCALE</B></A>,
+<A HREF="#symmetry"><B>SYMMETRY</B></A>, <A HREF="#title"><B>TITLE</B></A>
+</blockquote>
+
+<H2>Compulsory input keywords for some options:</H2>
+
+<H3><A NAME="input"></A>INPUT &lt;type&gt;</H3>
+
+The allowed &lt;type&gt;s are those listed <A HREF="#files_input">above</A>.
+
+<H3><A NAME="batch"></A>BATCH &lt;batch number&gt;</H3>
+
+This specifies the `batch' number for data in the multirecord MTZ
+output. (BATCH is not required for DENZO, SCAL_NM, SCAL_NM2, SAINT or USER input
+if a batch column is present in the input file. It is not required for
+WEISS or TEXSAN inputs but if given it will override the IDENT value.)
+
+<H3><A NAME="cell"></A>CELL &lt;a&gt; &lt;b&gt; &lt;c&gt; [ &lt;alpha&gt;
+&lt;beta&gt; &lt;gamma&gt; ]</H3>
+Cell dimensions in Angstroems and angles in degrees; the angles default
+to 90 degrees. This keyword is not compulsory for <A HREF="#mtzf">MTZF</A>, 
+<A HREF="#mtzi">MTZI</A>, <A HREF="#scal_nm">SCAL_NM</A> or
+<A HREF="#denzo">DENZO</A> input, but if given it will override the
+cell dimensions from the file headers. This keyword is compulsory for
+other input types.
+
+<H3><A NAME="labin"></A>LABIN &lt;program label&gt; = &lt;file label&gt;
+...</H3>
+Only compulsory for <A HREF="#mtzf">MTZF</A> or <A HREF="#mtzi">MTZI</A> input.<br>
+Column assignments for conventional labels F and SIGF are required
+for MTZF input, or for I and SIGI for MTZI input.
+
+<H3><A NAME="label"></A>LABEL &lt;file label 1&gt; &lt;file label 2&gt;
+...</H3>
+
+Column assignments for user-defined input format (INPUT USER). &lt;file
+label n&gt; must be chosen from H, K, L, M, BATCH, I, SIGI (or F, SIGF, or
+F(+) SIGF(+) F(-) SIGF(-)), IPR, SIGIPR, FRACTION and given in the order in
+which they occur in the input file. The indices H, K, L are compulsory. M is
+optional and defaults to 0, <EM>i.e.</EM> fully recorded reflexions.
+The batch number should either be read in from a BATCH column or taken from
+the BATCH keyword (the former takes precedence if both are present). Either I,
+SIGI or F, SIGF must be given; if the latter, then F is squared and I/SIGI output.
+The remaining columns IPR, SIGIPR, FRACTION are optional.
+
+<H3><A NAME="symmetry"></A>SYMMETRY &lt;SG number&gt; | &lt;SG symbol&gt;</H3>
+
+Specifies the spacegroup for the data. Compulsory if not 
+<A HREF="#mtzf">MTZF</A> or <A HREF="#mtzi">MTZI</A> input.
+
+<H2>Optional input keywords:</H2>
+
+<P>For input types which contain batch number information the
+following two keywords determine the transformation of the input
+numbers. Note that the "MISBATCH" command is no longer needed to list
+missing batches and has been removed. </P>
+
+<H3><A NAME="addbatch"></A>ADDBATCH &lt;offset&gt;</H3>
+
+&lt;offset&gt; is added to all input batch numbers (default 0).
+
+<H3><A NAME="phirange"></A>PHIRANGE &lt;divisions&gt;</H3>
+
+(DENZO only, default 1.) Each batch is split into a number &lt;divisions&gt;
+of divisions for scaling.
+
+The output batch number will be:<br>
+
+&lt;divisions&gt;*(batch - 1) + phi_step_counter + &lt;offset&gt;
+
+<H3><A NAME="format"></A>FORMAT &lt;format string&gt;</H3>
+
+Supply a format specifier for user-defined input (see <A HREF="#user">INPUT USER</A>).
+The argument must be a valid FORTRAN fixed format string, such as might
+be given in a FORMAT statement, including the brackets and quoted. <EM>E.g.</EM>:
+
+<PRE>   FORMAT '(6(6X,F8.3))'
+</PRE>
+
+will read records comprising six numbers each preceded by a six-character-wide
+field which will be skipped. It is not possible to read more than one reflexion
+from each input line.</p>
+
+<p>The format should be reading <I>real</I> numbers
+(F), and not integers (I), so if your input file contains integers, then
+they should be read as reals with <EM>e.g.</EM> F6.0 rather than I6. If the
+supplied FORMAT statement contains I descriptors then COMBAT will
+automatically convert them to the correct F format for you.</p>
+
+<p>Make use of the X descriptor to skip unwanted
+columns. Under Unix, the cut (1) command may be useful for reformatting
+the input columns if, for instance, the relevant fields aren't in fixed
+positions. If the FORMAT keyword is not given for user-defined input, then
+the default format specifier '*' is used.
+
+<H3> <A NAME="name"></A>NAME PROJECT &lt;pname&gt; CRYSTAL &lt;xname&gt; DATASET &lt;dname&gt;</H3>
+[Note that the keywords PNAME &lt;pname&gt;, XNAME &lt;xname&gt; and DNAME &lt;dname&gt;
+are also available, but the NAME keyword is preferred.]
+<p>
+Specify the project, crystal and dataset names for the output MTZ file.
+For input options <A HREF="#mtzf">MTZF</A> and <A HREF="#mtzi">MTZI</A>, this
+information will be inherited from the input file, but can be overridden
+with this keyword. For all other input types, it is strongly recommended
+that this information is given. Otherwise, the default project, crystal and 
+dataset names are "unknown", "unknown" and "unknownddmmyy" respectively.
+<p>
+The project-name specifies a particular structure solution project, the
+crystal name specifies a physical crystal contributing to that project, 
+and the dataset-name specifies a particular dataset obtained from that
+crystal. All three should be given.
+
+<H3><A NAME="wavelength"></A>WAVELENGTH &lt;wavelength&gt; </H3>
+Assign wavelength to dataset.
+
+<H3><A NAME="monitor"></A>MONITOR &lt;nmon&gt;</H3>
+
+Every &lt;nmon&gt;-th reflection is monitored (printed out). Default:
+no monitoring.
+
+<H3><A NAME="reject"></A>REJECT &lt;hrej&gt; &lt;krej&gt; &lt;lrej&gt;</H3>
+
+The arguments specify indices of reflections to be excluded from the output
+file (these indices should lie in the spacegroup's chosen asymmetric unit).
+All reflections equivalent to this set of indices will be rejected. This
+is a desperate measure to weed out bad reflections (usually overloads)
+without repeating the data processing. This line can be repeated up to
+200 times.
+
+<H3><A NAME="reindex"></A>REINDEX &lt;transformation&gt;</H3>
+
+&lt;transformation&gt; specifies how to transform the original indices
+for the output. It is specified in the form k,h,-l; h,-k,-h/2-1/2; etc.
+The default is no transformation.
+
+<H3><A NAME="resolution"></A>RESOLUTION &lt;resmin&gt; [ &lt;resmax&gt;
+]</H3>
+
+Rejects reflections outside the given resolution range in &Aring;s or 4s**2/lambda**2.
+
+<H3><A NAME="scale"></A>SCALE &lt;scale&gt;</H3>
+
+The input intensities are multiplied by &lt;scale&gt; (default 1.0).
+
+<H3><A NAME="title"></A>TITLE &lt;title&gt;</H3>
+
+&lt;title&gt; is written to the output file.
+
+<H3><A NAME="detector"></A>DETECTOR &lt;xmin&gt; &lt;xmax&gt; &lt;ymin&gt;
+&lt;ymax&gt;</H3>
+
+limits of detector coordinates XDET, YDET. These are needed for the
+detector scaling options in <A HREF="scala.html">Scala</A>.
+
+<H3><A NAME="end"></A>END</H3>
+
+to finish.
+</DL>
+
+<H2>SEE ALSO</H2>
+
+<P><A HREF="scala.html">scala</A>, <A HREF="f2mtz.html">f2mtz</A>, <A HREF="harvesting.html">Data Harvesting</A>, <A HREF="cad.html">CAD</A></P>
+
+<P>
+<A HREF="http://www.mpimf-heidelberg.mpg.de/~kabsch/xds/">XDS web site</a>
+</P>
+
+<H2>EXAMPLES</H2>
+
+<PRE>combat HKLIN raxis.dump HKLOUT junk.mtz &lt;&lt; +
+CELL 63 63 264 90 90 90
+MONITOR 1000 
+BATCH 1                # first batch number
+INPUT RAXISDUMP
+RESOLUTION 0 0.137
+SYMMETRY 89
+TITLE   Test combat
+NAME PROJECT myproject CRYSTAL mycrystal DATASET native
+END 
++
+</PRE>
+
+<PRE>combat                       \
+HKLIN ESRF/pcrb/pcrb5_e1.sca \
+HKLOUT $SCRATCH/pcrb5_e1.mtz    \
+<< 'END-mtzrwrot' 
+MONI 10000 
+INPUT SCAL_NM2
+ADDBATCH 0
+CELL 92.004  92.004 175.229  90.000  90.000  90.000
+SYMM P41212
+TITLE Test on Scalepack - NoMerge- Original Indices L1
+NAME PROJECT myproject CRYSTAL mycrystal DATASET native
+END 
+'END-mtzrwrot'
+#</PRE>
+
+<H2>AUTHOR</H2>
+
+<P>Alun Ashton, CCP4 Daresbury Laboratory. </P>
+
+<P>Original program was ROTAPREP by Eleanor Dodson, University of York</p>
+
+</BODY>
+</HTML>

@@ -1,0 +1,45 @@
+#!/usr/bin/env tclsh
+# creates output PDB (second argument) only composed of specified atom types (third...sixth argument) from input PDB (first argument)
+
+set input_pdb   [lindex $argv 0]
+set output_pdb  [lindex $argv 1]
+set input_atom  [lindex $argv 2]
+set input_atom2 [lindex $argv 3]
+set input_atom3 [lindex $argv 4]
+set input_atom4 [lindex $argv 5]
+set input_atom5 [lindex $argv 6]
+
+set input [open $input_pdb r]
+set indata [split [read $input] "\n"]
+set output [open $output_pdb w]
+
+foreach line  $indata {
+    if { [regexp {CRYST1.*} $line junk] || [regexp {SCALE.*} $line junk] } {
+      puts $output $line      
+    }
+    if { [regexp {HETATM.*} $line junk] || [regexp {ATOM.*} $line junk] } {
+      scan $line "%6s%5d%*c%4s%*c%4s%*c%*c%*c%*c%*c%*c%*c%*c%*c%*c%*c%8f%8f%8f%6f%6f" label number atom residue x y z occ b 
+      # we need to think of problematic special cases till Refmac is fully accepting all atom=residue cases...
+      if { [string compare $atom $residue]==0 || [string compare $residue "SO4"]==0 || [string compare $residue "IOD"]==0 } {
+        if { [string compare $atom $input_atom]==0 } {
+          puts $output $line
+        }
+        if { [string compare $atom $input_atom2]==0 } {
+	      puts $output $line
+        }
+        if { [string compare $atom $input_atom3]==0 } {
+	      puts $output $line
+        }
+        if { [string compare $atom $input_atom4]==0 } {
+	      puts $output $line
+        }
+        if { [string compare $atom $input_atom5]==0 } {
+	      puts $output $line
+        }
+      }
+    }
+}
+
+close $input
+close $output
+

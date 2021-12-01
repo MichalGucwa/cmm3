@@ -1,0 +1,201 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4 Program Suite : refmac</title>
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX64 6.2 IP19) [Netscape]" />
+</head>
+<body>
+
+<!-- ::INDEX_INFO::REFMAC::Supported::Model Refinement::macromolecular refinement program:::::::: -->
+
+<h1>REFMAC (CCP4: Supported Program)</h1>
+<h2>User's manual for the program refmac_5.*</h2>
+
+<h2><a name="tls_meaning"></a>What does TLS refinement mean?</h2>
+
+<p>The theory behind the TLS parameterisation has been presented in
+detail by Schomaker and Trueblood (Schomaker and Trueblood, 1968) [<a href="#reference3">3</a>],
+with useful summaries in Howlin <EM>et al</EM>. (1989) [<a href="#reference2">2</a>] and Schomaker and
+Trueblood (1998) [<a href="#reference4">4</a>].</p>
+
+<p>TLS parameters describe the possible mean square displacements of
+rigid bodies. In this context, the rigid bodies are groups of atoms
+in your protein model. How many groups and the make-up of each group
+must be chosen by the user. TLS parameters describe anisotropic
+motion - an anisotropic U factor can be derived for each atom in
+a TLS group. But these U factors are correlated by virtue of belonging
+to the same rigid body, and only 20 refinement parameters are required
+for each TLS group. Thus, refinement of TLS parameters is a method
+of including anisotropic displacements without requiring the large
+number of parameters of full anisotropic refinement.</p>
+
+<p>TLS refinement can therefore be used at moderate resolution, <em>e.g.</em> 2.0&#197;.
+The number of extra parameters depends on the number of TLS groups
+defined. A single TLS group for the whole molecule may prove useful,
+and only requires 20 extra parameters. Or you may define a
+TLS group for every rigid side chain, using a few thousand extra parameters.
+TLS refinement may or may not turn out to be useful, but it is unlikely
+to do any harm. Individual B factors are refined in addition to the
+TLS parameters.</p>
+
+<p>TLS refinement is often useful when there is NCS. It is often the
+case that different copies of a molecule in the asymmetric unit have
+different overall displacements. These can be accounted for by refining
+TLS parameters for each molecule. The residual atomic displacement
+parameters (B factors) should then be similar between molecules, and
+NCS restraints can be applied between them.</p>
+
+<h2><a name="tls_refinement_in_refmac"></a>TLS refinement in REFMAC</h2>
+
+<p>REFMAC needs the following information to do TLS refinement:</p>
+
+<dl>
+<dt><tt>REFI TLSC 20</tt>
+<dd>The TLSC subkeyword initiates cycles of TLS refinement, in this
+example 20 cycles. These cycles are performed after initial estimation
+of scaling parameters and before refining coordinates and B factors.</dd>
+
+<dt><tt>TLSIN</tt>
+<dd>The <tt>TLSIN</tt> file specifies the rigid groups to be used.
+The full specification of this file is given in the 
+<a href="../files/tls.html">Files</a> section. Generally, you only need
+to give the TLS record (which starts a group definition) and the 
+RANGE record which specifies which atoms are included in the group.</dd>
+
+<dt><tt>BFAC SET 40</tt>
+<dd>We have found that TLS refinement works best if individual B factors 
+are first set to a constant value. This is done with the BFAC keyword.
+B factors are then refined after the TLS parameters have been determined.</dd>
+</dl>
+
+<p><em>N.B.</em> There have been some cases where TLS refinement has been
+tried in the early stages of refinement, and has not been very
+stable. If this happens, then leave it out, and try again later
+on when the model is more complete.</p>
+
+<h2><a name="output"></a>Output from REFMAC</h2>
+
+<p>Refinement statistics are as in a traditional refinement run. In addition,
+you get:</p>
+
+<ul>
+<li>Refined TLS parameters written to the TLSOUT file. This file can
+be analysed with the auxiliary program TLSANL, see <a href="#tlsanl">below</a>.</p>
+
+<li>B factors in the XYZOUT file. These are &quot;residual&quot; B factors that
+are refined after determining the TLS parameters, and do not contain
+any contribution from the TLS parameters.</li>
+</ul>
+
+<p><em>N.B.</em> When attempting to interpret the TLS tensors physically, it
+is important to bear in mind the following:</p>
+
+<ul>
+<li>TLS parameters are refined assuming the physical model of a rigid
+body, <em>i.e.</em> that all atoms in the TLS groups have amplitudes (in 3 dimensions)
+appropriate to a rigid body and <em>that all atoms move in phase</em>.
+However, if for example one constructed a model in which all atoms in
+the TLS group had rigid body amplitudes but with one half moving in
+anti-phase with the other half, one would get the same derived U values
+and hence the same fit to the observed structure factors. The same is true
+of more complicated phase relationships between the atomic displacements.
+Thus the refinement statistics would be just as good, but the physical
+interpretation may be quite different.</li>
+
+<li>TLS parameters, like any other form of displacement parameter, will
+mop up errors as well as a variety of different displacement types. This
+is particularly true when TLS is the only modelling of anisotropy that
+is being used - the TLS parameters will attempt to fit anisotropic
+internal modes and anisotropic errors.</li>
+</ul>
+
+<h2><a name="tlsanl"></a>Analysing the results with TLSANL</h2>
+
+<p>The TLS file and PDB file output from REFMAC can be inputted to
+the auxiliary program <a href="../../tlsanl.html">TLSANL</a> for analysis, via:</p>
+
+<pre>
+
+tlsanl tlsin in.tls xyzin in.pdb xyzout out.pdb &lt;&lt;EOF
+bresid
+end
+EOF
+
+</pre>
+
+<p>The keyword &quot;bresid&quot; is essential when running TLSANL on the
+output of REFMAC (it signifies the fact that the B factors in xyzin
+do not contain any contribution from the TLS parameters in tlsin).</p>
+
+<p>For each group, this gives several representations of the T, L and S
+tensors. It also outputs individual anisotropic U factors derived
+from the TLS tensors to the file XYZOUT. Full details are can be
+found in Howlin <em>et al.</em> 1993 [<a href="#reference5">5</a>], but here
+are the important bits to look for:</p>
+
+<dl>
+<dt>1. INPUT TENSOR MATRICES WRT ORTHOGONAL AXES USING ORIGIN OF CALCULATIONS
+<dd>This should echo the contents of the tls file, with the values
+now displayed as matrices.</dd>
+
+<dt>2. FOR TLS TENSOR USING CENTRE OF REACTION:
+<dd>(About halfway down.) T and L are real symmetric tensors, and so
+can be diagonalised to give principal axes. S is also symmetric for
+one particular choice of origin (the Centre of Reaction), and can then
+also be diagonalised. This section gives the orientation of the principal
+axes of T, L and S in various coordinate frames, and also the magnitudes
+along these axes. So for example, if the input TLS tensors are:
+<pre>
+
+ INPUT TENSOR MATRICES WRT ORTHOGONAL AXES USING ORIGIN OF CALCULATIONS
+          T TENSOR                  L TENSOR                  S TENSOR
+          (A^2)                     (DEG^2)                   (A DEG)
+    0.026  -0.013   0.007     0.973   0.215  -0.130     0.009   0.034  -0.045
+   -0.013   0.056  -0.016     0.215   5.150   0.082    -0.055   0.010  -0.229
+    0.007  -0.016   0.005    -0.130   0.082   0.849     0.049   0.016  -0.019
+
+</pre>
+The principal axes of the L tensor are then:
+<pre>
+
+ AXES OF LIBRATION WRT TO          MEAN-SQUARE         ANGLE LIBRATION AXES MAKE TO
+ ORTHOGONAL AXES (IN ROWS)         DISPLACEMENT        ORTHOGONAL AXES (DEG)
+                                   ABOUT AXES (DEG^2)      X       Y       Z
+    0.834  -0.033  -0.550             1.050               33.47   91.88  123.40
+    0.051   0.999   0.017             5.162               87.09    3.07   89.01
+    0.549  -0.042   0.835             0.759               56.69   92.43   33.42
+
+</pre>
+In this example, there is a dominant libration along the b axis, and
+we see that the second principal axis is aligned almost exactly along b.
+The middle column gives the eigenvalues of L, and these can be quoted
+rather than the entire tensor.</dd>
+</dl>
+
+<h2><a name="pretty_pictures"></a>How do I make pretty pictures?</h2>
+
+<p>Latest version of TLSANL has keyword AXES for outputting
+the various axes in a format suitable for molscript.</p>
+
+<h2><a name="references"></a>References</h2>
+
+<dl compact>
+<dt><a name="reference1">[1]</a>
+<dd>Winn, M.D., Isupov, M.N. and Murshudov G.N. (2001) <em>Acta Cryst.</em>,
+<b>D57</b>, 122 - 133.</dd>
+<dt><a name="reference2">[2]</a>
+<dd>Howlin, B., Moss, D.S. and Harris, G.W. (1989) <em>Acta Cryst.</em>,
+<b>A45</b>, 851 - 861.</dd>
+<dt><a name="reference3">[3]</a>
+<dd>Schomaker, V. and Trueblood, K.N. (1968) <em>Acta Cryst.</em>,
+<b>B24</b>, 63 - 76.</dd>
+<dt><a name="reference4">[4]</a>
+<dd>Schomaker, V. and Trueblood, K.N. (1998) <em>Acta Cryst.</em>,
+<b>B54</b>, 507 - 514.</dd>
+<dt><a name="reference5">[5]</a>
+<dd>B.Howlin, S.A.Butler, D.S.Moss, G.W.Harris and H.P.C.Driessen (1993)
+<em>J. Appl. Cryst.</em>, <b>26</b>, 622</dd>
+</dl>
+
+</body>
+</html>

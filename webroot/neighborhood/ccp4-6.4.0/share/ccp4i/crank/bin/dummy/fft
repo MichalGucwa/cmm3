@@ -1,0 +1,16 @@
+#!/usr/bin/env python
+# wrapper to run fft for APR/wARP 7.x
+# strerr is not caught by arpwarp so we print errors into stdout
+import sys,os,subprocess
+if os.environ.has_key('CCP4'):
+  # make sure to prevent indefinite recursion
+  cbin=os.path.join(os.getenv('CCP4'),'bin')
+  if cbin==os.path.dirname(os.path.abspath(__file__)):
+    print 'Error from crank_fft_wrapper: $CCP4/bin is pointing to dummy directory.'
+    sys.exit(1)
+  args = [os.path.join(cbin,'fft'),]
+  args.extend(sys.argv[1:])
+  subprocess.call(args)
+else:
+  print 'Error from crank_fft_wrapper: CCP4 enviroment variable not found.'
+  sys.exit(1)

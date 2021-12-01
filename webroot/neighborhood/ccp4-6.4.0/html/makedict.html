@@ -1,0 +1,207 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::MAKEDICT::Supported::Coordinate file manipulations::converts PDB file to TNT or PROTIN dictionaries and PROTIN to PDB:::::::: -->
+
+<H1> MAKEDICT (CCP4: Supported Program) </H1>
+<H2> NAME</H2>
+<b>makedict </b>
+- converts PDB file to TNT or PROTIN dictionaries and PROTIN to PDB.
+<H2> SYNOPSIS</H2>
+<b>makedict</b>
+<b>XYZIN</b>
+[
+<i>foo.pdb | foo.dict</i>
+]
+[
+<b>DICT </b>
+<i>foo.dict</i>
+|
+<b>XYZOUT</b>
+<i>foo.pdb</i>
+]
+<br>
+        [<A HREF="#keywords">Keyworded input</A>]
+<H2> <A NAME="description"></A>DESCRIPTION</H2>
+
+<b>Note:</b> PROTIN is now obsolete - use the 
+<a href="refmac5.html">new REFMAC</a>.
+<p>
+Reads a set of coordinates for the group, in PDB or PROTIN format,
+and writes out dictionary entry in format for either TNT or PROTIN.
+The program can also convert a PROTIN coordinate entry to PDB format.
+Multiple copies of the group may be present (with different residue
+numbers), in which case bond lengths &amp; angles will be averaged (only
+useful for TNT output).
+
+<H2> <A NAME="keywords"></A>KEYWORDED INPUT</H2>
+
+<P>The available keywords are:
+<blockquote>
+<A HREF="#centre"><B>CENTRE</B></A>, <A HREF="#chiral"><B>CHIRAL</B></A>,
+<A HREF="#input"><B>INPUT</B></A>, <A HREF="#nonbond"><B>NONBOND</B></A>,
+<A HREF="#output"><B>OUTPUT</B></A>, <A HREF="#plane"><B>PLANE</B></A>,
+<A HREF="#radii"><B>RADII</B></A>, <A HREF="#residue"><B>RESIDUE</B></A>,
+<A HREF="#sd"><B>SD</B></A>
+</blockquote>
+
+<H3> <A NAME="input"></A>INPUT [PROTIN | PDB]</H3>
+Input format, Protin or PDB
+
+<H3> <A NAME="output"></A>OUTPUT [TNT | PROTIN &lt;numres&gt; &lt;rscode&gt; | PDB]</H3>
+<dl>
+<dt>    TNT     
+<dd>Write output dictionary for TNT
+<p><dt>    PROTIN  
+<dd>Write output dictionary for Protin
+   <dl compact>
+   <dt>&lt;numres&gt;  
+   <dd>Residue number for PROTIN, as it appears in Card 1a of the
+protin dictionary. The default value is 1, but this should normally
+be changed.
+   <dt>&lt;rscode&gt;  <dd>  1-character residue name for PROTIN, as 
+it appears in Card 1a of the protin dictionary. The 3-character residue 
+name is taken from the RESIDUE keyword.
+   </dl>
+<p><dt>    PDB     
+<dd>Output file in PDB format <br>
+(<EM>e.g.</EM> for converting from Protin dictionary form)
+</dl>
+
+<H3> <A NAME="radii"></A>RADII &lt;element_name&gt; &lt;radius&gt;</H3>
+Set bonding radius for elements (C,N,O,S & P are present by default).
+<H3> <A NAME="residue"></A>RESIDUE &lt;residue_name&gt;</H3>
+New residue type name, to override input.
+<H3> <A NAME="plane"></A>PLANE &lt;atom list&gt;</H3>
+Define list of atoms in plane.
+<H3> <A NAME="chiral"></A>CHIRAL &lt;central atom&gt; &lt;atom2&gt; &lt;atom3&gt; &lt;atom4&gt;</H3>
+List of atoms in chiral group.
+<P> 
+Note the TNT convention for chiral groups:
+1st atom is central atom
+Look from central atom towards the lowest-priority atom
+(nearly always H), then list the other atoms (which are towards you)
+in a clockwise order.
+<H3> <A NAME="centre"></A>CENTRE &lt;atom name&gt;</H3>
+Atom to consider as centre [default 1st atom]
+<H3> <A NAME="sd"></A>SD &lt;sd_bond&gt; &lt;sd_angle&gt; &lt;sd_plane&gt; &lt;sd_bfactor&gt;</H3>
+For TNT output only.
+Read sd parameters for TNT dictionary.
+<H3> <A NAME="nonbond"></A>NONBOND [&lt;type&gt;] &lt;atom pair 1&gt; &lt;atom pair 2&gt; ...</H3>
+For Protin output only.
+<P> 
+List of atomname pairs to be put in the non-bonded contact list.
+Type is either 1 for single-torsion contacts or 2 [default] for
+multiple-torsion contacts.
+<H2><A NAME="files"></A> INPUT AND OUTPUT</H2>
+<dl>
+<dt> XYZIN<dd>
+Input PDB file; with INPUT PDB.
+<dt> XYZOUT<dd>
+Output PDB file; with INPUT PROTIN and OUTPUT PDB.
+<dt> DICT<dd>
+Output dictionary file; with OUTPUT PROTIN or OUTPUT TNT.
+</dl>
+
+<H2>HINTS FOR MAKING PROTIN DICTIONARY ENTRIES</H2>
+MAKEDICT should be used for making dictionary entries for
+<a href="protin.html">PROTIN</a>.
+<p>
+You need a set of coordinates for an "ideal" substrate in PDB
+format (XYZIN) (the coordinates can be anywhere in space as long as they
+are correctly bonded, i.e. their relative positions must be correct).
+You also need knowledge of planar and chiral groups (if any), and must
+supply this information via the <a href="#plane">PLANE</a> and
+<a href="#chiral">CHIRAL</a> keywords respectively. Nonbonding contacts
+can be defined using the <a href="#nonbond">NONBOND</a> keyword; covalent
+bonds should be defined as <a href="protin.html#special">SPECIAL</a>
+distances within PROTIN.
+<p>
+Then: take the DICT file output of MAKEDICT and insert each section (separated
+by comment lines; don't copy these) into the appropriate places of your local
+copy of the PROTIN dictionary (e.g. mydict.dic). See
+<a href="protin.html#protindic">appendix A</a> of the
+PROTIN documentation for a description of the different
+parts of the dictionary.
+<p>Finally, assign the logically variable DICTPROTN to mydict.dat when you
+run PROTIN to prepare restraints with your new substrate.
+
+<H2> <A NAME="examples"></A>EXAMPLES</H2>
+
+<h3>Unix example script found in $CEXAM/unix/runnable/</h3>
+
+Example of using MAKEDICT to generate PROTIN dictionary entry:
+<ul>
+          <li><a href="../examples/unix/runnable/makedict.exam">makedict.exam</a>
+</ul>
+
+<h3>General examples of input and output scripts</h3>
+
+Here is an example where an input PDB is converted into a PROTIN dictionary.
+<p>
+Input PDB:
+<pre>
+
+REMARK   This file contains the 1dtx pdb coordinates with
+REMARK   residue 1 renamed
+CRYST1   73.53    39.06    23.15   90.00  90.00  90.00
+SCALE1      0.013600  0.000000  0.000000        0.00000
+SCALE2      0.000000  0.025601  0.000000        0.00000
+SCALE3      0.000000  0.000000  0.043197        0.00000
+ATOM    473  N   GLY    59       9.911  -4.709  16.657  1.00 24.03
+ATOM    474  CA  GLY    59       9.228  -5.696  17.463  1.00 27.54
+ATOM    475  C   GLY    59       9.299  -5.294  18.943  1.00 31.44
+ATOM    476  O   GLY    59       9.804  -6.144  19.719  1.00 33.91
+ATOM    477  OE  GLY    59       9.027  -4.131  19.297  1.00 34.32
+
+</pre>
+Script:
+<pre>
+
+#!/bin/sh
+
+makedict XYZIN toxd.pdb DICT junk.dict &lt;&lt;eof
+INPUT PDB
+OUTPUT  PROTIN
+RESIDUE JNK
+CENTRE CA
+END
+eof
+
+</pre>
+Output dictionary:
+<pre>
+
+## Dictionary entry in Protin format: edit out sections separated by ##
+##  Coordinates
+                                                 1    1          JNK
+   0.68300   0.98700  -0.80600              2         1   -1               N
+   0.00000   0.00000   0.00000              1         2   -1               CA
+   0.07100   0.40200   1.48000              1         3   -1               C
+   0.57600  -0.44800   2.25600              3         4   -1               O
+  -0.20100   1.56500   1.83400              3         5   -1               OE
+## Distances (bonds & angles)
+JNK          1    8
+  2  1 1 1  3  2 1 1  4  3 1 1  5  3 1 1  1  3 2 2  2  4 2 2  2  5 2 2  4  5 2 2
+
+</pre>
+The reverse transformation can be done with the following script
+(you must of course remove the lines beginning with an "#" from the protin
+entry given above):
+<pre>
+
+#!/bin/sh
+
+makedict XYZIN junk.dict XYZOUT junk.pdb &lt;&lt;eof
+INPUT PROTIN
+OUTPUT PDB
+END
+eof
+
+</pre>
+
+
+<H2> AUTHORS</H2>
+Originator: Phil Evans
+</body></html>

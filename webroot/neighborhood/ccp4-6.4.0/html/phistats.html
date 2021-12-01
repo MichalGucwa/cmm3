@@ -1,0 +1,182 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::PHISTATS::Supported::Others/Jiffies::Analysis of agreement between phase sets, and checking it against weighting factors:::::::: -->
+
+<H1> PHISTATS (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>phistats </b>
+- Analysis of agreement between phase sets, and checking it against weighting factors.
+<H2> SYNOPSIS</H2>
+<b>phistats </b>
+<b>HKLIN</b>
+<i>foo_in.mtz </i>
+<br>
+ [<A HREF="#keywords">Keyworded input</A>]
+<H2> <A NAME="description"></A>DESCRIPTION</H2>
+PHISTATS analyses the differences between two sets of phases.  The
+analysis can be binned against two types of weights; for example a
+figure of merit, and the magnitude of Fobs.  It is probably more
+informative to do map correlation using <A HREF="overlapmap.html">OVERLAPMAP</A>.
+<H2> <A NAME="keywords"></A>KEYWORDED INPUT</H2>
+The various data control lines are identified by keywords.
+Only the first 4 characters are significant.
+Those available are:
+<blockquote>
+<A HREF="#end"><B>END</B></A>, <A HREF="#labin"><B>LABIN</B></A>,
+<A HREF="#ranges"><B>RANGES</B></A>, <A HREF="#resolution"><B>RESOLUTION</B></A>,
+<A HREF="#shift"><B>SHIFT</B></A>,  <A HREF="#hand"><B>HAND</B></A>,
+<A HREF="#title"><B>TITLE</B></A>
+</blockquote>
+<H3> <A NAME="labin"></A>LABIN &lt;program label&gt;=&lt;file label&gt; ...</H3>
+Input column assignments.
+The program labels are:
+FP SIGFP PHIBP WP PHIB2 W2.
+For details of these, see <A HREF="#files">INPUT AND OUTPUT FILES</A>. 
+<H3> <A NAME="ranges"></A>RANGES &lt;nbin&gt; [ &lt;mon&gt; ]</H3>
+Set the number of resolution bins &lt;nbin&gt; and the reflection monitoring
+interval &lt;mon&gt;.
+<P> 
+&lt;nbin&gt; is the number of resolution bins (equal width in
+[sin(theta)/(lambda)]**2) in which to divide partial structure data
+for normalization and sigmaA estimation.  It is IMPORTANT that
+resolution ranges contain sufficient reflections.  It is best to use
+as large a value of &lt;nbin&gt; as possible, as long as the estimates of
+sigmaA vary smoothly with resolution.  If they do not, &lt;nbin&gt; should
+be reduced until sigmaA does vary smoothly.  A good first guess is the
+number of reflections divided by 1000.  If sigmaA refinement converges
+to zero in one or more of the ranges (which happens sometimes when the
+correct value is low), this can usually be circumvented by decreasing
+&lt;nbin&gt;.
+<P> 
+Information about every &lt;nmon&gt;-th reflection will be written to the
+log file.
+<P> 
+Defaults: 20 1000; maximum &lt;nbin&gt; allowed: 50.
+<H3> <A NAME="resolution"></A>RESOLUTION [ &lt;rmin&gt; ] &lt;rmax&gt;</H3>
+Low and high resolution limits in either order or upper
+limit if only one is specified.
+These are in Angstroms or, if both are &lt;1.0, units of
+4(sin theta/lambda)**2.
+By default, all the data in the file are used.
+
+<H3><A NAME="shift"></A>SHIFT &lt;X_fracshift Y_fracshift Z_fracshift&gt;</H3>
+<p>PHI2 phases adjusted for a fractional Shift - especially useful when 
+the two phase sets refer to different crystal origin:</p>
+<PRE>
+  PHI2_used = PHI2_input + 2PI(h X_fracshift + k Y_fracshift + l Z_fracshift)
+</PRE>
+
+
+<H3><A NAME="hand"></A>HAND </H3>
+<p>PHI2 phases adjusted to change hand. </p>
+<PRE>
+  PHI2_used = -PHI2_shifted + 2PI(h CX + k CY + l CZ) 
+where CX,CY,CZ are the centre of symmetry for this space group. 
+(CX,CY,CZ) is (0,0,0) except for spacegroups
+I41, I4122, F4132,I4132. See reindexing notes.
+</PRE>
+
+<H3> <A NAME="title"></A>TITLE &lt;title&gt;</H3>
+A title written to the log file.
+<H3> <A NAME="end"></A>END</H3>
+End of input.
+<H2> <A NAME="files"></A>INPUT AND OUTPUT FILES</H2>
+<H3>INPUT</H3>
+This is an MTZ file assigned to logical name HKLIN. 
+The following column assignments are required:
+<dl>
+<dt> FP, SIGFP<dd>
+native amplitude and standard deviation;
+<dt> PHIBP<dd>
+first phase (degrees), maybe an isomorphous phase;
+<dt> WP<dd>
+first `weight' to analyse against, for example, the figure of merit;
+<dt> W2<dd>
+second `weight' for analysis, for example, the native amplitude.
+</dl>
+<P> 
+PHIB2 may optionally be assigned.  This is the second phase (degrees).
+If it is not assigned the program gives the correlation between WP and W2.
+<H3> OUTPUT</H3>
+There is no output file from this program.
+<P> 
+Normally the program compares two sets of phases. They can be any set of phases
+you like, not just experimental phases against calculated model phases. 
+Obviously, if you have calculated phases from a model there is no experimental 
+weight. These phases are broken up into those from centric reflections and 
+acentric. 
+<P> 
+Since centric reflections have a limited number of possible values PHISTATS 
+compares the agreement between phases. That is if the phases are the same they
+agree but if they are different they disagree. Thus if the fraction that agree
+is unity then all the centric phases are equivalent.
+<P> 
+The correlation with the weights is exactly that. The linear correlation 
+coefficient is calculated between the phase difference and a weight. It is
+calculated twice, once for WP and then W2. This coefficient can range between
+1.0 and -1.0. The optimum set of weights would produce a correlation of -1.0
+because this would mean that the largest weights would correspond to the 
+smallest phase error. The linear correlation coefficient is also calculated 
+between weight and cos(phase_difference).
+<P> 
+There are similar calculations made for acentric reflections, however in this
+case a phase error or difference is calculated. Also, an estimated phase 
+error is calculated. This is based on the principles used in <A HREF="sigmaa.html">SIGMAA</A> where a
+quantity sigma_a is calculated. This is calculated from the two sets of 
+structure factor magnitudes and need not be relevant.
+<P> 
+Tables are produced where these quantities are compared against resolution
+and the value of the weight. 
+<H2> SEE ALSO</H2>
+ <A HREF=overlapmap.html>overlapmap</A>, <A HREF=sigmaa.html>sigmaa</A>
+<H2> AUTHORS</H2>
+Eleanor Dodson, University of York
+<H2> <A NAME="examples"></A>EXAMPLES</H2>
+<H3> Phase analysis</H3>
+<pre>
+#  Assign weight 1 to FOM, weight 2 to FC magnitude.
+phistats hklin $CCP4_SCR/toxd_sf_mir &lt;&lt; END
+TITLE   Phase analysis
+RESOLUTION  40. 2.
+RANGES 10   500
+LABIN FP=FTOXD3 SIGFP=SIGFTOXD3 PHIBP=PHI_mir WP=W_mir -
+      PHIB2=PHICtoxd W2=FCtoxd
+END
+</pre>
+<H3> Phase analysis for alternative origin for mir phases and calculated ones</H3>
+<pre>
+#  Assign weight 1 to FOM, weight 2 to FC magnitude.
+phistats hklin $CCP4_SCR/toxd_sf_mir &lt;&lt; END
+TITLE   Phase analysis
+SHIFT 0.5 0.5 0.0
+RESOLUTION  40. 2.
+RANGES 10   500
+LABIN FP=FTOXD3 SIGFP=SIGFTOXD3 PHIBP=PHI_mir WP=W_mir -
+      PHIB2=PHICtoxd W2=FCtoxd
+END
+</pre>
+<H3> Phase analysis for other hand</H3>
+<pre>
+#  Assign weight 1 to FOM, weight 2 to FC magnitude.
+phistats hklin $CCP4_SCR/toxd_sf_mir &lt;&lt; END
+TITLE   Phase analysis
+HAND 
+RESOLUTION  40. 2.
+RANGES 10   500
+LABIN FP=FTOXD3 SIGFP=SIGFTOXD3 PHIBP=PHI_mir WP=W_mir -
+      PHIB2=PHICtoxd W2=FCtoxd
+END
+</pre>
+<H3> Correlation</H3>
+<pre>
+phistats hklin os_lu_shhg2_pt_pt4_khg_os2_nat.mtz 
+&lt;&lt; END
+TITLE   Phase analysis chmi model vs MIR phases
+RANGES 20 1000        ! Number of analysis bins, monitor interval
+RESOLUTION  100.0 2.6 ! Resolution limits in Angstroms
+LABIN FP=FP SIGFP=SIGFP WP=FOM  PHIB2=PHI W2=FP           
+END
+</pre>
+</body></html>

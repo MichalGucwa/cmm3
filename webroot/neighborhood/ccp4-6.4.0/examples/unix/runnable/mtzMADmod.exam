@@ -1,0 +1,61 @@
+#!/bin/sh
+
+set -e
+#
+# MTZMADMOD example using rnase data
+#
+# Use mtzMADmod to generate the F+/- columns from the
+# anomalous differences for the three derivatives in
+#
+mtzMADmod HKLIN  $CEXAM/rnase/rnase25.mtz \
+          HKLOUT $CCP4_SCR/rnase25_madmod.mtz <<eof-mod
+TITLE Generate F+/- columns for derivative data
+LABIN -
+    F1=FHG2        SIGF1=SDFHG2 -
+    D1=FHG2DEL     SIGD1=SDFHG2DEL -
+    F2=FPTNCD25    SIGF2=SIGFPTNCD25 -
+    D2=DELFPTNCD25 SIGD2=SIGDELFPTNCD25 -
+    F3=FIOD25      SIGF3=SIGFIOD25 -
+    D3=DELFIOD25   SIGD3=SIGDELFIOD25
+LABOUT -
+    F1=FHG2  SIGF1=SDFHG2 D1=FHG2DEL SIGD1=SDFHG2DEL -
+    F1(-)=FHG2(-)      F1(+)=FHG2(+) -
+    SIGF1(-)=SDFHG2(-) SIGF1(+)=SDFHG2(+) -
+    F2=FPTNCD25    SIGF2=SIGFPTNCD25 -
+    D2=DELFPTNCD25 SIGD2=SIGDELFPTNCD25 -
+    F2(-)=FPTNCD25(-)       F2(+)=FPTNCD25(+) -
+    SIGF2(-)=SIGFPTNCD25(-) SIGF2(+)=SIGFPTNCD25(+) -
+    F3=FIOD25      SIGF3=SIGFIOD25 -
+    D3=DELFIOD25   SIGD3=SIGDELFIOD25 -
+    F3(-)=FIOD25(-)       F3(+)=FIOD25(+) -
+    SIGF3(-)=SIGFIOD25(-) SIGF3(+)=SIGFIOD25(+)
+END
+eof-mod
+
+#
+# Now use sftools to merge rnase and rnase_madmod mtz
+# files (nb could also use cad to do this step).
+#
+# First delete the output file (if it exists)
+#
+if test -f $CCP4_SCR/rnase25_all.mtz; then
+   echo 'Removing $CCP4_SCR/rnase25_all.mtz file ...'
+   echo ' '
+   rm -f $CCP4_SCR/rnase25_all.mtz
+fi
+echo 'SFTOOLS run to merge data into a single file...'
+echo ' '
+#
+# Read in the native data from the original file
+# and the F+/- data from the mtzmadmod file
+# Then output to a third file
+#
+sftools <<eof
+read $CEXAM/rnase/rnase25.mtz col FNAT SIGFNAT
+read $CCP4_SCR/rnase25_madmod.mtz
+write $CCP4_SCR/rnase25_all.mtz
+exit
+eof
+#
+exit
+#

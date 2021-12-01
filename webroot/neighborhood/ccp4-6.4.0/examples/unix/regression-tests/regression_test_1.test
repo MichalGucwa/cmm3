@@ -1,0 +1,173 @@
+#!/bin/sh
+set -e
+
+# bug # 3192 - run-all examples produce harvest files - well to counteract
+# this here set HARVESTHOME to somewhere in $CCP4_SCR
+
+HARVESTHOME=$CCP4_SCR
+export HARVESTHOME
+
+#
+# run bp3
+#
+
+bp3 HKLIN $CEXAM/rnase/rnase25.mtz HKLOUT $CCP4_SCR/rnase_bp3_$$.mtz <<+
+
+# native crystal
+
+Xtal NATIVE
+  DName NATIVE
+    COLUmn F=FNAT SF=SIGFNAT
+
+# platinum derivative
+
+Xtal Platinum
+  ATOM Pt
+    XYZ 0.566  0.828  0.018
+    OCCU 0.2
+    BISO 25.0
+  ATOM Pt
+    XYZ 0.842  0.944  0.469
+    OCCU 0.2
+    BISO 25.0
+  ATOM Pt
+    XYZ 0.103  0.941  0.189
+    OCCU 0.2
+    BISO 25.0
+  ATOM Pt
+    XYZ 0.190  0.005  0.742
+    OCCU 0.2
+    BISO 25.0
+  ATOM Pt
+    XYZ 0.047  0.848  0.273
+    OCCU 0.2
+    BISO 25.0
+
+  DNAME Plat
+    COLUmn F=FPTNCD25 SF=SIGFPTNCD25
+
+ALLIn
+
++
+
+#
+# run dm 
+#
+
+dm hklin $CCP4_SCR/rnase_bp3_$$.mtz hklout $CCP4_SCR/rnase_bp3_dm_$$.mtz <<+ 
+solc 0.45
+mode solv hist aver
+COMBINE PERT
+NCYC 20
+SCHEME ALL
+AVER  REFI
+ROTAT EULER 0 0 0
+TRANS 0 0 0
+AVER  REFI
+ROTAT EULER  92.65556 -68.98311 -104.13478
+TRANS -33.31073  21.15489  18.63655
+LABIN FP=FNAT SIGFP=SIGFNAT PHIO=PHIB FOMO=FOM HLA=HLA HLB=HLB HLC=HLC HLD=HLD
+LABOUT PHIDM=PHIDM FOMDM=WDM HLADM=HLADM HLBDM=HLBDM HLCDM=HLCDM HLDDM=HLDDM
++
+
+#
+# run buccaneer 
+#
+
+python $CBIN/ccp4_pipeline_simple << eof | tee $CCP4_SCR/buccaneer_$$.log
+%loop-cyc 3
+%copy-pre $CCP4_SCR/rnase_bp3_dm_$$.mtz $CCP4_SCR/temporary_refmac_$$.mtz
+%copy-post $CCP4_SCR/temporary_refmac_$$.pdb $CCP4_SCR/rnase_bp3_dm_buc_$$.pdb
+%prgm-loop buccaneer cbuccaneer %exit
+%prgm-loop refmac refmac5 %exit
+buccaneer %arg -stdin
+buccaneer title buccaneer_refmac_test
+buccaneer pdbin-ref $CLIBD/reference_structures/reference-1tqw.pdb
+buccaneer mtzin-ref $CLIBD/reference_structures/reference-1tqw.mtz
+buccaneer seqin-wrk $CEXAM/rnase/rnase.seq
+buccaneer mtzin-wrk $CCP4_SCR/temporary_refmac_$$.mtz
+buccaneer colin-wrk-fo /*/*/[FNAT,SIGFNAT]
+buccaneer colin-wrk-free /*/*/[FreeR_flag]
+buccaneer:0 colin-wrk-hl /*/*/[HLADM,HLBDM,HLCDM,HLDDM]
+buccaneer:1-* colin-wrk-phifom /*/*/[PHCOMB,FOM]
+buccaneer:1-* pdbin-wrk $CCP4_SCR/temporary_refmac_$$.pdb
+buccaneer pdbout-wrk $CCP4_SCR/temporary_buccaneer_$$.pdb
+buccaneer find
+buccaneer grow
+buccaneer join
+buccaneer link
+buccaneer sequence
+buccaneer correct
+buccaneer filter
+buccaneer ncsbuild
+buccaneer prune
+buccaneer rebuild
+buccaneer:0 cycles 3
+buccaneer:0 sequence-reliability 0.95
+buccaneer:1-* cycles 1
+buccaneer:1-* correlation-mode
+buccaneer:1-* sequence-reliability 0.95
+buccaneer new-residue-name UNK
+buccaneer resolution 2.0
+refmac %arg HKLIN $CCP4_SCR/rnase_bp3_dm_$$.mtz
+refmac %arg XYZIN $CCP4_SCR/temporary_buccaneer_$$.pdb
+refmac %arg HKLOUT $CCP4_SCR/temporary_refmac_$$.mtz
+refmac %arg XYZOUT $CCP4_SCR/temporary_refmac_$$.pdb
+refmac title [No title given]
+refmac weight MATRIX 0.1
+refmac labin -
+refmac HLA=HLADM HLB=HLBDM HLC=HLCDM HLD=HLDDM -
+refmac FREE=FreeR_flag -
+refmac FP=FNAT SIGFP=SIGFNAT
+refmac make check NONE
+refmac make hydrogen YES hout NO peptide NO cispeptide YES ssbridge YES symmetry YES sugar YES connectivity NO link NO
+refmac refi type REST PHASE SCBL 1.0 BBLU 0.0 resi MLKF meth CGMAT bref ISOT
+refmac ncyc 10
+refmac scal type SIMP LSSC ANISO EXPE
+refmac solvent YES VDWProb 1.4 IONProb 0.8 RSHRink 0.8
+refmac monitor MEDIUM torsion 10.0 distance 10.0 angle 10.0 plane 10.0 chiral 10.0 bfactor 10.0 bsphere 10.0 rbond 10.0 ncsr 10.0
+refmac labout FC=FC FWT=FWT PHIC=PHIC PHWT=PHWT DELFWT=DELFWT PHDELWT=PHDELWT FOM=FOM PHCOMB=PHCOMB
+refmac PNAME buccaneer
+refmac DNAME buccaneer
+refmac RSIZE 80
+refmac END
+eof
+
+#
+# csfcalc test
+#
+csfcalc -pdbin $CEXAM/rnase/rnase.pdb -mtzin $CCP4_SCR/rnase_bp3_dm_$$.mtz -colin-fo '/*/*/[FNAT,SIGFNAT]' -colin-free '/*/*/[FreeR_flag]' -mtzout $CCP4_SCR/rnase_csfcalc_$$.mtz | tee $CCP4_SCR/csfcalc_$$.log
+
+#
+# cphasematch/bp3 test
+#
+cphasematch -mtzin $CCP4_SCR/rnase_csfcalc_$$.mtz -colin-fo '/*/*/[FNAT,SIGFNAT]' -colin-hl-1 '/*/*/[HLA,HLB,HLC,HLD]' -colin-hl-2 '/*/*/sfcalc' | tee $CCP4_SCR/cphasematch_bp3_$$.log
+
+#
+# cphasematch/dm test
+#
+cphasematch -mtzin $CCP4_SCR/rnase_csfcalc_$$.mtz -colin-fo '/*/*/[FNAT,SIGFNAT]' -colin-hl-1 '/*/*/[HLADM,HLBDM,HLCDM,HLDDM]' -colin-hl-2 '/*/*/sfcalc' | tee $CCP4_SCR/cphasematch_dm_$$.log
+
+#
+# test the answers
+#
+csfc=`awk 'BEGIN{fr=99}/Free R-factor/{fr=int(100*$4)}END{print fr}' $CCP4_SCR/csfcalc_$$.log`
+cpbp=`awk 'BEGIN{cr=0}/Qfom/{getline;cr=int(100*$7)}END{print cr}' $CCP4_SCR/cphasematch_bp3_$$.log`
+cpdm=`awk 'BEGIN{cr=0}/Qfom/{getline;cr=int(100*$7)}END{print cr}' $CCP4_SCR/cphasematch_dm_$$.log`
+seqr=`awk 'BEGIN{seq=0}/residues were seque/{seq=$1}END{print seq}' $CCP4_SCR/buccaneer_$$.log`
+free=`awk 'BEGIN{fr=0}/Free R factor/{fr=int(100*$5)}END{print fr}' $CCP4_SCR/buccaneer_$$.log`
+echo
+echo "Final result:"
+echo -e "Sfcalc   - Free R factor     :\t $csfc \t(reference =  21, error >  22)"
+echo -e "BP3      - Map correlation   :\t $cpbp \t(reference =  46, error <  45)"
+echo -e "DM(ncs)  - Map correlation   :\t $cpdm \t(reference =  78, error <  75)"
+echo -e "Buccaneer- Residues sequenced:\t $seqr \t(reference = 175, error < 150)"
+echo -e "Refmac5  - Free R factor     :\t $free \t(reference =  44, error >  45)"
+
+test $csfc -gt  22 && exit 1
+test $cpbp -lt  45 && exit 1
+test $cpdm -lt  75 && exit 1
+test $seqr -lt 150 && exit 1
+test $free -gt  50 && exit 1
+
+echo "SUCCESS"

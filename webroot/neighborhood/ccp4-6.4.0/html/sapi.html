@@ -1,0 +1,224 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head><title>CCP4 Program Suite : sapi</title></head>
+<body>
+
+<!-- ::INDEX_INFO::SAPI::Supported::Multiple Isomorphous Replacement,MULTIWAVELENGTH ANOMALOUS DISPERSION::heavy atom site location:::::::: -->
+
+<H1> SAPI (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>sapi </b>- A program to find heavy atom sites.
+
+
+<H2>SYNOPSIS</H2>
+<b>sapi hklin</b><i>foo_in.mtz </i><b>sapipks<i> </i></b><i>foo_sapi.pks</i>
+<br>[<a href="#keywords">Keyworded input</a>]
+<h2>
+<a NAME="description"></a>DESCRIPTION</h2>
+SAPI is a direct-method program to find heavy atom sites using one-wavelength
+anomalous scattering data or single isomorphous replacement data. It can
+also be used to solve general small molecule structures.
+
+<p> SAPI is run in two passes.  The <a href="#first">first</a> run of SAPI is 
+used to find list of sites, output in the <b>SAPIPKS</b> file.
+<p> The <a href="#second">second</a> run is used to refine these sites and 
+obtain scores using the <a href="#kar">KAR</a> keyword.  The output is again
+in the SAPIPKS file.  <br>NB. currently this requires copying the contents of
+the <b>SAPIPKS</b> file in the first job to the command script of the second.
+<br>Also, because of the way that the SAPI input works, an EOF must occur
+before the input parsing occurs.
+
+<a NAME="files"></a>
+<H2>INPUT AND OUTPUT FILES</h2>
+The following input and output files are used by the program:
+<p>Input Files:
+<dl>
+<dt>
+HKLIN</dt>
+
+<dd>
+Input MTZ file.</dd>
+
+<dd>
+This should contain the conventional (CCP4) asymmetric unit of data (preferably
+from <a href="./truncate.html">TRUNCATE</a>). See the <a href="#labin">LABIN</a>
+ keyword for columns used.</dd>
+</dl>
+
+<p>Output Files:
+<dl>
+<dt>
+SAPIPKS</dt>
+
+<dd>
+Output file that contains the peak list found by the program.</dd>
+</dl>
+
+<h2>
+<a NAME="keywords"></a>KEYWORDED INPUT</h2>
+(The first three letters are significant except <a href="#labin">LABIN</a> 
+where the first four are necessary)
+<p><i>The first keyword must be:</i>
+<h3>
+TITLE &lt;title string></h3>
+<i>The remaining keywords can be in any order. Some are compulsory (see
+individual descriptions).</i>
+
+<p>The possible keywords are:</P>
+<blockquote>
+<A HREF="#cell"><B>CELL</B></A>, <A HREF="#spg"><B>SPG</B></A>,
+<A HREF="#con"><B>CON</B></A>, <A HREF="#kar"><B>KAR</B></A>,
+<A HREF="#labin"><B>LABIN</B></A>, <A HREF="#nre"><B>NRE</B></A>,
+<A HREF="#max"><B>MAX</B></A>, <A HREF="#lim"><B>LIM</B></A>,
+<A HREF="#end"><B>END</B></A>
+</blockquote>
+
+<a name="cell"></a>
+<h3>
+CELL &lt;a> &lt;b> &lt;c> &lt;alpha> &lt;beta> &lt;gamma></h3>
+(optional)
+<br>Cell dimensions. If these are not given, cell dimensions will be read
+from the input MTZ file.
+
+<a name="spg"></a>
+<h3>
+SPG &lt;space group></h3>
+(optional)
+<br>Space group (e.g. P 21 21 21); beware of the spaces in between. If
+this is not given, space group information will be read from the input
+MTZ file.
+
+<a name="con"></a>
+<h3>
+CON &lt;atom type> &lt;number of atoms in unit cell ></h3>
+(optional)
+<br>Contents of unit cell. If these are not known, the program will assume
+all carbon, and estimate the number according to the cell volume. Note:
+the program is not sensitive to the atom type, i.e. you may use C (carbon)
+to model anomalous scatterers such as Se.
+
+<a name="kar"></a>
+<h3>
+KAR &lt;atom1> &lt;x1> &lt;y1> &lt;z1> [&lt;1> &lt;occupancy1>] ......
+&lt;atom_n> &lt;xn> &lt;yn> &lt;zn> [&lt;n> &lt;occupancy_n>]</h3>
+(optional)
+<br>Fractional coordinates of atom(s). The coordinates will be refined
+by the Karle recycle method. An R-factor will be calculated to assess the
+quality of the given sites and additional sites can be found.
+
+<a name="labin"></a>
+<h3>
+LABIN DF=... SIGDF=...</h3>
+(compulsory)
+<dt>
+DF:</dt>
+
+<dd>
+Friedel difference (OAS) or the isomorphous difference |F(derivative)|-|F(native)|
+(SIR).</dd>
+
+<dt>
+SIGFD:</dt>
+
+<dd>
+standard deviation of DF.</dd>
+
+<a name="nre"></a>
+<h3>
+NRE &lt;number></h3>
+(optional)
+<br>Number of largest E's used.
+
+<a name="max"></a>
+<h3>
+MAX &lt;number></h3>
+(optional)
+<br>Number of trials. (default = 1000).
+
+<a name="lim"></a>
+<h3>
+LIM &lt;rmax> &lt;rmin></h3>
+Limits on data resolution in Angstrom (default: no low reso limit, 3)
+
+<a name="end"></a>
+<h3>
+END</h3>
+(compulsory)
+<br>end of the keyword list
+
+<h2>
+<a NAME="examples"></a>EXAMPLES</h2>
+<a name="first"></a>
+<H3>The first run</H3>
+
+<ul>
+<li><a href="../examples/unix/runnable/sapi_run1.exam">sapi_run1.exam</a><br>
+Example of SAPI locating Hg sites in rnase 25 data.
+
+<li><pre>#ompdc_1.com
+sapi hklin ompdc.mtz sapipks ompdc_sapi.pks&lt;&lt;eof
+TITLE   ompdc one-wavelength anomalous scattering data -
+locating Se atoms
+LABIN DF=DANO2 SIGDF=SIGDANO2
+END
+eof
+</pre>
+</ul>
+
+<a name="second"></a>
+<H3>The second run</H3>
+
+<ul>
+<li><a href="../examples/unix/runnable/sapi_run1.exam">sapi_run2.exam</a><br>
+Example of SAPI refining Hg sites in rnase 25 data.
+
+<li><pre>#ompdc_2.com
+sapi hklin ompdc.mtz sapipks ompdc_sapi.pks&lt;&lt;eof
+TITLE ompdc - refining the Se sites
+labin DF=DANO2 SIGDF=SIGDANO2
+KAR
+      C    0.9481   0.0686    0.3858    1
+      C    0.0501   0.1418    0.8754    2
+      C    0.2278   0.0530    0.8609    3
+      C    0.0996   0.0933    0.7587    4
+      C    0.2879   0.1929    0.8885    5
+      C    0.2921   0.2246    0.7965    6
+      C    0.2016   0.2238    0.7753    7
+      C    0.6243   0.2351    0.2025    8
+      C    0.8794   0.0520    0.4618    9
+      C    0.3525   0.1186    0.8852   10
+      C    0.2272   0.1292    0.8899   11
+      C    0.0386   0.0675    0.2715   12
+      C    0.6741   0.2202    0.5788   13
+      C    0.9896   0.0569    0.4514   14
+      C    0.3682   0.0832    0.5957   15
+      C    0.8689   0.0405    0.3536   16
+      C    0.7619   0.1833    0.1968   17
+      C    0.6529   0.2022    0.9082   18
+END
+eof
+</pre>
+</ul>
+
+<h2>
+<a NAME="references"></a>REFERENCES</h2>
+
+<ol><!-- KEEP startreferencelist -->
+<li>
+Q. Hao, Y. X. Gu, J. X. Yao, C. D. Zheng and H. F. Fan (2003) <i>J. Appl. Cryst.</i>
+<b>36</b> 1274-1276. "SAPI: a direct-methods program for finding heavy-atom sites
+with SAD or SIR data."
+<!-- KEEP endreferencelist -->
+</ol>
+
+<h2>
+AUTHORS</h2>
+Y. X. Gu (1), C. D. Zheng (1) & H. F. Fan (1) & Q. Hao (1, 2)
+<p>
+(1) Institute of Physics, Chinese Academy of Sciences, Beijing 100080,
+    P. R. China.<br>
+(2) MacCHESS, Wilson Synchrotron Lab, Cornell University, NY 14850, USA
+<p>
+Email: qh22@cornell.edu   or   fan@aphy.iphy.ac.cn 
+</body>
+</html>

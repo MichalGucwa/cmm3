@@ -1,0 +1,201 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4I Documentation for Programmers: Core Documentation</title>
+<link rel="stylesheet" type="text/css" href="../../ccp4idocs.css" title="CCP4i" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+</head>
+<body>
+<H2>CCP4i Documentation for Programmers: Core Documentation</H2>
+<H3>Contents</H3>
+<h3>Utilities for managing task installation (src/CCP4i_packages_utils.tcl)</h3>
+<a name="Utilities_for_managing_task_installation"><h3> Utilities for managing task installation </h3> 
+<p>Utilities for installing, uninstalling and exporting task interface packages, and manipulating ccp4i_packages.def files.<p>
+<a name="InstallTaskPackage" ><h4><font color="#CC3333">InstallTaskPackage</font> <em>Driver procedure to perform installation of a new task</em></h4> 
+<p><em>Argument list:  &lt;package_name&gt; &lt;location&gt; &lt;archive_file&gt; &lt;args&gt;</em></p>
+<p>Install or update a package with identifier package_name from the specified archive_file. The package will be installed in either the main CCP4i area (accessible to all users) or the user's local CCP4i (accessible only to them), depending on the location argument. A record of the installation is stored in the relevant ccp4i_packages.def file.<p>
+<p>By default the installation will proceed automatically based on the information and files found in the archive_file. The calling procedure can over-ride this by supplying alternative information for each attribute via the arguments below.<p>
+<p>InstallTaskPackage can run in two different modes, specified by the -mode option. The default is 'nongraphical' mode, which means that warnings and error messages are written to the standard output. In 'graphical' mode these warnings are displayed graphically using the WarningMessage procedure.<p>
+<p>Returns 1 if the installation was successful, 0 if it failed.<p>
+<p><strong>package_name</strong>  Identifier for the package<p>
+<p><strong>location</strong>  Either MAIN (the main CCP4i area) or LOCAL (user's private CCP4i area)<p>
+<p><strong>archive_file</strong>  A tar or tar.gz archive file containing the task package to be installed. Alternatively, it can be a directory where the archive file has already been unpacked.<p>
+<p><strong>-version</strong><em>  version</em><p>
+<p>Version control string of the form "major.minor.patch"<p>
+<p><strong>-task_files</strong><em>  list_of_files</em><p>
+<p>Specify alternative list of task files (.tcl and .def) to be installed<p>
+<p><strong>-script_files</strong><em>  list_of_files</em><p>
+<p>Specify alternative list of script files (.script)<p>
+<p><strong>-com_files</strong><em>  list_of_files</em><p>
+<p>Specify alternative list of template files (.com)<p>
+<p><strong>-help_files</strong><em>  list_of_files</em><p>
+<p>Specify alternative list of help files (.html)<p>
+<p><strong>-task_references</strong><em>  list_of_references</em><p>
+<p>Specify task references to be added to the modules.def file. Each task reference must be a list consisting of: task_name task_title task_description module_name module_title<p>
+<p><strong>-install_script</strong><em>  script_file</em><p>
+<p>Specify a script to be run before installing the package<p>
+<p><strong>-no_install_script</strong><p>
+<p>Do not run the install script, even if one is found<p>
+<p><strong>-no_archive</strong><p>
+<p>Indicates that the "archive_file" is not a real CCP4i package<p>
+<p><strong>-mode</strong><em>  run_mode</em><p>
+<p>Warning and error messages will be displayed in a window (run_mode = graphical) or written to standard output (run_mode = nongraphical)<p>
+<a name="ImportTaskPackage" ><h4><font color="#CC3333">ImportTaskPackage</font> <em>Driver procedure to import a task package from another CCP4 installation</em></h4> 
+<p><em>Argument list:  &lt;package_name&gt; &lt;location&gt; &lt;ccp4_dir&gt; &lt;args&gt;</em></p>
+<p>Given the name of a package, an installation location, and the path to another CCP4 installation, extract the data about the package and use that to copy the task install in the current CCP4 installation.<p>
+<p>ImportTaskPackage can run in either 'nongraphical' (the default) or 'graphical' modes, as specified by the -mode option. In the former warning and error messages are written to the standard output, in the latter they are displayed graphically using the WarningMessage procedure.<p>
+<p>Returns 1 if the package was successfully imported, 0 if it failed.<p>
+<p><strong>package_name</strong>  Identifier for the package<p>
+<p><strong>location</strong>  Either MAIN (the main CCP4i area) or LOCAL (user's private CCP4i area)<p>
+<p><strong>ccp4_dir</strong>  Path to the top-level directory of a previous CCP4 installation<p>
+<p><strong>-mode</strong><em>  run_mode</em><p>
+<p>Warning and error messages displayed in a window (run_mode = graphical) or written to standard output (run_mode = nongraphical)<p>
+<a name="ImportAllTaskPackages" ><h4><font color="#CC3333">ImportAllTaskPackages</font> <em>Driver procedure to import all task packages from another CCP4 installation</em></h4> 
+<p><em>Argument list:  &lt;ccp4_dir&gt; &lt;args&gt;</em></p>
+<p>Given the path to another CCP4 installation, extract the data about the packages installed in that installation and then copy the task install into the current CCP4 installation.<p>
+<p>ImportAllTaskPackages can run in either 'nongraphical' (the default) or 'graphical' modes, as specified by the -mode option. In the former warning and error messages are written to the standard output, in the latter they are displayed graphically using the WarningMessage procedure.<p>
+<p>Returns 1 if the package was successfully imported, 0 if it failed.<p>
+<p><strong>ccp4_dir</strong>  Path to the top-level directory of a previous CCP4 installation<p>
+<p><strong>-mode</strong><em>  run_mode</em><p>
+<p>Warning and error messages displayed in a window (run_mode = graphical) or written to standard output (run_mode = nongraphical)<p>
+<a name="ExportTaskPackage" ><h4><font color="#CC3333">ExportTaskPackage</font> <em>Driver procedure to create a task package archive file</em></h4> 
+<p><em>Argument list:  &lt;package_name&gt; &lt;archive_file&gt; &lt;args&gt;</em></p>
+<p>Create an installable tar.gz archive file for a package with identifier package_name. The contents and attributes of the package are specified via the optional arguments.<p>
+<p>ExportPackage can run in either 'nongraphical' (the default) or 'graphical' modes, as specified by the -mode option. In the former warning and error messages are written to the standard output, in the latter they are displayed graphically using the WarningMessage procedure.<p>
+<p>Returns 1 if the package was successfully exported, 0 if it failed.<p>
+<p><strong>package_name</strong>  Identifier for the package<p>
+<p><strong>archive_file</strong>  Archive file to be written<p>
+<p><strong>-version</strong><em>  version</em><p>
+<p>Version control string of the form "major.minor.patch"<p>
+<p><strong>-task_files</strong><em>  list_of_files</em><p>
+<p>Specify list of task files (.tcl and .def) for inclusion<p>
+<p><strong>-script_files</strong><em>  list_of_files</em><p>
+<p>Specify list of script files (.script) for inclusion<p>
+<p><strong>-com_files</strong><em>  list_of_files</em><p>
+<p>Specify list of template files (.com) for inclusion<p>
+<p><strong>-help_files</strong><em>  list_of_files</em><p>
+<p>Specify list of help files for inclusion<p>
+<p><strong>-task_references</strong><em>  list_of_references</em><p>
+<p>Specify task references to be added to the modules.def file<p>
+<p><strong>-install_script</strong><em>  script_file</em><p>
+<p>Specify a script to be run before installing the package<p>
+<p><strong>-mode</strong><em>  run_mode</em><p>
+<p>Warning and error messages displayed in a window (run_mode = graphical) or written to standard output (run_mode = nongraphical)<p>
+<a name="UninstallTaskPackage" ><h4><font color="#CC3333">UninstallTaskPackage</font> <em>Driver procedure to uninstall a previously installed task package</em></h4> 
+<p><em>Argument list:  &lt;package_name&gt; &lt;location&gt; &lt;args&gt;</em></p>
+<p>Uninstall the package with identifier package_name from either the main CCP4i area or the user's local CCP4i area (depending on the value of the location argument), using the information stored in the relevant ccp4i_packages.def file.<p>
+<p>The uninstall will remove the files associated with the package (restoring any backup files that it finds in the process) and remove any associated task references which were installed in the modules.def file. The package will be removed from the ccp4i_packages.def file.<p>
+<p>UninstallTaskPackage can run  in two different modes, specified by the -mode option. The default is 'nongraphical' mode, which means that warnings and error messages are written to the standard output. In 'graphical' mode these warnings are displayed graphically using the WarningMessage procedure.<p>
+<p>Returns 1 if the uninstallation was successful, 0 if it failed.<p>
+<p><strong>package_name</strong>  Identifier for the package to be uninstalled<p>
+<p><strong>location</strong>  Either MAIN (the main CCP4i area) or LOCAL (user's private CCP4i area)<p>
+<p><strong>-mode</strong><em>  run_mode</em><p>
+<p>Warning and error messages will be displayed in a window (run_mode = graphical) or written to standard output (run_mode = nongraphical)<p>
+<a name="ExamineTaskArchive" ><h4><font color="#CC3333">ExamineTaskArchive</font> <em>Examine the contents of a task archive package file</em></h4> 
+<p><em>Argument list:  &lt;package_name&gt; &lt;archive_file&gt; &lt;packagesVar&gt;</em></p>
+<p>Returns a list of the contents of a package archive file, as follows:<p>
+<p>List element 0: list of tasks<p>
+<p>List element 1: list of tcl files<p>
+<p>List element 2: list of def files<p>
+<p>List element 3: list of script files<p>
+<p>List element 4: list of template files<p>
+<p>List element 5: list of help files<p>
+<p>List element 6: list of task references, read from the modules file in the package.<p>
+<p>Each task reference is itself a list, consisting of: task name, task title, task description, module name and module title.<p>
+<p>If the archive contents cannot be successfully read then an empty string is returned. If the archive contains a ccp4i_packages.def file then the contents are also read into an array called packagesVar and returned to the calling procedure.<p>
+<p><strong>package_name</strong>  The name of the package<p>
+<p><strong>archive_file</strong>  The full path of the archive (file)<p>
+<p><strong>packagesVar</strong>  Name of the array variable in which information will be returned to the calling procedure<p>
+<a name="MakeTmpTaskInstallDir" ><h4><font color="#CC3333">MakeTmpTaskInstallDir</font> <em>Create a temporary directory in which to unpack an archive file</em></h4> 
+<p><em>Argument list:  &lt;package_name&gt; &lt;args&gt;</em></p>
+<p>Makes a subdirectory in TEMPORARY called install_(package_name). This is used by other procedures to unpack and examine the contents of the the archive file.<p>
+<p>Returns the path of the temporary directory, or an empty string if there is an error.<p>
+<p>NB The procedure will attempt to detect if it is operating in a non-graphical mode - if the ChooseOptionDialog procedure is not found then non-graphical mode is assumed and the -force option is taken as default.<p>
+<p><strong>package_name</strong>  Identifier for package<p>
+<p><strong>-force</strong><p>
+<p>By default the user is queried if the temporary directory already exists. This option over-rides the query and forces deletion of the directory contents before recreating the directory.<p>
+<a name="GetTaskInstallDir" ><h4><font color="#CC3333">GetTaskInstallDir</font> <em>Return the root path for the installation area</em></h4> 
+<p><em>Argument list:  &lt;location&gt;</em></p>
+<p>Returns the path for the installation area depending on the value of the location argument. MAIN refers to the main CCP4i area pointed to by the CCP4I_TOP system variable, LOCAL refers to the user's private CCP4i area in \$HOME/.CCP4/CCP4I_TOP<p>
+<p><strong>location</strong>  Installation area, either MAIN or LOCAL<p>
+<a name="GetTaskInstallFileDir" ><h4><font color="#CC3333">GetTaskInstallFileDir</font> <em>Return the root path for the installation modules and packages files</em></h4> 
+<p><em>Argument list:  &lt;location&gt;</em></p>
+<p>Returns the path for the directory holding the releveny modules.def and ccp4i_packages.def files depending on the value of the location argument. MAIN refers to the main CCP4i area (\$CCP4I_TOP/etc), LOCAL refers to the user's private CCP4i area (\$HOME/.CCP4/(opsys)).<p>
+<p><strong>location</strong>  Installation area, either MAIN or LOCAL<p>
+<a name="UnpackTaskArchive" ><h4><font color="#CC3333">UnpackTaskArchive</font> <em>Unpack a CCP4i task package archive file.</em></h4> 
+<p><em>Argument list:  &lt;archive_file&gt; &lt;tmpdir&gt;</em></p>
+<p>Copy the task archive file to the temporary area, and uncompress and unpack it so that the contents can be examined. Returns the full path name of the unpacked directory, or an empty string if there was an error.<p>
+<p><strong>archive_file</strong>  Full path name of the task archive file<p>
+<p><strong>tmpdir</strong>  Full path name of the temporary directory<p>
+<a name="GetPackageList" ><h4><font color="#CC3333">GetPackageList</font> <em>Return a list of CCP4i package names from a ccp4i_packages.def file</em></h4> 
+<p><em>Argument list:  &lt;packages_file&gt;</em></p>
+<p><strong>packages_file</strong>  Full path name of the ccp4i_packages.def file of interest<p>
+<a name="GetPackageFiles" ><h4><font color="#CC3333">GetPackageFiles</font> <em>Return a list of files for a package registered in a CCP4i subdirectory</em></h4> 
+<p><em>Argument list:  &lt;packages_file&gt; &lt;package_name&gt; &lt;subdir&gt;</em></p>
+<p>Get a list of files in one of the CCP4i subdirectories (tasks, scripts, templates or help) which are associated with a currently installed package.<p>
+<p><strong>packages_file</strong>  The full path name of the ccp4i_packages.def file<p>
+<p><strong>package_name</strong>  Name of the CCP4i task package of interest<p>
+<p><strong>subdir</strong>  The subdirectory of interest<p>
+<a name="GetPackageReferences" ><h4><font color="#CC3333">GetPackageReferences</font> <em>Return a list of associated task references registered with a package</em></h4> 
+<p><em>Argument list:  &lt;packages_file&gt; &lt;package_name&gt;</em></p>
+<p>Returns a list of task references from a ccp4i_packages.def file.<p>
+<p>Each element of the list is also a list, describing the installed task references:<p>
+<p>{task_title} {task_name} {task_descript} {module_name} {module_title}<p>
+<p>Optionally the list may contain an two additional items<p>
+<p>{folder_name} {folder_title}<p>
+<p><strong>packages_file</strong>  The full path name of the ccp4i_packages.def file<p>
+<p><strong>package_name</strong>  The name of the package of interest<p>
+<a name="GetPackageVersion" ><h4><font color="#CC3333">GetPackageVersion</font> <em>Return the version string of a CCP4i task package in the ccp4i_packages.def file</em></h4> 
+<p><em>Argument list:  &lt;packages_file&gt; &lt;package_name&gt;</em></p>
+<p><strong>packages_file</strong>  The full path of the ccp4i_packages.def file<p>
+<p><strong>package_name</strong>  The name of the package to examine<p>
+<a name="UpdatePackagesEntry" ><h4><font color="#CC3333">UpdatePackagesEntry</font> <em>Update an entry in a ccp4i_packages.def file</em></h4> 
+<p><em>Argument list:  &lt;packages_file&gt; &lt;package_name&gt; &lt;args&gt;</em></p>
+<p>Updates the existing entry for a CCP4i task package in a ccp4i_packages.def file, or creates a new entry if it doesn't currently exist.<p>
+<p><strong>packages_file</strong>  The full path for the ccp4i_packages.def file<p>
+<p><strong>package_name</strong>  The name of the CCP4i task package<p>
+<p><strong>-version</strong><em>  version_string</em><p>
+<p>Specifies the version string for the package<p>
+<p><strong>-task_files</strong><p>
+<p>List of associated files in the tasks directory (.tcl and .def) <p>
+<p><strong>-script_files</strong><p>
+<p>List of associated script files<p>
+<p><strong>-com_files</strong><p>
+<p>List of associated template (.com) files<p>
+<p><strong>-help_files</strong><p>
+<p>List of associated help files<p>
+<p><strong>-task_references</strong><p>
+<p>List of associated task references<p>
+<p><strong>-install_script</strong><p>
+<p>Name of an installation script<p>
+<p><strong>-backups</strong><p>
+<p>List of associated backup files<p>
+<p><strong>-modules</strong><p>
+<p>List of modules<p>
+<a name="RemovePackagesEntry" ><h4><font color="#CC3333">RemovePackagesEntry</font> <em>Remove an existing entry from a ccp4i_packages.def file</em></h4> 
+<p><em>Argument list:  &lt;packages_file&gt; &lt;package_name&gt;</em></p>
+<p><p>
+<p><strong>packages_file</strong>  The full path for the ccp4i_packages.def file<p>
+<p><strong>package_name</strong>  The name of the CCP4i task package whose entry is to be removed.<p>
+<a name="CreateTarFile" ><h4><font color="#CC3333">CreateTarFile</font> <em>Apply 'tar cf' to dir to create a tar file</em></h4> 
+<p><em>Argument list:  &lt;file&gt; &lt;tar_dir&gt; &lt;parent_dir&gt;</em></p>
+<p><strong>file</strong>  Full pathname of tar file to create<p>
+<p><strong>tar_dir</strong>  Name of directory to archive relative to parent_dir<p>
+<p><strong>parent_dir</strong>  Directory to move to before creating tar file<p>
+<a name="ValidatePackageName" ><h4><font color="#CC3333">ValidatePackageName</font> <em>Check that the supplied package name is valid</em></h4> 
+<p><em>Argument list:  &lt;package_name&gt;</em></p>
+<p>Package names should only contain letters, numbers and underscores.<p>
+<p><strong>package_name</strong>  Package name to check.<p>
+<a name="ComparePackageVersions" ><h4><font color="#CC3333">ComparePackageVersions</font> <em>Compare version strings for CCP4i task packages</em></h4> 
+<p><em>Argument list:  &lt;version1&gt; &lt;version2&gt;</em></p>
+<p>Version strings should be of the form a(.b(.c)) i.e. major(minor(patch)).<p>
+<p>Returns 0 if the versions are equivalent, 1 if version1 is higher than version2, 2 if version2 is higher than version1, or -1 if the comparison is ambiguious (e.g. one or both are not of the correct format).<p>
+<p><strong>version1</strong>  First version string<p>
+<p><strong>version2</strong>  Second version string<p>
+<a name="InstallReport" ><h4><font color="#CC3333">InstallReport</font> <em>Report a message from the install procedures.</em></h4> 
+<p><em>Argument list:  &lt;message&gt; &lt;run_mode&gt;</em></p>
+<p><strong>message</strong>  Text of message to be displayed<p>
+<p><strong>run_mode</strong>  Either graphical (message is displayed in a window) or nongraphical (message is written to stdout).<p>
+</body>
+</html>
+

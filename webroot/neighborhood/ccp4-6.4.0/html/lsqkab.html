@@ -1,0 +1,291 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>CCP4 Program Suite</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]">
+</HEAD>
+<BODY>
+
+<!-- ::INDEX_INFO::LSQKAB::Supported::Coordinate file manipulations::apply various transformations to coordinate files:::::::: -->
+
+<H1>LSQKAB (CCP4: Supported Program)</H1>
+<H2>NAME</H2>
+<B>lsqkab </B>
+- Work out and apply various transformations to coordinate files.
+
+<H2>SYNOPSIS</H2>
+
+<P><B>lsqkab xyzinm </B><I>tomatch.brk</I> <B>xyzinf</B> <I>reference.brk</I>
+<B>xyzout</B> <I>matched.brk</I> <BR>
+<B>lsqkab xyzinm</B> <I>totransform.brk</I> <B>xyzout</B> <I>transformed.brk</I>
+</P>
+[<A HREF="#keywords">Keyworded input</A>]
+
+<p><b>Note:</b> XYZINM has the aliases XYZIN2, WORKCD and XYZINW <br>
+XYZINF has the aliases XYZIN1, REFRCD and XYZINR <br>
+XYZOUT has the alias LSQOP  <br></p>
+
+<H2><A NAME="description"></A>DESCRIPTION</H2>
+
+<H3>Primary use</H3>
+
+<P>Optimises the fit of a subset of atomic coordinates from one file (assigned
+to XYZINM) to the same subset of another file (assigned to XYZINF). The 
+"working" coordinates in XYZINM are to be moved; the "reference" coordinates 
+in XYZINF are fixed. The
+program assumes both sets of coordinates are in the PDB format. If there are
+two or more conformations, the first (labelled A) is chosen for comparison.
+</P>
+
+<P>The subset can be defined either by residue numbers with options for
+main chain only, side chain only or CAs, or by the position of the atom
+in the file. </P>
+
+<P>The centroid of the moving subset is first shifted to that of the fixed
+set and then a rotation matrix is derived using a method suggested by Kabsch
+(<A HREF="#reference1">reference [1]</A>). This rotation matrix is defined relative to the orthogonal coordinate
+system. </P>
+
+<P>The whole of the moving coordinate set can be transformed and output
+in an orientation matching that of the fixed reference set. The output file assigned
+to XYZOUT. You can give CELL dimensions to set up the CRYST1 and SCALEi lines, 
+otherwise they  will be copied from the XYZINM coordinate file.  </P>
+
+<P>There are various output options described on the input cards. </P>
+
+<H3>Secondary purpose - much better done in PDBSET</H3>
+
+<P>The rotating coordinate set contained in file XYZINM can be transformed 
+by a given rotation matrix and translation (see <A HREF="#rotate">ROTATE</a>
+and <A HREF="#translate">TRANSLATE</a> keywords), and then output in a new 
+orientation to the file XYZOUT. </P>
+
+<H2><A NAME="keywords"></A>KEYWORDED INPUT</H2>
+
+<P>The keywords are: 
+<A HREF="#fit">FIT</a>, <A HREF="#match">MATCH</a>, 
+<A HREF="#output">OUTPUT</a>, <A HREF="#radius">RADIUS</a>, 
+<A HREF="#rotate">ROTATE</a>, <A HREF="#title">TITLE</a>, 
+<A HREF="#translate">TRANSLATE</a>, <A HREF="#cell">CELL</a>,
+<A HREF="#end">END</a>. </P>
+
+<H3><A NAME="fit"></A>FIT [ ATOM | RESIDUE ] &lt;arguments&gt; </H3>
+
+<P>Describes the rotating coordinate subset taken from XYZINM. 
+Keyword must be followed by ATOM (alias WATOM) or RESIDUE (alias WRESIDUE).</P>
+
+<DL>
+<DT><A NAME="fit_atom"></A>ATOM &lt;atom1&gt; TO &lt;atom2&gt;</DT>
+
+<DD> the atom range to fit. </DD>
+
+<DT><A NAME="fit_residue"></A>RESIDUE [ CA | MAIN | SIDE | ALL ] &lt;res1&gt;
+TO &lt;res2&gt; [ CHAIN &lt;chnam&gt; ] </DT>
+
+<DD> atom type used for fitting (default ALL), followed by residue range.
+<A NAME="fit_chain"></A>CHAIN (alias WCHAIN) describes
+the rotating chain name, if needed </DD>
+</DL>
+
+<P>For fitting the next card must be <A href="#match">MATCH</A>. </P>
+
+<H3><A NAME="match"></A>MATCH &lt;n1&gt; TO &lt;n2&gt; [ CHAIN &lt;chnam&gt; ]</H3>
+
+<P>Describes the reference coordinate subset taken from XYZINF.</P>
+
+<DL>
+<DT>&lt;n1&gt;, &lt;n2&gt; </DT>
+
+<DD>two numbers to define atom or residue range (interpretation depends on
+previous <A href="#fit">FIT</A> keyword; ATOM or RESIDUE subkeywords can
+be included but are actually ignored).</DD>
+
+<DT><A NAME="match_chain"></A>CHAIN &lt;chnam&gt; </DT>
+
+<DD>(alias RCHAIN) the reference chain name if needed. </DD>
+</DL>
+
+<H3><A NAME="cell"></A>CELL a b c [alpha beta gamma ncode]</H3>
+
+<P> Default alpha beta gamma 90.0 90.0 90.0.   Default ncode 1. </P>
+<P>Read cell dimensions and prepare CRYST1 &amp; SCALE header records for
+XYZOUT. These
+will replace any cell dimensions read from th input working coordinates.
+The fractional translation vector will be given relative to these cell dimensions.
+
+<P>ncode selects the orthogonalization matrix to be used. </P>
+<PRE>     Code :-
+        = 1  axes along a, c* x a, c*  (Brookhaven standard, default)
+        = 2  axes along b, a* x b, a*
+        = 3  axes along c, b* x c, b*
+        = 4  axes along a+b, c* x (a+b), c*
+        = 5  axes along a*, c x a*, c       ( Rollett )
+        = 6  axes along a, b*, a x b*
+        = 7  axes along a*, b, a* x b   (TNT convention)
+</PRE>
+
+
+<H3><A NAME="output"></A>OUTPUT [ XYZ / RMS / DELTAS ]</H3>
+
+<P>Must be followed by XYZ and/or RMS and/or DELTAS. </P>
+
+<DL>
+<DT><A NAME="output_xyz"></A>XYZ</DT>
+
+<DD> Output a PDB file of coordinates to the file assigned to xyzout. The cell
+is assumed to be that of the ROTATING coordinates.</DD>
+
+<DT><A NAME="output_rms"></A>RMS</DT>
+
+<DD> Output a table of rms distances between atom pairs for the  main chain and
+side chain of each selected residue. (If you are only fitting CA or main chain atoms,
+the side chain RMS will be zero. If the "residue" has no peptide unit, the main chain 
+RMS will be zero). It can be input into a plotting program such as SQUID. 
+</DD>
+
+<DT><A NAME="output_deltas"></A>DELTAS</DT>
+
+<DD> A list of ALL differences between atom pairs is written to a file
+assigned to DELTAS. </DD>
+</DL>
+
+<H3><A NAME="radius"></A>RADIUS &lt;radchk&gt; [ &lt;Xc&gt; &lt;Yc&gt;
+&lt;Zc&gt; ]</H3>
+
+<P>Use atoms in a sphere for fitting. </P>
+
+<P>radchk: All atoms more than radchk Angstroms from the reference centroid
+are excluded. </P>
+
+<P>radchk Xc Yc Zc: All atoms more than radchk Angstroms from the reference
+point Xc Yc Zc (in As) are excluded </P>
+
+<H3><A NAME="rotate"></A>ROTATE [ EULERIAN / POLAR / DCS / MATRIX ]</H3>
+
+<P>must be followed by EULERIAN or POLAR or DCS (direction cosines) or
+MATRix. All generate a matrix for rotation of XYZINM. </P>
+
+<PRE>   EULERIAN    alpha beta gamma
+   POLAR       omega phi kappa
+   DCS         dc1 dc2 dc3  kappa
+   MATRIX      nine elements: m11 m12 m13  m21 m22 m23  m31 m32 m33
+</PRE>
+
+<H3><A NAME="translate"></A>TRANSLATE &lt;t1&gt; &lt;t2&gt; &lt;t3&gt;</H3>
+
+<P>Must be followed by t1 t2 t3, the translation vector in &#197;s along PDB
+axes. </P>
+
+<P>Alternative: <BR>
+TRANslate FRAC &lt;t1&gt; &lt;t2&gt; &lt;t3&gt; <BR>
+translation vector in fractions of ROTATING cell edge. </P>
+
+<P>Input coordinates are rotated by matrix [R] then translated by vector
+tr. <BR>
+[Xop] = [R] * [Xip] + [tr]. </P>
+
+<H3><A NAME="title"></A>TITLE &lt;title&gt;</H3>
+
+<H3><A NAME="end"></A>END</H3>
+
+<P>Terminate input and begin program. </P>
+
+<H2><A NAME="files"></A>REQUIRED FILES</H2>
+
+<OL>
+<LI>You will always want a set of coordinates to rotate. Assign a PDB file
+to logical name XYZINM. </LI>
+
+<LI>If you want to FIT/MATCH, you need a reference fixed set of coordinates.
+Assign a PDB file to logical name XYZINF. </LI>
+
+<LI>If you have requested xyz output, open coordinate file with logical
+name XYZOUT. </LI>
+
+<LI>If you have requested rms output, open file with logical name RMSTAB.
+</LI>
+
+<LI>If you have requested deltas output, open file with logical name DELTAS.
+</LI>
+</OL>
+
+<H2><A NAME="known_problems"></A>KNOWN PROBLEMS</H2>
+
+<P>There has been a report that in some cases using the FIT RESIDUE CA options,
+the fitting has been ``reversed'' e.g. the commands
+<pre>
+FIT RESIDUE CA 7 TO 12
+MATCH 7 TO 12
+</pre>
+result in the CA atom of residue 12 in the rotating set is fitted to the CA of
+residue 7 in the reference set and so on.</P>
+
+<P>The reported workaround is to split the FIT/MATCH commands, for example:
+<pre>
+FIT RESIDUE CA 7 TO 9
+MATCH 7 TO 9
+FIT RESIDUE CA 10 TO 12
+MATCH 10 TO 12
+</pre>
+which apparently works in most cases.</P>
+
+<P><I>(Thanks to Toby Galbraith)</I></P>
+
+<H2><A NAME="references"></A>REFERENCE</H2>
+
+<OL>
+<P><!-- KEEP startreferencelist --></P>
+
+<LI><A NAME="reference1"></A>Kabsch W. <I>Acta. Cryst.</I> <B>A32</B> 922-923 (1976). </LI>
+<!-- KEEP endreferencelist -->
+</OL>
+
+<H2><A NAME="examples"></A>EXAMPLES</H2>
+
+<H3>UNIX example script found in $CEXAM/unix/runnable/</H3>
+
+<LI><A HREF="../examples/unix/runnable/lsqkab.exam">lsqkab.exam</A> 
+(Examples of fitting and applying transformations).</LI>
+
+<H3>Very complicated match</H3>
+
+<PRE>lsqkab xyzinf ../data/takaxp_model8_9.pdb 
+    xyzinm ../data/takap21.pdb xyzout {$SCRATCH}lsq_cat_residues.pdb 
+    DELTAS {$SCRATCH}lsq_cat_residues.delta &lt;&lt; END-lsqkab 
+title matching catalytic residues of 3A to 2.1A taka
+output  XYZ
+output  deltas
+fit RESIDU side 155 TO 156 CHAIN A 
+MATCH RESIDU 155 TO 156 CHAIN A
+fit RESIDU side 210 TO 210 CHAIN A 
+MATCH RESIDU 210 TO 210 CHAIN A
+fit RESIDU side 206 TO 206 CHAIN A 
+MATCH RESIDU 206 TO 206 CHAIN A
+fit RESIDU side 122 TO 122 CHAIN A 
+MATCH RESIDU 122 TO 122 CHAIN A
+fit RESIDU side 83 TO 83 CHAIN A 
+MATCH RESIDU 83 TO 83 CHAIN A
+fit RESIDU side 168 TO 168 CHAIN A 
+MATCH RESIDU 168 TO 168 CHAIN A
+fit RESIDU side 74 TO 74 CHAIN A 
+MATCH RESIDU 74 TO 74 CHAIN A
+fit RESIDU side 35 TO 35 CHAIN A 
+MATCH RESIDU 35 TO 35 CHAIN A
+fit RESIDU side 79 TO 79 CHAIN A 
+MATCH RESIDU 79 TO 79 CHAIN A
+fit RESIDU side 340 TO 340 CHAIN A 
+MATCH RESIDU 340 TO 340 CHAIN A
+fit RESIDU side 344 TO 344 CHAIN A 
+MATCH RESIDU 344 TO 344 CHAIN A
+fit RESIDU side 296 TO 297 CHAIN A 
+MATCH RESIDU 296 TO 297 CHAIN A
+fit RESIDU side 230 TO 233 CHAIN A 
+MATCH RESIDU 230 TO 233 CHAIN A
+fit RESIDU side 209 TO 209 CHAIN A 
+MATCH RESIDU 209 TO 209 CHAIN A
+end
+END-lsqkab
+</PRE>
+
+</BODY>
+</HTML>

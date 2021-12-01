@@ -1,0 +1,300 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>CCP4 Program Suite</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]">
+</HEAD>
+<BODY>
+
+<!-- ::INDEX_INFO::F2MTZ::Supported::MTZ manipulations / conversions::Convert a formatted reflection file to MTZ format:::::::: -->
+
+<H1>F2MTZ (CCP4: Supported Program)</H1>
+<H2>NAME</H2>
+<B>f2mtz </B>
+- Convert a formatted reflection file to MTZ format
+
+<H2>SYNOPSIS</H2>
+
+<P><B>f2mtz hklin</B> <I>foo.hkl</I> <B>hklout</B> <I>foo.mtz</I> <BR>
+[<A HREF="#keywords">Keyworded input</A>] </P>
+
+<H2><A NAME="description"></A>DESCRIPTION</H2>
+
+<P>F2MTZ is a program to convert a free- or fixed-format formatted reflection file
+to MTZ format. It should be used on merged data in the later stages of
+structure determination, <EM>e.g.</EM> when importing data from X-Plor. If you wish
+to import data from a data processing program for reduction in SCALA
+and TRUNCATE, then it is better to use <a href="combat.html">COMBAT</a>.
+F2MTZ requires some keywords to describe the content of the MTZ header. </P>
+
+<h4><a name="data_harvesting"></a>Datasets and Harvesting</h4>
+
+Datasets should be assigned project, crystal and dataset names, using
+the <a href="#name">NAME</a> keyword. These
+are written to the output MTZ file and are used in subsequent processing
+to categorise the data. The project and dataset names are also utilised
+for <a href="harvesting.html">Data Harvesting</a>. 
+
+<H2><A NAME="keywords"></A>KEYWORDED INPUT</H2>
+
+<P>Possible keywords are: </P>
+
+<BLOCKQUOTE>
+<a href="#cell"><B>CELL</B></a>, <a href="#ctypout"><B>CTYPOUT</B></a>,
+<a href="#end"><B>END</B></a>,
+<a href="#file"><B>FILE</B></a>, <a href="#format"><B>FORMAT</B></a>,
+<a href="#labout"><B>LABOUT</B></a>, <a href="#name"><B>NAME</B></a>,
+<a href="#scale"><B>SCALE</B></a>, <a href="#skip"><B>SKIP</B></a>,
+<a href="#symmetry"><B>SYMMETRY</B></a>, <a href="#title"><B>TITLE</B></a>
+</BLOCKQUOTE>
+
+<P>The <B>CELL</B>, <B>SYMMETRY</B>, <B>LABOUT</B> and <B>CTYPOUT</B> specifications
+are mandatory; the program will stop with an error if they are not present.
+</P>
+
+<H3><A NAME="cell"></A>CELL &lt;a&gt; &lt;b&gt; &lt;c&gt; [ &lt;alpha&gt;
+&lt;beta&gt; &lt;gamma&gt; ]</H3>
+
+<P>Followed by the cell lengths and angles. </P>
+
+<H3><A NAME="symmetry"></A>SYMMETRY &lt;spacegroup&gt;</H3>
+
+<P>Followed by the standard space group name or number, or explicit symmetry
+operators. </P>
+
+<H3><A NAME="labout"></A>LABOUT</H3>
+
+<P>In the specification of the MTZ format, each data column has an associated
+label and type. The LABOUT command allows you to specify the column labels.
+The various programs in the CCP4 program suite expect reflection data to
+be labelled according to a specific scheme. If the label in the input reflection
+MTZ file does not match the expected name, all programs in the suite will
+allow you to specify the label names using the <B>LABIN </B>and <B>LABOUT
+</B>commands. </P>
+
+<P>The standard label names used are as follows: </P>
+
+<PRE>
+   Name         Item
+ 
+   H, K, L      Miller indices.
+   S            (4 sin**2 theta / lambda**2).
+
+   IC           Centric flag.
+   M/ISYM       Partial flag and symmetry number.
+   BATCH        Batch number.
+
+   I            Intensity.
+   I'           Selected mean intensity.
+   SIGI         sigma(I).
+   SIGI'        sigma(I').
+
+   FRACTIONCALC Calculated partial fraction.
+
+   IMEAN        Mean intensity.
+   SIGIMEAN     sigma(IMEAN).
+   RATDELSD     Agreement factor between films in a pack.
+
+   FP           Native `F' value.
+   FC           Calculated `F'.
+   FPHn         `F' value for derivative `n'.
+
+   DP           Anomalous difference for native data.
+   DPHn         Anomalous difference for derivative `n'.
+
+   SIGFP        sigma(FP).
+   SIGDP        sigma(DP).
+   SIGFPHn      sigma(Fn).
+   SIGDPHn      sigma(DELn).
+
+   PHIC         Calc Phase.
+   PHIM         Most prob phase.
+   PHIB         Phase.
+
+   FOM          figure of merit.
+   WT           weight
+
+   HLA          ABCD H/L coeffs
+   HLB
+   HLC
+   HLD
+</PRE>
+
+<H3><A NAME="ctypout"></A>CTYPOUT </H3>
+
+<P>This keyword allows you to specify column types. These take a number
+of strings as arguments, one per column. The MTZ format requires each data
+column to have an associated label and type; if a CTYPOUT specification
+is absent a default type of R (see below) is assumed in the output file.
+There is a special case for CTYPOUT: if it is `X' (an invalid type, normally),
+it is changed to `I' and that column is assumed to be an X-PLOR or SHELX
+free R factor and the difference in conventions is accounted for. </P>
+
+<P>The data types for the different types of data which can be present
+in an MTZ file are as follows; </P>
+
+<PRE>
+H       index h,k,l
+J       intensity
+F       structure amplitude, F
+D       anomalous difference
+Q       standard deviation of anything: J,F,D or other
+G       structure amplitude associated with one member of an hkl -h-k-l pair, F(+) or F(-) 
+L       standard deviation of a column of type G 
+K       intensity associated with one member of an hkl -h-k-l pair, I(+) or I(-) 
+M       standard deviation of a column of type K 
+P       phase angle in degrees
+W       weight (of some sort)
+A       phase probability coefficients (Hendrickson/Lattman)
+B       BATCH number
+Y       M/ISYM, packed partial/reject flag and symmetry number
+I       any other integer
+R       any other real
+X       special dummy type for Rfree in X-PLOR; this is reset to I.
+
+</PRE>
+
+<P>This information allows the programs to decide whether the data is being
+treated sensibly in a given situation. </P>
+
+<H3> <A NAME="name"></A>NAME PROJECT &lt;pname&gt; CRYSTAL &lt;xname&gt; DATASET &lt;dname&gt;</H3>
+[Note that the keywords PNAME &lt;pname&gt;, XNAME &lt;xname&gt; and DNAME &lt;dname&gt;
+are also available, but the NAME keyword is preferred.]
+<p>
+Specify the project, crystal and dataset names for the output MTZ file.
+It is strongly recommended
+that this information is given. Otherwise, the default project, crystal and 
+dataset names are "unknown", "unknown" and "unknownddmmyy" respectively.
+<p>
+The project-name specifies a particular structure solution project, the
+crystal name specifies a physical crystal contributing to that project, 
+and the dataset-name specifies a particular dataset obtained from that
+crystal. All three should be given.
+
+<H3><A NAME="format"></A>FORMAT &lt;format string&gt;</H3>
+
+<P>Supply a valid FORTRAN fixed format string, such as might be given in
+a FORMAT statement, including the brackets and quoted. <EM>E.g.</EM>, </P>
+
+<PRE>
+
+   FORMAT '(6(6X,F6.0))'
+
+</PRE>
+
+<P>will read records comprising six numbers each preceded by a
+six-character-wide field which will be skipped.  It is not possible to
+read more than one reflexion from each input line. However, a single
+reflexion can be read from more than one line by using the '/' format
+character. The 'X' format character can be used to skip over keywords
+in the input file, <EM>e.g.</EM> "INDE" in the X-Plor format. Under Unix, 
+the <b>cut</b> (1) command may be useful for reformatting the input columns 
+if, for instance, the relevant fields aren't in fixed positions.</P>
+
+<p>Since the MTZ format stores all data, including indices, as reals,
+the FORMAT statement must read numbers as real (<b>F</b>), and not 
+integer (<b>I</b>). Numbers which are integers in the input file
+should be read as real with a .0 extension, <EM>e.g.</EM> F6.0, see the
+<a href="#caveats">CAVEATS</a> section below. If the supplied FORMAT string
+includes I's then F2MTZ will convert them to the correct F format
+automatically, <EM>e.g.</EM> 3I4 will be converted to 3F4.0.</p></P>
+
+<p>If no FORMAT keyword is specified, then the program will assume free
+format.
+</P>
+
+<H3><A NAME="skip"></A>SKIP &lt;nlines&gt;</H3>
+
+<P>Specify a number of lines to be skipped at the start of the file before
+the data are read. </P>
+
+<H3><A NAME="title"></A>TITLE &lt;title&gt;</H3>
+
+<P>Put a suitable title in the output file. </P>
+
+<H3><A NAME="scale"></A>SCALE &lt;scale1&gt; &lt;scale2&gt; ...</H3>
+
+<P>Followed by a list of scale factors to apply to the values in each column
+of the output file, given as real numbers in column order. </P>
+
+<H3><A NAME="file"></A>FILE &lt;file&gt;</H3>
+
+<P>Specify the ASCII input file. Usually this would be done via the logical
+name HKLIN. It can be in free format or in the format specified by the
+<A HREF="#format">FORMAT</A> keyword. The input typically contains h, k, l, Fp and SigFp. </P>
+
+<h3><A NAME="end"></A>END</h3>
+End keyworded input.
+
+<H2><A NAME="caveats"></A>CAVEATS</H2>
+
+<P>If you are using this to convert Raxis data do not forget to run
+<a href="cad.html">CAD</a> afterwards - your data may not be in the 
+conventional CCP4 asymmetric unit. This may apply to data from other 
+sources too. </P>
+
+<P>Note the comment above about REAL numbers being required. In cases like
+that of <B>scalepack</B> output where the format actually changes depending
+on the value of the datum, becoming integer rather than real in some cases
+(!) ensure you use a format item ending with `.0'. If the numbers are right-justified
+in the F format field you specify, the `.0' can't harm.</P>
+
+<P>Note that I's in the supplied FORMAT string will automatically be converted
+to the appropriate F format; see <a href="#format">FORMAT</a> keyword.</P>
+
+<H2><A NAME="missing_data"></A>MISSING DATA</H2>
+
+<P>If you read the input in free-format (no FORMAT specification) data
+which take the `default' value according to the Fortran rules will appear
+in the output with the canonical `missing' value. Free-format default values
+are acquired, for instance, if there are consecutive commas or the record
+is prematurely terminated by a slash. </P>
+
+<H2><A NAME="cns"></A>CONVERTING CNS DATA</H2>
+
+Reflection files from CNS can vary in the precise formatting of the 
+real numbers. The following script can be used to tidy up a CNS file:
+<pre>
+
+================== CUT ================
+#!/usr/bin/perl
+until(($_=&lt;&gt;)=~/\binde/i){}
+do{s/\b[a-z]\S*\s*//gi;print}while(&lt;&gt;);
+================== CUT ================
+
+</pre>
+Usage: save it (e.g. as 'cnshkl.pl'), make it executable, then:
+<pre>
+
+cnshkl.pl in.hkl &gt; out.hkl
+
+</pre>
+Then run f2mtz <em>without</em> the FORMAT option.
+
+<H2><A NAME="examples"></A>EXAMPLE</H2>
+
+<H3>Unix example script found in $CEXAM/unix/runnable/</H3>
+  <li><a href="../examples/unix/runnable/f2mtz.exam">f2mtz.exam</a>
+(Example of converting X-Plor data.)
+<P>
+
+<H2>BUGS</H2>
+
+<P>The program is at the mercy of the argument to <B>FORMAT</B>.<BR>
+Make sure it's going to read the correct number of real numbers from the
+right columns. </P>
+
+<H2>AUTHOR</H2>
+
+<P>Morten Kjeldgaard. </P>
+
+<H2>SEE ALSO</H2>
+
+<P><A HREF=combat.html>combat</A>,
+<A HREF=scalepack2mtz.html>scalepack2mtz</A>,
+<A HREF="harvesting.html">Data Harvesting</A>,
+<A HREF="cad.html">CAD</A>,
+cut (1) </P>
+
+</BODY>
+</HTML>

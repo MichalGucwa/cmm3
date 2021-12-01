@@ -1,0 +1,141 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4I Documentation for Programmers: Core Documentation</title>
+<link rel="stylesheet" type="text/css" href="../../ccp4idocs.css" title="CCP4i" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+</head>
+<body>
+<H2>CCP4i Documentation for Programmers: Core Documentation</H2>
+<H3>Contents</H3>
+<h3>Interaction with Operating System & Local Packages(src/local.tcl)</h3>
+<a name="Interaction_with_Operating_System___Local_Packages_src_local_tcl_"><h3> Interaction with Operating System & Local Packages(src/local.tcl) </h3> 
+<p>The following procedures might need local customisation. In practice the only procedure that I know to have been changed on any site is RunBatchJob which needs customising of the local batch system.<p>
+<a name="SendMail" ><h4><font color="#CC3333">SendMail</font> <em>Send email using system Mail utility</em></h4> 
+<p><em>Argument list:  &lt;subject&gt; &lt;tmp_file&gt; &lt;mail_address&gt;</em></p>
+<p><strong>subject</strong>  Subject of mail message<p>
+<p><strong>tmp_file</strong>  Temporary file containing the text of the message<p>
+<p><strong>mail_address</strong>  Mail addressee<p>
+<h3>Interaction with Netscape</h3>
+<a name="Interaction_with_Netscape"><h3> Interaction with Netscape </h3> 
+<p>It is assumed that Netscape is used as a browser. CCP4i uses the browser to display documentation and uses commands normally invoked from the command line to send commands to Netscape to display the required file. See the Netscape documentation <p>
+<a href=http://www.netscape.com/newsref/std/x-remote.html>Netscape Docs</a><p>I (Liz) have found some of the commands documented here do not seem to work on SGIs or through the Tcl exec command.<p>
+<p>Another major problem is that if Netscape is not already running it can be tricky to start it and then specify the name of the file to display as there is a significant wait as Netscape starts up and is not listening to input. The poll_netscape procedure was an attempt to tackle this problem.<p>
+<a name="start_netscape" ><h4><font color="#CC3333">start_netscape</font> <em>Start the Netscape program</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>Uses the Tcl exec command to run the command line defined in configure(START_NETSCAPE)<p>
+<p>The use of this procedure is deprecated - use start_hypertext_viewer instead.<p>
+<a name="start_hypertext_viewer" ><h4><font color="#CC3333">start_hypertext_viewer</font> <em>Start the hypertext viewer program defined in configure</em></h4> 
+<p><em>Argument list:  &lt;viewer&gt;</em></p>
+<p>Uses the Tcl exec command to start the hypertext viewer defined in configure(HYPERTEXT_VIEWER).<p>
+<p>This is a generic version of the start_netscape command, and should be used instead.<p>
+<p><strong>viewer</strong>  (optional) Specify a viewer command to use in preference to that defined in configure(HYPERTEXT_VIEWER).<p>
+<a name="open_url" ><h4><font color="#CC3333">open_url</font> <em>Open a specified file in a browser window</em></h4> 
+<p><em>Argument list:  &lt;url&gt; &lt;args&gt;</em></p>
+<p> Open a specified file in a currently open browser window<p>
+<p><strong>url</strong>  full path name of file<p>
+<p><strong>target</strong>  optional target within file<p>
+<p><strong>-remote</strong><p>
+<p>The url is not a local file     <p>
+<a name="warning_no_netscape" ><h4><font color="#CC3333">warning_no_netscape</font> <em>Output warning message when fail to open page in Netscape</em></h4> 
+<p><em>Argument list:  &lt;url&gt; &lt;message&gt;</em></p>
+<p>This procedure is superseded by the generic warning_no_hypertext_viewer command.<p>
+<p><strong>url</strong>  name of file which could not open<p>
+<p><strong>message</strong>  the message returned by the opening mechanism<p>
+<a name="warning_no_hypertext_viewer" ><h4><font color="#CC3333">warning_no_hypertext_viewer</font> <em>Output warning message when there is a failure to open a URL</em></h4> 
+<p><em>Argument list:  &lt;hypertext_viewer&gt; &lt;url&gt; &lt;message&gt;</em></p>
+<p>When CCP4i fails to open a URL in the specified hypertext viewer then display a warning with the error message returned by the opening mechanism.<p>
+<p>This is a generic version of the warning_no_netscape procedure and should be used instead.<p>
+<p><strong>url</strong>  Name of the file which couldn't be opened<p>
+<p><strong>message</strong>  The message text returned by the opening mechanism<p>
+<a name="poll_netscape" ><h4><font color="#CC3333">poll_netscape</font> <em>Make repeat attempts to load page into Netscape</em></h4> 
+<p><em>Argument list:  &lt;mode&gt; &lt;delay&gt; &lt;netscape_npolls&gt; &lt;url&gt; &lt;message&gt;</em></p>
+<p>After Netscape has been started there is a delay before it will respond to system commands to load a page.  This procedure works by recursively  calling itself and incrementing netscape_npolls until it equals some maximal value (currently hardcoded).<p>
+<p><strong>mode</strong>  either remote (url is on a remote machine) or file (url is a local file)<p>
+<p><strong>delay</strong>  the pause between each attempt to load a page<p>
+<p><strong>netscape_npolls</strong>  number of attempts that have been made to load page<p>
+<p><strong>url</strong>  page to be loaded into Netscape<p>
+<p><strong>message</strong>  Error message to be output to user<p>
+<h3>Running Program Scripts</h3>
+<a name="Running_Program_Scripts"><h3> Running Program Scripts </h3> 
+<p>Most of the code for running scripts is in the runjob.tcl file. The procedures in this section are those which might possibly require some installation dependent modification.<p>
+<p>Provided ccp4i is properly configured the user has the option to run program scripts on remote machines or in batch queues.  The necessary configuring is described in<p>
+<a href=../../../help/general/configure.html#remote_machine>Configuring Running on Remote Machines</a><p>RunRemote uses one of the unix system command rsh or ssh to run jobs on other machines on the same local network.  The necessary commands to run in batch (RunBatchJob) may be installation dependent.  For either of these modes ccp4i creates a com file (CreateBatchCom) which is a short *nix shell script to setup ccp4 and to start a ccp4i process with the appropriate command line arguments which will run it in 'run' mode for running the program scripts.<p>
+<a name="RunBatchJob" ><h4><font color="#CC3333">RunBatchJob</font> <em>Submit a job to a local batch queue</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt; &lt;com_file&gt; &lt;batch_queue&gt; &lt;batch_type&gt; &lt;batch_options&gt;</em></p>
+<p>Uses a simple Tcl exec command to submit a job to a local batch queue. and handles failures cleanly.<p>
+<p><strong>job_id</strong>  The job number (see database documentation)<p>
+<p><strong>com_file</strong>  A command file which will be run on the batch machine (see CreateBatchCom)<p>
+<p><strong>batch_queue</strong>  The name of the batch queue<p>
+<p><strong>batch_options</strong>  Any additional arguments to the batch system<p>
+<a name="RunRemote" ><h4><font color="#CC3333">RunRemote</font> <em>Start a job on a remote machine</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt; &lt;com_file&gt; &lt;machine&gt; &lt;args&gt;</em></p>
+<p><strong>job_id</strong>  job number<p>
+<p><strong>com_file</strong>  Command script to run on the remote machine (see CreateBatchCom)<p>
+<p><strong>machine</strong>  Name of remote machine<p>
+<p><strong>-time</strong><em>  time</em><p>
+<p>Use the Unix at command to run the job at time. This is a text string with an appropriate format for the at command<p>
+<p><strong>-protocol</strong><em>  protocol</em><p>
+<p>Protocol to use for remote connection (e.g. rsh, ssh). Otherwise the default is taken from configure.def<p>
+<a name="RunServer" ><h4><font color="#CC3333">RunServer</font> <em>Procedure not fully implemented. Start a job on a server</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt; &lt;script_file&gt; &lt;server_name&gt; &lt;server_host&gt; &lt;server_port&gt;</em></p>
+<a name="CreateBatchCom" ><h4><font color="#CC3333">CreateBatchCom</font> <em>Create a command file to start a job on a remote machine or batch queue</em></h4> 
+<p><em>Argument list:  &lt;format&gt; &lt;def_file&gt; &lt;script_file&gt; &lt;com_fileVar&gt;</em></p>
+<p>The command file will normally contain a command to setup CCP4 as defined by configure(CCP4_SETUP_COMMAND) and a command to run non-graphical ccp4i in script mode with the appropriate script file name as input.<p>
+<p><strong>def_file</strong>  def file containing parameters to run script (is in the project database directory).<p>
+<p><strong>com_fileVar</strong>  the name of a command file is generated from the script file name by adding the extension .com and changing the directory to the the TEMPORARY directory. The command file name is returned as com_fileVar<p>
+<a name="KillScript" ><h4><font color="#CC3333">KillScript</font> <em>Kill a non-graphical ccp4i process</em></h4> 
+<p><em>Argument list:  &lt;script_pid&gt; &lt;nretry&gt; &lt;0&gt;</em></p>
+<p>Kill the ccp4i script which is running the ccp4 program(s) by killing any child process (i.e. the ccp4 program). The script should then fail cleanly.  If it can not find a child process then the KillScript process will call itself again recursively and try again.  The limit on retries is currently set in the procedure to 3 and after this it will try to kill the ccp4i process.<p>
+<p>Not currently implemented for the Windows operating system<p>
+<p>A potential problem on *nix systems is the use of the system command ps -ef to find the ids of processes and the ids of their parents.  The output from this can have variable format.<p>
+<p><strong>script_pid</strong>  Process id for ccp4i process (this information is returned to the main graphical ccp4i process when the job start) #d_arg nretry Number of retries that have been made. This is optional argument which should not usually be set when the procedure is first called - it is used when KillScript recursively calls itself to keep track of the number of tries.<p>
+<a name="GetProcessList" ><h4><font color="#CC3333">GetProcessList</font> <em>Return the process information from the Unix ps command</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>Determine the possible forms of the "ps" command for the current operating system, then execute using the get_process_list command to return the output as a list (with each line of output as an element of the list). Returns an empty string on error.<p>
+<a name="get_process_list" ><h4><font color="#CC3333">get_process_list</font> <em>Execute and return the output of Unix command ps ...</em></h4> 
+<p><em>Argument list:  &lt;ps_command&gt;</em></p>
+<p>Internal command called from GetProcessList. Executes the supplied "ps" command and returns the output as a list, with each line of output as an element of the list. Returns an empty string on error.<p>
+<p><strong>ps_command</strong>  The ps ... command appropriate to this system (normally ps -ef)<p>
+<a name="KillProcess" ><h4><font color="#CC3333">KillProcess</font> <em>Kill a system process</em></h4> 
+<p><em>Argument list:  &lt;pid&gt;</em></p>
+<p>Kill a system process with the specified pid, by issuing the kill -9 command to it.<p>
+<p>Returns 1 on success, 0 on failure.<p>
+<p><strong>pid</strong>  The process id number for the process to be killed.<p>
+<a name="KillChildProcesses" ><h4><font color="#CC3333">KillChildProcesses</font> <em>Kill a system process id and all its child processes</em></h4> 
+<p><em>Argument list:  &lt;process_id&gt; &lt;delay&gt;</em></p>
+<p>Kill all the child processes of the specified system process (if any, by calling KillChildProcesses recursively) and then try to kill the process itself (if it is still active).<p>
+<p>Returns 1 on success, 0 on failure.<p>
+<p>After killing the child processes KillChildProcesses pauses for the specified delay, to allow the system to update, before checking to see if the parent process is still active. If not then it is assumed that it has died due to the kill signals sent to its children, and success status is returned.<p>
+<p><strong>process_id</strong>  pid of the system process to be killed<p>
+<p><strong>delay</strong>  delay in milliseconds after killing child processes and before checking whether the parent process is still active<p>
+<a name="KillRemoteScript" ><h4><font color="#CC3333">KillRemoteScript</font> <em>Kill a ccp4i non-graphical script running on a remote machine</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt;</em></p>
+<p>This uses a *nix system command (either ssh or rsh) to start another ccp4i process on the remote machine.  The new process has a -k(ill) argument and will just use the KillScript procedure to kill the target process before terminating itself.<p>
+<p><strong>job_id</strong>  Job number of job to be killed.<p>
+<a name="ReadLogPid" ><h4><font color="#CC3333">ReadLogPid</font> <em>Read log file header to get process id</em></h4> 
+<p><em>Argument list:  &lt;job_id&gt; &lt;pidVar&gt;</em></p>
+<p> All ccp4i scripts write an identifier to the top of the output log file.  One item of information is the process id.<p>
+<p>When ccp4i starts a job it usually saves the process id in the project database but this information is lost if the main ccp4i job is stopped and restarted.  The best way to recover the process id is from the log file. The only current use for the information is to kill a job.<p>
+<p><strong>job_id</strong>  Job number<p>
+<p><strong>pidVar</strong>  Return the process id for the job<p>
+<h3>Server-Side Socket Handling</h3>
+<a name="Server_Side_Socket_Handling"><h3> Server Side Socket Handling </h3> 
+<p>See the Tcl documentation on the socket command and also the client side procedures in <p>
+<a href=./system.html#Socket_Handling>Socket Handling</a><p>In CCP4i the main graphical process acts as the server which has a permanently open port to which the non-graphical processes (which run the programs) can connect. The main use for the sockets is to return information on job status and output files to the main ccp4i process.<p>
+<p>The server port is opened at CCP4i startup  by OpenServerPort.  There are then two processes ServerAcceptSocket which accepts new socket connections from a client and ServerAcceptInput which accepts input via a socket. The input to ServerAcceptInput is usually in the form of a command which is the name of a ccp4i procedure and some arguments. For obvious security reasons only a very limited number of commands are recognised and these are explicitly listed in ServerAcceptInput. <p>
+<p>The activities of the socket handlers are reported in the session log<p>
+<a href=./system.html#CreateSessionLog>Session Log</a><a name="OpenServerPort" ><h4><font color="#CC3333">OpenServerPort</font> <em>Open a port in the CCP4i server i.e. the main graphical process</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>This procedure called as part of ccp4i initialisation. The port id is one in the range defined by configure(GUI_PORT).  This should be a list of two elements - the first and last in the range of permissible port ids.  The number of ports required may exceed the number available if there are a large number of ccp4i processes on one machine.  This procedure reports to the user if it fails and warns that inter-process communication will fail.<p>
+<a name="ServerAcceptSocket" ><h4><font color="#CC3333">ServerAcceptSocket</font> <em>Accept a socket connection from a client</em></h4> 
+<p><em>Argument list:  &lt;newSock&gt; &lt;addr&gt; &lt;port&gt;</em></p>
+<p><strong>newSock</strong>  the id for the new socket<p>
+<p><strong>addr</strong>  Address (as domain style name of ip address) for the client machine<p>
+<p><strong>port</strong>  Port id for the client side of the connection<p>
+<a name="ServerAcceptInput" ><h4><font color="#CC3333">ServerAcceptInput</font> <em>Accept input from a client</em></h4> 
+<p><em>Argument list:  &lt;sock&gt;</em></p>
+<p> The input should be in the form of one of the recognised commands: DbReceive, EditComFile, DbAddOutputFile or LGServerReceive.  Or an eof marker will indicate that the socket is being closed from the client side and so should be closed by the server.<p>
+</body>
+</html>
+

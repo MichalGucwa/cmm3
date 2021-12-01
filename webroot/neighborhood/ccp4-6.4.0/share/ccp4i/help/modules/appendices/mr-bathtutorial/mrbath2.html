@@ -1,0 +1,725 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4 Interface: I. Tickle tutorial MR (continuation 2)</title>
+<link rel="stylesheet" type="text/css" href="../../../ccp4idocs.css" title="CCP4i" />
+<link rev="made" href="mailto:mgwt@yorvic.york.ac.uk" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta name="AUTHOR" content="Maria and Liz" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="2"><img src="../../../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logotitle">MR Tutorial Bath - Basic concepts</td></tr>
+</table>
+
+<table class="bathbuttons" width="100%">
+<tr>
+<td><a href="mrbath1.html"><img src="back.gif" /></a></td>
+<td align="center"><a href="mrbath98.html">BACK TO INDEX</a></td>
+<td align="right"><a href="mrbath3.html"><img src="forward.gif" /></a></td>
+</tr>
+</table>
+
+<h1>2. Molecular Replacement: Basic concepts</h1>
+
+<p>Similar molecules can form crystals with the same or with very different packing arrangements
+of the molecules within the unit cell. These differences arise even for molecules with identical
+shapes because the packing is determined not only by shape but by intermolecular interactions
+(charge, H-bond, hydrophobic effect) at the molecular surfaces. An additional complication
+arises when several molecular species co-crystallise. In practice 4 cases can be distinguished;
+in each case &quot;molecular complex&quot; may be substituted for &quot;molecule&quot;:</p>
+
+<ol type="a">
+<li>
+<p>Similar molecules crystallise with essentially identical packing arrangements (<strong>isomorphism</strong>).</p>
+</li>
+
+<li>
+<p>The same or similar molecules crystallise with significant differences in their relative
+positions (usually apparent from differences in the cell constants), while maintaining their
+symmetry relationships (<em>i.e.</em> the crystals are <strong>non-isomorphous</strong>).</p>
+</li>
+
+<li>
+<p>The same molecule forms two or more crystals with differing packing arrangements
+(<strong>polymorphism</strong>), under the same or different crystallisation conditions.</p>
+</li>
+
+<li>
+<p>Similar molecules crystallise with different packing arrangements.</p>
+</li>
+</ol>
+
+<p>Knowledge of the molecular structure of one crystal can be used to derive the structure of the
+same or similar molecule in another (&quot;<strong>target</strong>&quot;) crystal. If the crystals are isomorphous this can
+be done by fitting the known molecule directly into the target crystal; otherwise the technique
+of <strong>Molecular Replacement</strong> is used to conduct a search for the fit of the known molecule into
+the target crystal by comparing their X-ray diffraction patterns.</p>
+
+<h3><a name="section2.1" id="section2.1"></a>2.1. Prerequisites</h3>
+
+<ol type="a">
+<li>
+<p><strong>Observed amplitudes</strong> for the X-ray diffraction of the target crystal, but no
+<strong>phases</strong> with which
+to compute the <strong>electron density</strong>.</p>
+
+<p>It is <strong>very important</strong> that the observed data is as <strong>complete</strong> as possible
+within the high resolution
+cutoff, <em>i.e.</em> minimal systematically missing regions (low resolution, cusp, zero layers <em>etc.</em>) and
+detector overloads. There is considerable evidence that data incompleteness can have a
+disastrous effect on the solution of the structure by Molecular Replacement, though there are
+things that can be done to alleviate the effect.</p>
+</li>
+
+<li>
+<p><strong>Atomic coordinates</strong> for <strong>1 molecule</strong> of the homologous
+<strong>model structure</strong>; for a protein at least
+20% sequence similarity is usually needed, but the higher the better. Actually, what is really
+needed is structural similarity, but of course this usually goes with sequence similarity.</p>
+
+<p>The model should preferably be a crystal structure <strong>refined</strong> by structure factor least squares, and
+with individual isotropic <strong>thermal parameters</strong>. Experience suggests that a lower degree of
+structural similarity can be tolerated provided the model is an accurate crystal structure, though
+it is not obvious why this should be so.</p>
+
+<p>Don't forget to delete H<sub>2</sub>O and other solvent molecules from the model coordinates, and also
+any obvious dissimilarities in the main-chain such as identified extra loops, but trimming
+differing side-chains does not usually make much difference.</p>
+</li>
+</ol>
+
+<h3><a name="section2.2" id="section2.2"></a>2.2. Symmetry</h3>
+
+<p>Unless the <strong>space group</strong> happens to be <strong>P1</strong> (no rotational symmetry,
+lattice repeats only), the
+target crystal will contain several molecules in different orientations related by <strong>crystallographic</strong>
+(or space group) <strong>symmetry</strong>, <em>i.e.</em> exact, and relating any pair of molecules anywhere in the
+crystal. The space group is normally determined uniquely by the symmetry of the observed
+<strong>diffraction pattern</strong> and from the <strong>systematic absences</strong> at the time that the raw
+intensity data is
+processed. However in some cases the systematic absences may not provide unique
+information, and so there may be an ambiguity in the translation components of the space
+group which can only be resolved by trial-and-error.</p>
+
+<p>In addition, some crystals contain two or molecules (&quot;protomers&quot;) related by
+<strong>non-crystallographic symmetry (NCS)</strong>, <em>i.e. </em>not exact and local, relating only specific pairs of
+protomers within the same oligomer. This is usually apparent from a <strong>solvent-content</strong>
+calculation, and also often, but not always, from pseudo-symmetry and/or lines of enhanced
+intensity (&quot;spikes&quot;) in the observed diffraction pattern.</p>
+
+<h3><a name="section2.3" id="section2.3"></a>2.3. The role of the Patterson function in Molecular Replacement</h3>
+
+<p>A basic understanding of the workings of the Molecular Replacement (MR) method can be
+gained by thinking about the <strong>Patterson functions</strong> of the model and target structures. It should
+be understood however that in practice most MR programs do not actually work with the
+Patterson functions directly, but do most of the work in reciprocal space with structure factors,
+transforming into real space only at the end of the calculation. The detailed theory behind these
+calculations is beyond the scope of these notes; numerous original papers and reviews on the
+subject are available (see <a href="mrbath6.html" target="_self">section 6: Bibliography</a>).</p>
+
+<p>From the observed amplitudes only (<em>i.e.</em> no
+phases are used), we can calculate the
+Patterson function of the target crystal; this
+consists of peaks at positions corresponding to
+the complete <strong>vector set</strong> of the crystal structure.</p>
+
+<table class="bath1" align="center">
+<tr>
+<td>The target crystal will in many cases have a
+different space group from the crystal of the
+model structure, or may crystallise in the same
+space group, but non-isomorphously, perhaps
+due to large-scale relative motion of the
+molecules in one crystal compared with the
+other. Each independent molecule in the
+asymmetric unit will therefore generally be in
+a different <strong>orientation and position</strong>, usually
+represented respectively by <strong>3 rotation angles</strong>
+about the coordinate axes and by <strong>3 translation coordinates</strong>. This gives altogether 6N
+parameters, where N is the number of molecules per asymmetric unit. Of course in the absence
+of NCS there will be just 6 parameters because then N = 1.</td>
+</tr>
+<tr>
+<td><img src="molreptr.gif" /></td>
+</tr>
+<tr>
+<td>For an animation of this picture (<em>i.e.</em> the molecular replacement 'process'), see
+<a href="http://px.cryst.bbk.ac.uk/sample/molrep.htm" target="_blank">MR: Molecular Replacement
+Using Known Structures</a> at Birkbeck.</td>
+</tr>
+</table>
+
+<p>If we knew all the 6N orientational and positional parameters, we could make a complete
+model of the crystal from the model of one molecule, then calculate the structure factor amplitudes from the
+coordinates and thermal parameters, and hence calculate a Patterson
+function <em>P</em><sub>calc</sub> derived solely from the model. This could be compared with the observed
+Patterson function <em>P</em><sub>obs</sub>; the simplest (though not necessarily the best!) way of doing this is with
+the <strong>product function</strong>:</p>
+
+<blockquote><em>S</em>(<strong><a
+href="../chargifs/omb.gif"><font face="symbol">w</font></a></strong>,<strong><a
+href="../chargifs/tab.gif"><font face="symbol">t</font></a></strong>) =
+<a href="../chargifs/siu.gif"><font
+face="symbol">S</font></a><sub>i</sub>
+<em>P</em><sub>obs</sub>(<strong>u</strong><sub>i</sub>).<em>P</em><sub>calc</sub>(<strong>u</strong><sub>i</sub>,<strong><a
+href="../chargifs/omb.gif"><font face="symbol">w</font></a></strong>,<strong><a
+href="../chargifs/tab.gif"><font face="symbol">t</font></a></strong>)</blockquote>
+
+<p>Here, <em>P</em><sub>obs</sub> and <em>P</em><sub>calc</sub> both vary with the vector
+<strong>u</strong><sub>i</sub>. <em>P</em><sub>calc</sub> also depends on the set of orientational
+parameters
+<strong><a href="../chargifs/omb.gif"><font face="symbol">w</font></a></strong> and positional parameters
+<strong><a href="../chargifs/tab.gif"><font face="symbol">t</font></a></strong>. The product function will
+sum to a large value provided the peaks in <em>P</em><sub>obs</sub> occur at the same position as the peaks
+in <em>P</em><sub>calc</sub>.</p>
+
+<p>An obvious approach to the problem of determining the unknown orientational and positional
+parameters is simply to try all possible combinations of
+<strong><a href="../chargifs/omb.gif"><font face="symbol">w</font></a></strong> and
+<strong><a href="../chargifs/tab.gif"><font face="symbol">t</font></a></strong>, and see which combination
+gives the maximum value for the product function. For N = 1, this involves a search in 6
+dimensions, and therefore the number of combinations to be tried goes up as the 6th power of
+the number of trial values for each parameter. There must be enough trial values that the
+separation between adjacent sample points is not so big that the maximum is missed
+completely. Unfortunately, Patterson searches in 6 dimensions or higher are extremely
+time-consuming and generally impractical. For N = 2, a 12 dimensional search would appear
+to be required, and this is certainly out of the question. The strategy has to be to find ways to
+decompose all these multi-dimensional searches into series of 3-D searches.</p>
+
+<p>The vector set of the complete structure can be thought of as containing both <strong>intra-</strong>
+and <strong>inter-molecular</strong> vectors. Although there is no way to distinguish these without knowing the
+structure, and there is certainly never a clear-cut separation of the two types of vector, the
+former tend to be shorter (nearer to the origin of the Patterson function); this simple fact is of
+crucial practical importance.</p>
+
+<p>The intra-molecular vector set depends only on the orientational parameters, and not on the
+positional ones, whereas the inter-molecular vector set depends on both. It is possible to use
+the differing length distributions to discriminate between intra- and inter-molecular vectors in
+<em>P</em><sub>obs</sub> by including in the summation only those inside an envelope, usually spherical with a fixed
+radius, centred on the Patterson origin. The aim is to choose this <strong>radius of integration</strong> to be
+large enough that sufficient intra-molecular vector peaks are included, while not including too
+many inter-molecular vector peaks. What in practice constitutes &quot;sufficient&quot; and &quot;too many&quot; is
+discussed <a href="#section2.7">below</a>.</p>
+
+<h3><a name="section2.4"></a>2.4. The Rotation and Translation functions</h3>
+
+<p>As an approximation therefore, the product function can be separated into two components: a
+<strong>Rotation function</strong> (RF):
+<em>R</em>(<strong><a href="../chargifs/omb.gif"><font face="symbol">w</font></a></strong>), and a
+<strong>Translation function</strong> (TF):
+<em>T</em>(<strong><a href="../chargifs/omb.gif"><font face="symbol">w</font></a></strong>,<strong><A
+href="../chargifs/tab.gif"><font face="symbol">t</font></a></strong>), each now with 3N
+variable parameters. Note that this Rotation function is also known as the <strong>cross-Rotation
+function</strong> to distinguish it from the <strong>self-Rotation function</strong>, to be discussed
+<a href="#section2.8">below</a>.</p>
+
+<blockquote><em>R</em>(<strong><a
+href="../chargifs/omb.gif"><font face="symbol">w</font></a></strong>) =
+<a href="../chargifs/siu.gif"><font face="symbol">S</font></a><sub>i<a
+href="../chargifs/in.gif"><font face="symbol">&#206;</font></a>intra</sub>
+<em>P</em><sub>obs</sub>(<strong>u</strong><sub>i</sub>).<em>P</em><sub>calc</sub>(<strong>u</strong><sub>i</sub>,<strong><a
+href="../chargifs/omb.gif"><font face="symbol">w</font></a></strong>)</blockquote>
+
+<blockquote><em>T</em>(<strong><a
+href="../chargifs/omb.gif"><font face="symbol">w</font></a></strong>,<strong><a
+href="../chargifs/tab.gif"><font face="symbol">t</font></a></strong>) =
+<a href="../chargifs/siu.gif"><font face="symbol">S</font></a><sub>i<a
+href="../chargifs/in.gif"><font face="symbol">&#206;</font></a>inter</sub>
+<em>P</em><sub>obs</sub>(<strong>u</strong><sub>i</sub>).<em>P</em><sub>calc</sub>(<strong>u</strong><sub>i</sub>,<strong><a
+href="../chargifs/omb.gif"><font face="symbol">w</font></a></strong>,<strong><a
+href="../chargifs/tab.gif"><font face="symbol">t</font></a></strong>)</blockquote>
+
+<p>In the TF, <em>P</em><sub>obs</sub> has to be modified so that it contains only the inter-molecular vectors; this is
+done by putting <em>P</em><sub>obs</sub> and <em>P</em><sub>calc</sub> on the correct relative scale, and then
+subtracting the intra-molecular component of <em>P</em><sub>calc</sub> from <em>P</em><sub>obs</sub>. The
+orientational parameters <strong><a href="../chargifs/omb.gif"><font face="symbol">w</font></a></strong> are assumed
+to be kept fixed, at the optimum values determined by the RF, during the TF search.</p>
+
+<p>The functions described above are the <strong>full-symmetry</strong> RF and TF, because <em>P</em><sub>calc</sub> contains
+contributions from all molecules related by space group symmetry (and by NCS if present); of
+course <em>P</em><sub>obs</sub> does as well, but that is unavoidable. The intra-molecular component of
+<em>P</em><sub>calc</sub> is
+simply the superposition of all the individual molecular Pattersons, which are related to each
+other by the crystallographic and non-crystallographic <strong>point groups</strong> (<em>i.e.</em> the purely rotational
+components of the symmetry elements).</p>
+
+<p>In practice most MR programs do not compute the full-symmetry RF, mainly because of
+computational complications, though it should give better results. Instead, an individual
+molecule of the model is placed in a hypothetical crystal without rotational symmetry (<em>i.e.</em> in
+space group P1), and amplitudes calculated from this are used. This should still produce
+maxima in the product function wherever the set of peaks in the calculated molecular Patterson
+coincides with a subset of the peaks in <em>P</em><sub>obs</sub>, though false maxima may arise from accidental
+superpositions with peaks belonging the other symmetry related subsets in <em>P</em><sub>obs</sub>.</p>
+
+<p>The inter-molecular vector set consists of contributions from all pairs of molecules, whether
+related by space-group symmetry or by NCS. In contrast with the RF, the full-symmetry TF
+above (also known as <em>T2</em>) is the one that is most often used in practice, at least by the newer
+MR programs. Some older programs still use the <em>T1</em> function, which derives from using the
+subset of inter-molecular vectors from only 1 pair of molecules, but this does not generally give
+as good results as the full-symmetry <em>T2</em> function, because again false maxima may arise from
+accidental superpositions with peaks belonging to the other inter-molecular vector subsets in
+<em>P</em><sub>obs</sub>.</p>
+
+<h3><a name="section2.5"></a>2.5. The Eulerian angles</h3>
+
+<p>The set of orientational parameters
+<strong><a href="../chargifs/omb.gif"><font face="symbol">w</font></a></strong>
+consists of 3 variables for each independent molecule. 
+These 3 variables could be defined in a number of different ways, but they are usually defined
+as <strong>Eulerian angles</strong>: either the Crowther convention
+(<strong><a href="../chargifs/al.gif"><font face="symbol">a</font></a>,
+<a href="../chargifs/be.gif"><font face="symbol">b</font></a>,
+<a href="../chargifs/ga.gif"><font face="symbol">g</font></a></strong>) which is used consistently
+throughout the CCP4 and MERLOT program suites, or the Rossmann &amp; Blow convention
+(<a href="../chargifs/th.gif"><font face="symbol">q</font></a><sub>1</sub>,
+<a href="../chargifs/th.gif"><font face="symbol">q</font></a><sub>2</sub>,
+<a href="../chargifs/th.gif"><font face="symbol">q</font></a><sub>3</sub>), or the X-PLOR convention
+(<a href="../chargifs/th.gif"><font face="symbol">q</font></a><sub>1</sub>',
+<a href="../chargifs/th.gif"><font face="symbol">q</font></a><sub>2</sub>',
+<a href="../chargifs/th.gif"><font face="symbol">q</font></a><sub>3</sub>').</p>
+
+<p>They are usually described as operating on the coordinates, in the order as written, about the
+axes <strong>after</strong> rotation, <em>e.g.</em>
+<a href="../chargifs/al.gif"><font face="symbol">a</font></a> about the <strong><em>z</em></strong> axis, then
+<a href="../chargifs/be.gif"><font face="symbol">b</font></a> about the <strong>new <em>y</em></strong>, then
+<a href="../chargifs/ga.gif"><font face="symbol">g</font></a> about the <strong>new <em>z</em></strong> (note
+that these axes are not necessarily the same as the crystallographic axes). However, it is
+probably conceptually simpler to regard them as operating on the coordinates in reverse order
+about the <strong>fixed</strong> axes, <em>i.e.</em>
+<a href="../chargifs/ga.gif"><font face="symbol">g</font></a> about the <strong><em>z</em></strong> axis, then
+<a href="../chargifs/be.gif"><font face="symbol">b</font></a> about the <strong>old <em>y</em></strong>, then
+<a href="../chargifs/al.gif"><font face="symbol">a</font></a> about the <strong>old <em>z</em></strong>. Both
+of these descriptions correspond to the equation:</p>
+
+<blockquote><strong>r<sub>new</sub></strong> =
+<strong>R</strong><sub>z</sub>(<a href="../chargifs/al.gif"><font face="symbol">a</font></a>) .
+<strong>R</strong><sub>y</sub>(<a href="../chargifs/be.gif"><font face="symbol">b</font></a>) .
+<strong>R</strong><sub>z</sub>(<a href="../chargifs/ga.gif"><font face="symbol">g</font></a>) .
+<strong>r<sub>old</sub></strong></blockquote>
+
+<p>Note that although the <a href="../chargifs/al.gif"><font face="symbol">a</font></a> rotation is written first,
+this is read as meaning that the <a href="../chargifs/ga.gif"><font face="symbol">g</font></a> rotation is
+applied to the coordinate vector <strong>r<sub>old</sub></strong> first.</p>
+
+<table class="bath4" align="center">
+<tr>
+<th><a name="eulerd.gif" id="eulerd.gif"></a>Rotating axes</th>
+<th><a name="eulerc.gif" id="eulerc.gif"></a>Fixed axes</th>
+</tr>
+<tr>
+<td>(for better resolution, click on the picture)</td>
+<td>(for better resolution, click on the picture)</td>
+</tr>
+<tr>
+<td><a href="eulerd.gif"><img src="eulerd.gif" height="300" /></a></td>
+<td><a href="eulerc.gif"><img src="eulerc.gif" height="300" /></a></td>
+</tr>
+<tr>
+<td>1.  <a href="../chargifs/al.gif"><font face="symbol">a</font></a> about <strong><em>z</em></strong></td>
+<td>1.  <a href="../chargifs/ga.gif"><font face="symbol">g</font></a> about <strong><em>z</em></strong></td>
+</tr>
+<tr>
+<td>2.  <a href="../chargifs/be.gif"><font face="symbol">b</font></a> about new <strong><em>y</em></strong></td>
+<td>2.  <a href="../chargifs/be.gif"><font face="symbol">b</font></a> about old <strong><em>y</em></strong></td>
+</tr>
+<tr>
+<td>3.  <a href="../chargifs/ga.gif"><font face="symbol">g</font></a> about new <strong><em>z</em></strong></td>
+<td>3.  <a href="../chargifs/al.gif"><font face="symbol">a</font></a> about old <strong><em>z</em></strong></td>
+</tr>
+</table>
+
+<p>The Eulerian angles
+(<a href="../chargifs/th.gif"><font face="symbol">q</font></a><sub>1</sub>,
+<a href="../chargifs/th.gif"><font face="symbol">q</font></a><sub>2</sub>,
+<a href="../chargifs/th.gif"><font face="symbol">q</font></a><sub>3</sub>),
+as originally defined by Rossmann &amp; Blow, behave in the same
+way as
+(<a href="../chargifs/al.gif"><font face="symbol">a</font></a>,
+<a href="../chargifs/be.gif"><font face="symbol">b</font></a>,
+<a href="../chargifs/ga.gif"><font face="symbol">g</font></a>),
+except that the second rotation axis is <strong><em>x</em></strong> instead of
+<strong><em>y</em></strong>.</p>
+
+<blockquote>
+Note:  <a href="../chargifs/th.gif"><font face="symbol">q</font></a><sub>1</sub> =
+<a href="../chargifs/al.gif"><font face="symbol">a</font></a> + 90&#176;,
+<a href="../chargifs/th.gif"><font face="symbol">q</font></a><sub>2</sub> =
+<a href="../chargifs/be.gif"><font face="symbol">b</font></a>,
+<a href="../chargifs/th.gif"><font face="symbol">q</font></a><sub>3</sub> =
+<a href="../chargifs/ga.gif"><font face="symbol">g</font></a> - 90&#176;</blockquote>
+
+<p>Beware that the <strong>X-PLOR</strong> program employs the transpose of the R&amp;B convention; this is
+pertinent if you wish to compare the results of X-PLOR with other RF programs. The X-PLOR
+Eulerian angles are related to the Crowther ones by:</p>
+
+<blockquote><a href="../chargifs/th.gif"><font face="symbol">q</font></a><sub>1</sub>' =
+270&#176; - <a href="../chargifs/ga.gif"><font face="symbol">g</font></a>,
+<a href="../chargifs/th.gif"><font face="symbol">q</font></a><sub>2</sub>' =
+<a href="../chargifs/be.gif"><font face="symbol">b</font></a>,
+<a href="../chargifs/th.gif"><font face="symbol">q</font></a><sub>3</sub>' =
+90&#176; - <a href="../chargifs/al.gif"><font face="symbol">a</font></a></blockquote>
+
+<p>In all cases the angles increase anticlockwise looking towards the origin from the positive end
+of the axis.</p>
+
+<h3><a name="section2.6"></a>2.6. Asymmetric unit of the Rotation function</h3>
+
+<p>The asymmetric unit of the RF is 1/M of a complete revolution in
+<a href="../chargifs/al.gif"><font face="symbol">a</font></a> or
+<a href="../chargifs/th.gif"><font face="symbol">q</font></a><sub>1</sub> (R&amp;B) or
+<a href="../chargifs/th.gif"><font face="symbol">q</font></a><sub>3</sub>'
+(X-PLOR), where M is the order of the crystallographic symmetry axis parallel to <em>z</em> in the
+orthogonalised frame of the target crystal. Unless the model structure has symmetry about its
+<em>z</em> axis, the asymmetric unit is a complete revolution in
+<a href="../chargifs/ga.gif"><font face="symbol">g</font></a> or
+<a href="../chargifs/th.gif"><font face="symbol">q</font></a><sub>3</sub> or
+<a href="../chargifs/th.gif"><font face="symbol">q</font></a><sub>1</sub>'.
+In <a href="../chargifs/be.gif"><font face="symbol">b</font></a> or
+<a href="../chargifs/th.gif"><font face="symbol">q</font></a><sub>2</sub> it is &#189; a
+complete revolution, unless the target crystal has at least one 2-fold axis perpendicular to <em>z</em>,
+when it is &#188;. The <strong>AMORE / ROTFUN</strong> program automatically detects symmetry in
+<a href="../chargifs/al.gif"><font face="symbol">a</font></a>, but
+needs to be given the asymmetric unit in
+<a href="../chargifs/be.gif"><font face="symbol">b</font></a>.</p>
+
+<h3><a name="section2.7"></a>2.7. The choice of radius of integration and model unit cell</h3>
+
+<p>The choice of the radius of integration in the RF can be critical in determining success or failure
+but there is no consensus on how to make the choice. Usually it is a matter of trial-and-error,
+as it is with the other parameters, such as resolution cutoffs. The size of the P1 unit cell in
+which the model is placed, which is obviously related to the radius, is not so critical.</p>
+
+<p>Bear in mind that a spherical molecule of <strong>diameter</strong> <em>D</em> will give an intra-molecular vector set in
+the Patterson bounded by a sphere of <strong>radius</strong> <em>D</em>, so nothing will be achieved by having the
+radius of integration larger than <em>D</em>. However a radius as large as <em>D</em> will certainly span the
+interstices between molecules and include many unwanted inter-molecular vectors in <em>P</em><sub>obs</sub>. Also
+in no circumstances must the radius be as large as the smallest primitive cell dimension of the
+target crystal, otherwise the resulting inclusion of the large Patterson origin peak will cause
+problems.</p>
+
+<p>David Blow (in the 1985 Molecular Replacement Daresbury Study Weekend Proceedings, p.5)
+suggests a value for the radius &quot;for an approximately spherical molecule ... 75-80% of the
+diameter&quot;. The most common choice seems to be about half the diameter, or for an ellipsoidal
+molecule the geometric mean of the ellipsoid semi-axes, which is roughly half the average
+diameter. However my experience is that this is too small; it only encloses 1/8 of all possible
+intra-molecular vectors, producing excessive &quot;noise&quot; in the RF. My own preference is for a
+hybrid of the above options, namely 75% of the <strong>minimum</strong> diameter. Having decided, the
+choice of the size of the unit cell is relatively straightforward: it must be at least the size of the
+box bounding the model <strong>plus</strong> the chosen radius in each direction; then all the inter-molecular
+vectors in <em>P</em><sub>calc</sub> will necessarily be longer than the radius and will be excluded. However it must
+not be over-sized otherwise too many structure factors may be calculated.</p>
+
+<h3><a name="section2.8"></a>2.8. Extra complications from non-crystallographic symmetry: Rotation function</h3>
+
+<p>Frequently no information on the nature of any non-crystallographic symmetry will be available
+initially, though there may be indications from the diffraction pattern. Also in special cases
+where a crystallographic and a non-crystallographic screw or rotation axis happen to be parallel,
+the <strong>native Patterson</strong> function will have distinctive features, so it is always worth computing this
+if NCS is suspected. In the presence of NCS the difficulties of solution are multiplied several-fold, and the best
+advice is probably to find a different crystal form!</p>
+
+<p>In principle, the point group of the NCS can be deduced from the self-rotation function,
+obtained by rotating <em>P</em><sub>obs</sub> against itself. 2-fold NCS is by far the most common, so normally the
+sections of the self-RF are plotted in terms of <strong>spherical polar angles</strong> (see next section); this
+allows the information on all 2-fold axes (crystallographic as well as non-crystallographic) to
+be viewed simultaneously. Similarly all 3-fold axes can be viewed together, and so on. NCS
+point group 222 (3 mutually perpendicular 2-fold axes) is quite common, so one might look for
+right angles between pairs of peaks on the 2-fold section of the self-RF. Angles can be
+measured directly from the plot by using a <strong>stereographic net</strong>.</p>
+
+<p>If the self-RF can be partially or completely interpreted, a <strong>locked Rotation function</strong> may give
+the best results. This is simply a cross-RF using the partial or full NCS point group symmetry,
+with some or all of the protomers in the correct orientation relative to each other.</p>
+
+<p>Unfortunately the self-RF can be very difficult to interpret, and is often only used to confirm
+the conclusions drawn from the cross-RF. Any pair of correctly interpreted peaks in the cross-RF arising from
+molecules related by NCS should correspond to a peak in the self-RF; working
+out the correspondence is a matter of simple matrix arithmetic (alternatively program <strong>RFCORR</strong>
+in CCP4 can be used to search for the correspondences).</p>
+
+<p>The main difficulty with the cross-RF in the presence of NCS arises when one lacks complete
+information on the NCS point group, and consequently there is no option but to search for
+individual protomers. The intra-molecular vector set is a superposition of the individual
+molecular vector sets and cannot be separated into its components, so 3-D searches for the
+orientations of each protomer have to be conducted in the presence of the intra-molecular vector
+sets from the other protomers. The cross-RF is then likely to be very noisy and may be hard
+to interpret.</p>
+
+<h3><a name="section2.9"></a>2.9. Spherical polar angles and the stereographic projection</h3>
+
+<p align="center"><a name="polar.gif" id="polar.gif"></a><img src="polartr.gif" /></p>
+
+<p>The 3 orientational parameters normally used in
+the self-RF differ from those in the cross-RF. 
+Instead of 3 Eulerian rotations about the
+coordinate axes, there is a <strong>single</strong> rotation
+<a href="../chargifs/ka.gif"><font face="symbol">k</font></a> about
+an axis whose direction is defined by the
+spherical polar angles
+(<a href="../chargifs/om.gif"><font face="symbol">w</font></a>,<a href="../chargifs/ph.gif"><font face="symbol">f</font></a>).
+Note that <a href="../chargifs/om.gif"><font face="symbol">w</font></a> is
+sometimes called <a href="../chargifs/th.gif"><font face="symbol">q</font></a>, and
+<a href="../chargifs/ka.gif"><font face="symbol">k</font></a> is sometimes called
+<a href="../chargifs/ch.gif"><font face="symbol">c</font></a>
+in the programs.</p>
+
+<p>The sections of constant <a href="../chargifs/ka.gif"><font face="symbol">k</font></a> in the self-RF are
+normally plotted in <strong>stereographic projection</strong>. 
+Here, the point <a href="../chargifs/om.gif"><font face="symbol">w</font></a> = 0&#176; at the north pole of an
+imaginary globe projects onto the centre of the
+circular plot; while points on the equator with <a href="../chargifs/om.gif"><font face="symbol">w</font></a>
+= 90&#176; project onto the circumference. The
+asymmetric unit of the self-RF is always
+contained in one hemisphere, so points outside
+the range <a href="../chargifs/om.gif"><font face="symbol">w</font></a> = 0-90&#176; need not be plotted. Points
+with <a href="../chargifs/ph.gif"><font face="symbol">f</font></a> = 0&#176; project onto the +<em>x</em> axis (meridian) of
+the plot and <a href="../chargifs/ph.gif"><font face="symbol">f</font></a> increases anti-clockwise.</p>
+
+<p>A <a name="stnet.gif"><a href="stnet.gif">stereographic net</a></a> (produced by, for example, program
+<strong>STNET</strong> in CCP4) is used to measure
+angles between points on a stereographic projection plot. The net used must have exactly the
+same diameter as the plot, otherwise the results will not be accurate. The angle must be
+measured <strong>along</strong> any one of the great circles (projected lines of longitude connecting opposite
+poles). The other set of lines (projected lines of latitude parallel to the equator) sub-divide the
+great circles and are calibrated in degrees to allow the angle to be read off.</p>
+
+<table class="bath1" align="center">
+<tr>
+<td>Here is a self-RF (NCS symmetry = 222) to practice on.</td>
+</tr>
+<tr>
+<td><img src="polrf222.gif" /></td>
+</tr>
+</table>
+
+<p>You should be able to find 2 sets of 3
+peaks; the sets are related to each other by a crystallographic 2-fold axis, and each set
+corresponds to the 3 NCS 2-fold axes in a 222 tetramer. Using the stereographic net, you
+should therefore be able to measure 90&#176; angles between all pairs of peaks within the set of 3.</p>
+
+<h3><a name="section2.10"></a>2.10. Non-crystallographic symmetry: Translation function</h3>
+
+<p>Assuming that the RF can be correctly interpreted, the solution of the TF in the presence of NCS
+is likely to prove an even tougher nut to crack. This is because there is likely to be no prior
+information at all on the positioning of the protomers within the oligomer, except in very
+special high symmetry cases such as virus structures.</p>
+
+<p>The strictly full-symmetry TF (crystallographic + NCS) is therefore generally not feasible, so a
+TF for each protomer independently has to be done first, ignoring the others and using only
+crystallographic inter-molecular vectors. However this procedure tends to give high
+background noise arising from interference from inter-molecular vector sets between the other
+NCS-related pairs; in any case it does not usually produce a unique solution because most space
+groups have alternative origins, and so there is no guarantee that each protomer will be defined
+relative to the same origin.</p>
+
+<p>Once one protomer (<em>e.g.</em> &quot;A&quot;) is located, then a TF for the next (&quot;B&quot;)
+can be done, using inter-molecular vectors between all B's, plus those between all A's and all B's.
+Then &quot;C&quot; can be
+searched for, using all inter-molecular C-C, A-C and B-C vectors, and so on. This procedure
+ensures that the origins are uniquely defined. Of course the labels are completely arbitrary, so
+it doesn't matter in which order the protomers are searched for.</p>
+
+<p>The <strong>TFFC</strong> program computes the NCS <em>T2</em> function by splitting it into 2 components: the
+&quot;crystallographic&quot; TF which uses only inter-molecular vectors of the type A-A, and the
+&quot;non-crystallographic&quot; (or &quot;partial&quot;) TF which uses only inter-molecular vectors of the type A-B. 
+The <strong>AMORE / TRAFUN</strong> program is more convenient in that it combines these into one
+operation. However the price of this is that much more memory is needed.</p>
+
+<p>It is worthwhile noting that this procedure is exactly analogous to that for finding heavy atoms
+in an isomorphous difference Patterson: for &quot;protomer positional coordinates&quot; read &quot;heavy-atom
+site coordinates&quot;, for &quot;crystallographic TF&quot; read &quot;Harker vector&quot;, and for
+&quot;non-crystallographic TF&quot; read &quot;cross vector&quot; - then the procedure is identical!</p>
+
+<p>For example, in space group P2<sub>1</sub> with 2 asymmetric units (labelled &quot;1&quot; and &quot;2&quot;)
+per unit cell, and
+4 independent molecules (labelled &quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;) per asymmetric
+unit, the intra- and inter-molecular vector sets can be characterised as follows:</p>
+
+<table class="bath5" border="5" align="center">
+<tr>
+<th></th>
+<th>A1</th>
+<th>A2</th>
+<th>B1</th>
+<th>B2</th>
+<th>C1</th>
+<th>C2</th>
+<th>D1</th>
+<th>D2</th>
+</tr>
+<tr>
+<td><strong>A1</strong></td>
+<td>S</td>
+<td>C</td>
+<td>N</td>
+<td>N</td>
+<td>N</td>
+<td>N</td>
+<td>N</td>
+<td>N</td>
+</tr>
+<tr>
+<td><strong>B1</strong></td>
+<td>N</td>
+<td>N</td>
+<td>S</td>
+<td>C</td>
+<td>N</td>
+<td>N</td>
+<td>N</td>
+<td>N</td>
+</tr>
+<tr>
+<td><strong>C1</strong></td>
+<td>N</td>
+<td>N</td>
+<td>N</td>
+<td>N</td>
+<td>S</td>
+<td>C</td>
+<td>N</td>
+<td>N</td>
+</tr>
+<tr>
+<td><strong>D1</strong></td>
+<td>N</td>
+<td>N</td>
+<td>N</td>
+<td>N</td>
+<td>N</td>
+<td>N</td>
+<td>S</td>
+<td>C</td>
+</tr>
+</table>
+
+<p>S = Intra-molecular vector set used in RF and subtracted in TF.<br />
+C = Inter-molecular vector set used in crystallographic TF.<br />
+N = Inter-molecular vector set used in non-crystallographic TF.</p>
+
+<p>Note that there are many more N vectors than C vectors, so the TF using NCS is likely to be
+less noisy and more reliable.</p>
+
+<h3><a name="section2.11"></a>2.11. Asymmetric unit of the Translation functions</h3>
+
+<p>The crystallographic component of the TF has the following asymmetric unit, depending on the
+point group:</p>
+
+<table class="bath4">
+<tr>
+<th>crystal system</th><th>point group</th><th>asymmetric unit</th>
+</tr>
+<tr>
+<td>Monoclinic</td>
+<td>2</td>
+<td>y=0 section; &#189; of x and z (for <strong>b</strong> unique).</td>
+</tr>
+<tr>
+<td>Orthorhombic</td>
+<td>222</td>
+<td>&#189; of x, y and z.</td>
+</tr>
+<tr>
+<td>Trigonal</td>
+<td>3</td>
+<td>z=0 section; all x and y (3 asymmetric units).</td>
+</tr>
+<tr>
+<td></td>
+<td>312</td>
+<td>All x and y; &#189; of z (3 asymmetric units).</td>
+</tr>
+<tr>
+<td></td>
+<td>321</td>
+<td>All x and y; &#189; of z.</td>
+</tr>
+<tr>
+<td>Tetragonal</td>
+<td>4</td>
+<td>z=0 section; &#189; of x, all y (or all x, &#189; of y).</td>
+</tr>
+<tr>
+<td></td>
+<td>422</td>
+<td>x and y as previous, &#189; of z.</td>
+</tr>
+<tr>
+<td>Hexagonal</td>
+<td>6</td>
+<td>z=0 section; all x and y.</td>
+</tr>
+<tr>
+<td></td>
+<td>622</td>
+<td>All x and y, &#189; of z.</td>
+</tr>
+<tr>
+<td>Cubic</td>
+<td>23</td>
+<td>&#189; of one of x, y or z; all of the other two.</td>
+</tr>
+<tr>
+<td></td>
+<td>432</td>
+<td>Same as previous.</td>
+</tr>
+</table>
+
+<pre>Except:     Space group F222 is &#188; of one of x, y or z; &#189; of the other two.
+                 Space group F23 is &#188; of one of x, y or z; all of the other two.</pre>
+
+<p>The space group of the TF is called the <strong>Cheshire group</strong>; it represents the symmetry remaining
+when the material contents of the crystal are hypothetically removed, leaving just the crystal
+lattice and its symmetry elements; in other words, just the smile after the rest of the Cheshire cat
+has disappeared! (Charles Lutwidge Dodgson, alias Lewis Carroll, was of course born in a
+certain village in the county of Cheshire well-known to crystallographers, namely Daresbury.)</p>
+
+<p>The non-crystallographic TF has the following asymmetric unit, depending on the lattice type:</p>
+
+<table class="bath4">
+<tr>
+<th>lattice type</th><th>asymmetric unit</th>
+</tr>
+<tr>
+<td>P</td>
+<td>All x, y and z.</td>
+</tr>
+<tr>
+<td>R</td>
+<td>All x, y and z (3 asymmetric units).</td>
+</tr>
+<tr>
+<td>C</td>
+<td>&#189; of x, all y and z (or &#189; of y, all x and z).</td>
+</tr>
+<tr>
+<td>I</td>
+<td>&#189; of one of x, y or z; all of the other two.</td>
+</tr>
+<tr>
+<td>F</td>
+<td>&#189; of x, y and z.</td>
+</tr>
+</table>
+
+<p>The correct asymmetric unit of the TF is automatically selected by <strong>AMORE / TRAFUN</strong>, but
+with <strong>TFFC</strong> the appropriate <strong>LIMITS</strong> should be specified in <strong>FFT</strong>;
+note that it doesn't matter if
+the chosen asymmetric unit is too big; the peak list will just contain solutions translated by the
+allowed origin shifts of the space group.</p>
+
+<table class="bathbuttons" width="100%">
+<tr>
+<td><a href="mrbath1.html"><img src="back.gif" /></a></td>
+<td align="center"><a href="mrbath98.html">BACK TO INDEX</a></td>
+<td align="right"><a href="mrbath3.html"><img src="forward.gif" /></a></td>
+</tr>
+</table>
+
+</body></html>

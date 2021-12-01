@@ -1,0 +1,114 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html>
+<head>
+<title>CCP4 Interface: Implementing Data Harvesting</title>
+<link rev="made" href="mailto:mgwt@ysbl.york.ac.uk" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+</head>
+<body bgcolor="#f6c462" vlink="#660000" link="#005a7b">
+
+<table border="0">
+<tr><td rowspan="2"><img src="../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td nowrap="nowrap"><font size="+2">CCP4I: Graphical User Interface</font></td></tr>
+<tr><td nowrap="nowrap" valign="bottom"><font size="+3" color="#cc3333"><strong>Implementing Data Harvesting</strong></font></td></tr>
+</table>
+<br />
+<table border="0">
+<tr><td>
+<a href="progframeset.html" target="_PROGRAMMERSDOCS">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="../general/install.html" target="_PROGRAMMERSDOCS">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+</td></tr>
+</table>
+
+<h3>Implementing Standard Interface to Data Harvesting in CCP4I</h3>
+
+<p>This is what you need to do to get a Data Harvest folder in a task interface
+and to get the parameters into the program script.
+<br />This protocol will correctly interface with the Data Harvesting options
+in the programs.</p>
+
+<h3>Changes to taskname.def</h3>
+
+<p>At the end of the file add
+<pre><font color="#ff0000">&#64; [FileJoin [GetEnvPath CCP4I_TOP] tasks harvest.def]</font></pre></p>
+
+<h3>In tasks/<em>taskname</em>.tcl:</h3>
+
+<ol>
+<li>In <strong><em>taskname_run</em></strong> procedure add a line:
+
+<pre><font color="#ff0000">SetHarvestParams $arrayname <em>mtzin</em> -run</font></pre>
+
+where mtzin is the name of the array parameter which contains the name
+of the input MTZ file. <em>Note</em> if there is no input MTZ file (for
+example, in the Mosflm interface) then <em>mtzin</em> should be set to
+an empty string i.e. "".</li>
+</ol>
+
+<h3>In <em>taskname</em>_task_window:</h3>
+
+<ol start="2">
+<li><p>In the call to <strong>CreateTaskWindow</strong> add the folder name<strong> </strong><font color="#ff0000">Data
+Harvesting</font> as the first folder so it will appear immediately after
+the Files folder.</p></li>
+
+<li><p>Immediately after the <strong>CreateTaskWindow</strong> call add the line:
+
+<pre><font color="#ff0000">SetHarvestParams $arrayname <em>mtzin</em> -init</font></pre>
+
+where mtzin is the name of the array parameter which contains the name
+of the input MTZ file (or an empty string i.e. "" if there is no such file).</p></li>
+
+<li><p>Append a command to the CreateInputFileLine for the input MTZ:
+
+<pre><font color="#ff0000">-command &quot;UpdateHarvestMTZ $arrayname <em>mtzin</em>&quot;</font></pre></p></li>
+
+<li><p>Before the current line 'Openfolder 1' add:
+
+<pre><font color="#ff0000">OpenFolder 1
+
+CreateHarvestLine line</font></pre></p></li>
+
+<li><p>Renumber the folders in the subsequent calls to all OpenFolder to
+allow for the insertion of a new folder.</p></li>
+</ol>
+
+<h3>In scripts/<em>taskname</em>.script</h3>
+
+<ol start="7">
+<li><p>At the top if the script add:
+
+<pre><font color="#ff0000"># Source pdb_utils for harvest handling & move to project directory
+# if we are going to dump harvest file to current directory
+  source [SearchPath TOP utils pdb_utils.tcl ] 
+  if { [StringSame $HARVEST_MODE  CURRENTDIR ] } {
+    ChangeDirectory [GetDefaultDirPath]
+   }</font></pre></p></li>
+
+<li><p>and at the end of the script:
+
+<pre><font color="#ff0000">HandleHarvestFile $HARVEST_MODE $HARVEST_PNAME
+            $HARVEST_DNAME <em>program_name</em></font></pre></p></li>
+</ol>
+
+<h3>In templates<em>/programname</em>.com</h3>
+
+<ol start="9">
+<li><a>At the end of the script (but before any end/go type line) add:
+
+<pre><font color="#ff0000">AT { [FileJoin [GetEnvPath CCP4I_TOP] templates harvest.com ] }</font></pre></p></li>
+</ol>
+
+<table border="0">
+<tr><td>
+<a href="progframeset.html" target="_PROGRAMMERSDOCS">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="../general/install.html" target="_PROGRAMMERSDOCS">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+</td></tr>
+</table>
+
+</body>
+</html>

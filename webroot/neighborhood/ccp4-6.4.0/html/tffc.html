@@ -1,0 +1,729 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::TFFC::Supported::Molecular Replacement::Translation Function Fourier Coefficients:::::::: -->
+
+<H1> TFFC (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>tffc </b>
+- Translation Function Fourier Coefficients 
+<H2> SYNOPSIS</H2>
+<b>tffc  hklin</b>
+<i> foo_in.mtz</i>
+<b>hklout</b>
+<i>foo_out.mtz</i>
+<br>
+<A HREF="#keywords">[Keyworded input]</A>
+<H2><A NAME="description"></A> DESCRIPTION</H2>
+TFFC is a full-symmetry Translation Function program based on the
+Harada, Lifchitz, Berthou and Jolles formulation of the Crowther and
+Blow T2 function, and it can also be used to calculate the TO/O
+function of Harada et al.  TFFC uses structure factor information
+(amplitudes and phases) from all molecules in the unit cell whose
+positions have already been determined by previous runs of the
+program, or are about to be determined in the current run, and not
+merely pairs of molecules, as does the C & B T1 function. 
+<P> 
+Amplitude-only information from all molecules of known orientation
+in the unit cell, including any not related by crystallographic
+symmetry (whose positions are consequently unknown), is however used in
+the Fobs/Fcalc scaling, in the calculation of normalised structure
+factor amplitudes, and optionally in the subtraction of the
+transform of the intramolecular vector set. 
+<P> 
+The conventional crystallographic T2 function is in general the
+3-dimensional sum function of the pairwise 2-dimensional T1
+functions; however in polar space groups the crystallographic T2
+function is also 2-dimensional.  It is especially advantageous in
+high-symmetry space groups, where the smaller signal/noise ratio
+of the peaks in the T1 functions may cause difficulties.
+<P> 
+TFFC works for all space-group symmetries containing only rotation
+and screw axes, and non-primitive lattice elements, provided the
+conventional settings in International Tables Vol. A are used (R3
+must be indexed on hexagonal axes).
+<P> 
+The partial T2 function (also called non-crystallographic,
+meaning obtained using structure factors from a partially known
+structure, which may or may not be related by non-crystallographic
+symmetry to the remaining unknown part) is also the 3-dimensional
+sum function of the pairwise partial T1 functions; however the
+partial T1 and T2 functions are always 3-dimensional.  The program
+can also be used to calculate the individual T1 functions, but a
+satisfactory automatic method for analysing these functions has yet
+to be devised, and so they have to be analysed manually (hopefully
+this should never be necessary!).
+<P> 
+The T2 Translation Function can be used to resolve a space group
+ambiguity, for example, I222/I212121 or P3121/P3221, where the
+systematic absence conditions do not distinguish the pairs, or for
+example P21212/P212121 where the identification of systematic
+absences is not always clear-cut. 
+<P> 
+Three important features which further improve the signal/noise ratio of
+the T2 function are the shell-scaling of the F(obs) and F(calc) values
+by the difference Wilson method, the use of normalised amplitudes (E
+values), and the subtraction of the transform of the intramolecular
+vector set from the transform of the Patterson function of the target
+structure.
+<P> 
+The program works by calculating the Fourier coefficients of the
+Translation Function from the transform of the intermolecular vector
+set, and the Fast Fourier Transform (<A HREF="fft.html">FFT</A>) program is used to effect the
+transformation into real space.  This method is about 3 orders of
+magnitude faster than a real space search, and the speed is also
+much less dependent on the fineness of the grid search. 
+<H2><A NAME="requirements"></A> PRE- AND POST-PROCESSING REQUIREMENTS</H2>
+It is assumed that the Rotation Function (<EM>e.g.</EM> program <A HREF="#amore.html">AMORE</A>) has been
+used to get an accurate orientation (within 2.5 deg at 3 Angstrom
+resolution) of the model structure (preferably with thermal parameters)
+to the maximum resolution of the data available.  All structure factors
+to this resolution for one asymmetric unit in space group P1 in the cell
+of the target structure are required (program <A HREF="sfall.html">SFALL</A>).  Then the
+calculated structure factors are combined with the observed amplitudes
+(program <A HREF="cad.html">CAD</A>); for each hkl there will be one Fobs with sigma(Fobs)
+and a number (equal to the number of asymmetric units in the primitive
+unit cell of the unknown structure) of Fcalc values with PHIcalc.
+<P> 
+IMPORTANT:  The unit cell specified in <A HREF="sfall.html">SFALL</A> must be the experimentally
+determined cell of the crystal whose structure is being determined, not
+some arbitrarily chosen cell as in the Rotation Function.  This is
+because the aim is to match the inter-molecular vectors (not the
+intra-molecular ones).  This is clearly not possible if the cells of
+the unknown and model structures are different. 
+<P> 
+If there is more than one molecule per asymmetric unit then the above
+procedure must be repeated for each molecule, using column labels of
+the form FCA1 PCA1 FCA2 PCA2 ... for the first molecule, FCB1 PCB1
+FCB2 PCB2 ... for the second and so on.  The files must then be
+column-merged into a single input reflection file (using <A HREF="cad.html">CAD</A> this 
+operation can be done in a single run).
+<P> 
+The output of TFFC is used as input to the P1 version of <A HREF="fft.html">FFT</A>.  The
+program outputs two sets of Fourier coefficients; for the TO/O function
+two FFTs are necessary, using labels A and B for the TO function and AO
+and BO for the O function.  It is not necessary to print any maps;
+instead specify binary map output in FFT and use the program <A HREF="mapsig.html">MAPSIG</A> to
+perform the division TO/O and analyse the results.  For the T2 function
+only the labels A and B are used, only one FFT is done, but MAPSIG can
+still be used.
+<P> 
+When computing the TO and O functions, the F000 terms must be entered
+manually into the FFT program; the required values are given at the end
+of the TFFC printer output (the two values are for the TO and O
+functions respectively).  The volume V must also be given, but this
+acts only as an arbitrary scale, and any value (typically around 1000)
+which gives sensible magnitudes in the Translation Function map can be
+used.
+<P> 
+Note that the reflection indices produced by TFFC are not the same
+as those read from the input reflection file.  Consequently the S 
+values calculated for these reflections are meaningless, and
+therefore it is important not to apply any resolution cutoffs in FFT.  
+If resolution cutoffs are desired they must be applied by TFFC to
+the original indices. 
+<H2><A NAME="keywords"></A> KEYWORDED INPUT</H2>
+Data are introduced by the following keywords:
+<BLOCKQUOTE>
+<A HREF="#find"><B>FIND</B></A>,
+<A HREF="#labin"><B>LABIN</B></A>,
+<A HREF="#list"><B>LIST</B></A>,
+<A HREF="#noncryst"><B>NONCRYST</B></A>,
+<A HREF="#part"><B>PART</B></A>,
+<A HREF="#pointgroup"><B>POINTGROUP</B></A>,
+<A HREF="#resolution"><B>RESOLUTION</B></A>,
+<A HREF="#self"><B>SELF</B></A>,
+<A HREF="#shell"><B>SHELL</B></A>,
+<A HREF="#spacegroup"><B>SPACEGROUP</B></A>,
+<A HREF="#symmetry"><B>SYMMETRY</B></A>,
+<A HREF="#title"><B>TITLE</B></A>,
+<A HREF="#vector"><B>VECTOR</B></A>.
+</BLOCKQUOTE>
+<P> 
+Only the first 4 characters of each keyword are significant.  All keywords
+are optional, though normally one would specify LABIN to use other than the
+default file labels.
+<P> 
+The keywords <A HREF="#spacegroup">SPACEGROUP</A> and <A HREF="#symmetry">SYMMETRY</A> are mutually exclusive; one or the
+other is only required if the space group information in the reflection
+file header is incorrect.  This may happen because the systematic absences
+do not unambiguously define the space group; the point group information
+defined by the rotation components of the symmetry matrices however must be
+correct.  It is not then necessary to re-run SFALL &amp; CAD, it is only
+necessary to specify the correct symmetry with either SPACEGROUP or
+SYMMETRY.
+<H2> VERY IMPORTANT</H2>
+The <A HREF="#spacegroup">SPACEGROUP</A> option can only be used if:
+<OL>
+<LI>Phase shifts due to any screw-axis translations have not already been applied, and</LI>
+<LI>The primitive General Equivalent Positions in symop.lib are in exactly the same order as
+those used when the input reflection file was prepared.</LI>
+</OL>
+<P> 
+If the space group has screw-axis translations (ignoring non-primitive
+lattice translations), and an earlier program used the translation
+components to apply phase shifts, the SPACEGROUP option cannot be
+used.  The SYMMETRY option must be used and the screw-axis
+translations then omitted. 
+<P> 
+The SYMMETRY option must also be used if the primitive General Equivalent
+Positions in symop.lib are in a different order from those originally
+specified.  This can happen either because for some space groups different
+editions of International Tables have the equivalent positions in a
+different order, or because for some space groups with the same point
+group, the order of the rotation components may vary.  When the SYMMETRY
+option is used, the order of equivalent positions must be identical with
+that used when the input file was prepared.
+<P> 
+No problems should occur using the SPACEGROUP option if
+<OL>
+<LI>the current versions of the SFALL and CAD programs have been used, and</LI>
+<LI>the current version of symop.lib has been used consistently.</LI>
+</OL>
+<H2> DESCRIPTION OF KEYWORDS</H2>
+<H3><A NAME="title"></A> TITLE [String]</H3>
+Title (default is to use reflection file title).
+<H3><A NAME="spacegroup"></A> SPACEGROUP [String or Integer]</H3>
+Name (as in symop.lib) or number in International Tables.
+<H3><A NAME="pointgroup"></A> POINTGROUP [String or Integer]</H3>
+Name (optionally beginning with pg).  This must be one of
+the following :
+<pre>
+
+   1    2  222    3  312  321    4  422    6  622   23  432
+
+The number of primitive g.e.p.'s to follow must be then :
+
+   1    2    4    3    6    6    4    8    6   12   12   24
+
+</pre>
+The default is to use the point group implied by the space group.
+The space/point group may be 1 (one equivalent position) only if the
+PART option is specified.
+<H3><A NAME="symmetry"></A> SYMMETRY [String]</H3>
+Primitive general equivalent position(s) in same format as
+International Tables, with one or more per line, separated
+by * and/or repeating keyword where necessary.  In whatever
+way the g.e.p.'s are set up (SPACEGROUP or SYMMETRY), they
+must exactly correspond in order to those used to generate
+the input reflection file.
+<H3><A NAME="noncryst"></A> NONCRYST [Integer]</H3>
+Number of non-crystallographic subunits per crystallographic
+asymmetric unit; must be between 0 and 8 inclusive.  The
+default is one molecule per asymmetric unit; this is also
+implied by values of 0 or 1.
+<H3><A NAME="self"></A> SELF</H3>
+Intramolecular vector contributions are included.  This is
+required for the TO/O function.  The T2 function is the
+default (intramolecular vector set subtracted).
+<H3><A NAME="shell"></A> SHELL [Integer]</H3>
+Approximate number of reflections per shell to divide data
+for scaling (default = 100).  This value will be reset if
+the number of shells is more than 200.  The program will
+stop with an error message if any shell is empty; the
+number of reflections per shell should then be increased.
+<H3><A NAME="resolution"></A> RESOLUTION [Real(2)]</H3>
+Resolution limits (d-spacings in Angstrom) to be applied
+(either way round); the default is  20  0  and these values
+are recommended for the initial run.
+<H3><A NAME="list"></A> LIST [Integer]</H3>
+Number of reflections to list (default = 0).  This is only
+useful for debugging.
+<H3><A NAME="vector"></A> VECTOR [String] [Real(3)]</H3>
+In the case of non-crystallographic symmetry, this is
+specified for each subunit (A, B, C ... H) whose fractional
+translation vector (Tx, Ty, Tz) has been determined by a
+previous run of TFFC, or otherwise.
+<H3><A NAME="find"></A> FIND [String]</H3>
+In the case of non-crystallographic symmetry, this is
+specified for the subunit (A, B, C ... H) whose translation
+is to be determined in this run.  There may be only one FIND, but it
+may be omitted if all but one subunit translations have been defined
+using VECTOR.
+<H3><A NAME="part"></A> PART</H3>
+This sets up the calculation of the partial (non-crystallographic)
+Translation Function (previously done by program TFPART).  The
+default is to calculate the crystallographic Translation Function
+(previously program TFSGEN). 
+<P> 
+With this option <A HREF="#noncryst">NONCRYST</A. must be specified, and must be between
+2 and 8 inclusive, and there must be at least one <A HREF="#vector">VECTOR</A>.
+For example if NONCRYST is given as 4, then 3 runs of the program would
+be required:
+<pre>
+
+Run 1 :  VECTOR  A  Ax Ay Az
+         FIND    B
+
+Run 2 :  VECTOR  A  Ax Ay Az
+         VECTOR  B  Bx By Bz
+         FIND    C
+
+Run 3 :  VECTOR  A  Ax Ay Az
+         VECTOR  B  Bx By Bz
+         VECTOR  C  Cx Cy Cz
+         FIND    D
+
+</pre>
+<P> 
+The first translation vector for the A subunit could be determined by the
+crystallographic Translation Function, except in P1 where the first
+translation vector can be chosen arbitrarily.  Note that the translations
+need not be determined in the order shown; it may be easier to start by
+fixing one of the other subunits, and then determine the other translations
+in a different order.
+<P> 
+To calculate a T1 function, both the subunit label and the number of the
+equivalent position must be specified in VECTOR (of which there may only
+be one) and FIND; for example:
+<pre>
+
+VECTOR  A1  Ax Ay Az
+FIND    B2
+</pre>
+<H3><A NAME="labin"></A> LABIN [String]</H3>
+MTZ column label assignments.
+<P> 
+If <A HREF="#noncryst">NONCRYST</A> = 0 or omitted, the program labels are:
+<pre>
+
+H K L FP SIGFP FC1 PC1 FC2 PC2 ...
+
+where FP, SIGFP = Fobs, sigma(Fobs)
+FCn, PCn = Fcalc and phase of n'th asymmetric unit of model.
+</pre>
+<P> 
+If NONCRYST &gt; 0 the program labels are H K L FP SIGFP (Fobs,
+sigma(Fobs)), followed by NONCRYST*NUMGEP pairs of columns
+containing the partial Fcalc, phase contributions (NUMGEP =
+number of primitive g.e.p.'s).
+<P> 
+For example, if NONCRYST = 4, NUMGEP = 2, the column labels
+would be:
+<br>
+<pre>
+
+       FCA1  PCA1  FCA2  PCA2  FCB1  PCB1  FCB2  PCB2
+       FCC1  PCC1  FCC2  PCC2  FCD1  PCD1  FCD2  PCD2
+
+</pre>
+<EM>i.e.</EM> the letters A,B,C,D refer to non-crystallographically
+related subunits and the numbers 1,2... refer to
+crystallographically related subunits.
+<H2><A NAME="notes"></A> NOTES</H2>
+<H3> The asymmetric unit of the crystallographic Translation Function</H3>
+The Translation Function is always computed in space group P1, but
+in many cases the crystallographic T function has extra
+translational symmetry, due to the presence of equivalent origins in
+the space group, which reduces the size of the asymmetric unit which
+need be computed.  These alternative origins arise either from
+rotational symmetry elements or from non-primitive lattice
+translations.  The Translation Function never has rotational
+symmetry.  However it should be approximately centrosymmetric about
+the solution vector, but since this is unknown, and therefore in a
+general position, this information cannot be used to reduce the size
+of the asymmetric unit. 
+<P> 
+In polar space groups, the translation vector for the
+crystallographic T function is limited to the plane perpendicular to
+the unique axis, so only one section need be calculated; also, all
+space groups have equivalent origins, which reduces the asymmetric
+unit of the Translation Function, <EM>e.g.</EM> in orthorhombic, these origin
+positions are at 0 and 1/2 in x, y and z, which reduces the
+asymmetric unit to 0 to 1/2 along each axis.  The table below shows
+the asymmetric unit for each point group. 
+<BLOCKQUOTE>
+<TABLE BORDER=0>
+<TR>
+<TD>Monoclinic<BR>(b unique)</TD>
+<TD VALIGN=TOP ALIGN=RIGHT>pg2:</TD>
+<TD>&nbsp;</TD>
+<TD VALIGN=TOP>y=0 section, 0 to 1/2 along x and z.</TD>
+</TR>
+<TR>
+<TD>&nbsp;</TD>
+</TR>
+<TR>
+<TD>Orthorhombic</TD>
+<TD ALIGN=RIGHT>pg222:</TD>
+<TD>&nbsp;</TD>
+<TD>0 to 1/2 along x, y and z.</TD>
+</TR>
+<TR>
+<TD>&nbsp;</TD>
+</TR>
+<TR>
+<TD>Trigonal</TD>
+<TD ALIGN=RIGHT>pg3:</TD>
+<TD>&nbsp;</TD>
+<TD>z=0 section, 0 to 1 along x and y.</TD>
+</TR>
+<TR>
+<TD></TD>
+<TD ALIGN=RIGHT>pg312 and pg321:</TD>
+<TD>&nbsp;</TD>
+<TD>0 to 1 along x and y, 0 to 1/2 along z.</TD>
+</TR>
+</TABLE>
+</BLOCKQUOTE>
+Note that in trigonal point groups it is not possible to calculate
+just one asymmetric unit by applying limits parallel to the cell
+edges.  Consequently the ranges suggested actually enclose 3
+equivalent origins. 
+<BLOCKQUOTE>
+<TABLE BORDER=0>
+<TR>
+<TD VALIGN=TOP>Tetragonal</TD>
+<TD ALIGN=RIGHT VALIGN=TOP>pg4:</TD>
+<TD>&nbsp;</TD>
+<TD>z=0 section, 0 to 1 along x,<BR>0 to 1/2 along y (or vice versa).</TD>
+</TR>
+<TR>
+<TD></TD>
+<TD ALIGN=RIGHT>pg422:</TD>
+<TD>&nbsp;</TD>
+<TD>x and y as for pg4, 0 to 1/2 along z.</TD>
+</TR>
+<TR>
+<TD>&nbsp;</TD>
+</TR>
+<TR>
+<TD>Hexagonal</TD>
+<TD ALIGN=RIGHT>pg6:</TD>
+<TD>&nbsp;</TD>
+<TD>z=0 section, 0 to 1 along x and y.</TD>
+</TR>
+<TR>
+<TD></TD>
+<TD ALIGN=RIGHT>pg622:</TD>
+<TD>&nbsp;</TD>
+<TD>0 to 1 along x and y, 0 to 1/2 along z.</TD>
+</TR>
+<TR><TD>&nbsp;</TD></TR>
+<TR>
+<TD VALIGN=TOP>Cubic</TD>
+<TD ALIGN=RIGHT VALIGN=TOP>pg23/pg432:</TD>
+<TD>&nbsp;</TD>
+<TD>0 to 1/2 along x, 0 to 1 along y and z<BR>(or any other permutation).</TD>
+</TR>
+</TABLE>
+</BLOCKQUOTE>
+In centred space groups, these asymmetric units may be reduced
+further.  Note that although higher symmetry point groups have
+smaller asymmetric units (as a fraction of the unit cell) in the
+space group, they have larger asymmetric units in the Translation
+Function.
+<H3> The asymmetric unit of the partial Translation Function</H3>
+The partial Translation Function only has translational symmetry
+arising from the lattice-centring symmetry elements, so that for all
+primitive space groups regardless of the point group symmetry, a
+complete unit cell in P1 must be computed.  For centred cells this
+can be reduced; for I-centred cells, for example, 1/2 a cell must be
+computed. 
+<H3> Combining the crystallographic and partial Translation Functions</H3>
+If TFFC is used in the presence of non-crystallographic symmetry, it
+must be given the partial structure factors of all the subunits of
+known orientation, whether the translations of the subunits are
+known or not.  The crystallographic and partial Translation Functions
+are then calculated separately; of course the partial T function 
+cannot be calculated unless at least one translation vector has been 
+determined using the crystallographic T function (or in the case of
+space group P1, the first vector can be fixed arbitrarily).
+<P> 
+For a given subunit, the total Translation Function is simply the
+sum of crystallographic and partial contributions, and the program
+<A HREF="mapsig.html">MAPSIG</A> can be used to do this summation (a minimum function could be
+used, but I have not tried this).  In practice I have not found it
+necessary to do this summation; manual inspection of the peak lists
+generated from the separate maps is usually all that is necessary. 
+<H2><A NAME="files"></A> INPUT AND OUTPUT FILES</H2>
+<H3> Input files</H3>
+<dl>
+<dt> Unit 5<dd>
+The input control data.
+<dt> HKLIN<dd>
+The input reflection data in standard CCP4 format.
+</dl>
+<H3> Output files</H3>
+<dl>
+<dt> Unit 6<dd>
+The line printer output.
+<dt> HKLOUT<dd>
+The output reflection data in standard CCP4 format.
+</dl>
+<H3> Reflection output file labels:</H3>
+H K L  A B  AO BO
+<P> 
+The A and B columns (real and imaginary components of the Fourier
+coefficient of the transform of the Translation Function) are used in a
+run of FFT in P1.  The solution vector should appear as a single peak;
+the corresponding molecule is to be translated by this vector.  The AO
+and BO columns are the transform of the Harada et al O (overlap)
+function.
+<H2><A NAME="program_structure"></A> PROGRAM STRUCTURE</H2>
+The TFFC program is a merger of the Translation Function programs 
+TFSGEN and TFPART, with the PART option added to select the 
+appropriate code.  The program consists of the following routines:
+<P> 
+TFFC (main subprogram)
+<br>
+Dimensions a working array (not used when PART option is selected).  Calls
+CCPFYP and TFMAIN.
+<P> 
+BLOCK DATA
+<br>
+Initialises file titles,flags for Harker section test, sums for scaling.
+<P> 
+TFMAIN
+<br>
+Calls GETINP to set up input data, calls GENPGT (for partial T1
+function only), reads MTZ file first time for resolution range,
+reads MTZ file second time for scale factor sums, putting Fobs^2 and
+Fcalc^2 into bins of constant d*^3, calculates maximum indices and
+scale factors.  For crystallographic T function dimensions a number
+of complex arrays (one for each Harker section) and calls TFSGEN. 
+For partial T function calls TFPART. 
+<P> 
+GETINP
+<br>
+Calls MTZINI, opens HKLIN reflection file.  Calls PARSER to read
+control data and checks it.  Sets up input labels and calls GRASSN to
+do input file assignments. 
+<P> 
+GRASSN
+<br>
+Makes input MTZ file assignments.
+<P> 
+GENPGT
+<br>
+Generates point group multiplication table.
+<P> 
+MULEPS
+<br>
+Calculates reflection multiplicity and symmetry weight factor epsilon.
+<P> 
+GENEQ
+<br>
+Generates equivalent reflection.
+<P> 
+TFSGEN
+<br>
+Reads MTZ file third time, applies scales using spline interpolation
+(FSPLIN).  Accumulates translation and overlap Fourier coefficients in
+arrays.  This is necessary because the FFT input routines only use the
+last coefficients read in for a particular hkl (to avoid having to worry
+about reflection multiplicity).  Calls GWOPEN to open output MTZ file 
+HKLOUT and writes structure factors using routine PUTREF.
+<P> 
+FSPLIN
+<br>
+Cubic spline interpolation.
+<P> 
+GWOPEN
+<br>
+General purpose output file (HKLOUT) open for MTZ.
+<P> 
+PUTREF
+<br>
+Writes a structure factor to HKLOUT, accumulating minimum, maximum 
+and sum statistics for data columns.
+<P> 
+TFPART
+<br>
+Calls GWOPEN to open output MTZ file HKLOUT.  Reads MTZ file third
+time, applies scales using spline interpolation (FSPLIN). 
+Calculates translation and overlap Fourier coefficients and writes
+structure factors using routine PUTREF. 
+<H2> IMPLEMENTATION</H2>
+For large problems it may be necessary to increase the
+dimension of the large array A.  If this is required, an appropriate
+message will be issued; change the array dimension in the first
+PARAMETER statement (NA), then re-compile and re-link.
+<H2><A NAME="examples"></A> EXAMPLES</H2>
+<H3> Crystallographic Translation Function for structure with only crystallographic symmetry</H3>
+<pre>
+#
+tffc hklin tffc_inp hklout tffc_out &lt;&lt; eof
+TITL test TFFC  P6522 hex pepsin.
+SPAC P6522
+LABI FP=FOHEXPEP SIGFP=SIGHEXPEP
+eof
+#
+fft hklin tffc_out mapout tffc_out &lt;&lt; eof
+LABI A=A B=B
+TITL T2 function for hex pepsin assuming P6522.
+AXIS Y,X,Z
+GRID 72 72 300
+XYZL 0 1 0 1 0 .5
+VF00 1000
+eof
+#
+mapsig mapin tffc_out  &lt;&lt; eof
+eof
+#
+</pre>
+<H3> Crystallographic Translation Function in the presence of non-crystallographic symmetry or partial structure</H3>
+<pre>
+#
+tffc  hklin bbp_tf  hklout tffc_out  &lt;&lt; eof
+TITL  C222 Find subunit B1 using A1 known.
+SPAC  C222
+SHEL  150
+NONC  2
+VECT  A 0.491 0.224 -0.002
+LABI  FP=FO SIGFP=SIGFO -
+      FCA1=F1B1 PCA1=PC1B1 FCA2=F1B2 PCA2=PC1B2 -
+      FCA3=F1B3 PCA3=PC1B3 FCA4=F1B4 PCA4=PC1B4 -
+      FCB1=F2B1 PCB1=PC2B1 FCB2=F2B2 PCB2=PC2B2 -
+      FCB3=F2B3 PCB3=PC2B3 FCB4=F2B4 PCB4=PC2B4
+eof
+#
+fft   hklin tffc_out  mapout tffc_out  &lt;&lt; eof
+LABI  A=A B=B
+TITL  C222 Find subunit B1 using A1 known.
+AXIS  Y,X,Z
+VF00  1000
+GRID  192 208 96
+XYZL  0 .5  0 .5  0 .5
+eof
+#
+mapsig  mapin tffc_out  &lt;&lt; eof
+eof
+#
+</pre>
+<H3> Partial Translation Function</H3>
+<pre>
+#
+tffc  hklin bbp_tf  hklout tffc_out  &lt;&lt; eof
+TITL  C222 Find subunit B1 using A1 known.
+SPAC  C222
+SHEL  150
+NONC  2
+VECT  A 0.491 0.224 -0.002
+PART
+LABI  FP=FO SIGFP=SIGFO -
+      FCA1=F1B1 PCA1=PC1B1 FCA2=F1B2 PCA2=PC1B2 -
+      FCA3=F1B3 PCA3=PC1B3 FCA4=F1B4 PCA4=PC1B4 -
+      FCB1=F2B1 PCB1=PC2B1 FCB2=F2B2 PCB2=PC2B2 -
+      FCB3=F2B3 PCB3=PC2B3 FCB4=F2B4 PCB4=PC2B4
+eof
+#
+fft   hklin tffc_out  mapout tffc_out  &lt;&lt; eof
+LABI  A=A B=B
+TITL  C222 (T2):find translation vector for molecule 1B using 1A known
+VF00  1000
+GRID  192 208 96
+XYZL  0 1 0 .5 0 1
+eof
+#
+mapsig  mapin tffc_out  &lt;&lt; eof
+eof
+#
+</pre>
+<H3> Example to find second non-crystallographic translation symmetry</H3>
+<pre>
+#!/bin/csh -f
+#   Calculate Translation Function (TFFC),
+#   Map (FFT) and find peaks (PEAKMAX)
+#  
+#  goto FFT
+#  goto PEAKMAX
+#  goto PLUTO
+#
+TFFC:
+#
+tffc  hklin  ../mtz/i96v/cad_all2.mtz  
+      hklout ../mtz/i96v/tf_all2.mtz  
+             &lt;&lt; eof
+TITL Barnase finding B1, A1 known
+POINTGROUP pg3
+SYMMETRY  X,Y,Z * -Y,X-Y,Z * Y-X,-X,Z
+SHEL 150
+NONC 3
+VECT A 0.690 0.865 0.000
+FIND B
+PART
+LABI FP=iv96_F    SIGFP=iv96_SIGF -
+     FCA1=FCP_A1   FCB1=FCP_B1     FCC1=FCP_C1   -
+     PCA1=PHICP_A1 PCB1=PHICP_B1   PCC1=PHICP_C1 -
+     FCA2=FCP_A2   FCB2=FCP_B2     FCC2=FCP_C2   -
+     PCA2=PHICP_A2 PCB2=PHICP_B2   PCC2=PHICP_C2 - 
+     FCA3=FCP_A3   FCB3=FCP_B3     FCC3=FCP_C3   -
+     PCA3=PHICP_A3 PCB3=PHICP_B3   PCC3=PHICP_C3 
+eof
+#
+exit
+#
+#   Make a map with FFT, find peaks with PEAKMAX
+#
+FFT:
+#
+fft  hklin ../mtz/i96v/tf_all2.mtz  
+     mapout map/tf_all2.map  
+     &lt;&lt;  eof
+RESO 100 1
+LABIN A=A B=B 
+TITLE TF all for C from ALMN ---&gt; TFFC
+!SCALE Label Scale B-factor                      ! optional
+!NOCHECKS                                        ! optional
+!SYMMETRY 1         !space-group name or number  ! optional
+!FFTSYMMETRY 1      !space-group name or number  ! optional
+AXIS Z X Y          !Axis order fast, medium, slow
+GRID 200 200 200    !nx ny nz 
+VF000 0 145300
+XYZLIM 0 1 0 1 0 1  !xmin xmax ymin ymax zmin
+!BIAS bias [optional]
+!EXCLUDE keyword1 value1 keyword2 value2 .
+!PROJECTION                                      !optional
+!RHOLIM rhomax [rhomin]                          !optional
+eof
+#
+PEAKMAX:
+#
+peakmax  mapin map/tf_all2.map  
+         to    peaks/tf_all2.peaks 
+         &lt;&lt; eof
+output peaks
+threshold rms 3
+numpeaks 20
+eof
+#
+exit
+#
+NPO:
+npo mapin  map/tf_all.map 
+      plot   tf_all.plt 
+      &lt;&lt; eof
+TITL Translation function, solution 2 from TFFC 
+MAP  
+CONTRS 1 TO 6  BY .08
+SECTNS 0
+PLOT 
+eof
+#
+xplot84driver tf_all.plt
+#
+exit
+#
+</pre>
+<H2> AUTHOR</H2>
+Ian Tickle, Birkbeck College.
+<H2> SEE ALSO</H2>
+ <A HREF=amore.html>amore</A>,  
+ <A HREF=sfall.html>sfall</A>, 
+ <A HREF=cad.html>cad</A>,
+ <A HREF=fft.html>fft</A>, 
+mapsig (1)
+<H2> REFERENCES</H2>
+<ol>
+<!-- KEEP startreferencelist -->
+<li>
+<i>Molecular Replacement</i>, Proceedings of the Daresbury 
+Study Weekend, (1985) DL/SCI/R23
+<li>
+<i>Molecular Replacement</i>,
+Proceedings of the Daresbury Study Weekend, (1992) DL/SCI/R33
+<!-- KEEP endreferencelist -->
+</ol>
+</body></html>

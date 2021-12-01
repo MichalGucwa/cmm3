@@ -1,0 +1,240 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4 Interface: Running a Job</title>
+<link rel="stylesheet" type="text/css" href="../ccp4idocs.css" title="CCP4i" />
+<link rev="made" href="mailto:mgwt@ysbl.york.ac.uk" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta name="AUTHOR" content="Maria and Liz" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="2"><img src="../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logotitle">Running a Job</td></tr>
+</table>
+<br />
+<table border="0">
+<tr><td>
+<a href="maps.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="loggraph.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="../index.html" target="_top">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td></tr>
+</table>
+
+<p><a href="#run_modes" target="_self">Run Modes</a></p>
+<p><a href="#remote" target="_self">Running Jobs Remotely/Later/In Batch</a></p>
+<!--<p><a href="#chaining" target="_self">Chaining Tasks</a></p>-->
+<p><a href="#run_script" target="_self">How Jobs are Run</a></p>
+
+<h3><a name="run_modes"></a>Run Modes</h3>
+
+<p>Jobs can be run from the <strong><tt>Run</tt></strong> menubutton at the
+bottom of task interfaces or from the <strong><tt>ReRun Job</tt></strong>
+interface. There are three modes of running a job:
+
+<dl>
+<dt><strong><tt>Run Now</tt></strong></dt>
+<dd>the task is run 'in background' - you can continue using the interface
+while the job is running and can exit the interface without interrupting
+the job.</dd>
+
+<dt><strong><tt>Run &amp; View Com File</tt></strong></dt>
+<dd>displays the command line and command file for the CCP4 program.
+You can edit the command file. This could be useful if you want to use an
+option not included in the Interface (but please let
+<a href="mailto:ccp4gui@dl.ac.uk">us</a> know if there is
+something useful missing).</dd>
+
+<dt><strong><tt>Run Remote/Batch/Later</tt></strong></dt>
+<dd>options to run a script on a remote machine (using the Unix system <em>rsh</em>
+or <em>ssh</em> commands) and/or to start at a later time (using the system
+<em>at</em> command).
+And, if this is supported by your local system, to submit the job to a batch
+queue. See <a href="#remote" target="_self">Running Jobs Remotely/Later/In Batch</a>.</dd>
+
+<!--<dt><strong><tt>Append to Script</tt></strong></dt>
+<dd>which allows chaining of tasks, <em>i.e.</em> building up one script which
+runs two or more tasks.</dd>-->
+</dl>
+
+<h3><a name="remote"></a>Running Jobs Remotely/Later/In Batch</h3>
+
+<p>Selecting this mode will bring up a window with a menu option to select whether
+to run the job remotely, or later, or submit to batch. Not all of these options will
+necessarily appear - it depends on your local setup which is defined in the file
+<strong>$CCP4I_top/etc/resources.def</strong> and can be edited using the
+<a href="database.html#configure_interface" target="_self"><tt>Configure Interface</tt></a> option at the bottom of the menu on the right hand side
+of the Main Window.</p>
+
+<p>The job is run remotely using either the <strong><em>rsh</em></strong> command -
+this will only work for Unix machines on the same network which can see the same
+file system. You will also need to ensure that remote login is possible without
+the need to submit your password.</p>
+
+<p>Delayed jobs are run using the <strong><em>at</em></strong> command and the time
+input should be in a format suitable for <strong><em>at</em></strong>. A subset of
+suitable formats is:
+
+<dl>
+<dt><strong>now</strong></dt>
+<dd>run the job now</dd>
+
+<dt><strong>now + n units</strong></dt>
+<dd>where <strong>n</strong> is an integer and <strong>units</strong> is:
+minutes, hours or days.</dd>
+
+<dt><strong>HH:MM</strong></dt>
+<dd>run the job at the time in hours and minutes of a 24-hour clock.</dd>
+
+<dt><strong>HH:MM Day</strong></dt>
+<dd>where <strong>Day</strong> is the full name of a day of the week.</dd>
+
+<dt><strong>HH:MM Month Day</strong></dt>
+<dd>where <strong>Month</strong> is a three-letter abbreviation of the month and
+<strong>Day</strong> is a number.</dd>
+</dl>
+</p>
+
+<p>The status of the job reported in the Job List will be:
+
+<dl>
+<dt><strong>ON_HOLD</strong></dt>
+<dd>for jobs not yet started on the local machine.</dd>
+
+<dt><strong>RUNNING</strong></dt>
+<dd>once job is started.</dd>
+
+<dt><strong>REMOTE</strong></dt>
+<dd>for jobs waiting to run or running on a remote machine or in batch.</dd>
+</dl>
+
+<p>Note that the usual mechanism by which jobs report their status
+to the main Interface, does not work across machines. To overcome this, the
+Interface will periodically check on the contents of the log file and if
+the usual termination statement is not present, it will assume the
+task is still running. This means there may be a short delay (less than
+a minute) before the termination is reported. Another possibility
+to consider if a job appears to have taken a very long time is that
+the script running on the remote machine has failed but the termination may not
+be written to the log.</p>
+
+<p>The <strong><tt>View Files from Job</tt></strong> option to
+<strong><tt>View Log File</tt></strong> will list a log file being generated
+on a remote machine.</p>
+
+<!--<h3><a name="chaining"></a>Chaining Tasks</h3>
+
+<p>&quot;Chaining&quot; is: running several tasks in one job, with carrying
+over of parameters between consecutive tasks.</p>
+
+<p>The chaining process is as follows:
+
+<ol>
+<li>Start with the first task in the chain and work through the task window
+as normal.</li>
+
+<li>Use the run function <strong><tt>Append to Script</tt></strong> to start the
+chain. The jobs window will now display the CHAINING status for this task.</li>
+
+<li>Open the task window for the next task in the chain and provide the
+correct input. The File Selection window will now contain an extra listbox
+containing the files created by previous tasks in the chain. These files
+can be selected as input for the current task.</li>
+
+<li>In the case of more than two tasks in a chain, repeat step 2 and 3
+until the last task.<br />
+For the last task in the chain, use the run function <strong><tt>Run Now</tt></strong>
+or <strong><tt>Run Remote/Batch</tt></strong> to run the task chain. The jobs window
+will display the present status of the job, followed by the names of the
+tasks in the chain.</li>
+</ol>
+
+<p>The output information of all the tasks in the chain will be concatenated
+to one <strong>.log</strong> file, which can be reviewed through the database menu
+as normal.</p>
+
+<p>A chained job can be rerun like any other job (see
+<a href="database.html#rerun_job" target="_self">ReRun
+Job</a>), with the additional option of only rerunning part of the chain.</p>
+
+<p>Chaining is controlled by the <strong><tt>Manage Chain</tt></strong> option on
+the Database menu - this is only available when you have a chain open.
+See <a href="database.html#manage_chain" target="_self">Manage Chain</a>.</p>-->
+
+<h3><a name="run_script"></a>How Jobs are Run</h3>
+
+<p>You do NOT&nbsp;NEED to know what follows but you may be
+interested or it may help in figuring out any problems.</p>
+
+<p>A <strong>run script</strong> called
+<strong><em>(job_number)_(task_name)</em>.def</strong>
+(<em>e.g.</em>&nbsp;32_refmac.def) is created in the CCP4_DATABASE
+subdirectory of the current project directory. This file begins
+with a header section (lines beginning with <tt>#CCP4I</tt>) which
+lists information about the job, e.g. the job ID, the taskname,
+the server to be used, etc. The header is then followed by a list
+of the parameters taken from the task interface. 
+
+<p>
+The <tt>.def</tt> file for the job is run by the script set by
+<tt>$configure(RUN_CCP4I)</tt>, which defaults
+to <tt>bin/ccp4i.tcl</tt>. The taskname is taken from the identifier 
+in the header of the <tt>.def</tt> file so that the script can source 
+the appropriate <em>taskname</em>.script file.
+
+<p>The script is run as an independent process - it uses sockets
+to send updates on progress back to the main interface.
+The progress is recorded in the status column in the Job List.</p>
+
+<p>As the task runs, the output is listed to a log file
+<strong><em>(project_name)_(job_number)_(task_name)</em>.log</strong>.
+The output from all the programs run will be concatenated into this
+file. For some tasks there may also be some extra output from the run
+script.</p>
+
+<p>The run file could potentially be run external to the Interface with
+the command:
+
+<pRE><strong>ccp4ish -r <em>(job_number)_(task_name).def</em></strong></pre>
+
+Note that <strong>ccp4ish</strong> is ccp4i without the graphics.
+
+<p>To run each individual CCP4 program, the script creates a temporary file
+which contains the command input. This is put in a file rather than simply
+streamed to the program, because of limitations running on VMS. If you
+are running the <strong><tt>Run&amp;View Com File</tt></strong> mode, the script will
+pause here to display the com file and the run command line. You can edit
+either of these before continuing.</p>
+
+<p>To run the job on a remote machine or in batch, the Interface creates a short
+<strong>.com</strong> file in the TEMPORARY directory. This will have the name
+of the run script with an extra extension <strong>.com</strong>. The com file contains
+the following:
+
+<pRE><tt>setup_ccp4</tt>
+<tt>/y/programs/ccp4i/bin/ccp4ish -r 163_scala.def </tt></pre>
+
+<p>The first line is the command to setup CCP4 and the second line
+is the full path name of the CCP4i program and the name of the run file.
+This com file will not work if the path name for either the CCP4i directory or the
+TEMPORARY directory are different on the remote machine.</p>
+
+<table border="0">
+<tr><td>
+<a href="maps.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="loggraph.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="../index.html" target="_top">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td></tr>
+</table>
+
+</body>
+</html>

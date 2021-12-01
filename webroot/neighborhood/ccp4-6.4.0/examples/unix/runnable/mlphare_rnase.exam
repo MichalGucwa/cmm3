@@ -1,0 +1,44 @@
+#!/bin/sh
+
+set -e
+
+# bug # 3192 - run-all examples produce harvest files - well to counteract
+# this here set HARVESTHOME to somewhere in $CCP4_SCR
+
+HARVESTHOME=$CCP4_SCR
+export HARVESTHOME
+
+# Phasing the rnase using Pt sites only.
+# See Sevcik, Dodson and Dodson, Acta Cryst. B47 240 (1991)
+
+mlphare HKLIN $CEXAM/rnase/rnase25.mtz \
+       HKLOUT $CCP4_SCR/rnase_phase_mir.mtz << eof-phare
+TITLE 9 refining cycles + 1 phasing cycle
+CYCLE 10
+PRINT AVE AVF
+ANGLE 10
+LABIN FP=FNAT SIGFP=SIGFNAT -
+      DPH1=DELFPTNCD25 SIGDPH1=SIGDELFPTNCD25 -
+      FPH1=FPTNCD25 SIGFPH1=SIGFPTNCD25
+LABOUT ALLIN PHIB=PHI_mir FOM=W_mir
+HLOUT
+ DERIV     Platinum
+ DCYCLE PHASE ALL REFCYC ALL KBOV ALL
+ RESO      50.00      2.50
+ SCALE    FPH1    0.9918   -1.9057
+ ISOE       90.55   51.57   44.90   56.63   56.38   62.94   51.73   42.91
+ RESO ANO       50.00    2.50
+ ANOE       22.23   20.22   18.24   19.27   19.32   17.06   16.87   17.40
+ ATOM1   PT    0.566  0.828  0.018  0.756  0.003 BFAC   37.340
+ ATREF X ALL Y ALL Z ALL OCC ALL AOCC ALL B ALL
+ ATOM2   PT    0.842  0.944  0.469  0.592 -0.020 BFAC   27.197
+ ATREF X ALL Y ALL Z ALL OCC ALL AOCC ALL B ALL
+ ATOM3   PT    0.103  0.941  0.189  0.358 -0.036 BFAC   18.868
+ ATREF X ALL Y ALL Z ALL OCC ALL AOCC ALL B ALL
+ ATOM4   PT    0.190  0.005  0.742  0.557  0.017 BFAC   29.563
+ ATREF X ALL Y ALL Z ALL OCC ALL AOCC ALL B ALL
+ ATOM5   PT    0.047  0.848  0.273  0.299 -0.047 BFAC   28.522
+ ATREF X ALL Y ALL Z ALL OCC ALL AOCC ALL B ALL
+end
+eof-phare
+#

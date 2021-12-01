@@ -1,0 +1,54 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#======================================================================
+#
+# mapmask script
+#
+#======================================================================
+# Use the maprot program for interpolation and rotation
+
+  if { $IFMAPROT } {
+
+# Convert map to unit cell
+    source [SearchPath TOP utils map_utils.tcl ]
+    set MAP_CELL [GetTmpFileName -ext map]
+    ConvertMapCell $MAPIN $MAP_CELL
+
+# Set the transfomation matrix to identity for interpolation mode
+    if { [StringSame $MAPMASK_MODE INTERPOLATE] } {
+      set NCS_NOPS 1
+      set NCS_OP_ALPHA(1) 0.0
+      set NCS_OP_BETA(1) 0.0
+      set NCS_OP_GAMMA(1) 0.0
+      set NCS_OP_XTRAN(1) 0.0
+      set NCS_OP_YTRAN(1) 0.0
+      set NCS_OP_ZTRAN(1) 0.0
+    }
+
+
+# Run maprot for interpolation or rotation
+    CreateComScript  maprot maprot_script
+    set cmd "[BinPath maprot] MAPIN \"$MAP_CELL\" WRKOUT \"$MAPOUT\""
+    set status [Execute $cmd $maprot_script program_status report ]
+
+  } else { 
+
+    CreateComScript mapmask mapmask_script
+    set cmd "[BinPath mapmask]"
+    foreach file $INPUT_FILES {
+      append cmd " $file \"[subst $[subst $file]]\""
+    }
+    foreach file $OUTPUT_FILES {
+      append cmd " $file \"[subst $[subst $file]]\""
+    }
+
+    set status [Execute $cmd $mapmask_script program_status report ]
+
+  }

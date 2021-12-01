@@ -1,0 +1,28 @@
+#! /bin/sh
+
+# Wrap-around script for $CETC/uniqueify
+# Completes the dataset by merging output of unique with
+# datafile (using cad). Also adds free-R flag column.
+
+set -e
+set -a
+
+#
+# Replace missing data with NaNs.
+#
+mtzmnf hklin toxd_old.mtz hklout toxd_nan.mtz \
+<<eof
+LABI F1=FTOXD3 SIGF1=SIGFTOXD3 -
+     D2=ANAU20 SIGD2=SIGANAU20 -
+     F2=FAU20  SIGF2=SIGFAU20 -
+     F3=FMM11  SIGF3=SIGFMM11 -
+     F4=FI100  SIGF4=SIGFI100
+END
+eof
+
+#
+# Add free-R flag column and complete dataset.
+#
+uniqueify toxd_nan.mtz toxd.mtz
+
+rm -f toxd_nan.mtz

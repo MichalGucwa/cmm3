@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# old PYTHONPATH is ignored -- it may be set for different Python version
+site_p=$CCP4/lib/python2.7/site-packages
+
+# when used from MSYS/MinGW shell on Windows the separator here must be ';'
+if [ -n "$MSYSTEM" -a -n "$MSYSCON" ]; then
+    export PYTHONPATH="$site_p;$site_p/libtbx/pythonpath;$CCP4/share/python"
+else
+    export PYTHONPATH="$site_p:$site_p/libtbx/pythonpath:$CCP4/share/python"
+fi
+
+# LIBTBX_BUILD is used in cctbx to find libtbx_env file (pickle)
+export LIBTBX_BUILD=$site_p
+# some python extensions are linked with libraries in $CCP4/lib
+export LD_LIBRARY_PATH=$CCP4/lib:$LD_LIBRARY_PATH
+export DYLD_LIBRARY_PATH=$CCP4/lib:$DYLD_LIBRARY_PATH
+
+if test -d $CCP4/pythondist; then
+    $CCP4/pythondist/bin/python "$@"
+elif test -d $CCP4/Frameworks/Python.framework; then
+    $CCP4/Frameworks/Python.framework/Versions/2.7/bin/python2.7 "$@"
+elif test -e $CCP4/../python2.7/python.exe; then
+    $CCP4/../python2.7/python.exe "$@"   # on Windows python is not in bin/
+elif test -e $CCP4/libexec/python2.7; then
+    $CCP4/libexec/python2.7 "$@"   # alternative location in dev. build
+else
+    python2.7 "$@"   # any python 2.7 should also be fine
+fi

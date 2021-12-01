@@ -1,0 +1,994 @@
+<html>
+<head><title>CCP4 Program Suite: parser</title></head>
+<body>
+
+<!-- ::INDEX_INFO::PARSER::Library::::parser subroutine library:::::::: -->
+
+<H1> PARSER (CCP4: Library)</H1>
+
+<H2> NAME</H2>
+
+<b>parser</b> - the CCP4 parser subroutine library
+
+<H2>DESCRIPTION</H2>
+
+<p>
+From CCP4 5.0, the core handling of input parsing
+is done by a set of C functions. Separate <a href="C_library/cparser_page.html">
+documentation</a> describes the structures and functions used, and the
+API for C/C++ programs. 
+<p>
+For Fortran programs, the original set of subroutines (held in <tt>parser.f</tt>)
+has mostly been replaced by an <a href="C_library/cparser_f_page.html">interface</a> to
+the C library. From the point of view of an application programmer,
+this interface should be identical to the original set of subroutines. This
+document originates from the original Fortran library, but should be
+applicable to the new library.
+
+<p>The PARSER module of the CCP4 library contains routines which are
+mainly used for `free-format' `keyworded' input of control data for
+programs.  Most programs have a loop over input records which are
+initially fed to the routine <a href="#parser">PARSER</a> to tokenise
+them and extract the initial keyword. <a href="#parser">PARSER</a> can
+cope with continued, commented input lines and included files.  It
+calls <a href="#parse">PARSE</a> to tokenise individual records and
+<a href="#parse">PARSE</a> is sometimes useful itself to compensate for
+the lack of free-format internal READs in the Fortran 77 standard.  See
+the entries below for details.
+
+<p>See also the <a href="keyparse.html">keyparse</a> library, which
+are wrapper routines for the parser routines designed to make it easier
+to read keyworded input.
+
+<H2>Contents</H2>
+
+<ul><li><a href="#common_keywords">Common keywords</a>
+    <ul><li><a href="#atom_selection">Atom selection commands</a>
+    </ul>
+    <li><a href="#list_of_subroutines">List of subroutines</a>
+    <li><a href="#descriptions">Descriptions of the subroutines</a>
+</ul>
+
+<a name="common_keywords"></a><H2>Common Keywords</H2>
+
+<p>The library contains routines to decode the parameters
+following the `standard' program keywords:
+<p>
+<dl>
+<dt><tt>SYMMETRY</tt> &lt;<i>number</i>&gt; | &lt;<i>name</i>&gt; | &lt;<i>operators</i>&gt;
+   <dd>Specifies symmetry in terms of either<br>
+       &lt;<i>number</i>&gt; spacegroup number e.g. <tt>19</tt>;<br>
+       &lt;<i>name</i>&gt; spacegroup name e.g. <tt>P212121</tt>;<br>
+       &lt;<i>operators</i>&gt; explicit symmetry operators e.g.<br>
+       <tt> X,Y,Z * 1/2-X,-Y,1/2+Z * 1/2+X,1/2-Y,-Z * -X,1/2+Y,1/2-Z</tt>
+       <br>
+       (See <a href="#rdsymm">RDSYMM</a>)</p>
+
+<dt><tt>RESOLUTION</tt> &lt;<i>limit</i>&gt; [ &lt;<i>limit</i>&gt; ]
+   <dd>Specifies resolution limits. If only a single limit is given, it is an
+       upper limit, otherwise the upper and lower limits can be in either order.
+       They are in &Aring; <i>unless</i> they are both &lt; 1.0, in which case
+       they are in units of 4sin<sup>2</sup> (theta)/(lambda)<sup>2</sup>.
+       <br>
+       (See <a href="#rdresl">RDRESL</a> and <a href="#rdreso">RDRESO</a>)</p>
+
+<dt><tt>CELL</tt> <i>a</i> <i>b</i> <i>c</i> [ <i>alpha</i> <i>beta</i> <i>gamma</i> ]
+   <dd>Specifies cell dimensions (in &Aring;) and optionally angles in degrees
+       (which default to 90<sup>o</sup>).
+       <br>
+       (See <a href="#rdcell">RCELL</a>)</p>
+
+<dt><tt>HEADER NONE | BRIEF | HIST | FULL</tt>
+   <dd>Controls printing of MTZ information as:<br>
+       <b>NONE</b> no header output<br>
+       <b>BRIEF</b> brief header output<br>
+       <b>HIST</b> brief, with MTZ history<br>
+       <b>FULL</b> full header output from MTZ reads.
+       <br>
+       (See <a href="#rdhead">RDHEAD</a>)</p>
+
+<dt><tt>SCALE ... </tt>
+   <dd>See <a href="#rdscal">RDSCAL</a>.</p>
+</dl>
+<p>There are also routines to extract real and integer numbers from fields.
+
+
+<a name="atom_selection"></a><H3>Atom selection commands</H3>
+
+<p>At present PARSER only supports one atom selection command syntax, with the
+subroutine <a href="#rdatomselect">RDATOMSELECT</a>. This will decode lines
+with the following type of atom selection commands:
+
+<p><tt>Keywords... </i> ATOM &lt;<i>inat0</i>&gt; [ [TO] &lt;<i>inat1</i>&gt; ] |
+                  RESIDUE [ ALL | ONS | CA ] [ CHAIN &lt;<i>chnam</i>&gt; ]
+                  &lt;<i>ires0</i>&gt; [ [TO] &lt;<i>ires1</i>&gt; ]</tt>
+
+<p>This is based on the syntax used in atom selection in DISTANG. For the
+purposes of decoding the selection commands the preceding keyword(s) are
+irrelevant.
+
+<p>In practice the syntax described above is designed to allow selections
+such as:
+<pre>
+... ATOM 1 TO 1000
+... ATOM 7 9
+... ATOM 10
+... RESIDUE 11 TO 22
+... RESIDUE 10 CHAIN A
+... RESIDUE CHAIN S CA 12 19
+</pre>
+<p>The selection will specifies a range either of atom numbers or of residue
+numbers. In the latter case it can also optionally be used to specify
+a chain identifier (one character) and/or an ``atom type'' selection keyword:
+<pre>
+  ALL   all types of atoms in the selected range
+  ONS   only oxygens and nitrogens in the selected range
+  CA    only carbon atoms in the in the selected range
+</pre>
+(Note that RDATOMSELECT can also be made to treat ALL/ONS/CA as invalid input,
+which may be appropriate in some applications.)
+
+<p>The ordering of the RESIDUE subarguments is flexible, so that
+<tt>RESIDUE 1 TO 9 CA CHAIN B</tt> is the same as <tt>RESIDUE
+CA CHAIN B 1 TO 9</tt> and so on.
+
+<p>For examples see <a href="distang.html">DISTANG</a> and
+<a href="contact.html">CONTACT</a>.
+
+<a name="list_of_subroutines"></a><H2>List of subroutines</H2>
+
+<p>Library parser.f contains the following subroutines:
+<p>
+<table border=1>
+<tr><th>Routine(argument list)  <th>Comments
+<tr><td>   <a href="#parser">PARSER</a>
+    <td>read and interpret data from the input stream
+<tr><td>   <a href="#parse">PARSE</a>
+    <td>free format read routine
+<tr><td>   <a href="#parsdl">PARSDL</a>
+    <td>change delimiters
+<tr><td>   <a href="#keynum">KEYNUM</a>
+    <td>check number of numeric fields
+<tr><td> [ KEYERR ]
+    <td> - internal subroutine (KEYNUM)
+<tr><td> [ CHKNUM ]
+    <td> - not used (Sep 1993)
+<tr><td> [ CHKTOK ]
+    <td> - internal (CHKNUM)
+<tr><td> [ GETREA ]
+    <td> - not used (Sep 1993)
+<tr><td> [ GETINT ]
+    <td> - not used (Sep 1993)
+<tr><td>   <a href="#gtnrea">GTNREA</a>
+    <td>extract reals from input
+<tr><td>   <a href="#gtnint">GTNINT</a>
+    <td>extract integers from input
+<tr><td>   <a href="#gtprea">GTPREA</a>
+    <td>extract single real number
+<tr><td>   <a href="#gtpint">GTPINT</a>
+    <td>extract single integer
+<tr><td> [ GETSTR ]
+    <td> - not used (Sep 1993)
+<tr><td>   <a href="#sblank">SBLANK</a>
+    <td>blank characters in an array
+<tr><td> [ GTCFLD ]
+    <td> - not used (Sep 1993)
+<tr><td> [ CPYCHR ]
+    <td> - not used (Sep 1993)
+<tr><td> [ CMOVE ]
+    <td> - not used (Sep 1993)
+<tr><td>   <a href="#chkkey">CHKKEY</a>
+    <td>check keyword against a list
+<tr><td>   <a href="#putlin">PUTLIN</a>
+    <td>dummy routine?
+<tr><td>   <a href="#blank">BLANK</a>
+    <td>put blank lines to output
+<tr><td>   <a href="#lerror">LERROR</a>
+    <td>general error reporting routine
+<tr><td>   <a href="#rdsymm">RDSYMM</a>
+    <td>read 'symmetry' keyword
+<tr><td>   <a href="#rdhead">RDHEAD</a>
+    <td>read 'header' keyword
+<tr><td>   <a href="#rdcell">RDCELL</a>
+    <td>read 'cell' keyword
+<tr><td>   <a href="#rdreso">RDRESO</a>
+    <td>read 'resolution' keyword
+<tr><td>   <a href="#rdscal">RDSCAL</a>
+    <td>read 'scale' keyword
+<tr><td>   <a href="#rdresl">RDRESL</a>
+    <td>read and decode 'resolution' limits
+<tr><td>   <a href="#rdatomselect">RDATOMSELECT</a>
+    <td>read and decode atom selection keywords
+<tr><td>   <a href="#gttrea">GTTREA</a>
+    <td>extract a real number
+<tr><td>   <a href="#gttint">GTTINT</a>
+    <td>extract an integer
+<tr><td>   <a href="#cmatch">CMATCH</a>
+    <td>compare characters in a string
+</table>
+
+<a name="descriptions"></a><H2>Descriptions of the Subroutines</H2>
+
+<dl>
+<dt><a name="parser"></a><H3>PARSER</H3>
+
+<dd><pre>SUBROUTINE PARSER(KEY,LINE,IBEG,IEND,ITYP,FVALUE,CVALUE,IDEC,NTOK,LEND,PRINT)</pre>
+ 
+<p>The normal behaviour is to read `keyworded' data from the input
+stream, and interpret it.  This is the case if LINE is initially
+blank.  Stream 5 is the standard input stream, but a line
+beginning with @&lt;name&gt; starts reading from a file &lt;name&gt; (on
+stream 11), until end-of-file.
+ 
+<p>Each logical 'card' may be continued on next line by the
+continuation characters `&', `-' or `\'  at the end of the line: this
+character is dropped from the list returned to the calling routine.
+ 
+<p>Trailing comments may be present, following the
+character '#' or '!': any continuation character (`&', `-'  or `\')
+must PRECEDE the comment character -- comments can't be continued.
+The complete (continued) line, less any comments, is returned in
+LINE.  Lines containing ONLY comments (or blank) will not be
+returned from this routine -- reading will continue.
+ 
+<p>Strings may be quoted or unquoted.  See also PARSE for details of
+token delimiters etc.
+ 
+<p>Alternatively, if LINE is non-blank it will be interpreted before
+possibly reading further data on the standard input if LINE ends
+with a continuation character.
+ 
+<p><b>Arguments</b>
+ 
+<pre>
+    KEY    (O)  CHARACTER*4    Keyword at beginning of line (if present),
+                               uppercased before returning.
+ 
+    LINE   (I/O) CHARACTER*(*) Parse this input string.  If blank read
+                               lines from unit 5.  LINE will be updated to
+                               contain the entire line read, including
+                               continuations.
+ 
+    IBEG   (O)  INTEGER(*)     Array of size at least NTOK.
+                               1st column number of tokens in field
+ 
+    IEND   (O)  INTEGER(*)     Array of size at least NTOK.
+                               Last column number of tokens in field
+ 
+    ITYP   (O)  INTEGER(*)     Array of size at least NTOK.
+                               =0  null field
+                               =1  character string
+                               =2  number
+ 
+    FVALUE (O)  REAL(*)        Array of size at least NTOK.
+                               Value of number.
+ 
+    CVALUE (O)  CHARACTER(*)*4 Array of size at least NTOK.
+                               Character string (1st 4 characters),
+                               for numbers as well as strings.
+ 
+       Items in FVALUE and CVALUE are left unchanged for null fields
+ 
+    IDEC   (O)  INTEGER(*)     Array of size at least NTOK.
+                               Number of 'digits':
+                               for string, number of characters (=4 if.gt.4)
+                               for integer, number of digits
+                               for real number,
+                               (number of digits before point+1)*100
+                                +number of digits after point
+ 
+    NTOK   (I/O) INTEGER       On input sets the maximum number of fields
+                               to be parsed (if <20 then defaults to 20)
+                               On output returns the number of fields parsed.
+ 
+    LEND    (O)  LOGICAL       .FALSE. for control card
+                               .TRUE.  for end-of-file
+ 
+    PRINT   (I)  LOGICAL       .TRUE. echo line to unit 6 via PUTLIN
+                               .FALSE. don't echo
+</pre>
+
+<dt><a name="parse"></a><H3>PARSE</H3>
+
+<dd><pre>SUBROUTINE PARSE(LINE,IBEG,IEND,ITYP,FVALUE,CVALUE,IDEC,N)</pre>
+ 
+<p>   Free format read routine.  This is really a scanner, not a parser.
+      It scans the LINE into N tokens which are separated by delimiters
+      and updates the information arrays for each, as below.  The
+      default delimiters are space, tab, comma and equals; they may be
+      changed using PARSDL.  Adjacent commas delimit `null' fields (the
+      same as empty strings).  Strings may be unquoted or single- or
+      double-quoted if they don't contain delimiters, but must be
+      surrounded by delimiters to be recognised.  This allows literal
+      quotes to be read, e.g. "ab"c" will be recognised as the token `ab"c'.
+      An unquoted `!' or `#' in LINE introduces a trailing comment,
+      which is ignored.
+ 
+<p><b>Arguments:</b>
+ 
+<pre>
+    LINE  (I)     CHARACTER*(*)  String to be parsed
+ 
+    N     (I/O)   INTEGER        Usually <0, when abs(N) is the maximum
+                                 number of fields to interpret and should
+                                 be <= the array dimensions.  If N>0 it
+                                 is the number of tokens read so far,
+                                 intended for continuation lines with PARSER.
+                                 Returns number of fields scanned or 0 if
+                                 line is blank or just contains a comment
+ 
+   For I=1,N :
+ 
+    IBEG(I)   (O) INTEGER(*)     1st column number in field
+ 
+    IEND(I)   (O) INTEGER(*)     last column number in field
+ 
+    ITYP(I)   (O) INTEGER(*)     =0  null field
+                                 =1  character string
+                                 =2  number
+ 
+    FVALUE(I) (O) REAL(*)        Value of number.  Use NINT(FVALUE(I)) to
+                                 extract an integer.
+ 
+    CVALUE(I) (O) CHARACTER(*)*4 Character string (1st 4 characters)
+                                 for numbers as well as strings
+ 
+      Items in FVALUE and CVALUE are left unchanged for null fields
+ 
+    IDEC(I)   (O) INTEGER(*)     Number of 'digits'
+                                 for string, number of characters (=4 if.gt.4)
+                                 for integer, number of digits
+                                 for real number,
+                                 (number of digits before point+1)*100
+                                 +number of digits after point
+</pre>
+
+<dt><a name="parsdl"></a><H3>PARSDL</H3>
+
+<dd><pre>SUBROUTINE PARSDL(NEWDLM,NNEWDL,NSPECD)</pre>
+ 
+<p>   Call to change delimiters used by PARSE(R)
+
+<pre>
+   NEWDLM  (I) CHARACTER*(*)  Array containing NNEWDL new delimiters
+ 
+   NNEWDL  (I) INTEGER        Number of new delimiters.
+                              If .le. 0, reset delimiters to the standard
+                              default set (in DDELIM).
+ 
+   NSPECD  (I) INTEGER        Number of special delimiters which
+                              cannot delimit a null field. These are
+                              at the beginning of the delimiter array.
+                              (defaults in NDSDLM)
+</pre>
+
+<dt><a name="keynum"></a><H3>KEYNUM</H3>
+
+<dd><pre>SUBROUTINE KEYNUM(N,NSTART,LINE,IBEG,IEND,ITYP,NTOK)</pre>
+ 
+<p>Check that correct number of numbers (numeric fields) are present
+ 
+<p><b>Arguments:</b>
+ 
+<pre>
+   N      (I) INTEGER        Number of consecutive numeric fields expected
+ 
+   NSTART (I) INTEGER        Number of first field to check
+ 
+   LINE   (I) CHARACTER*(*)  Array containing the fields
+ 
+   IBEG   (I) INTEGER(*)     First column number of fields (from PARSER)
+ 
+   IEND   (I) INTEGER(*)     Last column number of fields (from PARSER)
+ 
+   ITYP   (I) INTEGER(*)     =0  null field
+                             =1  character string
+                             =2  number
+                             (from PARSER)
+ 
+   NTOK   (I) INTEGER        Number of fields (from PARSER)
+</pre>
+
+<dt><a name="gtnrea"></a><H3>GTNREA</H3>
+
+<dd><pre>SUBROUTINE GTNREA(N,M,X,NTOK,ITYP,FVALUE)</pre>
+ 
+<p>Extract M real numbers X starting from N'th value of Parser
+   array FVALUE, if possible. If no value, X = 0.0 .
+   If illegal, write message.
+ 
+<p><b>Arguments:</b>
+ 
+<pre>
+  N      (I) INTEGER    Number of 1st element of FVALUE to be extracted
+ 
+  M      (I) INTEGER    Number of elements to be extracted
+ 
+  X      (O) REAL(M)    Put extracted elements into this array
+ 
+  NTOK   (I) INTEGER    Total number of fields (from PARSER)
+ 
+  ITYP   (I) INTEGER(*)  =0  null field
+                         =1  character string
+                         =2  number
+ 
+  FVALUE (I) REAL(*)     Array of numbers to be extracted (from PARSER)
+</pre>
+
+<dt><a name="gtnint"></a><H3>GTNINT</H3>
+
+<dd><pre>SUBROUTINE GTNINT(N,M,J,NTOK,ITYP,FVALUE)</pre>
+ 
+<p>Extract M integers J starting from N'th value of Parser array FVALUE,
+  if possible. If no value, J = 0 . If illegal, write message
+ 
+<p><b>Arguments:</b>
+ 
+<pre>
+  N      (I) INTEGER     Number of 1st element of FVALUE to be extracted
+ 
+  M      (I) INTEGER     Number of elements to be extracted
+ 
+  J      (O) INTEGER(M)  Put extracted elements into this array
+ 
+  NTOK   (I) INTEGER     Total number of fields (from PARSER)
+ 
+  ITYP   (I) INTEGER(*)  =0  null field
+                         =1  character string
+                         =2  number
+ 
+  FVALUE (I) REAL(*)     Array of numbers to be extracted (from PARSER)
+</pre>
+
+<dt><a name="gtprea"></a><H3>GTPREA</H3>
+
+<dd><pre>SUBROUTINE GTPREA(N,X,NTOK,ITYP,FVALUE)</pre>
+ 
+<p>Extract real number X from N'th value Parser array FVALUE, if possible.
+  If no value, leave X unchanged. If illegal, write message
+ 
+<p><b>Arguments:</b>
+ 
+<pre>
+  N      (I) INTEGER    Number of 1st element of FVALUE to be extracted
+ 
+  X      (O) REAL       Extracted number put here
+ 
+  NTOK   (I) INTEGER    Total number of fields (from PARSER)
+ 
+  ITYP   (I) INTEGER(*)  =0  null field
+                         =1  character string
+                         =2  number
+ 
+  FVALUE (I) REAL(*)     Array of numbers to be extracted (from PARSER)
+</pre>
+
+<dt><a name="gtpint"></a><H3>GTPINT</H3>
+
+<dd><pre>SUBROUTINE GTPINT(N,I,NTOK,ITYP,FVALUE)</pre>
+ 
+<p>Extract integer I from N'th value Parser array FVALUE, if possible
+  If no value, leave I unchanged. If illegal, write message
+ 
+<p><b>Arguments:</b>
+ 
+<pre>
+  N      (I) INTEGER    Number of 1st element of FVALUE to be extracted
+ 
+  I      (O) INTEGER    Extracted number put here
+ 
+  NTOK   (I) INTEGER    Total number of fields (from PARSER)
+ 
+  ITYP   (I) INTEGER(*)  =0  null field
+                         =1  character string
+                         =2  number
+ 
+  FVALUE (I) REAL(*)     Array of numbers to be extracted (from PARSER)
+</pre>
+
+<dt><a name="sblank"></a><H3>SBLANK</H3>
+
+<dd><pre>SUBROUTINE SBLANK(ARRAY,N1,N2)</pre>
+ 
+<p>Blank characters N1 to N2 of ARRAY
+ 
+<p><b>Arguments:</b>
+ 
+<pre>
+  ARRAY (I/O)  CHARACTER(*)
+ 
+  N1    (I)    INTEGER
+ 
+  N2    (I)    INTEGER
+</pre>
+
+<dt><a name="cmatch"></a><H3>CMATCH</H3>
+
+<dd><pre>
+LOGICAL FUNCTION CMATCH(STRING1,STRING2,NCHAR)</pre>
+
+<p>Compare nchar character in string1 and string2
+      return cmatch .true. if all match, else .false.
+ 
+<p><b>Arguments:</b>
+
+<pre>
+  STRING1 (I) CHARACTER*(*)  1st string to compare
+ 
+  STRING2 (I) CHARACTER*(*)  2nd string to compare
+ 
+  NCHAR   (I) INTEGER        number of characters to compare
+</pre>
+
+<dt><a name="chkkey"></a><H3>CHKKEY</H3>
+
+<dd><pre>SUBROUTINE CHKKEY(KEY,WORDS,NWORDS,IKEY)</pre>
+ 
+<p>Check keyword KEY against list of NWORDS possible keywords in WORDS.
+  Allows abbreviated or extended keys provided they are not ambiguous.
+ 
+<p><b>Arguments:</b>
+ 
+<pre>
+  KEY    (I) CHARACTER*(*)         Keyword for checking
+ 
+  WORDS  (I) CHARACTER(NWORDS)*(*) List of possible keywords
+ 
+  NWORDS (I) INTEGER               Number of keywords in WORDS
+ 
+  IKEY (I/O) INTEGER               = '?', list all words
+                                   Returns:
+                                   = keyword number found (.gt.0)
+                                   = 0 if not found or null
+                                   = -1 if ambiguous
+</pre>
+
+<dt><a name="putlin"></a><H3>PUTLIN</H3>
+
+<dd><pre>SUBROUTINE PUTLIN(STROUT,OUTWIN)</pre>
+ 
+<p>This is a dummy PUTLIN to link with the MTZ routines mark 1 -
+      all it does is write the line in STROUT to lun 6. Later the
+      routines will be linked with the Compose-Parser etc. from Kim
+      where PUTLIN does a few more things !
+ 
+<p><b>Arguments:</b>
+ 
+<pre>
+  STROUT (I) CHARACTER*(*)  Input line
+ 
+  OUTWIN (O) CHARACTER*(*)  Not used
+</pre>
+
+<dt><a name="blank"></a><H3>BLANK</H3>
+
+<dd><pre>SUBROUTINE BLANK(OUTWIN,NLINES)</pre>
+ 
+<p>This subroutine calls PUTLIN to output NLINES blank lines to the
+      window OUTWIN
+ 
+<p><b>Arguments:</b>
+ 
+<pre>
+      OUTWIN  (I)   CHARACTER*6     output window
+ 
+      NLINES  (I)   INTEGER         number of blank lines to output
+</pre>
+
+<dt><a name="lerror"></a><H3>LERROR</H3>
+
+<dd><pre>SUBROUTINE LERROR(ERRFLG,IFAIL,ERRMSG)</pre>
+ 
+<p>General error reporting subroutine, for the MTZ routines, etc
+ 
+<p><b>Arguments:</b>
+ 
+<pre>
+      ERRFLG  (I)  INTEGER         =1 output message as warning
+                                   =2 output message as fatal
+ 
+      IFAIL   (I)  INTEGER         =0 return after fatal error
+                                   =-1 STOP after reporting fatal error
+ 
+      ERRMSG  (I)  CHARACTER*(*)   character string containing error
+                                   message to output
+</pre>
+
+<dt><a name="rdsymm"></a><H3>RDSYMM</H3>
+
+<dd><pre>SUBROUTINE RDSYMM(JTOK,LINE,IBEG,IEND,ITYP,FVALUE,NTOK,
+     .    SPGNAM,NUMSGP,PGNAME,NSYM,NSYMP,RSYM)</pre>
+ 
+<p>Read and decode symmetry specification
+ 
+<p><b>Arguments:</b>
+ 
+<pre>
+    JTOK    (I)  INTEGER        Number of first field to interpret
+ 
+    LINE    (I)  CHARACTER*(*)  Input string (from PARSER)
+ 
+    IBEG    (I)  INTEGER(*)     1st column number of tokens in field
+                                (from PARSER)
+ 
+    IEND    (I)  INTEGER(*)     Last column number of tokens in field
+                                (from PARSER)
+ 
+    ITYP    (I)  INTEGER(*)     =0  null field
+                                =1  character string
+                                =2  number
+                                (from PARSER)
+ 
+    FVALUE  (I)  REAL(*)        Array of numbers. (from PARSER)
+ 
+    NTOK    (I)  INTEGER        The number of fields parsed. (from PARSER)
+ 
+ 
+    NSYM  (I/O)  INTEGER        Number of symmetry operations already read,
+                                including non-primitive.
+                                (should be cleared to 0 at beginning)
+ 
+    SPGNAM  (O) CHARACTER*(*)   Space group name
+ 
+    NUMSGP  (O) INTEGER         Space group number
+ 
+    PGNAME  (O) CHARACTER*(*)   Point group name
+ 
+    NSYMP   (O) INTEGER         Number of primitive symmetry operations
+ 
+    RSYM    (O) REAL(4,4,*)     Symmetry matrices. * should be at least =NSYM
+</pre>
+
+<dt><a name="rdhead"></a><H3>RDHEAD</H3>
+
+<dd><pre>SUBROUTINE RDHEAD(JTOK,LINE,IBEG,IEND,ITYP,FVALUE,NTOK,
+     .    MTZPRT,MTZBPR)</pre>
+ 
+<p>Read and decode HEADER command, to set print flags for MTZ headers
+ 
+<p><b>Arguments:</b>
+ 
+<pre>
+    JTOK   (I) INTEGER       Number of first field to interpret
+ 
+    LINE   (I) CHARACTER*(*) Input string (from PARSER)
+ 
+    IBEG   (I) INTEGER(*)    1st column number of tokens in field
+                             (from PARSER)
+ 
+    IEND   (I) INTEGER(*)    Last column number of tokens in field
+                             (from PARSER)
+ 
+    ITYP   (I) INTEGER(*)    =0  null field
+                             =1  character string
+                             =2  number
+                             (from PARSER)
+ 
+    FVALUE (I) REAL(*)       Array of numbers. (from PARSER)
+ 
+    NTOK   (I) INTEGER       The number of fields parsed. (from PARSER)
+ 
+ 
+    MTZPRT (O) INTEGER       Flag to control printout from MTZ file header
+                             NONE    sets MTZPRT = 0
+                              no header o/p
+                             BRIEF   sets MTZPRT = 1 (default)
+                              brief header o/p
+                             HISTORY sets MTZPRT = 2
+                              brief + mtz history
+                             ALL     sets MTZPRT = 3
+                              full header o/p from mtz reads
+ 
+    MTZBPR (O) INTEGER       Controls printout from BATCH HEADERS
+                             NOBATCH     sets MTZBPR = 0
+                              no batch header o/p
+                             BATCH       sets MTZBPR = 1  (default)
+                              batch titles o/p
+                             ORIENTATION sets MTZBPR = 2
+                              batch orientation also
+</pre>
+
+<dt><a name="rdcell"></a><H3>RDCELL</H3>
+
+<dd><pre>SUBROUTINE RDCELL(ITOK,ITYPE,FVALUE,NTOK,CELL)</pre>
+ 
+<p>Read and decode cell parameters
+ 
+<p><b>Arguments:</b>
+ 
+<pre>
+    ITOK   (I) INTEGER     Number of first field to interpret
+ 
+    ITYPE  (I) INTEGER(*)  =0  null field
+                           =1  character string
+                           =2  number
+                           (from PARSER)
+ 
+    FVALUE (I) REAL(*)     Array of numbers. (from PARSER)
+ 
+    NTOK   (I) INTEGER     The number of fields parsed. (from PARSER)
+ 
+    CELL   (O) REAL(6)     Cell parameters a, b, c, alpha, beta, gamma.
+</pre>
+
+<dt><a name="rdreso"></a><H3>RDRESO</H3>
+
+<dd><pre>SUBROUTINE RDRESO(ITOK,ITYPE,FVALUE,NTOK,RESMIN,
+     +                  RESMAX,SMIN,SMAX)</pre>
+ 
+<p>Read and decode resolution limits.
+ 
+<p><b>Arguments:</b>
+ 
+<pre>
+      ITOK    (I) INTEGER     Number of first field to interpret
+ 
+      ITYPE   (I) INTEGER(*)  =0  null field
+                              =1  character string
+                              =2  number
+                              (from PARSER)
+ 
+      FVALUE  (I) REAL(*)     Array of numbers. (from PARSER)
+ 
+      NTOK    (I) INTEGER     The number of fields parsed. (from PARSER)
+ 
+ 
+      RESMIN  (O) REAL        Minimum resolution (in As)
+ 
+      RESMAX  (O) REAL        Maximum resolution (in As)
+ 
+      SMIN    (O) REAL        Minimum resolution ( 4sin**2 theta/lambda**2)
+ 
+      SMAX    (O) REAL        Maximum resolution ( 4sin**2 theta/lambda**2)
+</pre>
+
+<dt><a name="rdscal"></a><H3>RDSCAL</H3>
+
+<dd><pre>SUBROUTINE RDSCAL(ITOK,LINE,IBEG,IEND,ITYP,FVALUE,NTOK,
+     .    NLPRGI,LSPRGI,ILPRGI,SCAL,BB)</pre>
+ 
+<p>Read and decode SCALE.
+ 
+<p><b>Arguments:</b>
+ 
+<pre>
+   ITOK   (I/O) INTEGER     Input: number of first field to interpret
+                            Output: number of next token to interpret (.gt. 0)
+                                   =  0 if line exhausted (SCAL & BB OK)
+                                   = -1 if no scale given
+                                   = -2 unrecognized label
+ 
+   LINE   (I) CHARACTER*(*) Input string (from PARSER)
+ 
+   IBEG   (I) INTEGER(*)    1st column number of tokens in field
+                            (from PARSER)
+ 
+   IEND   (I) INTEGER(*)    Last column number of tokens in field
+                            (from PARSER)
+ 
+   ITYP   (I) INTEGER(*)    =0  null field
+                            =1  character string
+                            =2  number
+                            (from PARSER)
+ 
+   FVALUE (I) REAL(*)       Array of numbers. (from PARSER)
+ 
+   NTOK   (I) INTEGER       The number of fields parsed. (from PARSER)
+ 
+   LSPRGI (I) CHARACTER(*)*30  Program label strings.
+                                   L(abel) S(tring) PRG(ram) I(nput)
+ 
+   NLPRGI (I) INTEGER        Number of label strings in LSPRGI
+ 
+   ILPRGI (O) INTEGER        Number in array of LSPRGI whose scale has been rese
+ 
+   SCAL   (O) REAL           Scale factor, no default
+ 
+   BB     (O) REAL           Temperature factor, default = 0.0
+</pre>
+
+<dt><a name="rdresl"></a><H3>RDRESL</H3>
+
+<dd><pre>SUBROUTINE RDRESL(ITOK,ITYPE,FVALUE,CVALUE,NTOK,RESMIN,
+     +                  RESMAX,SMIN,SMAX,ISTAT)</pre>
+ 
+<p>Read and decode resolution limits.
+
+<p>      Subkeywords in CVALUE recognized:
+<pre>
+        LOW   read next number as low resolution limit
+        HIGH  read next number as high resolution limit
+</pre>
+ 
+<p>      If LOW & HIGH are both present, the limits will still be swapped
+      to the correct order
+ 
+<p>      If only LOW or HIGH are given, the unset limit (ie either RESMAX, SMAX
+      or RESMIN, SMIN) will be set to -1.0. If only one number is given,
+      it is treated as a high resolution limit
+ 
+<p>      If both limits are given without keywords, and both are .lt. 1.0,
+      it is assumed that the limits are 4(sin theta/lambda)**2 rather than A
+ 
+<p><b>Arguments:</b>
+ 
+<pre>
+   ITOK   (I) INTEGER         Number of first field to interpret
+ 
+   ITYP   (I) INTEGER(*)      =0  null field
+                              =1  character string
+                              =2  number
+                              (from PARSER)
+ 
+   FVALUE (I) REAL(*)         Array of numbers. (from PARSER)
+ 
+   NTOK   (I) INTEGER         The number of fields parsed. (from PARSER)
+ 
+   CVALUE (I) CHARACTER(*)*4  Parsed tokens from program input. (from PARSER)
+ 
+   RESMIN  (O) REAL           Minimum resolution (in As) (ie low resolution)
+ 
+   RESMAX  (O) REAL           Maximum resolution (in As) (ie high resolution)
+ 
+   SMIN    (O) REAL           Minimum resolution ( 4sin**2 theta/lambda**2)
+                                 (ie low resolution)
+ 
+   SMAX    (O) REAL           Maximum resolution ( 4sin**2 theta/lambda**2)
+                                 (ie high resolution)
+ 
+   ISTAT   (O) INTEGER        =0  OK
+                              =-1 illegal subkeyword
+                              =+1 no limits set
+                              =+2 illegal number (probably can't happen)
+</pre>
+
+<dt><a name="gttrea"></a><H3>GTTREA</H3>
+
+<dd><pre>SUBROUTINE GTTREA(N,X,LFLAG,NTOK,ITYP,FVALUE)</pre>
+ 
+<p>Extract real number X from N'th value of Parser array FVALUE,
+      if possible.
+ 
+<p>      If no value, leave X unchanged. If illegal, write message
+ 
+<p><b>Arguments:</b>
+ 
+<pre>
+   N      (I) INTEGER     Number of 1st element of FVALUE to be extracted
+ 
+   X      (O) REAL        Put extracted number here
+ 
+   LFLAG  (O) INTEGER     =  0  OK (valid number or null field)
+                          = -1  beyond end of line
+                          = +1  illegal number
+ 
+   NTOK   (I) INTEGER     Total number of fields (from PARSER)
+ 
+   ITYP   (I) INTEGER(*)  =0  null field
+                          =1  character string
+                          =2  number
+                          (from PARSER)
+ 
+   FVALUE (I) REAL(*)     Array of numbers to be extracted (from PARSER)
+</pre>
+
+<dt><a name="gttint"></a><H3>GTTINT</H3>
+
+<dd><pre>SUBROUTINE GTTINT(N,I,LFLAG,NTOK,ITYP,FVALUE)</pre>
+ 
+<p>Extract integer I from N'th value of Parser array FVALUE,
+      if possible.
+ 
+<p>   If no value, leave I unchanged. If illegal, write message.
+ 
+<p><b>Arguments:</b>
+ 
+<pre>
+   N      (I) INTEGER     Number of 1st element of FVALUE to be extracted
+ 
+   I      (O) INTEGER     Put extracted number here
+ 
+   LFLAG  (O) INTEGER     =  0  OK (valid number or null field)
+                          = -1  beyond end of line
+                          = +1  illegal number
+ 
+   NTOK   (I) INTEGER     Total number of fields (from PARSER)
+ 
+   ITYP   (I) INTEGER(*)  =0  null field
+                          =1  character string
+                          =2  number
+                          (from PARSER)
+ 
+   FVALUE (I) REAL(*)     Array of numbers to be extracted (from PARSER)
+</pre>
+
+<dt><a name="rdatomselect"></a><H3>RDATOMSELECT</H3>
+
+<dd><pre>SUBROUTINE RDATOMSELECT(JTOK,INAT0,INAT1,IRES0,IRES1,CHNAM,
+     +                        IMODE,NTOK,LINE,IBEG,IEND,ITYP,IDEC,
+     +                        FVALUE,IFAIL)</pre>
+
+<p>Subroutine to process atom selection keyword with the following
+general syntax:
+
+<pre>
+    &lt;Keywords...&gt; ATOM &lt;inat0&gt; [ [TO] &lt;inat1&gt; ] |
+                  RESIDUE [ALL | ONS | CA] [ CHAIN &lt;chnam&gt; ]
+                  &lt;ires0&gt; [ [TO] &lt;ires1&gt; ]
+
+     e.g. kywd atom 1 to 100
+          kywd residue chain A 20 to 30
+          kywd residue all 11 32    etc...
+</pre>
+<p>To be compatible with DISTANG, CONTACT etc the ordering of the
+RESIDUE subarguments is flexible, eg RESIDUE 1 TO 9 CA CHAIN B
+is the same as RESIDUE CA CHAIN B 1 TO 9...
+
+<p>The subroutine returns the selection entered by the user and expects the
+calling program to deal with the results. The preceding keywords are
+relevant for this subroutine
+
+<p><b>ARGUMENTS</b>
+
+<pre>
+     JTOK    (I) INTEGER       Number of first field to interpret
+     NTOK    (I) INTEGER       The number of fields parsed, from PARSER
+     LINE    (I) CHARACTER*(*) Input string, from PARSER
+     IBEG    (I) INTEGER(*)    1st column number of tokens in field
+                               (from PARSER)
+     IEND    (I) INTEGER(*)    Last column number of tokens in field
+                               (from PARSER)
+     ITYP    (I) INTEGER(*)    =0  null field
+                               =1  character string
+                               =2  number   (from PARSER)
+     IDEC    (I) INTEGER(*)    Number of characters/digits in each token
+                               (from PARSER)
+     FVALUE  (I) REAL(*)       Array of numbers. (from PARSER)
+
+     INAT0   (O) INTEGER       Lower limit of atom range (-99 if not set)
+     INAT1   (O) INTEGER       Upper limit of atom range (-99 if not set)
+     IRES0   (O) INTEGER       Lower limit of residue range (-99 if not set)
+     IRES1   (O) INTEGER       Upper limit of residue range (-99 if not set)
+     CHNAM   (O) CHARACTER*1   Chain identifier (' ' if not set)
+     IMODE (I/O) INTEGER       On entry: -1 = don't allow MODE
+                                         any other value = allow MODE
+                               On exit:  Type of atoms to include:
+                                          1=ALL   2=ONS   3=CA (see eg CONTACT)
+     IFAIL (I/O) INTEGER       On entry:  0 = suppress warnings
+                                         -1 = print warnings
+                               On exit:   0 = LINE parsed ok
+                                         >0 = error occurred parsing line
+                                              (value of IFAIL is no. of bad token)
+</pre>
+
+<p><b>RETURNED VALUES</b>
+
+<p>The subroutine returns either:
+
+<ol>
+<li> first/last atom numbers, defining a range of atoms, or
+<li> first/last residue numbers, defining a range of residues, plus<br>
+        (optionally) chain identifier<br>
+        (optionally) a MODE which specifies which type of atoms to
+        include:<pre>
+	   all = (default) all atoms in residue range
+           ons = only oxygen and nitrogen atoms
+           ca  = only CA atoms
+		</pre>
+        (see CONTACT/DISTANG)
+</ol>
+
+<p>  Unset atoms/residue numbers will be returned < 0 (i.e. -99)<br>
+Unset chain identifier will be returned as a blank, i.e. ' '<br>
+Mode defaults to 1 = include all types of atoms.
+
+</dl>
+
+<H2>Authors</H2>
+
+Original Author: Based on Mike Levitt's routine of the same name.<br>
+Modified By: Peter Brick, Phil Evans, Eleanor Dodson, Dave Love, Peter Briggs
+
+<hr>
+</body>
+</html>

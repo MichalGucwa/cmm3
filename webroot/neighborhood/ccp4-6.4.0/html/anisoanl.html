@@ -1,0 +1,324 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::ANISOANL::Supported::Model Refinement::analyses of anisotropic displacement parameters :::::::: -->
+
+<H1> ANISOANL (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>anisoanl </b>
+- analyses of anisotropic displacement parameters 
+
+<H2> SYNOPSIS</H2>
+<b>anisoanl  xyzin</b>
+<i>input.pdb</i>
+<b>tlsin</b>
+<i>input.tls</i>
+<b>xyzout</b>
+<i>output.pdb</i>
+<b>tlsout</b>
+<i>output.tls</i>
+<b>psout</b>
+<i>out.ps</i>
+<br>
+ [Key-worded input file]
+<p>
+
+<H2> DESCRIPTION</H2>
+
+The program analyses model anisotropic U values supplied on 
+<a href="pdbformat.html#part1ani">ANISOU records</a> in the input PDB
+file (XYZIN).  These may originate for example from a full anisotropic
+refinement by <a href="refmac5.html">REFMAC</a> for atomic resolution data. 
+Plots of average equivalent isotropic B values, anisotropy, and radial and 
+tangential projections against residue are produced.
+<p>
+Using rigid groups defined in TLSIN, it can fit TLS values to the observed
+U values. These are output in TLSOUT, and residual U values are output 
+in XYZOUT. The so-called L2 norm is used as the residual for fitting
+U's calculated from TLS tensors to the observed Us obtained from refinement.
+<p>
+The program can also analyse the input anisotropic U values in terms of
+<a href="#references">Rosenfield's</a> rigid-body postulate. Output plots
+give an indication of whether groups of atoms (as defined in TLSIN) have 
+U values conforming to rigid-body-like displacements. A postscript plot
+is also produced which may hint at possible rigid groups.
+<p>
+The plots against residue may be useful for visualising U values obtained
+from the program <a href="tlsanl.html">TLSANL</a>. However, the rigid group
+analysis is less useful, since in this case the U values will have been
+obtained from a rigid group description in the first place.
+
+<H2> INPUT AND OUTPUT FILES</H2>
+<H3> XYZIN</H3>
+<p>Input coordinates with anisotropic U values held in standard ANISOU records.
+The elements of U are assumed to appear as integers representing 10000*Uij in
+orthogonal coordinates, and in the order U11, U22, U23, U12, U13, U23.</p>
+<p>The program will check for non-positive-definite anisotropic U values,
+and report any found to the log file. Non-positive-definite means that
+one of the eigenvalues is less than or equal to zero, which in turn
+means that one of the radii of the thermal ellipsoid has vanished.</p>
+
+<H3> TLSIN</H3>
+Rigid group definitions for TLS groups. The format of the TLS file is as
+given in the <a href="restrain.html">RESTRAIN</a> documentation, 
+with the following addition. The RANGE
+record can include the subkeyword FIT or APPLY. Atoms included in the FIT
+range are used both for fitting the TLS values, and in calculating residual
+U's for XYZOUT. Atoms in APPLY are used only for the latter. Thus, one may
+want to use only main chain atoms for fitting TLS values, but then apply
+these TLS values to all atoms in the molecule. Only TLS and RANGE records
+are required, to define the chosen TLS groups.
+<H3> XYZOUT </H3>
+Output coordinates and residual anisotropic U values.
+<H3> TLSOUT </H3>
+Fitted TLS tensors for groups defined in TLSIN. This file can be input
+to <a href="tlsanl.html">TLSANL</a> for further analysis. Note that
+TLSOUT contains a REFMAC record to flag that the file contains tensor
+elements in the order used in REFMAC, rather than the order used by RESTRAIN.
+
+<h3>PSOUT</h3>
+Postscript plot of "delta" values between all selected pairs of atoms.
+Light shading implies low "delta" value, consistent with the atoms belonging
+to the same quasi-rigid group. Dark shading means the atoms are unlikely to
+belong to the same quasi-rigid group. See <a href="#key_rigidbody">RIGIDBODY</a>
+keyword.
+<p>
+
+<H2> KEYWORDED INPUT</H2>
+
+<h3><a name="key_title">TITLE &lt;title&gt;</h3>
+Title for the job.
+
+<h3><a name="key_fittls">FITTLS [OFF]</h3>
+Fit TLS parameters to individual anisotropic U values (default).
+If OFF specified then don't. If TLS parameters are to be fitted, then
+the input file TLSIN should be given.
+
+<H3><a name="key_tlscycles">TLSCYCLES &lt;tlsc&gt;</H3>
+Number of cycles of TLS fitting. With current residual, should converge
+in first cycle! Default is 2 cycles.
+
+<h3><a name="key_rigidbody">RIGIDBODY [OFF]</h3>
+Assess <a href="#references">Rosenfield's</a> rigid-body postulate (default). 
+If OFF specified then don't. The rigid-body postulate states that for two atoms
+belonging to the same rigid-body (not necessarily bonded), the projections of 
+the anisotropic displacement parameters along the interatomic vector should be
+equal. In practice, we expect the difference between the projections to
+be smaller for atoms belonging to the same quasi-rigid body, and larger for
+atoms belonging to different quasi-rigid bodies.
+<p>
+For all pairs of atoms, the absolute difference in the projection as a 
+fraction of the mean projection (the
+"delta" value) is calculated, and all such differences are binned (see 
+the keyword <a href="#key_dubins">DUBINS</a>). These "delta" values are
+displayed graphically in a postscript plot (file PSOUT, default anisoanl.ps).
+Light shading implies low "delta" value, consistent with the atoms belonging
+to the same quasi-rigid group. Dark shading means the atoms are unlikely to
+belong to the same quasi-rigid group. Atom selection can be done with
+the file TLSIN - only atoms specified in this file are used in the calculation.
+For example, clearer results may be obtained if only CA atoms are used.
+See Tom Schneider's <a href="#references">article</a> for an example of
+this kind of plot.
+<p>
+The distribution of "delta" values is included in the log output (see
+keywords <a href="#key_dubins">DUBINS</a> and <a href="#key_durange">DURANGE</a>).
+Possible quasi-rigid bodies should be defined using the TLSIN file
+(see <A href="#example2">example</A> below). The distribution is plotted
+for all pairs of atoms within each quasi-rigid body, and a final plot
+gives the distribution for pairs of atoms from different groups.
+If the choice of rigid bodies is good, the differences
+should be significantly smaller within groups than between them. A subset of atoms
+can be chosen using the atom selection field in TLSIN (e.g. "CA" may be useful
+for large rigid groups).
+
+<h3><a name="key_dubins">DUBINS &lt;dist_bins&gt; &lt;ps_bins&gt;</h3>
+Specify the number of bins for the <a href="#key_rigidbody">RIGIDBODY</a>
+plots. &lt;dist_bins&gt; refers to the distribution plot, and &lt;ps_bins&gt;
+to the postscript plot. Defaults are 30 and 10 (maximum is 100).
+
+<h3><a name="key_durange">DURANGE &lt;range&gt;</h3>
+Specify the range of values covered by the <a href="#key_rigidbody">RIGIDBODY</a>
+plot. Default is 0.3. The "delta" values are defined as the absolute difference 
+in the projection as a fraction of the mean projection, so the maximum
+range is 2.0
+
+<h3><a name="key_plot">PLOT [OFF]</h3>
+Produce plots of equivalent isotropic U values, anisotropy, and projections
+of U (default).  If OFF specified then don't. See below for a
+description of the plots produced.
+
+<h3><a name="key_mainchain">MAINCHAIN</h3>
+Use main chain atoms only in producing plots. Default is to use
+all atoms.
+
+<h3><a name="key_verbose">VERBOSE</h3>
+Produces extra output.
+
+<H3><a name="key_end">END</H3>
+Terminate input.
+<p>
+
+<H2> PROGRAM OUTPUT</H2>
+
+<h3>FITTLS option</h3>
+
+For each cycle of fitting, the residual, the R value and the Goodness of Fit
+are printed. The R value is sqrt(sum deltaU**2 / sum Uobs**2), and the
+Goodness of Fit is 1000 * sqrt(sum deltaU**2 / (num observables - num parameters))
+(the factor of 1000 is one over a typical sigmaU). These values are given
+for (i) atoms used in fitting (FIT), (ii) atoms included in TLS
+group but not used for fitting (APPLY).
+
+<h3>PLOT option</h3>
+
+The PLOT option displays graphs of the following quantities:
+<dl>
+<dt>Uiso
+<dd>The equivalent isotropic U factor calculated as 1/3*trace(U).
+<dt>R2FROMORIG
+<dd>The square of the distance from the local origin. If the FITTLS 
+option is being used, then the local origin is taken to
+be the origin of the TLS group to which the atom belongs. Otherwise,
+the local origin is taken to be the centroid of the chain
+to which the atom belongs (i.e. the mean atomic coordinates of that
+chain). The values of R2FROMORIG are divided by a scaling factor
+(currently 3000) for convenience of plotting.
+<dt>Anisotropy
+<dd>This is defined as the ratio of the smallest to the largest 
+eigenvalue of U.
+<dt>PROLMEAN
+<dd>This factor is defined as the ratio of the middle to the largest 
+eigenvalue of U. If the thermal ellipsoid corresponding to U is
+oblate (disc-like), then this factor will be close to 1. If however it is
+prolate (cigar-like), then this factor will be close to the value
+of the anisotropy
+<dt>URADMEAN
+<dd>The projection of U onto a radial vector from the local origin
+(see above) to the atomic position.
+<dt>UTANGMEAN
+<dd>The average value of U projected on to a plane perpendicular
+to the radial vector.
+<dt>UISOMEAN2, ANISOMEAN2, PROLMEAN2
+<dd>If TLS groups have been fitted, then the values of Uiso, A
+and PROLMEAN as derived from the fitted TLS parameters are also
+given.
+<dt>Radial distribution of Urad and Utang
+<dd>In a separate graph, Urad and Utang are plotted against R**2.
+For rigid body motion, Urad should be constant, and Utang linear in R**2.
+</dl>
+All quantities are averaged over the atoms in each residue, unless
+the <a href="#key_mainchain">MAINCHAIN</a> is given, in which case
+the average is over main chain atoms only.
+
+<H2><A NAME="examples"></A>EXAMPLES</H2>
+
+<h3><A NAME="example"></A>Runnable example</h3>
+
+<a href="../examples/unix/runnable/anisoanl.exam">anisoanl.exam</a>
+
+<h3><A NAME="example1"></A>Example 1</h3>
+
+Example of fitting TLS groups, and plotting anisotropy etc.
+<pre>
+
+anisoanl xyzin holo_adh.pdb tlsin holo_adh.tls \
+  xyzout holo_resid.pdb tlsout holo_out.tls &lt;&lt;eof
+FITTLS
+RIGIDBODY OFF
+PLOT
+MAINCHAIN
+END
+eof
+
+</pre>
+<p>
+
+<h3><A NAME="example2"></A>Example 2</h3>
+
+Example of the RIGIDBODY analysis:
+<pre>
+
+anisoanl xyzin 1exr.pdb tlsin 1exr.tls &lt;&lt;EOF
+FITTLS OFF
+RIGIDBODY
+DUBINS 8 10
+DURANGE 0.2
+PLOT OFF
+END
+EOF
+
+</pre>
+where the rigid groups are defined in 1exr.tls as:
+
+<pre>
+
+REFMAC
+
+TLS    Chain A                                                                      
+RANGE  'A  16.' 'A  16.' CG CD1 CD2 CE1 CE2 CZ                       
+
+TLS    Chain A                                                                      
+RANGE  'A  19.' 'A  19.' CG CD1 CD2 CE1 CE2 CZ                         
+
+</pre>
+The two rigid groups are two PHE side chains. This example gives a clear
+indication of the two phenyl groups acting as rigid-bodies. Similar results
+can be obtained for domain-size quasi-rigid bodies, though never as
+clear-cut. 
+<p>
+In this case, the postscript plot is unhelpful - it is more helpful
+for looking at larger groups of atoms.
+
+<h3>Published applications of ANISOANL</h3>
+
+<dl>
+
+<dt><a name="ref1">arginine kinase transition-state analogue complex at 1.2A</a>
+<dd>Yousef M.S., Fabiola F., Gattis J.L., Somasundarama T. and Chapman M.S. (2002)   
+<em>Acta.Cryst.</em>, <b>D58</B>, 2009
+
+<dt><a name="ref2">calmodulin</a>
+<dd>Wilson, M.A. and Brunger, A.T. (2003) <em>Acta.Cryst.</em>, 
+<b>D59</B>, 1782
+
+<dt><a name="ref3">GroEL</a>
+<dd>C Chaudhry, A L Horwich, A T Brunger and P D Adams (2004) 
+<em>J. Mol. Biol.</em>, <b>342</B>, 229
+
+</dl>
+
+<H2> SEE ALSO</H2>
+
+<a href="tlsanl.html">tlsanl</a> - analysis of TLS parameters
+<p>
+<a href="http://www.bmsc.washington.edu/raster3d/">
+RASTEP</a> (Raster3D Thermal Ellipsoid Program) - plotting of thermal
+ellipsoids.
+
+<H2><A NAME="references"></A>REFERENCES</H2>
+
+<OL>
+<P><!-- KEEP startreferencelist --></P>
+
+<LI>Martyn Winn, <i>CCP4 Newsletter</i> March 2001, <b>39</b> <br>
+<a href="http://www.ccp4.ac.uk/newsletter39/03_anisoanl.html">
+ANISOANL - analysing anisotropic displacement parameters</a>
+<LI>R.E.Rosenfield, K.N.Trueblood and J.D.Dunitz, <i>Acta Cryst</i>, <b>A34</b>, 
+828 - 829 (1978)<br>
+Rigid-body postulate.
+<LI>T.R.Schneider, <i>Proc. CCP4 Study Weekend</i>, 133 - 144 (1996).<br>
+Application of rigid-body postulate to protein SP445.
+<LI>V. Schomaker and K.N.Trueblood, <i>Acta Cryst.</i>, <b>B24</b>, 63 - 76 (1968)<br>
+Original description of TLS.
+<LI>V. Schomaker and K.N.Trueblood, <i>Acta Cryst.</i>, <b>B54</b>, 507 - 514 (1998)<br>
+Description of THMA program for small molecules, which fits TLS parameters
+(and more) to refined U values.
+
+<!-- KEEP endreferencelist -->
+</OL>
+
+<H2> AUTHORS</H2>
+Martyn Winn (m.d.winn@ccp4.ac.uk)
+
+</body></html>

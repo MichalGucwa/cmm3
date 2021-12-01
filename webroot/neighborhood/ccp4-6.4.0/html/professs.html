@@ -1,0 +1,197 @@
+<!DOCTYPE html
+                     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                     "DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+   <meta name="Author" content="Kevin Cowtan" />
+   <meta name="Changedby" content="Eleanor and Maria" />
+   <meta name="GENERATOR" content="Mozilla/4.03 [en] (X11; I; SunOS 5.7 sun4m) [Netscape]" />
+<title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::PROFESSS::Supported::Density Modification - Molecular Averaging::determination of NCS operators from heavy atoms:::::::: -->
+
+<h1>PROFESSS (CCP4: Supported Program)</h1>
+<h2>NAME</h2>
+<p><b>professs</b>
+- determination of NCS operators from heavy atoms</p>
+
+<h2>SYNOPSIS</h2>
+<p><b>professs</b>
+<b>XYZIN</b>
+<i>foo.pdb</i>
+[<b>XYZOUT</b>
+<i>bar.pdb</i>]<br />
+[<a href="#keywords">Keyworded input</a>]</p>
+
+<h2><a name="description"></a>DESCRIPTION</h2>
+
+<p>'professs' is a tool to help in the identification of NCS
+related atoms from a list of heavy atom positions. It assembles
+atom triplets into similar triangles applying any necessary symmetry operators.
+It is less easy to use than 'findncs', but unlike that program it runs extremely quickly.</p>
+
+<p>'professs' takes as input a list of the heavy atom sites, either as a
+PDB or an &quot;.ha&quot; file. Crystallographic symmetry equivalents are
+generated for the sites and the extended list searched for triangles of 3 atoms,
+with all spacing less than a given cutoff distance (see <a href="#distance">
+DISTANCE</a> keyword). The results are sorted and tabulated according to the
+sum of the 3 distances, so that the user may identify equivalent triangles
+belonging to NCS related molecules.</p>
+
+<p>It then finds the NCS operators relating the three atoms which generate pairs of
+similar triangles. Additional atoms which obey the same operators are added to
+the list over several cycles. The related atoms are then reduced to a
+common basic set so that the operators can be compared without the
+confusing effects of crystallographic symmetry. Any 'loops' within the
+resulting groups, associated with proper rotational NCS, are listed.
+Duplicate operators are identified and removed.</p>
+
+<p>After all unique operators are found they are sorted according to the number of
+atom pairs and the loop order, and a list of operators output in this order.</p>
+
+<p>The angles between the best operators with proper rotational NCS are tabulated. This can
+help indicate whether there is higher NCS symmetry in the set of sites; <em>e.g.</em> hexamers
+or tetramers require that there are orthogonal NCS operators between the same atom sets
+3folds perpendicular to 2-folds for hexamers, 3 orthogonal sets of 2folds to make a tetramer.</p>
+
+<p>If XYZOUT is assigned, a PDB file is output.  
+If keyword <a href="#list"> LIST</a> is requested, this PDB file
+contains first the triplets of atoms which make up each triangle, with each 
+one given a different segment ID.
+For teaching purposes this file may be fed into '<a href="lsqkab.html">lsqkab</a>'
+to determine the operators relating the original triangles. It will then give
+the full list of atom sets including all additional related atoms.</p>
+
+<p>If LIST is not specified, XYZOUT will have only the full list of atom sets including all additional
+related atoms for the operators which generate the most complete matches.</p>
+
+<h2><a name="files"></a>INPUT/OUTPUT FILES</h2>
+<dl>
+<dt>XYZIN</dt>
+<dd>Input PDB file containing the heavy atom positions. If the CRYST1 keyword
+is present in the file, this will also provide the unit cell dimensions, and
+possibly the spacegroup. Atoms are renumbered according to their input order,
+and identified by this serial number along with the symmetry operator applied
+throughout the output.</dd>
+<dt>XYZOUT (OPTIONAL)</dt>
+<dd>Output PDB file containing two sets of coordinate listings. The
+atom number throughout will reflect the input order. Atom names,
+B factors and occupancies are unchanged but the Chain ID, SEGID, and residue
+numbers will be altered.
+<ol type="a">
+<li>triangles of atoms, grouped for input to 'lsqkab'.
+Each triangle is given a separate seg ID, and each atom
+within the triangle is numbered, 1, 2 or 3. The atom order is chosen
+such that the distances are ranked d<sub>12</sub> &lt; d<sub>23</sub>
+&lt; d<sub>31</sub> (if the differences in the distances are less
+than the distance tolerance - an isosceles triangle - then both
+orderings are produced).</li>
+<li>full set of related atoms.
+The second half contains the largest full set(s) of matched atoms.
+Here the chain IDs are given as F for the first,
+and S for the second elements. There are some &quot;REMARK&quot; records to give the
+operators relating the paired sets.</li>
+</ol>
+</dd>
+</dl>
+
+<h2><a name="keywords"></a>KEYWORDED INPUT</h2>
+
+<blockquote>
+<a href="#cell"><b>CELL</b></a>,
+<a href="#distance"><b>DISTANCE</b></a>,
+<a href="#end"><b>END</b></a>,
+<a href="#list"><b>LIST</b></a>,
+<a href="#symmetry"><b>SYMMETRY</b></a>,
+<a href="#tidyinput"><b>TIDYINPUT</b></a>,
+<a href="#tolerance"><b>TOLERANCE</b></a>,
+<a href="#verbose"><b>VERBOSE</b></a>
+</blockquote>
+
+<h3><a name="cell"></a>CELL &lt;a&gt; &lt;b&gt; &lt;c&gt; &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt;</h3>
+<p>Unit cell parameters. Override the cell parameters given in XYZIN.</p>
+
+<h3><a name="symmetry"></a>SYMMETRY &lt;spacegroup_name&gt;</h3>
+<p>Space group symmetry. Override the spacegroup given in XYZIN.</p>
+
+<h3><a name="distance"></a>DISTANCE &lt;distance&gt;</h3>
+<p>Maximum interatomic distance for analysis in Angstroms. Atom pairs further apart
+than this distance will be ignored. Default: 25&#197;.</p>
+
+<h3><a name="tolerance"></a>TOLERANCE &lt;tolerance&gt;</h3>
+<p>Tolerance on interatomic distances in Angstroms. Distances differing by less
+than this distance will be considered equal. This is useful when triangles are
+approximately isosceles or equilateral, in which case the atom order will be
+ambiguous. Specifying a tolerance will cause all equivalent triangles to be produced.</p>
+
+<p>The tolerance is used in the second stage to choose which atoms will
+be included into the match sets. After determination of the operators,
+atom pairs within this distance will be added to the list.</p>
+
+<p>Try 1-3 Angstroms, depending on the quality of your heavy atom positions.
+Default = 1.0.</p>
+
+<h3><a name="tidyinput"></a>TIDYINPUT [FRAC &lt;Xfc&gt; &lt;Yfc&gt; &lt;Zfc&gt;] [ORTH &lt;Xoc&gt; &lt;Yoc&gt; &lt;Zoc&gt;]</h3>
+
+<p>Tidy up the input coordinates to place them close to the specified coordinate.
+This occurs before the rest of the calculation. Symmetry and cell numbers in the
+log file will refer to the tidied coordinates. If the keyword is given without a
+coordinate, then the atoms will be placed close to the origin with slight preference
+for the positive octant. Default: not set.</p>
+
+<h3><a name="verbose"></a>VERBOSE</h3>
+<p>Generate a few extra diagnostics. Default: not set.</p>
+
+<h3><a name="list"></a>LIST</h3>
+<ol type="a">
+<li>All triplets of atoms which make up suitable triangles are output to XYZOUT (if assigned).</li>
+<li>All non-identical complete atom sets related by an operator are output to the XYZOUT file.
+If XYZOUT is assigned, the default is that only sets containing at least half the maximum number of atoms
+found in a set are output.</li>
+</ol>
+
+<h3><a name="end"></a>END</h3>
+<p>End input.</p>
+
+<h2>Reading the Output:</h2>
+
+<p>The program first lists the triangles of atoms which it has found,
+then it analyses each pair of triangles as a possible NCS match. For
+each possible operator, a list of all matching atoms is given. For
+each pair of atoms, a 'loop factor' is listed. If the NCS operator is
+an N-fold rotation, the atom will be part a 'loop' of N atoms (unless
+one is missing). This, along with an appropriate 3rd polar angle, can
+confirm the existence of a proper NCS operator.</p>
+
+<p>Atoms are numbered according to the input order, and identified by this
+serial number along with the symmetry operator applied. this is coded by
+4 numbers listed in square brackets. The first of these is
+the number of the crystallographic symmetry operators, and the other
+three are the unit cell translations applied after the symmetry
+operator.</p>
+
+<p>If you expect higher orders of NCS check the table of angles between the best operators.
+This can help indicate whether there is higher NCS symmetry in the set of sites; <em>e.g.</em> hexamers
+or tetramers require that there are related NCS operators between the same atoms.</p>
+
+<p>A PDB file may be output.</p>
+
+<h2>Problems:</h2>
+<ul>
+<li>When calculating the distance between a pair of atoms, all
+symmetry equivalents are considered, but only the cell repeat giving
+the least distance is considered. In a very few cases of low order
+crystallographic symmetry this may cause atoms to be missed.</li>
+</ul>
+
+<h2>AUTHOR</h2>
+<p>Kevin Cowtan, York (originally named 'eleanorinabox').</p>
+
+<h2>SEE ALSO</h2>
+<p><a href="dm.html">dm</a>,
+<a href="lsqkab.html">lsqkab</a></p>
+
+</body>
+</html>

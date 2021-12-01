@@ -1,0 +1,48 @@
+#!/bin/sh
+
+set -e
+
+# Analyse ADPs including all main chain atoms
+
+anisoanl xyzin $CEXAM/data/1a2p.pdb tlsin $CEXAM/data/1a2p_1.tls \
+         psout $CCP4_SCR/1a2ps_1.ps <<EOF
+TITLE Analysis of ADPs of barnase
+PLOT  ON
+RIGIDBODY   ON
+DUBINS 30 15
+DURANGE 0.5
+FITTLS  OFF
+END
+EOF
+
+# Split into 3 groups, and fit TLS parameters
+
+anisoanl xyzin $CEXAM/data/1a2p.pdb tlsin $CEXAM/data/1a2p_2.tls \
+         xyzout $CCP4_SCR/1a2p_anisoanl.pdb \
+         tlsout $CCP4_SCR/1a2p_anisoanl.tls \
+         psout $CCP4_SCR/1a2ps_2.ps <<EOF
+TITLE Fitting TLS to ADPs of barnase
+PLOT  ON
+RIGIDBODY  ON
+DUBINS 30 15
+DURANGE 0.5
+FITTLS  ON
+END
+EOF
+
+# Analyse TLS parameters from previous fitting procedure.
+
+tlsanl xyzin $CEXAM/data/1a2p.pdb tlsin $CCP4_SCR/1a2p_anisoanl.tls \
+       xyzout $CCP4_SCR/1a2p_tlsanl.pdb <<EOF
+END
+EOF
+
+# Extract sample results for testing purposes - these can
+# be compared with runs with different versions or on different
+# platforms
+
+echo " " >> $CCP4_SCR/sample_results
+echo " *** anisoanl.exam *** " >> $CCP4_SCR/sample_results
+echo " " >> $CCP4_SCR/sample_results
+grep "[TLS]    " $CCP4_SCR/1a2p_anisoanl.tls >> $CCP4_SCR/sample_results
+

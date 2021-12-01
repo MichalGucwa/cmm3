@@ -1,0 +1,246 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::WATERTIDY::Supported::Coordinate file manipulations::rationalise waters at the end of refinement:::::::: -->
+
+<h1>WATERTIDY (CCP4: Supported Program)</h1>
+<h2>NAME</h2>
+<b>watertidy</b>
+- rationalise waters at the end of refinement
+<h2>SYNOPSIS</h2>
+<b>watertidy xyzin</b>
+<i>refined-coords.brk</i>
+<b>distout</b>
+<i>distang-out.log</i>
+<b>xyzout</b>
+<i>tidied-coords.brk</i>
+<br />
+ [<a href="#keywords">Keyworded input</a>]
+
+<h2><a name="description"></a>DESCRIPTION</h2>
+<p>At the end of refinement it is useful to try to rationalise the H<sub>2</sub>O
+naming.  You may have more than one molecule in the asymmetric unit;
+have two isomorphous structures, <em>etc</em>., and want to compare the H<sub>2</sub>O
+structures for them.</p>
+<p>This program has two purposes.
+<ol>
+<li>It moves the H<sub>2</sub>O coordinates to the symmetry related position 
+nearest to the host molecule.</li>
+<li>It attempts to design an H<sub>2</sub>O naming system which gives some
+information about the residue which a particular H<sub>2</sub>O is hydrogen
+bonded to.  The user inputs chain IDs for host chains and assigns an
+output ID for the H<sub>2</sub>Os bonded to this chain.</li>
+</ol></p>
+<p>The distance search is done with the program 
+<a href="distang.html">DISTANG</a>, which must be run first. 
+WATERTIDY then reads in the DISTOUT file from DISTANG
+which lists all close contacts, and does some
+preliminary analysis of H<sub>2</sub>O contacts (<em>e.g.</em> contact too close, C
+involved in close contact, number of contacts per chain).</p>
+<p><b>Important:</b> <i>post CCP4 V4.2, WATERTIDY cannot read the logfile from DISTANG
+directly. Instead the <a href="distang.html#output">OUTPUT DISTOUT</a> option
+of DISTANG must be used - the resulting output file assigned to DISTOUT from
+DISTANG will be in the appropriate format to be read in by WATERTIDY.</i>
+<p>
+This generates another problem; what to do about H<sub>2</sub>Os which are bonded
+to more than one host atom?  The solution used here is to list such
+H<sub>2</sub>Os more than once, giving the site closest to a host atom the input
+occupancy, and all secondary sites occupancy &lt;occw&gt; (default value
+0.01, see keyword <a href="#occw">OCCW</a>).</p>
+<p>
+The program can be run first to find the H<sub>2</sub>Os linked to the protein
+molecule, then a second or third pass would attempt to apply the same
+rules to renaming H<sub>2</sub>Os in a second or third solvent shell which will
+not have been renamed at all in the previous pass.</p>
+<p>All non relabelled atoms are output exactly as input.</p>
+<p>WATERTIDY names the waters with the appropriate output ID and a label
+containing information about which residue and atom type the water is
+H-bonded to. An H<sub>2</sub>O is labelled in the output PDB file as
+<blockquote>O&lt;i&gt;&lt;j&gt; WAT &lt;chnid&gt; &lt;nres&gt;</blockquote>
+where &lt;nres&gt; is the host residue number and &lt;chnid&gt; is the assigned 
+output ID. &lt;i&gt; and &lt;j&gt; are defined as follows:
+<ol>
+<li>If the host atom belongs to a protein residue the number &lt;i&gt; (range 0-9)
+defines the bonding atom type as follows:
+<pre>
+      0 for N 
+      1 for O
+      2 for OG OG1 
+      3 for OD1 ND1
+      4 for OD2 ND2
+      5 for OE OE1 NE1  
+      6 for OE2 NE2
+      7 for NZ        
+      8 for OH OH1 NH1 
+      9 for OH2 NH2
+</pre>
+Additional assignments for &lt;i&gt; are made as follows:
+<pre>
+      0  for OW
+     &lt;n&gt; for O&lt;n&gt; or OW&lt;n&gt; where n=0-9
+     &lt;n&gt; for O&lt;n&gt;&lt;m&gt; where n,m=0-9
+</pre>
+The number &lt;j&gt; (range 0-3) numbers the contact of the H<sub>2</sub>O to 
+the protein atom; up to &lt;hbond&gt; H<sub>2</sub>Os can be bonded to one atom.
+An extension to allow other acceptor atoms (<em>e.g.</em> C S <em>etc</em>.) 
+means that the numbering has to be modified slightly. 
+<pre>
+      0 for CA        as well
+      1 for C         as well
+      2 for CG CG1    as well
+      3 for CD CD1    as well
+      4 for CD2 CD3   as well
+      5 for CE CE1    as well
+      6 for CE2 CE3.. as well
+      7 for CZ        as well
+      8 for CH CH1    as well
+      9 for CH2 CH3.. as well
+</pre></li>
+<li>If the host atom is another H<sub>2</sub>O the number &lt;i&gt; will be the same as
+that of the host atom.
+<br />
+The number &lt;j&gt; (range 4-6) numbers the contact of the H<sub>2</sub>O to its
+host for the second shell; up to 3 H<sub>2</sub>Os can be bonded to one atom
+and &lt;j&gt; is offset to the range 4-6 to make it clear which H<sub>2</sub>Os are in
+the second shell.
+<br />
+The number &lt;j&gt; (range 7-9) numbers the contact of the H<sub>2</sub>O to its
+host for the third shell; up to 3 H<sub>2</sub>Os can be bonded to one atom and
+&lt;j&gt; is offset to the range 7-9 to make it clear which H<sub>2</sub>Os are in the
+third shell.
+<br />
+For molecules with non-crystallographic symmetry there is no guarantee
+that the &lt;j&gt;-th number for one related chain will be the same as that
+for the other.</li>
+</ol></p>
+<p>When you have assigned as many shells as you feel are needed,
+resort the output water atoms of the PDB file on &lt;chnid&gt;, residue
+number, <em>etc</em>., using the system sort utility.  On Unix, this sorts on
+&lt;chainid&gt; first, then residue number then atom number:
+<blockquote>
+sort +4 -5 +5 -6 +3.1 - 3.3 wat.pdb &gt; wat_sorted.pdb
+</blockquote>
+BEWARE: Your CRYSTAL and SCALE cards will be scrambled by the
+sorting.</p>
+
+<h2><a name="files">INPUT AND OUTPUT FILES</a></h2>
+
+<h3>Input</h3>
+<dl>
+<dt>XYZIN</dt><dd>Input coordinate file in PDB format.</dd>
+<dt>DISTOUT</dt><dd>Output file from the program <a href="distang.html">DISTANG</a>,
+using the <a href="distang.html#output">OUTPUT DISTOUT</a> option.
+The program reads the list of distances included in the DISTOUT file,
+and ignores the rest.</dd>
+</dl>
+
+<h3>Output</h3>
+<dl>
+<dt>XYZOUT</dt><dd>Output coordinate file in PDB format. Water atoms will be relabelled
+as described above, and may have been moved to a symmetry-related
+position. Water atoms which bond to more than one host atom will be
+duplicated, with second and subsequent entries having occupancy
+&lt;occw&gt;.</dd>
+</dl>
+
+<h2><a name="keywords"></a>KEYWORDED INPUT</h2>
+<p>Available keywords are:
+<blockquote>
+<a href="#accept"><b>ACCEPT</b></a>,
+<a href="#chnid"><b>CHNID</b></a>,
+<a href="#end"><b>END</b></a>,
+<a href="#hbond"><b>HBOND</b></a>,
+<a href="#occw"><b>OCCW</b></a>,
+<a href="#shell"><b>SHELL</b></a>,
+<a href="#symmetry"><b>SYMMETRY</b></a>,
+<a href="#title"><b>TITLE</b></a>,
+<a href="#watid"><b>WATID</b></a>.
+</blockquote></p>
+
+<h3><a name="accept"></a>ACCEPT &lt;id&gt; ...</h3>
+<p>Specify extra acceptors: single character atom types, default O N.</p>
+
+<h3><a name="chnid"></a>CHNID &lt;chainid&gt; [ WATOUTID &lt;id&gt; ] 
+    [ RANGE &lt;residue1&gt; &lt;residue2&gt; ]</h3>
+<dl>
+<dt>&lt;chainid&gt;</dt>
+<dd>The host chain id (the chain identifier for the &lt;ich&gt;-th host chain),
+as it appears in XYZIN <em>e.g.</em> A or B.</dd>
+<dt>&lt;id&gt;</dt>
+<dd>A single character label for the water chain bonded to &lt;chainid&gt;,
+to be used in XYZOUT.</dd>
+<dt>&lt;residue1&gt; &lt;residue2&gt;</dt>
+<dd>The starting and ending residue numbers for the host chain.  This range is
+necessary if the chain is not numbered 1, 2, 3...  or if you have more
+than one chain.</dd>
+</dl>
+
+<h3><a name="hbond"></a>HBOND &lt;hbond&gt;</h3>
+<p>Maximum number of waters bonded to one atom, default 4.</p>
+
+<h3><a name="occw"></a>OCCW &lt;occw&gt;</h3>
+<p>Occupancy for secondary sites (default 0.01). If &lt;occw&gt; is set to 0.0
+then secondary sites are not written to XYZOUT.</p>
+
+<h3><a name="shell"></a>SHELL &lt;shell&gt;</h3>
+<p>Specify the shell number (up to 3), default 1.</p>
+
+<h3><a name="symmetry"></a>SYMMETRY &lt;SG name&gt; | &lt;SG number&gt; | &lt;operators&gt;</h3>
+<p>Standard symmetry specification.  This must be the same as used for
+<a href="distang.html">DISTANG</a>.</p>
+
+<h3><a name="title"></a>TITLE &lt;title&gt;</h3>
+<p>&lt;title&gt; is written to output PDB file as a REMARK.</p>
+
+<h3><a name="watid"></a>WATID &lt;id&gt;</h3>
+<p>Water chain id. The chain identifier for unassigned H<sub>2</sub>Os to be
+assigned in this pass, as it appears in XYZIN.</p>
+
+<h3><a name="end"></a>END</h3>
+<p>Terminate input.</p>
+
+<h2><a name="examples"></a>EXAMPLES</h2>
+<h3>Example of output file</h3>
+<pre>
+REMARK
+REMARK
+SCALE2       0.00000   0.03820   0.00000        0.00000
+SCALE3       0.00000   0.00000   0.01937        0.00000
+SCALE1       0.01897   0.00000   0.00099        0.00000
+ATOM      1  N   GLY A   1      -8.094   0.714  38.861  1.00 19.52
+ ...
+ATOM     18  C   VAL A   3     -10.635   2.653  34.037  1.00 15.79
+ATOM     13  N   VAL A   3      -8.153   2.210  33.953  1.00 16.23
+ ...
+ATOM     25  N   GLU A   4     -10.661   2.145  35.262  1.00 13.58
+ATOM     28  O   GLU A   4     -12.831   4.702  36.359  1.00 15.64
+ ....
+ATOM     21  OE1 GLU A   4      -9.572   0.074  36.837  1.00 30.05
+ATOM     20  OE2 GLU A   4     -11.042  -1.224  35.968  1.00 32.63
+ ....
+ATOM    769  O00 WAT P   1      -8.453  -1.913  39.350  1.00 45.10
+   A H<sub>2</sub>O bonded to the N of GLY A 1...
+ATOM    772  O00 WAT P   3      -7.612  -0.514  34.997  0.01 22.90
+   A H<sub>2</sub>O bonded to the N of VAL A 3...
+ATOM    750  O10 WAT P   4     -14.304   4.121  38.925  1.00 25.25
+ATOM    772  O50 WAT P   4      -7.612  -0.514  34.997  1.00 22.90
+ ...
+ATOM    795  O04 WAT T   3      -5.847  -2.930  35.432  0.01 30.04
+ATOM    749  O14 WAT T   4     -11.391   4.228  40.350  1.00 32.06
+ATOM    811  O15 WAT T   4     -14.681   2.966  41.308  1.00 56.74
+ATOM    795  O54 WAT T   4      -5.847  -2.930  35.432  0.01 30.04
+ ...
+</pre>
+
+<h3>Unix example script found in $CEXAM/unix/runnable/</h3>
+<ul>
+  <li><a href="../examples/unix/runnable/watertidy-3shells">watertidy-3shells</a></li>
+</ul>
+
+
+<h2>SEE ALSO</h2>
+<p><a href="distang.html">distang</a>,
+<a href="pdbset.html">pdbset</a>,
+sort (1)</p>
+</body></html>

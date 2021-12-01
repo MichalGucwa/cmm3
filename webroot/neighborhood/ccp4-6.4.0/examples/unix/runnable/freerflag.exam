@@ -1,0 +1,53 @@
+#!/bin/sh
+
+set -e
+
+# NOTE: freerflag is included in the script uniqueify, and in general
+# you should not need to run it on its own.
+
+####### starting from CCP4 file (for starting from X-PLOR data with free R,
+#       see also f2mtz.exam (and use `cad' afterwards) as well as
+#       mtz2various.exam to go the other way)
+
+#  Take original mtz file.
+#  HKLOUT will have all items in HKLIN plus a FreeRflag
+#  On average, 5% of the data has a particular flag in the range (0,19)
+#  which can be used for exclusion from refinement.
+
+freerflag HKLIN $CEXAM/toxd/toxd_old HKLOUT $CCP4_SCR/toxd_free <<+
+FREERFRAC  0.05
++
+#
+#  If you need to extend your data generate freerflag first,
+#  so that all equivalent reflections have the same status.
+#
+#   an example of extending native data to P1 +-h,+-k,+l
+cad HKLIN1 $CCP4_SCR/toxd_free HKLOUT $CCP4_SCR/toxd_free_p1 <<+
+OUTLIM SPACEGROUP P1
+TITLE  Toxd data extended to P1 cell
+LABIN FILE 1 E1=FTOXD3 E2=SIGFTOXD3 E3=FreeR_flag
+END
++
+
+### Example of COMPLETE keyword #####
+
+# We take a 1.8 A dataset from rnase18.mtz and combine it with a
+# freeR column from a 2.5 A dataset rnase25.mtz  In the output
+# file from CAD, there are thus no freeR flags for the resolution
+# range 1.8 - 2.5 A.
+# We then use FREERFLAG to extend the freeR flags out to 1.8 A,
+# while keeping the original ones unchanged.
+
+cad hklin1 $CEXAM/rnase/rnase18.mtz \
+    hklin2 $CEXAM/rnase/rnase25.mtz \
+    hklout $CCP4_SCR/rnase_cad.mtz <<EOF 
+labi file 1 E1=FNAT E2=SIGFNAT
+labi file 2 E1=FreeR_flag
+END
+EOF
+
+freerflag hklin $CCP4_SCR/rnase_cad.mtz hklout $CCP4_SCR/rnase_free.mtz <<EOF
+COMPLETE FREE=FreeR_flag
+EOF
+#
+

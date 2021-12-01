@@ -1,0 +1,168 @@
+#!/usr/bin/env ccp4-python
+
+# setup the environment
+
+import os, sys, shutil, subprocess
+
+
+# helper function to build command files
+
+def cmdfile( cmds, prgm, cyc ):
+  cmdinp = ""
+  cmdarg = ""
+  spc = " "
+  for cmd in cmds:
+    words = cmd.strip().split()
+    if len( words ) > 1:
+      if words[0][0:len(prgm)] == prgm:
+        cycn = [0,ncyc-1]
+        cycs = words[0][len(prgm)+1:]
+        cycr = cycs.split("-")
+        if ( len(cycr) == 1 ): cycr.append( cycr[0] )
+        for i in range(2):
+          if ( cycr[i].isdigit() ): cycn[i] = int( cycr[i] )
+          elif  ( cycr[i] == '*' ): cycn[i] = ncyc-1
+        if ( cyc >= cycn[0] and cyc <= cycn[1] ):
+          if words[1] == "%arg":
+            cmdarg += spc.join(words[2:]) + " "
+          else:
+            cmdinp += spc.join(words[1:]) + os.linesep
+  return ( cmdarg, cmdinp );
+
+
+# helper function to find executables
+
+def runprog( prg, cmd ):
+  bin = os.path.join( os.environ["CCP4"], "bin", prg )
+  if ( not os.path.exists( bin ) ):
+    bin = prg  # if binary isn't in CBIN, assume absolute or path
+  # start of windows compatibility code
+  # fix for Windows to prevent terminal window being created
+  startupinfo=None
+  if ( os.name == 'nt' ):
+    bin = bin.strip() + ".exe"
+    bin.replace( "\\", "/" );
+    cmd[0].replace( "\\", "/" );
+    cmd[1].replace( "\\", "/" );
+    startupinfo = subprocess.STARTUPINFO()
+    if sys.version_info <= (2, 6):
+      startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    else:
+      startupinfo.dwFlags |= subprocess._subprocess.STARTF_USESHOWWINDOW
+  # end of windows comatibility code
+  cmdlist = [bin] + cmd[0].split()
+  process = subprocess.Popen( cmdlist, stdin=subprocess.PIPE, startupinfo=startupinfo )
+  process.stdin.write( cmd[1] )
+  process.stdin.close()
+  return process.wait()
+
+
+# Test for environment variables
+
+if not os.environ.has_key('CCP4'):
+  raise RuntimeError, 'CCP4 not found'
+if os.environ['CCP4_OPEN'] == 'NEW':
+  os.environ['CCP4_OPEN'] = 'UNKNOWN'
+
+# get the command input
+
+cmds = sys.stdin.readlines()
+
+# fetch the control parameters
+
+ncyc = 0
+prgm_pre  = []
+prgm_loop = []
+prgm_post = []
+copy_pre  = []
+copy_post = []
+remv_post = []
+
+for cmd in cmds:
+  words = cmd.strip().split()
+  if len(words) > 0:
+    if words[0] == "%loop-cyc":
+      ncyc = int(words[1])
+    if words[0] == "%prgm-pre":
+      prgm_pre.append(  ( words[1], words[2], words[3] ) )
+    if words[0] == "%prgm-loop":
+      prgm_loop.append( ( words[1], words[2], words[3] ) )
+    if words[0] == "%prgm-post":
+      prgm_post.append( ( words[1], words[2], words[3] ) )
+    if words[0] == "%copy-pre":
+      copy_pre.append(  ( words[1], words[2] ) )
+    if words[0] == "%copy-post":
+      copy_post.append( ( words[1], words[2] ) )
+    if words[0] == "%remv-post":
+      remv_post.append( words[1] )
+
+# pre-job file copy
+
+for files in copy_pre:
+  shutil.copy( files[0],files[1] )
+
+# pre-loop programs
+
+# get command files and execute
+for prgm in prgm_pre:
+  # fetch control info
+  job = prgm[0]  # job name
+  prg = prgm[1]  # exe name
+  err = prgm[2]  # error handling
+  cmd = cmdfile( cmds, job, cyc )
+  print "#", prg, cmd[0]
+  status = runprog( prg, cmd )
+  if ( status != 0 ):
+    if ( err == "%exit"  ):
+      sys.exit(1)
+
+# loop programs
+
+error = 0
+for cyc in range( ncyc ):
+  # get command files and execute
+  for prgm in prgm_loop:
+    # fetch control info
+    job = prgm[0]  # job name
+    prg = prgm[1]  # exe name
+    err = prgm[2]  # error handling
+    cmd = cmdfile( cmds, job, cyc )
+    print "#", prg, cmd[0]
+    status = runprog( prg, cmd )
+    if ( status != 0 ):
+      if ( err == "%exit"  ):
+        sys.exit(1)
+      if ( err == "%break" ):
+        error = 1
+    if error: break
+  if error: break
+
+# post-loop programs
+
+# get command files and execute
+for prgm in prgm_post:
+  # fetch control info
+  job = prgm[0]  # job name
+  prg = prgm[1]  # exe name
+  err = prgm[2]  # error handling
+  cmd = cmdfile( cmds, job, cyc )
+  print "#", prg, cmd[0]
+  status = runprog( prg, cmd )
+  if ( status != 0 ):
+    if ( err == "%exit"  ):
+      sys.exit(1)
+
+# post-job file copy
+
+for files in copy_post:
+  shutil.copy( files[0],files[1] )
+
+# post-job file removal
+
+for files in remv_post:
+  os.remove( files )
+
+# exit
+
+sys.exit(0)
+

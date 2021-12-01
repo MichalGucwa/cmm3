@@ -1,0 +1,684 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4 Program Suite : REFMAC - Keywords - Principal Xray</title>
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX64 6.2 IP19) [Netscape]" />
+</head>
+<body>
+
+<!-- ::INDEX_INFO::REFMAC::Supported::Model Refinement::macromolecular refinement program:::::::: -->
+
+<h1>REFMAC (CCP4: Supported Program)</h1>
+
+<h2> User's manual for the program refmac_5.*</h2>
+
+<h2><a name="keywords" id="keywords"></a>Keyworded input - Essential Xray keywords</h2>
+
+<p>Anything input on a line after &quot;!&quot; or
+&quot;#&quot; is ignored and lines can be continued by using a minus (-) sign.
+The program only checks the first 4 characters of each keyword. The order
+of the cards is not important except that an END card must be last. Some
+keywords have various subsidiary keywords. The available keywords in this section
+are:</p>
+<blockquote><dl>
+<dt><a href="#labin"><b>LABI</b></a></dt>
+<dd>Input MTZ labels</dd>
+<dt><a href="#ncyc"><b>NCYC</b></a></dt>
+<dd>Number of the refinement cycles</dd>
+<dt><a href="#refi"><b>REFI</b></a></dt>
+<dd>Refinement parameters</dd>
+<dt><a href="#scal"><b>SCAL</b></a></dt>
+<dd>Scale parameters</dd>
+<dt><a href="#scal_mlsc"><b>SIGM</b></a></dt>
+<dd>Parameters of the likelihood (sigmaA)</dd>
+<dt><a href="#solv"><b>SOLV</b></a></dt>
+<dd>Parameters of the solvent</dd>
+<dt><a href="#weig"><b>WEIG</b></a></dt>
+<dd>Weighting X-ray vs geometry</dd>
+</dl></blockquote>
+
+<h3><a name="labin" id="labin"></a>LABIN &lt;program label&gt;=&lt;file label&gt;...</h3>
+<p>This keyword tells the program which columns in the <a href="../../mtzlib.html">MTZ
+file</a> should be used as native structure factors, sigmas, FreeR flag, phase
+information <em>etc</em>.</p>
+<p>For example:</p>
+<pre>
+--------------------------------------------------------------------------
+      #
+      #   Only native structure factors, their sigmas and FreeR_flag
+      #   are given
+      #
+      LABIn FP=F_native SIGFP=SIGF_native FREE=FreeR_flag
+
+      #      or
+      #
+      #   Apart from native structure factors, their sigmas and FreeR_flag
+      #   some phase information in a form of Hendrickson and Lattman
+      #   coefficients also known. It gives signal to the program that
+      #   phased refinement should be used
+      #
+      LABI FP=F_native SIGF=SIGF_native FREE=FreeR_flag -
+           HLA=HLA_phases HLB=HLB_phases HLC=HLC_phases HLD=HLD_phases
+--------------------------------------------------------------------------
+</pre>
+
+<p>LABIn is essential for all refinement except geometry idealisation.
+To some extent the course of the refinement is governed by the assignments
+given. The following program labels can be assigned:</p>
+<blockquote><tt><a href="#labin_fp_sigfp">FP SIGFP</a>&nbsp;&nbsp;
+<a href="#labin_free">FREE</a>&nbsp;&nbsp;
+<a href="#labin_fparti_phiparti">FPARTi PHIPi</a>&nbsp;&nbsp;
+<a href="#labin_hl_or_phib_fom">HLA HLB HLC HLD  or  PHIB FOM</a></tt></blockquote>
+
+<dl>
+<dt><a name="labin_fp_sigfp" id="labin_fp_sigfp"></a>FP SIGFP</dt>
+<dd>Assignments for FP and SIGFP are always required.</dd>
+
+<dt><a name="labin_free" id="labin_free"></a><a name="use_free" id="use_free"></a>FREE</dt>
+<dd>The use of the FreeR flag is recommended.
+This is an important component of using maximum likelihood refinement. If
+<a href="xray-general.html#free">FREE</a> is assigned, reflections which are flagged
+with nfree_exclude (default 0) are excluded from the derivative calculations,
+and therefore the agreement between them and calculated structure factors is
+not part of the refinement procedure.</dd>
+
+<dd>REMARK 0: It is strongly recommended to run the
+<a href="../../unique.html">uniqueify</a>
+script on the first dataset as soon as possible, <em>e.g.</em> after
+<a href="../../truncate.html">TRUNCATE</a>.
+This script adds a column of FreeR flags, and it is
+important for the validity of the FreeR approach that this is done before
+any model refinement. If you are continuing model refinement with a new
+data set, it is important to preserve the FreeR assignment used before.
+See <a a="#free">FreeR assignment</a>.</dd>
+
+<dd>If CCP4i (<a href="../../../ccp4i/help/index.html">CCP4 graphical user interface</a>) is used,
+then Uniqueify is in &quot;Convert to MTZ &amp; Standardise&quot; task in &quot;Reflection Data
+Utilities&quot; module.</dd>
+
+<dd>REMARK 1: Reflections flagged for FreeR calculation are omitted
+from the refinement of the atomic parameters, and also from the scale and
+B-factor  calculation. For ML refinement the default is to use them to estimate
+SigmaA.
+[See <a href="#scal"><b>SCALe</b></a> and
+     <a href="#scal_mlsc"><b>SIGMA</b></a> keywords.] </dd>
+
+<dt><a name="labin_fparti_phiparti" id="labin_fparti_phiparti"></a><a name="fpart" id="fpart"></a>FPARTi PHIPARTi</dt>
+<dd>In order to add known FPART(s) to the structure
+factors, assign FPARTi and PHIPi. Possible example of using partial
+structure is: adding in contributions from unmodelled parts of a structure
+(<em>e.g.</em> uninterpretable parts of MIR/MAD/SAD/DM maps).</dd>
+
+<dd>REMARK 2: See <a href="xray-general.html#scpa"><b>SCPART</b></a> keyword: The FPARTi will be
+added to the FC <i>without</i> any further scaling unless this is set.</dd>
+
+<dt><a name="labin_hl_or_phib_fom" id="labin_hl_or_phib_fom"></a><a name="phase_fom" id="phase_fom"></a>HLA HLB HLC HLD or PHIB FOM</dt>
+<dd>PHIB FOM: An input phase and its figure of merit.</dd>
+
+<dd><a name="HL_phases" id="HL_phases"></a>Or: HLA HLB HLC HLD The Hendrickson-Lattman
+coefficients describing <i>prior</i> or &quot;experimental&quot; phase
+information. These can be obtained by the usual routes; MIR, MAD plus
+density modification. Theoretically Hendrickson and Lattman coefficients
+contain more information about phases than PHIB and FOM.</dd>
+
+<dd>REMARK 3: In our experience using '<tt>dm</tt>' phases gave better result than
+using MIR phases. However the reliability of the phases may need to be
+changed. See <a href="#refi_phas"><b>PHASe</b></a> keyword.</dd>
+</dl>
+
+<h3><a name="refi" id="refi"></a>REFInement [ TYPE | PHASe | RESIdual | BREFinement | METHod | RESOlution | TLSCycles ]</h3>
+
+<p>This keyword controls the type of refinement or idealisation.</p>
+
+<p>For example:</p>
+<pre> 
+------------------------------------------------------------------------------
+           #
+           ####Restrained refinement. Reflections between 20 - 1.5&#197; will be used
+           #
+           REFI TYPE RESTrained RESOLUTION  20 1.50
+           #
+           #   Use maximum likelihood residual
+           #
+           REFI RESI MLKF
+           #
+           #   Refine individual isotropic B values
+           REFI BREF ISOTropic 
+             or
+           REFI TYPE REST  RESO 20 1.50  
+           REFI RESI MLKF  BREF ISOT 
+           REFI METH CGMAT
+             or 
+           #
+           #   Rigid body refinement
+           #
+           REFI TYPE RIGID  #(all other definitions are defaults)
+------------------------------------------------------------------------------
+</pre>
+
+<p>Subkeywords:</p>
+<dl>
+<dt><a href="#refi_type">TYPE</a> RESTrained | UNREstrained | IDEAlise | RIGId | TLSRefinement</dt>
+<dd>[Default RESTrained]</dd>
+
+<dt><a href="#refi_phas">PHASed</a> SCBLurred &lt;scblur&gt; BBLUrred &lt;bblur&gt; SIGMacalc</dt>
+<dd>[Default: only used if PHASE definition given on <a href="#labin">LABIN</a>; scblur =1.0, 
+bblur = 0. Its effect is equavalent to the keyword <a href="xray-general.html#phas"><b>PHASe</b></a>]</dd>
+
+<dt><a href="#refi_resi">RESIdual</a> LSQF | MLKF</dt>
+<dd>[Default MLKF ]</dd>
+
+<dt><a href="#refi_bref">BREFinement</a> OVERall | ISOTropic | ANISotropic | MIXED<dt>
+<dd>[Default ISOTropic]</dd>
+
+<dt><a href="#refi_meth">METHod</a> CGMAt | CGRAd | CDIR</dt>
+<dd>[Default CGMAT]</dd>
+
+<dt><a href="#refi_reso">RESO</a> &lt;resmin&gt; &lt;resmax&gt;</dt>
+<dd>[Default: all data]</dd>
+
+<dt><a href="#refi_tlsc">TLSC</a> &lt;ncycles&gt;</dt>
+<dd>[Default: no TLS-refinement]</dd>
+
+</dl>
+
+<p>In more detail, these subkeywords are:</p>
+
+<dl>
+
+<p><dt><a name="refi_type" id="refi_type"></a><strong>TYPE</strong></dt>
+<p>Default:</p>
+<blockquote><pre>REFInement TYPE RESTrained</pre></blockquote>
+<dd><p>This keyword describes the type of refinement.</p>
+
+<dl>
+<dt><a name="refi_type_rest" id="refi_type_rest"></a>RESTrained</dt><dd>invokes restrained refinement,
+where both the Xray residual (reflecting the agreement between the observed
+and the calculated Fs, and the geometric residual (reflecting the fit between
+the expected and the observed geometry) are minimised at the same time. The
+relative weighting of these two terms is defined by the keyword
+<a href="#weig"><b>WEIGHt</b></a></dd>
+
+<dt><a name="refi_type_unre" id="refi_type_unre"></a>UNREstrained</dt><dd>is for unrestrained refinement,
+<em>i.e.</em> geometric part is ignored.</dd>
+
+<dt><a name="refi_type_idea" id="refi_type_idea"></a>IDEAlised</dt><dd>is for geometry idealisation.</dd>
+
+<dt><a name="refi_type_rigi" id="refi_type_rigi"></a>RIGID</dt><dd>invokes rigid body refinement. The 
+description of domains is given by the keywords
+<a href="xray-general.html#rigi"><b>RIGID</b></a>. REFI TYPE RIGID is equavalent to 
+<a href="xray-general.html#mode"><b>MODE</b></a> RIGID.</dd>
+
+<dt><a name="refi_type_tlsr" id="refi_type_tlsr"></a>TLSR</dt>
+<dd>This invokes TLS refinement. Definition of rigid bodies is taken from
+<a href="../files/tls.html#tlsin">TLSIN input file</a>. If this type of refinement has been specified
+then only TLS refinement will be performed. For TLS followed by individual atomic refinement,
+use <a href="#refi_tlsc">REFI TLSC</a>.</dd>
+</dl>
+</dd></p>
+
+<p><dt><a name="refi_phas" id="refi_phas"></a><strong>PHASed</strong></dt>
+<p>Default:</p>
+<blockquote><pre>REFInement PHASed SCBLur 1.0 BBLUr 0.0</pre></blockquote>
+
+<dl>
+<dt><a name="refi_phas_scbl" id="refi_phas_scbl"></a>SCBL &lt;scblur&gt; BBLUr &lt;bblur&gt;</dt>
+<dd><p>If experimental phases are being used it may be necessary to blur the
+phase probabilities, especially after some density modification calculations
+(this information can also be input with the keyword <a href="xray-general.html#phas"><b>PHASE</b></a>).</p>
+
+<p>Program will apply blurring as follows:</p>
+
+<blockquote><pre>HLAnew = HLA*scblur*exp(-(sin(theta)/lambda)**2*bblur)
+HLBnew = HLB*scblur*exp(-(sin(theta)/lambda)**2*bblur)
+HLCnew = HLC*scblur*exp(-(sin(theta)/lambda)**2*bblur)
+HLDnew = HLD*scblur*exp(-(sin(theta)/lambda)**2*bblur)</pre></blockquote>
+
+<p>or if PHASE and FOM are given: the program first generates the Hendrickson-Lattman coefficients 
+using the formula:</p>
+<blockquote><pre>HLA = Func(FOM)*COS(DEGTOR*PHASE), 
+HLB = Func(FOM)*SIN(DEGTOR*PHASE),
+HLC = HLD = 0.</pre></blockquote>
+
+<p><em>i.e.</em> the Phase probability distribution is unimodal.</p></dd>
+
+<dt><a name="refi_phas_sigm" id="refi_phas_sigm"></a>SIGMAcalc</dt>
+<dd>Use the phase information for sigmaA estimation. This option is not recommended and has 
+not been fully tested.</dd>
+</dl></p>
+
+<p><dt><a name="refi_resi" id="refi_resi"></a><strong>RESIdual</strong></dt>
+<p>Default:</p>
+<blockquote><pre>REFInement RESIdual MLKF</pre></blockquote>
+
+<dd><p>This keyword describes the Xray part of the function.</p>
+
+<dl>
+<dt><a name="refi_resi_lsqf" id="refi_resi_lsqf"></a>LSQF</dt>
+<dd>defines amplitude based least-squares residual.
+<blockquote><pre>Fxray = SUM(Whkl*(|FO|-|FC|)**2)</pre></blockquote></dd>
+
+<dt><a name="refi_resi_mlkf" id="refi_resi_mlkf"></a>MLKF</dt>
+<dd>A -loglikelihood residual derived from 
+Rice distribution for centric and acentric cases of Fs.
+<blockquote><pre>Fxray = SUM(LLKcentric_hkl) + SUM(LLKacentric_hkl)</pre></blockquote></dd>
+</dl>
+<!-- see theory for details --></dd>
+
+<dd><p>If experimental phase information is available the residual is modified
+appropriately. This is invoked by assigning appropriate input columns; see
+<a href="#labin">LABIN</a> (for methodology see G.N. Murshudov, A.A.Vagin and E.J.Dodson,(1997)
+in Acta Cryst. D53, 240-255, <em>or</em>
+Pannu, Murshudov, Dodson and Read (1998) in Acta Cryst. D54, 1285-1294).</p></dd>
+</p>
+
+<p><dt><a name="refi_meth" id="refi_meth"></a><strong>METHod</strong></dt>
+<p>Default:</p>
+<blockquote><pre>REFInement METHod CGMATrix</pre></blockquote>
+
+<dd><p>This keyword describes method of minimisation.</p>
+
+<dl>
+<dt><a name="refi_meth_cgma" id="refi_meth_cgma"></a>CGMAT</dt><dd>(default) is sparse matrix as in PROLSQ.</dd>
+
+<dt><a name="refi_meth_cgra" id="refi_meth_cgra"></a>CGRAD</dt><dd>is conjugate gradient. <em>Does not work</em></dd>
+
+<dt><a name="refi_meth_cdir" id="refi_meth_cdir"></a>CDIR</dt><dd>is the conjugate direction method.
+<em>Does not work</em></dd>
+</dl></dd></p>
+
+<p><dt><a name="refi_bref" id="refi_bref"></a><strong>BREFinement</strong></dt>
+<p>Default:</p>
+<blockquote><pre>REFInement BREFinement ISOTropic</pre></blockquote>
+
+<dd><p>This keyword describes method for parameterisation of atomic Bvalues 
+(atomic displacement parameters).</p>
+
+<dl>
+<dt><a name="refi_bref_over" id="refi_bref_over"></a>OVERall</dt><dd>Overall B-factor (Boverall) 
+obtained from scaling is added to the atomic B values.</dd>
+
+<dt><a name="refi_bref_isot" id="refi_bref_isot"></a>ISOTropic</dt><dd>Individual isotropic B-factor 
+refined for all atoms.</dd>
+
+<dt><a name="refi_bref_anis" id="refi_bref_anis"></a>ANISotropic</dt><dd>Individual anisotropic B-factor 
+refined for all atoms.</dd>
+
+<dt><a name="refi_bref_mixe" id="refi_bref_mixe"></a>MIXEd</dt><dd>Some atoms with isotropic, some with 
+anisotropic B-values. In this case input file (PDB) defines which atom should 
+be refined isotropicly and which anisotropicly. The atoms with ANISOU card are 
+refined anisotropicly.</dd>
+</dl></dd></p>
+
+<p><dt><a name="refi_reso" id="refi_reso"></a><strong>RESO</strong></dt>
+<p>Default: Use all reflections</p>
+
+<dl>
+<dt>&lt;resmin&gt; &lt;resmax&gt;</dt><dd>[Default: all data]</dd>
+<dt>&lt;dmin&gt;, &lt;dmax&gt;</dt><dd>[Default 1, 1000] are resolution limits used
+for refinement in Angstroms (or in 4*sin**2/l**2 if both are &lt; 1.0).
+They can be given in either order. If only one value is given, it is assumed
+to be the high resolution cutoff.</dd>
+</dl>
+
+<p>Include all well measured data, not omitting the weak observations;
+it will be weighted appropriately. The low resolution data helps define
+the solvent shell. However if you have lost strong terms by some accident
+of data collection, the scaling may not behave well.</p>
+</p>
+
+<p><dt><a name="refi_tlsc" id="refi_tlsc"></a><strong>TLSC</strong></dt>
+<p>Default:</p>
+<blockquote><pre>REFInement TLSCycles 0</pre></blockquote>
+<dl>
+<dt>&lt;ncycles&gt;</dt>
+<dd>This subkeyword indicates that before individual atomic restrained or 
+unrestrained refinement, the overall TLS parameters of rigid body should be 
+refined. Then resultant individual atomic B value in the output coordinate 
+file will be after removing of the overall TLS parameters.</dd>
+</dl></p>
+
+</dl>
+
+<h3><a name="scal" id="scal"></a>SCALe [TYPE &lt;BULK | SIMP&gt;] 
+[BAVER &lt;baverage&gt;] [RESO &lt;resmin&gt; &lt;resmax&gt;] [APPL &lt;OBSE | CALC&gt;]
+[LSSC [ANIS] | [FIXBulk SCBUlk &lt;scbulk&gt; BBULk &lt;bbulk&gt;] | 
+[NCYC &lt;ncyc&gt;] | [EXPE] | [FREE]  ]</h3>
+
+<p>It controls scaling of calculated and observed structure factors. The SCALE 
+keyword has several different options. See below for keywords
+for estimation of sigmaA, triggered by <a href="#scal_mlsc">SCALe MLSC</a>. For example:</p>
+
+<blockquote><pre>#   Use Babinet's bulk solvent type scaling
+#   
+SCALe TYPE BULK 
+# and/or   
+#
+#  do anisotropic scaling. Use resolution between 100 and 2.1&#197;
+#
+SCALe LSSC ANIS    RESO 100 2.1
+#
+#  Use simple scaling, <em>i.e.</em> do not use Babinet's bulk solvent
+#  
+SCALe TYPE SIMP
+#
+#   Fix B value of Babinet's bulk solvent. It is useful when
+#   bulk solvent based on the constant value is used.   
+SCALe LSSC FIXBulk BBULk 200</pre></blockquote>
+
+<p>Subkeywords:</p>
+
+<dl>
+<dt><a href="#scal_type">TYPE</a> BULK | SIMPle </dt>
+<dd>[Default: SCALe TYPE BULK]</dd>
+
+<dt><a href="#scal_bave">BAVERage</a> &lt;baverage&gt; - <em>It is not active now</em></dt>
+<dd>[If there is not sufficient data to refine a B value it is possible
+to hold it at some sensible value derived from the Wilson plot.]</dd>
+
+<dt><a href="#scal_lssc_reso">RESO</a> &lt;resmin&gt; &lt;resmax&gt;</dt>
+<dd>[Default: all data used for the scaling]</dd>
+
+<dt><a href="#scal_lssc_appl">APPLY</a> OBS | CALC - <em>It is not active now</em></dt>
+<dd>[Default: ouput file contains Fobs brought to Fcalc scale]</dd>
+
+<dt><a href="#scal_lssc">LSSC</a></dt>
+<dd>Flag to indicate all following subkeywords apply to estimation of scale
+between Fo and Fc.
+
+<dl>
+<dt><a href="#scal_lssc_anis">ANISotropic</a></dt>
+<dd>[Default: anisotropic overall scale]</dd>
+
+<dt><a href="#scal_lssc_fixb">FIXBulk</a> SCBUlk &lt;scbulk&gt; BBULk &lt;bbulk&gt;</dt>
+<dd>[Lower resolution structures may not have sufficient data to find sensible
+overall scales and B values for both the BULK and the protein component.
+It can help to fix these]</dd>
+
+<dt><a href="#scal_lssc_ncyc">NCYCle</a> &lt;ncycle&gt;</dt>
+<dd>[Default: ncycle = 10]</dd>
+
+<dt><a href="#scal_lssc_expe">EXPE</a></dt>
+<dd>[Default is to not use experimental sigmas in the determination. The 
+keyword EXPE changes this to use experimental sigmas]</dd>
+
+<dt><a href="#scal_lssc_free">FREE</a></dt>
+<dd>[Default: Scales are calculated against the WORKing set of reflections,
+but if requested it can be derived from the FREE set.]</dd>
+</dl>
+</dd>
+</dl>
+
+<p>In more detail, these subkeywords are:</p>
+
+<dl>
+
+<p><dt><a name="scal_type" id="scal_type"></a><strong>TYPE</strong></dt>
+
+<dd><p>with one of the following sub-subkeywords:</p>
+
+<dl>
+<dt><a name="scal_type_bulk" id="scal_type_bulk"></a>BULK</dt>
+<dd>[Default] If TYPE BULK, then the scale KB is a function of 4 variables
+with the form:
+<blockquote><pre>KB = K0*exp(-B0*s^2) * (1- K1*exp(-B1*s^2))</pre></blockquote>
+<p>The scale formulation is based on the Babinet principle and described
+by Dale Tronrud and others. Better results can be obtained if bulk solvent
+correction based on a constant value is used.
+See <a href="#solv"><b>SOLVENT</b></a>.</p></dd>
+
+<dt><a name="scal_type_simp" id="scal_type_simp"></a>SIMPLE</dt>
+<dd>If TYPE is SIMPle the scale factor has the form:
+<blockquote><pre>KB = K0*exp(-B0*s^2)  (Simple Wilson scaling)
+<em>i.e.</em> K1 = 0</pre></blockquote>
+<p>This may be more appropriate if keyword <a href="#solv"><b>SOLVENT</b></a>
+is active.</p></dd>
+</dl></p>
+
+<p><dt><a name="scal_bave" id="scal_bave"></a><strong>BAVErage</strong> &lt;baverage&gt;</dt>
+<dd><p>Lower resolution structures may not have sufficient data to give a
+robust Wilson plot overall B factor, so it is possible to fix the &lt;B&gt;
+for the structure to a set value. If you are using this option it is important
+to add remaining B-value to observed structure factors.</p></dd></p>
+
+<dt><a name="scal_lssc_reso" id="scal_lssc_reso"></a><strong>RESO</strong>
+&lt;resmin resmax&gt; or &lt;dmin dmax&gt;</dt>
+
+<dd><p>[Default all data are used for the scaling]</p>
+<p>Defines resolution limit for scaling.</p></dd>
+
+<dt><a name="scal_lssc_appl" id="scal_lssc_appl"></a><strong>APPL</strong>
+OBSE|CALC - <em>It is not active now</em></dt>
+
+<dd><p>APPL OBSE | CALC will apply overall Bcorrection to either observed
+or calculated structure factors.</p></dd>
+
+<p><dt><a name="scal_lssc" id="scal_lssc"></a><strong>LSSC</strong></dt>
+<dd><p>Flag to indicate all following subkeywords apply to estimation of scale
+between Fo and Fc.</p>
+
+<dl>
+<dt><a name="scal_lssc_fixb" id="scal_lssc_fixb"></a>FIXB
+SCBUlk &lt;scbulk&gt; BBULk &lt;Bbulk&gt;</dt>
+
+<dd><p>Lower resolution structures may not have sufficient data to find sensible
+overall scales and B values for both the BULK and the protein.<br />
+SCBULK = &lt;solvent_density&gt;/&lt;protein_density&gt<br />
+<em>i.e.</em> For aqueous solvent, with solvent density &#126; 1.0. and protein density
+&#126; 1.35, SCBULK &#126; 1.0/(1.35).
+If bulk solvent based on a constant value (<a href="#solv"><b>SOLVENT</b></a>) is used
+then fixing of BBULK is necessary. In this case SCALE TYPE SIMPLe also
+could be used.</p></dd>
+
+<dt><a name="scal_lssc_anis" id="scal_lssc_anis"></a>ANISO</dt>
+<dd><p>Many crystals generate seriously &quot;anisotropic&quot; reflection
+data. This is presumably due to some crystalline disorder, and is not the
+same as anisotropy of individual atoms. However the correction can be expressed
+in a similar form.</p>
+<p>Then, apart from isotropic overall B factor B0, contribution of anisotropic B
+centered at the origin of coordinate system (<em>i.e.</em> in orthogonal system
+(B11+B22+B33 = 0.0) is also refined.</p>
+<p>Overall anisotropic B values are applied to the calculated structure factor
+with Miller index h,k,l as follows:</p>
+
+<blockquote><pre>B11*h*h*(a<sup>*</sup>)^2 +
+B22*k*k*(b<sup>*</sup>)^2 +
+B33*l*l*(c<sup>*</sup>)^2 +
+2.0*B12*h*k*(a<sup>*</sup>)*(b<sup>*</sup>) +
+2.0*B13*h*l*(a<sup>*</sup>)*(c<sup>*</sup>) +
+2.0*B23*k*l*(b<sup>*</sup>)*(c<sup>*</sup>)
+
+where
+h,k,l are Miller indices
+a<sup>*</sup>,b<sup>*</sup>,c<sup>*</sup> are reciprocal space cell dimensions</pre></blockquote>
+<!--mgwt: sent Garib email 8may2000 to ask to make sense of 2nd sentence of
+the following paragraph-->
+<p>REFMAC estimates overall anisotropic B values only once at the first cycle
+and keeps them constant for the rest of the REFMAC refinement session. For
+R, free are calculation contribution of them is applied to the  calculated
+ structure factor. During refinement it is applied to the observed structure
+factor.</p>
+<p>Anisotropic scaling of data should ideally be done at the merging stage
+but often the distortion aligns with the crystal axes, and therefore cannot
+be detected from symmetry equivalent reflections alone. Large improvements in
+behaviour of refinement, maps and statistics (R, FreeR <em>etc.</em>) can result
+from this correction.</p></dd>
+
+<dt><a name="scal_lssc_ncyc" id="scal_lssc_ncyc"></a>NCYC &lt;ncyc&gt;</dt>
+
+<dd><p>Default: &lt;ncyc&gt; = 10</p></dd>
+
+<dt><a name="scal_lssc_expe" id="scal_lssc_expe"></a>EXPE</dt>
+
+<dd><p>Default is to not use experimental sigmas in the determination. The
+keyword EXPE changes this to use experimental sigmas.</p></dd>
+
+<dt><a name="scal_lssc_free" id="scal_lssc_free"></a>FREE</dt>
+
+<dd><p>Default is to use all reflections in the WORKing set for scaling. The
+keyword FREE changes this to determine the scale from the FREE set of
+reflections.</p></dd>
+</dl></dl>
+
+<p><em>NB</em>: Before applying bulk solvent scaling and including all low resolution
+data, check your distribution of &lt;F&gt; looks sensible. This is the raw
+material for all overall scaling algorithms. A good way to check this is
+to look at a &lt;Fsq&gt; plot against resolution.</p>
+
+<p>This should look something like this:</p>
+
+<pre>         +
+          +           +
+           +        +     +
+             +    +          +
+                +                  +
+       &lt;10A     5A    4.5A          ............
+
+</pre>
+
+<p>If the low resolution looks strange, it may mean your backstop was
+causing problems, intensities were saturated <em>etc etc</em>, and including such
+data may give unreasonable solvent scales. A sensible sort of value would be:
+bulk Solvent scale around -0.75 and bulk solvent B value around 200.0 if
+<a href="#solv"><b>SOLVENT</b></a> is not used.</p>
+
+<p>
+NB========================================================================<br />
+We are not really sure how best to handle scaling. If you have problems
+please get in touch. In our experience there have been no problems with
+data sets with resolution 2.5&#197; or higher, unless there was some obvious
+flaw; huge ice rings or Is labelled as Fs or some such thing. But with
+one unusual data set which died at 2.7&#197; there has been a problem, which
+we got round by tweaking parameters, but these cases should be automatically
+checked.<br />
+NB========================================================================
+</p>
+
+<p>NOTE: When doing ML refinement the scale factors are only used to calculate
+R values and overall B values (isotropic and anisotropic).</p>
+
+<h3><a name="scal_mlsc" id="scal_mlsc"></a>SCALe MLSC [ &lt;NCYC &lt;ncyc&gt; | WORK |
+FIXBulk SCBUlk &lt;scbulk&gt; BBULk &lt;bbulk&gt; ]</h3>
+
+<p>For example:</p>
+
+<blockquote><pre>SCALe MLSC FIXBulk BVALue 100.0 SCVAlue -0.1</pre></blockquote>
+
+<p>The SigmaA estimate is generally fitted to the normalised Free reflections
+using a 4 parameter equation of an analogous form to the bulk scaling:</p>
+<blockquote><pre>SA = SA0*exp(-T0*s^2) * (1- SA1*exp(-T1*s^2))</pre></blockquote>
+
+<p>This keyword controls the estimation of SigmaA. Subkeywords:</p>
+
+<dl>
+<dt><a name="scal_mlsc_fixb" id="scal_mlsc_fixb"></a>FIXBulk</dt>
+<dd>The option FIXBulk to fix parameters can be evoked in the same way
+as for the SCAL LSSC options, but should only be used with care!</dd>
+
+<dt><a name="scal_mlsc_ncyc" id="scal_mlsc_ncyc"></a>NCYCle &lt;ncyc&gt;</dt>
+<dd>[Default &lt;ncyc&gt; = 10]<br />
+Use &lt;ncyc&gt; cycles to determine the parameters.</dd>
+
+<dt><a name="scal_mlsc_work" id="scal_mlsc_work"></a>WORK</dt>
+<dd>[Default Sigmaa is calculated against the FREE set of reflections]<br />
+The keyword WORK changes this to determine the scale from the WORKing set
+of reflections.</dd>
+</dl>
+
+<h3><a name="solv" id="solv"></a> SOLVENT [YES|NO] [VDWProb &lt;vdwprob&gt;]
+[IONProb &lt;ionprob &gt;] [RSHRink &lt;rshrink&gt;]</h3>
+
+<p>[Default is use the bulk solvent correction based on a constant value with
+the parameters of the mask VDWProb=1.4, IONProbe=0.8, RSHRink=0.8]</p>
+<p>This keyword controls parameters for the solvent mask calculation.
+A constant value is assigned to the region of the unit cell not
+occupied by the atoms present in the input coordinate file. Its Fourier
+transform is used as contribution to the disordered (bulk) solvent or unmodelled
+part of the structure. Current version does not attempt to identify
+uninterpreted but ordered part of the unit cell.</p>
+<p>Mask calculation is performed in three stages:
+<ol>
+<li>All asymmetric unit is set to a constant value.</li>
+<li>For each point inside an atom sphere with its center in the atomic position and a certain radius
+(Rvdw+vdwprob for vdw atoms, Rion+ionprobe for ions), this value is set to 0.</li>
+<li>If the distance from a point to the nearest non-zero point is less than &lt;rshrink&gt; then
+this point is set to predefined constant also. For each atom all its symmetry-related
+counterparts are also considered.</li>
+</ol></p>
+
+<p>For example:</p>
+<blockquote><pre>SOLVENT VDWProb 1.4 IONProb 0.8 RSHRink 0.8</pre></blockquote>
+
+<p>Subkeywords:</p>
+<dl>
+<dt>YES|NO</dt>
+<dd>[Default YES]</dd>
+<dd>Turns on or off the calculation of the contribution from solvent region</dd>
+
+<dt>VDWProb &lt;vdwprob&gt;</dt>
+<dd>[Default vdwprob=1.4]</dd>
+<dd>For mask calculation the vdw radii of non-ion atoms (like carbon) are increased by
+this value and this new radius is used</dd>
+
+<dt>IONProb &lt;ionprobe&gt;</dt>
+<dd>[Default ionprobe=0.8]</dd>
+<dd>For mask calculation the ionic radii of atoms which can be ion (or can
+participate in a coulombic interaction) are increased by this value and this
+new radius is used for mask calculation</dd>
+
+<dt>RSHRink &lt;rshrink&gt;</dt>
+<dd>[Default rshrink = 0.8]</dd>
+<dd>Mask calculated after taking away atoms with new radii is shrunk by this value
+and a constant value assigned to this new region</dd>
+</dl>
+<p>If this keyword is active, the scale type could be set to <a href="#scal_type_simp">SIMPLe</a>.
+In our experience setting SCALE type to BULK and fixing BULK solvent B value to 200.0 
+gives &quot;good&quot; results:</p>
+<blockquote><pre>SCALE LSSCale FIXBulk BBULk 200.0</pre></blockquote>
+
+<p>Sometimes with high resolution data, BULK solvent B value may not be fixed.</p>
+
+<h3><a name="weig" id="weig"></a>WEIG [NOEX|EXPE] MATRix &lt;wmat&gt; | AUTO</h3>
+
+<p>[Default EXPE MATR 0.5]<br />
+This keyword controls the weighting of the X-ray and and geometric parts.</p>
+
+<p>For example:</p>
+<blockquote><pre>WEIGht MATRix 0.5</pre></blockquote>
+
+<dl compact>
+<dt><a name="weig_expe" id="weig_expe"></a>NOEX</dt>
+<dd>Exclude experimental sigmas from weighting.</dd>
+</dl>
+
+<p>This sub-keyword allows you not to use experimental sigmas of the observations
+for the Xray residual. The default action is to use them.</p>
+
+<p>The remaining sub-keywords control the relative weighting of the X-ray
+and geometry terms in the residual.</p>
+
+<dl compact>
+<dt><a name="weig_matr" id="weig_matr"></a>MATR &lt;wmat&gt; </dt>
+<dd>[Default 0.5]<br />
+This keyword defines the weight between X-ray and geometric part of
+the refinement residual. For tight restraints it should be decreased. For
+example (for low resolution data it seems to be necessary to use tight restraints):
+<blockquote><pre>WEIGHT MATRix 0.1</pre></blockquote>
+For loose restraints which is useful for high resolution data (higher than 1.5&#197;),
+this value should be increased. For example (at 1.0&#197;):
+<blockquote><pre>WEIGht MATRix 20</pre></blockquote>
+<p>This weighting is based on the comparison between average diagonal term of X-ray and
+geometry &quot;Hessians&quot; (same as PROLSQ). Weighting equates
+wmat*average_diagonal_of_geometry to average_diagonal_of_Xray terms.</p></dd>
+</dl>
+<dl compact>
+<dt><a name="weig_auto" id="weig_auto"></a>AUTO</dt>
+<dd>By using this keywords user will let Refmac5 adjust the weights automatically.
+</dl>
+<h3><a name="ncyc" id="ncyc"></a>NCYC &lt;ncycref&gt;</h3>
+
+<p>[Default 5]<br />
+This keyword defines number of cycles of refinement.</p>
+
+</body>
+</html>

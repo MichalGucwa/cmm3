@@ -1,0 +1,82 @@
+#!/bin/csh -f
+#  Prepare a P1 map to calculate "model" structure factors for 
+#   molecular replacement
+#  We need 
+#  1) A mask covering only one molecule in this expanded cell.
+#  Can use coordinates to generate a mask in P1 cell.
+#  (Could use bones2pdb to produce a dummy coordinate file from the
+#  chosen density for a molecule.)
+#  Or a averaging mask generated however  could be padded with zeros 
+#    to cover a P1 cell. (See dm_ncs_averaging.doc for suggestions on 
+#    getting this)
+#     mama2ccp4 takes MAMA/O style masks into the required format.
+#
+#  2) the model map expanded to fill p1 cell, in the correct
+#      orientation of sfall - SFSG 1.
+#  This requires AXIS Z X Y, XYZLIM 0 to NX-1, 0 to NY-1,0 to NZ-1
+#  MAPSYM = 1
+#
+#  3) the map produced by OVERLAPMAP which will only include points
+#     from the protein map flagged by the mask 
+#  4) A set of P1 structure factors.
+#
+#xyzin ~/gmt/cycle9_o.pdb  \
+ncsmask \
+mskin  /y/people/cowtan/temp3/gmto.msk \
+mskout $SCRATCH/gmto_p1.msk \
+<< 'END' 
+xyzlim  0 47   0 71   0 95
+AXIS Z X Y
+SYMM 1
+'END'
+#
+#
+#  MAPMASK to extend protein map  to  cover whole cell 
+#                   0 to NX-1, 0 to NY-1,0 to NZ-1
+#  This will guarantee that complete molecules are embedded in
+# the map.
+#  Also need to change axis order to Z X Y for sfall P1 sfs
+mapmask    \
+mapin /y/people/cowtan/temp3/dmgmt.map \
+MAPOUT  $SCRATCH/dmgmt_p1.map  \
+<< 'END' 
+xyzlim  0 47   0 71   0 95 
+AXIS Z X Y
+end
+'END'
+#   Cut out points not covered by mask
+overlapmap \
+MAPIN1  $SCRATCH/gmto_p1.msk  \
+MAPIN2  $SCRATCH/dmgmt_p1.map  \
+MAPOUT  $SCRATCH/junk.map  \
+<< 'END' 
+MAP INCLUDE
+END
+'END'
+#
+
+# Extend needed to  change map header symmetry. to P1 
+#   (sfall gets upset otherwise)
+extend    \
+MAPIN  $SCRATCH/junk.map  \
+mapout $SCRATCH/cutout_p1.map \
+<< 'END' 
+xyzlim  0 47   0 71   0 95 
+mapsymm 1
+end
+'END'
+
+#  Read in map to calculate "model" structure factors.
+s:
+sfall           \
+HKLOUT $SCRATCH/cutout_p1.mtz   \
+mapin $SCRATCH/cutout_p1.map \
+<< 'END-sfrkall'
+TITL  calculating structure factors from "Fc" map
+MODE SFCALC MAPIN 
+RESO 37 3.1
+BINS  60
+SFSG 1
+LABO FC=FC PHIC=AC
+'END-sfrkall'
+

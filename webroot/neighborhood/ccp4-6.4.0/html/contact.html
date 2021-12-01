@@ -1,0 +1,696 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::CONTACT::Supported::Model Analysis::computes various types of contacts in protein structures:::::::: -->
+
+<H1> CONTACT (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>contact </b>
+- computes various types of contacts in protein structures
+<H2> SYNOPSIS</H2>
+<b>contact XYZIN</b>
+<i>foo.pdb</i>
+<br>
+ [<A HREF="#keywords">Keyworded input</A>]
+
+<H2><A NAME="description"></A> DESCRIPTION</H2>
+Program for computing various types of contacts in protein structures. Can also
+analyse water hydrogen bonding. The program uses a bricking algorithm in
+which atoms are segregated into 6x6x6 A boxes and contact searching is
+limited to neighbouring boxes; this is very fast. CONTACT reads a standard
+Brookhaven data bank file which must contain SCALE cards if MODE = IMOL or
+AUTO. 
+<P> 
+Maximum residue number is 9000. Maximum number of atoms is 96000.
+Restrictions on the number of symmetry operations allowed in IMOL and AUTO
+modes, present in older versions, have been eased.
+<pre>
+
+  ( PARAMETER (MXATOM=96000,MXRES=9000,MXSYMM=230) )
+  MXSYMM is: maximum number of symm. operations + 27
+
+</pre>
+
+<H2> <A NAME="keywords"></A>KEYWORDED INPUT</H2>
+The program uses the routine PARSER to read in the control data. It only
+checks the first 4 characters of each keyword which can be upper or lower
+case. The order of the cards is not important and there are plenty of default
+values (see <A HREF="#examples">examples</A>).
+<P> 
+The possible keywords are:
+<blockquote>
+<A HREF="#amode"><B>AMODE</B></A>, <A HREF="#angle"><B>ANGLE</B></A>,
+<A HREF="#atype"><B>ATYPE</B></A>, <A HREF="#fromto"><B>FROM</B></A>,
+<A HREF="#bigsearch"><B>BIGSEARCH</B></A>,
+<A HREF="#hexclude"><B>HEXCLUDE</B></A>, <A HREF="#hoh"><B>HOH</B></A>,
+<A HREF="#limits"><B>LIMITS</B></A>, <A HREF="#metal"><B>METAL</B></A>,
+<A HREF="#mode"><B>MODE</B></A>, <A HREF="#nolist"><B>NOLIST</B></A>,
+<A HREF="#source"><B>SOURCE</B></A>,
+<A HREF="#spacegroup"><B>SPACEGROUP</B></A>, <A HREF="#symmetry"><B>SYMM</B></A>,
+<A HREF="#symtit"><B>SYMTIT</B></A>, <A HREF="#target"><B>TARGET</B></A>,
+<A HREF="#title"><B>TITLE</B></A>, <A HREF="#fromto"><B>TO</B></A>
+</blockquote>
+
+<H3><A NAME="title"></A> TITLE &lt;title&gt; </H3>
+(default: no title)
+<br>
+Title used on the printer output.
+&lt;string&gt; - character string up to 75 characters.
+
+<H3><A NAME="mode"></a> MODE  &lt;mode&gt;</H3>
+&lt;mode&gt; =  ALL,IRES,ISUB,IMOL or AUTO (default: MODE IRES).
+<blockquote>
+<dl>
+<dt> ALL  <dd>
+for all interatomic distances for chosen residues.
+
+<dt> IRES  <dd>
+for interresidual contacts for chosen residues. It is similar 
+to 'ALL' except that distances between atoms of different residues 
+only will be computed, and distances between main-chain atoms
+from adjacent residues are also suppressed. 
+
+<dt> ISUB  <dd>
+for intersubunit contacts (subunits must have different
+chain names in the Brookhaven file).
+
+<dt> IMOL  <dd>
+for intermolecular contacts. This mode requires symmetry
+information, see keywords <A HREF="#symmetry"><B>SYMM</B></A> and
+<A HREF="#spacegroup"><B>SPACEGROUP</B></A>. The program looks
+for contacts using the supplied symmetry operations. If the
+symmetry operators are supplied via a spacegroup specification,
+then the identity operator is removed. The identity operator
+can be specified explicitly using a SYMM card.
+<p>
+Main-chain to main-chain 
+and side-chain to side-chain contacts are suppressed if the atoms are on
+the same or adjacent residues <i>and</i> the target symmetry
+operation is the identity.
+
+<dt> AUTO  <dd>
+as IMOL, but additional (primitive) lattice translations are generated
+automatically and combined with the supplied space-group symmetry
+in a search for intermolecular contacts. The identity operator is suppressed 
+for lattice translations equal to (0,0,0), so that contacts within the same 
+asymmetric unit are not listed.
+<p>
+The default is to use only single translations (<EM>e.g.</EM> +A ,-A,
++A-B ...etc), which works well if the molecule is reasonably
+positioned within the cell (not outside). To extend the search to
+a larger volume (up to two lattice translations in all directions)
+you must also specify the <a href="#bigsearch"><B>BIGSEARCH</B></a>
+keyword.
+</dl>
+</blockquote>
+<p>
+Additional output for MODE AUTO
+<p>
+(as in the original contact.f the default is do SOURCE = all input
+atoms to TARGET = all input atoms)
+<p>
+using
+<pre>
+
+  contact xyzin   /homes/henrick/pdb/pdb4ins.ent &lt;&lt;eof
+  MODE AUTO
+  ATYPE ALL
+  LIMITS   2 3.66
+  eof
+
+</pre>
+gives for LIMITS   2 3.66  Angstrom for PDB file 4ins
+<p>
+Sorted summation for Number of Contacts for
+atoms between symmetry related molecules
+Excluding water molecules
+<pre>
+
+ Num contacts TransSymm       Symmetry
+ =================================================
+     995        555 002      2: -X+Y,  -X,  Z
+     818        555 001      1: -Y,  X-Y,  Z
+     337        554 007      7: -Y+1/3,  X-Y+2/3,  Z+2/3
+     331        455 005      5: -X+Y+2/3,  -X+1/3,  Z+1/3
+     179        554 002      2: -X+Y,  -X,  Z
+     145        554 009      9:   X, Y, Z
+     143        556 009      9:   X, Y, Z
+      76        556 001      1: -Y,  X-Y,  Z
+       9        554 008      8: -X+Y+1/3,  -X+2/3,  Z+2/3
+       9        555 004      4: -Y+2/3,  X-Y+1/3,  Z+1/3
+       4        555 008      8: -X+Y+1/3,  -X+2/3,  Z+2/3
+       3        555 007      7: -Y+1/3,  X-Y+2/3,  Z+2/3
+       3        454 005      5: -X+Y+2/3,  -X+1/3,  Z+1/3
+       2        554 004      4: -Y+2/3,  X-Y+1/3,  Z+1/3
+
+</pre>
+ Note: The 2 Zinc insulin dodecamer requires the symmetry operations
+  (in addition to identity)  -X+Y,  -X,  Z and  -Y,  X-Y,  Z, hence
+  in the above table of contacts the cutoff at 6Ang for a significant
+  oligomer is clear.
+<p>
+  For LIMITS 2 3.66 Angstrom one gets
+    Sorted summation for Number of Contacts for
+    atoms between symmetry related molecules
+     Excluding water molecules
+<pre>
+
+ Num contacts TransSymm       Symmetry
+ =================================================
+      49        555 002      2: -X+Y,  -X,  Z
+      39        555 001      1: -Y,  X-Y,  Z
+      10        554 007      7: -Y+1/3,  X-Y+2/3,  Z+2/3
+       9        554 009      9:   X, Y, Z
+       9        556 009      9:   X, Y, Z
+       9        554 002      2: -X+Y,  -X,  Z
+       8        455 005      5: -X+Y+2/3,  -X+1/3,  Z+1/3
+
+</pre>
+ Again the cutoff is clear.
+<p>
+Note: The summation of all atom contacts between symmetry related
+molecules excludes water molecules, but includes any other HETATM
+labelled atoms.
+<p>
+Again if there is no spacegroup name on the CRYST1 record of the input
+PDB file then the keyword SPACEGROUP can be used.</p>
+
+<h3><A NAME="atype"></a> ATYPE &lt;atype&gt;  (ALL or NON-CARBON)</h3>
+(default: ATYPE ALL)
+<blockquote>
+<dl>
+<dt> ALL   <dd>
+all types of atoms will be used in computations. 
+<dt> NON-CARBON <dd>
+carbon atoms omitted.
+</dl>
+</blockquote>
+<H3><A NAME="amode"></a> AMODE (=ATYPE)   </H3>
+<p></p>
+<H3><A NAME="spacegroup"></a> SPACEGROUP &lt;spacegroup name&gt;</H3>
+followed by the spacegroup name as given in $LIBD/syminfo.lib
+<EM>e.g.</EM> 'R 3 :H' or 'H 3' or H3 or 146. Only required when MODE is IMOL 
+or AUTO. SYMTitles are automatically generated. The identity operation
+is not applied for lattice translations equal to (0,0,0). If no SYMM
+or SPAC keyword is given, and symmetry information is required, the
+program will attempt to find the spacegroup from the CRYST1 line of the
+input PDB file.
+
+<H3><A NAME="bigsearch"></a> BIGSEARCH</H3>
+This keyword only takes effect for <a HREF="#mode">MODE AUTO</a>, in
+which case it extends the search from +/-1 lattice vector (the default
+in MODE AUTO) to +/-2 lattice vectors in every direction (thus searching
+a larger volume of space).
+
+<H3><A NAME="symmetry"></a> SYMM &lt;symmetry&gt; </H3>
+where &lt;symmetry&gt; is a symmetry operation as in the International Tables.
+Only required when MODE is IMOL or AUTO, and more than one card can be
+given. If the identity is not explicitly given, it will be automatically
+added for lattice translations not equal to (0,0,0). If the identity is
+explicitly given, it will be included for all lattice translations 
+including (0,0,0).
+
+<H3><A NAME="symtit"></a> SYMTIT  &lt;string&gt;</H3>
+(default: 'symmetry n')
+<br>
+&lt;string&gt; is any meaningful description (up to 15 characters long) 
+of symmetries entered on <a href="#symmetry">SYMM</a> cards. SYMTIT cards, 
+if present, must be given in the same order as the SYMM cards. 
+Example: SYMTIT 21 along a
+<P> 
+If SYMTIT cards are not supplied, the symmetry description
+will be : symmetry 1, symmetry 2, etc...
+<p>
+If spacegroup symmetry operations are required, and have not been supplied
+by the <A href="#spacegroup">SPACEGROUP</a> or <a href="#symmetry">SYMM</a> cards,
+then they will be taken from the input PDB file CRYST1 line if they are there. 
+SYMMTitles are automatically generated in this case.
+
+<H3><A NAME="angle"></a> ANGLE  &lt;angh&gt; &lt;ango&gt; &lt;dmin&gt; &lt;maxnb&gt; &lt;bmax&gt;</H3>
+(default: 120.0 90.0 2.3 4 50.0) Note: &lt;maxnb&gt; is an integer. 
+<p>
+When using the ANGLE option, the program calculates the hydrogen 
+position for those target nitrogen atoms where the hydrogen position
+is unambiguous (<EM>i.e.</EM>, excluding NZ on Lys and N terminus). The
+angle O...H...N is calculated and printed. For source...oxygen
+hydrogen bonds, the angle source...O__Bonded carbon is
+calculated. Limits on both these angles (ANGH and ANGO) must be
+supplied, and bonds with angles less than these limits are
+rejected.
+Suitable values are 120 and 90 degrees.
+<P> 
+The ANGLE option can be used to search for hydrogen bonds within
+the protein, and the bond angles will be calculated as described
+above. Note that mainchain-mainchain and sidechain-sidechain
+contacts within one residue or to an immediately adjacent residue
+are suppressed in this mode.                             
+The minimum bond length (DMIN) for bonds to be included and the
+maximum  number of bonds (MAXNB) are read from the same card, in
+free format, as is the MAXIMUM temperature factor for a source atom
+to be included in contact search and water analysis (BMAX).
+<P> 
+An analysis of all water-protein and water-water hydrogen
+bonds and the bond angles at the water oxygen is also given.
+Note: water residue name should be WAT and the water atom
+name must be O (NOT O1 or OW etc) when using this option.
+<P> 
+The ANGLE option may be used in conjunction with all modes,
+but to ensure the numbers are correct (especially the number of 
+waters in the first and second hydration shells) the IMOL (or
+even better AUTO) mode should always be used, and identity 
+(symm x,y,z) included to generate all lattice contacts for analysis
+of water interactions (only water molecules should be selected as
+the SOURCE range in this case). 
+<p>
+The ANGLE operation in this version should be the same as the original
+with the exception except perhaps as I am not certain about the original 
+all waters with occupancy less that 1.0 are excluded from water analysis 
+in this version.
+<p>
+In addition both residue names for waters of HOH or WAT are allowed.</p>
+ 
+<H3><A NAME="hoh"></a> HOH (=ANGLE)</H3>
+<H3><A NAME="limits"></a> LIMITS &lt;dmin&gt; &lt;dmax&gt;</H3>
+(default: LIMITS 0.0 3.6)        
+<blockquote>
+<dl>
+<dt> &lt;dmin&gt;  <dd>
+the minimum distance between atoms to be included in the printout
+<dt> &lt;dmax&gt; <dd>
+the maximum distance to be printed out. Because of the bricking algorithm
+(see <A href="#description">DESCRIPTION</A> section above) some contacts
+may be missed if &lt;dmax&gt; is greater than 6.0 A.
+</dl>
+</blockquote>
+
+<H3><A NAME="hexclude"></a> HEXCLUDE</h3>
+Ignore all hydrogen atoms in the input file.
+Default is to include them if they are there.
+
+<H3><A NAME="nolist"></a> NOLIST</h3>
+Turh off printing of individual contacts and just print overall summary.
+
+<H3><A NAME="source"></a> SOURCE  &lt;n1&gt; [&lt;n2&gt;]</H3>
+<blockquote>
+<dl>
+<dt> n1, n2 <dd>
+range of source residues. You may input as many SOURCE cards
+as you like (within array limits). The maximum residue number
+allowed is 9000. If the range is made of just one residue
+only n1 is required.
+</dl>
+</blockquote>
+<H3><A NAME="target"></a> TARGET  &lt;n1&gt; [&lt;n2&gt;]</H3>
+<blockquote>
+<dl>
+<dt> n1, n2 <dd>
+range of target residues. You may input as many TARGET cards
+as you like (within array limits). The maximum residue number
+allowed is 9000 (MXRES). If the range is made of just one
+residue only n1 is required.
+</dl>
+</blockquote>
+
+<H3><A NAME="fromto"></a>FROM | TO</h3>
+
+Atom selection can also be carried using the keywords FROM and TO
+as used in the CCP4 program <a href="distang.html">DISTANG</a>, <EM>i.e.</EM>
+allowed inputs are:
+<pre>
+
+  (i) based on atom numbers
+
+  FROM ATOM 1 TO 561
+  TO ATOM 1 TO 561
+
+  (ii) based on residue numbers but now allowing for chain names
+
+  FROM RESIDUE ALL CHAIN A 1 to 125
+  TO   RESIDUE ALL CHAIN W 1 to 256
+
+</pre>
+The general input expression is:
+<pre>
+
+  FROM [ [ ATOM &lt;inat0&gt; [TO] &lt;inat1&gt; ] | 
+          [ RESIDUE &lt;ires0&gt; [TO] &lt;ires1&gt; ]] ...
+             [ CHAIN &lt;chainid&gt; ALL | ONS | CA ]
+ TO [ [ ATOM &lt;jnat0&gt; [TO] &lt;jnat1&gt; ] | 
+          [ RESIDUE &lt;jres0&gt; [TO] &lt;jres1&gt; ]] ... 
+             [ CHAIN &lt;chainid&gt; ALL | ONS | CA ]
+  
+</pre>
+If ATOM is specified it is followed by &lt;inat0&gt; and &lt;inat1&gt;,
+respectively the first and last target atoms checked. <EM>I.e.</EM> FROM atoms
+&lt;inat0&gt; to &lt;inat1&gt; are checked against TO atoms &lt;jnat0&gt; to &lt;jnat1&gt;.
+(Atoms are numbered 1 to NAT, in the order read, but the residue order
+can be varied without restriction. Beware: atoms with occ=0.0 are not
+counted.)
+<p>   
+If RESIDUE is specified it is followed by &lt;jres0&gt; and &lt;jres1&gt;,
+respectively the first and last target residues checked, and
+optionally subsidiary keywords:
+<pre>
+   
+ CHAIN &lt;chainid&gt; ALL | ONS | CA
+      ALL (default) will select all atoms in the requested residues.
+      ONs will select just the oxygen and nitrogen atoms. 
+      CA will select just the CA atoms.
+
+</pre>
+<EM>i.e.</EM> FROM residues &lt;ires0&gt; to &lt;ires1&gt; are
+checked against TO residues &lt;jres0&gt; to &lt;jres1&gt; for the
+appropriate class of atoms.
+<p>          
+Example:
+<pre>
+   
+  will give just source CHAIN A to TARGET CHAIN B
+
+  contact xyzin   /homes/henrick/pdb/pdb4ins.ent &lt;&lt;eof
+  LIMITS   2 3.66
+  FROM RESIDUE ALL CHAIN A 1 to 21
+  TO   RESIDUE ALL CHAIN B 1 to 30
+  eof
+
+</pre>
+</p>
+
+<H3><A NAME="metal"></a> METAL &lt;Metal&gt; [ &lt;metal-ligand distance&gt; ] </h3>
+
+Metal coordination geometry option. The METAL keyword will automatically
+find all atomic distances from all atoms of element type &lt;Metal&gt; to all
+other atoms. The element type of the metal is picked up from the ATOM NAME column
+in the PDB input file (NOT the element type at the end of the line, which is
+only present in newer PDB released entries).
+<p>If <a href="#mode">MODE</a> is not specified elsewhere then the use of the METAL
+keyword will automatically set the MODE to AUTO, and look for contacts with
+symmetry related atoms - in this case the symmetry operations must be
+specified in some manner; see the <a href="#mode">MODE</a> keyword for more
+details.
+<p>
+&lt;metal-ligand distance&gt; defaults to a value of 2.35 &Aring;, if not explicitly
+specified. Pairs of atoms which are less than this distance apart will be marked
+with a "***" symbol (see <A HREF="#comments_on_output">Comments on output</A>).
+Use the <a href="#limits">LIMITS</a> keyword to set the closest and furthest
+distance for finding contacts, though note that METAL will automatically set
+a closest distance of at least 0.25 &Aring;, overriding that set by LIMITS if
+it is smaller. 
+<p>
+The output consists of a list of metal-ligand contacts; for each metal atom
+a table of angles is also printed for all those atoms closer than
+&lt;metal-ligand distance&gt;. These are the angles at the metal position
+formed by each pair of contacting atoms.
+
+<p>
+Example 1:
+<pre>
+
+  contact xyzin   /homes/henrick/pdb/pdb4ins.ent &lt;&lt;eof
+  METAL ZN 2.35
+  eof
+
+</pre>
+Example 2:
+<p> If there is no spacegroup name on the CRYST1 line
+in the input PDB file use (or you can still select individual
+symmetry operations with SYMMETRY keyword as in the original
+contact.f)
+<pre>
+
+  contact xyzin   /homes/henrick/pdb/pdb4ins.ent &lt;&lt;eof
+  METAL ZN 2.35
+  SPACEGROUP R3
+  eof
+
+</pre>
+This gives the output:
+<pre>
+
+zn     1  ZN  His    10B CD2  ...  3.08    [      ]   1: -Y,  X-Y,  Z
+              His    10B CE1  ...  3.02    [      ]   9:   X, Y, Z
+              His    10B CE1  ...  3.02    [      ]   1: -Y,  X-Y,  Z
+              His    10B NE2  ...  2.11 ***[      ]   9:   X, Y, Z
+              His    10B NE2  ...  2.10 ***[      ]   1: -Y,  X-Y,  Z
+              His    10B NE2  ...  2.11 ***[      ]   2: -X+Y,  -X,  Z
+              Wat   201  O    ...  2.19 ***[      ]   1: -Y,  X-Y,  Z
+              Wat   201  O    ...  2.19 ***[      ]   2: -X+Y,  -X,  Z
+              Wat   251  O    ...  3.32    [      ]   9:   X, Y, Z  
+              Wat   251  O    ...  3.32    [      ]   1: -Y,  X-Y,  Z
+              Wat   251  O    ...  3.32    [      ]   2: -X+Y,  -X,  Z
+              His    10B CD2  ...  3.09    [      ]   9:   X, Y, Z
+              His    10B CD2  ...  3.09    [      ]   2: -X+Y,  -X,  Z
+              His    10B CE1  ...  3.02    [      ]   2: -X+Y,  -X,  Z
+              Wat   201  O    ...  2.19 ***[      ]   9:   X, Y, Z
+zn     2  ZN  His    10D CD2  ...  3.14    [      ]   1: -Y,  X-Y,  Z
+              His    10D CD2  ...  3.14    [      ]   2: -X+Y,  -X,  Z
+              His    10D CE1  ...  2.96    [      ]   1: -Y,  X-Y,  Z
+              His    10D CE1  ...  2.96    [      ]   2: -X+Y,  -X,  Z
+              His    10D NE2  ...  2.08 ***[      ]   1: -Y,  X-Y,  Z
+              His    10D NE2  ...  2.08 ***[      ]   2: -X+Y,  -X,  Z
+              Wat   513  O    ...  2.32 ***[    -C]   9:   X, Y, Z
+              Wat   513  O    ...  2.32 ***[    -C]   2: -X+Y,  -X,  Z
+              His    10D CD2  ...  3.14    [      ]   9:   X, Y, Z
+              His    10D CE1  ...  2.96    [      ]   9:   X, Y, Z
+              His    10D NE2  ...  2.08 ***[      ]   9:   X, Y, Z
+              Wat   513  O    ...  2.32 ***[    -C]   1: -Y,  X-Y,  Z
+
+ for Metal atom  ZN    ZN      1
+ ============================================
+ 1 His    10B NE2       
+ 2 His    10B NE2           98.9
+ 3 His    10B NE2           98.7    98.8
+ 4 Wat   201  O             93.9    90.4   163.0
+ 5 Wat   201  O            163.1    93.9    90.2    74.9
+ 6 Wat   201  O             90.2   163.2    93.7    74.8    74.8
+                               1       2       3       4       5
+
+ for Metal atom  ZN    ZN      2
+ ============================================
+ 1 His    10D NE2       
+ 2 His    10D NE2          103.4
+ 3 Wat   513  O            154.0    96.6
+ 4 Wat   513  O             96.6    87.7    67.5
+ 5 His    10D NE2          103.4   103.4    87.7   154.0
+ 6 Wat   513  O             87.7   154.0    67.5    67.5    96.6
+                               1       2       3       4       5
+</pre>
+Example 3:
+<pre>
+   METAL AL 2.25
+</pre>
+For pdb entry 1kdn the aluminium to ligand contacts are within the same
+residue, not between residues, nor are symmetry related contacts involved.
+Note that the order of the atoms in the input file is important in this case:
+<pre>
+--- this will work
+
+HETATM 1150 AL   AF3 A 157      69.404  29.227   2.379  1.00 22.45
+HETATM 1151  F1  AF3 A 157      69.611  30.838   3.207  1.00 23.32
+HETATM 1152  F2  AF3 A 157      68.410  27.856   3.138  1.00 23.97
+HETATM 1153  F3  AF3 A 157      69.936  28.691   0.589  1.00 19.15
+ 
+--- this will fail
+
+HETATM 1151  F1  AF3 A 157      69.611  30.838   3.207  1.00 23.32
+HETATM 1152  F2  AF3 A 157      68.410  27.856   3.138  1.00 23.97
+HETATM 1153  F3  AF3 A 157      69.936  28.691   0.589  1.00 19.15
+HETATM 1150 AL   AF3 A 157      69.404  29.227   2.379  1.00 22.45
+</pre>
+
+<H2><A NAME="comments_on_output"></A> COMMENTS ON OUTPUT</H2>
+<i>Please note: this is not a definitive explanation of the output! See also
+individual keyword information for more details of the output associated with
+specific keywords.</i>
+<p>
+The main output of the program is a list of the contacts. The information is
+arranged in columns as follows:
+<pre>
+First three columns: describe the "source" atom
+           1 - residue name
+           2 - residue number
+           3 - atom name
+Second three columns: describe the "target" atom
+           4 - residue name
+           5 - residue number
+           6 - atom name
+</pre>
+In <tt>MODE</tt>s <tt>ALL</tt>, <tt>IRES</tt> and <tt>ISUB</tt> the target atoms
+are simply taken from those listed in the input pdb file (limited by the
+<tt>TARGET</tt> keyword, if present). In these modes, the next three columns are:
+<pre>
+           7 - distance between target and source (angstroms)
+           8 - hydrogen bond angle (if ANGLE keyword is present)
+           9 - "***", "  *"  or "   " (<EM>i.e.</EM> blank)
+</pre>
+See the comments for keyword <A HREF="#angle">ANGLE</A> above for more details of the contents of
+column 8; it will be empty if <tt>ANGLE</tt> is not specified. In column 9, "***"
+indicates the strong possibly of a hydrogen bond at this contact (distance &lt; 3.3 A),
+"   *" indicates a weak possibility (distance &gt; 3.3 A). Blank indicates that the
+program considers there is no possibility of a hydrogen bond. <i>(Nb: when using the
+METAL keyword, column 9 instead marks those contacts which lie within the 
+&lt;metal-ligand distance&gt;.)</i>
+<p>
+The final three columns will be empty except in <tt>MODE IMOL</tt> or <tt>AUTO</tt>.
+In these cases, the target atoms are generated from those in the pdb file by a
+combination of a symmetry operation followed by a lattice translation. These columns
+give information about the operations used to create these "symmetry related" atoms: 
+<pre>
+          10 - lattice translations
+          11 - number identifying symmetry operation
+          12 - name identifying symmetry operation
+</pre>
+See the <A HREF="#symmetry">SYMM</A>, <A HREF="#symtit">SYMTIT</A> and <A HREF="#spacegroup">SPACEGROUP</A> keywords for more details
+of the number (col. 11) and name (col. 12) of the symmetry operators. Column 10 will
+contain output of the form
+<pre>          <EM>e.g.</EM>  [  +B-C] or [+A    ].</pre>
+Here <tt>A</tt>, <tt>B</tt> and <tt>C</tt> refer to the primitive lattice vectors
+<b>a</b>, <b>b</b> and <b>c</b> respectively, which are generated from the
+<tt>CRYST1</tt> card in the pdb file. So in these two modes, target atoms may seem to
+appear more than once - but they will be distinguished by having different associated
+symmetry and/or translation operations, which means they are symmetry related to the
+atom listed in columns 4-6 but are at different physical positions.
+
+<H2><A NAME="examples"></A> EXAMPLES</H2>
+
+1) Intermolecular contacts:
+<pre>
+
+contact xyzin  holo9c4.brk &lt;&lt;eof
+TITLE INTER-MOLECULAR CONTACTS FOR HOLO-GAPDH
+ATYPE ALL
+MODE  IMOL
+limits  0.0  3.9
+symtit  +A
+symm    1+X,Y,Z
+symtit  +C
+symm    X,Y,1+Z
+symtit  21
+symm    -X,1/2+Y,-Z
+eof
+
+</pre>
+2) Intermolecular contacts (AUTO mode). Default symmetry labels.
+<pre>
+
+contact xyzin xisomerase.brk &lt;&lt; eof
+mode   auto
+symm -Y,X-Y,1/3+Z
+symm Y-X,-X,2/3+Z
+symm Y,X,-Z
+symm -X,Y-X,1/3-Z
+symm X-Y,-Y,2/3-Z
+eof
+
+</pre>
+3)Contacts between specified parts of the molecule:
+<pre>
+
+contact xyzin holo9c4.brk &lt;&lt; eof
+TITLE  NAD-WATER CONTACTS
+limits 0.0  3.9
+SOURCE 336
+TARGET 337 1000
+eof
+
+</pre>
+4)Bond lengths in NAD molecule (residue number 336):
+<pre>
+
+contact xyzin holo9c4.brk &lt;&lt; eof
+TITLE NAD BONDS
+mode    ALL
+limits  0.0  1.9
+SOURCE  336
+TARGET  336
+eof
+
+</pre>
+5)Intersubunit contacts for a fragment of the chain. Subunits must
+have different chain names in the Brookhaven data file.
+<pre>
+
+contact xyzin holo9c4.brk &lt;&lt; eof
+title  INTERSUBUNIT CONTACTS
+mode   ISUB
+limits 0.0  3.9
+source 180 210
+eof
+
+</pre>
+6) Analysis of water hydrogen bonding (all water contacts)
+<pre>
+
+contact xyzin holo9c4.brk &lt;&lt; eof
+TITLE WATER CONTACTS
+mode auto
+angle
+symm x,y,z
+symm -X,1/2+Y,-Z
+SOURCE  340 1000            !water molecules
+eof
+
+</pre>
+7) Hydrogen bonds and angles for a piece of chain
+<pre>
+
+contact xyzin holo9c4.brk &lt;&lt; eof
+ANGLE
+LIMITS   0.0 3.4
+SOURCE   33 88
+TARGET  1 334
+eof
+
+</pre>
+8) For MODE AUTO with TO and FROM keywords
+<pre>
+
+  contact xyzin   /homes/henrick/pdb/pdb4ins.ent &lt;&lt;eof
+  MODE AUTO
+  LIMITS   2 3.66
+  FROM RESIDUE ALL CHAIN A 1 to 21
+  TO   RESIDUE ALL CHAIN D 1 to 30
+  eof
+
+</pre>
+will give all symmetry related chain D atoms to identity chain A atoms, <EM>i.e.</EM>
+<pre>
+
+ Thr     8A O   His     5D CD2  ...  3.00         +C1: -Y,  X-Y,  Z
+ Ser     9A C   His     5D NE2  ...  3.45         +C1: -Y,  X-Y,  Z
+ Ser     9A O   His     5D CD2  ...  3.39         +C1: -Y,  X-Y,  Z
+                His     5D CE1  ...  3.62         +C1: -Y,  X-Y,  Z
+                His     5D NE2  ...  2.60 ***     +C1: -Y,  X-Y,  Z
+ Gln    15A CG  Phe    25D CE2  ...  3.57     -A    5: -X+Y+2/3,-X+1/3,Z+1/3
+ Asn    18A CG  Thr    27D OG1  ...  3.64     -A    5: -X+Y+2/3,-X+1/3,Z+1/3
+ Asn    18A OD1 Thr    27D OG1  ...  2.75 *** -A    5: -X+Y+2/3,-X+1/3,Z+1/3
+
+</pre>
+9) Combining selection TO/FROM with AUTO and ANGLE
+<pre>
+
+  contact xyzin   /homes/henrick/pdb/pdb4ins.ent &lt;&lt;eof
+  MODE AUTO
+  LIMITS   2 3.66
+  FROM RESIDUE ALL CHAIN A 1 to 21
+  TO   RESIDUE ALL CHAIN D 1 to 30
+  ANGLE
+  eof
+
+</pre>
+<H2> AUTHOR</H2>
+Tadeusz Skarzynski, Imperial College, London, 1.12.88
+<br>
+(the ANGLE (HOH) mode by Andrew Leslie)
+
+<h2>SEE ALSO</h2>
+
+<a href="ncont.html">NCONT</a> - new contact seeking program with flexible
+atom selection syntax <br>
+<a href="act.html">ACT</a> - alternative contact seeking program <br>
+<a href="distang.html">DISTANG</a> - alternative contact seeking program 
+
+</body></html>
+
+

@@ -1,0 +1,113 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::SCALEPACK2MTZ::Supported::Data Processing and Reduction::converts merged scalepack output into MTZ format:::::::: -->
+
+<H1> SCALEPACK2MTZ (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>scalepack2mtz </b>
+- converts merged scalepack output into MTZ format.
+<H2> SYNOPSIS</H2>
+<b>scalepack2mtz</b>
+<b>HKLIN</b>
+<i>foo.dat</i>
+<b>HKLOUT</b>
+<i>foo.mtz</i><br>
+[<A HREF="#keywords">Keyworded input</A>]
+<H2><A NAME="description"></A> DESCRIPTION</H2>
+This program converts merged data from scalepack (which is part of the
+DENZO package) into an MTZ format. The scalepack data file may or may not
+contain anomalous data. After the conversion use 
+<A HREF="truncate.html">TRUNCATE</A> to convert the Is into Fs. 
+Finally, <A HREF="cad.html">CAD</A> should be run to sort the data and put it
+into the correct asymmetric unit for CCP4.
+
+<H4><A NAME="data_harvesting"></A> MTZ datasets and Data Harvesting</H4>
+Columns in MTZ files are organised into projects, crystals and datasets. 
+This information is used in subsequent processing to make sensible
+decisions based on which dataset a column belongs to. Project, crystal
+and dataset names should be assigned using the <A HREF="#name">NAME</A> 
+keyword. These will be written to the 
+output MTZ file, and be inherited by subsequent programs.
+<A HREF="harvesting.html">Data harvesting</A> also uses the 
+project and dataset names to write out appropriate harvest files for
+deposition.
+
+<H2><A NAME="files"></A> INPUT/OUTPUT FILES</H2>
+<dl>
+<dt><A NAME="hklin"></A> HKLIN<dd>
+is the input ASCII scalepack file. It is assumed to start with a 3-line
+header, the third line containing the cell dimensions. In the absence of
+anomalous data there should be 5 columns H, K, L, I and SIGI, and with
+anomalous data there should be 7 columns H, K, L, I+, SIGI+, I- and SIGI-.
+<dt><A NAME="hklout"></A> HKLOUT<dd>
+is the output MTZ file containing labels H, K, L, IMEAN, SIGIMEAN and if
+anomalous data is present I(+), SIGI(+), I(-), SIGI(-) as well.
+</dl>
+<H2><A NAME="keywords"></A> KEYWORDED INPUT</H2>
+<P>Available keywords are:
+<BLOCKQUOTE>
+<A HREF="#anomalous"><B>ANOMALOUS</B></A>, <A HREF="#cell"><B>CELL</B></A>,
+<A HREF="#end"><B>END</B></A>,
+<A HREF="#monitor"><B>MONITOR</B></A>, <A HREF="#name"><B>NAME</B></A>,
+<A HREF="#reject"><B>REJECT</B></A>, <A HREF="#resolution"><B>RESOLUTION</B></A>,
+<A HREF="#scale"><B>SCALE</B></A>, <A HREF="#symmetry"><B>SYMMETRY</B></A>,
+<A HREF="#title"><B>TITLE</B></A>, <A HREF="#wavel"><B>WAVE</B></A> </P>
+</BLOCKQUOTE>
+
+<H3> <A NAME="name"></A>NAME PROJECT &lt;pname&gt; CRYSTAL &lt;xname&gt; DATASET &lt;dname&gt;</H3>
+[Note that the keywords PNAME &lt;pname&gt;, XNAME &lt;xname&gt; and DNAME &lt;dname&gt;
+are also available, but the NAME keyword is preferred.]
+<p>
+Specify the project, crystal and dataset names for the output MTZ file.
+It is strongly recommended
+that this information is given. Otherwise, the default project, crystal and 
+dataset names are "unknown", "unknown" and "unknown&lt;ddmmyy&gt;" respectively
+(where &lt;ddmmyy&gt; is the date, with no spaces).
+<p>
+The project-name specifies a particular structure solution project, the
+crystal name specifies a physical crystal contributing to that project, 
+and the dataset-name specifies a particular dataset obtained from that
+crystal. All three should be given.
+
+<H3><A NAME="cell"></A>CELL  &lt;a&gt; &lt;b&gt; &lt;c&gt; [ &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt; ]</H3>
+The cell dimensions in Angstroms and  degrees.
+The angles default to 90 degrees. If this key
+is omitted then the cell dimensions are  taken
+from the input file (normally OMIT this command).
+<H3><A NAME="anomalous"></A>ANOMALOUS  YES | NO</H3>
+Specify whether or not input file contains anomalous data.
+Defaults to YES.
+<H3><A NAME="monitor"></A>MONITOR &lt;nmon&gt;</H3>
+Monitors the &lt;nmon&gt;th reflection and writes it to the output stream. The 
+default is every 1000th reflection.
+<H3><A NAME="reject"></A>REJECT &lt;h k l&gt;</H3>
+If specified then the specific hkl will not be written to the MTZ file.
+<H3><A NAME="resolution"></A>RESOLUTION &lt;maxres&gt; &lt;minres&gt;</H3>
+If specified then the all reflections outside the range will be excluded from
+the MTZ file. The limits can be given in either order and in Angstrom or 
+SineSquared(theta)/LambdaSquared units. The default is that all reflections 
+are output.
+<H3><A NAME="scale"></A> SCALE &lt;scale&gt;</H3>
+All intensities and their sigmas will be scaled by &lt;scale&gt;. The default is 
+1.0.
+<H3><A NAME="symmetry"></A>SYMMETRY &lt;SG name|SG number&gt;</H3>
+This keyword can be given as the space group name or 
+number. If this keyword is not present attempt will be made to read it from
+input file.
+<H3><A NAME="title"></A>TITLE &lt;string&gt;</H3>
+This title will become the title/history in the MTZ file.
+<H3><A NAME="wavel"></A>WAVE &lt;wavelength&gt;</H3>
+The wavelength associated with this data. (Will become compulsory)
+<H3><A NAME="end"></A> END</H3>
+Terminates the keyword input. Must be last keyword.
+<H2><A NAME="examples"></A> EXAMPLES</H2>
+<H3>A unix example scipt is availabe in $CEXAM/unix/runnable/
+<P><A HREF="../examples/unix/runnable/scalepack2mtz.exam">scalepack2mtz.exam</A></P>
+
+<H2> SEE ALSO</H2>
+ <A HREF=cad.html>cad</A>,
+ <A HREF=truncate.html>truncate</A>,
+<A HREF="harvesting.html">Data Harvesting</A>.
+</body></html>

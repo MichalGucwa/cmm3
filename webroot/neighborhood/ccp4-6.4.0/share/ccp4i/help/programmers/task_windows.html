@@ -1,0 +1,598 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4i Documentation for Programmers: The Task Window File</title>
+<link rel="stylesheet" type="text/css" href="../ccp4idocs.css" title="CCP4i" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="3" class="logopic"><img src="../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logoprog">Documentation for Programmers</td></tr>
+<tr><td class="logotitle">The Task Window File</td></tr>
+</table>
+<br />
+<table border="0">
+<tr><td>
+<a href="tcl_intro.html" target="_PROGMAIN">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="modules.html" target="_PROGMAIN">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="intro.html" target="_PROGMAIN">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td></tr>
+</table>
+
+<p><a href="#intro" target="_self">Introduction</a></p>
+<p><a href="#procedures_and_arrays"
+target="_self">The Procedures and Arrays in a Task Window File</a></p>
+<p><a href="#windows_and_widgets" target="_self">Windows
+and Widgets</a></p>
+<p><a href="#CCP4I_library" target="_self">The CCP4i
+Library Commands to Draw Windows</a></p>
+
+<dl>
+<dt><a href="#menus" target="_self">Menus</a></dt>
+<dd><a href="#menu_data_types" target="_self">Menu Data
+Types</a></dd>
+<dd><a href="#defining_a_menu" target="_self">Defining
+a Menu</a></dd>
+<dd><a href="#variable_menus" target="_self">Variable
+Menus</a></dd>
+</dl>
+
+<p><a href="#extending_and_toggle_frames"
+target="_self">Extending Frames and Toggle Frames</a></p>
+<p><a href="#project_database_parameters"
+target="_self">Parameters Used by the Project Database</a></p>
+
+<dl>
+<dt><a href="#MTZ_column_labels" target="_self">Handling
+of MTZ Column Labels</a></dt>
+<dd><a href="#taskname_run" target="_self">The
+<em>taskname_run</em> Procedure</a></dd>
+</dl>
+
+<dl>
+<dt><a href="#prerequisites" target="_self">Handling Prerequisites
+for Running Tasks</a></dt>
+<dd><a href="#taskname_prereq" target="_self">The <em>taskname_prereq</em>
+Procedure</a></dd>
+</dl>
+
+<h3><a name="intro"></a>Introduction</h3>
+
+<p>A task window file defines the appearance of a task window. The file
+is written in the Tcl scripting language but all essential functionality
+is provided by a small library of CCP4i commands so, at least for simpler
+interfaces, the programmer needs only minimal knowledge of Tcl. There is
+an example task window file <strong><em>$CCP4I_top/tasks/demo.tcl</em></strong>
+which will be referred to below.</p>
+
+<p>If you are not familiar with Tcl, you should look at the
+<a href="tcl_intro.html" target="_self">Introduction to Tcl</a>.
+You should perhaps read quickly through this before looking at the demo file
+and then refer back when features of the demo need some explanation.</p>
+
+<h3><a name="procedures_and_arrays"></a>The Procedures and Arrays in a Task Window File</h3>
+
+<p>For a task called <strong><em>taskname</em></strong> (as defined in the
+<em>modules</em> file) there must be a file called
+<strong><em>taskname</em>.tcl</strong> in the directory
+<strong>$CCP4I_top/tasks</strong>. This file must define a procedure
+<strong><em>taskname</em>_task_window</strong>
+which contains the definition of the graphical interface to the task. This
+procedure will be called when the user selects the task from the menu in
+the main CCP4i window. The file can also contain three other procedures:</p>
+
+<dl>
+<dt><a name="taskname_setup"></a><strong><em>taskname</em>_setup</strong></dt>
+<dd>which is called prior to <em>taskname</em>_task_window. This can be used
+to perform any initialisation and is particularly used for defining menus</dd>
+<dt><a href="#taskname_run" target="_self"><strong><em>taskname</em>_run</strong></a></dt><dd>is also optional and will
+be called when the user picks the <strong><tt>Run</tt></strong> button on the
+task window. It can be used to do any checking and 'tidying up' of parameters
+before running the task.</dd>
+<dt><a href="#taskname_prereq" target="_self"><strong><em>taskname</em>_prereq</strong></a></dt>
+<dd>This is an optional procedure which is invoked when the main interface
+window displays the list of tasks available to the user. It can be used to
+perform any checks for "prerequisites" for running the task - for example,
+to check if a particular executable is available on the system.<dd>
+</dl>
+
+<p>The <em>taskname.tcl</em> file is not read until the user selects to run
+the task and then the three procedures described above are called automatically
+by the core (<em>i.e.</em> the main part) of CCP4i when required. Most of the
+functionality of these procedures is achieved by calls to the library of CCP4i
+procedures so the task window file is basically providing the meat in a
+sandwich.</p>
+
+<p>All the variables associated with one instance of a task window are
+saved as elements of one array. This is necessary for keeping everything
+together and avoiding possible clashes where, for example, two different
+tasks, open simultaneously, might both have a variable called
+<tt>RESOLUTION_MIN</tt>. The interface is implemented so that, in principle,
+it is possible to have two windows interfacing to the <strong>same</strong>
+task open simultaneously, and with each window having an independent set of
+parameters which are stored in different arrays (in practice, however, this
+option has been disabled to avoid confusing the user). The actual name of
+the array is decided by the CCP4i core before it calls any of the task
+procedures and the name is then passed to the procedures as an argument.
+In practice the name of the array is usually the same as the
+<em>taskname</em> but you should not assume this is always so.</p>
+
+<p>When the name of an array is passed to a procedure, it is necessary to
+associate that name with a local variable using the <tt>upvar</tt> command.
+An example of the syntax of this, taken from the <em>demo.tcl</em> file:</p>
+
+<pre>
+proc demo_task_window { arrayname } {
+upvar #0 $arrayname array
+...
+....
+}
+</pre>
+
+<p><tt>arrayname</tt> will contain the true name of the array when it is
+passed into the procedure. The true name of the array is substituted for
+<tt>$arrayname</tt> in the <tt>upvar</tt> command so that the <tt>upvar</tt>
+command is given the true name of the array and equivalences it to the
+local variable <tt>array</tt>. In the task window files that I have written,
+including the demo.tcl, I have always used the very generic words <tt>arrayname</tt>
+for the argument and <tt>array</tt> for the local variable. The important
+point to remember, assuming you use the same convention, is: within the
+procedure all references to the array should use the word <tt>array</tt>
+<strong>except</strong> if the name of the array is being passed on to
+another procedure in which case <tt>$arrayname</tt> should be used.</p>
+
+<p>Within the graphical interface, the names of the parameters should be
+the same, or similar to, the program parameter names (assuming the program
+has 'sensible' parameter names!) and are commonly upper case so they
+stand out in scripts. So the significance of parameter names such as
+<tt>RESOLUTION_MIN</tt> and <tt>RESOLUTION_MAX</tt> should be obvious.
+Within the task window files, these names are actually used as array indices
+so that if you need to access these variables, they are
+array(<tt>RESOLUTION_MIN</tt>) and array(<tt>RESOLUTION_MAX</tt>).
+In practice you should not often need to access these parameters but you
+will just pass their names on to library routines.</p>
+
+<h3><a name="windows_and_widgets"></a>Windows and Widgets</h3>
+
+<p>Tk is the part of the Tcl/Tk package responsible for the graphics. Programming
+a task window does not require direct use of Tk - the CCP4i command library
+provides higher level functionality.</p>
+
+<p>Each graphical element in Tk is called a widget. Tk has an hierarchical
+arrangement of widgets - a child widget (<em>i.e.</em> one that is the next layer
+down in the hierarchy) is drawn within its parent. For example, a very simplified
+view of the hierarchy for a task window is:</p>
+
+<p>task window -&gt; frame/folder -&gt; line -&gt; labels and input widgets</p>
+
+<p>If you look at the task window it is horizontally partitioned into 'frames'
+(<em>i.e.</em> protocol frame and files frame) and folders and these frames are,
+fairly obviously, defined in terms of lines. This layout is not inherent
+in Tk but is built into the CCP4i command library. The <tt>CreateTaskWindow</tt>
+command is used to create a window with the conventional format. The
+<tt>OpenFolder</tt> command is used to specify where the definition of a folder
+begins. The <tt>CreateLine</tt> command is used to define an entire line in
+the window and its arguments include the definition of the labels and input
+widgets on that line.</p>
+
+<p>In Tk each widget has an id which is formatted rather like the format
+for directories in UNIX, except that a '.' is used as a separator instead
+of a '/'. In UNIX the root directory is '/' and in Tk the main widow
+of an application is named '.'. A child widget of '.' would be <em>.foo</em>.
+A child of <em>.foo</em> would be <em>.foo.bar</em> and so on.</p>
+
+<p>In CCP4i the task windows usually have names <em><tt>.taskname</tt></em>.
+Because of the complexities of setting up scroll bars, message lines and toggleable
+frames (all dealt with by the <tt>CreateTaskWindow</tt> command), the components
+of the task window have lengthy, complex names. The programmer does not usually
+need to be concerned with these, but the commands which create frames
+and lines do return the id for the frame or line which a programmer would
+need to customise the interface using Tk commands directly.</p>
+
+<h3><a name="CCP4I_library"></a>The CCP4i Library Commands to Draw Windows</h3>
+
+<p>To follow this section, look for examples of the library commands described
+below in the file <strong>$CCP4I_top/tasks/demo.tcl</strong> and look at the demo
+task window. The library commands are described more fully in the
+<a href="indexframeset.html" target="_PROGRAMMERSDOCS">command
+documentation</a>.</p>
+
+<p>An important feature of every task window is the partitioning into frames
+and folders. Ideally the protocol frame at the top of the window presents
+the user with easy to understand options to specify exactly want they want
+to achieve. The file frame requires the user to select input and output
+files and select column labels from MTZ files. Each subsequent folder contains
+closely related options and the folder has a title indicating the contents
+of the folder. Folders which contain less frequently required options are
+closed. I try to work towards a convention of putting 'compulsory' options
+in the first folder and having all other folders closed - this is not always
+possible.</p>
+
+<p>To open a task window requires the command <tt>CreateTaskWindow</tt>
+- the arguments to this command include the title and icon name for the
+window. The command also requires an id for the window - this is usually
+<em><tt>.taskname</tt></em> and the name of the array which contains the
+parameters for this task. The name of the array is saved by the library
+and used by other commands such as <tt>CreateLine</tt>.</p>
+
+<p>The titles of the folders within the task window are specified by the
+fourth argument to <tt>CreateTaskWindow</tt>. All task windows are drawn
+with a protocol and a file frame - the additional folders are optional.
+To begin the definition of the contents of each frame/folder you must call
+<tt>OpenFolder</tt> with the argument 'protocol' or 'file' or an integer
+in the range 1 to <em>n</em> where <em>n</em> is the number of folders defined
+using the <tt>CreateTaskWindow</tt> command. It is not necessary to call
+<tt>OpenFolder</tt> for the folders in the order they appear in the window
+so reordering the folders in a window can be done without moving around
+large chunks of code.</p>
+
+<p>The <tt>OpenFolder</tt> command has three possible optional commands to
+control the default visibility of a folder:</p>
+
+<dl>
+<dt><strong>open</strong></dt>
+<dd>the title line and contents of the folder are visible</dd>
+<dt><strong>closed</strong></dt>
+<dd>the title line of the folder is displayed but the contents
+are not displayed. The user can access the contents using the toggle button
+on the title line</dd>
+<dt><strong>hide</strong></dt>
+<dd>neither the title line nor the contents are displayed</dd>
+</dl>
+
+<p>The visibility status can be dependent on a control parameter which
+would usually be an option in the protocol frame.</p>
+
+<p>There are several commands which draw a single line within a folder.
+The most generic command is <tt>CreateLine</tt>. The <tt>CreateInputFileLine</tt>
+and <tt>CreateOutputFileLine</tt> commands draw a line for the user to
+select a file. The <tt>CreateLabin</tt> command draws a line for the user
+to select an MTZ label. All of these commands have arguments which are
+the names of parameters. Each parameter must be defined in the .def file.
+It is a common mistake for a parameter to be missing from the .def file
+and an error message will appear in the report window of the CCP4i main
+window (hint: watch this window when you are testing a new interface!)
+and the line will not be drawn completely.</p>
+
+<p>The 'line' routines will draw the appropriate widget for the user to
+select or enter a value for the parameter. As explained above, all the parameters
+for one task interface are stored in one array so commands such as <tt>CreateLine</tt>
+are actually drawing widgets which are associated with an array variable
+such as <tt>array(PARAM)</tt> but you do not need to be concerned
+about this - you just need to give the parameter name <tt>PARAM</tt> as
+an argument to the command.</p>
+
+<p>The <tt>CreateLine</tt> command has a very flexible argument list.
+Usually arguments come in pairs; each pair is a keyword followed by another
+keyword-specific argument. For example the keyword <tt>label</tt> is followed
+by the text which is to appear as a label on the line. The keyword <tt>widget</tt>
+is followed by the name of a parameter. The appropriate widget (menu
+or entry field or toggle button) will be drawn for the type of the parameter
+which must have been defined in the <em>taskname.def</em> file.
+The <tt>CreateLine</tt> command can have a variable number of keyword arguments
+so the line seen by the user can be made up of any combination of label
+text and input widgets. The labels and widgets are drawn from left to right
+in the order of the keywords in the argument list. <tt>CreateLine</tt>
+also has other keywords which define the target for help and the help message
+line associated with the subsequent widgets in the line.</p>
+
+<p>It is also possible to control the visibility of individual lines.
+<tt>CreateLine</tt> has a keyword <tt>toggle_display</tt> and the other
+'line' commands have an optional argument <tt>-toggle_display</tt> which
+can make the display of the line dependent on some control parameter. It
+is not possible to control the visibility of individual labels and widgets
+in a line. Instead you should define the alternative forms of the line
+by multiple calls to <tt>CreateLine</tt> and use the <tt>toggle_display</tt>
+keyword to control the visibility of each instance of the line.</p>
+
+<p>If you want to group together several consecutive lines and
+control their visibility collectively, then use the <tt>OpenSubFrame</tt>
+and <tt>CloseSubFrame</tt> commands to group the lines together. The
+<tt>OpenSubFrame</tt> command has similar arguments to <tt>OpenFolder</tt>
+to define visibility. It is recommended to use these sub-frames wherever
+possible, because it makes for faster and smoother updating of a window.</p>
+
+<p>It is very strongly recommended that you use the tools to control visibility
+to ensure that once the user has entered what they want to do within the
+protocol frame, they are only faced with relevant options. A convention
+which I aim towards is that the visibility of a line can only be altered
+by a parameter in the protocol frame or in the same folder and appearing
+above the line in question. Visibility of folders should only be controlled
+by parameters in the protocol frame. These conventions are intended to
+avoid a 'jack-in-the-box' effect for the user.</p>
+
+<h3><a name="menus"></a>Menus</h3>
+
+<h4><a name="menu_data_types"></a>Menu Data Types</h4>
+
+<p>All parameters in a task interface must have a data type which is defined
+in the .def file. There are many generic data types (<em>e.g.</em> <em>_logical</em>,
+<em>_pdb_file</em>, <em>_space_group</em>) which are defined in the <em>types.def</em>
+file but some parameters are best represented in the task interface window by a menu
+which is specific for the particular task interface. Each menu is treated as a data type
+equivalent to <em>_logical</em> or <em>_space_group</em> because, like the
+more generic data types, it defines what appears in the task interface
+window and determines what the allowed input values are.</p>
+
+<h4><a name="defining_a_menu"></a>Defining a Menu</h4>
+
+<p>Each menu must be given a data type name. To avoid possible clashes,
+the name should begin with the task name. For example, in the
+<a href="window_demo.html" target="_self"><em>demo</em> task</a>,
+the two menu data types are <em>_demo_refine_type</em> and <em>_demo_input_phase</em>.
+Note that the data type name always begins with an underscore. The
+parameter which has the menu data type is defined in the <em>demo.def</em>
+file with a line which has the form:</p>
+
+<pre>
+REFINE_TYPE _demo_refine_type FULL
+</pre>
+
+<p>Here <tt>REFINE_TYPE</tt> is the parameter which has the data type
+<tt>_demo_input_phase</tt> and its initial value is <tt>FULL</tt>.</p>
+
+<p>Each menu is a separate data type but all belong to the <em>menu</em>
+class of data types. All data types of the <em>menu</em> class have two properties:
+<em>deflist</em> and <em>aliaslist</em> (I regret the choice of names but
+not enough to change them). The <em>deflist</em> is the list of options which
+the user will see in the task interface window. The text for each item
+in the <em>deflist</em> must be 'plain English' for the user to understand
+but CCP4 programs usually expect single keywords (and the CCP4i programmer
+may prefer to handle single keywords). So the <em>aliaslist</em> is a list
+of single word items with one item for each of the items in the <em>deflist</em>.
+The <em>aliaslist</em> usually consists of the program input keywords.
+The <em>aliaslist</em> is optional - if it is missing, the <em>deflist</em>
+item will be used wherever the <em>aliaslist</em> is expected.</p>
+
+<p>Note that where the initial value of the parameter is set in the .def
+file, either a <em>deflist</em> or an <em>aliaslist</em> item may be used. It
+is usually easier to use the <em>aliaslist</em> item and probably safer as
+the text of the <em>deflist</em> is liable to change as you review and refine
+the interface.</p>
+
+<p>It is possible to define menus in the <em>types.def</em> file but is more
+convenient to call the <em>DefineMenu</em> command in the <em>task.tcl</em>
+file. The definition must be within the procedure <em>task</em>_setup (as
+described
+<a href="#taskname_setup" target="_self">above</a>).</p>
+
+<p>For example in the <em>demo.tcl</em> file a menu is defined:</p>
+
+<pre>
+DefineMenu _demo_refine_type \
+[list &quot;full refinement&quot; &quot;quick refinement&quot;] \
+[list FULL FAST]
+</pre>
+
+<p>The three arguments to
+<tt><a href="DefineMenu.html" target="_self"><em>DefineMenu</em></a></tt>
+are:</p>
+
+<dl>
+<dt><em>menu_name</em></dt><dd><tt>_demo_refine_type</tt></dd>
+<dt><em>deflist</em></dt><dd><tt>[list &quot;full refinement&quot;
+&quot;quick refinement&quot;]</tt></dd>
+<dt><em>aliaslist</em></dt><dd><tt>[list FULL FAST]</tt></dd>
+</dl>
+
+<p>Two features of Tcl syntax to note here are:</p>
+
+<ul>
+<li>strings which contain spaces must be enclosed in double quotes <em>e.g.</em>
+&quot;full refinement&quot;</li>
+<li>the safest way to define a list in Tcl is to use the <em>list</em> command
+which, in this context, must have square brackets enclosing the command
+name and its arguments. See also
+<a href="http://sunscript.sun.com/man/tcl8.1/TclCmd/list.htm" target="_blank">Tcl
+<em>list</em> command</a>.</li>
+</ul>
+
+<h4><a name="variable_menus"></a>Variable Menus</h4>
+
+<p>A variable menu is one which may change as the interface is used. For
+example, look at the <strong><tt>Directories&amp;ProjectDir</tt></strong> window
+(accessed by clicking the button on the top right of the CCP4i main window). In
+this window, as the user adds extra project directories, the menu for selecting
+the default project directory is extended.</p>
+
+<p><font color="#ff0000">This needs more documentation</font></p>
+
+<h3><a name="extending_and_toggle_frames"></a>Extending Frames and Toggle Frames</h3>
+
+<p>To understand what these are, look at examples:</p>
+
+<ul>
+<li>The Cad interface has an extending frame in the file frame to allow
+users to enter the names of one or more input files.</li>
+<li>The Refmac interface uses toggle frames to define the domains in rigid
+body refinement. To see these, bring up the Refmac task window and change
+the refinement mode (the first menu in the protocol frame) to 'rigid body
+refinement'. Now look down the window to the 'Rigid Domains Definition'
+folder.</li>
+</ul>
+
+<p>Both extending frames and toggle frames have two control buttons underneath
+them. The button on the right, which has a context-dependent label and allows
+the user to open an extra frame beneath those which might already be open.
+And the button on the left is a menubutton with access to some simple editing
+functionality to delete and copy frames. Extending frames are usually just
+single line frames but can have more than one line. Toggle frames are
+usually multi-line frames which also have a title line with a toggle button
+which controls the display of the frame contents. Note that closing a frame
+does not make the contents 'go away' or switch them off!</p>
+
+<p>It is possible to nest extending frames inside either other extending
+frames or inside toggle frames. Only one layer of nesting is allowed and
+it is not currently possible to have toggle frames nested within extending
+or toggle frames. An example is in the Cad interface. If, for one of the
+input files, you choose to 'Select Input Columns', an extending frame
+to select MTZ columns is displayed. This 'select label' extending
+frame is embedded within a 'select file' extending frame.</p>
+
+<p>These frames are defined using the <tt>CreateExtendingFrame</tt> and
+<tt>CreateToggleFrame</tt> commands. It is also necessary to write a separate
+procedure which defines the content of each frame. Each time the user clicks
+the control button to open another frame, the procedure is invoked to draw
+the contents of the frame. The name of the procedure is an argument to
+<tt>CreateExtendingFrame</tt> or <tt>CreateToggleFrame</tt>. The procedure
+must have certain defined arguments so that some possibly useful information
+can be passed to the procedure. The arguments are the array name and the
+value of a counter which will be '1' if this is the first frame to be drawn,
+'2' if it is the second frame and so on. If the frame is a nested extending
+frame, two counters are passed to the procedure. The first counter
+is for the 'outer' frame and the second counter is for the nested extending
+frame.</p>
+
+<p>Any parameter which is used inside an extending frame or toggle frame
+only needs to appear once in the <em>taskname.def</em> file. If the root
+of the parameter name is <tt>PARAM</tt>, the defining line in the .def
+file should be for <tt>PARAM,0</tt>, <em>i.e.</em> the root name followed
+by a comma and zero. I think of this as the zero'th instance of <tt>PARAM</tt>
+which will always contain the initial default value for <tt>PARAM</tt> so
+that whenever a new extending or toggle frame is opened, it will have a
+parameter <tt>PARAM,<em>n</em></tt> which initially takes the same value
+as <tt>PARAM,0</tt>.</p>
+
+<p><em>Parameter names must not contain commas. Even if Tcl/Tk can handle
+them, they will confuse CCP4i!</em></p>
+
+<p>The contents of each extending or toggle frame is defined within a separate
+procedure which uses commands such as <tt>CreateLine</tt>. Within the procedure
+commands which require a parameter name as an argument (<em>e.g.</em> after the
+<tt>widget</tt> keyword in the <tt>CreateLine</tt> command) just
+require the root name of the parameter. Appropriate indices will be added
+internally.</p>
+
+<p>Each extending frame and toggle frame has an index parameter which keeps
+count of the number of frames opened. This parameter needs to be defined
+in the .def file. It usually has a type <em>_positiveint</em> and is initialised
+as zero. The name of the parameter is given as an argument to the
+<tt>CreateExtendingFrame</tt> or <tt>CreateToggleFrame</tt> commands. The user
+must NOT have access to this parameter in any other part of the interface!</p>
+
+<p>When the user clicks the <strong><tt>Run</tt></strong> button, a new script
+is created to run the task as an independent process. In this run script, the
+parameters are no longer bundled into one array. The parameters which can potentially
+have multiple instances because they occur in extending and toggle frames,
+are converted to arrays which have the form <tt>PARAM(i)</tt> or (where they are
+from nested extending frames) <tt>PARAM(i,j)</tt>. Note that the convention for
+the ordering of the indices is that the second index is for the nested
+loop (this is the reverse of what you might expect by analogy with the
+Fortran convention).</p>
+
+<p>Internal to CCP4i, there are alternative conventions for naming parameters
+which appear in extending and toggle frames. These are discussed below
+- you can probably
+<a href="#project_database_parameters"
+target="_self">skip this discussion</a>.</p>
+
+<p>Any parameter which appears in an extending or toggle frame can have
+multiple instances. For example, in the Cad interface there may be multiple
+HKLIN parameters. The obvious way to handle these would be to have
+an array called HKLIN with indices 1 to <em>n</em> where <em>n</em> is
+the number of files. But this is not possible because HKLIN itself
+is the name of element of the array which contains all of the Cad parameters.
+So the way this is handled in the graphical part of CCP4i, is to call the
+parameters HKLIN,1 HKLIN,2 ... HKLN,<em>n</em> <em>etc</em>. Note that these
+parameter names are really the names of elements in an array so the variables
+are really <tt>array(HKLIN,1)</tt>, <tt>array(HKLIN,2)</tt> <em>etc</em>.
+Remember the comment made earlier that Tcl arrays are not truly
+multidimensional; Tcl treats the comma in these array element names as just
+another character but CCP4i does handle such parameters differently in some
+circumstances.</p>
+
+<p>An extended frame embedded within another frame contains parameters which
+need to have two indices. So for example in the Cad interface, if two labels
+are selected for the first file they are given parameter names:
+<tt>LABIN,1_1</tt>, <tt>LABIN,1_2</tt>. Note the use of an underscore to
+separate the two indices (I now regret not using a comma but not enough to
+change it). The index before the underscore is the index for the outer loop
+(the file) and the index after the underscore is the index for inner loop
+(the labels). Note that this is the reverse of the Fortran convention for
+indices order.</p>
+
+<p>There are utility commands to parse these complex parameters: GetIndx</p>
+
+<h3><a name="project_database_parameters"></a>Parameters Used by the Project Database</h3>
+
+<p>Besides the parameters required to run the task, there are three parameters
+which should be defined for every task which will be used by the database:
+<tt>INPUT_FILES</tt>, <tt>OUTPUT_FILES</tt> and <tt>TITLE</tt>. These three
+parameters should be defined in the .def file (see the <em>demo.def</em> file)
+but only the <tt>TITLE</tt> parameter should appear on the interface.
+<tt>INPUT_FILES</tt> and <tt>OUTPUT_FILES</tt> are lists of the
+input file parameters and output file parameters respecively. For example,
+for a Refmac-like refinement the <tt>INPUT_FILES</tt> might be the list
+&quot;HKLIN XYZIN&quot; and the <tt>OUTPUT_FILES</tt> might be the list
+&quot;HKLOUT XYZOUT&quot;.
+When a task is run, the database saves the names of the files stored in
+the variables <tt>HKLIN</tt>, <tt>XYZIN</tt>, <tt>HKLOUT</tt> and
+<tt>XYZOUT</tt> and so has a record of the
+input and output files for the task. Beware that the input and output file
+list often depend on the mode of running the program so that it may be
+necessary to update the lists in the <em>taskname_run</em> procedure in the task
+window file.</p>
+
+<p>The <tt>TITLE</tt> parameter should be defined in the .def file and should
+appear as the first line of the protocol frame in the task window. The
+text from the <tt>TITLE</tt> parameter is saved in the database and written
+to the Job List in the main window. If the program has a <tt>TITLE</tt> keyword,
+it is expected to use the same parameter. The task should have a <tt>TITLE</tt>
+parameter even if the program does not have a <tt>TITLE</tt> keyword.</p>
+
+<h3><a name="MTZ_column_labels"></a>Handling of MTZ Column Labels</h3>
+
+<h4><a name="taskname_run"></a>The <em>taskname_run</em> Procedure</h4>
+
+<p>It is not necessary to define a procedure <em>taskname_run</em> in a task window
+file but if it is defined, it will be called when the user clicks the
+<strong><tt>Run</tt></strong> button before a run script is written. Any
+'tidying up' of parameters should be done in this procedure. There are several
+parameters which particularly might need tidying up.</p>
+
+<dl>
+<dt><tt>INPUT_FILES</tt> and <tt>OUTPUT_FILES</tt></dt>
+<dd>CCP4i expects every task to have parameters <tt>INPUT_FILES</tt> and
+<tt>OUTPUT_FILES</tt> which are necessary for the project database to save
+the names of input and output files correctly. The input and output files
+for a task often depend on the mode of running and these parameters might
+need to be updated after the user has set the run mode and just before
+the job is actually run.</dd>
+<dt><tt>LABIN</tt> (or similar lists of MTZ column labels)</dt>
+<dd>In CCP4i the <tt>LABIN</tt> parameter is usually a list of the MTZ input
+column label parameters. The <tt>LABIN</tt> parameter is used by the
+<tt>LABELLIST</tt> keyword
+in the command template files to generate the <tt>LABIN</tt> keyword in the
+program command file. The required MTZ input columns are often dependent
+on the mode of running the task and so the <tt>LABIN</tt> might need to be
+updated after the user has set the run mode and just before the job is
+actually run.</dd>
+</dl>
+
+<h3><a name="prerequisites"></a>Handling Prerequisites for Running Tasks</h3>
+
+<h4><a name="taskname_prereq"></a>The <em>taskname_prereq</em> Procedure</h4>
+
+<p>It is not necessary to define a procedure <em>taskname_prereq</em> in a task
+window file however if it is defined, it will be called whenever the main
+interface tries to determine whether the task should be made available to the
+user from the task list in the main window.</p>
+
+<p>The procedure should perform any necessary checks, for example checking
+whether a particular executable is available on the user's path, to ensure that
+the task can be run. It should return 1 if the prerequisites are met (i.e. the
+task can be run), and zero otherwise.</p>
+
+<p>For tasks where the prerequisites are not met, the button to launch the
+task will be non-functioning and the text will be displayed as "greyed-out".
+Also the message line text with the task description will have the text
+"(disabled)" appended to indicate that the task is not available.</p>
+
+</body>
+</html>

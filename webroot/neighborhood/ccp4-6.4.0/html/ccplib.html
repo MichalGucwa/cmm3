@@ -1,0 +1,1186 @@
+<html>
+<head><title>CCP4 Program Suite: ccplib</title></head>
+<body>
+
+<!-- ::INDEX_INFO::CCPLIB::Library::::utility subroutine library:::::::: -->
+
+<H1> CCPLIB (CCP4: Library)</H1>
+
+<H2> NAME</H2>
+
+<b>ccplib </b> - CCP4 utility subroutine library
+
+<H2>DESCRIPTION</H2>
+
+<p> <b>ccplib</b> contains various low-level utility routines which are
+potentially machine-dependent. Since CCP4 version 5.0, the original <tt>ccplib.f</tt>
+has been split amongst several files. The most commonly used routines
+have been re-implemented in C, with a Fortran interface, while other 
+routines remain in <tt>ccplib.f</tt>. This document describes the routines
+as seen from a Fortran programmer's perspective. For information on
+the C functions, see <a href="C_library/index.html">C libraries</a> and
+<a href="C_library/utilities_page.html">CCP4 Library Utilities</a>.
+
+<H2>Contents of this file</H2>
+
+<ul>
+  <li><a href="#general">General information</a>
+  <ul>
+     <li><a href="#pre_processor">Using the pre-processor in programs</a>
+     <li><a href="#initialisation">Initialisation</a>
+     <li><a href="#termination">Program termination</a>
+     <li><a href="#file_opening">File opening</a>
+     <li><a href="#version">Version printing</a>
+     <li><a href="#skeleton">Skeleton example CCP4 program</a>
+  </ul>
+  <li><a href="#list_of_subroutines">List of subroutines</a>
+  <li><a href="#description">Description of the subroutines</a>
+</ul>
+
+<a name="general"></a><H2>General information</H2>
+
+<a name="pre_processor"></a><H3>Using the pre-processor in programs</H3>
+
+<p> To use the pre-processor in existing code you will need to add a call
+to the routine <a href="#ccpfyp">CCPFYP</a> as the first executable 
+statement in the program.
+This routine performs all the pre-processing and should be called before
+any other CCP4 library routines.
+
+<a name="initialisation"></a><H3>Initialisation</H3>
+
+<p>Fortran programs should call the routine <a href="#ccpfyp">CCPFYP</a>
+initially (see "USING THE PRE-PROCESSOR"), allowing one to run them using
+the mechanism
+<pre>        &lt;program&gt; hklin &lt;file&gt; hklout &lt;file&gt; ...</pre>
+
+<a name="termination"></a><H3>Program Termination</H3>
+
+<p>There should be no <tt>STOP</tt> statements within the code; rather, call
+the subroutine <a href="#ccperr">CCPERR</a>. This has the form
+<pre>        CALL CCPERR( &lt;num&gt; '&lt;string&gt;')</pre>
+where <tt>&lt;num&gt;</tt> is an exit value (0 for normal termination) and the
+<tt>&lt;string&gt;</tt> is a suitable message. Programs should terminate
+successfully with the call
+<pre>        CALL CCPERR(0, 'Normal termination')</pre>
+
+<p>To terminate a program because an error has been detected use
+<pre>        CALL CCPERR(1, '&lt;string&gt;')</pre>
+where &lt;string&gt; should contain any useful information about why the
+program is being terminated abnormally.
+
+<p>CCPERR can also be used to send 'warnings' (CCPERR level 2) and messages
+(CCPERR level 3).
+
+<a name="file_opening"></a><H3>File opening</H3>
+
+<p>There should be no <tt>OPEN</tt> statements in Fortran code. Instead call
+<a href="#ccpdpn">CCPDPN</a> for general files, and appropriate library routines
+for the standard data formats (MTZ, PDB, CCIF, CCP4 maps etc).
+
+<p>Use the normal Fortran <tt>CLOSE</tt> to close files opened with CCPDPN.
+The standard data formats have specific library routines for closing files
+which should be used in preference to <tt>CLOSE</tt> in those cases.
+
+<a name="version"></a><H3>Version printing</H3>
+
+<p>The version of the CCP4 library being used can be queried using
+the <a href="#ccp4_version">CCP4_VERSION</a> routine. The program version
+number may be different, and can be set (and later retrieved) using 
+<a href="#ccp4_prog_version">CCP4_PROG_VERSION</a>.
+A call to <a href="#ccpvrs">CCPVRS</a> will output a banner including
+this version information. The command line switch -i can also be used to
+get program and version information.
+
+<a name="skeleton"></a><H3>Skeleton example CCP4 program</H3>
+
+<pre>
+      PROGRAM &lt;<i>name</i>&gt;
+      &lt;<i>declarations</i>&gt;
+C define the program version
+      CALL CCP4_PROG_VERSION('7.2',0)
+C call the pre-processor:
+      CALL CCPFYP
+C advertise the version:
+      CALL CCPRCS(LUNSTO(1), '&lt;<i>name</i>&gt;', '$Date$')
+C open an input file:
+      CALL CCPDPN(IN1, 'INFILE1','READONLY','F','F')
+      .
+      .
+      .
+C close the file
+      CLOSE(IN1)
+      CALL CCPERR(0, 'Normal termination')
+      END
+</pre>
+
+<a name="list_of_subroutines"></a><H2>List of subroutines</H2>
+
+<table border=1>
+<tr><th>Routine  <th>Description
+<tr><td>    <a href="#ccfill">CCFILL</a>    <td>Set specified number of elements of byte array
+<tr><td>    <a href="#ccp4_version">CCP4_VERSION</a> <td>Return current CCP4 library version as string
+<tr><td>    <a href="#ccp4_prog_version">CCP4_PROG_VERSION</a> <td>Set or retrieve program version as string
+<tr><td>    <a href="#ccpalc">CCPALC</a>    <td>Call subroutine with allocated memory
+<tr><td>    <a href="#ccpale">CCPALE</a>    <td>Call subroutine with allocated memory set from environment
+<tr><td>    <a href="#ccpbyi">CCPBYI</a>    <td>Copy array of unsigned (or signed) bytes into integer array
+<tr><td>    <a href="#ccpbyt">CCPBYT</a>    <td>Indicate whether byte handling is available
+<tr><td>    <a href="#ccpcpi">CCPCPI</a>    <td>Copy array of BYTE or INTEGER*2 elements into integer array
+<tr><td>    <a href="#ccpdat">CCPDAT</a>    <td>Get calendar date
+<tr><td>    <a href="#ccpdex">CCPDEX</a>    <td>Periodicity reduction of 1024 (for PROLSQ)
+<tr><td>    <a href="#ccpdpn">CCPDPN</a>    <td>more friendly CCPOPN
+<tr><td>    <a href="#ccpe2i">CCPE2I</a>    <td>read integer from logical name value
+<tr><td>    <a href="#ccperr">CCPERR</a>    <td>Report error or normal termination and stop
+<tr><td>    <a href="#ccpexs">CCPEXS</a>    <td>test if file exists
+<tr><td>    <a href="#ccpfyp">CCPFYP</a>    <td>Set up environment & parse command line arguments
+<tr><td>    <a href="#ccpgi2">CCPGI2</a>    <td>Get unsigned integer*2 value from 0 to 65535 from N'th
+                      unsigned integer*2 element of array.
+<tr><td>    <a href="#ccpgtb">CCPGTB</a>    <td>Get unsigned byte value from 0 to 255 from N'th byte of
+                      array.
+<tr><td>    <a href="#ccpi2i">CCPI2I</a>    <td>Copy an array of INTEGER*2 elements into an integer array
+<tr><td>    <a href="#ccpiby">CCPIBY</a>    <td>Copy array of integers into array of bytes.
+<tr><td>    <a href="#ccpii2">CCPII2</a>    <td>Copy array of integers into array of INTEGER*2 elements.
+<tr><td>    <a href="#ccplwc">CCPLWC</a>    <td>Convert a string to lower case
+<tr><td>    <a href="#ccpmde">CCPMDE</a>    <td>If byte handling available return nos. of bytes for map
+                      modes
+<tr><td>    <a href="#ccpmvb">CCPMVB</a>    <td>Move bytes from one non-character array to another if
+                      byte handling is available
+<tr><td>    <a href="#ccpmvi">CCPMVI</a>    <td>Move words from one integer array to another
+<tr><td>    <a href="#ccpmvr">CCPMVR</a>    <td>Move words from one real array to another
+<tr><td>    <a href="#ccpnun">CCPNUN</a>    <td>Return an unconnected i/o unit number
+<tr><td>    <a href="#ccponl">CCPONL</a>    <td>See if program is being run interactively
+<tr><td>    <a href="#ccppsf">CCPPSF</a>    <td>Parse file name into components
+<tr><td>    <a href="#ccprcs">CCPRCS</a>    <td>Like CCPVRS but use RCS-format date string
+<tr><td>    <a href="#csetnv">CSETNV</a>    <td>Associate logical name with file name
+<tr><td>    <a href="#ccppag">CCPPAG</a>    <td>Set paging parameters if available
+<tr><td>    <a href="#ccpsi2">CCPSI2</a>    <td>Set integer value from 0 to 65535 into the N'th
+                      unsigned integer*2 element of an array.
+<tr><td>    <a href="#ccpstb">CCPSTB</a>    <td>Set integer value from 0 to 255 into N'th byte of array.
+<tr><td>    <a href="#ccpsum">CCPSUM</a>    <td>Sum the elements of an array
+<tr><td>    <a href="#ccptim">CCPTIM</a>    <td>Get CPU and Elapsed times
+<tr><td>    <a href="#ccpto1">CCPTOI</a>    <td>Convert n'th byte or I*2 in a non-character array to an
+              integer
+<tr><td>    <a href="#ccpufl">CCPUFL</a>    <td>Suppress underflow messages
+<tr><td>    <a href="#ccpupc">CCPUPC</a>    <td>Convert a string to upper case
+<tr><td>    <a href="#ccpvrs">CCPVRS</a>    <td>Print program version number and date header
+<tr><td>    <a href="#ccppnm">CCPPNM</a>    <td>Entry: Return the program  name  previously set by CCPVRS
+<tr><td>    <a href="#ccpzbi">CCPZBI</a>    <td>Sets an array of bytes to zero
+<tr><td>    <a href="#ccpzi">CCPZI</a>     <td>Set 'n' words of an integer array to zero using a simple loop
+<tr><td>    <a href="#ccpzr">CCPZR</a>     <td>Set 'n' words of a real array to zero using a simple loop
+<tr><td>    <a href="#fdir">FDIR</a>      <td>Returns the directory part of a file name
+<tr><td>    <a href="#fextn">FEXTN</a>     <td>Returns the extension of a file name
+<tr><td>    <a href="#froot">FROOT</a>     <td>Returns the root of a file name
+<tr><td>    <a href="#litend">LITEND</a>    <td>determine endianness
+<tr><td>    <a href="#lenstr">LENSTR</a>    <td>length of string to last non-space
+<tr><td>    <a href="#lunsti">LUNSTI</a>    <td>Get logical unit number for input
+<tr><td>    <a href="#lunsto">LUNSTO</a>    <td>Get logical unit number for output
+<tr><td>    <a href="#nbitst">NBITST</a>    <td>Return the (unsigned) integer value held within a bit
+                          field in a word
+<tr><td>    <a href="#nocrlf">NOCRLF</a>    <td>write line suppressing cr/lf to standard output
+<tr><td>    <a href="#qprint">QPRINT</a>    <td>write debug messages
+<tr><td>    <a href="#qprlvl">QPRLVL</a>    <td>Entry: Return debug level used by QPRINT.
+<tr><td>    <a href="#stbits">STBITS</a>    <td>Set a bit field within a word to a given (unsigned)
+                          integer value</td>
+<tr><td>    <a href="#ccplic">CCPLIC</a>    <td>Check that license conditions have been agreed
+</table>
+
+<a name="description"></a><H2>Descriptions of the Subroutines</H2>
+
+<dl>
+<dt><a name="ccfill"></a><b>SUBROUTINE CCFILL(ARR1,SCAL,NTIMES)</b>
+<dd>Set specified number of elements of byte array
+<p>
+<table noborder>
+       <tr valign="TOP"><td>ARR1    <td>(o) <td>(byte)    
+        <td>array to which bytes are to be copied
+       <tr valign="TOP"><td>SCAL    <td>(i)   <td>(byte)    
+        <td>byte value to be copied into ARR1
+       <tr valign="TOP"><td>NTIMES  <td>(i)   <td>(integer) 
+        <td>the number of bytes to be copied
+</table>
+<p>
+
+<dt><a name="ccp4_version"></a><b>SUBROUTINE CCP4_VERSION(VERSION)</b>
+<dd>   Return current CCP4 version as string
+       <table noborder>
+       <tr valign="TOP"><td>VERSION <td>(o)   <td>(character*(*)) 
+        <td> current version of CCP4 suite
+       </table>
+<p>
+
+<dt><a name="ccp4_prog_version"></a><b>SUBROUTINE CCP4_PROG_VERSION(VERSION,IFLAG)</b>
+<dd>   Set or retrieve program version as string
+       <table noborder>
+       <tr valign="TOP"><td>VERSION <td>(i/o)   <td>(character*(*)) 
+        <td> version of individual program
+       <tr valign="TOP"><td>IFLAG <td>(i)   <td>(integer) 
+        <td> if 0 then set version using VERSION argument, else 
+             if 1 then return version in VERSION argument
+       </table>
+<p>
+
+<dt><a name="ccpalc"></a><b>SUBROUTINE CCPALC(ROUTNE, N, TYPE, LENGTH)</b>
+<dd>   Arrange to call subroutine ROUTNE with N  array  arguments
+       each  of length LENGTH (i) and type indicated by TYPE (i):
+       'i' == integer, 'r' ==  real,  'd'  ==  double  precision,
+       'c'==complex.   TYPE  elements may have either case.  The calling
+       of ROUTNE and allocation are performed by the machine dependant
+       routine CCPAL1
+       (UNIX <a href="./library.html">library.c</a>, 
+        VMS <a href="./unix.html#CCPAL1">vms.for</a>,
+        MVS <a href="./unix.html#CCPAL1">w32mvs.f</a>).  Consider
+       <pre>        call ccpalc (fred, 3, types, lens)</pre>
+       with types = (/'i', 'r', 'c'/)  and lens =  (/1000,  2000,
+       3000/).  This effectively does
+       <pre>       call fred (1000, arr1, 2000, arr2, 3000, arr3)</pre>
+       with
+       <pre>        subroutine fred (n1, foo, n2, bar, n3, baz)
+               integer n1, n2, n3, foo (n1)
+               real bar (n2)
+               complex baz (n3)
+               ...</pre>
+       Obviously  all communication with ROUTNE must be by COMMON
+       (or, possibly, extra ENTRYs).   The  allocated  memory  is
+       freed  on  return from ROUTNE.  As a concession, it's initially
+       filled with zeroed bytes.
+<p>
+<table noborder>
+           <tr valign="TOP"><td>ROUTNE <td>(i)   <td>(external) 
+	    <td> routine to call
+           <tr valign="TOP"><td>     N <td>(i)   <td>(integer)
+	    <td> number of arguments to ROUTNE (&lt;=12)
+           <tr valign="TOP"><td>  TYPE <td>(i)   <td>(character*1 (*))
+	    <td> <dt> type of arguments to ROUTNE:
+                           <dd>'I': INTEGER <dd>'R': REAL 
+			   <dd>'D': DOUBLE PRECISION <dd>'C': COMPLEX
+           <tr valign="TOP"><td>LENGTH <td>(i)   <td>(integer*(*)) 
+	    <td> number of elements in each (array) argument of ROUTNE
+</table>
+<p>
+
+<dt><a name="ccpale"></a><b>SUBROUTINE CCPALE(ROUTNE, N, TYPE, LENGTH, LENDEF)</b>
+<dd>   Arrange to call subroutine ROUTNE with N  array  arguments
+       each  of length LENGTH (i) and type indicated by TYPE (i):
+       'i' == integer, 'r' ==  real,  'd'  ==  double  precision,
+       'c'==complex.  TYPE elements may have either case.  LENGTH
+       points to an array of environment variable (logical) names
+       from  which  integer values are read, 
+       <a href=#ccpe2i>CCPE2I</a>.  The lengths default
+       to values from LENDEF.  This is a convenient interface  to
+       <a href="#ccpalc">CCPALC</a>  to allow configuring of the 
+       memory requirements on
+       the command line where appropriate.  This may be useful if
+       the  memory requirements can't be determined initially and
+       it's necessary to guess.
+<p>
+<table noborder>
+          <tr valign="TOP"><td>ROUTNE <td>(i)   <td>(external)
+	   <td> routine to call
+          <tr valign="TOP"><td>     N <td>(i)   <td>(integer)
+	   <td> number of arguments to ROUTNE (&lt;=12)
+          <tr valign="TOP"><td>  TYPE <td>(i)   <td>(character*1 (*))
+	   <td> <dt>type of arguments to ROUTNE:
+                   <dd>'I': INTEGER <dd>'R': REAL <dd>'D': DOUBLE PRECISION
+                   <dd>'C': COMPLEX
+          <tr valign="TOP"><td>LENGTH <td>(i)   <td>(character*(*))
+	   <td> logical names representing the
+                number of elements in each (array) argument of ROUTNE
+          <tr valign="TOP"><td>LENDEF <td>(i)   <td>(integer (*)) 
+	   <td> default lengths for the argument
+                arrays used if the appropriate LENGTH argument doesn't
+                represent a defined logical
+          <tr valign="TOP"><td>PRINT  <td>(i)   <td>(logical)
+	   <td> whether or not to print the values of the array lengths
+</table>
+<p>
+
+<dt><a name="ccpbyi"></a><b>SUBROUTINE CCPBYI(IA,IBYT,NB)</b>
+<dd>       Copy array of unsigned  (or  signed)  bytes  into  integer
+       array <br>To be implemented if <a href="#ccpbyt">CCPBYT</a> == .TRUE.
+       [for LAUE program?].
+<p>
+<table noborder>
+       <tr valign="TOP"><td>IA    <td>(o) <td>(integer)
+        <td> array to return integer values
+       <tr valign="TOP"><td>IBYT  <td>(i) <td>(byte)    
+        <td>array holding byte data (may be an integer array,
+            for example, with data packed into adjacent bytes).
+       <tr valign="TOP"><td>NB    <td>(i) <td>(integer) 
+        <td>if &gt;0, the number of unsigned bytes to be copied <br>
+            if &lt;0, -the number of signed bytes to be copied
+</table>
+<p>
+
+<dt><a name="ccpbyt"></a><b>LOGICAL FUNCTION CCPBYT(NBW)</b>
+<dd>   Indicate whether byte handling is available.  Used in 
+       <a href="./maplib.html">maplib</a>.
+      <br> NOTE: is assumed to be available (.TRUE., NBW=4).
+<p>
+       NBW (o) (integer) <td>returns the number of bytes per word or a value
+                         of 1 if no byte handling is available (4).
+<p>
+<table noborder>
+       <tr valign="TOP"><td>Returns CCPBYT  <td>== .TRUE. 
+        <td>byte handling and associated ccplib routines available (assumed).
+       <tr valign="TOP"><td>                <td>== .FALSE. 
+        <td>no byte handling available.
+</table>
+     
+<p>
+<dt><a name="ccpcpi"></a><b>SUBROUTINE CCPCPI(IA,IB,MINEL,MAXEL,ITYP)</b>
+<dd>   Copy  an array of BYTE or INTEGER*2 elements into an integer array.
+       NB is bytewise operation<br>
+       To be implemented if <a href="#ccpbyt">CCPBYT</a>  function
+       returns .TRUE. [for LAUE program?]
+<table noborder>
+        <tr valign="TOP"><td>    IA <td>(o)   <td>(integer (*))
+	 <td> to return values
+        <tr valign="TOP"><td>    IB <td>(i)   <td>(integer (*))
+	 <td> holding data with data packed into adjacent
+              BYTE or INTEGER*2 elements (in routine is byte)
+        <tr valign="TOP"><td> MINEL <td>(i)   <td>(integer)
+	 <td> Minimum element to copy
+        <tr valign="TOP"><td> MAXEL <td>(i)   <td>(integer)
+	 <td> Maximum element to copy
+        <tr valign="TOP"><td>  ITYP <td>(i)   <td>(integer) 
+	 <td>Type =1 unsigned byte<br>
+                                   =2 signed byte<br>
+                                   =3 unsigned two byte integer<br>
+                                   =4 signed two byte integer
+</table>
+       Note:  if  MINEL &gt MAXEL  elements will be copied in reverse
+       order
+<p>
+
+<dt><a name="ccpdat"></a><b>SUBROUTINE CCPDAT(CALDAT)</b>
+<dd>   Get calendar date
+
+<table noborder>
+       <tr valign="TOP"><td>CALDAT <td>(o) <td>(character*8) 
+        <td>variable returning date as dd/mm/yy (returned as a blank string if
+            not available).
+</table>
+<p>
+
+<dt><a name="ccpdex"></a><b>SUBROUTINE CCPDEX(INDX,N)</b>
+<dd>   Periodicity reduction of 1024 [for PROLSQ]
+
+<table noborder>
+       <tr valign="TOP"><td>INDX <td>(i/o) <td>(integer) 
+        <td>array holding numbers for periodicity reduction
+       <tr valign="TOP"><td>N    <td>(i)   <td>(integer) 
+        <td>no. of elements in INDX
+</table>
+<p>
+
+<dt><a name="ccpdpn"></a><b>SUBROUTINE CCPDPN(IUN,LOGNAM,STATUS,TYPE,LREC,IFAIL)</b>
+<dd>   
+       Calls <a href="./unix.html#ccpopn">CCPOPN</a> to open a file, 
+       but with mnemonic arguments.
+<table noborder>
+       <tr valign="TOP"><td>IUN    <td>(i) (integer)        
+        <td>unit number
+       <tr valign="TOP"><td>LOGNAM <td>(i) (character*(*))  
+        <td>logical file name
+       <tr valign="TOP"><td>STATUS <td>(i) (character*(*))  
+        <td> <dt>file status flag <dd>'UNKNOWN'
+                             <dd>'SCRATCH'
+                             <dd>'OLD'
+                             <dd>'NEW'
+                             <dd>'READONLY'
+                             <dd>'PRINTER'
+       <tr valign="TOP"><td>TYPE   <td>(i) (character*(*)) 
+        <td><dt>file type flag 
+	               <dd>='F', 'SEQUENTIAL' 'FORMATTED'
+                       <dd>='U', 'SEQUENTIAL' 'UNFORMATTED'
+                       <dd>='DF', 'DIRECT'     'FORMATTED'
+                       <dd>='DU', 'DIRECT'     'UNFORMATTED'
+       <tr valign="TOP"><td>LREC  <td>(i) (integer) 
+        <td>record length for direct access file (no. of
+            characters for a formatted file or words for
+            an unformatted file). <br>
+	    Not relevant for a sequential file.
+       <tr valign="TOP"><td>IFAIL <td>(i/o) (integer) 
+        <td> <dt>on input <dd>=0, stop on open failure
+                          <dd>=1, continue after open failure
+                                  (only on file not found)
+             <dt>on output <dd> unchanged if file open OK
+                           <dd>=-1, error in opening file
+</table>
+<p>
+
+<dt><a name="ccpe2i"></a><b>INTEGER FUNCTION CCPE2I (NAME, DEFVAL)</b>
+<dd>   Return an integer extracted from environment variable NAME.
+       If  NAME isn't defined, use DEFVAL as the default.  If the
+       value of NAME isn't a representation of an integer, abort.
+<table noborder>
+       <tr valign="TOP"><td>    NAME   <td>(I)  <td>(character *(*))
+       <tr valign="TOP"><td>    DEFVAL <td>(I)  <td>(integer)
+</table>
+<p>
+
+<dt><a name="ccperr"></a><b>SUBROUTINE CCPERR(ISTAT,ERRSTR)</b>
+<dd>   Report error or normal termination and stop.  Also reports
+       latest system error iff ISTAT<0.
+<table noborder>
+       <tr valign="TOP"><td>     ISTAT <td>(I)   <td>(integer)
+        <td> exit status (0 for normal termination,
+                        1 for fatal error)
+       <tr valign="TOP"><td>     ERRST <td>(I)   <td>(character)*(*)
+        <td> message
+</table>
+<p>
+
+<dt><a name="ccpexs"></a><b>LOGICAL FUNCTION CCPEXS(NAME)</b>
+<dd>   Test if file or file assigned to logical name exists
+
+<table noborder>
+       <tr valign="TOP"><td>NAME <td>(i) (character*(*)) 
+        <td>file name/logical name
+</table>
+<table noborder>
+       <tr valign="TOP"><td>Returns CCPEXS == <td>.TRUE.  if file exists
+       <tr valign="TOP"><td>                <td>.FALSE. if file does not exist
+</table>
+<p>
+
+<dt><a name="ccpfyp"></a><b>SUBROUTINE CCPFYP</b>
+<dd>   Set up the environment in which the program runs 
+       (environ.def, default.def locations, etc) and  then
+       parses the command line arguments.
+<p>
+       Note: A  call to CCPFYP should be the first executable statement
+       in ccp4 programs.
+<p>
+
+<dt><a name="ccpgi2"></a><b>SUBROUTINE CCPGI2(IVAL,IA,N)</b>
+<dd>   Get unsigned integer*2 value from 0  to  65535  from  N'th
+       unsigned integer*2 element of array.  <br>To be implemented if
+       <a href="#ccpbyt">CCPBYT</a> == .TRUE.  Used in density modification
+       routines.
+<p>
+<table noborder>
+       <tr valign="TOP"><td>IVAL <td>(o)   <td>(integer)      
+        <td>returned integer values from 0 to 65535
+       <tr valign="TOP"><td>IA   <td>(i) <td>(integer*2(*)) 
+        <td>array from which the unsigned INTEGER*2 value is to be retrieved
+       <tr valign="TOP"><td>N    <td>(i)   <td>(integer)      
+        <td>position in 'IA' where the unsigned INTEGER*2 value is to be 
+	 retrieved
+</table>
+<p>
+
+<dt><a name="ccpgtb"></a><b>SUBROUTINE CCPGTB(IVAL,IA,N)</b>
+<dd>   Get  unsigned  byte  value from 0 to 255 from N'th byte of
+       array. <br>To be implemented if
+       <a href="#ccpbyt">CCPBYT</a> == .TRUE.  Used in density modification
+       routines.
+<p>
+<table noborder>
+       <tr valign="TOP"><td>IVAL <td>(o)   <td>(integer) 
+        <td>the returned integer value from 0 to 255
+       <tr valign="TOP"><td>IA   <td>(i) <td>(byte(*)) 
+        <td>array from which the byte value is to be retrieved
+       <tr valign="TOP"><td>N    <td>(i)   <td>(integer) 
+        <td>position in IA where the byte value is to be retrieved
+</table>
+<p>
+
+<dt><a name="ccpi2i"></a><b>SUBROUTINE CCPI2I(IA,I2,NE,SIGNED,SWAPB)</b>
+<dd>   Copy an array of INTEGER*2 elements into an integer array. <br>
+       To be implemented if <a href="#ccpbyt">CCPBYT</a> == .TRUE. [for
+       LAUE program?]
+<p>
+<table noborder>
+       <tr valign="TOP"><td>IA     <td>(o) <td>(integer(*)) 
+        <td>Array to return INTEGER values
+       <tr valign="TOP"><td>I2     <td>(i) <td>(integer*2)  
+        <td>Array holding INTEGER*2 data (may be an INTEGER array for 
+	    example with data packed into adjacent INTEGER*2 elements).
+       <tr valign="TOP"><td>NE     <td>(i) <td>(integer)    
+        <td>The number of elements to be copied
+       <tr valign="TOP"><td>SIGNED <td>(i) <td>(logical)   
+        <td>==.TRUE.  Copy as signed INTEGER*2 values<br>
+            ==.FALSE. Copy as unsigned INTEGER*2 values
+       <tr valign="TOP"><td>SWAPB  <td>(i) <td>(logical)   
+        <td>==.TRUE.  Swap bytes in the INTEGER*2 elements<br>
+            ==.FALSE. Do not swap bytes
+</table>
+<p>
+
+<dt><a name="ccpiby"></a><b>SUBROUTINE CCPIBY(IBYT,IA,NB)</b>
+<dd>   Copy array of integers into array of bytes. 
+       NOTE: No overflow checking is done (least significant figures 
+       only stored). <br> To must be implemented if
+       <a href="#ccpbyt">CCPBYT</a> == .TRUE. [for LAUE program?] 
+
+<table noborder>
+       <tr valign="TOP"><td>IBYT <td>(o) <td>(byte(*))    
+        <td>Array returning byte data (may be an integer array for example
+            with data packed into adjacent bytes).
+       <tr valign="TOP"><td>IA   <td>(i) <td>(integer(*)) 
+        <td>array holding integer values
+       <tr valign="TOP"><td>NB   <td>(i) <td>(integer)    
+        <td>if &gt;0, the number of elements to be
+                             copied to unsigned bytes<br>
+            if &lt;0, -the number of elements to be copied
+                             to signed bytes
+</table>
+<p>
+
+<dt><a name="ccpii2"></a><b>SUBROUTINE CCPII2(I2,IA,NE,SIGNED,SWAPB)</b>
+<dd>   Copy array of integers into array of  INTEGER*2  elements.
+       NOTE: No overflow checking is done. <br>
+       To be implemented if <a href="#ccpbyt">CCPBYT</a> == .TRUE.)
+       [for LAUE program?]
+
+<table noborder>
+       <tr valign="TOP"><td>I2     <td>(o) <td>(integer*2)  
+        <td>Array returning INTEGER*2 data
+            (may be an INTEGER array for example with data
+            packed into adjacent INTEGER*2 elements
+       <tr valign="TOP"><td>IA     <td>(i) <td>(integer(*)) 
+        <td>Array holding INTEGER values
+       <tr valign="TOP"><td>NE     <td>(i) <td>(integer)    
+        <td>The number of elements to be copied
+       <tr valign="TOP"><td>SIGNED <td>(i) <td>(logical)    
+        <td>==.TRUE.  Copy as signed integer*2 values<br>
+            ==.FALSE. Copy as unsigned integer*2 values
+       <tr valign="TOP"><td>SWAPB  <td>(i) <td>(logical)    
+        <td>==.TRUE.  Swap bytes in the integer*2 elements<br>
+            ==.FALSE. Do not swap bytes
+</table>
+<p>
+
+<dt><a name="ccplwc"></a><b>SUBROUTINE CCPLWC(STRING)</b>
+<dd>   Convert a text string to lower case in situ
+<p>
+<table noborder>
+       <tr valign="TOP"><td>STRING <td>(i/o) <td>(character*(*))
+</table>
+<p>
+
+<dt><a name="ccpmde"></a><b>SUBROUTINE CCPMDE(MODE,NBYT)</b>
+<dd>   If byte handling is available then this subroutine
+     returns the number of bytes per data item for the different modes
+     used, in particular, in the map handling subroutines. 
+     [is routine actually called? no reference in map routines]<br> 
+     NOTE. byte handling is assumed to be available with 4 byte/word,
+     see <a href="#ccpbyt">CCPBYT</a>. 
+<p>
+<table noborder>
+       <tr valign="TOP"><td>MODE <td>(i) <td>(integer) <td>= 0,  bytes<br>
+                          = 1,  short (2 byte) integers<br>
+                          = 2,  real/integer (single word)<br>
+                          = 3,  short complex (2 * 2 byte integers)<br>
+                          = 4,  complex (two words)
+       <tr valign="TOP"><td>NBYT <td>(o) (<td>integer) 
+        <td> <dt> &gt;0,
+              <dd> CCPBYT == .TRUE. number of bytes infor the MODE
+	      <dd> CCPBYT == .FALSE. number of words 
+             <dt> = 0,  no value available for this mode
+             <dt> = -1, invalid mode
+</table>
+<p>
+<table noborder>
+       <tr valign="TOP">
+        <td>Typical values:  
+        <td>1  2  4  4  8   
+	<td>if byte handling available with 4 bytes/word
+       <tr valign="TOP">
+        <td>                 
+        <td>0  0  1  0  2   
+	<td>if byte handling unavailable
+</table>
+<p>
+
+<dt><a name="ccpmvb"></a><b>SUBROUTINE CCPMVB(ARR1,I1,ARR2,I2,NTOMOV)</b>
+<dd>   Move bytes from one non-character array to another if byte
+       handling is available (assumed available). <br>
+       [is routine actually called? no reference in map routines]
+
+<table noborder>
+       <tr valign="TOP">
+        <td>ARR1   
+	<td>(i/o) 
+	<td>(byte(*)) 
+	<td>Array to which bytes are to be copied
+       <tr valign="TOP">
+        <td>I1     
+	<td>(i)   
+	<td>(integer) 
+	<td>The start byte number in ARR1 where bytes are to be copied
+       <tr valign="TOP">
+        <td>ARR2   
+	<td>(i)   
+	<td>(byte(*)) 
+	<td>Array from which bytes are to be copied
+       <tr valign="TOP">
+        <td>I2     
+	<td>(i)   
+	<td>(integer) 
+	<td>The start byte number in ARR2 from which 
+	    the bytes are to be copied
+       <tr valign="TOP">
+        <td>NTOMOV 
+	<td>(i)   
+	<td>(integer) 
+	<td>The number of bytes to be copied
+</table>
+<p>
+
+<dt><a name="ccpmvi"></a><b>SUBROUTINE CCPMVI(ARR1,ARR2,NUM)</b>
+<dd>   Assign the first NUM words of ARR2 to ARR1
+
+<table noborder>
+       <tr valign="TOP"><td>ARR1 <td>(o) <td>(integer(*))
+       <tr valign="TOP"><td>ARR2 <td>(i) <td>(integer(*))
+       <tr valign="TOP"><td>NUM  <td>(i) <td>(integer)
+</table>
+<p>
+
+<dt><a name="ccpmvr"></a><b>SUBROUTINE CCPMVR(ARR1,ARR2,NUM)</b>
+<dd>   Assign the first NUM words of ARR2 to ARR1
+
+<table noborder>
+       <tr valign="TOP"><td>ARR1 <td>(o) <td>(real(*))
+       <tr valign="TOP"><td>ARR2 <td>(i) <td>(real(*))
+       <tr valign="TOP"><td>NUM  <td>(i) <td>(integer)
+</table>
+<p>
+
+<dt><a name="ccpnun"></a><b>INTEGER FUNCTION CCPNUN()</b>
+<dd>   Return  a currently unconnected i/o unit number.  Use this
+       to select an arbitrary unit for i/o to avoid clashes  with
+       other  code.   (The  value returned will be the same until
+       the unit in question is OPENed or a lower-numbered one  is
+       CLOSEd.)
+<p>
+
+<dt><a name="ccponl"></a><b>LOGICAL FUNCTION CCPONL(IDUM)</b>
+<dd>   See if program is being run interactively if this information is 
+       available.  Tests if ft06 is tty.
+<table noborder>
+       <tr valign="TOP"><td>IDUM <td>(i) <td>(integer) <td>Dummy parameter
+</table>
+<table noborder>
+       <tr valign="TOP">
+        <td>Returns 
+	<td>.TRUE.  
+	<td>if program is being run on-line
+       <tr valign="TOP">
+        <td>
+	<td> .FALSE. 
+	<td>if batch mode or status unknown
+</table>
+<p>
+
+<dt><a name="ccppsf"></a><b>SUBROUTINE CCPPSF(FILNAM,PATH,NAME,TYPE,VERS)</b>
+<dd>   Parse file name into components
+
+       <br> Note: This routine contains machine dependent code
+
+<table noborder>
+       <tr valign="TOP">
+        <td>FILNAM 
+	<td>(i) 
+	<td>(character*(*)) 
+	<td>file name string (no embedded blanks assumed)
+       <tr valign="TOP">
+        <td>PATH   
+	<td>(o) 
+	<td>(character*(*)) 
+	<td>returns path or,
+            for VAX VMS the part of the file specification
+            up to the end of the directory specification
+            (includes terminating ] or : or /)
+            <br> (blank if none)
+       <tr valign="TOP">
+        <td>NAME   
+	<td>(o) 
+	<td>(character*(*)) 
+	<td>returns name (blank if none)
+       <tr valign="TOP">
+        <td>TYPE   
+	<td>(o) 
+	<td>(character*(*)) 
+	<td>returns file type/extension (blank if none)
+       <tr valign="TOP">
+        <td>VERS   
+	<td>(o) 
+	<td>(character*(*)) 
+	<td>returns the version (blank if none)
+</table>
+
+<p>
+       After the removal of the path and  version  parts  of  the
+       string then, if there is at least one dot, the name is the
+       string up to the last dot remaining and the  type  is  the
+       part  of  the  string  after the dot. If no dot is present
+       then the remaining string is the  name  and  the  type  is
+       blank.
+
+<p>
+<dt><a name="ccprcs"></a><b>SUBROUTINE CCPRCS(ILP,PROG,RCSDAT)</b>
+<dd>   Print  program  name  and  date  of  current version (also
+       prints run date if available).
+<p>
+       Interface to <a href="#ccpvrs">CCPVRS</a> passing date in dd/mm/yy
+       format (DATE).  Takes RCS-format date string, e.g.
+       '$Date$' or its form expanded with 
+       RCS option `-kv', as  for  a  CVS export, in which case it will 
+       have the leading `$Date$' stripped.  
+       Initially, RCSDAT should be '$Date$'.<br>  
+       See the RCS documentation.
+
+<table noborder>
+       <tr valign="TOP">
+        <td>ILP   
+	<td>(i) 
+	<td>(integer)        
+	<td>Unit number of printer output
+       <tr valign="TOP">
+        <td>PROG  
+	<td>(i) 
+	<td>(character*(*))  
+	<td>Variable holding program name (max of 10 characters)
+       <tr valign="TOP">
+        <td>VDATE 
+	<td>(i) 
+	<td>(character*(*))  
+	<td>Character variable holding RCS date string
+</table>
+<p>
+
+<dt><a name="csetnv"></a><b>SUBROUTINE CSETNV(LNAME,FILNAM,ENAME,ETYPE,EXTN,ICOUNT,LSKIP)</b>
+<dd>   Associate `logical name' LNAME with value FILNAM using  an
+       environment variable LNAME.  It is passed arrays of (name,
+       type, extension) for ICOUNT number of name lines read from
+       environ.def.   Doesn't re-define existing name if LSKIP is
+       true.
+
+<table noborder>
+       <tr valign="TOP"><td>LNAME  <td>(i) <td>(character*(*)) <td>
+        Logical name (environment variable).
+       <tr valign="TOP"><td>FILNAM <td>(i) <td>(character*(*)) <td>
+        File name, if extension is omitted it is appended
+       <tr valign="TOP"><td>ENAME  <td>(i/o) <td>(character(150)*20) <td>
+        list of environment variables; if LNAME is not in list 
+        it is appended (also to ETYPE & EXTN arrays).
+       <tr valign="TOP"><td>ETYPE  <td>(i/o) <td>(character(150)*5) <td>
+        list of in/out types.
+       <tr valign="TOP"><td>EXTN   <td>(i/o) <td>(character(150)*4) <td>
+        list of extensions.
+       <tr valign="TOP"><td>ICOUNT <td>(i/o) <td>(integer) <td>
+        lengths of arrays ENAME, ETYPE & EXTN.
+       <tr valign="TOP"><td>LSKIP  <td>(i) <td>(logical) <td>
+        if .TRUE. existing name not re-defined.
+</table>
+<p>
+
+<dt><a name="ccppag"></a><b>SUBROUTINE CCPPAG(IUN,NCOL,NLIN)</b>
+<dd>   Return the number of columns and lines for a printer  output
+       page on a given fortran unit number if the information
+       is available
+
+<table noborder>
+       <tr valign="TOP"><td>IUN  <td>(i) <td>(integer) <td>Fortran unit number
+       <tr valign="TOP"><td>NCOL <td>(o) <td>(integer) <td>number of columns in the page
+       <tr valign="TOP"><td>NLIN <td>(o) <td>(integer) <td>number of lines in the page
+</table>
+<p>
+       Note: Returns 80,132 unless output is terminal whence 0,80.
+
+<p>
+<dt><a name="ccpsi2"></a><b>SUBROUTINE CCPSI2(IVAL,IA,N)</b>
+<dd>   Store integer in N'th  unsigned integer*2 element (range 0-65535) 
+       of an array.  To be implemented if <a href="#ccpbyt">CCPBYT</a> 
+       == .TRUE.  Used in density modification routines. 
+       <br>Note: no overflow check is done.
+
+<table noborder>
+       <tr valign="TOP">
+        <td>IVAL 
+	<td>(i)   
+	<td>(integer)      
+	<td>Unsigned integer value. Should be in range 0 to 65535
+       <tr valign="TOP">
+        <td>IA   
+	<td>(o) 
+	<td>(integer*2(*)) 
+	<td>Array into which the unsigned INTEGER*2  value is to be inserted
+       <tr valign="TOP">
+        <td>N    
+	<td>(i)   
+	<td>(integer)      
+	<td>Position in IA where the unsigned INTEGER*2 value is to be 
+	    inserted
+</table>
+
+<p>
+<dt><a name="ccpstb"></a><b>SUBROUTINE CCPSTB(IVAL,IA,N)</b>
+<dd>   Store integer value, from 0 to 255, into N'th byte of array.
+       To be implemented if <a href="#ccpbyt">CCPBYT</a> 
+       == .TRUE.  Used in density modification routines.
+       <br>Note: no overflow check is done.
+   
+<table noborder>
+       <tr valign="TOP">
+        <td>IVAL 
+	<td>(i)   
+	<td>(integer)   
+	<td>Unsigned integer, value from 0 to 255
+       <tr valign="TOP">
+        <td>IA   
+	<td>(o) 
+	<td>(byte*2(*)) 
+	<td>Array into which the byte value is to be inserted
+       <tr valign="TOP">
+        <td>N    
+	<td>(i)   
+	<td>(integer)   
+	<td>Position in IA where the byte value is to be inserted
+</table>
+
+<p>
+<dt><a name="ccpsum"></a><b>REAL FUNCTION CCPSUM(A,N,L)</b>
+<dd>   Returns sum of every l'th element of a vector array
+
+<table noborder>
+       <tr valign="TOP"><td>A <td>(i) <td>(real(N)) <td>Array to be summed
+       <tr valign="TOP"><td>N <td>(i) <td>(integer) 
+        <td>dimension of the array
+       <tr valign="TOP"><td>L <td>(i) <td>(integer) 
+        <td>sum every L'th element
+</table>
+<p>
+
+<dt><a name="ccptim"></a><b>SUBROUTINE CCPTIM(IFLAG,CPU,ELAPS)</b>
+<dd>   Get CPU and Elapsed times
+
+<table noborder>
+       <tr valign="TOP">
+        <td>IFLAG 
+	<td>(i/o) 
+	<td>(integer) 
+	<td>== 0, initialise<br>
+            &lt;&gt; 0, return times (documented 1, also -1 for 
+	          dummy call which is not implemented)
+       <tr valign="TOP">
+        <td>CPU   
+	<td>(o)   
+	<td>(real)    
+	<td>cpu time in seconds
+       <tr valign="TOP">
+         <td>ELAPS 
+	 <td>(o)   
+	 <td>(real)    
+	 <td>elapsed time in seconds
+</table>
+<p>
+
+<dt><a name="ccpto1"></a><b>SUBROUTINE CCPTOI(ARRAY,N,II,ITYP,IFAIL)</b>
+<dd>   Extract n'th byte or INTEGER*2 element from non-character (real)
+       array to and store in an integer.  It is used by the map file handling
+       routines and must be implemented if map modes 0,1,3  or  5
+       are to be used.
+       <br> Overflow check is performed.
+
+<table noborder>
+       <tr valign="TOP">
+        <td>ARRAY 
+	<td>(i)   
+	<td>(real(*)) 
+	<td>Real array containing the element to be extracted
+       <tr valign="TOP">
+        <td>N     
+	<td>(i)   
+	<td>(integer) 
+	<td>Number of element to be converted
+       <tr valign="TOP">
+        <td>II    
+	<td>(i)   
+	<td>(integer) 
+	<td>extracted value
+       <tr valign="TOP">
+        <td>ITYP  
+	<td>(i)   
+	<td>(integer) 
+	<td> <dt> Conversion type
+	      <dd>=1, byte to integer
+              <dd> =2, integer*2 to integer
+       <tr valign="TOP">
+        <td>FAIL  
+	<td>(i/o) 
+	<td>(integer) 
+	<td> <dt>On input  
+	      <dd>=0, Stop if conversion not  available<br>
+              <dd>=1, Return from subroutine always
+	     <dt>On output 
+	      <dd>unchanged if conversion carried out
+              <dd>=-1 if conversion not available
+</table>
+<p>
+
+<dt><a name="ccpufl"></a><b>SUBROUTINE CCPUFL()</b>
+<dd>   Suppress  underflow  error messages if required and if the
+       facility is available. <br>
+       (Currently dummy.)
+<p>
+
+<dt><a name="ccpupc"></a><b>SUBROUTINE CCPUPC(STRING)</b>
+<dd>   Convert a string to upper case
+
+<table noborder>
+       <tr valign="TOP">
+        <td>STRING 
+	<td>(i/o) 
+	<td>(character*(*)) 
+	<td>String to be converted
+</table>
+<p>
+
+<dt><a name="ccpvrs"></a><b>SUBROUTINE CCPVRS(ILP,PROG,VDATE)</b>
+<dd>   Print program version number and date header.  Extended to include
+       html tags.
+
+<table noborder>
+       <tr valign="TOP">
+        <td>ILP   
+	<td>(i) 
+	<td>(integer)        
+	<td>Unit number of printer output
+       <tr valign="TOP">
+        <td>PROG  
+	<td>(i) 
+	<td>(character*(*))  
+	<td>Variable holding program name (max of 10 characters)
+       <tr valign="TOP">
+        <td>VDATE 
+	<td>(i) 
+	<td>(character*(*))  
+	<td>Character variable holding date
+           of the current version as dd/mm/yy
+</table>
+<p>
+<dt><a name="ccppnm"></a><b>ENTRY CCPPNM(NAME)</b>
+<dd>   Entry point in <a href="#ccpvrs">CCPVRS</a> <br>
+       Returns   the   program  name  previously  set  by  CCPVRS
+       (/CCPRCS); if that isn't set, use arg(0).
+
+<table noborder>
+       <tr valign="TOP">
+        <td>NAME  
+	<td>(o)  
+	<td>(character*(*))  
+	<td>Program name
+</table>
+<p>
+
+<dt><a name="ccpzbi"></a><b>SUBROUTINE CCPZBI(ARR1,NUM)</b>
+<dd>   Set NUM bytes of the array ARR1 to zero
+
+<table noborder>
+       <tr valign="TOP"><td> ARR1 <td>(i/o) <td>(byte(*))
+       <tr valign="TOP"><td> NUM  <td>(i)   <td>(integer)
+</table>
+<p>
+
+<dt><a name="ccpzi"></a><b>SUBROUTINE CCPZI(IARR1,NUM)</b>
+<dd>   Set NUM words of an integer array IARR1 to zero.
+
+<table noborder>
+       <tr valign="TOP"><td>IARR1 <td>(i/o) <td>(integer(*))
+       <tr valign="TOP"><td>NUM  <td>(i)   <td>(integer)
+</table>
+<p>
+
+<dt><a name="ccpzr"></a><b>SUBROUTINE CCPZR(ARR1,NUM)</b>
+<dd>   Set NUM words of a real array ARR1 to zero.
+
+<table noborder>
+       <tr valign="TOP"><td>ARR1 <td>(i/o) <td>(real(*))
+       <tr valign="TOP"><td>NUM  <td>(i)   <td>(integer)
+</table>
+<p>
+
+<dt><a name="fdir"></a><b>CHARACTER FUNCTION FDIR(FILNAM)</b>
+<dd>   Returns the directory part of a file name.  <br>
+       Uses <a href="#ccppsf">CCPPSF</a>.
+
+<table noborder>
+       <tr valign="TOP"><td>FILNAM <td>(i) <td>(character*(*)) <td>filename
+</table>
+<p>
+
+<dt><a name="fextn"></a><b>CHARACTER FUNCTION FEXTN(FILNAM)</b>
+<dd>   Returns the extension of a file name. <br> 
+       Uses <a href="#ccppsf">CCPPSF</a>.  
+
+<table noborder>
+       <tr valign="TOP">
+        <td>FILNAM 
+	<td>(i) 
+	<td>(character*(*)) 
+	<td>filename
+</table>
+<p>
+
+<dt><a name="froot"></a><b>CHARACTER FUNCTION FROOT(FILNAM)</b>
+<dd>   Returns the root of a file name (file name minus an extension). <br>
+       Uses <a href="#ccppsf">CCPPSF</a>.
+
+<table noborder>
+       <tr valign="TOP">
+        <td>FILNAM 
+	<td>(i) 
+	<td>(character*(*))
+	<td>filename
+</table>
+<p>
+
+<dt><a name="litend"></a><b>LOGICAL FUNCTION LITEND(IDUM)</b>
+<dd>   Determine  endianness. Assumes integer*4 as the default.
+
+<table noborder>
+       <tr valign="TOP">
+        <td>Returns 
+	<td>.TRUE. 
+	<td>if little endian (VAX, FX2800, Ultrix, Convex)
+       <tr valign="TOP">
+        <td>        
+	<td>.FALSE. 
+	<td>if big endian (IBM,IRIS,ESV)
+</table>
+<p>
+
+<dt><a name="lenstr"></a><b>INTEGER FUNCTION LENSTR(STRING)</b>
+<dd>   Returns length of string to last non-space
+
+<table noborder>
+       <tr valign="TOP">
+        <td>STRING 
+	<td>(i) 
+	<td>(character*(*)
+</table>
+<p>
+
+<dt><a name="lunsti"></a><b>INTEGER FUNCTION LUNSTI(IDUM)</b>
+<dd>   Returns the fortran standard input unit number (=5)
+<p>
+
+<dt><a name="lunsto"></a><b>INTEGER FUNCTION LUNSTO(IDUM)</b>
+<dd>   Returns the fortran standard output unit number (=6)
+<p>
+
+<dt><a name="nbitst"></a><b>INTEGER FUNCTION NBITST(IWORD,LSB,NBITS)</b>
+<dd>   Return  the  (unsigned)  integer  value  held within a bit
+       field in a word <br>[for LAUE program?]
+
+<table noborder>
+       <tr valign="TOP">
+        <td>IWORD 
+	<td>(i) 
+	<td>(integer) 
+	<td>The word containing the bits to be examined
+       <tr valign="TOP">
+        <td>LSB   
+	<td>(i) 
+	<td>(integer) 
+	<td>The least significant bit offset for the bit field
+       <tr valign="TOP">
+        <td>NBITS 
+	<td>(i)	
+	<td>(integer) 
+	<td>The number of bits in the bit field
+            (Must be less than the word length)
+</table>
+<p>
+
+<dt><a name="nocrlf"></a><b>SUBROUTINE NOCRLF(LINE)</b>
+<dd>   Output LINE supressing cr/lf.  
+<table noborder>
+       <tr valign="TOP">
+        <td>LINE 
+	<td>(i)  
+	<td> (character*(*)) 
+	<td> Line to output.
+</table>
+<p>
+
+<dt><a name="qprint"></a><b>SUBROUTINE QPRINT(IFLAG,MSG)</b>
+<dd>   Conditionally print information.
+
+       Normally, MSG is printed iff IFLAG is not greater than the
+       `reference'  level  for messages.  This reference level is
+       set to the value of IFLAG on the first call  (which  won't
+       print anything).
+
+<table noborder>
+       <tr valign="TOP">
+        <td>IFLAG 
+	<td>(i) 
+	<td>(integer)       
+	<td>debug level 0-9 higher numbers give more output
+       <tr valign="TOP">
+        <td>MSG   
+	<td>(i) 
+	<td>(character*(*)) 
+	<td>the output message itself
+</table>
+<p>
+
+<dt><a name="qprlvl"></a><b>ENTRY QPRLVL(LEVEL)</b>
+<dd>   Entry point in <a href="#qprint">QPRINT</a> <br>
+       Returns  the  current  `debug level' used by QPRINT in the
+       integer output variable LEVEL.
+<p>
+
+<dt><a name="stbits"></a><b>SUBROUTINE STBITS (IWORD,LSB,NBITS,IVAL)</b>
+<dd>   Set a bit field within a word to a given (unsigned)  integer 
+       value <br>
+       [for LAUE program?]
+<table noborder>
+       <tr valign="TOP">
+        <td>IWORD 
+	<td>(i/o)  
+	<td>(integer) 
+	<td> The word in which the bits are to be set
+       <tr valign="TOP">
+        <td>  LSB 
+	<td>(i)    
+	<td>(integer) 
+	<td>The least significant bit offset for the bit field
+       <tr valign="TOP">
+        <td>NBITS 
+	<td>(i)    
+	<td>(integer)
+	<td>The number of bits in the bit field
+            (must be less than the word length)
+       <tr valign="TOP">
+        <td> IVAL 
+	<td>(I)    
+	<td>(integer) 
+	<td>The unsigned integer value to be set in
+            the bit field (The user should ensure that this
+            value will fit within the requested bit field)
+</table>
+<p>
+
+<dt><a name="ccplic"></a><b>LOGICAL FUNCTION CCPLIC(NAME)</b>
+<dd>   Returns TRUE if it finds evidence that the CCP4 license<br>
+       has been agreed to. It call CCPERR (1) (fail) if not.
+<table noborder>
+       <tr valign="TOP">
+        <td>NAME 
+	<td>(i)  
+	<td>(character*(*)) 
+	<td> Which license to test for. Only CCP4 currently works.
+</table>
+<p>
+</dl>
+
+<hr>
+
+</body>
+</html>

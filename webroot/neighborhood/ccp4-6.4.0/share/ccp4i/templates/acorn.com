@@ -1,0 +1,116 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+{ [IfSet $TITLE] } title  $TITLE
+LABELLINE labin $LABIN
+LABELLINE labout $LABOUT
+
+1
+1 #General ACORN keywords
+IF { $ADDCONTENT > 0 }
+1 CONTENT
+LOOP I 1 $ADDCONTENT
+ - 1 $CONT_SYMB($I) $CONT_NUMB($I)
+ENDLOOP
+ENDIF
+
+{ $IFGRIDDEF && [IfSet $GRID] } GRID $GRID
+{ $IFGRIDSMALL && [IfSet $GRIDSMALL] } GRID $GRIDSMALL
+
+{ $IFSEED && [IfSet $SEED] } SEED $SEED 
+
+1
+1 #Select Reflection Data
+
+$EXCLUDE_RESOLUTION RESO $EXCLUDE_RESOLUTION_LO $EXCLUDE_RESOLUTION_HI
+$EXCLUDE_RESO_HALOW RESO $EXCLUDE_RESOLUTION_LO $EXCLUDE_RESO_HI_HALOW
+
+$ACORN_EXTEND EXTEND
+
+{ $IFSIGCUT && [IfSet $EXCLUDE] } EXCLUDE $EXCLUDE
+{ $IFECUT && [IfSet $ECUT] } ECUT $ECUT
+
+IF { [StringSame $STRONGSEL STRONGNUM] }
+1 NSTRONG $NSTRONG
+ENDIF
+IF { [StringSame $STRONGSEL STRONGVAL] }
+1 ESTRONG $ESTRONG
+ENDIF
+
+IF { [StringSame $WEAKSEL WEAKNUM] }
+1 NWEAK $NWEAK
+ENDIF
+IF { [StringSame $WEAKSEL WEAKVAL] }
+1 EWEAK $EWEAK
+ENDIF
+
+1
+1 #Select Model Parameters
+
+IF { $RATM }
+  { [IfSet $NRATM] } RATM $NRATM $RATM_PERC
+ELSE
+  IF { [StringSame $MODELSEL NAFRAGALL] }
+    { $KNOWN_FRAG } POSI 1
+  ENDIF
+  IF { [StringSame $MODELSEL NSTARTN] }
+    { $KNOWN_FRAG } POSI 1
+    1 NAFRAG $NAFRAG
+    1 NSTART $NSTART
+  ENDIF
+  IF { [StringSame $MODELSEL NSTARTR] }
+    { $KNOWN_FRAG } POSI $POSI
+    1 NAFRAG $NAFRAG
+  ENDIF
+ENDIF
+
+1
+1 #ACORN-MR keywords
+
+IF { $IFMR }
+CASE $ROTMODE
+CASEMATCH ROTF
+1 ROTF $ROTF_STEP $RF_PERC $RF_RESOR
+CASEMATCH RROT
+1 RROT $RROT_NROT $RF_PERC $RF_RESOR
+ENDCASE
+CASE $TRAMODE
+CASEMATCH TRAN
+1 TRAN $TF_NSROT
+CASEMATCH RTRA
+1 RTRA $RTRA_NTRAN $TF_PERC $TF_NSROT
+ENDCASE
+ENDIF
+
+1
+1 #ACORN-PHASE keywords
+IF {$NTRYONLY}
+  1 NTRY $NTRY1
+ELSE
+#ntry-ncser-ncddm code initiated by pete
+IF {$NTRY > 0}
+  1 NTRY $NTRY
+  1 NCSER
+  LOOP n 1 $NTRY
+    - 1 $NCSER($n)
+  ENDLOOP
+  1 NCDDM
+  LOOP n 1 $NTRY
+    - 1 $NCDDM($n)
+  ENDLOOP
+ENDIF
+ENDIF
+{ $SUPP } SUPP
+{ $IFMAXSET && [IfSet $MAXSET] } MAXSET $MAXSET 
+{ $IFCUTDDM && [IfSet $CUTDDM] } CUTDDM $CUTDDM
+{ $IFPSFINISH && [IfSet $PSFINISH] } PSFINISH $PSFINISH 
+{ $IFCCFINISH && [IfSet $CCFINISH] } CCFINISH $CCFINISH 
+
+1
+1 END

@@ -1,0 +1,1 @@
+INSERT INTO usages (sessionid,usagetype,test_data,crystal_contact,pdbfileid,host,ip,browser_os,browser_name,browser_version,filename) VALUES ('1q0e',2,FALSE,FALSE,37,'azja.med.Virginia.EDU','128.143.44.212','linux','Mozilla Firefox','3.6.13','/var/www/html/csgid/app/webroot/neighborhood_temp/1q0e/pdb1q0e.ent');

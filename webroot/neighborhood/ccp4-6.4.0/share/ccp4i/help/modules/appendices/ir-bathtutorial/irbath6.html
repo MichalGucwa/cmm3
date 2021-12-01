@@ -1,0 +1,170 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4 Interface: I. Tickle tutorial MIR (continuation 6)</title>
+<link rel="stylesheet" type="text/css" href="../../../ccp4idocs.css" title="CCP4i" />
+<link rev="made" href="mailto:mgwt@yorvic.york.ac.uk" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta name="AUTHOR" content="Maria and Liz" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="2"><img src="../../../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logotitle">MIR Tutorial Bath - Heavy atom refinement</td></tr>
+</table>
+
+<table class="bathbuttons" width="100%">
+<tr>
+<td><a href="irbath5.html"><img src="back.gif" /></a></td>
+<td align="center"><a href="irbath98.html">BACK TO INDEX</a></td>
+<td align="right"><a href="irbath7.html"><img src="forward.gif" /></a></td>
+</tr>
+</table>
+
+<h1>6. Refinement of heavy-atom parameters</h1>
+
+<h3>6.1. Background</h3>
+
+<p>The heavy-atom refinement programs in the CCP4 package (<strong>MLPHARE</strong>, which can
+do phasing as well as refinement, and <strong>VECREF</strong>, which does refinement only) have
+been in use now for about 5 years. These programs differ in several fundamental
+ways from their predecessors, and in order to understand what the new programs
+do that is different, it will be useful to review some recent history.</p>
+
+<p>The method of refinement of heavy atoms in protein derivatives that was commonly
+in use before 1991 was originally conceived in 1961 and remained basically
+unchanged for 30 years, though in the 70's it was observed that the method had poor
+convergence properties, particularly (as is common) when several derivatives had
+some or all of their major sites in common. The basic idea was to calculate the <strong>most
+probable</strong> value of the native phase for each reflection in turn based on one, or a
+subset, of the derivatives, and then to use this <strong>fixed</strong> estimate of the phase to obtain
+the calculated value of |<strong><em>F</em></strong><sub>PH</sub>|. The difference between this and the
+measured |<strong><em>F</em></strong><sub>PH</sub>|
+is the <strong>lack of closure error</strong>, and the sum of the squared error could be minimised in
+a conventional least-squares refinement procedure. Initial estimates of the heavy-atom parameters could
+in theory be adjusted to produce at convergence a set of
+parameters that best fitted the measurements.</p>
+
+<p>The method, which was implemented by the program PHARE (phase and refine),
+worked reasonably well provided that the set of sites used to calculate phases was
+not the same as the set whose heavy-atom parameters were being refined; in
+particular it could not cope with the case where only one derivative is available
+(<strong>single isomorphous replacement</strong> or <strong>SIR</strong>).</p>
+
+<p>In order to get round these problems, an alternative method (&quot;<strong><em>F</em><sub>HLE</sub></strong>&quot;)
+that required the measurement of <strong>anomalous differences</strong> was devised, where the heavy-atom
+amplitudes were estimated directly without the necessity of calculating the protein
+phases, and consequently each derivative was refined completely independently of
+the others. This method, which was implemented by the program REFINE (a
+separate program PHASE was needed to do the phasing), often worked quite well
+in practice, but had the disadvantage that reasonably accurate anomalous differences
+had to be used, otherwise the resulting heavy-atom parameters suffered from large
+errors. Being much smaller than the isomorphous differences, the anomalous
+differences are in fact notoriously difficult to measure accurately.</p>
+
+<p>Because the isomorphous difference is a good approximation to |<strong><em>F</em></strong><sub>H</sub>| for centric
+reflections, these can be used in the initial stages of refinement; however this is not
+a general solution because several space groups either have no (<em>e.g.</em> R3), or only one
+(<em>e.g.</em> P2<sub>1</sub>) centric zone.</p>
+
+<h3>6.2. The maximum likelihood method of refinement</h3>
+
+<p>The principle of <strong>maximum likelihood</strong> is that a <strong>joint conditional probability density
+function</strong> is constructed, the value of which measures the likelihood that the particular
+set of measurements that were actually obtained, would have been obtained given
+any specified set of values for the unknown parameters. The optimal set of
+parameters is that which maximises the likelihood of having made the actual set of
+measurements. Usually the errors in the individual measurements are all
+independent of each other, so the likelihood is just a product of individual probability
+functions, whose algebraic form is based on informed guesswork about the
+probability of making a measurement if its true value were known, and from its
+known error estimate.</p>
+
+<blockquote><em>L</em> =
+<a href="../chargifs/piu.gif"><font face="symbol">P</font></a><sub>hkl</sub>
+<em>P</em>(|<strong><em>F</em></strong><sub>P</sub>|,|<strong><em>F</em></strong><sub>PHj</sub>|
+| (<em>x</em><sub>i</sub>,<em>y</em><sub>i</sub>,<em>z</em><sub>i</sub>,<em>B</em><sub>i</sub>,<em>O</em><sub>i</sub>
+)<sub>j</sub>,
+<a href="../chargifs/si.gif"><font face="symbol">s</font></a><sup>2</sup>(|<strong><a
+href="../chargifs/deu.gif"><font face="symbol">D</font></a></strong><sub>j</sub>|)).</blockquote>
+
+<p>The likelihood <em>L</em> = conditional probability of having made the set of observations
+|<strong><em>F</em></strong><sub>P</sub>|, |<strong><em>F</em></strong><sub>PHj</sub>| given values of the
+heavy atom parameters
+(<em>x</em><sub>i</sub>,<em>y</em><sub>i</sub>,<em>z</em><sub>i</sub>,<em>B</em><sub>i</sub>,<em>O</em><sub>i</sub>)<sub>j</sub>,
+<a href="../chargifs/si.gif"><font face="symbol">s</font></a><sup>2</sup>(|<strong><a
+href="../chargifs/deu.gif"><font face="symbol">D</font></a></strong><sub>j</sub>|).</p>
+
+<blockquote>log(<em>L</em>) =
+<a href="../chargifs/siu.gif"><font face="symbol">S</font></a><sub>hkl</sub> log(<em>P</em>(...|...))</blockquote>
+
+<p>The most likely set of parameters will be the one that maximises the log(likelihood).</p>
+
+<p>The main drawback of the old methods of refinement was that the protein phase was
+either fixed or just ignored during refinement, leading either to bias in the parameters
+or to loss of information. The important breakthrough with the new method is that
+all possible values of the phase are considered during refinement, each value being
+weighted according to its probability of being correct.</p>
+
+<p>The <strong>MLPHARE</strong> program, a direct descendant of PHARE, implements the likelihood
+maximisation procedure, and adjusts the overall and individual heavy-atom
+parameters of a set of derivatives simultaneously from initial estimates to optimum
+values.</p>
+
+<h3>6.3. The vector-space method of refinement</h3>
+
+<p>The principle of <strong>vector-space refinement</strong> is very simple: the Patterson is calculated
+from the initial heavy-atom parameters, it is compared with the observed
+isomorphous difference Patterson, and the parameters are adjusted to minimise the
+sum of weighted squared differences between the calculated and observed Pattersons.</p>
+
+<p>It can be shown that the isomorphous difference Patterson has the same peaks as the
+heavy-atom Patterson, but at half height, and with additional uncorrelated noise
+peaks. So, to reduce the effect of this noise, not all the grid points in the Patterson
+are used in the refinement, only those that fall within the peaks of the calculated
+Patterson.</p>
+
+<p>The weight is the reciprocal variance of the Patterson density, which depends only
+on the position in Patterson space (positions on or near symmetry elements in the
+point group have higher variance than the average). The <strong>VECREF</strong> program
+implements this <strong>real-space</strong> method in complete constrast with the <strong>reciprocal-space</strong>
+method used by MLPHARE, and in fact by all other heavy-atom refinement programs
+(as far as the author is aware).</p>
+
+<p>The isomorphous difference Patterson of course contains the complete set of
+information embodied in the native and derivative measured intensities, and with the
+exception that the overall scale factor is assumed to be correct, does not incorporate
+any additional assumptions. In particular, and in contrast with the difference Fourier,
+the Patterson does not rely on phase information. Because any Fourier tends to be
+dominated by the phases, and not the amplitudes, it is very easily biassed by the sites
+used to calculate the phases.</p>
+
+<p>It therefore seems logical to make the essential cross-check against the Patterson an
+integral part of the refinement. A bonus of this procedure is that wrong sites are
+much more easily discriminated by the Patterson than by the Fourier, and so instead
+of the cautious stepwise addition of new sites that is required when refining in
+reciprocal space, caution can be thrown to the winds, and many new trial sites can
+be added in one go.</p>
+
+<p>It might be argued that several of the weak peaks in the difference Fourier may not
+be heavy-atom sites at all and may be due instead to imperfect isomorphism, but
+against this it should be remembered that the aim is to model all differences between
+the native and derivative structure. Provided there is no significant change in the
+unit cell dimensions it doesn't matter whether the differences are caused by heavy-atom
+substitution or by movement of atoms in the native structure, the effect is the same.</p>
+
+<p>Although VECREF can be used for the refinement, it does not calculate phases, so
+MLPHARE is still used for this.</p>
+
+<table class="bathbuttons" width="100%">
+<tr>
+<td><a href="irbath5.html"><img src="back.gif" /></a></td>
+<td align="center"><a href="irbath98.html">BACK TO INDEX</a></td>
+<td align="right"><a href="irbath7.html"><img src="forward.gif" /></a></td>
+</tr>
+</table>
+
+</body></html>

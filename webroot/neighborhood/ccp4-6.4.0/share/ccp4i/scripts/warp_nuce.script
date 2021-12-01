@@ -1,0 +1,82 @@
+global job_params
+global system
+#
+#
+# Source file with utility procedures
+  source [SearchPath TOP utils map_utils.tcl]
+#
+# Write the par file
+
+  set logfile $job_params(LOG_FILE)
+  set arpwarpdir $job_params(JOB_ID)_$job_params(TASKNAME) 
+  set workdir [GetDefaultDirPath]
+
+  set parfile "$workdir/$arpwarpdir.par"
+
+  append partext "set parfile = $parfile\n"
+  append partext "set WORKDIR = [GetDefaultDirPath]\n"
+  append partext "set PROJECT = $job_params(PROJECT)\n"
+  append partext "set JOB_ID = $job_params(JOB_ID) \n"
+  append partext "set fulllogfile = " [FileJoin [GetDefaultDirPath]  \
+     $job_params(JOB_ID)_warp_nuce_details.log ] \n 
+  append partext "set wilsonlogfile = " [FileJoin [GetDefaultDirPath]  \
+     $job_params(JOB_ID)_warp_wilson.log ] \n 
+  append partext "set warpbin = [GetEnvPath warpbin]\n"
+
+# Put the name of the CCP4i def file  into the par file
+  append partext "set CCP4I_DEFFILE = " [FileJoin [GetDefaultDirPath]  \
+     CCP4_DATABASE $job_params(JOB_ID)_$job_params(TASKNAME).def ] \n
+
+    AddOutputFile $XYZOUT PROJECT
+    AddOutputFile $WILSON_LOG PROJECT
+  
+# Handle file names
+
+  foreach par [list HKLIN XYZOUT COMPARETO] arppar [list datafile pdbfileout compareto] {
+    set file [subst $[subst $par]]
+    set dir [subst DIR_$[subst $par]]
+    set value [GetFullFileName1 $file $dir]
+    if { $value == "" } {
+      append partext "set $arppar = ''" \n
+    } else {
+      append partext "set $arppar = $value" \n
+    }
+  }
+
+# Basic params
+
+set sizevalue [ expr $NRES * 8 ]
+
+    foreach \
+       par [ list NRES NNUC WILSON_B SOLVENTC FP FP    SIGFP PHIB FOM] \
+    arppar [ list nres nnuc wilsonb  solventc fp fbest sigfp phib fom] {
+	set value [subst $[subst $par]]
+        append partext "set $arppar = $value" \n
+	}
+
+
+  GetCellfromMtz $HKLIN mtz_space_group cell lattice
+  set space_gp_number [GetSpaceGroupNumber $SPACE_GROUP]
+
+#  puts $space_gp_number
+  
+  append partext "set sym = $space_gp_number" \n
+  append partext "set resol = '$RESOL '" \n
+  append partext "set xyzlim = '$XYZLIM '" \n
+#  append partext "set fbest = " \n
+  append partext "set version = 7.3" \n
+  
+
+if { [file exists $parfile] } {
+	   file delete -force -- $parfile
+}
+
+   WriteFile $parfile $partext
+ 
+   file attributes $parfile -permissions 0740
+
+   AddOutputFile $parfile PROJECT
+
+   catch {exec [GetEnvPath warpbin]/warp_nuce.sh  $parfile >> $logfile}
+
+

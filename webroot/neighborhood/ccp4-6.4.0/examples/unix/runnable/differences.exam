@@ -1,0 +1,57 @@
+#!/bin/sh -e
+
+# Test of differencing utilities: mtzdiff, mapdiff, pdbdiff
+
+# PDBDIFF
+#=========================================
+# First make a new pdb file with different
+# coordinates
+pdbset XYZIN $CEXAM/toxd/toxd.pdb \
+       XYZOUT $CCP4_SCR/toxd_noise.pdb <<EOF
+noise
+EOF
+# Examine the differences
+pdbdiff $CEXAM/toxd/toxd.pdb $CCP4_SCR/toxd_noise.pdb
+
+# MTZDIFF
+#=========================================
+# Get structure factors from original coordinates
+sfall XYZIN $CEXAM/toxd/toxd.pdb \
+      HKLIN $CEXAM/toxd/toxd.mtz \
+      HKLOUT $CCP4_SCR/toxd_orig.mtz <<EOF
+mode sfcalc xyzin hklin
+labin FP=FTOXD3 SIGFP=SIGFTOXD3
+labout FC=FC PHIC=PHIC
+end
+EOF
+# Get structure factors from new coordinates
+sfall XYZIN $CCP4_SCR/toxd_noise.pdb \
+      HKLIN $CEXAM/toxd/toxd.mtz \
+      HKLOUT $CCP4_SCR/toxd_noise.mtz <<EOF
+mode sfcalc xyzin hklin
+labin FP=FTOXD3 SIGFP=SIGFTOXD3
+labout FC=FC PHIC=PHIC
+end
+EOF
+# Examine the differences
+mtzdiff $CCP4_SCR/toxd_orig.mtz $CCP4_SCR/toxd_noise.mtz
+
+# MAPDIFF
+#=========================================
+# Make a map from original coordinates
+sfall XYZIN $CEXAM/toxd/toxd.pdb \
+      MAPOUT $CCP4_SCR/toxd_orig.map <<EOF
+mode atmmap
+symmetry 19
+end
+EOF
+# Make a map from the new coordinates
+sfall XYZIN $CCP4_SCR/toxd_noise.pdb \
+      MAPOUT $CCP4_SCR/toxd_noise.map <<EOF
+mode atmmap
+symmetry 19
+end
+EOF
+# Examine the differences
+mapdiff $CCP4_SCR/toxd_orig.map $CCP4_SCR/toxd_noise.map
+#

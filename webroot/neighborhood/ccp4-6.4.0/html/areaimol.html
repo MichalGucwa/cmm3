@@ -1,0 +1,683 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::AREAIMOL::Supported::Model Analysis::Analyse solvent accessible areas::supported:::::: -->
+
+<h1>AREAIMOL (CCP4: Supported Program)</h1>
+<h2>NAME</h2>
+<p><b>areaimol</b>
+- Analyse solvent accessible areas</p>
+<h2>SYNOPSIS</h2>
+<p><b>areaimol XYZIN</b>
+<i>foo_in.pdb</i>
+[<b>XYZIN2</b>
+<i>foo2_in.pdb</i>]
+[<b>XYZOUT</b>
+<i>foo_out.pdb</i>]
+<br />
+[<a href="#keywords">Keyworded input</a>]</p>
+
+<h2><a name="description">DESCRIPTION</a></h2>
+
+<p>The solvent accessible surface of a protein is defined
+(<a href="#references">Lee and Richards (1971)</a>) as the locus of
+the centre of a probe sphere (representing a solvent molecule) as it
+rolls over the Van der Waals surface of the protein
+(<a href="#figure1">figure 1</a>). AREAIMOL calculates
+the solvent accessible surface area by generating surface points on an
+extended sphere about each atom (at a distance from the atom centre equal
+to the sum of the atom and probe radii), and eliminating those that lie
+within equivalent spheres associated with neighbouring atoms. This is
+different from the original Lee and Richards (1971) algorithm, which
+is implemented in the program <a href="surface.html">SURFACE</a>. Note also,
+that the solvent accessible surface is distinct from the molecular surface,
+which is the locus of the inward-facing point of the probe sphere (the
+sum of the contact and re-entrant surfaces - see
+<a href="#figure2">figure 2</a>).</p>
+
+<p>AREAIMOL finds the solvent accessible area of atoms
+in a PDB coordinate file, and summarises the accessible area by
+residue, by chain and for the whole molecule. It will also
+calculate the contact area (the area in square angstroms on the
+Van der Waals surface of an atom that can be contacted by a sphere
+of the given probe radius) and will attempt to identify isolated
+areas of surface (which could be cavities either within the molecule,
+or formed as a result of intermolecular contacts).</p>
+
+<p>It is capable of excluding specified residues from the calculations, and
+of generating symmetry related molecules. It can also be used to compare
+accessible area and analyse area differences.
+Accessible areas (or area differences) for individual atoms can be written
+to a pseudo-PDB output file.</p>
+
+<p>This is an extensively revised version of the old AREAIMOL program which
+now also incorporates the functions of DIFFAREA, RESAREA and WATERAREA.
+The flexibility of the area calculation has been extended by
+the addition of new keywords PROBE (sets probe radius), PNTDEN (sets
+precision of area calculation) and ATOM (allows new atom types to be
+defined).</p>
+
+<table border=0 cellspacing=20>
+<tr>
+<td><a name="figure1"></a><img width=400 src="images/areaimol_asurf.gif" alt="Figure 1: accessible surface area" /></td>
+<td><a name="figure2"></a<img width=400 src="images/areaimol_molsurf.gif" alt="Figure 2: molecular surface and contact area" /></td>
+</tr>
+<tr>
+<td valign=top><b>Figure 1:</b> accessible surface of a molecule, defined as the
+locus of the centre of a solvent molecule as it rolls over the Van der Waals
+surface of the protein.</td>
+<td valign=top><b>Figure 2:</b> molecular surface of a molecule, defined as the
+locus of the inward-facing probe sphere. The contact area is the portion of the
+molecular surface that lies on the Van der Waals surface.</td>
+</tr>
+</table>
+
+<p>As of CCP4 version 6.1 the algorithm for calculating the accessible
+surface area has been made more accurate - see the <a href="#notes">Notes</a>
+section.</p>
+
+<h2> <a name="keywords"></a>KEYWORDED INPUT</h2>
+
+<p>The keywords are split into three groups:</p>
+
+<dl>
+<dt><a href="#main">Main keywords</a> which control the type of calculation</dt>
+    <dd><a href="#diffmode">DIFFMODE</a>,
+        <a href="#mode">MODE</a>,
+        <a href="#smode">SMODE</a>,
+        <a href="#symmetry">SYMMETRY</a>,
+        <a href="#trans">TRANS</a><br /><br /></dd>
+<dt><a href="#secondary">Secondary keywords</a> which control parameters within the
+calculation</dt>
+    <dd><a href="#atom">ATOM</a>,
+        <a href="#exclude">EXCLUDE</a>,
+        <a href="#matchup">MATCHUP</a>,
+        <a href="#pntden">PNTDEN</a>,
+        <a href="#probe">PROBE</a><br /><br /></dd>
+<dt><a href="#auxiliary">Auxiliary keywords</a></dt>
+    <dd><a href="#verbose">VERBOSE</a>,
+        <a href="#output">OUTPUT</a>,
+        <a href="#report">REPORT</a>,
+        <a href="#end">END</a></dd>
+</dl>
+
+<h2><a name="main"></a>MAIN KEYWORDS</h2>
+
+<h3><a name="diffmode"></a>DIFFMODE OFF | IMOL | WATER | COMPARE</h3>
+<p>This keyword controls the program function, the data required, and
+how it is processed and analysed (see <a href="#function">PROGRAM FUNCTION</a>).
+DIFFMODE must be the first keyword, unless it is omitted in which case
+the program defaults to <a href="#diffmode_off">DIFFMODE OFF</a>.</p>
+<p>Subkeywords:</p>
+<blockquote>
+<dl>
+<dt>OFF [default]</dt>
+<dd>This corresponds to the function of the original AREAIMOL program. A single
+input file is required and a single accessible area calculation and analysis
+is performed.</dd>
+<dt>IMOL</dt>
+<dd>This mode analyses the differences in accessible areas of a molecule due to
+different intermolecular contacts (generated from different sets of symmetry
+operators and/or lattice translations).</dd>
+<dt>WATERS</dt>
+<dd>This mode analyses the differences in accessible area for the waters in
+a molecule depending on whether they are treated as solvent or as protein.</dd>
+<dt>COMPARE</dt>
+<dd>This mode is used to analyse the area differences for atoms and residues which
+are common between molecules held in two different files (XYZIN and XYZIN2).</dd>
+</dl>
+</blockquote>
+
+<p>The value of DIFFMODE may moderate the behaviour of other keywords:
+<a href="#mode">MODE</a>, <a href="#smode">SMODE</a>,
+<a href="#symmetry">SYMMETRY</a> and <a href="#trans">TRANS</a> (see below).</p>
+
+<h3><a name="mode"></a> MODE ALL | NOHOH | HOH | HOHALL</h3>
+
+<p>Controls which type of residues are included and how they are treated.
+There are four possible modes of operation, specified by one of the
+subkeywords below.</p>
+
+<p>Subkeywords:</p>
+<blockquote>
+<dt>NOHOH [default]</dt>
+<dd>All waters (residue type HOH or WAT) are ignored.</dd>
+<dt>HOH</dt>
+<dd>The accessible area will only be calculated for waters (HOH or WAT),
+treating other waters as solvent. Only waters will be analysed.</dd>
+<dt>HOHALL</dt>
+<dd>As HOH, but waters are treated as protein, and consequently more
+waters will have low solvent accessibility.</dd>
+<dt>ALL</dt>
+<dd>Calculate accessible area for all atoms, including waters if present
+in file. Water atoms are treated as solvent when calculating
+accessible area.<br />
+<b>Warning:</b> waters may have large accessible area assigned in this MODE,
+leading to unrealistically inflated estimates of the total accessible
+area. Check the output carefully.</dd>
+</dl>
+</blockquote>
+
+<p>Under <a href="#diffmode_waters">DIFFMODE WATERS</a>, the MODE keyword is
+redundant and is ignored.</p>
+
+<h3><a name="smode"></a> SMODE IMOL | OFF</h3>
+<p>Symmetry mode keyword which is used to look at intermolecular contacts.
+There are two options:</p>
+<p>Subkeywords:</p>
+<blockquote>
+<dl>
+<dt>IMOL</dt>
+<dd>Account for intermolecular contacts by generating symmetry related
+molecules from coordinates in Brookhaven
+file before calculating accessible areas, using symmetry operators
+supplied by the <a href="#symmetry">SYMMETRY</a> keyword. (The
+<a href="#trans">TRANS</a> keyword can also be used, to generate molecules
+related by lattice translation symmetry.)</dd>
+<dt>OFF [default]</dt>
+<dd>Symmetry related atoms will not be generated and intermolecular contacts
+are not accounted for.</dd>
+</dl>
+</blockquote>
+
+<p>Under <a href="#diffmode_imol">DIFFMODE IMOL</a>, the SMODE keyword is
+redundant and is ignored.</p>
+
+<h3> <a name="symmetry"></a>SYMMETRY &lt;space-group name | space-group
+number | symmetry operators&gt;</h3>
+<p>Read the symmetry operations, specified as a name (<i>e.g.</i> P2<sub>1</sub>2<sub>1</sub>2<sub>1</sub>), the
+International Tables number, or as a series of symmetry operations (<i>e.g.</i>
+SYMMETRY X,Y,Z * -X,Y+1/2,-Z). In the latter case, all the symmetry
+operators must be supplied on a single SYMMETRY keyword.</p>
+
+<p>If the SYMMETRY keyword is omitted when SMODE has been specified as IMOL 
+then the program will generate symmetry related molecules assuming P1
+symmetry (essentially, lattice translations only). If SMODE is OFF then
+the SYMMETRY keyword is optional.</p>
+
+<p>Under <a href="#diffmode_imol">DIFFMODE IMOL</a> a second SYMMETRY keyword
+is necessary, to specify the symmetry operators required for the second
+area calculation (see below).</p>
+
+<p>Note that unlike previous versions of the program, it is no longer necessary
+to manually exclude the identity operation when entering symmetry operations.
+The identity is implicitly assumed. If the identity is the only operation that
+has been entered (or if P1 symmetry is specified) then a warning may
+appear, but this can be ignored (unless you are not in P1 symmetry).</p>
+
+<h3><a name="trans"></a>TRANS [ NONE | 1 | 2 | BOTH ]</h3>
+
+<p>TRANSlation keyword. This causes the program to generate additional 
+symmetry-related molecules by applying 125 translations made up from linear
+combinations of the primitive lattice vectors (+/-2 lattice vectors in each
+direction). Combining these with the spacegroup operators via the
+<a href="#symmetry">SYMMETRY</a> keyword will generate the crystal lattice.</p>
+
+<p>Only takes effect if <a href="#diffmode_imol">DIFFMODE IMOL</a> or
+<a href="#smode">SMODE</a> IMOL have been specified.</p>
+
+<p>Subkeywords for DIFFMODE IMOL:</p>
+<blockquote>
+<dl>
+<dt>1 (or 2)</dt>
+<dd>Apply the translation vectors on the first (or second) area calculation only.</dd>
+<dt>BOTH</dt>
+<dd>Apply the translations on both the first and the second area calculation.</dd>
+<dt>NONE</dt>
+<dd>[Default] Do not apply any translations.</dd>
+</dl>
+</blockquote>
+
+<p>For SMODE IMOL, NONE turns off the translations [default] and TRANS on its
+own is sufficient to switch them on.</p>
+
+<h2><a name="secondary"></a>Secondary Keywords</h2>
+
+<h3><a name="atom"></a>ATOM &lt;name&gt; &lt;no&gt; &lt;radius&gt;</h3>
+<p>Add or change an atom type and associated Van der Waals radius recognised
+by the program. <b>&lt;name&gt;</b> is the element name (as appears in
+columns 13-14 of the pdb file), and can be given in either upper or lower
+case (it is automatically upper-cased and right-justified before being
+processed).
+<b>&lt;no&gt;</b> is the atomic number and <b>&lt;radius&gt;</b> is the
+Van der Waals radius to be assigned to this atom type, in Angstroms.</p>
+
+<p>If both <b>&lt;name&gt;</b> and <b>&lt;no&gt;</b> match those belonging to
+an atom already in the list then its Van der Waal radius will be changed
+to <b>&lt;radius&gt;</b>. If only one of either match, then the program
+ignores that occurrence of the ATOM keyword and the radius will remain
+unchanged.</p>
+
+<p>AREAIMOL assumes a single radius for each element, and only recognises
+a limited number of different elements. Unknown atom types (<i>i.e.</i> those not
+in AREAIMOL's internal database) will be assigned the default radius of 1.8&#197;.
+The list of recognised atoms is:</p>
+
+<pre>
+       Name  Atomic no. VdW rad. (&#197;)
+       -----------------------------
+         C        6        1.80
+         N        7        1.65
+         O        8        1.60
+        MG       12        1.60
+         S       16        1.85
+         P       15        1.90
+        CL       17        1.80
+        CO       27        1.80
+</pre>
+<p>The ATOM keyword must appear once for each atom definition. The program
+can store up to twelve new atom types, in addition to those listed above.</p>
+
+<h3><a name="exclude"></a>EXCLUDE &lt;residue1&gt; &lt;residue1&gt; ...</h3>
+<p>Here <b>residue</b><i>n</i> represents a three-character residue name (<i>e.g.</i>
+ARG for arginine). Atoms belonging to any of the named residues will be
+ignored in the area calculations, and will <b>not</b> be written to the
+output Brookhaven file.</p>
+
+<p>Any number of specified residue names can appear together after a single
+EXCLUDE, separated by a space (<i>e.g.</i> EXCLUDE PRO ARG GLY). The EXCLUDE
+keyword can also be repeated any number of times with one or more
+specified residue names.</p>
+
+<p>There is a maximum number of excluded residues which is set inside the
+program (currently 30). If there are more than this limit then extra names
+will not be recorded. Names entered in lower case will automatically be
+converted to uppercase. Note also that the program does not check that the
+entries given are valid residue names, or if any are repeated.</p>
+
+<p>In <a href="#diffmode_compare">DIFFMODE COMPARE</a>, the named residues will
+be excluded from both of the input files before the areas are calculated.</p>
+
+<h3><a name="matchup"></a>MATCHUP ALL | NOCOORDS</h3>
+<p>Default: ALL</p>
+
+<p>In <a href="#diffmode_compare">DIFFMODE COMPARE</a> MATCHUP sets the
+comparison criteria used when doing comparison of XYZIN and XYZIN2:</p>
+
+<dl>
+<dt>ALL</dt>
+<dd>(default) Atoms are only included in the comparison compared if atom name,
+residue name/number, chain id and atomic coordinates are the same between both
+files.</dd>
+<dt>NOCOORDS</dt>
+<dd>Uses the same criteria as ALL, except that differences in the atomic
+coordinates between the files are ignored. This makes it suitable for use
+with different conformations.</dd>
+</dl>
+<p>Atoms which are not included in the comparison are ignored in the output.
+MATCHUP is only available for DIFFMODE COMPARE.</p>
+
+<h3><a name="pntden"></a> PNTDEN &lt;point_density&gt;</h3>
+<p>The <b>p</b>oi<b>ntden</b>sity keyword sets the precision of the area calculation.
+<b>&lt;point_density&gt;</b> is the number of points per square angstrom, so that
+the smallest area that can be calculated is the reciprocal of this value. The
+default is &lt;point_density&gt; = 15 points per square angstrom.</p>
+
+<p>Note: High values of &lt;point_density&gt; allow more precise estimates of the
+accessible surface area, but will take longer to calculate - and if
+&lt;point_density&gt; is too large then the program may exceed its memory
+resources and stop. At lower values of &lt;point_density&gt; it is possible that
+atoms with low surface accessibility may be diagnosed as having no accessible
+surface area at all.</p>
+
+<h3><a name="probe"></a>PROBE &lt;x&gt;</h3>
+<p>Sets the radius of the solvent molecule used as a probe in the area calculations
+to be equal to &lt;x&gt; angstroms.</p>
+
+<p>The probe radius must be greater than zero, up to a limit of 25&#197;. The default
+radius is 1.4&#197;.</p>
+
+<h2><a name="auxiliary"></a>Auxiliary Keywords</h2>
+
+<h3><a name="verbose"></a>VERBOSE</h3>
+<p>Switch on extended (<i>i.e.</i> verbose) printer output. In addition to the
+output described in <a href="#printer_output">'PRINTER OUTPUT'</a>, the log
+file will also contain the following information:</p>
+
+<ol>
+ <li>A list of the recognised atom types and their associated radii
+     (see the <a href="#atom">ATOM</a> keyword),</li>
+ <li>The matrices derived from the SCALE cards of the input file,</li>
+ <li>The symmetry matrices used to generate symmetry-related atoms
+     in <a href="#smode">SMODE IMOL</a> or <a href="#diffmode_imol">DIFFMODE
+     IMOL</a></li>
+</ol>
+
+<h3><a name="output"></a> OUTPUT [ ATOM | RESIDUE | GXGRATIO ]</h3>
+<p>The OUTPUT keyword causes a list of atoms to be written to the file
+with logical name XYZOUT. This file has a pseudo-PDB format and should
+contain the CRYST1 and SCALE cards from the input file, plus for each
+atom: the coordinates, the associated residue, and the accessible area
+(if <a href="#diffmode_off">DIFFMODE OFF</a>) or area difference (in
+other DIFFMODES) in the B-factor column. This is intended to mimic the
+output from the old AREAIMOL program.
+
+<p>Subkeywords:
+<dl>
+<dt>ATOM</dt>
+<dd>The area value for each atom will be output (default).</dd>
+<dt>RESIDUE</dt>
+<dd>The area value for each residue will be output.</dd>
+<dt>GXGRATIO</dt>
+<dd>The ratio (x100) of the residue surface area to that of the
+corresponding GXG tripeptide will be output, <i>i.e.</i>this
+effectively normalises the surface area for a better like-for-like
+comparison.</dd>
+</dl>
+
+<p><b>NB:</b> The input PDB file must contain CRYST1 cards for the
+OUTPUT option to function.
+
+<h3><a name="report"></a> REPORT [ CONTACT YES | NO ]&nbsp
+[ RESAREA YES | NO ]&nbsp [ GXGRATIO YES | NO ]</h3>
+<p>The REPORT keyword controls the logfile output that the program
+generates.
+
+<p>Subkeywords:
+<dl>
+<dt>CONTACT YES | NO</dt>
+<dd>YES means report the contact area as well as the accessible area, NO
+means don't report this (default is YES).</dd>
+<dt>RESAREA YES | NO</dt>
+<dd>YES means report the area/area difference per residue, NO means
+don't report this (default is YES).</dd>
+<dt>GXGRATIO YES | NO</dt>
+<dd>YES means do accurate calculation of ratios of residue surface areas
+to those of corresponding GXG tripeptide, NO means just estimate using
+tabulated values, see: Miller et al., J. Mol. Biol. (1987), 196,
+641-656. The accurate calculation yields a better result particularly
+for residues at the chain termini (default is YES).</dd>
+</dl>
+
+<h3><a name="end"></a> END</h3>
+<p>(Optional) Specifies the end of keyworded input and starts AREAIMOL running.</p>
+
+<h2><a name="files">INPUT AND OUTPUT FILES</a></h2>
+
+<dl>
+<dt>XYZIN</dt>
+    <dd>Input coordinates in CCP4 PDB format. Must contain SCALE cards if
+symmetry-related molecules are required. Must contain CRYST1 card if the
+<a href="#output">OUTPUT</a> option is being used.</dd>
+<dt>XYZIN2</dt>
+    <dd>This gives a second set of input coordinates, and is only used in
+         <a href="#diffmode_compare">DIFFMODE COMPARE</a></dd>
+<dt>XYZOUT</dt>
+    <dd>Output coordinate file in a pseudo-PDB format,
+where the B-factor column contains the accessible area calculated for each of the
+atoms (or area difference if DIFFMODE is anything other than OFF). This is an
+attempt to reproduce part of the functionality of the old AREAIMOL program.
+See keyword <a href="#output">OUTPUT</a>.</dd>
+</dl>
+
+<p>Notes</p>
+
+<ol>
+<li>Atoms with zero occupancy in the input files will be ignored in
+the area calculations; those with finite occupancies less than unity
+will be included. In either instance a warning message will appear. Also,
+the program does not recognise 'TER' cards and will skip them, continuing to
+read in any atoms appearing afterwards.</li>
+
+<li>The program always ignores hydrogens which are present in the input file(s).
+This is because the van der Waals radii used in the area calculations implicitly
+include the atomic hydrogens.</li>
+</ol>
+
+<h2><a name="printer_output"></a>PRINTER OUTPUT</h2>
+
+<p>For each area calculation performed by the program it will by default
+output an analysis of the accessible area by residue, by chain, and for the
+whole molecule. For each chain the accessible area of each residue will be
+listed, followed by the total for the chain. The reporting of areas per
+residue can be suppressed by using the REPORT RESAREA OFF keywords.</p>
+
+<p>In the cases where only waters are considered (DIFFMODE WATERS, or MODEs
+HOH or HOHALL) an additional breakdown is presented of the waters which
+have no accessible area, and those which have areas &lt; 5&#197;<sup>2</sup>,
+&lt; 10&#197;<sup>2</sup> and &gt; 10&#197;<sup>2</sup>.</p>
+
+<p>By default the program also outputs the contact area for each residue,
+chain and for the whole molecule. The contact area is defined as the area
+on the Van der Waals surface of an atom that can be contacted by a sphere
+of the given probe radius (see <a href="#figure2">figure 2</a> above for a
+schematic representation of the contact area). The reporting of contact
+areas can be suppressed by using the REPORT CONTACT OFF keywords.</p>
+
+<p>For modes NOHOH and ALL the program analyses the atoms which have been
+assigned accessible area and tries to determine how many isolated areas
+of surface there are (<i>i.e.</i> areas of surface which are unconnected to each
+other on the original molecule).
+Multiple isolated surfaces could represent any combination of:</p>
+
+<ol>
+<li>cavities within a single molecule,</li>
+<li>cavities formed as a result of intermolecular contacts (in which case
+the calculated area will be the area of the part of the cavity formed by a
+single molecule, and <i>not</i> of the whole cavity), and</li>
+<li>separate molecules or clusters of atoms.</li>
+</ol>
+<p>For each isolated area of surface identified, the program reports the number
+of atoms, the total accessible area and the centre of mass.</p>
+
+<p>In the case when differences in area are calculated (DIFFMODE other than OFF),
+an additional analysis is presented of the number of each atom type which have
+non-zero area differences. This is summarised in a table with the following
+quantities:</p>
+
+<dl>
+<dt><tt>Number</tt></dt>
+<dd>the number of atoms of each type read in from the input file</dd>
+<dt><tt>Area1</tt>(<tt>Area2</tt>)</dt>
+<dd>the total accessible areas for all atoms of that type
+from the first (second) area calculations</dd>
+<dt><tt>N-diff</tt></dt>
+<dd>the number of that atom type which have non-zero
+area differences</dd>
+<dt><tt>Area-diff</tt></dt>
+<dd>the total difference in accessible area
+for all atoms of that type</dd>
+</dl>
+
+<p>There is also a breakdown of accessible area differences by residue, chain
+and for the whole molecule.</p>
+
+<p>Additional output can be obtained by specifying the
+<a href="#verbose">VERBOSE</a> keyword, which causes the program to print
+out diagnostic information such as recognised atom types and radii and the
+symmetry matrices derived from the symmetry cards. The
+<a href="#report">REPORT</a> keyword can also be used to select the
+desired output from the area calculations.</p>
+
+<h2><a name="function"></a>PROGRAM FUNCTION</h2>
+<p>Analysis of surface accessible areas and area differences.</p>
+
+<p>There were originally four programs to analyse solvent accessible area
+(AREAIMOL, RESAREA, WATERAREA and DIFFAREA). This version combines the
+function of the original set of programs into a single run which is
+controlled by the <a href="#diffmode">DIFFMODE</a> keyword:</p>
+
+<h3><a name="diffmode_off"></a>DIFFMODE OFF</h3>
+<p>This mode analyses the accessible surface area of a molecule.</p>
+
+<p>In the most basic mode of operation the program performs
+a single area calculation, obtaining the solvent accessibility of each atom
+under consideration. These individual
+areas are then used to obtain an analysis of the total accessible area for
+each residue, chain and for the whole molecule.</p>
+
+<p>The <a href="#mode">MODE</a> keyword can be used to exclude certain types
+of residue (<i>e.g.</i> waters) from the calculation. The effect of intermolecular
+contacts (which will reduce the accessible area) can be included using the
+<a href="#smode">SMODE</a> keyword (which generates symmetry-related copies
+of the original molecule by applying the symmetry operations supplied with
+the <a href="#symmetry">SYMMETRY</a> keyword) and the
+<a href="#trans">TRANS</a> keyword (which will apply linear combinations of
+primitive lattice vectors to the symmetry-related molecules to generate
+further copies). Combining the primitive lattice vectors with spacegroup
+symmetry will effectively generate the crystal lattice.</p>
+
+<p>This reproduces the function of the old AREAIMOL program followed by either
+WATERAREA or RESAREA as appropriate.</p>
+
+<h3><a name="diffmode_imol"></a>DIFFMODE IMOL</h3>
+<p>This mode compares the difference in accessible area due to the presence of
+intermolecular contacts, <i>e.g.</i> changes in accessible area due to oligomer
+formation.</p>
+
+<p>Two area calculations are performed, one for each set of supplied symmetry
+operations (see <a href="#symmetry">SYMMETRY</a> and <a href="#trans">TRANS</a>
+keywords - if only one set of operators is supplied then the second set is
+assumed to consist of the identity). The difference in accessible area on each
+atom is then calculated and the overall area differences analysed.</p>
+
+<p>The SMODE keyword has no function under the DIFFMODE IMOL option, and the
+SYMMETRY keyword can appear twice: each occurrence gives the operators for one
+calculation of accessible area. Other keywords maintain their function and
+take effect during both calculations.</p>
+
+<h3><a name="diffmode_waters"></a>DIFFMODE WATERS</h3>
+<p>This mode only considers waters and compares the difference in accessible
+area when waters are treated as solvent as opposed to as protein (<i>i.e.</i>
+water treated as protein can 'obscure' surface area on other waters).</p>
+
+<p>Only one set of coordinates is input, and two separate area calculations are
+carried out (the first treating waters as solvent, <i>i.e.</i> equivalent to MODE HOH,
+and the second treating them as protein, <i>i.e.</i> equivalent to MODE HOHALL). The
+area differences are then calculated and output.</p>
+
+<p>The results of the calculations can be interpreted as follows:</p>
+
+<ol>
+<li>Waters with zero area in the first calculation are completely
+enclosed by protein.</li>
+<li>Waters which have non-zero area in the first calculation but zero
+area in the second are enclosed between protein and/or other waters.</li>
+<li>Waters which have non-zero area in both calculations are not
+completely enclosed by protein and/or waters and so are on the 'outside'
+of this shell.</li>
+</ol>
+<p>The value of the area difference for each water listed is equal to the
+reduction in accessible area due to being obscured by neighbouring
+waters. Waters buried completely in protein will not be listed in the area
+difference analysis.</p>
+
+<p>The MODE keyword has no function under this option, although the other keywords
+maintain their function and take effect during both calculations.</p>
+
+<h3><a name="diffmode_compare"></a>DIFFMODE COMPARE</h3>
+<p>This mode compares the difference in accessible areas for two similar molecules,
+<i>e.g.</i> changes due to substrate or ligand binding.</p>
+
+<p>Two input coordinate files are required, and two separate area calculations
+are carried out, one for each set of coordinates. The same MODE and symmetry
+operators etc (if relevant) are used in each case, so the resulting area
+differences will depend only on differences between the contents of the files.
+Area differences are calculated only for those atoms which are common to both
+files.</p>
+
+<p><i>E.g.</i> if one file describes a protein bound to a ligand and the other describes
+the protein alone, then using this mode will calculate the change in surface
+area of the protein in the presence of the ligand, or more specifically the area
+obscured by the ligand.</p>
+
+<h2><a name="notes"></a>GENERAL NOTES</h2>
+
+<p>The following comments are based on those in the original documentation:</p>
+
+<p>The area calculations also depend critically
+upon various parameters, such as the probe radius (taken to be 1.4&#197; for
+most calculations) and the van der Waals radii chosen for different
+atoms. Many programs (including AREAIMOL) choose one radius for all
+carbons, one radius for all nitrogens, one for all oxygens, whereas
+others (<i>e.g.</i> <a href="surface.html">SURFACE</a>) are able to differentiate
+between different carbons (aliphatic, aromatic etc.), different nitrogens
+and so on.</p>
+
+<p>SURFACE assigns the Van der Waals radius for a given atom
+according to both the element and also the residue in which it appears,
+and thus may lead to differences in estimates of the accessible area.</p>
+
+<p>Note that SURFACE calculates both the accessible area and
+the contact area, but does not include options for accounting for intermolecular
+contacts.</p>
+
+<p>One of the factors limiting the accuracy of the AREAIMOL calculation
+is the algorithm used to divide up the surface of each expanded Van der
+Waals atom. As of CCP4 6.1, Ian Tickle has implemented an improved
+algorithm which divides the surface up more evenly according to a
+"spiral" pattern based on <a href="#references">Saff and Kuijlaars
+(1997)</a>. Using this improved algorithm the calculated values of the ASA
+appear to be more accurate and stable over a wide range of PNTDEN values.</p>
+
+<h2><a name="problems"></a>KNOWN PROBLEMS</h2>
+
+<h3>ERROR: Dimension of parameter MAXNET is too small</h3>
+
+<p>The maximum size of protein that the program can handle is
+hardcoded in the parameter MAXNET in the source code file
+<tt>areaimol.f</tt>:</p>
+
+<pre> 
+      PARAMETER (MAXNET=6000000)
+</pre>
+
+<p>There is not a straightforward relationship between the number
+of atoms in the structure and the minimum size of this parameter
+however the program will detect when it is too small and will
+report what the required value is before terminating, for example:</p>
+
+<pre>
+ ERROR: Dimension of NET too small in program. Need: 
+  12362350  Currently:    6000000
+ AREAIMOL:  Parameter MAXNET too small
+</pre>
+
+<p>In this case it should be sufficient to edit the value of the
+MAXNET parameter to be at least the recommended size (<i>i.e.</i>
+12362350 in this example) and then recompile the program.</p>
+
+<h3>Too many symmetry operations</h3>
+
+<p>The number of symmetry operations that the program can handle
+is hardcoded in the parameter MAXSYM in the source code file
+<tt>areaimol.f</tt>:</p>
+
+<pre>
+      PARAMETER (MAXSYM=60)
+</pre>
+
+<p>In the event that the program stops with the message <tt>Too many
+symmetry operations</tt>, this limit has been exceeded. The program
+will suggest a new value for this parameter - you will need to update
+all occurrences before recompiling the program.</p>
+
+<h2><a name="examples">EXAMPLES</a></h2>
+
+<h3>Unix examples script found in $CEXAM/unix/runnable/</h3>
+
+          <li><a href="../examples/unix/runnable/areaimol.exam">areaimol.exam</a>
+
+<h2><a name="references"></a>REFERENCES</h2>
+
+<ol>
+<p><!-- KEEP startreferencelist --></p>
+
+<li>B.Lee and F.M.Richards, <i>J.Mol.Biol.</i>, <b>55</b>, 379-400 (1971)</li>
+<li>E.B.Saff and A.B.J.Kuijlaars, <i>The Mathematical Intelligencer</i>,
+    <b>19</b>, 5-11 (1997)<br />
+    <a href="http://www.math.vanderbilt.edu/~esaff/texts/161.pdf">http://www.math.vanderbilt.edu/~esaff/texts/161.pdf</a></li>
+
+<!-- KEEP endreferencelist -->
+</ol>
+
+<h2>AUTHORS</h2>
+<p>Originator: Peter Brick, Imperial College<br />
+Substantial modifications/additional features: Peter Briggs, Ian Tickle</p>
+
+<h2>SEE ALSO</h2>
+<p><a href="surface.html">surface</a>, <a href="contact.html">contact</a>,
+<a href="http://www.ccp4.ac.uk/newsletters/newsletter38/03_surfarea.html">CCP4 Newsletter article about SURFACE and AREAIMOL</a></p>
+
+</body></html>

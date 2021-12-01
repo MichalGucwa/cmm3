@@ -1,0 +1,494 @@
+<!DOCTYPE html
+                     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                     "DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<title>CCP4 Interface: Map &amp; Mask Utilities Module</title>
+<link rel="stylesheet" type="text/css" href="../ccp4idocs.css" title="CCP4i" />
+<link rev="made" href="mailto:mgwt@ysbl.york.ac.uk" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta name="AUTHOR" content="Maria and Liz" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="2"><img src="../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logotitle">Map &amp; Mask Utilities Module</td></tr>
+</table>
+<br />
+
+<table border="0">
+<tr><td>
+<a href="mtz_utils.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="valdep.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="../index.html" target="_top">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td></tr>
+</table>
+
+<dl>
+<dt><font color="#cc3333"><strong>Tasks in this module:</strong></font></dt>
+</dl>
+
+<p><a href="#task_maps" target="_self">Create Task-Specific Maps</a></p>
+<dl>
+<dt><a href="#fft" target="_self">Run FFT - Create Map</a></dt>
+<dd><a href="#fft_layout" target="_self">FFT - Task Window Layout</a></dd>
+</dl>
+<p><a href="#patterson1" target="_self">Generate Patterson Map</a></p>
+<p><a href="#ncsmask" target="_self">Create/Edit Masks</a></p>
+<dl>
+<dt><a href="#maputils" target="_self">Edit/Rotate Maps &amp; Masks</a></dt>
+<dd><a href="#maputils_layout" target="_self">Maputils - Task Window Layout</a></dd>
+</dl>
+<p><a href="#mapave" target="_self">Map Averaging</a></p>
+<p><a href="#map_correl" target="_self">Map Correlation</a></p>
+<p><a href="#mapcutting" target="_self">Map Cutting</a></p>
+<p><a href="#run_mapslicer1" target="_self">View map sections</a></p>
+<p><a href="#omitmap" target="_self">Calculate Omit Map</a></p>
+
+<dl>
+<dt><strong><em>Clipper Map Utilities</em></strong></dt>
+<dd><a href="#mapcalc" target="_self">Calculate Map</a></dd>
+<dd><a href="#pattcalc" target="_self">Calculate Patterson</a></dd>
+<dd><a href="#sfcalcmap" target="_self">Map to Structure Factors</a></dd>
+</dl>
+
+<p>The layout of each task window, <em>i.e.</em> the number of folders present,
+and whether these folders are open or closed by default, depends on the choices
+made in the <strong>Protocol</strong> folder of the task (see
+<a href="../general/intro.html#task_window_format" target="_self">Introduction</a>). Although
+certain folders are closed by default, there are specific reasons why you should
+or may want to look at them. These reasons are described in the Task Window
+Layout sections below.</p>
+
+<dl>
+<dt>This Module also contains utilities to view map and mask files:</dt>
+<dd><a href="#run_mapslicer1" target="_self"><strong><tt>View map sections</tt></strong></a></dd>
+</dl>
+
+<h3><a name="task_maps"></a>Create Task-Specific Maps</h3>
+
+<p>The tasks <a href="improvement.html#dm" target="_self">'Run DM'</a>,
+<a href="improvement.html#solomon" target="_self">'Run Solomon'</a>,
+<a href="refinement.html#refmac" target="_self">'Run Refmac'</a>,
+<a href="refinement.html#ncs_phased_refinement" target="_self">'NCS Phased Refinement'</a> and
+<a href="exptphase.html#mlphare" target="_self">'Run Mlphare'</a>
+will optionally produce specific maps (and/or masks) which should help the user to evaluate
+the results of that task. You can have these maps created when the task is run or you can
+create them afterwards using the 'Create Task-Specific Maps' task. <em>N.B. masks can
+not be (re)created afterwards using this task. As for MLPHARE maps, it would be most prudent to
+(re)create those through (re-running) the MLPHARE job itself (they can not be (re)created using the
+'Create Task-Specific Maps' task, and only with extreme care and if you know exactly what you
+are doing can they be (re)created using the 'Run FFT - Create Map' task)</em>. The only user
+input this task requires is the job number of the original job - all other parameters will be
+restored from the database. This task will produce the appropriate map(s), even if a map was not
+created in the original job. You can set the format of the output maps.</p>
+
+<p>The maps can be in CCP4 format or in the format for the graphics programs O, Quanta or
+XtalView. The default format is set in the
+<a href="../general/preferences.html" target="_self">Preferences</a> window (find
+<strong><tt>Preferences</tt></strong> in the menu on the right-hand side of the main window).</p>
+
+<h3><a name="fft"></a>Run FFT - Create Map</h3>
+
+<p>At various stages of the crystallographic process, (<em>e.g.</em> after refinement, before
+manual rebuilding of the structure takes place), an electron density map needs to be
+calculated. In the CCP4 Suite this is done with the Fast Fourier Transform program. If FFT is run
+<a href="task_maps" target="_self">independently from programs/tasks</a> like Refmac,
+'<tt>dm</tt>', Solomon, NCS Phased Refinement and MLPHARE,
+special care needs to be taken in the choice of map output (<em>e.g.</em> Refmac calculates
+special weighted differences to be used as coefficients for the maps). The FFT task
+is most easily performed inside the various program interfaces.</p>
+
+<p>In the <strong>Protocol</strong> folder of the Run FFT interface:</p>
+<ul>
+<li><a name="fft_type"></a>the option is provided to run FFT
+, and to
+use an existing map (see also
+<a href="#map_format" target="_self">change of map format</a> and/or
+<a href="#map_extent" target="_self">change of extent of map</a>).</li>
+<li><a name="fft_maptype"></a>the type of electron density map is chosen. They are:
+<dl>                                                                                                      
+<dt>simple</dt> <dd>map with &quot;single coefficient&quot; amplitudes for the
+Fourier transform, usually of the form [W]&nbsp;F1, where W is a weight and F1
+a structure factor. The phases are of the form PHI.<br /><strong>Refmac/SigmaA maps are
+special cases of simple maps, where the &quot;F1&quot; are actually composite
+Fourier coefficients, denoted as FWT (~2mFO-dFC) and DELFWT (~mFO-dFC).</strong>
+See also <a href="../../../../html/fft.html#map_simple" target="_PROGDOC">FFT program
+documentation for this type of map</a>.</dd>
+<dt>nF1-mF2</dt> <dd>map with &quot;multi-coefficient&quot; amplitudes for
+the Fourier transform, usually of the form
+[W](SCALE1&nbsp;F1&nbsp;-&nbsp;SCALE2&nbsp;F2), where W is a weight, and F1 and
+F2 are structure factors. SCALE1 and SCALE2 are scale factors chosen by the user
+(<em>e.g.</em> a 3FO-2FC map would have SCALE1="3" and SCALE2=2). The phases are
+of the form PHI. See also
+<a href="../../../../html/fft.html#map_diff" target="_PROGDOC">FFT program documentation
+for this type of map</a>.</dd>
+<dt>anomalous</dt><dd>See
+<a href="../../../../html/fft.html#map_anom" target="_PROGDOC">FFT program documentation
+for this type of map</a>.</dd>
+<dt>vector difference</dt><dd>See
+<a href="../../../../html/fft.html#map_vecdiff" target="_PROGDOC">FFT program documentation
+for this type of map</a>.</dd>
+<dt>double difference</dt><dd>See                                                                         
+<a href="../../../../html/fft.html#map_ddiff" target="_PROGDOC">FFT program documentation
+for this type of map</a>.</dd>
+<dt>translation</dt><dd>See                                                                         
+<a href="../../../../html/fft.html#map_phtrans" target="_PROGDOC">FFT program documentation
+for this type of map</a>.</dd>
+</dl>
+</li>
+<li><a name="map_format"></a>the format of the map is determined (<em>i.e.</em> CCP4, O, QUANTA). The
+Interface can create maps in these formats automatically, assuming you are
+properly set up for the graphics programs (<em>i.e.</em> the environment
+variables and/or the full paths for the maps are described in the setup). An existing map
+in one format can be recreated in another.</li>
+<li><a name="map_extent"></a>the role of the molecule in the map calculation is decided
+(<em>i.e.</em> the map to cover 'asymmetric unit', 'all atoms in PDB file' or
+'extent defined by user'). An existing map can be recreated covering a different part of space.</li>
+<li><a name="peaksearch"></a>automatic peak searching can be switched on.</li>
+<li><a name="plot_map_sections"></a>plotting of map sections with optional coordinates
+can be chosen.</li>
+</ul>
+
+<p>In the <strong>Files</strong> folder the input MTZ file and the output MAP are
+assigned. Depending on the choice of the type of map, the Interface displays
+the appropriate MTZ file columns that require a label, with a suggested
+default. If an existing map is to be used (see
+<a href="#fft_type" target="_self">Protocol options above</a>), this
+map needs to be assigned. If a map is to cover all atoms in PDB file (see
+<a href="#map_extent" target="_self">Protocol options above</a>), this coordinate
+file needs to be assigned. When the peak search option is switched on (see
+<a href="#peaksearch" target="_self">above</a>), the peak coordinates file needs
+to be assigned.</p>
+
+<h4><a name="fft_layout"></a>FFT - Task Window Layout</h4>
+
+<p>Features to look out for in the FFT task are:</p>
+
+<table border="1">
+<tr><th>Protocol option</th><th>Folder title</th><th>Importance</th><th>Comment</th></tr>
+<tr>
+<td>Run FFT</td>
+<td>Define map</td>
+<td>Exclude set of FreeR reflections defined by MTZ label</td>
+<td>To use &quot;FREE&quot; reflections in map calculations or to keep them truly FREE</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>Parameters SCALE1 (<tt>n</tt>) and SCALE2 (<tt>m</tt>) for <tt>n</tt>F1-<tt>m</tt>F2 map</td>
+<td>Needed for map types 'nF1-mF2' and 'vector difference'.
+See <a href="#fft_maptype" target="_self">above</a>.</td>
+</tr>
+<tr>
+<td></td>
+<td>Exclude Reflections</td>
+<td>Exclusion of reflections on the basis of their resolution or their value of F</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>Infrequently Used Options</td>
+<td>Generate map in spacegroup</td>
+<td>Specific spacegroups only, see
+<a href="../../../../html/fft.html#fftspacegroup" target="_PROGDOC">fftspacegroups</a>.<br />For
+other spacegroups, see
+<a href="../../../../html/fft.html#spgp_symm_pair" target="_PROGDOC">alternatives</a>.</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>Exclude reflection in FreeR set with specified value</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>Scaling of the map using cell volume or F000</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>Grid sampling</td>
+<td>Default grid is 1/3 of the maximum resolution</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>Apply B-factor scaling to F1 and/or F2</td>
+</tr>
+<tr>
+<td>all atoms in PDB file</td>
+<td>Extending map</td>
+<td>Border in &#197;ngstr&#246;m around atoms</td>
+</tr>
+<tr>
+<td>extent defined by user</td>
+<td>Map Limits</td>
+<td>Map extent for x, y and z</td>
+<td>To cover specific range of X, Y and Z, see also
+<a href="../../../../html/fft.html#xyzlim" target="_PROGDOC">xyzlim</a></td>
+</tr>
+<tr>
+<td>Do peak search of map</td>
+<td>Peak search details</td>
+<td>Search for negative peaks</td>
+<td>Toggle little square</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>PDB ATOM cards</td>
+<td>Identity of output peaks can be assigned here</td>
+</tr>
+</table>
+
+<p>See program documentation:
+<a href="../../../../html/fft.html" target="_PROGDOC">FFT</a>.</p>
+
+<h3><a name="patterson1"></a>Generate Patterson Map</h3>
+
+<p>See description in <a href="exptphase.html#patterson" target="_self">Experimental Phasing</a>
+module.</p>
+
+<p>See program documentation:
+<a href="../../../../html/fft.html#patterson" target="_self">FFT</a>.</p>
+
+<h3><a name="ncsmask"></a>Create/Edit Masks</h3>
+
+<p>This task interfaces to NCSMASK which will generate a mask from input
+coordinates or will edit or clean-up an existing mask. Beware that when creating a
+mask you will probably want to exclude water and ligand from the input coordinate file.
+Note that '<tt>dm</tt>' will generate masks internally and these should be used rather
+than creating masks with this task.</p>
+
+<p>See program documentation:
+<a href="../../../../html/ncsmask.html" target="_PROGDOC">NCSMASK</a>.</p>
+
+<h3><a name="maputils"></a>Edit/Rotate Maps &amp; Masks</h3>
+
+<p>The <strong>Protocol</strong> folder of the Maputils task contains the various options
+for manipulating maps and masks available from the programs Mapmask and Maprot.</p>
+
+<p>The <strong>Files</strong> folder offers lines for input and output map and/or mask files.</p>
+
+<h4><a name="maputils_layout"></a>Maputils - Task Window Layout</h4>
+
+<p>The following table contains a (short) description of all the protocol options of the
+Edit/Rotate Maps &amp; Masks task:</p>
+
+<table border="1">
+<tr><th>Protocol option</th><th>Folder title</th><th>Importance</th><th>Comment</th></tr>
+<tr>
+<td>Edit a map/mask file</td>
+<td></td>
+<td></td>
+<td><strong>Files</strong> folder contains 'Map out' or 'Mask out', depending on whether
+a map or mask is required</td>
+</tr>
+<tr>
+<td></td>
+<td>Edit File</td>
+<td><a name="map_scale"></a>Scale density by scale factor or by preset mean and SD</td>
+<td>Toggle little square and choose option and values</td>
+</tr>
+<tr>
+<td>Extend a map/mask file</td>
+<td></td>
+<td></td>
+<td><strong>Files</strong> folder contains 'Map out' or 'Mask out', depending on whether
+a map or mask is required</td>
+</tr>
+<tr>
+<td></td>
+<td>Extend File</td>
+<td>Extend map to 'cover all atoms in molecule'</td>
+<td>Choose 'PDB file' and 'Border around molecule'. Two other options available
+to extend map, see also <a href="#map_extent" target="_self">above</a>.</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>Extend map by...</td>
+<td>Program defaults to straightforwardly copy if output map is within input,
+and to use symmetry if map is extended.</td>
+</tr>
+<tr>
+<td><a name="map_print"></a>Print a map/mask file</td>
+<td>Print File</td>
+<td></td>
+<td>Sections and scaling can be chosen appropriately. See also
+<a href="#map_scale" target="_self">above</a>.</td>
+</tr>
+<tr>
+<td>Interpolate map to alternative grid</td>
+<td>Interpolate Map to Different Grid</td>
+<td></td>
+<td>Self-explanatory</td>
+</tr>
+<tr>
+<td>Rotate map</td>
+<td>Rotate Map</td>
+<td></td>
+<td>Rotation expressed in Euler angles</td>
+</tr>
+<tr>
+<td>Create mask from map</td>
+<td>Create Mask from Map</td>
+<td>Select mask for 'density above cutoff', 'fraction of output mask' or
+'fraction of unit cell'.</td>
+<td>Mask selection options all require input value.
+Sections can be printed as <a href="#map_print" target="_self">before</a>.</td>
+</tr>
+<tr>
+<td>Scale map using a mask</td>
+<td>Scale Map Using a Mask</td>
+<td>Scale density by...</td>
+<td>Choose either 'mean for protein and solvent', or 'ratio of SD/mean for protein'.</td>
+</tr>
+<tr>
+<td>Solvent flatten a map using a mask</td>
+<td>Solvent Flatten a Map</td>
+<td>Perform solvent 'flattening' or 'flipping'</td>
+<td>Density shifts are multiplied by 1 for flattening, and 2 for flipping. See
+<a href="../../../../html/mapmask.html#solv" target="_PROGDOC">FLIP</a>.</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>Multiply negative density in protein region by...</td>
+<td>A value of 0 corresponds to density truncation. See
+<a href="../../../../html/mapmask.html#solv" target="_PROGDOC">ATTN</a>.</td>
+</tr>
+<tr>
+<td>Combine maps/masks</td>
+<td></td>
+<td></td>
+<td><strong>Files</strong> folder contains appropriate input and output lines.</td>
+</tr>
+<tr>
+<td></td>
+<td>Combine Maps/Masks</td>
+<td>Combine...</td>
+<td>By addition or multiplication; no scaling performed.</td>
+</tr>
+</table>
+
+<p>See program documentation:
+<a href="../../../../html/mapmask.html" target="_PROGDOC">MAPMASK</a>,
+<a href="../../../../html/maprot.html" target="_PROGDOC">MAPROT</a>.</p>
+
+<h3><a name="mapave"></a>Map Averaging</h3>
+
+<p>This task uses MAPROT to produce either an averaged map for visualisation
+on graphics or for back transformation, or a correlation map. The input to MAPROT is
+always a map covering the entire unit cell but you can also input either an MTZ file
+and input labels, or a map which only covers the asymmetric unit. These will be
+converted to a map for the full unit cell.</p>
+
+<p>MAPROT will perform a variety of operations on one or two input maps and/or
+masks and output a map or mask.  The map rotation and interpolation tools are
+interfaced in CCP4i through the Map Utilities task in the Utilities module.</p>
+
+<p>See program documentation:
+<a href="../../../../html/maprot.html" target="_PROGDOC">MAPROT</a>.</p>
+
+<h3><a name="map_correl"></a>Map Correlation</h3>
+
+<p>This task will compare two maps and produce a table in the log file indicating
+the level of correlation either for the sections in the map or for the regions around
+each residue or atom. This task uses the Overlapmap program in the
+<a href="overlapmap.html#correlate" target="_PROGDOC">CORRELATE</a> mode and
+the definitions of correlation and real space R-factor are given in the
+<a href="../../../../html/overlapmap.html" target="_PROGDOC">Overlapmap program documentation</a>. Note
+that for a real-space R-factor the maps must be on the same scale; this is usually the
+case if, for example, you are comparing the Fobs and Fcalc which are output by Refmac.</p>
+
+<p>You must input the equivalent of two maps but these may be:</p>
+<ol type="a">
+<li>a map file</li>
+<li>an MTZ file with specified structure factors and phases</li>
+<li>(for the second map) a coordinate file from which an Fcalc map is generated</li>
+</ol>
+
+<p>If the map is generated from coordinates or if the correlation is listed by-residue
+or by-atom, you must select an input coordinate file. If the correlation is listed
+by-atom or by-residue, you must specify the range of residues for which a listing is
+required. By default these are set to all the chains in the input PDB file.</p>
+
+<p>The default mode of operation is to produce a by-residue listing of
+correlation of observed and calculated map; the 'observed' map is the
+observed structure factors and phases in an MTZ file and the 'calculated'
+map is calculated from the input molecule coordinates using the Sfall
+program.</p>
+<p>Note that if the correlation is reported by-atom or by-residue then Sfall
+is also run to generate a mask indicating the area of map corresponding
+to each atom or residue.</p>
+
+<p>It is not normally necessary for the user to specify the map grid.</p>
+
+<p>The best way to view the output is using the option <tt>View Log Graphs</tt> to
+display the table of map correlation versus residue number or section number. See
+<a href="../general/loggraph.html" target="_self">Loggraph</a>.</p>
+
+<p>See program documentation:
+<a href="../../../../html/sfall.html" target="_PROGDOC">SFALL</a>,
+<a href="../../../../html/overlapmap.html" target="_PROGDOC">OVERLAPMAP</a>.</p>
+
+<h3><a name="mapcutting"></a>Map Cutting</h3>
+
+<p>This task cuts density from a map for use in a molecular replacement
+search.</p>
+
+<p>See program documentation:
+<a href="../../../../html/maprot.html" target="_PROGDOC">MAPROT</a></p>
+
+<h3><a name="run_mapslicer1"></a>View Map Sections</h3>
+
+<p>Launch MAPSLICER, which is an interactive map section viewer for CCP4
+formatted map files.</p>
+
+<p>See program documentation:
+<a href="../../../../html/mapslicer.html" target="_PROGDOC">MapSlicer</a>.</p>
+
+<h3><a name="omitmap"></a>Calculate Omit Map</h3>
+
+<p>This task runs the Omit procedure in SFCHECK to generate an omit
+map from coordinate and reflection data.</p>
+
+<p>See program documentation:
+<a href="../../../../html/sfcheck.html" target="_PROGDOC">SFCHECK</a>.</p>
+
+<h3><a name="mapcalc"></a>Calculate Map</h3>
+
+<p>Use the Clipper CFFT program to generate a map.</p>
+
+<h3><a name="pattcalc"></a>Calculate Patterson</h3>
+
+<p>Use the Clipper CPATTERSON program to generate a Patterson map.</p>
+
+<h3><a name="sfcalcmap"></a>Map to Structure Factors</h3>
+
+<p>Use the Clipper CINVFFT program to generate structure factors from
+an existing map.</p>
+
+<table border="0" width="100%">
+<tr><td>
+<a href="mtz_utils.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="valdep.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="../index.html" target="_top">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td>
+<td align="right"><a href="http://validator.w3.org/" target="_EXTERNAL">Valid XHTML 1.0!</a>
+<a href="http://jigsaw.w3.org/css-validator/" target="_EXTERNAL">Valid CSS!</a></td></tr>
+</table>
+
+</body>
+</html>

@@ -1,0 +1,134 @@
+#!/bin/sh 
+#
+# mtzdmp script
+#
+if test $# = 0 ; then
+#
+#---- no filename given, read it
+#
+	printf "Input file name: "
+	read File_Name
+else
+	File_Name=$1
+fi
+#
+#
+if test $# = 1 ; then
+	#
+	#--- test for help
+	#
+	if  test $1 = "-h" ; then
+		echo " "
+		echo "mtzdmp -n Number  : number of hkl to dump (def 10) "
+		echo "mtzdmp -e         : print HEADER only"
+		echo "mtzdmp -b         : dump BATCH headers"
+		echo "mtzdmp -s         : dump SYMMETRY info"
+		echo "mtzdmp -bs (-sb)  : dump both SYMM and BATCH"
+		echo "mtzdmp -r Rmax (Rmin) : resolution limits"
+		echo "mtzdmp -i         : Interactive"
+		echo " "
+		exit
+	fi
+
+	File_Name=$1
+fi
+
+#---- test if $1 is a file name
+
+if test ! -e $File_Name ; then
+	#--- well then test if $1.mtz is a file
+	File_Name=$File_Name".mtz"
+	if test ! -e $File_Name ; then
+		echo "mtzdmp: no file: `basename $File_Name .mtz`[.mtz]"
+		exit 1
+	fi
+fi
+
+if  test $# -le 1 ; then
+	mtzdump hklin $File_Name < /dev/null
+	exit $?
+fi
+
+#
+
+XHEAD=" "
+XBATCH=" "
+XSYMM=" "
+XNREF=" "
+XRESO=" "
+
+while test $# -gt 1 ; do
+shift
+case "$1" in 
+
+  -n)
+# check there is another arg
+if test $# -ge 2 ; then
+        shift
+        XNREF="NREF $1"
+else
+        XNREF="NREF 10"
+fi
+        ;;
+  -e) XHEAD="HEAD" ;;
+  -b) XBATCH="BATCH" ;;
+  -s) XSYMM="SYMMETRY" ;;
+  -r) 
+if  test $# -ge 2 ; then
+        shift
+        XRESO="RESOLUTION  $1"
+		if  test $# -ge 2 ; then
+		        shift
+		        XRESO="${XRESO} "$1
+		fi
+else
+        XRESO=" "
+fi
+	;;
+  -sb)
+        XSYMM="SYMMETRY"
+        XBATCH="BATCH"
+	;;
+  -bs)
+        XSYMM="SYMMETRY"
+        XBATCH="BATCH"
+	;;
+
+  -h)
+		echo " "
+		echo "mtzdmp -n Number  : number of hkl to dump (def 10) "
+		echo "mtzdmp -e         : print HEADER only"
+		echo "mtzdmp -b         : dump BATCH headers"
+		echo "mtzdmp -s         : dump SYMMETRY info"
+		echo "mtzdmp -bs (-sb)  : dump both SYMM and BATCH"
+		echo "mtzdmp -r Rmax (Rmin) : resolution limits"
+		echo "mtzdmp -i         : Interactive"
+		echo " "
+		exit
+	;;
+  -i)
+#
+#---- interactive
+#
+        exec mtzdump hklin $File_Name
+	;;
+  *)
+#
+#--- assume number for number of reflections
+#
+        NREF="NREF "$1
+        ;;
+esac
+done
+
+
+
+mtzdump hklin $File_Name <<EOF
+$XHEAD
+$XBATCH
+$XSYMM
+$XNREF
+$XRESO
+EOF
+#
+exit $?

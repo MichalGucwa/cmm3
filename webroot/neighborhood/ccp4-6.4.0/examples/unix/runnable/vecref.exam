@@ -1,0 +1,49 @@
+#!/bin/sh
+#
+# Example of running Vecref - NB scaling should be done with 
+# Fhscal first and vf000 term output by Fhscal should be used
+# in Patterson calculation.
+#
+# Use Fhscal to scale native and derivative data
+#
+fhscal \
+hklin $CEXAM/toxd/toxd.mtz \
+hklout $CCP4_SCR/toxd_fhsc.mtz <<eof-fhscal
+TITLE scale Au derivative by Kraut method
+! SHELLS 20 ! default
+LABIN FP=FTOXD3 SIGFP=SIGFTOXD3 FPH=FAU20 SIGFPH=SIGFAU20 
+END
+eof-fhscal
+#
+#  Calculate Patterson
+#
+fft \
+   HKLIN  $CCP4_SCR/toxd_fhsc.mtz \
+   MAPOUT  $CCP4_SCR/toxd_aupatt.map \
+   <<eof-fft
+PATT
+resol 100 2.5
+! LIST 100 ! uncomment this to get input FFT terms (fftkw.abcoeffs)
+EXCLUD SIG1 4 SIG2 4 DIFF 3700
+titl  2.5A AU - NAT patterson - excluding 4 sig , and Diso > 3700
+grid 128 64 40
+xyzlim 0 64 0 32 0 20
+vf000 38165 0  ! set to value given in Fhscal
+bias 1         ! 
+binmapout
+LABI F1=FAU20 SIG1=SIGFAU20 F2=FTOXD3  SIG2=SIGFTOXD3
+end
+eof-fft
+#
+# Use vecref to refine sites determined using RSPS (see rsps.exam)
+#
+vecref \
+  MAPIN $CCP4_SCR/toxd_aupatt.map \
+  ATOUT $CCP4_SCR/toxd_vecref.data \
+  << eof-vecref
+TITL TEST VECREF 2.5A
+RESO 2.5 20
+SPAC P212121
+CYCL 3 3 5
+ATOM AU 1  1    .1758  0.1016 -.1000     20
+eof-vecref

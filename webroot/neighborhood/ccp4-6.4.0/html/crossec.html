@@ -1,0 +1,149 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::CROSSEC::Supported::Data Processing and Reduction,MULTIWAVELENGTH ANOMALOUS DISPERSION::interpolate X-ray cross sections and compute anomalous scattering factors:::::::: -->
+
+<H1> CROSSEC (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>crossec </b>
+- interpolate X-ray cross sections and compute anomalous scattering factors
+<H2> SYNOPSIS</H2>
+<b>crossec</b>
+<br>
+ [<A HREF="#keywords">Keyworded input</A>]
+<H2><A NAME="description"></A> DESCRIPTION</H2>
+CROSSEC interpolates X-ray cross sections and computes anomalous scattering
+factors.  f' and f'' values are derived for a given atom type at given
+wavelengths.  These are important for data collection and analysis
+with heavy atoms.
+<P> 
+Three contributions to f' are listed separately in the output (<A HREF="#verbose">VERBose</A> option):
+<dl>
+<dt>P.E.</dt>
+<dd>Photoelectric contribution</dd>
+<dt>Eterm</dt>
+<dd>Term dependent on the total energy of the atom (<A HREF="#reference2">reference [2]</A>)</dd>
+<dt>Jensen</dt>
+<dd>Term dependent on the X-ray energy (<A HREF="#reference3">reference [3]</A>)</dd>
+</dl>
+<P> 
+The output is marked up for plotting with 
+<a href="xloggraph.html">XLOGGRAPH</a>.
+<P> 
+The cross section file has a number of orbitals for each atom from
+atomic number 3-98.  The first MX records (MX=5 for this
+cross-section file and is set in the program for each orbital) will
+have cross sections at MX values of energy from about 1 to 80 keV
+approximately equally spaced in log(energy).  The next five records
+will be cross sections at energies selected by the Gauss integration
+scheme.  If the function type is 0 (IF=0) (<A HREF="#reference2">reference [2]</A>) a sixth value is read in
+for an energy of 1.001*(binding energy).  If the X-ray energy is less
+than the binding energy, FUNCTION SIGMA3 will be used (<A HREF="#reference4">reference [4]</A>).
+<p>
+<b> Warning</b>
+<p>
+If An X-ray energy is very close to one of the energies
+used in the Gauss integration an `anomalous' anomalous scattering
+factor may result.  There is no easy way out of this problem.  A
+suggested way is to compute several values at nearby energies
+and draw a smooth curve.  This method should work provided
+the points do not pass through an edge.
+
+<H2><a name="files">INPUT AND OUTPUT FILES</a></H2>
+
+The data file is read from logical name CROSSECDATA (defaulting to
+$CLIBD/crossec.lib).
+
+<H2><a name="keywords">KEYWORDED INPUT</a></H2>
+
+<P>The ATOM keyword is compulsory. You must also specify a set of
+wavelengths using the NWAV keyword and/or the CWAV keyword.
+Any number of NWAV and CWAV keywords may be given, but there is
+currently a maximum of 1000 on the total number of wavelengths
+allowed. All other keywords are optional. The possible keywords are:</P>
+<blockquote>
+<A HREF="#atom"><B>ATOM</B></A>, <A HREF="#cwav"><B>CWAV</B></A>,
+<A HREF="#end"><B>END</B></A>, <A HREF="#nord"><B>NORD</B></A>,
+<A HREF="#nwav"><B>NWAV</B></A>, <A HREF="#verbose"><B>VERB</B></A>
+</blockquote>
+
+<h3><A NAME="atom"></A>ATOM &lt;atom&gt;</h3>
+(Compulsory). <br>
+Atomic symbol for the element of interest (case-insensitive).
+
+<h3><A NAME="nwav"></A>NWAV &lt;nwav&gt; &lt;wav_1&gt; .... &lt;wav_nwav&gt;</h3>
+Number &lt;nwav&gt; of wavelengths to be given, followed
+by a list of the wavelengths themselves (in Angstroms).
+
+<h3><A NAME="cwav"></A>CWAV &lt;nwav&gt; &lt;centre&gt; &lt;step&gt;</h3>
+CWAV is a more compact way of specifying a series of regularly
+spaced wavelengths than NWAV. This keyword specifies
+&lt;nwav&gt; wavelengths centred on &lt;centre&gt; (in Angstroms) 
+and separated by &lt;step&gt; (in Angstroms). This may be useful
+if you want to look at a series of wavelengths on either side of
+an edge.
+
+<h3><A NAME="nord"></A>NORD &lt;nord&gt;</h3>
+(Default 2). <br>
+Interpolation in the data file is governed by the NORD value as
+follows:
+<dl>
+<dt> 0<dd>
+Interpolation is by fitting three closest points to a quadratic.
+<dt> 1,2,3 etc.<dd>
+Use Aitken's interpolation method with NORD the interpolation order.
+2 is probably the best value to use.
+</dl>
+
+<h3><A NAME="verbose"></A>VERB</h3>
+Verbose output. The default is to only produce the final table (which
+can be viewed with <a href="xloggraph.html">XLOGGRAPH</a>).
+
+<h3><A NAME="end"></A>END</h3>
+End input and run.
+
+<H2><A NAME="examples"></A>  EXAMPLE</H2>
+
+<H3>Unix example script found in $CEXAM/unix/runnable/</H3>
+    <li><a href="../examples/unix/runnable/crossec.exam">crossec.exam</a>
+
+<H2> AUTHORS</H2>
+Don Cromer, LANL.
+
+<H2><A NAME="references"></A> REFERENCES</H2>
+<ol>
+<!-- KEEP startreferencelist -->
+<li><A NAME="reference1"></A>
+Don T. Cromer.  `Calculation of Anomalous Scattering Factors at Arbitrary
+Wavelengths', <i>J. Applied Cryst.</i> <b>16</b> 437-8 (1983)
+<li><A NAME="reference2"></A>
+Cromer and Liberman.  <i>J. Chem. Phys.</i> <b>53</b> 1891-1898 (1970)
+<li><A NAME="reference3"></A>
+Jensen. <i> Physics Letters</i> <b>74A</b> 41-44 (1979)
+<li><A NAME="reference4"></A>
+Cromer and Liberman <i>Acta Cryst.</i> <b>A37</b> 267-268 (1981)
+<li><A NAME="reference5"></A>
+Henke, Gullikson and Davis, Atomic Data and Nuclear Data Tables Vol. 54 No.2
+181-342 (1993).  <br>
+(See <A HREF="http://xray.uu.se/hypertext/henke.html">http://xray.uu.se/hypertext/henke.html</A>)   <br> 
+<! --  This and next item from Colin Nave: -- >
+Note however that they are not given in fine intervals.  This is only
+important in the immediate region of an absorption edge where they
+change quickly.  In any case near edge features mean that any values
+of f' or f'' for an isolated atom in this region could be unreliable
+as they depend on the environment of the atom.
+<li><A NAME="reference6"></A>
+Alain Soyer, <i>J.Appl.Cryst.</i> <b>28</b> 244 (1995).  <br>
+The program Fhkl can plot values from the Henke et al and Cromer et al 
+methods, though it is designed for other purposes.
+<li><A NAME="reference7"></A>
+D. Waasmaier and A. Kirfel, `New Analytical Scattering Factor
+Functions for Free Atoms and Ions', <i>Acta Cryst.</i> <b>A51</b> (1995).  <br>
+<A HREF="ftp://wrzx02.rz.uni-wuerzburg.de/pub/local/Crystallography/index.txt">FTP Uni Wuerzburg</A>
+<!-- KEEP endreferencelist -->
+</ol>
+
+<H2> SEE ALSO</H2>
+ <A HREF=xloggraph.html>xloggraph</A>
+</body></html>

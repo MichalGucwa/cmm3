@@ -1,0 +1,224 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::PEAKMAX::Supported::Map calculation and manipulation,Multiple Isomorphous Replacement::search for peaks in the electron density map:::::::: -->
+
+<H1> PEAKMAX (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>peakmax </b>
+- search for peaks in the electron density map
+<H2> SYNOPSIS</H2>
+<b>peakmax MAPIN </b>
+<i>foo_in.map  </i>
+[<b>XYZOUT </b>
+<i>foo_out.pdb</i>]
+[<b>XYZFRC</b>
+<i>foo_frac.out</i>]
+[<b>PEAKS</b>
+<i>foo_peak.out</i>]
+<br>
+[<A HREF="#keywords">Keyworded input</A>]
+
+<H2><A NAME="description">DESCRIPTION</A></H2>
+Search map (in standard map format) and list coordinates of all
+peaks (optionally all positive peaks only) with height above a given
+threshold. The peaks are listed in grid, fractional and orthogonal
+coordinates, in the order they are found in the map and sorted in
+descending order of absolute value of peak height. The list of peaks
+is checked for symmetry-related peaks, and these are assigned a unique
+site number to indicate which peaks are related. A peak list can be written
+to output files: in a format with fractional coordinates suitable for
+input to MLPHARE and/or to a PDB file for further processing,
+<EM>e.g.</EM> with WATPEAK or graphics program such as O.
+<H2><A NAME="keywords">KEYWORDED INPUT</A></H2>
+
+<P>The various data control lines are identified by keywords, those available
+being: </P>
+<blockquote>
+<A HREF="#atname"><B>ATNAME</B></A>, <A HREF="#bfactor"><B>BFACTOR</B></A>, <A HREF="#chain"><B>CHAIN</B></A>, <A HREF="#exclude"><B>EXCLUDE</B></A>, <A HREF="#numpeaks"><B>NUMPEAKS</B></A>, <A HREF="#orthogonalization"><B>ORTHOGONALIZATION</B></A>, <A HREF="#output"><B>OUTPUT</B></A>, <A HREF="#patterson"><B>PATTERSON</B></A>, <A HREF="#residue"><B>RESIDUE</B></A>, <A HREF="#threshold"><B>THRESHOLD</B></A>, <A HREF="#xyzlimit"><B>XYZLIMIT</B></A>, <A HREF="#end"><B>END</B></A>
+</blockquote>
+
+<H3><A NAME="threshold"></A>THRESHOLD [RMS] &lt;threshold&gt; [NEGATIVES]</H3>
+[default THRESHOLD RMS 3]
+<br>
+Threshold for peaks: all peaks with  values above &lt;threshold&gt;
+will be selected. 
+<br>
+<b>Subkeywords:</b>
+<blockquote>
+<dl>
+<dt> RMS  <dd>
+peaks will be chosen if they are more than &lt;threshold&gt; * (rms density), 
+instead of an absolute value.
+<dt> NEGATIVES <dd>
+negative peaks below -&lt;threshold&gt; will be selected as well as positive 
+peaks.
+</dl>
+</blockquote>
+
+<H3> <A NAME="output"></A>OUTPUT [ PDB | FRAC | PEAKS | NONE ]</H3>
+[default OUTPUT PDB]
+<br>
+By default, output PDB files contain in the occupancy
+column, the peak height, and in the Bfactor column,
+height/rms(density). If the <a href="#bfactor">BFACTOR</a> command
+is present, these columns will be set to occupancy &amp; Bfactor. Note
+that one or more of the subkeywords - other than 'NONE' - can appear
+on the same line as the OUTPUT keyword; they are not mutually
+exclusive.<br>
+<b>Subkeywords:</b><br>
+<blockquote>
+<dl>
+<dt> PDB (default)  <dd>
+write sorted peaks to a PDB format coordinate file with
+logical name XYZOUT
+<dt> FRAC    <dd>
+write sorted peaks with fractional coordinates to the file with
+logical name XYZFRC, in a format suitable for input to MLPHARE.<br>
+<EM>N.B.</EM>: In OUTPUT FRAC, no file will be written if the
+<a href="#patterson">PATTERSON</a> keyword is also present.
+<dt> PEAKS   <dd>
+write unsorted peaks file to logical name PEAKS
+<dt> NONE   <dd>
+no output file
+</dl>
+</blockquote>
+
+<H3> <A NAME="bfactor"></A>BFACTOR &lt;Bfactor&gt;  [&lt;Occupancy&gt;]</H3>
+[default: set occupancy = peak height/rms(density), Bfactor = height]
+<br>
+Define Bfactor [&amp; occupancy] for output file.
+
+<H3> <A NAME="residue"></A>RESIDUE &lt;Residue_type&gt;</H3>
+[default HOH]
+<br>
+Set residue type for output file.
+
+<H3> <A NAME="atname"></A>ATNAME &lt;Atom_name&gt;</H3>
+[default O]
+<br>
+Set atom name for output file.
+
+<H3> <A NAME="chain"></A>CHAIN &lt;Chain_ID&gt;</H3>
+[default X]
+<br>
+Set chain identifier for output file
+
+<H3> <A NAME="numpeaks"></A>NUMPEAKS  &lt;nop&gt;</H3>
+(&lt;= 8000) (Default: 800)  
+<br>
+Number of peaks to output in the list, sorted by height
+
+<H3> <A NAME="orthogonalization"></A>ORTHOGONALIZATION  &lt;Ncode&gt;</H3>
+[Default: 1  (Standard PDB)]
+<br>
+Set orthogonalisation convention
+<pre>
+              =1   A // XO, C* // ZO  (Standard PDB)
+              =2   B // XO, A* // ZO
+              =3   C // XO, B* // ZO
+              =4  HEX A+B // XO, C* // ZO
+              =5   A* // XO, C // ZO      (Rollett)
+</pre>
+
+<H3> <A NAME="patterson"></A>PATTERSON</H3>
+If given then the patterson vector lengths will be given
+for the sorted list. If there is possible NCS translation the output is flagged.
+<pre>
+                                ***** NCS translation likely *****  
+
+ Origin peak:                                        337.21   0.000 0.000 0.000     0.00   0.00   0.00
+ Possible NCS Peak, fractional & Orthogonal coords    79.76   0.209 0.000 0.490    19.45   0.00  34.09
+</pre>
+
+<H3> <A NAME="xyzlimit"></A>XYZLIMIT  &lt;NU1&gt; &lt;NU2&gt; &lt;NV1&gt; &lt;NV2&gt; &lt;NW1&gt; &lt;NW2&gt;</H3>
+[Default: If this keyword is omitted, the whole map is searched]
+<br>
+Limits for search in grid units on fast, medium, slow axes.
+
+<H3> <A NAME="exclude"></A>EXCLUDE [ EDGE | NONE ]</H3>
+
+[Default: EXCLUDE EDGE]
+<br>
+Attempt to suppress output of symmetry-equivalent peaks at the map
+edges (EXCLUDE EDGE), otherwise output all peaks (EXCLUDE NONE). It
+should be noted that EXCLUDE EDGE doesn't always successfully
+suppress all the equivalent peaks.
+
+<H3> <A NAME="end"></A>END</H3>
+End input.
+
+<H2> <A NAME="files"></A>INPUT AND OUTPUT FILES</H2>
+
+<H3>Input</H3>
+<dl compact>
+<dt>MAPIN<dd>
+Map file to be searched for peaks, in CCP4 map format.
+</dl>
+<H3>Output</H3>
+
+Which of the following output files (if any) are produced depends on the values
+of the subkeywords given with the <a href="#output">OUTPUT</a> keyword. In all
+cases the height/(rms density) is written for each peak (<EM>i.e.</EM> not the &quot;absolute&quot;
+peak height)
+
+<dl compact>
+<dt>XYZOUT<dd>
+Sorted list of peaks written in PDB format; produced when the
+OUTPUT PDB option is specified.<br>
+See also the <a href="#notes">NOTES</a> below.
+<dt>XYZFRC<dd>
+Sorted list of peaks with fractional coordinates in a format
+suitable for input to MLPHARE; produced with the OUTPUT FRAC option.<br>
+No file will be written if the
+<a href="#patterson">PATTERSON</a> keyword has been specified.
+<dt>PEAKS<dd>
+List of unsorted peaks produced when the OUTPUT PEAKS option is specified.
+</dl>
+
+<H2> <A NAME="notes"></A>NOTES</H2>
+In the PDB file on stream XYZOUT, the peaks are put out as
+waters with a chain identifier of X until residue 999 is reached, when the
+sequence continues from 1 and chain id Y. The official PDB format allows the
+residue number to contain up to four digits, so this is technically
+unnecessary.
+
+<H2> SEE ALSO</H2>
+The program <a href="watpeak.html">WATPEAK</a> can be used to associate the
+peaks/holes with atomic coordinates from the output with OUTPUT PDB
+(default options).
+ 
+<H2> AUTHOR</H2>
+<pre>
+Contact:   Phil Evans (6-OCT-1989 12:33) 
+  Email :  PRE@MRC-MOLECULAR-BIOLOGY.CAMBRIDGE.AC.UK
+    (pre@mrc-lmb.cam.ac.uk)
+
+Other authors: Ian Clifton (30-Jul-1993) 
+  Address:  Laboratory of Molecular Biophysics
+  Oxford University
+  Rex Richards Building
+  South Parks Road
+  Oxford  OX1 3QU
+  UK
+  Phone:  +44 865 275387
+  Email (INTERNET):  ian@biop.ox.ac.uk
+  Email (X.400):  C=GB;ADMD= ;PRMD=UK.AC;O=OX;OU=BIOP;S=Ian 
+</pre>
+
+<H2> <A NAME="examples"></A>EXAMPLES</H2>
+
+<H3>Simple unix example scripts found in $CEXAM/unix/runnable/</H3>
+
+	<li><a href="../examples/unix/runnable/3fo2fcmap">3fo2fcmap </a>
+(calculating a 3Fo - 2Fc map)<BR>
+	<li><a href="../examples/unix/runnable/fofcmap">fofcmap </a>
+(calculating an Fo-Fc map)<BR>
+	<li><a href="../examples/unix/runnable/watpeak.exam">watpeak.exam </a>
+(A simple Procedure  for finding water peaks)<BR>
+	<li><a href="../examples/unix/runnable/waterpeaks">waterpeaks </a>
+(Procedure  for finding water peaks.)<BR>
+       
+</body></html>
+

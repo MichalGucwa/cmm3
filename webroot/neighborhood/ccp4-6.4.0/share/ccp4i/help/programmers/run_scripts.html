@@ -1,0 +1,103 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4i Documentation for Programmers: Run Scripts</title>
+<link rel="stylesheet" type="text/css" href="../ccp4idocs.css" title="CCP4i" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="3" class="logopic"><img src="../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logoprog">Documentation for Programmers</td></tr>
+<tr><td class="logotitle">Run Scripts</td></tr>
+</table>
+<br />
+<table border="0">
+<tr><td>
+<a href="def_files.html" target="_PROGMAIN">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="command_template.html" target="_PROGMAIN">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="intro.html" target="_PROGMAIN">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td></tr>
+</table>
+
+<h3><a name="definitions"></a>Run Scripts</h3>
+
+<p>See documentation on <a href="../general/runjob.html#run_script" target="_MAIN">How Jobs are Run.</a></p>
+
+<p>Every task <em>taskname</em> must have a run script file
+$CCP4I_top/script/<em>taskname</em>.script. 
+The simplest run script will just run the required program, but a complex
+script could run several programs, include some quite complex flow control
+and possibly do other work such as analysing the log file output from the
+programs. The run scripts are written in the Tcl scripting language though
+technically it should be possible to use alternative scripting languages in
+this context within the general framework of CCP4i.</p>
+There is a
+<a href="indexframeset.html" target="_PROGRAMMERSDOCS">library of CCP4i
+commands</a>, some of which are specific for run scripts, 
+which simplify script writing.</p>
+
+<p>A simple script to run one program will do three things:</p>
+
+<ul>
+<li>define the command line for the program</li>
+<li>write a command script (if the program requires a script)</li>
+<li>use the CCP4i library command
+<a href="Execute.html" target="_INDEXMAIN"><tt>Execute</tt></a> to run the program</li>
+</ul>
+
+<p>Besides running the program, the <tt>Execute</tt> command has functionality
+to enable the user to view and edit the command line or input script, and
+functionality to terminate the run script cleanly if the program fails.
+This command requires, as input, the command line to run the program and
+the script that the program will read.</p>
+
+<p>For any program which requires command script input (<em>i.e.</em> most CCP4
+programs) the run script must generate the command script. There are two
+means to generate command scripts: either they can be written explicitly
+(which is good for short, simple scripts) or they can be generated
+automatically using the program command templates.</p>
+
+<p>To write command scripts explicitly, use the
+<a href="WriteFile.html" target="_INDEXMAIN"><tt>WriteFile</tt></a> and
+<a href="GetTmpFileName.html" target="_INDEXMAIN"><tt>GetTmpFileName</tt></a>
+commands, for example:</p>
+
+<pre>
+WriteFile [set tmp_script [GetTmpFileName -ext _com]] \
+"MODE UPDATE $ARP_UPDATE_MODE
+CELL $CELL_1 $CELL_2 $CELL_3 $CELL_4 $CELL_5 $CELL_6
+SYMM $SPACE_GROUP  \nEND"
+</pre>
+
+<p>Command templates are described
+<a href="command_template.html" target="_self">elsewhere</a>. There is
+usually one command template per program. If the same program is used by more than
+one task (<em>e.g.</em> the FFT program is used by both the 'FFT' and the 'Generate
+Patterson' tasks), the same command template can be reused. The CCP4i library
+command <a href="CreateComFile.html" target="_INDEXMAIN"><tt>CreateComFile</tt></a>
+requires the name of a command template file
+as argument and will create a command script by substituting the parameters
+set in the run file into the command template. This requires a feat which
+might seem impossible to Fortran programmers: the <tt>CreateComFile</tt>
+command must be able to 'see' the parameters set in the run file without
+them been explicitly passed to the command. This is achieved using the
+Tcl <tt>uplevel</tt> command. The <tt>CreateComFile</tt> command
+returns the name of the command script which can then be passed on to the
+<tt>Execute</tt> command.</p>
+
+<p>All of the parameters set in the task interface are written to a .def file which
+is read by the <em>ccp4ish</em> process and all of the parameters set in the .def file
+are visible when <em>ccp4ish</em> sources the run script. The .def file
+for a job also contains come job control parameters at the top of the file;
+these are on lines beginning with #CCP4I. These parameters are loaded into an array called
+<tt>job_params</tt> which is accessed by the CCP4i library routines such as 
+<tt>Execute</tt> and <tt>TerminateScript</tt>.</p>
+
+</body>
+</html>

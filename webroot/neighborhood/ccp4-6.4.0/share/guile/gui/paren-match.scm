@@ -1,0 +1,30 @@
+
+(define-module (gui paren-match)
+  #:export (find-matching-open))
+
+(define (find-matching-open str pos)
+  (let ((reversed-str (let loop ((pos pos)
+                                 (chars '()))
+                        (if (< pos 0)
+                            (list->string (reverse! chars))
+                            (loop (- pos 1)
+                                  (let ((c (string-ref str pos)))
+                                    (case c
+                                      ((#\()
+                                       (cons #\) chars))
+                                      ((#\))
+                                       (cons #\( chars))
+                                      ((#\\)
+                                       (set-car! chars #\x)
+                                       (cons #\x chars))
+                                      (else
+                                       (cons c chars)))))))))
+    (if (char=? (string-ref reversed-str 0) #\()
+        (with-input-from-string reversed-str
+          (lambda ()
+            (let ((x (false-if-exception (read))))
+              (cond ((eof-object? x) #f)
+                    (x (- (string-length reversed-str)
+                          (port-column (current-input-port))))
+                    (else #f)))))
+        #f)))

@@ -1,0 +1,69 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4 Program Suite : refmac</title>
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX64 6.2 IP19) [Netscape]" />
+</head>
+<body>
+
+<!-- ::INDEX_INFO::REFMAC::Supported::Model Refinement::macromolecular refinement program:::::::: -->
+
+<h1>REFMAC (CCP4: Supported Program)</h1>
+<h2>User's manual for the program refmac_5.0.*</h2>
+
+<h2><a name="example10"></a>EXAMPLE 10</h2>
+
+<p>Example of using the user supplied ligand description. 
+<a href="ions.html">ions.cif</a> contains description of ligands supplied by 
+user. This file may contain all users ligands. Ligands present in this file
+may or may not be in the list of the stadard ligands. If one of the ligands
+(in this case it is MO6) is present in the standard ligand list then program 
+will use users definition. Users ligands file may contain different ligands and
+links. If program finds link or ligand present in the coordinate file not
+described by user and not present in the standard ligand list then refmac 
+will create description for this ligand and write to file specified by LIB_OUT 
+&lt;out.lib&gt;, default new.lib. All ligands from LIB_IN also will be copied 
+to the output ligand file</p>
+<pre>
+#!/bin/csh -fv
+
+refmac5  xyzin   beta29.pdb   hklin beta_nat3_phase_ano.mtz \
+  xyzout beta_r.pdb  hklout $SCRATCH/junk \
+  lib_in ions.cif \
+  &lt;&lt; eop
+
+#
+#   Input mtz labels.
+labin FP=Fnat3 SIGFP=SIGFnat3 FREE=FreeR_flag  
+#
+#  Output mtz labels
+
+LABOUT FC=FC PHIC=PHIC FWT=FWT DELFWT=DELFWT
+
+#
+# this keyword should be activated to see if there are any links in the
+# coordinate file not defined in the coordinate file
+#make link y
+
+#
+#  This keyword forces refmac to stop after checking coordinates and 
+#  making restraints if MAKE HYDR N has been specified. It is better to
+#  have formatted restraint file.
+#make format f
+#make exit y
+
+# Refinement parameters
+ncycle 1
+#
+# Weight x-ray and geometry according this weighting scheme
+weight matrix 0.5
+#
+#First and last cycles will give full statistics. Intermediate cycles
+#will give only minimum overall statistics
+MONITOR  MEDIum
+
+END
+eop
+</pre>
+</body>
+</html>

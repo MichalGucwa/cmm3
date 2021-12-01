@@ -1,0 +1,55 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+# Draw specific maps for review after run of dm 
+# This script is used stand-alone from task_maps or sourced from dm script
+
+  source [SearchPath TOP utils map_utils.tcl]
+
+# Create maps for input and output density
+
+    set mapin [SetOutputFileRoot -map]_in.map
+    set mapout [SetOutputFileRoot -map]_out.map
+     
+    CreateMap $MAPOUT_FORMAT $HKLIN mapin "Map input to DM" \
+        [list F1 W PHI ] [list $FP $FOMO $PHIO] -xtal [list FP FOM PHIB]
+    CreateMap $MAPOUT_FORMAT $HKLOUT mapout "Map after DM" \
+	[list F1 W PHI ] [list $FP $FOMDM $PHIDM] -xtal [list FP FOM PHIB]
+    AddOutputFile $mapin MAP_DEFAULT $mapout MAP_DEFAULT
+
+# If possible convert mask to appropriate format
+
+    if { [regexp O|QUANTA $MAPOUT_FORMAT] } {
+      set maskout [SetOutputFileRoot -map]_mask.mbk
+      ConvertMapFormat $MAPOUT_FORMAT $MASKOUT $maskout $LOG_FILE -nonorm
+      AddOutputFile $maskout MAP_DEFAULT
+    }
+
+# Make macros for O and XtalView
+
+    if [regexp O $MAPOUT_FORMAT] {
+      set macro_file [SetOutputFileRoot].mac
+      MakeOMapMacro $macro_file [list $mapin $mapout $maskout ] \
+	[list dm_in dm_out mask ] [list 1.0 1.0 0.5 ] \
+	[list slate_blue red green] 200.0 -mtz $HKLOUT -centre
+      AddOutputFile $macro_file PROJECT
+
+    } elseif [regexp XtalView $MAPOUT_FORMAT] {
+
+      WriteToLog "Writing file for XtalView $mapout\n\n **Once you are in Xtalview.......\nUse a `Fo*FOM (Xheavy) map'\n" 
+
+      set crystal_file [SetOutputFileRoot].xtal
+      set macro_file [SetOutputFileRoot]_xtal.script
+
+
+      MakeXtalMacro $HKLOUT $crystal_file $macro_file \
+		[list $mapin $mapout] [list Fo*fom Fo ] [list 8 8 ]
+      AddOutputFile $crystal_file PROJECT $macro_file PROJECT
+    }
+

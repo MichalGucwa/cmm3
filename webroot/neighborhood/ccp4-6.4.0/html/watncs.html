@@ -1,0 +1,263 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html>
+<head>
+   <title>CCP4 Program Suite : watncs</title>
+</head>
+<body>
+
+<!-- ::INDEX_INFO::WATNCS::Supported::MODEL REFINEMENT::Pick waters which follow NCS and sort out to NCS asymmetric unit:::::::: -->
+
+<h1>WATNCS (CCP4: Supported Program)</h1>
+<h2>NAME</h2>
+<b>watncs</b>
+- Pick waters which follow NCS and sort out to NCS asymmetric unit
+
+<h2>SYNOPSIS</h2>
+
+<p><b>watncs</b> <br />
+[<a href="#keywords">Keyworded input</a>]</p>
+
+<h2><a name="description"></a>DESCRIPTION</h2>
+
+<dl>
+<dt>Author:</dt>
+<dd><a href="http://bioinfo1.mbfys.lu.se/~guoguang/index.html"><b>Guoguang Lu</b></a>
+Department of Molecular Biophysics,
+Lund University,
+Box 124, 221 00, Lund, Sweden</dd>
+<dt>E-mail:</dt>
+<dd><a href="mailto:Guoguang.Lu@mbfys.lu.se">Guoguang.Lu@mbfys.lu.se</a></dd>
+<dt>Contents:</dt>
+<dd><ol type="a"><li><A HREF="#introduction">Introduction</a></li>
+<li><a href="#examples">Example command File</a></li>
+<li><a href="#keywords">Keyworded Input</a></li>
+<li><a href="#more_hints">More Hints</a></li></ol></dd>
+</dl>
+
+<h2><A NAME="introduction">Introduction</A></h2>
+
+<p>In protein crystallographic refinement, it is quite important to avoid false 
+water molecules introducing noise in the electron density map.  
+If non-crystallographic symmetry exists in the crystal, many water 
+molecules which bind to the protein should also follow the NCS of their host 
+proteins. The WATNCS program can pick those which follow operations from all 
+the water candidates calculated from 
+difference fourier maps. It can also sort them into each NCS asymmetric 
+unit, in order to introduce NCS restraint in the crystallographic 
+refinement. In the first few cycles of adding water, such a procedure
+is a powerful way of steering the refinement in the right direction.</p>
+<p>WATNCS reads in the coordinate file (in PDB format) and NCS operations. 
+The groups of atoms satisfying all NCS operations will be written out
+by the program into a file with identical residue numbers but different chain 
+names so that some refinement programs such as XPLOR or <a href="refmac5.html">REFMAC</a> can recognise
+them as NCS equivalent atoms. The program can also write out atoms which only 
+partially satisfy NCS operations (for example satisfy 2 of 3 NCSs).</p>
+
+<h2><a name="examples">Example Command file</a></h2>
+
+<h3>UNIX example script found in $CEXAM/unix/runnable/</h3>
+<ul>
+<li><a href="../examples/unix/runnable/watncs.exam">watncs.exam</a>
+(using RNASE coordinates).</li>
+</ul>
+<h3>Another example</h3>
+
+<pre>
+#
+rm fort.1*
+ln -s $SCR/junk1.pdb fort.11
+ln -s $SCR/junk2.pdb fort.12
+ln -s $SCR/junk3.pdb fort.13
+ln -s $SCR/junk4.pdb fort.14
+watncs << 'end'
+pdb wat1wchk.pdb
+out wat1wncs.pdb
+mol refm2w.pdb
+RELATE 
+ -0.9999970     -4.2974250E-04 -2.4399513E-03 
+ -1.4226431E-03 -0.7066850      0.7075269    
+ -2.0283312E-03  0.7075282      0.7066822    
+  0.4821968      9.3696594E-02 -0.1603031 
+RELATE 
+  0.9999976      2.0712232E-03  7.7215023E-04 
+  2.0715299E-03 -0.9999978     -3.9639443E-04 
+  7.7132753E-04  3.9799302E-04 -0.9999996    
+  0.3441153     -1.6441345E-03 -0.5252590    
+RELATE 
+ -0.9999971     -2.3997077E-03 -2.4492259E-04 
+ -1.5290348E-03  0.7091355     -0.7050705    
+  1.8656463E-03 -0.7050681     -0.7091371    
+  0.5303268     -0.2367973     -0.4432688    
+error 0.6
+least 2
+!CHAIN W U V X Y Z S T
+group W A
+group U B
+group V E
+group X F
+number 61
+num1 127
+atom O1
+residue HOH
+occu 1.0
+temp 30.
+'end'
+</pre>
+
+<h2><a name="keywords">Keyworded Input</a></h2>
+
+<p>General: Each line which starts with "!" or "#" will be ignored. Available keywords are:
+<blockquote>
+<a href="#atom"><b>ATOM</b></a>,
+<a href="#chain"><b>CHAIN</b></a>,
+<a href="#error"><b>ERROR</b></a>,
+<a href="#group"><b>GROUP</b></a>,
+<a href="#least"><b>LEAST</b></a>,
+<a href="#mol"><b>MOL</b></a>,
+<a href="#num2"><b>NUM2</b></a>,
+<a href="#number"><b>NUMBER</b></a>,
+<a href="#occu"><b>OCCU</b></a>,
+<a href="#out"><b>OUT</b></a>,
+<a href="#pdb"><b>PDB</b></a>,
+<a href="#relate"><b>RELATE</b></a>,
+<a href="#residue"><b>RESIDUE</b></a>,
+<a href="#temp"><b>TEMP</b></a>.
+</blockquote></p>
+
+<h3><a name="pdb"></a>PDB &lt;filname&gt;</h3>
+<p>Input file name of the water molecules</p>
+
+<h3><a name="out"></a>OUT &lt;filenam&gt;</h3>
+<p>Out file name of the water molecules</p>
+
+<h3><a name="mol"></a>MOL &lt;filename&gt;  (alternative)</h3>
+<p>Input filename of protein molecule. 
+This is used when you want to sort the chain name of water molecule
+according the chain name of protein molecule. If you have a 2-fold
+rotation NCS (or 222 fold symmetry), the protein file is also helpful to
+put water molecule into the &quot;right asymmetric unit&quot;. See <a href="#group">GROUP</a>.
+Note: the file must NOT contain any water molecule.</p>
+
+<h3><a name="relate"></a>RELATE 3*4 matrix - a11,a21,a31,a12,a22,a32,a12,a23,a33,tx,ty,tz</h3>
+<p><pre>
+     (a11 a12 a12)      (tx)
+X2 = (a21 a22 a23)*X1 + (ty)
+     (a31 a32 a33)      (tz)
+</pre>
+The NCS rotation and translation (the matrix must start on another line).
+The translation should be in orthogonal coordinates (assuming the PDB
+file is).
+If you have coordinates of protein molecules, the matrix can be obtained
+from the program <a href="http://bioinfo1.mbfys.lu.se/~guoguang/fit.html">FIT</a> or O. 
+The command can be repeated.
+If you use the FIT program, there is an output file MATRIX which contains
+this matrix. If you use the O program, you can use lsq_exp to obtain the matrix
+to some like lsq_rt_atob. Then you write to a file by command
+&quot;write .lsq_rt_atob filename (3f10.6)&quot;. You can get the matrix in the file.</p>
+
+<h3><a name="error"></a>ERROR &lt;error&gt;</h3>
+<p>Allowed error range of NCS related water molecules. I recommend 2-3 times the 
+RMS value of protein superposition or 1/3 of data resolution.</p>
+
+<h3><a name="least"></a>LEAST &lt;least&gt;</h3>
+<p>Minimum number of NCS operations which selected waters must follow.
+In the example file, there is a NCS of 222 symmetry. That means there
+are 3 NCS operations. If 4 water molecule which follow this 222
+symmetry, the program will think all the 3 NCS operations are satisfied, 
+so it will write out these 4 atoms with an identical residue number but
+chain names (W,U,V and X in this case). If 1 of the atoms is missing, the
+program will think 2 operations are satisfied. In the example file least=2, 
+the program will still write them out, but with another chain ID (Y)
+and non identical residue numbers. If 2 of the 4 atoms are missing, the
+program only thinks 1 NCS operation is satisfied and it is smaller than
+the least requirement 2 here. So they will not be written to the output file.
+If you need them output two, you have to change the command into &quot;LEAST 1&quot;.
+Default same as NCS operation number.</p>
+
+<h3><a name="chain"></a>CHAIN &lt;chain1&gt; &lt;chain2&gt; ....</h3>
+<p>Chain name for output waters. If you have 3 NCS operations, waters
+with the first 4 chain name should be able to apply NCS restraint.
+In fact, it is possible to apply NCS restraint to all the water
+molecules output from this program by looking at the log file and write
+command in the refinement program carefully although I believe most people
+only have the patience to use the restraint recommended by the program.</p>
+
+<h3><a name="group"></a>GROUP &lt;Chain_water&gt; &lt;Chain_protein&gt;</h3>
+<p>In the case of  2-fold symmetry, the program might put water
+molecule in a &quot;wrong&quot; NCS asymmetric unit (giving a wrong chain name). It is 
+not a problem at all for NCS restraint. However if you want to assign the
+water molecule to the right protein, you have to input the protein
+coordinates and tell the program which water chain name corresponds to
+which protein chain name. In the example file, output waters with chain W
+will belong to protein A...... See also <a href="#mol">MOL</a>.</p>
+
+<h3><a name="number"></a>NUMBER &lt;number&gt;</h3>
+<p>For those water molecules for NCS restraint, the output residue 
+number will start after this number.</p>
+
+<h3><a name="num2"></a>NUM2 &lt;num2&gt;</h3>
+<p>For those water molecules not for NCS restraint, the output residue 
+number will start after this number.</p>
+
+<h3><a name="atom"></a>ATOM &lt;atomname&gt;</h3>
+<p>If this command is present, the water atoms will be output with the 
+given atom name instead of the name from input file.</p>
+
+<h3><a name="residue"></a>RESIDUE &lt;HOH&gt;</h3>
+<p>If this command is present, the water atoms will be output with the 
+given residue name instead of the name from input file.</p>
+
+<h3><a name="occu"></a>OCCU &lt;occupancy_value&gt;</h3>
+<p>If this command is present, the water atoms will be output with the 
+given occupancy value instead of the value from input file.</p>
+
+<h3><a name="temp"></a>TEMP &lt;Bfactor&gt;</h3>
+<p>If this command is present, the water atoms will be output with the
+given B factor instead of the value from input file.</p>
+
+<h2><a name="more_hints"></a>More Hints </h2>
+<p><b>Automatically adding waters to models with NCS</b><br />
+The author recommends adding waters after all or most of the protein atoms 
+have been defined. Then one can perform the following steps.
+<ol>
+<li>Calculate an Fo-Fc map</li>
+<li>Search peaks from the map with a peak searching program (such as <a href="peakmax.html">PEAKMAX</a>
+in CCP4)</li>
+<li>Run a stereo chemistry filtering program to select waters which have good
+interactions with protein (or other waters). I use PEAKCHECK written by Janet Smith.
+(I think <a href="watpeak.html">watpeak</a> in CCP4 will do a similar job).</li>
+<li>Use watncs to get rid of the molecules which do not fit NCS. Usually
+in the first cycle, I only use waters which satisfy all the NCS. In the 2nd or
+3rd cycle, I allow waters which fit some of the NCSs. There is almost no
+chance of false peaks which fit both the stereochemistry and NCSs, so
+the user almost does not have to check these new added waters interactively 
+on graphics</li>
+<li>For those waters which fit all the NCS, introduce NCS restraint in the
+refinement program.</li>
+<li>Repeat 1 to 5 until R-free converges. Those old waters which do not 
+have all NCS related mates (Y chain waters in the example files) 
+must be input together with new waters, otherwise some &quot;good waters&quot; which
+appear from a improved electron density map and  NCS-related to old waters 
+might be missed.</li>
+</ol></p>
+
+<p>There are always real water molecules which do not follow NCSs because
+of packing or other reasons. One has to run the above procedure without
+WATNCS at least once and check these water molecules interactively. 
+However this should be in the last few cycles.</p>
+<p>The automatic procedure cannot prevent the addition of waters to sites which
+protein atoms should occupy (when protein atoms are mis-placed to some
+other sites). However, statistically most water molecules are correct
+and the procedure can significantly improve the map, the problem can be
+show up automatically by listing the atoms with negative values in Fo-Fc
+map using the 
+<a href="http://bioinfo1.mbfys.lu.se/~guoguang/diflist.html">DIFLIST</a> program.</p>
+<p>One cannot prevent some compounds such as citrate being identified 
+as waters. In this case, I think users can find out the problem by only 
+checking the protein atoms but not checking all the waters.</p>
+<p>The advantage of the above automatic procedure is to make sure all the water
+molecules in the first few cycles are real. The map is improved by
+real molecules and NCS restraint. Later water adding would be based on 
+better maps.</p>
+
+</body></html>

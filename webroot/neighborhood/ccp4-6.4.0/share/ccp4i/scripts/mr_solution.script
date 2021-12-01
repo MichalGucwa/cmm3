@@ -1,0 +1,168 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#===========================================================================
+#
+# mr_solution.script
+#
+#===========================================================================
+
+# Source the file with utility procedures for running amore
+  source [SearchPath TOP utils amore_utils.tcl ]
+  source [SearchPath TOP utils pdb_utils.tcl ]
+  set alphabet [list " " A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]
+  set tmp_log [GetTmpFileName -ext log ]
+
+# Get the file root and extension for the output file
+# For >1 solution output files will have a "_n" inserted in file name
+  set xyzout_ext  [file extension $XYZOUT]
+  if { $xyzout_ext == "" } { set xyzout_ext ".pdb" }
+  set xyzout_root [file rootname $XYZOUT]
+  set fileout_list ""
+  set output_list "AddOutputFile "
+
+#-------------------------------------------------------------------
+# Open the solution file and read in solutions
+#-------------------------------------------------------------------
+  if { ![ReadFile $SOLFIL text -split] } {
+    TerminateScript 0 -report "Can not read solution file $SOLFIL"
+  }
+  set ns 1; set nm 0
+  foreach line $text {
+    if { ![regexp {^#} $line ] && [llength $line] > 6 } {
+      if { $nm <  $N_MODELS } { incr nm } else { incr ns; set nm 1 }
+      set EULER_1($ns,$nm) [lindex $line 2]
+      set EULER_2($ns,$nm) [lindex $line 3]
+      set EULER_3($ns,$nm) [lindex $line 4]
+      set COM_1($ns,$nm) [lindex $line 5]
+      set COM_2($ns,$nm) [lindex $line 6]
+      set COM_3($ns,$nm) [lindex $line 7]
+    }
+  }
+  set N_SOLUTIONS $ns
+#----------------------------------------------------------------------------
+# Run pdbset to translate and rotate molecule 
+#----------------------------------------------------------------------------
+  for { set ns 1 } { $ns <= $N_SOLUTIONS } { incr ns } {
+    set tmp_pdb_list ""
+
+    set nch 0
+    for { set nm 1 } { $nm <= $N_MODELS } { incr nm } {
+      set tmpxyz($nm) [GetTmpFileName -ext pdb]
+      set comline "[BinPath pdbset] XYZIN \"$XYZSHFT($nm)\" XYZOUT \"$tmpxyz($nm)\""
+      set pdbset_comfile ""
+      lappend tmp_pdb_list $tmpxyz($nm)
+
+# Get chain list from input file
+      if { ![PdbGetChains $XYZSHFT($nm) chn_list chn_ranges] } {
+         # No chain ids found
+         set chn_list [list " "]
+      }
+# Make CHAIN keywords for PDBSET script
+      set chn_lines ""
+      foreach chnid $chn_list {
+	incr nch
+	if { $nch > 26 } { set nch 1 }
+	append chn_lines "CHAIN $chnid [lindex $alphabet $nch]\n"
+      }
+      set chn_lines [string trim $chn_lines "\n"]
+
+# Write a com file to do the translate
+      WriteComFile pdbset_comfile \
+"CELL $CELL_1 $CELL_2 $CELL_3 $CELL_4 $CELL_5 $CELL_6
+SPACEGROUP $SPACE_GROUP
+$chn_lines
+ROTATE EULER $EULER_1($ns,$nm) $EULER_2($ns,$nm) $EULER_3($ns,$nm)
+SHIFT FRACTIONAL $COM_1($ns,$nm) $COM_2($ns,$nm) $COM_3($ns,$nm)"
+
+      set status [Execute $comline  $pdbset_comfile program_status report ]
+
+    }
+
+#----------------------------------------------------------------------------
+# Merge the temporary transformed pdb files into one file
+# using utility from $CCP4I_TOP/utils/amore_utils.tcl
+#----------------------------------------------------------------------------
+    if { $N_SOLUTIONS <= 1 } {
+      set fileout $XYZOUT
+    } else {
+      set fileout $xyzout_root; append fileout _$ns $xyzout_ext
+    }
+    DeleteFile $fileout
+    if { $N_MODELS <= 1 } {
+      MoveFile $tmpxyz(1) $fileout
+    } else {
+      set status [MergePdbFiles $fileout $tmp_pdb_list]
+    }
+    lappend fileout_list $fileout
+    append output_list "$fileout PROJECT "
+  }
+
+#-------------------------------------------------------------------------
+# Look for bad contacts in the newly created pdb file
+#-------------------------------------------------------------------------
+  if { $IFBADCONTACTS } {
+
+
+#    set LPOUT ""; append LPOUT [file rootname $file] "_contacts.dat"
+
+    set INTRA_RES 0
+    set INTRA_MOL 1
+    if { [regexp CA $CONTACT_MODE] } {
+      set N_ATOM_RADII 1
+      set ATOMTYPE(1) CA
+      set ATOMRADIUS(1) 1.5
+    } else {
+      set N_ATOM_RADII 0
+    }
+
+    CreateComScript distang distang_comfile
+
+  set ns 0; foreach file $fileout_list { incr ns;
+
+    set comline "[BinPath distang] XYZIN \"$file\""
+
+    set status [Execute $comline $distang_comfile \
+        program_status report -copy_log $tmp_log ]
+
+# Find total number of close contacts for this model
+    set nbumps($ns) 0; set log_text ""
+    ReadFile $tmp_log log_text
+    set line [ExtractFromText $log_text "Number of Close Contacts to Symmetry" \
+		3 all]
+    while { ![regexp DISTANG $line] } {
+      if { [llength $line] == 5 } { \
+	set nbumps($ns) [expr $nbumps($ns) + [lindex $line 4] ] }
+      set line [ExtractFromText - {} 1 all]
+    }
+    DeleteFile $tmp_log
+  }
+
+  }
+#--------------------------------------------------------------------
+# Output summary of close contacts to log file
+#--------------------------------------------------------------------
+
+  if { $IFBADCONTACTS } { 
+  
+set log_text "SUMMARY OF CLOSE-CONTACTS FOR ALL SOLUTION(S)
+
+Number of instances of Calpha-Calpha distances less than 6 Angstrom
+between adjacent symmetry elements
+
+"
+  for { set ns 1 } { $ns <= $N_SOLUTIONS } { incr ns } {
+    append log_text "\nSolution $ns   $nbumps($ns) close contacts"
+  }
+
+  WriteToLog $log_text
+
+  }
+
+  eval $output_list

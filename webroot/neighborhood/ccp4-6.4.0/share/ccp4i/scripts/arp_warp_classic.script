@@ -1,0 +1,306 @@
+global job_params
+global system
+#
+#
+# Source file with utility procedures
+# source [SearchPath TOP src CCP4_utils.tcl]
+  source [SearchPath TOP utils map_utils.tcl]
+# Read the crystal parameters files
+#  ReadSymops [FileJoin [GetEnvPath CLIBD] symop.lib]
+#  ReadCrystalData [SearchPath TOP etc crystal.lib]
+#
+# Write the arp .par file
+
+  set logfile $job_params(LOG_FILE)
+  set arpwarpdir $job_params(JOB_ID)_$job_params(TASKNAME) 
+  set workdir [GetDefaultDirPath]
+
+  set parfile "$workdir/$arpwarpdir.par"
+
+  append partext "set parfile = $parfile \n"
+
+  append partext "set warpbin = [GetEnvPath warpbin]\n"
+  append partext "set version = 7.3 \n"
+
+  append partext "set WORKDIR = [GetDefaultDirPath]\n"
+  append partext "set PROJECT = $job_params(PROJECT)\n"
+  append partext "set JOB_ID = $job_params(JOB_ID) \n"
+  append partext "set arpwarpdir = $arpwarpdir \n"
+
+# Put the name of the CCP4i def file  inot the par file
+  append partext "set CCP4I_DEFFILE = " [FileJoin [GetDefaultDirPath]  \
+     CCP4_DATABASE $job_params(JOB_ID)_$job_params(TASKNAME).def ] \n
+
+  
+# Handle file names
+
+  foreach par [list HKLIN MODELIN SEQIN HEAVYIN] arppar [list datafile modelin seqin heavyin ] {
+    set file [subst $[subst $par]]
+    set dir [subst DIR_$[subst $par]]
+    set value [GetFullFileName1 $file $dir]
+#    if { $value == "" } {
+#      append partext "set $arppar = ''" \n
+#    } else {
+      append partext "set $arppar = $value" \n
+#    }
+  }
+
+# Protein size
+# Naive approach to start with
+  
+    set value [ expr $NRES * 8]
+    append partext "set protsize = $value" \n
+
+# More basic params
+
+    foreach \
+       par [ list WILSON_B SOLVENTC FP SIGFP FBEST PHIB FOM ] \
+    arppar [ list wilsonb  solventc fp sigfp fbest phibest fom ] {
+	set value [subst $[subst $par]]
+        append partext "set $arppar = $value" \n
+	}
+
+# cycling
+
+    foreach \
+       par [ list TOTAL_CYCLES SMALL_CYCLES NMOL WEIGHT WEIGHTVAL NMODELS WHICHTRACE SOLVENT RIDGE_RESTRAINTS FLATTEN FREEBUILD] \
+    arppar [ list restrcyc restrref cgr wmat weightv models whichtrace solvent ridgerestraints flatten freebuild] {
+	set value [subst $[subst $par]]
+        append partext "set $arppar = $value" \n
+	}
+
+  GetCellfromMtz $HKLIN mtz_space_group cell lattice
+  set space_gp_number [GetSpaceGroupNumber $SPACE_GROUP]
+
+#  puts $space_gp_number
+  
+  append partext "set sym = $space_gp_number" \n
+  append partext "set cell = '$cell'" \n
+  append partext "set scanis = Y" \n
+
+# NCS settings
+  append partext "set ncsrestraints = $NCS_RESTRAINTS" \n 
+  append partext "set ncsextension = $NCS_EXTENSION" \n 
+
+# hmainpostfit is always set to 1
+  append partext "set hmainpostfit = 1" \n 
+
+# Keep Junk
+  append partext "set keepjunk = $KEEP_JUNK" \n
+
+# Params not requiring quotes
+    foreach \
+       par [ list ALBE TWIN RESTRAINTS LOOPS SAD ] \
+    arppar [ list albe twin restraints loops sad ] {
+	set value [subst $[subst $par]]
+        append partext "set $arppar = $value" \n
+    }
+
+# These are params that have to be included in quotes !!!
+
+    foreach \
+       par [ list XYZLIM DAMP RESOL SCALEOPT FREELABIN SCALML SCALE PHASELABIN PHASEREF SADCARD] \
+    arppar [ list xyzlim damp resol scaleopt freelabin scalml scale phaselabin phaseref sadcard] {
+	set value [subst $[subst $par]]
+        if { $value == "" } {
+          append partext "set $arppar = " \n
+        } else {
+          append partext "set $arppar = '$value'" \n
+	}
+    }
+#
+    foreach \
+       par [ list REFMAX EXCLUDE_FREER REFMAC_REF_SET NCYCLES ] \
+    arppar [ list refmax freer freerml rrcyc ] {
+	set value [subst $[subst $par]]
+        append partext "set $arppar = $value" \n
+	}
+
+    foreach \
+       par [ list CYCSKIP SKIP_CYCLES MULTITRACE UP_UPDATE SIDE IS_SEMET] \
+    arppar [ list cycskip skip multit upmore side is_semet] {
+	set value [subst $[subst $par]]
+        append partext "set $arppar = $value" \n
+	}
+
+    foreach \
+       par [ list ADDATOM_SIGMA REMATOM_SIGMA ARP_MODE ] \
+    arppar [ list fsig          rsig          modeccp4i ] {
+	set value [subst $[subst $par]]
+        append partext "set $arppar = $value" \n
+	}
+
+    foreach \
+       par [ list RANDTIMES RAND1 RANDSHIFT1 BCUT1 RAND2 RANDSHIFT2 BCUT2 RAND3 RANDSHIFT3 BCUT3 ] \
+    arppar [ list randtimes rand1 randshift1 bcut1 rand2 randshift2 bcut2 rand3 randshift3 bcut3 ] {
+	set value [subst $[subst $par]]
+        append partext "set $arppar = $value" \n
+	}
+
+
+    foreach \
+       par [ list DATAKEEP_MODE REMOTE_JOB USER_EMAIL ] \
+    arppar [ list keepdata remote remoteemail ] {
+	set value [subst $[subst $par]]
+        append partext "set $arppar = $value" \n
+	}
+
+if { [file exists $parfile] } {
+	   file delete -force -- $parfile
+}
+
+   WriteFile $parfile $partext
+ 
+   file attributes $parfile -permissions 0740
+
+    AddOutputFile $parfile PROJECT
+    AddOutputFile $WILSON_LOG PROJECT
+
+#  puts "Par file: $parfile\n $partext\n"
+
+   set TheOS $system(OPSYS)
+#   puts $TheOS
+
+if { $REMOTE_JOB == "0" && $TheOS == "WINDOWS" } {
+   WriteToLog {You can not submit jobs on your local Windows machine} -nofoot -nohead
+   WriteToLog {You can however submit the job remotely at the Hamburg cluster} -nofoot -nohead
+   WriteToLog {Use the options at the last panel of the ARp/wARP CCP4i interface} -nofoot -nohead
+   TerminateScript 0 -report {Local submisison not allowed in Windows}
+}
+
+if { $REMOTE_JOB == "0" } {
+
+   catch {exec [GetEnvPath warpbin]/warp_tracing.sh $parfile >> $logfile}
+
+} else {
+
+   WriteToLog  {The ARP/wARP job is now ready to run remotely on the 16 processor Cluster at Hamburg} -nofoot -nohead
+   WriteToLog  {<B><FONT COLOR="#FF0000"><!--SUMMARY_BEGIN--> } -nofoot -nohead 
+   WriteToLog  {Further instructions will be sent to the Email address: } -nofoot -nohead 
+   WriteToLog  $USER_EMAIL -nofoot -nohead 
+   WriteToLog  {Please check your mailbox for further instructions and to start the job ! } -nofoot -nohead 
+   WriteToLog  {<!--SUMMARY_END--></FONT></B>} -nofoot -nohead 
+
+   if { $DATAKEEP_MODE == "CONFIDENTIAL" } {
+      WriteToLog  {Your data and results will be automatically erased \
+      after you downloaded the results. Only the minimum information will be \
+      stored in the ARP/wARP database, i.e. the short log file, the Wilson log file \
+      and the parameter file.} -nofoot -nohead 
+   } else {      
+      WriteToLog {Your files will be made available to:} -nofoot -nohead
+      if { $DATAKEEP_MODE == "WARPTEAM" } { WriteToLog {    ARP/wARP-AutoRickshaw-Refmac developers.}  -nofoot -nohead }
+      if { $DATAKEEP_MODE == "EUFW6" } { WriteToLog {    Participants of the BIOXHIT and SPINE EU networks.} -nofoot -nohead }
+      if { $DATAKEEP_MODE == "WORLD" } { WriteToLog {    Any developer that requests them.} -nofoot -nohead  }
+   }
+
+
+   WriteToLog {Your data will now get packed and transferred to the Hamburg server.} -nofoot -nohead 
+
+   set taridList [GetUserId] 
+   lappend taridList [GetHostname]
+#   lappend taridList [exec date -u +%j%Y%H%M]
+   lappend taridList [exec date -u +%j%Y%H%M%S]
+
+   set tmpDir [join $taridList "_"]
+   set tarName "$tmpDir.tar"
+
+   set WorkPath [GetDefaultDirPath]
+
+#   puts $tmpDir
+#   puts $tarName
+#   puts $WorkPath
+
+   if {![file isdirectory $WorkPath/$tmpDir]} {
+    file mkdir $WorkPath/$tmpDir
+   } 
+
+   file copy -force $parfile $WorkPath/$tmpDir
+   file copy -force $HKLIN $WorkPath/$tmpDir
+
+   file copy -force $WILSON_LOG $WorkPath/$tmpDir
+
+   if { $SEQIN != "" } {
+      file copy -force $SEQIN $WorkPath/$tmpDir
+   }  
+
+   if { $MODELIN != "" } {
+      file copy -force $MODELIN $WorkPath/$tmpDir
+   }  
+
+   cd $WorkPath
+
+
+    if { [ catch { exec tar -cf $tarName $tmpDir } ] } {
+    WriteToLog {Error While Creating TarFile for remote submission.}
+      TerminateScript 0 -report {Creation of Tar file has failed.}
+   } else {
+      WriteToLog {Archive (tar file) with needed data created.} -nohead -nofoot
+   }
+ 
+    set logFile [open "./$tarName.log" "w"]
+    puts $logFile "EOF"
+    close $logFile
+    
+#    source [file join [GetEnvPath warpbin] ftp_lib.tcl ] 
+#    set spass [exec [file join [GetEnvPath warpbin] arp_warp] -r]
+#    set server [lindex "$spass" 0]
+#    set user [lindex "$spass" 1]
+#    set passwd [lindex "$spass" 2]
+#    set pno [lindex "$spass" 3]
+ 
+#    puts $spass
+#    puts $server
+#    puts $user
+#    puts $passwd
+#    puts $pno
+
+   WriteToLog {Attempting http connection using curl.}  -nohead -nofoot
+
+   if [ catch [GetEnvPath HTTP_PROXY] ] {
+	set http_proxy [GetEnvPath HTTP_PROXY]
+   } else {
+   	set http_proxy "0"
+   }
+
+
+   if { $http_proxy == "0" } {
+        WriteToLog {No proxy server is in use.}  -nohead -nofoot
+      if { [ catch { exec curl --url http://cluster.embl-hamburg.de/upload.php --form userfile=@$tarName --silent --fail --connect-timeout 30 } ] } {
+         WriteToLog  {<B><FONT COLOR="#FF0000"><!--SUMMARY_BEGIN--> } -nofoot -nohead 
+         WriteToLog {HTTP connection could not be established.} -nohead -nofoot
+         WriteToLog  {<!--SUMMARY_END--></FONT></B>} -nofoot -nohead 
+         WriteToLog {Either HTTP_PROXY is needed or the Cluster at Hamburg is not responding.} -nohead -nofoot
+         WriteToLog {HTTP_PROXY is NOT set. Do you need an HTTP_PROXY ?} -nohead -nofoot
+         WriteToLog {Did you get any warning messages during installation?} -nohead -nofoot
+	 TerminateScript 0 -report {Remote submission failed.}
+      } else {
+         WriteToLog  {<B><FONT COLOR="#FF0000"><!--SUMMARY_BEGIN--> } -nofoot -nohead 
+         WriteToLog {HTTP connection established and files transferred. } -nohead -nofoot
+         WriteToLog  {<!--SUMMARY_END--></FONT></B>} -nofoot -nohead 
+  	 exec curl --url http://cluster.embl-hamburg.de/upload.php --form userfile=@$tarName.log --silent --fail --connect-timeout 30
+      }
+   } else {
+      WriteToLog {Using proxy server defined in HTTP_PROXY}  -nohead -nofoot
+      if { [ catch { exec curl --proxy $http_proxy --url http://cluster.embl-hamburg.de/upload.php --form userfile=@$tarName --silent --fail --connect-timeout 30 } ] } {
+         WriteToLog  {<B><FONT COLOR="#FF0000"><!--SUMMARY_BEGIN--> } -nofoot -nohead 
+         WriteToLog {HTTP connection could not be established.} -nohead -nofoot
+         WriteToLog  {<!--SUMMARY_END--></FONT></B>} -nofoot -nohead 
+         WriteToLog {Either HTTP_PROXY is not set correctly or the Cluster at Hamburg is not responding.} -nohead -nofoot
+         WriteToLog {HTTP_PROXY is set. Is the value in the next line correct ?} -nohead -nofoot
+	 WriteToLog $http_proxy  -nohead -nofoot
+         WriteToLog {Did you get any warning messages during installation?} -nohead -nofoot
+	 TerminateScript 0 -report {Remote submission failed.}
+      } else {
+         WriteToLog  {<B><FONT COLOR="#FF0000"><!--SUMMARY_BEGIN--> } -nofoot -nohead 
+         WriteToLog {HTTP connection established and files transferred. } -nohead -nofoot
+         WriteToLog  {<!--SUMMARY_END--></FONT></B>} -nofoot -nohead 
+  	 exec curl --proxy $http_proxy --url http://cluster.embl-hamburg.de/upload.php --form userfile=@$tarName.log --silent --fail --connect-timeout 30
+      }
+   }
+
+
+TerminateScript 1 -report {Remote submission done}
+
+}
+
+   WriteToLog  {<!--SUMMARY_END--></FONT></B>} -nofoot -nohead 

@@ -1,0 +1,410 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>CCP4 Program Suite: solomon</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]">
+</HEAD>
+<BODY>
+
+<!-- ::INDEX_INFO::SOLOMON::Supported::Density Modification - Molecular Averaging::density modification (phase improvement) by solvent flipping:::::::: -->
+
+<H1>SOLOMON (CCP4: Supported Program)</H1>
+<H2>NAME</H2>
+<B>solomon </B>
+- density modification (phase improvement) by solvent flipping.
+
+<H2>SYNOPSIS</H2>
+
+<P><B>solomon MAPIN</B> <I>foo_in.map</I> [ <B>MAPOUT</B> <I>foo_out.map</I>
+] [ <B>RMSMAP</B> <I>foo_out2.map</I> ] <BR>
+<a href="#keywords">[Keyworded input]</a> </P>
+
+<H2><A NAME="description"></A>DESCRIPTION</H2>
+
+<P>Solomon is a program which modifies the electron density maps by averaging,
+solvent flipping and protein truncation [<A HREF="#reference1">1</A>]. It can also remove overlapped
+parts of a mask between itself and its symmetry equivalents. Please note
+that this program has various non CCP4 standard features. </P>
+
+<H2><A NAME="usage"></A>USAGE</H2>
+
+<P>Several stages are required for phase refinement with Solomon. The stages
+described here assume that the phase probability distributions were determined
+experimentally (<EM>i.e.</EM> SIR, MIR, MAD). </P>
+
+<OL>
+<LI>Determine phase probability distributions, described by Hendrickson-Lattman
+coefficients. This is done automatically by <A HREF="mlphare.html">MLPHARE</A>.
+</LI>
+
+<LI>Calculate the map to be flattened. Initially, you will have a map calculated
+from experimental phases. It is advised that you start from a resolution
+which has got significant phase information and do not yet extend the resolution!
+</LI>
+
+<P>Subsequent maps can be calculated from coefficients produced by <A HREF="sigmaa.html">SIGMAA</A>.
+This gives the advantage that missing reflections can be estimated from
+the corresponding Fc (calculated from the flattened map). The procedure
+can be improved by substituting in this way for the low resolution reflections
+that are missing. </P>
+
+<LI>Have a look at the map and compare it with the original FOM weighted
+map. If there is no non-crystallographic symmetry, you might get some additional
+improvement by playing around with the solvent multiplication factor and
+the truncation level (see the keywords <A HREF="#trunc">TRUNC</A> and <A HREF="#mulsolv">MULSOLV</A>).
+If the crystals contain a lot of solvent (70 to 80%) you might try phase
+extension, but make sure the map actually improves by doing so. If you
+have got very weak phase information at higher resolution, try including
+it from the start, but keep the <A HREF="#radius">RADIUS</A> at the lower
+resolution. (If you have got reasonable phase information to 3.7 &#197;, and
+very weak information to 3.2 &#197;, use a radius of 3.7 &#197;, and a high resolution
+cutoff of 3.2 &#197;; don't extend to 3.2, but use all information from the
+first cycle). </LI>
+
+<LI>Identify and refine non-crystallographic symmetry if present. The Uppsala
+programmes &quot;O&quot;, &quot;mama&quot; and &quot;imp&quot; are ideally
+suited for this purpose. You must remove overlap between symmetry related
+masks. The mask can be either in &quot;O&quot; or &quot;CCP4&quot; format.
+</LI>
+
+<LI>The mask will encompass a monomer. Each mask has a set of associated
+symmetry operators which describe how the density within this mask is related
+to other density within the asymmetric unit. This is a bit different from
+the way things are done in the &quot;rave&quot; package and has some advantages.
+</LI>
+
+<LI>Include the non-crystallographic restraints in &quot;Solomon&quot;
+and run the script again. You might need to reduce the level of truncation
+a bit and the solvent multiplier should probably be a bit less negative.
+</LI>
+</OL>
+
+<H2><A NAME="files"></A>INPUT AND OUTPUT FILES</H2>
+
+<H3><A NAME="input_files"></A>Input</H3>
+
+<DL>
+<DT>MAPIN</DT>
+
+<DD> The input map must cover the asymmetric unit exactly. The input map
+(CCP4 format) is associated with the logical name MAPIN. </DD>
+
+<DT>others</DT>
+
+<DD> Input masks can either be in CCP4 or &quot;O&quot; style formats.
+The program can automatically determine which type of format it is. These
+masks are not associated with logical names but are input via the keyword
+<A HREF="#mskin">MSKIN</A>; this is not a standard CCP4 procedure.<BR>
+Another possible input file is governed by the keyword <A HREF="#csym">CSYM</A>. </DD>
+</DL>
+
+<H3><A NAME="output_files"></A>Output</H3>
+
+<DL>
+<DT>MAPOUT / RMSMAP</DT>
+
+<DD> MAPOUT and RMSMAP are both output maps and are in CCP4 format. They
+are not output by default, so if output is required this must be indicated
+by the keywords <A HREF="#mapout">MAPOUT</A> and <A HREF="#rmsmap">RMSMAP</A>. </DD>
+
+<DT>others</DT>
+
+<DD> Other output files are governed by the keywords <A HREF="#slvmask">SLVMASK</A> and <A HREF="#asmask">ASMASK</A>.
+All output masks will be in CCP4 format. </DD>
+</DL>
+
+<P>Conversion between formats can be done with <A HREF="mama2ccp4.html">MAMA2CCP4</A>,
+<A HREF="xdlmapman.html">XDLMAPMAN</A> or MAPMAN. </P>
+
+<H3><A NAME="note_on_solomon_masks"></A>Note on SOLOMON masks</H3>
+
+<P>There are two ``features'' of SOLOMON masks which users should be aware
+of:
+
+<OL>
+<LI> Although SOLOMON uses the standard CCP4 map format for
+its input and output masks, it does not use the same convention as other
+programs <EM>e.g.</EM> '<TT>dm</TT>'. In SOLOMON, mask grid points are set to 0.0 for protein
+and 1.0 for solvent. If you intend to import/export maps from or to other
+CCP4 programs then use <A HREF="mapmask.html">MAPMASK</A> to change the
+mask convention.
+<LI> Masks output by SOLOMON may suffer from artificial features, namely
+lines of set grid points along the mask edges away from the origin.
+For the time being this can be fixed by giving SOLOMON a map covering the
+whole unit cell plus the edges, and then extracting the whole unit cell
+afterwards (thus discarding the problematic sections).<br>
+<EM>E.g.</EM> run MAPMASK before and after SOLOMON, using the <A HREF="mapmask.html#xyzlim">XYZLIM</A>
+keyword the first time to extend the mask by an extra grid point, and
+the second to restore the limits to the original values.
+</OL>
+
+
+<H2><A NAME="keywords"></A>KEYWORDED INPUT</H2>
+
+<P>Keywords can be upper or lower case and only the first four letters
+are significant. Solomon echoes keywords as it reads them, allowing you
+to check the input. Keywords are only recognised if they occur at the start
+of a line, but they can be preceded by spaces or tabs. Keywords which are
+not found in the input are flagged to say that defaults will be used, misspelt
+keywords are ignored but not flagged. After reading the keyword and its
+specifier(s), the rest of the line is treated as a comment and ignored.
+Lines which do not start with a keyword are treated as comments too. In
+most cases, the order of the keywords is irrelevant, and you will probably
+find that Solomon does not read them in the order you specified anyway.
+However, there are a few exceptions (see <A HREF="#mskin">MSKIN</A>)! </P>
+
+<P>Available keywords are:
+<BLOCKQUOTE>
+<A HREF="#asmask"><B>ASMASK</B></A>,
+<A HREF="#csym"><B>CSYM</B></A>,
+<A HREF="#extrude"><B>EXTRUDE</B></A>,
+<A HREF="#mapout"><B>MAPOUT</B></A>,
+<A HREF="#mskin"><B>MSKIN</B></A>,
+<A HREF="#mskout"><B>MSKOUT</B></A>,
+<A HREF="#mulsolv"><B>MULSOLV</B></A>,
+<A HREF="#ptos"><B>PTOS</B></A>,
+<A HREF="#radius"><B>RADIUS</B></A>,
+<A HREF="#rmsmap"><B>RMSMAP</B></A>,
+<A HREF="#slvdens"><B>SLVDENS</B></A>,
+<A HREF="#slvfrc"><B>SLVFRC</B></A>,
+<A HREF="#slvmask"><B>SLVMASK</B></A>,
+<A HREF="#trans"><B>TRANS</B></A>,
+<A HREF="#trunc"><B>TRUNC</B></A>,
+<A HREF="#verbose"><B>VERBOSE</B></A>
+</BLOCKQUOTE>
+
+<H3><A NAME="verbose"></A>VERBOSE </H3>
+
+<P>(default: not verbose) <BR>
+This option produces more information in the log file. </P>
+
+<H3><A NAME="mapout"></A>MAPOUT </H3>
+
+<P>(default: no mapout)<BR>
+This keyword only has a meaning when Solomon is modifying the electron
+density. The modified map will be written to the file associated with the
+logical name MAPOUT. </P>
+
+<H3><A NAME="slvfrc"></A>SLVFRC &lt;value&gt; </H3>
+
+<P>(default: 0)<BR>
+Defines the fraction of the map to be treated as solvent. The protein mask
+is assumed to be a connected volume without small islands. Sometimes (especially
+during the first cycles) a larger fraction of the map than actually specified
+will be treated as solvent. This is because small islands with a high local
+standard variation (<EM>i.e.</EM> look like a protein region) are included in the
+solvent region. </P>
+
+<H3><A NAME="radius"></A>RADIUS &lt;value&gt; </H3>
+
+<P>(default: 3.5)<BR>
+The solvent region is determined from the local standard deviation of the
+map within a sphere of a radius specified in Angstroms. The standard deviation
+is calculated relative to the mean solvent density, which by default is
+assumed to be the same as the whole map, but which can be changed with
+the keyword <A HREF="#slvdens">SLVDENS</A>. Solomon also produces a histogram
+of the local standard deviation allowing you to make a judgement of the
+separation between solvent and protein. This histogram is printed if you
+specify <A HREF="#verbose">VERBOSE</A>. The mask can be inspected with the <A HREF="#rmsmap">RMSMAP</A>
+or the <A HREF="#slvmask">SLVMASK</A> commands. Tests suggest that the optimum size
+of the radius is about the resolution limit to which significant phase
+information is available. Do not set it too high! The algorithm for determining
+the solvent mask is different from the Wang-algorithm, which needs larger
+radii! </P>
+
+<H3><A NAME="rmsmap"></A>RMSMAP </H3>
+
+<P>(default: not output)<BR>
+A map containing the local standard deviation at each grid point is written
+out (associated logical name is RMSMAP). This map can be manipulated with
+CCP4 programs and inspected within &quot;O&quot;. Solomon will inform you
+about the appropriate contour level to choose to see the solvent boundary.
+</P>
+
+<H3><A NAME="slvmask"></A>SLVMASK &lt;filename&gt;</H3>
+
+<P>After determining the solvent mask, it will be written to disk as specified.
+See <A HREF="#files">INPUT AND OUTPUT</A> section for information on mask format.
+</P>
+
+<H3><A NAME="slvdens"></A>SLVDENS &lt;value&gt; </H3>
+
+<P>(default: 0)<BR>
+The mean density of the solvent after subtracting the F000 term. The solvent
+mask is determined from the local standard deviation from the mean density
+of the solvent, which by default is assumed to be the same as the whole
+map. However, inclusion of (possibly reconstructed) very low resolution
+terms can change the mean solvent density significantly. This keyword allows
+one to correct for this. </P>
+
+<H3><A NAME="mulsolv"></A>MULSOLV [AUTO] &lt;value&gt; </H3>
+
+<P>(default: -1.00 with AUTO or -0.75 without)<BR>
+Defines the multiplier used to modify the solvent density with respect
+to its mean, the flipping factor. For conventional solvent flattening,
+set this value to 0. For solvent flipping, set this value to -1. Tests
+on crystals with a solvent content of around 50% suggest that there is
+a clear relationship between the optimal flipping factor and the level
+of truncation. Therefore it is advisable to use the &quot;AUTO&quot; option,
+which scales the solvent multiplier by the ratio between the variance of
+the protein after and before truncation. </P>
+
+<P>Tests also indicate that when the solvent content is higher
+than 50%, the solvent multiplier needs to be made less negative than with
+lower solvent content. In a
+test case with significant data to 3 &#197; and a solvent content of 33%, the
+best results were obtained with &quot;MULSOLV AUTO -1.6&quot;. </P>
+
+<H3><A NAME="trunc"></A>TRUNC &lt;minvalue&gt; &lt;maxvalue&gt; </H3>
+
+<P>(default: 0.35 1) <BR>
+Defines truncation levels. </P>
+
+<PRE>
+        trunc 0.05 0.95
+
+</PRE>
+
+<P>will truncate the lowest and highest 5 percent of the protein area of
+the map. Tests strongly suggest that by truncating the lower 30 to 40%
+of the protein, major improvements of the phases can be obtained. It is
+likely that there is a relationship between the optimum level of truncation
+and the maximum resolution of the data. In test cases of crystals diffraction
+beyond 3 &#197;, the optimum lies between 30 and 40%. </P>
+
+<H3><A NAME="ptos"></A>PTOS &lt;value&gt; </H3>
+
+<P>(default: 1.31)<BR>
+Ratio between the mean protein density and the mean solvent density. This
+is used in conjunction with <A HREF="#extrude">EXTRUDE</A>. </P>
+
+<H3><A NAME="extrude"></A>EXTRUDE </H3>
+
+<P>(default: not extrude)<BR>
+By specifying &quot;EXTRUDE&quot;, very low resolution structure factors
+will be reconstructed. If low resolution terms are missing or are not well
+phased, the mean protein density will be almost equal to the mean solvent
+density. If the density modification procedure is used to also reconstruct
+missing terms (by using the program <A HREF="sigmaa.html">SIGMAA</A> or <A HREF="fft.html">FFT</A>
+to substitute Fc), a constant value (which can be negative) will be added
+to the grid points in the solvent, adjusting the mean ratio between
+protein and solvent to be as given by <A HREF="#ptos">PTOS</A>. It is assumed that
+the lowest density found within the protein region is zero after adding
+in an F000 term. The main function of this keyword is to prevent the inflation
+of the mean protein density during iterative density modification caused
+by truncating protein density on every cycle. </P>
+
+<H3><A NAME="csym"></A>CSYM &lt;filename&gt; </H3>
+
+<P>(default: operators from mapfile)<BR>
+&quot;O&quot;-style crystallographic symmetry operators. If this keyword
+is omitted, the symmetry operators from the input map are used. </P>
+
+<H3><A NAME="asmask"></A>ASMASK &lt;filename&gt; </H3>
+
+<P>(default: none)<BR>
+This keyword only has a meaning when Solomon is removing overlap and generating
+new masks. If this keyword is given, a mask will be written to disk which
+defines the area of the asymmetric unit covered by all the other specified
+masks. See <A HREF="files">INPUT AND OUTPUT</A> section for information on mask
+format. </P>
+
+<H3><A NAME="mskin"></A>MSKIN &lt;filename&gt;<BR>
+<A NAME="trans"></A>TRANS &lt;filename&gt;<BR>
+<A NAME="mskout"></A>[MSKOUT &lt;filename&gt;]</H3>
+
+<P>A &quot;mskin&quot; keyword, defining the filename of an &quot;O&quot;-style
+mask or a CCP4 style mask. The &quot;O&quot; masks are similar in format
+and are ASCII files. This keyword is followed by the transformations of
+the mask producing the symmetry related copies (&quot;trans&quot; keyword).
+The transformation matrices are read from an ASCII file (see <A HREF="#example_transformation">example below</A>)
+and are in the 'O' style. However, Solomon can read these files with or
+without the normal 'O' data block header. Like in '<TT>dm</TT>' the translation part
+is in Angstrom units. Do not forget to provide the unit symmetry operator
+too!! </P>
+
+<P>If a &quot;trans&quot; keyword is followed by the &quot;mskout&quot;
+keyword, averaging will not be undertaken, but instead the masks will be
+checked for overlap, and where overlap occurs, this will be removed by
+dividing the common volume between the overlapping masks. The trimmed masks
+will be written to disk as specified by the filename following the &quot;mskout&quot;
+keyword. CCP4 masks will not need to be trimmed if generated from <A HREF="mapmask.html">MAPMASK</A>
+or <A HREF="ncsmask.html">NCSMASK</A>. The output mask will have the same
+format as the input mask. </P>
+
+<P><A NAME="example_transformation"></A>An example: </P>
+
+<PRE>        
+        mskin r1.msk
+        trans unit.ncs
+        mskout r1trim.msk
+        trans r1tor3.msk
+        mskout r3trim.msk
+
+</PRE>
+
+<P>No averaging will be undertaken (at least one &quot;mskout&quot; keyword
+was present in the command file). </P>
+
+<P>Any overlap between the mask and any of its symmetry related copies
+(either crystallographic, non-crystallographic, or a combination of both)
+will be removed, and the resulting symmetry related masks will be written
+to disk with the specified filenames. </P>
+
+<P>In addition, &quot;O&quot;-style non-crystallographic symmetry operators
+will be written to disk. Their filenames are constructed by replacing the
+extension of the new mask by &quot;ncs%d&quot;, where &quot;%d&quot; is
+an integer, indicating which symmetry is described. The integer indicates
+the mask which will be generated by the symmetry operation: </P>
+
+<PRE>        
+        r1trim.ncs0 : unity operator
+        r1trim.ncs1 : generates r3trim.msk from r1trim.msk
+        r3trim.ncs0 : generates r1trim.msk from r3trim.msk
+        r3trim.ncs1 : unity operator
+
+</PRE>
+
+<P>Another example: </P>
+
+<PRE>        
+        mskin r1trim.msk
+        trans r1trim.ncs0
+        trans r1trim.ncs1
+        mskin r3trim.msk
+        trans r3trim.ncs0
+        trans r3trim.ncs1
+
+</PRE>
+
+<P>The density in &quot;r1trim.msk&quot; will be averaged with the density
+as defined by the symmetry operators &quot;r1trim.ncs0&quot; and &quot;r1trim.ncs1&quot;.
+Likewise, the density within &quot;r3trim.msk&quot; will be averaged. The
+maps produced by averaging contain just the density local to the specified
+maps, and are on the same scale. Their filenames are constructed by replacing
+the extension &quot;.msk&quot; by &quot;.map&quot;. So, the files &quot;r1trim.map&quot;
+and &quot;r3trim.map&quot; are produced. </P>
+
+<H2><A NAME="references"></A>REFERENCES</H2>
+
+<OL>
+<P><!-- KEEP startreferencelist --></P>
+
+<LI><A NAME="reference1"></A>Abrahams J. P. and Leslie A. G. W., <I>Acta Cryst.</I> <B>D52</B>,
+30-42 (1996) </LI>
+
+<!-- KEEP endreferencelist -->
+</OL>
+
+<H2>AUTHOR</H2>
+
+<P>Jan-Pieter Abrahams, MRC Laboratory of Molecular Biology, Cambridge.
+I/O subroutines modified by: Kevin Cowtan, University of York. </P>
+
+<H2>SEE ALSO</H2>
+
+<P><A HREF="mama2ccp4.html">MAMA2CCP4</A>, <A HREF="xdlmapman.html">XDLMAPMAN</A>,
+<A HREF="dm.html">DM</A> </P>
+
+</BODY>
+</HTML>

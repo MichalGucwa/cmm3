@@ -1,0 +1,187 @@
+<!DOCTYPE html
+                     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                     "DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<title>Porting shell scripts</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	</head>
+	<body>
+		<h1>Porting unix shell script files to Windows Batch shell scripts.</h1>
+		<p>Even if the windows command shell is not as powerful as Linux shells, it is 
+			still easy to port (not too complicated) linux scripts under windows.</p>
+		<p>Below will be explained the main correspondences between, redirection of 
+			output/input and between the main linux tools. There will be more explanation 
+			about windows assuming people are already familiar to linux.</p>
+		<OL>
+			<li>
+				<U><B>Comments:</B></U>&nbsp;
+				<BR>
+				<BR>
+				In a linux scripts, they are made by starting the line with '<B>#</B>' 
+				character, the only change in windows is using '<B>::</B>' (two colon 
+				characters) instead.</li>
+				<BR>
+			<li>
+				<U><B>Environment variables:</B></U>
+				<BR>
+				<BR>
+				When you want to set a environment variable under linux or windows you do more 
+				or less the same.<BR>
+				<B>set A=value</B> for windows or setenv A value for linux (depending on the 
+				shell you are using)<br>
+				For referencing the syntax is different. Under linux it is referenced as <B>$A</B>
+				but under windows it is referenced as <B>%A%.</B></li>
+				<BR>
+			<li>
+				<B><U>Control Loop:</U></B>
+				<BR>
+				<BR>
+				There are only two loop control operator that are used under windows and to 
+				which it is possible to give a comparison.
+				<p><EM>Under windows you have:</EM></p>
+				<p>
+					<TABLE id="Table1" height="75" cellSpacing="1" cellPadding="1" width="700" border="1">
+						<TR>
+							<TD width="105"><SPAN style="FONT-SIZE: 12pt; FONT-FAMILY: 'Times New Roman'; mso-fareast-font-family: 'Times New Roman'; mso-ansi-language: EN-GB; mso-fareast-language: EN-US; mso-bidi-language: AR-SA"><EM><U>Operator</U></EM></SPAN></TD>
+							<TD width="187"><SPAN style="FONT-SIZE: 12pt; FONT-FAMILY: 'Times New Roman'; mso-fareast-font-family: 'Times New Roman'; mso-ansi-language: EN-GB; mso-fareast-language: EN-US; mso-bidi-language: AR-SA"><EM><U>Syntax</U></EM></SPAN></TD>
+							<TD><SPAN style="FONT-SIZE: 12pt; FONT-FAMILY: 'Times New Roman'; mso-fareast-font-family: 'Times New Roman'; mso-ansi-language: EN-GB; mso-fareast-language: EN-US; mso-bidi-language: AR-SA"><U><EM>Example</EM></U></SPAN></TD>
+						</TR>
+						<TR>
+							<TD width="105">IF</TD>
+							<TD width="187"><SPAN style="FONT-SIZE: 12pt; FONT-FAMILY: 'Times New Roman'; mso-fareast-font-family: 'Times New Roman'; mso-ansi-language: EN-GB; mso-fareast-language: EN-US; mso-bidi-language: AR-SA">IF Cond (Ops)</SPAN></TD>
+							<TD><SPAN style="FONT-SIZE: 12pt; FONT-FAMILY: 'Times New Roman'; mso-fareast-font-family: 'Times New Roman'; mso-ansi-language: EN-GB; mso-fareast-language: EN-US; mso-bidi-language: AR-SA">IF NOT EXIST test.file (echo file missing 
+        &amp;&amp; GOTO :EOF)</SPAN></TD>
+						</TR>
+						<TR>
+							<TD width="105">FOR</TD>
+							<TD width="187"><SPAN style="FONT-SIZE: 12pt; FONT-FAMILY: 'Times New Roman'; mso-fareast-font-family: 'Times New Roman'; mso-ansi-language: EN-GB; mso-fareast-language: EN-US; mso-bidi-language: AR-SA">FOR %%V in Set DO (Ops)</SPAN></TD>
+							<TD><SPAN style="FONT-SIZE: 12pt; FONT-FAMILY: 'Times New Roman'; mso-fareast-font-family: 'Times New Roman'; mso-ansi-language: EN-GB; mso-fareast-language: EN-US; mso-bidi-language: AR-SA">FOR %%I in (a.exe b.exe) DO 
+  %%I</SPAN></TD>
+						</TR>
+					</TABLE>
+					<BR>
+					<BR>
+					Where Cond is any Boolean condition which can be the result of another command. 
+					In the For loop structure, the variable V can only be one character! Set is 
+					usually a set of Files but it can use a range of value by making the 
+					appropriate syntax (type HELP FOR in the windows terminal to have the 
+					explanation pages). In both case Ops is a sequence of command or a unique 
+					command, the parenthesis enclose the sequence that will be performed if the 
+					condition is true.<BR>
+					<BR>
+					<EM>Under unix shell it is:</EM><BR>
+					<BR>
+					<TABLE id="Table2" height="75" cellSpacing="1" cellPadding="1" width="700" border="1">
+						<TBODY>
+							<TR>
+								<TD width="105"><SPAN style="FONT-SIZE: 12pt; FONT-FAMILY: 'Times New Roman'; mso-fareast-font-family: 'Times New Roman'; mso-ansi-language: EN-GB; mso-fareast-language: EN-US; mso-bidi-language: AR-SA"><EM><U>Operator</U></EM></SPAN></TD>
+								<TD width="187"><SPAN style="FONT-SIZE: 12pt; FONT-FAMILY: 'Times New Roman'; mso-fareast-font-family: 'Times New Roman'; mso-ansi-language: EN-GB; mso-fareast-language: EN-US; mso-bidi-language: AR-SA"><EM><U>Syntax</U></EM></SPAN></TD>
+								<TD><SPAN style="FONT-SIZE: 12pt; FONT-FAMILY: 'Times New Roman'; mso-fareast-font-family: 'Times New Roman'; mso-ansi-language: EN-GB; mso-fareast-language: EN-US; mso-bidi-language: AR-SA"><U><EM>Example</EM></U></SPAN></TD>
+							</TR>
+							<TR>
+								<TD width="105">IF</TD>
+								<TD width="187"><SPAN style="FONT-SIZE: 12pt; FONT-FAMILY: 'Times New Roman'; mso-fareast-font-family: 'Times New Roman'; mso-ansi-language: EN-GB; mso-fareast-language: EN-US; mso-bidi-language: AR-SA"><SPAN style="FONT-SIZE: 12pt; FONT-FAMILY: 'Times New Roman'; mso-fareast-font-family: 'Times New Roman'; mso-ansi-language: EN-GB; mso-fareast-language: EN-GB; mso-bidi-language: AR-SA">if Cond; then Ops else Ops fi</SPAN>
+									</SPAN></TD>
+								<TD><SPAN style="FONT-SIZE: 12pt; FONT-FAMILY: 'Times New Roman'; mso-fareast-font-family: 'Times New Roman'; mso-ansi-language: EN-GB; mso-fareast-language: EN-US; mso-bidi-language: AR-SA">
+										If !test -f test.file echo file missing &nbsp;<SPAN style="FONT-SIZE: 12pt; FONT-FAMILY: 'Times New Roman'; mso-fareast-font-family: 'Times New Roman'; mso-ansi-language: EN-GB; mso-fareast-language: EN-US; mso-bidi-language: AR-SA">exit</SPAN>
+									</SPAN>
+				</p>
+				</TD></TR>
+				<TR>
+					<TD width="105">FOR</TD>
+					<TD width="187"><SPAN style="FONT-SIZE: 12pt; FONT-FAMILY: 'Times New Roman'; mso-fareast-font-family: 'Times New Roman'; mso-ansi-language: EN-GB; mso-fareast-language: EN-US; mso-bidi-language: AR-SA"><SPAN style="FONT-SIZE: 12pt; FONT-FAMILY: 'Times New Roman'; mso-fareast-font-family: 'Times New Roman'; mso-ansi-language: EN-GB; mso-fareast-language: EN-US; mso-bidi-language: AR-SA">For $var in Set; do Ops done</SPAN>
+						</SPAN></TD>
+					<TD><SPAN style="FONT-SIZE: 12pt; FONT-FAMILY: 'Times New Roman'; mso-fareast-font-family: 'Times New Roman'; mso-ansi-language: EN-GB; mso-fareast-language: EN-US; mso-bidi-language: AR-SA"><SPAN style="FONT-SIZE: 12pt; FONT-FAMILY: 'Times New Roman'; mso-fareast-font-family: 'Times New Roman'; mso-ansi-language: EN-GB; mso-fareast-language: EN-US; mso-bidi-language: AR-SA">For $exe in a.exe b.exe; do $exe</SPAN>
+						</SPAN></TD>
+				</TR>
+				</TBODY></TABLE></P></li>
+				<BR>
+			<li>
+				<B><U>Tools Altering Files:<BR>
+						<BR>
+					</U></B>Everybody knows the <B>rm, cp, mv</B> operations that are surely 
+				used every day. Fortunately under windows their use is also straightforward.
+				<br>
+				<b>cp</b> becomes <b>copy</b>, <b>rm</b> becomes <b>del</b> and <b>mv</b> becomes
+				<b>move</b>. Their syntax is the same except for flags.
+				<p><b>move</b> only has one flag <b>/Y</b> which corresponds to <b>-f</b> of linux.</p>
+				<p><b>del</b> has five flags <b>/P /F /S /Q /A </b>(+ attributes) . The first one 
+					simply correspond to <b>-i</b> flag of <b>rm</b>. <b>/Q</b> corresponds more or 
+					less to <b>-f</b> for <b>rm</b> and the others are not worth explaining here as 
+					they do not exist under linux.</p>
+				<p><b>copy</b> has many flags but the only relevant is <b>/Y</b> corresponding to <b>-f</b>
+					of <b>cp</b> command.</p>
+			<li>
+				<U><B>Others tools:
+						<BR>
+						<BR>
+					</B></U>
+				<ul>
+					<li>
+						<B>grep</B> becomes <B>FIND</B>, syntax is the same except that for <B>FIND</B>
+					the pattern must be enclosed in " ".
+					<li>
+						<b>diff</b> becomes <B>FC</B>
+					with same syntax
+					<li>
+						<b>sort</b> stays the same, with same syntax
+					</li>
+				</ul>
+				<p>Be aware anyway that not all flags available for linux are available under 
+					windows. Most of the time, you need to simply change -flag into /flag. To be 
+					sure about what flag are available always refer to "<B><EM>HELP command</EM></B>" 
+					which are effectively the equivalent to linux man pages.</p>
+			<li>
+				<u><b>Redirections:</b></u>
+				<BR>
+				<BR>
+				This point is the easiest and the most troublesome at the same time. It is easy 
+				because all redirections of input and batching are the same <b>(&amp;, &lt;, &gt;, 
+					2&gt;, 1&gt;&amp;2, .)</b>.
+				<BR>
+				But it is troublesome because only the <b>&lt;&lt;</b> operator does not 
+				exists. Therefore each time you use a pattern like
+				<BR>
+				<BR>
+				<b><EM>Command "params" &lt;&lt; keyword<BR>
+						Input line 1
+						<BR>
+						Input line 2<BR>
+						.
+						<BR>
+						Keyword</EM></b><BR>
+				<BR>
+				you will have to put the input lines into one file and then use the <b>&lt;</b> 
+				operator to point to that file and have
+				<BR>
+				<BR>
+				<b><EM>Command "params" &lt; inputfile.dat</EM></b><BR>
+				<BR>
+				Most of the time I use ".<EM>dat</EM>" extension to remind me that it is only 
+				data for the batch scripts files.
+				<BR>
+				This was the simple case, the more complex case arise when in the input lines 
+				of the linux version there are lines using environment variables. Obviously 
+				under linux it is substituted at execution time as the input is indirected but 
+				under windows if you simply copy it into a file, the programs in the script 
+				will read it as pure string without substiuting it with the actual value of the 
+				environment variable.
+				<BR>
+				The way I do it (probably not the best way I guess) is just to do the following
+				<BR>
+				<BR>
+				<EM><b>echo Input line 1 &gt; inputfile.dat
+					<BR>
+					echo Input line 2 &gt;&gt; inputfile.dat<BR>
+					...
+					<BR>
+					echo Input line last &gt;&gt; inputfile.dat<BR></b>
+				</EM>
+				<BR>
+				The <b>&gt;</b> will erase the content if this file previously existed and then writes 
+				the line; the <b>&gt;&gt;</b> will append the text to an existing file. The reason for 
+				using this method is simply because echo will substitute the value of <b>%A%</b> when 
+				printing into a file.</li></OL>
+	</body>
+</html>

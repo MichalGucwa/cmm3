@@ -1,0 +1,31 @@
+#!/bin/sh
+# detwin.exam
+# 
+# An example script to run detwin with some twinned data (from JCSG crystal
+# 13089 / deposited structure 1vr7) low resolution pass scaled with Scala.
+# 
+
+set -e
+
+HARVESTHOME=$CCP4_SCR
+export HARVESTHOME
+
+if test ! -f ${CEXAM}/data/1vr7_lr_i.mtz ; then
+  echo "input reflection file not found: ${CEXAM}/data/1vr7_lr_i.mtz"
+  exit 1
+fi
+
+detwin \
+hklin ${CEXAM}/data/1vr7_lr_i.mtz \
+hklout ${CCP4_SCR}/1vr7_lr_dt.mtz << eof
+labin IMEAN=IMEAN SIGIMEAN=SIGIMEAN
+sym h,-h-k,-l
+twin 0.283
+eof
+
+truncate \
+hklin ${CCP4_SCR}/1vr7_lr_dt.mtz \
+hklout ${CCP4_SCR}/1vr7_lr_trunc.mtz << eof
+labin IMEAN=IMEAN_detw SIGIMEAN=SIGIMEAN_detw
+nresidue 353
+eof

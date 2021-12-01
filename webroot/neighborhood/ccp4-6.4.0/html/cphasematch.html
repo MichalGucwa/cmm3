@@ -1,0 +1,158 @@
+<!DOCTYPE html
+                     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                     "DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+   <meta name="Author" content="Martyn Winn" />
+<title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::CPHASEMATCH::Supported::MTZ manipulations / conversions::Calculate agreement between phase sets:::::::: -->
+
+<h1>CPHASEMATCH (CCP4: Supported Program)</h1>
+<h2>NAME</h2>
+<p><b>cphasematch</b>
+- Calculate agreement between phase sets, allowing for possible origin differences</p>
+
+<h2>SYNOPSIS</h2>
+<p>
+<b>cphasematch</b>
+	<b>-mtzin</b> <i>filename</i>
+	<b>-mtzout</b> <i>filename</i>
+	<b>-colin-fo</b> <i>colpath</i>
+	<b>-colin-hl-1</b> <i>colpath</i>
+	<b>-colin-phifom-1</b> <i>colpath</i>
+	<b>-colin-fc-1</b> <i>colpath</i>
+	<b>-colin-hl-2</b> <i>colpath</i>
+	<b>-colin-phifom-2</b> <i>colpath</i>
+	<b>-colin-fc-2</b> <i>colpath</i>
+	<b>-colout</b> <i>colpath</i>
+	<b>-resolution-bins</b> <i>number-of-bins</i>
+	<b>-no-origin-hand</b>
+        <b>[-stdin] </b>
+<br />
+[<a href="#keywords">Keyworded input</a>]</p>
+
+<h2><a name="description"></a>DESCRIPTION</h2>
+
+<p>'cphasematch' will calculate the agreement between two phase sets, represented either
+by a phase / figure of merit pair, or as a set of Hendrickson Lattman coefficients.
+By default, cphasematch will check for possible origin shifts between the two sets.</p>
+
+
+<h2><a name="files"></a>INPUT/OUTPUT FILES</h2>
+
+<dl>
+<dt>-mtzin</dt> <dd>Input MTZ file containing the phase sets to be compared. These 
+can be represented as a phase / figure of merit pair, or as a set of 
+Hendrickson Lattman coefficients. These columns can be created from a set of
+atomic coordinates (i.e. a PDB file) by running csfcalc.</dd>
+
+<dt>-mtzout</dt> <dd>Output MTZ file containing, in addition to the input columns, 
+phase information for the second phase 
+set (HL coefficients, phi/fom, Fc depending on what was supplied) adjusted for any
+origin shift which has been applied.</dd>
+
+
+<h2><a name="keywords"></a>KEYWORDED INPUT</h2>
+
+See <a href="#notekeywords">Note on keyword input</a>.
+
+<h3><a name=""></a>-colin-fo <i>colpath</i></h3>
+<p>Specify the Fobs column in the input MTZ file, e.g. "*/*/[FP,SIGFP]"</p>
+
+<h3><a name=""></a>-colin-hl-1 <i>colpath</i></h3>
+<p>Specify the Hendrickson Lattman coefficients for the first phase set,
+e.g. "*/*/[nat.ABCD.A,nat.ABCD.B,nat.ABCD.C,nat.ABCD.D]"</p>
+
+<h3><a name=""></a>-colin-phifom-1 <i>colpath</i></h3>
+<p>As an alternative to -colin-hl-1, specify the phase/FOM for the first phase set,
+e.g. "*/*/[nat.Phi_fom.phi,nat.Phi_fom.fom]"</p>
+
+<h3><a name=""></a>-colin-fc-1 <i>colpath</i></h3>
+<p>As an alternative to -colin-hl-1 or -colin-phifom-1, specify an Fcalc/phi pair
+for the first phase set, e.g. "*/*/[nat.F_phi.F,nat.F_phi.phi]". The associated
+figure of merit is set to 0.9998.</p>
+
+<h3><a name=""></a>-colin-hl-2 <i>colpath</i></h3>
+<p>Specify the Hendrickson Lattman coefficients for the second phase set.</p>
+
+<h3><a name=""></a>-colin-phifom-2 <i>colpath</i></h3>
+<p>As an alternative to -colin-hl-2, specify the phase/FOM for the second phase set.</p>
+
+<h3><a name=""></a>-colin-fc-2 <i>colpath</i></h3>
+<p>As an alternative to -colin-hl-2 or -colin-phifom-2, specify an Fcalc/phi pair
+for the second phase set.</p>
+
+<h3><a name=""></a>-colout <i>colpath</i></h3>
+<p>Default: "phasematch"<br>
+Specify the root of the output MTZ columns.</p>
+
+<h3><a name=""></a>-resolution-bins <i>number-of-bins</i></h3>
+<p>Default: 12<br>
+Specify the number of resolution bins for output statistics.</p>
+
+<h3><a name=""></a>-no-origin-hand</h3>
+<p>By default, cphasematch will check for possible origin shifts, and changes of hand.
+Use this option to turn off this behaviour.</p>
+
+
+<h4><a name="notekeywords"></a>Note on keyword input:</h4>
+<p>Keywords may appear on the command line, or by specifying the
+'-stdin' flag, on standard input. In the latter case, one keyword is
+given per line and the '-' is optional, and the rest of the line is
+the argument of that keyword if required, so quoting is not used in
+this case. End input with &lt;Ctrl-D&gt; (END is not recognised).</p>
+
+<h2>Program Output</h2>
+
+<p>The program outputs phase statistics as a function of resolution, and as a 
+function of FOM. In general, figures of merit (FOM) should lie between 0 and 1,
+with higher values being better. Correlation coefficients should lie between 1
+(perfect correlation) and -1 (perfect anti-correlation).
+</p>
+<p>The following graphs are output:
+<ul>
+<li>The FOMs for the input phase sets as a function of resolution.
+<li>The mean phase difference between the sets as a function of resolution. This is given 
+unweighted, weighted by the FOM of the first set, and weighted by the FOM of the second set.
+<li>The correlation coefficient between the structure factor amplitudes of the
+first and second sets, weighted by the cosine of the phase difference, as a function 
+of resolution. A second graph is included for normalised structure factor 
+amplitudes (Es).
+<li>Histogram of the input figures of merit, given for each phase set.
+<li>The mean phase difference as a function of the input FOM, given for each phase set.
+In each case, this is compared with the arccosine of the input FOM which is an estimate 
+of the mean phase error for that set. Thus, one can compare the phase difference
+between the two sets to the phase error of each set.
+</ul>
+</p>
+<p>Finally, the program gives overall average values for several quantities,
+calculated over the full dataset, including:
+<dl compact>
+<dt>&lt;dphi&gt;
+<dd>mean phase difference
+<dt>w1&lt;dphi&gt;
+<dd>mean phase difference weighted by the FOM of the first set
+<dt>wFcorr
+<dd>correlation coefficient between the structure factor amplitudes of the
+first and second sets, weighted by the cosine of the phase difference
+<dt>Qfom1
+<dd>Average ratio between the cosines of the phase difference and the phase
+error (latter from the FOM).
+</dl>
+</p>
+
+<h2>Problems</h2>
+<p>None known.</p>
+
+<h2>AUTHOR</h2>
+<p>Kevin Cowtan, York.</p>
+
+<h2>SEE ALSO</h2>
+<p><a href="phistats.html">phistats</a>
+</p>
+
+</body>
+</html>

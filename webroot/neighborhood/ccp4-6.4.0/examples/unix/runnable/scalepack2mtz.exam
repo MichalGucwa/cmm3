@@ -1,0 +1,47 @@
+#!/bin/sh
+
+set -e
+
+# bug # 3192 - run-all examples produce harvest files - well to counteract
+# this here set HARVESTHOME to somewhere in $CCP4_SCR
+
+HARVESTHOME=$CCP4_SCR
+export HARVESTHOME
+
+# 
+#   SCALEPACK2MTZ
+#
+#  h k l I+ SigI+ I- SigI-   were extracted from aucn.na4
+#  (acentric data only), and put into scalepack format. 
+#  This is simply to illustrate the procedure for getting 
+#  scalepack data into CCP4. I don't really know if it
+#  is a good example.
+#
+#  (You can use the same procedure whether or not you have 
+#  anomalous data.)
+
+scalepack2mtz hklin $CEXAM/data/aucn.sca \
+              hklout $CCP4_SCR/junk1.mtz <<eof
+name proj DMSO crys aucn data red_aucn
+symm 91
+end
+eof
+
+# convert Is to Fs and Ds.
+
+truncate hklin $CCP4_SCR/junk1.mtz \
+         hklout $CCP4_SCR/junk2.mtz <<eof
+title DMSO red aucn2 data 
+truncate yes
+nresidue 745
+labout  F=FP SIGF=SIGFP
+eof
+
+# get correct sort order and asymmetric unit
+
+cad hklin1 $CCP4_SCR/junk2.mtz hklout $CCP4_SCR/aucn_trn.mtz <<eof
+labi file 1 ALL
+sort H K L
+end
+eof
+#

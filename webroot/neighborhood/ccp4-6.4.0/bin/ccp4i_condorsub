@@ -1,0 +1,38 @@
+#!/bin/sh
+#
+# Simple script for subnitting ccp4i jobs to Condor batch system
+# This is a hack to replicate what happens for SGE and PBS. It
+# requires that this file be somewhere in the users PATH.
+#
+# Ronan Keegan 05/03/2009 
+#
+
+# Takes the ccp4i job com file as input
+infile=$1
+
+# Get the def file location, name and the job number
+#def_file=`grep \.def $infile | gawk '{print $3}'`
+def_file_line=`grep \.def $infile`
+def_file=${def_file_line##*-r}
+def_file_name=${def_file##*/}
+job_number_name=${def_file_name%.*}
+
+# Get the project name from the def file
+project_line=`grep CCP4I $def_file | grep PROJECT `
+project=${project_line##* }
+
+# Create the condor submission script
+cat << eof > ${CCP4_SCR}/${job_number_name}_${project}_condor.sub
+Universe       = vanilla
+
+Executable     = ${CCP4I_TOP}/bin/ccp4ish 
+arguments = -r ${def_file}
+getenv  = true
+output  = ${CCP4_SCR}/${job_number_name}_${project}_condor.out
+error   = ${CCP4_SCR}/${job_number_name}_${project}_condor.error
+
+Queue
+eof
+
+# Submit the job to the Condor queue
+condor_submit ${CCP4_SCR}/${job_number_name}_${project}_condor.sub

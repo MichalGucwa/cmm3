@@ -1,0 +1,486 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::VECREF::Supported::Multiple Isomorphous Replacement::Vector-space refinement of heavy atom sites in isomorphous derivatives:::::::: -->
+
+<h1> VECREF (CCP4: Supported Program)</h1>
+<h2> NAME</h2>
+<b>vecref </b>
+- Vector-space refinement of heavy atom sites in isomorphous derivatives.
+<h2> SYNOPSIS</h2>
+<b>vecref MAPIN</b>
+<i>foo_in.map </i>
+<b>ATOUT</b>
+<i>foo_out.dat</i>
+<br />
+ [<a href="#keywords">Keyworded input</a>]
+
+<h2><a name="description"></a> DESCRIPTION</h2>
+<p>Vector-space refinement is an alternative to the standard
+reciprocal-space refinement of Busing &amp; Levy (<a href="#reference1">[1]</a>); instead of
+least-squares minimisation of the sum of weighted squared
+differences between observed and calculated structure factor
+amplitudes with respect to the atomic parameters, we minimise
+the same function of the observed and calculated heavy-atom
+difference Patterson function values.</p>
+<p>Although the Patterson function is a complete representation in
+vector space of the set of structure factor amplitudes (provided
+the Patterson function is sampled at a sufficiently fine
+interval), the two types of refinement are not equivalent.  This
+is because the minimisation in vector space is only done for
+sample points where the calculated Patterson density is
+significantly positive, in other words near the interatomic
+vector peaks, whereas each structure factor contains information
+from all points in real space (except in special zones).  In all
+real crystal structures the atoms fill all the space (there are
+no holes), so there would be no advantage with vector-space
+refinement; indeed there would be problems due to considerable
+overlap of peaks in vector space.</p>
+<p>For a difference structure the situation is reversed; most of
+the space is empty and the probability of overlaps is small; and
+since the structure factors represent mostly empty space, they
+are dominated by errors arising from taking a small difference
+between large quantities with small relative errors.  As a
+result, reciprocal-space refinement of heavy-atom parameters is
+notoriously slow to converge and insensitive to misplaced sites
+and to errors in the starting values of the parameters, and
+refinement statistics usually give little indication of the
+correctness of the solution.  (Typical conventional R-factors
+for reciprocal-space heavy-atom refinement are in the range 30% 
+(rarely) to 70%, usually around 50%, compared with the random
+value for acentric data of 58.6%.)</p>
+<p>The theoretical convergence radius for reciprocal-space
+refinement is dmin/4, <em>i.e.</em> 0.75&Aring; at 3&Aring;, but this is unlikely to be
+achieved in practice because of random errors; for vector-space
+refinement the theoretical convergence radius is the apparent
+atomic diameter, which is about dmin/sqrt(2), <em>i.e.</em> about 2.1&Aring; at 3&Aring;.</p>
+<p>Vector-space refinement also has the considerable advantage over
+reciprocal-space refinement in that it is possible to perform
+the least-squares fit to the 3-dimensional data set using only
+isomorphous differences, so that heavy-atom derivatives for
+which no anomalous scattering data are available (or are of
+dubious reliability) can be refined using information from all
+data, centric and acentric.  In this case it is important to
+have the derivative data already scaled accurately against the
+native data, as the derivative scale-factor cannot be refined in
+real space.  The Kraut scaling technique (<a href="#reference2">[2]</a>) is recommended
+for this; see the documentation for program 
+<a href="fhscal.html">FHSCAL</a>.</p>
+<p>In vector space, there exists no procedure corresponding to the
+heavy-atom difference Fourier for finding minor sites.  However
+other options which utilise the Patterson, such as superposition
+methods, are available, and of course one can still calculate
+structure factors from the refined atomic parameters and do a
+difference Fourier.</p>
+
+<h2><a name="keywords"></a>KEYWORDED INPUT</h2>
+
+<p>Free format using keywords.  The following keywords may be used;
+only the leading 4 characters are significant and the order is
+immaterial:
+<blockquote>
+<a href="#aniso"><b>ANISO</b></a>,
+<a href="#atom"><b>ATOM</b></a>,
+<a href="#blimits"><b>BLIMITS</b></a>,
+<a href="#brefine"><b>BREFINE</b></a>,
+<a href="#cycles"><b>CYCLES</b></a>,
+<a href="#damp"><b>DAMP</b></a>,
+<a href="#end"><b>END</b></a>,
+<a href="#group"><b>GROUP</b></a>,
+<a href="#origin"><b>ORIGIN</b></a>,
+<a href="#rcut"><b>RCUT</b></a>,
+<a href="#resolution"><b>RESOLUTION</b></a>,
+<a href="#scale"><b>SCALE</b></a>,
+<a href="#spacegroup"><b>SPACEGROUP</b></a>,
+<a href="#threshold"><b>THRESHOLD</b></a>,
+<a href="#title"><b>TITLE</b></a>.
+</blockquote></p>
+<p>The keywords SPACEGROUP, RESOLUTION, CYCLES and ATOM are always
+required, the rest are optional, and assume default values if
+omitted.</p>
+<h3><a name="title"></a> TITLE &lt;title&gt;</h3>
+<p>Title (max 100 characters).</p>
+<h3><a name="spacegroup"></a> SPACEGROUP &lt;space_group&gt;</h3>
+<p>Space group name (<em>e.g.</em> P212121) or number (<em>e.g.</em> 19).</p>
+<h3><a name="resolution"></a> RESOLUTION &lt;d_min&gt; [&lt;d_max&gt;]</h3>
+<p>Approximate minimum and maximum d-spacings (high and low
+resolution cutoffs respectively; may be given either way
+round) of the data used to compute the Patterson map.
+d_max may be omitted, in which case no low resolution
+cutoff is assumed.</p>
+<h3><a name="rcut"></a> RCUT &lt;radius&gt;</h3>
+<p>Radius cutoff for Patterson peaks.  The default radius is
+defined by the point where the density either becomes zero
+or a minimum; this is usually satisfactory.  If RCUT is
+positive the radius is taken as a RCUT times the RMS radius.
+Note that the RMS radius is typically 0.5-0.6 times the
+default radius, so there is no point setting RCUT above
+about 1.5.  If RCUT is negative, the radius (in Angstrom)
+is taken as abs(RCUT).</p>
+<h3><a name="group"></a> GROUP &lt;gs&gt; &lt;as1&gt; &lt;w1&gt; &lt;r1&gt; &lt;as2&gt; &lt;w2&gt; &lt;r2&gt;</h3>
+<p>Group symbol, any 2 characters used to represent the group
+scatterer, <em>e.g.</em> HI for HgI4-- (do not use a symbol which
+could be confused with an atomic symbol).</p>
+<p>Atomic symbol, multiplicity and radius for the first type
+of atom in the group; <em>i.e.</em> if this is the central atom then
+w1 = 1 and r1 = 0.</p>
+<p>Repeat for the second type of atom (optional).</p>
+
+<h3><a name="cycles"></a> CYCLES &lt;ncyc1&gt; &lt;ncyc2&gt; &lt;ncyc3&gt;</h3>
+<p>The program will perform &lt;ncyc1&gt; cycles of refinement of the 
+occupancy factors (usually 3 to 5, possibly up to 10 for difficult cases),
+followed by &lt;ncyc2&gt; cycles of refinement of the occupancies and
+coordinates (usually about 5), and finally &lt;ncyc3&gt; cycles
+of refinement of all variables (occupancies, coordinates and thermal 
+parameters) (usually 10-20).</p>
+
+<h3><a name="origin"></a> ORIGIN</h3>
+<p>Specify to include Patterson origin.
+Usually exclude, except in the case of 1 atom in space group
+P1, when the origin is the only vector.  See <a href="#note5">note 5</a>.</p>
+<h3><a name="scale"></a> SCALE &lt;scale(i)&gt;</h3>
+<p>Scale factors for the coordinates; if these are fractional
+then scale(i) = 1 (this is the default).  If they are in
+grid units (<em>i.e.</em> taken directly from a map) then scale(i) =
+number of grid units along each cell edge.  (These grid units
+need not be the same as those used in the Patterson read by
+the program.)</p>
+<h3><a name="atom"></a> ATOM &lt;as&gt; &lt;iat&gt; &lt;occ&gt; &lt;x&gt; &lt;y&gt; &lt;z&gt; &lt;b&gt;</h3>
+<dl>
+<dt>&lt;as&gt;</dt>
+<dd>Atomic or group symbol.</dd>
+<dt>&lt;iat&gt;</dt>
+<dd>Atom/group identifier (integer from 1 to 9999).</dd>
+<dt>&lt;occ&gt;</dt>
+<dd>Occupancy.</dd>
+<dt>&lt;x&gt; &lt;y&gt; &lt;z&gt;</dt>
+<dd>Real space (not Patterson space) fractional/grid coordinates.</dd>
+<dt>&lt;b&gt;</dt>
+<dd>Thermal parameter (B-factor).</dd>
+</dl>
+<h3><a name="aniso"></a> ANISO</h3>
+<p>This is currently not operational.</p>
+<h3><a name="brefine"></a> BREFINE</h3>
+<p>Specify to refine individual isotropic thermal parameters
+(ncyc3 must also be &gt; 0).  The default is to refine an
+overall B factor (when ncyc3 &gt; 0).  See <a href="#note4">note 4</a>.</p>
+<h3><a name="damp"></a> DAMP &lt;damp&gt;</h3>
+<p>Damping factor for occupancy and B-factor shifts when
+these are refined together.  The default value is 0.25.
+The occupancies and B-factors are always highly correlated,
+so without damping the shifts tend to oscillate.</p>
+<h3><a name="threshold"></a> THRESHOLD &lt;trms&gt;</h3>
+<p>Only atoms with refined occupancies above this threshold
+times the estimated standard deviation are written to the
+ATOUT file.  If threshold is given as negative, the absolute
+value of the occupancy is tested, so that negative
+occupancies may also be written out.  Default is 2 sigma.</p>
+<h3><a name="blimits"></a> BLIMITS &lt;blim(1)&gt; &lt;blim(2)&gt;</h3>
+<p>Only atoms with B factors within the specified limits are
+accepted on input, and are written to the ATOUT file.
+Defaults are 0 200.</p>
+<h3><a name="end"></a> END</h3>
+<p>Terminate input and start the calculation.</p>
+<h2><a name="files"></a> INPUT AND OUTPUT FILES</h2>
+<dl>
+<dt>MAPIN:</dt>
+<dd>A Patterson map in standard CCP4 format is required; see <a href="#note2">note 2</a>
+for important information concerning its preparation.</dd>
+<dt>ATOUT:</dt>
+<dd>The refined coordinates are written to a file in a format
+suitable for inclusion in the control data for subsequent runs.</dd>
+<dd>The standard library of symmetry positions (SYMOP.LIB) is only
+required if the space group number is specified.</dd>
+</dl>
+<p>Logical names used:
+<blockquote><table border="0">
+<tr>
+<td>INPUT_DENSITY_FILE</td><td align="right">MAPIN</td>
+</tr>
+<tr>
+<td>OUTPUT_COORDINATE_FILE</td><td align="right">ATOUT</td>
+</tr>
+<tr>
+<td>Symmetry library</td><td align="right">SYMOP</td>
+</tr>
+<tr>
+<td colspan="2" align="center">[default $CLIBD/symop.lib]</td>
+</tr>
+<tr>
+<td>Form-factor library</td><td align="right">ATOMSF</td>
+</tr>
+<tr>
+<td colspan="2" align="center">[default $CLIBD/atomsf.lib]</td>
+</tr>
+<tr>
+<td>Dynamic array dimension</td><td align="right">VECREF_MAXPTS</td>
+</tr>
+<tr>
+<td colspan="2" align="center">[default 200000]</td>
+</tr>
+</table></blockquote>
+<p>The dynamic array dimension will be automatically increased if it
+is not large enough.  However, the program will run faster if it
+is set large enough initially (<em>e.g.</em> setenv VECREF_MAXPTS 1000000).</p>
+<h2><a name="notes"></a> NOTES</h2>
+<ol>
+<li><a name="note1"></a>
+Lattice type: The program takes account of
+non-primitive lattices by multiplying the atomic form-factor by
+the multiplicity factor. This means that the refined occupancies
+are true occupancies, not multiplied by the lattice
+multiplicity.</li>
+<li><a name="note2"></a>
+Map file: Great care must be taken in the preparation
+of the map file, particularly with non-primitive space groups
+such as C2, as the VECREF program may not be able to detect
+mistakes made.  The most likely result of this is that you will
+finish up with incorrect occupancies, and hence biased protein
+phases.  The following points should be carefully observed: 
+<ol type="a">
+<li>It is recommended that Kraut scaling of the
+derivative be used, with or without anomalous differences.
+In the latter case the <a href="fhscal.html">FHSCAL</a> program can be used.
+The scales and temperature factors
+given to FFT will then be 1 and 0 respectively.  A bias
+factor of 1 is recommended, but this is not critical.</li>
+<li>It is a recommended that a list of the largest
+isomorphous differences (or Fhle's) be checked for obvious
+outliers and these rejected before the Patterson is computed,
+otherwise these will strongly bias the occupancies.  A
+convenient way of checking is to run a program which performs
+analyses of the scaling in terms of the hkl indices, such as
+<a href="scaleit.html">SCALEIT</a> or LOCAL, as large outliers usually stand out; the
+fractional rms difference in F^2 is a particularly sensitive
+check.  A low resolution cutoff <em>e.g.</em> 20&Aring; in FFT will often remove
+most of the outliers, though this should be done with caution.</li>
+<li>The number of sampling intervals specified affects 
+critically the run-time of the VECREF run, <em>i.e.</em> inversely 
+proportional to the cube of the size of the interval.  Normally
+use an interval about 1/4th of the resolution, <em>i.e.</em> Nx = 4.hmax
+etc.  The Patterson must of course constitute at least an
+asymmetric unit in vector space, but it doesn't matter if it is
+more than an asymmetric unit.</li>
+<li>Use the VF000 map scaling option; for V use the value
+computed by <a href="fhscal.html">FHSCAL</a>, or for Fhle Pattersons use the actual volume.
+F000 should be 0 as VECREF computes the value from the occupancies
+and scattering factors.</li>
+</ol>
+<li><a name="note3"></a>
+Group scattering factors: These are useful for complex
+ions like AuI4-, PtI6--, HgI4-- etc, where a substantial part of
+the scattering arises from atoms not located at the centre of
+the electron density.  The spherically averaged combined
+scattering factor is used.</li>
+<li><a name="note4"></a>
+Thermal parameters: For low resolution (dmin &gt; &#126;4.5)
+thermal parameters cannot be sensibly refined due to high
+correlations with the occupancies, so this should then be zero,
+otherwise about 5.
+<br />
+Usually when refining the thermal parameters, the R-factor
+(residual) goes up initially and then converges slowly (due to
+the high correlations), but not back as far as the level
+attained by refining occupancies and coordinates alone.  This in
+itself should not necessarily be taken to mean that the thermal
+parameters are not meaningful.  This increases the peak widths and
+hence the number of observations; this by itself will tend to
+push up the R-factor, but also the extra observations will be in
+the tails of the peaks where the signal to noise ratio is poor.</li>
+<li><a name="note5"></a>
+Patterson origin: The program should normally be
+instructed to ignore the origin peak for the purposes of
+least-squares unless you are confident there is no systematic
+discrepancy between the observed and calculated origin peak
+heights, as there usually is, probably because of random errors
+and/or missing sites.</li>
+</ol>
+<h2><a name="output"></a> PRINTER OUTPUT</h2>
+<p>The refined atomic parameters appear in a table under the 
+following headings:
+<pre>Atom  Parameter  Init  Old  Shift  Change  New  Esd
+</pre></p>
+<dl> 
+<dt>Atom</dt>
+<dd>the atom or group symbols and identifiers.</dd>
+<dt>Parameter</dt> 
+<dd>the names of the atomic parameters
+being refined.</dd>
+<dt>Init</dt> 
+<dd>the values of the parameters at the start of
+the current run.</dd>
+<dt>Old</dt> 
+<dd>the values of the parameters before the
+current cycle of refinement.</dd>
+<dt>Shift</dt> 
+<dd>Under Shift appear, on the same line as the atom name, the
+net shifts in Angstrom for the current cycle, and, on the same
+line as the parameter name, the shifts for the current cycle in
+the same units as the corresponding parameter.</dd>
+<dt>Change</dt> 
+<dd>Under Change appear, on the same line as the atom name, the
+net shifts in Angstrom from the initial values, and, on the same
+line as the parameter name, the shifts from the initial values
+in the same units as the corresponding parameter.</dd>
+<dt>New</dt> 
+<dd>the new values of the parameters for the
+current cycle.</dd>
+<dt>Esd</dt> 
+<dd>Under Esd appear, on the same line as the atom name, the
+estimated standard deviation of the atomic position in Angstrom,
+and, on the same line as the parameter name, the estimated
+standard deviations of the parameters in the same units as the
+corresponding parameter.</dd>
+</dl>
+<p>Atoms are not allowed to shift from their initial position by
+more than twice the expected convergence radius (approximately
+dmin*sqrt(2)); atoms for which the calculated shift would take
+them over this limit have their occupancy set to zero; the
+occupancy is then allowed to refine upwards only if the
+coordinate shifts move the atom back towards its initial
+position.  Atoms with occupancy exactly zero are ignored on 
+input; if this effect is not desired, alter the zero occupancy 
+to some small number (<em>e.g.</em> 0.001).</p>
+<p>I have not yet had sufficient experience with the program to
+know what constitute good R-factors and correlation
+coefficients, or which statistic to place the greatest reliance
+on, though the R-factor seems to be more discriminating.  The
+best result I have had so far is R = 17.5%, C = 0.976,
+(excluding the Patterson origin, and not refining B-factors) for
+the test data distributed with the program.  Note this is real
+data !  (Acknowledgements to Dr. Simon Phillips, University of
+Leeds.)</p>
+<p>The list of vectors, which appears after the occupancy
+refinement cycles and again at the end of the run, has the
+Patterson map coordinates in the same units as the atomic
+coordinates if these were supplied as map grid coordinates, or
+in the same units as the map supplied if the atomic coordinates
+were supplied as fractions of a unit cell.  The columns labelled
+Pobs, Pcalc, and &lt;Pobs&gt;, &lt;Pcalc&gt; are approximate peak heights
+and mean peak values respectively. They are intended only as a
+guide to the fit; in particular the Pcalc values do not include
+a contribution from any overlapping peaks.  (These are not the
+data used in the least squares, where the fit is done on a grid
+point basis, not on a peak basis.)</p>
+<h2><a name="errors"></a> ERRORS</h2>
+<p>One or more of the following messages occur when errors are
+discovered in the input control data; the program continues to
+process the data but stops when all data has been read:
+<pre>
+
+   *** ERROR: Centring translation not integer.
+   *** ERROR: Identity position not found.
+   *** ERROR: Invalid number of atoms.
+   *** ERROR: Atom symbol not in scat. fact. list.
+   *** ERROR IN GETINP: Error(s) in input data.
+
+</pre></p>
+<p>The following conditions indicate that an array is not large
+enough for the problem and should be cured either by correcting
+the input data (in most cases by increasing the sampling
+interval of the Patterson), or by increasing the value assigned
+to the symbol specified in PARAMETER statements in the source
+code, taking care to modify all PARAMETER statements containing
+the symbol, and re-compiling and linking. 
+<pre>
+
+   *** ERROR: Array bound check (MSECT).
+   *** ERROR: Array bound check (MRHO).
+   *** ERROR IN ADDAST: Array bound check (MCF).
+   *** ERROR IN PKLIST: Array bound check (MPL).
+   *** ERROR IN GENPTS: Array bound check (MPT).
+
+</pre></p>
+<p>The following conditions are likely to occur if either the
+symmetry specified is wrong, or the Patterson map is less
+than an asymmetric unit:
+<pre>
+
+   *** ERROR: Point not found.
+   *** ERROR IN GENPTS: No points.
+
+</pre></p>
+<p>The following errors occur when the standard map handling 
+routine detects an error; this is likely to indicate
+something seriously wrong with the map file, like data
+corruption:
+<pre>
+
+   *** ERROR IN PKLIST: MGULP error.
+   *** ERROR IN REFCYC: MGULP error.
+
+</pre></p>
+<h2><a name="program_description"></a> PROGRAM DESCRIPTION</h2>
+<p>One important point often not clearly understood about this
+method of refinement is that the program does handle overlapping
+vectors correctly, provided first that the overlap is between
+known atoms and second that not all vectors arising from a pair
+of atoms overlap.  This is because the calculated Patterson
+density is summed over all contributing atom pairs before being
+compared with the observed value.  Vectors which overlap with
+those due to as yet unknown atoms will positively bias the
+occupancy, and will also affect the refined coordinates, but
+this is also true for the reciprocal-space method.</p>
+<h2><a name="references"></a> REFERENCES</h2>
+<ol>
+<!-- KEEP startreferencelist -->
+<li><a name="reference1"></a>
+Busing WR and Levy HA (1961) in Computing Methods and the 
+Phase Problem in X-ray Crystal Analysis, Pergamon, Oxford.</li>
+<li><a name="reference2"></a>
+Kraut J, Sieker LC, High DF, Freer ST (1962), Proc. Nat.
+Acad. Sci. USA, 48, 1417-1424.</li>
+<!-- KEEP endreferencelist -->
+</ol>
+
+<h2>SEE ALSO</h2>
+
+<p><a href="mlphare.html">MLPHARE</a> - reciprocal-space refinement and phasing program <br />
+<a href="fft.html">FFT</a> - prepare Patterson function for MAPIN <br />
+</p>
+
+<h2><a name="examples"></a> EXAMPLES</h2>
+<!--
+Example 1:
+<pre>
+
+vecref MAPIN foo_in.map ATOUT foo_out.dat &lt;&lt;eof
+TITL TEST VECREF 3A
+RESO 3.02 20
+SPAC P21
+CYCL 3 3 5
+ATOM HG 1  1    .12  0      .47    20
+ATOM HG 2  1    .42   .048  .80    20
+eof
+
+</pre>
+Example 2:
+<br />
+If this were an HgI4 derivative, the group scattering option 
+could be used as follows:
+<pre>
+
+vecref MAPIN foo_in.map ATOUT foo_out.dat &lt;&lt;eof
+TITLTITL TEST VECREF 3A, demonstrate GS and coordinate scaling options.
+RESO 3.02 20
+SPAC P21
+GROUP HI  HG 1 0  I 4 2.78 ! Distance in HgI2.
+SCAL 100 100 100
+ATOM HI 1  1    12    0      47    20   ! Same coordinates as before.
+ATOM HI 2  1    42    4.8    80    20
+eof
+
+</pre>
+-->
+
+<h3>Simple unix example script found in $CEXAM/unix/runnable/</h3>
+<ul><li><a href="../examples/unix/runnable/vecref.exam">vecref.exam</a>
+(Use vecref to refine sites determined using <a href="rsps.html">RSPS</a>)</li></ul>
+
+</ul>
+<h2> AUTHOR</h2>
+Originator:   Ian Tickle, Birkbeck College, London
+
+</body></html>
+

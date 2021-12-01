@@ -1,0 +1,46 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#======================================================================
+#
+# sortmtz script
+#
+#======================================================================
+
+  if $IFREBATCH {
+    set tmpmtz0 [GetTmpFileName -ext mtz]
+
+    CreateComScript rebatch rebatch_script
+
+    set status [Execute "[BinPath rebatch] HKLIN \"$HKLIN\" HKLOUT \"$tmpmtz0\""  \
+                  $rebatch_script program_status report ]
+
+    set HKLIN $tmpmtz0
+    set N_SORT_HKLIN 1
+    set SORT_HKLIN(1) $tmpmtz0
+  }
+
+
+  if $IFREINDEX {
+
+    if { $REINDEX_MODE == "STD" } { set REINDEX_MODE HKL }
+    set tmpmtz [GetTmpFileName -ext mtz]
+
+    CreateComScript reindex reindex_script
+
+    set status [Execute "[BinPath reindex] HKLIN \"$HKLIN\" HKLOUT \"$tmpmtz\""  \
+                  $reindex_script program_status report ]
+
+    set N_SORT_HKLIN 1
+    set SORT_HKLIN(1) $tmpmtz
+  }
+
+  CreateComScript sortmtz sortmtz_script
+  set status [ Execute "[BinPath sortmtz] HKLOUT \"$HKLOUT\"" \
+       $sortmtz_script program_status report ]

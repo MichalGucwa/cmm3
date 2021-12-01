@@ -1,0 +1,1055 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4 Program Suite : refmac</title>
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX64 6.2 IP19) [Netscape]" />
+</head>
+<body>
+
+<!-- ::INDEX_INFO::REFMAC::Supported::Model Refinement::macromolecular refinement program:::::::: -->
+
+<h1>REFMAC (CCP4: Supported Program)</h1>
+<h2>User's manual for the program refmac_5.*</h2>
+
+<h2><a name="examples"></a>EXAMPLES</h2>
+
+<p>The following examples are included to illustrate the various ways in
+which REFMAC can be run:</p>
+
+<dl>
+<dt><a href="#exam0">Example 0.</a></dt>
+
+<dd>Completing the data to include all possible hkls. Should do this after
+data reduction, and certainly before using REFMAC.</dd>
+
+<dt><a href="#exam1">Example 1.</a></dt>
+
+<dd>Restrained refinement with atomic isotropic B-factor. Method is sparse
+matrix method.</dd>
+
+<dt><a href="#exam2">Example 2.</a></dt>
+
+<dd>Unrestrained refinement by maximum likelihood method.</dd>
+
+<dt><a href="#exam3">Example 3.</a></dt>
+
+<dd>Idealization. Method of minimization is conjugate gradient method.</dd>
+
+<dt><a href="#exam4">Example 4.</a></dt>
+
+<dd>Restrained refinement with contribution from hydrogens.</dd>
+
+<dt><a href="#exam5">Example 5.</a></dt>
+
+<dd>Restrained refinement with maximum likelihood method etc. 3&#197; data requires
+fixing of the Babinet's BULK B value.</dd>
+
+<dt><a href="#exam6a">Example 6a.</a></dt>
+
+<dd>Example of rigid body refinement in refmac. Ordinary case with several
+domains.</dd>
+
+<dt><a href="#exam6b">Example 6b.</a></dt>
+
+<dd>Example of rigid body refinement in refmac. Experimental phase information
+used. Side chains excluded from refinement.</dd>
+
+<dt><a href="#exam7">Example 7.</a></dt>
+
+<dd>Example of using experimental phase information. Very bad model (RMS error 2&#197;).</dd>
+
+<dt><a href="#exam8">Example 8.</a></dt>
+
+<dd>Example of individual anisotropic B-value refinement. Hydrogens must be added
+prior to refinement.</dd>
+
+<dt><a href="#exam9">Example 9.</a></dt>
+<dd>Example of TLS and after that individual atomic refiment.</dd>
+
+<dt><a href="example_10.html">Example 10.</a></dt>
+<dd>Example of using user supplied ligand description</dd>
+
+</dl>
+
+<h3><a name="exam0"></a>Example 0</h3>
+
+<p>Completing the data to include all possible hkls. Should do this after
+data reduction, and certainly before using REFMAC. This is now done with
+the uniqueify script.
+It is best done using CCP4i.</p>
+
+<pre>#! /bin/sh
+#
+set -e
+#
+# Case (1)
+#
+# Complete dataset and add free-R column.
+# Keep systematic absences with -s switch (though you probably wouldn't
+# want to do this).
+#
+uniqueify -s $CCP4_SCR/toxd_nan.mtz $CCP4_SCR/toxd-unique.mtz
+
+#
+# Case (2)
+#
+# Complete dataset and add free-R column.
+# Increase the fraction of reflections tagged with each free-R
+# indicator above the default 0.05 (sensible for toxd which has
+# small dataset).
+#
+uniqueify -p 0.1 $CCP4_SCR/toxd_nan.mtz $CCP4_SCR/toxd-unique2.mtz
+
+#
+# Case (3)
+#
+# First add free-R column to incomplete dataset.
+# (Silly thing to do - this is just to create a dataset with an existing
+# free-R column for illustrating use of uniqueify with -f switch.)
+#
+freerflag hklin $CCP4_SCR/toxd_nan.mtz hklout $CCP4_SCR/toxd_free.mtz &lt;&lt; eof
+END
+eof
+
+#
+# Now complete with -f switch to indicate free-R column already present.
+#
+uniqueify -f FreeR_flag $CCP4_SCR/toxd_free.mtz $CCP4_SCR/toxd-unique3.mtz
+
+#</pre>
+
+<h3><a name="exam1"></a>Example 1</h3>
+
+<p>Restrained refinement with overall B-factor refinement. Method is sparse
+matrix method.</p>
+
+<pre>#!/bin/csh -f
+#
+#   Example of refinement by refmac
+#
+set inmtz=toxd-unique.mtz
+start:
+
+set name = toxd
+set last = 0
+set cycles = 1
+set count = 0
+while ($count != $cycles)
+echo '*******************************************************************'
+echo  $count 
+echo '*******************************************************************'
+@ curr = $last + 1
+
+#
+# Refmac 
+#
+refmac:
+refmac5 \
+HKLIN   $inmtz \
+HKLOUT   $CCP4_SCR/${name}${last}.mtz \
+XYZIN   $CCP4_SCR/${name}${last}.pdb \
+XYZOUT  $CCP4_SCR/${name}${curr}.pdb \
+&lt;&lt; eor
+#
+#####Do not add hydrogens
+#
+<a href="../keywords/restraints.html#makecif">MAKE_restraints</a> HYDRogens No
+#
+#####Do not check correctness of all monomers. Rely on users naming
+#####One should be careful in using this option.
+#
+MAKE CHECk 0
+#
+####Input mtz labels. 
+#
+<a href="../keywords/xray-principal.html#labin">LABIN</a> FP=FTOXD3 SIGFP=SIGFTOXD3  FREE=FreeR_flag
+#
+####Output mtz labels
+#
+<a href="../keywords/xray-general.html#labout">LABO</a> FC=FC PHIC=PHIC    FWT=2FOFCWT PHWT=PH2FOFCWT -
+                     DELFWT=FOFCWT  PHDELWT=PHFOFCWT
+#
+####Restrained refinement. Reflections between 20 1.5&#197; resolution will be used
+#
+<a href="../keywords/xray-principal.html#refi_type">REFI TYPE</a> RESTrained RESOLUTION  20 1.50
+#
+####Use maximum likelihood residual
+#
+<a href="../keywords/xray-principal.html#refi_resi">REFI RESI</a> MLKF
+#
+####Refine isotropic B values.
+# 
+<a href="../keywords/xray-principal.html#refi_bref">REFI BREF</a> ISOTropic  
+#
+####Use 0.35 as weighting between X-ray and geometry
+# 
+<a href="../keywords/xray-principal.html#weig">WEIGHT</a> MATRIX 0.35
+#
+####Scaling parameters. Use BULK solvent based on Babinet's principle.
+####NB: Unless otherwise SOLVENT NO given contribution of bulk solvent
+####based on constant value will be used. 
+#
+<a href="../keywords/xray-principal.html#scal_type">SCALe TYPE</a> BULK   
+#
+####Fix Babinet's bulk solvent B value to 200.0
+#
+<a href="../keywords/xray-principal.html#scal_lssc_fixb">SCALe LSSCale FIXBulk</a> 200.0
+#
+####number of refinement cycles
+#
+<a href="../keywords/xray-principal.html#ncyc">NCYC</a> 2
+#
+####Monitor only overall statistics
+# 
+<a href="../keywords/xray-general.html#moni">MONI</a> FEW
+end
+eor
+#
+if ($status) exit
+# make maps.
+#
+#  Sigmaa style 2mfo-dfc map with restored data
+#
+fft:
+fft \
+hklin $CCP4_SCR/${name}${last}.mtz \
+mapout $CCP4_SCR/2mfodfc_${name}${last}.mtz \
+&lt;&lt;eof
+title Sigmaa style 2mfo-Dfc map calculated with refmac coefficients
+labi F1=2FOFCWT PHI=PH2FOFCWT
+binmapout
+end
+eof
+if ($status) exit
+#
+#   Sigmaa style mfo-dfc map
+#
+fft \
+hklin $CCP4_SCR/${name}${last}.mtz \
+mapout $CCP4_SCR/mfodfc_${name}${last}.mtz \
+&lt;&lt;eof
+title Sigmaa style mfo-Dfc map calculated with refmac coefficients
+labi F1=FOFCWT PHI=PHFOFCWT
+binmapout
+end 
+eof
+if ($status) exit
+#
+@ last++
+@ count++
+end
+#</pre>
+
+<h3><a name="exam2"></a>Example 2</h3>
+
+<p>Unrestrained refinement by maximum likelihood method.</p>
+
+<pre>#!/bin/csh -f
+#
+#   Example of refinement by refmac
+#
+set CTEST=/y/programs/xtal/ccp4/examples
+cp $CTEST/toxd/toxd.pdb $CCP4_SCR/toxd0.pdb
+
+set inmtz=toxd-unique.mtz
+start:
+
+set name = toxd
+set last = 0
+set cycles = 1
+set count = 0
+while ($count != $cycles)
+echo '*******************************************************************'
+echo  $count
+echo '*******************************************************************'
+@ curr = $last + 1
+#
+# Refmac step. Refine
+#
+refmac:
+refmac5 \
+HKLIN   $inmtz \
+HKLOUT   $CCP4_SCR/${name}${last}.mtz \
+XYZIN   $CCP4_SCR/${name}${last}.pdb \
+XYZOUT   $CCP4_SCR/${name}${curr}.pdb \
+&lt;&lt; eor
+#
+####Input mtz labels
+#
+<a href="../keywords/xray-principal.html#labin">LABIN</a> FP=FTOXD3 SIGFP=SIGFTOXD3  FREE=FreeR_flag
+#
+####Output mtz labels for map calculation
+#
+<a href="../keywords/xray-general.html#labout">LABO</a> FC=FC PHIC=PHIC    FWT=2FOFCWT PHWT=PH2FOFCWT -
+                     DELFWT=FOFCWT  PHDELWT=PHFOFCWT
+#
+####Unrestrained refinement. Use reflections between 20 1.5&#197;
+#
+<a href="../keywords/xray-principal.html#refi_type">REFI TYPE</a> UNREstrained RESOLUTION  20 1.50
+#
+####Use maximum likelihood residual
+#
+<a href="../keywords/xray-principal.html#refi_resi">REFI RESI</a> MLKF
+#
+####Refine individual atomic isotropic B-values
+#
+<a href="../keywords/xray-principal.html#refi_bref">REFI BREF</a> ISOTropic    
+#
+####Scaling parameters. Use Babinet's bulk solvent correction.
+#   Unless SOLVENT NO given, bulk solvent based on constant value
+#   will also be used in some cases.
+#
+#<a href="../keywords/xray-principal.html#scal_lssc_fixb">SCALe LSSCale FIXBulk</a> 200.0 # should be added if scaling is not stable
+#
+<a href="../keywords/xray-principal.html#scal_type">SCAL TYPE</a> BULK   
+#
+####Number of refinement cycles
+#
+<a href="../keywords/xray-principal.html#ncyc">NCYC</a> 2 
+#
+####Monitor only overall statistics
+#
+<a href="../keywords/xray-general.html#moni">MONI</a> FEW
+end
+eor
+#
+if ($status) exit
+# make maps.
+#
+#  Sigmaa style 2mfo-dfc map with restored data
+#
+fft:
+fft \
+hklin $CCP4_SCR/${name}${last}.mtz \
+mapout $CCP4_SCR/2mfodfc_${name}${last}.mtz \
+&lt;&lt;eof
+title Sigmaa style 2mfo-Dfc map calculated with refmac coefficients
+labi F1=2FOFCWT PHI=PH2FOFCWT
+binmapout
+end
+eof
+#
+if ($status) exit
+#   Sigmaa style mfo-dfc map
+#
+fft \
+hklin $CCP4_SCR/${name}${last}.mtz \
+mapout $CCP4_SCR/mfodfc_${name}${last}.mtz \
+&lt;&lt;eof
+title Sigmaa style mfo-Dfc map calculated with refmac coefficients
+labi F1=FOFCWT PHI=PHFOFCWT
+binmapout
+end 
+eof
+if ($status) exit
+#</pre>
+
+<h3><a name="exam3"></a>Example 3</h3>
+
+<p>Idealization. Method of minimization is conjugate gradient method.</p>
+
+<pre>#!/bin/csh -f
+#
+#   Example of refinement by refmac
+#
+#
+#  Set parameters
+#
+set CTEST=/y/programs/xtal/ccp4/examples
+set crdin=$CTEST/toxd/toxd.pdb
+set crdout=toxd_1.pdb
+
+#
+# Refmac step. Idealise
+#
+refmac:
+refmac5 \
+XYZIN   $crdin \
+XYZOUT $crdout \
+&lt;&lt; eor
+#
+#   Do not include hydrogens
+#
+<a href="../keywords/restraints.html#make_hydr">MAKE</a> HYDR N
+#
+#   Idealisation of the geometry
+#
+<a href="../keywords/xray-principal.html#refi_type">REFI TYPE</a> IDEAlise 
+#
+#   Number of idealisation cycles
+#
+<a href="../keywords/xray-principal.html#ncyc">NCYC</a> 2
+#
+#    In the first and last cycles information about outliers and
+#    overall statistics will be given. In the intermediate cycles
+#    only information about bond lengthes and bond angles will be
+#    monitored
+# 
+<a href="../keywords/xray-general.html#moni">MONI</a> MEDI
+end
+eor
+if ($status) exit
+#</pre>
+
+<h3><a name="exam4"></h>Example 4</h3>
+
+<P>Restrained refinement with partial contribution from hydrogens.</P>
+
+<pre>#!/bin/csh -f
+#
+start:
+set name = kak1_
+set last = 1
+set cycles = 1
+set count = 0
+while ($count != $cycles)
+echo '*******************************************************************'
+echo  $count 
+echo '*******************************************************************'
+@ curr = $last + 1
+#
+#   Run refmac - refinement adding in hydrogen contributions
+#
+refmac:
+refmac5 \
+HKLIN $SCRATCH/kak_freer_unobs_hyd.mtz   \
+XYZIN $SCRATCH/${name}${last}.pdb     \
+HKLOUT $SCRATCH/${name}${last}.mtz     \
+XYZOUT $SCRATCH/${name}${curr}.pdb  &lt;&lt; eop
+#
+#  add hydrogens in their riding positins. It is default. 
+#  Hydrogens will be added in their riding positions and 
+#  they will be used for geometry gradient calculation and in
+#  structure factor calculation. They are excluded from X-ray graident and 
+#  second derivative calculation.
+#
+<a href="../keywords/restraints.html#make_hydr">MAKE HYDRogens</a> All 
+#
+#   Do not write hydrogens to output pdb file. It is default
+#
+<a href="../keywords/restraints.html#make_hout">MAKE HOUT</a> No 
+#
+#   Input mtz labels
+#
+<a href="../keywords/xray-principal.html#labin">LABI</a> FP=F SIGFP=SIGF FREE=FreeR_flag
+#
+#   Output mtz labels
+#
+<a href="../keywords/xray-general.html#labout">LABO</a> FC=FC_p PHIC=PHIC_p FWT=2FOFCWT_p DELFWT=FOFCWT_p
+#
+#   Monitor all overall statistics and outliers at every cycle
+#   bond distance outliers will be written to log file if deviation
+#   from ideal values is more than 5.0 sigma. All other statistics 
+#   are default 
+#
+<a href="../keywords/xray-principal.html#moni">MONI</a> MANY DIST 5.0
+#
+#Refinement parameters
+#
+#   Restrained refinement
+#
+<a href="../keywords/xray-principal.html#refi_type">REFI TYPE</a> REST
+#
+#   Maximum likelihood residual. Reflections between 20 and 1.2 A
+#   will be used for the refinement
+<a href="../keywords/xray-principal.html#refi_resi">REFI RESI</a> MLKF RESO 20.0 1.2
+#
+#  Refine individual isotropic B values
+#
+<a href="../keywords/xray-principal.html#refi_bref">REFI BREF</a> ISOT
+#
+#   Weight between X-ray and geometry. Usually at this resolution
+#   this value should be set to very high value (for example 10 or 20)
+#
+<a href="../keywords/xray-principal.html#weig">WEIGHT</a> MATRIX 0.5
+#
+#   Scaling parameters. Use Babinet's bulk solvent scaling.
+#   Solvent based on constant value in the solvent region is used
+#   by default. 
+#<a href="../keywords/xray-principal.html#scal_lssc_fixb">SCALE LSSCale FIXBulk</a> 200.0 # should be added if scaling is not stable
+#
+<a href="../keywords/xray-principal.html#scal_type">SCAL TYPE</a> BULK
+#
+#  Number of refinement cycles
+#
+<a href="../keywords/xray-principal.html#ncyc">NCYC</a> 5
+#
+#   Number of resolution bins
+#
+<a href="../keywords/xray-general.html#bins">BINS</a> 20
+END
+eop
+if ($status) exit
+#
+@ last++
+@ count++
+end
+#</pre>
+
+<h3><a name="exam5"></a>Example 5</h3>
+
+<p>Restrained refinement with maximum likelihood method <em>etc</em>. 3&#197; data requires
+fixing of protein and Babinet's BULK B value. In these cases it is better to
+use TLS refinement before indivdual atomic refinement. See <a href="#exam9"><b>Example 9</b></a>.</p>
+
+<pre>#!/bin/csh -f
+#
+set verbose
+set name = piitrig-
+set last = 0
+set cycles = 1
+set count = 0
+while ($count != $cycles)
+@ curr = $last + 1
+#
+refmac:
+refmac5 \
+HKLIN   pii_154free.mtz \
+HKLOUT   $SCRATCH/$name$last.mtz                \
+XYZIN   $SCRATCH/$name$last.pdb         \
+XYZOUT $SCRATCH/$name$curr.pdb \
+&lt;&lt; 'END-sfrk'
+#
+#   Do not include hydrogens even if they are present in the input pdb file
+#
+<a href="../keywords/restraints.html#make_hydr">MAKE HYDRogens</a> No
+#
+#   Labels of input mtz file
+#
+<a href="../keywords/xray-principal.html#labin">LABIN</a> FP=FP SIGFP=SIGFP  FREE=FreeR_flag
+#
+#   Labels of output mtz file
+#
+<a href="../keywords/xray-general.html#labout">LABO</a> FC=FC PHIC=PHIC    FWT=2FOFCWT DELFWT=FOFCWT
+#
+#   Restrained refinement with reflections between 20 and 3.0 A
+#
+<a href="../keywords/xray-principal.html#refi_type">REFI TYPE</a> RESTrained RESOLUTION  20  3.0
+#
+#   Maximum likelihood residual
+#
+<a href="../keywords/xray-principal.html#refi_resi">REFI RESI</a> MLKF
+#
+#   Isotropic B value refinement
+#
+<a href="../keywords/xray-principal.html#refi_bref">REFI BREF</a> ISOTropic 
+#
+#   Tight restrained refinement
+#
+<a href="../keywords/xray-principal.html#weig">WEIGHT</a> MATRIX 0.1
+#
+#  Damp down shifts at each cycle by 0.5 (positional) 0.5 (thermal)
+#
+<a href="../keywords/xray-general.html#damp">DAMP</a> 0.5 0.5  
+!Scaling parameters
+<a href="../keywords/xray-principal.html#scal_type">SCAL TYPE</a> BULK LSSC  FIXBulk BBULk 200 ! Fixes Babinet's bulk solvent B 
+<a href="../keywords/xray-principal.html#scal_lssc_anis">SCAL LSSC ANISO</a>               !Scales aniso B
+#
+#   Number of the refinement cycles
+#
+<a href="../keywords/xray-principal.html#ncyc">NCYC</a> 4
+#
+#   It is good idea check geometry in the first and last cycles of the 
+#   refinement
+#
+<a href="../keywords/xray-general.html#moni">MONItor</a> MEDIum 
+
+'END-sfrk'
+if ($status) exit
+#
+@ last++
+@ count++
+end
+#</pre>
+
+<h3><A NAME="exam6a"></A>Example 6a</h3>
+
+<p>Example of rigid body refinement in refmac. Ordinary case with several
+domains.</p>
+
+<pre>#!/bin/csh -f
+#
+###################################################################
+#####################################################################
+set name = cytc_refmac_
+set inmtz=/y/ccp4/cytc/pseudo_alc_cprime1_sc_feph_sq_sf2_sfx_sq_a+p-unique_pt2p.mtz
+set last =  0
+set cycles = 1
+set count = 0
+while ($count != $cycles)
+@ curr = $last + 1
+refmac5 \
+HKLIN $inmtz \
+HKLOUT ${name}${curr}.mtz \
+XYZOUT ${name}${curr}.pdb \
+XYZIN ${name}${last}.pdb    \
+   &lt;&lt; eop
+#
+#   Input mtz labels
+<a href="../keywords/xray-principal.html#labin">LABI</a> FP=Fnata SIGFP=SIGFnata FREE=FreeR_flag 
+#
+#    Refinement parameters. Maximum likelihood refinement.
+#    Reflections between 15 and 2.0&#197; will be used
+#
+<a href="../keywords/xray-principal.html#refi_type">REFI TYPE</a> RIGID RESI MLKF RESO  15  2.0 
+#
+#   Scaling parameters. For rigid body sometimes bulk solvent based 
+#   on constant value could be switched off
+#<a href="../keywords/xray-principal.html#solv">SOLVent</a> NO
+#
+#    Fixing Babinet's bulk solvent parameters sometimes helps to 
+#    stabilise scaling
+#
+<a href="../keywords/xray-principal.html#scal_type">SCALe TYPE</a> BULK LSSC ANIS FIXBulk BBULk 200.0
+#
+#   Rigid body parameters
+#
+#   Number of cycles
+#
+<a href="../keywords/xray-general.html#rigi">RIGIdbody NCYCle</a> 10                   
+#
+#   Domain definition. Each group is one rigid body. It may consist of
+#   several unconnected pieces of chain
+#
+<a href="../keywords/xray-general.html#rigi">RIGIdbody GROUp</a> 1 FROM 2   A TO 32  A 
+RIGIdbody GROUp 2 FROM 38  A TO 55  A 
+RIGIdbody GROUp 3 FROM 76  A TO 99  A 
+RIGIdbody GROUp 4 FROM 101 A TO 126 A 
+RIGIDbody GROUp 5 FROM 56  A TO 75  A 
+
+#
+#   First cycle will give R, free R over resolution. Last cycle also
+#   will give rotation matrices and angles and translations
+#
+<a href="../keywords/xray-general.html#moni">MONI</a> MEDIum
+END
+eop
+if ($status) exit
+#
+@ last++
+@ count++
+end
+#</pre>
+
+<H3><A NAME="exam6b"></A>Example 6b</H3>
+
+<P>Same problem but now using experimental phases.</P>
+
+<pre>#!/bin/csh -f
+set inmtz=/y/ccp4/cytc/pseudo_alc_cprime1_sc_feph_sq_sf2_sfx_sq_a+p-unique_pt2p.mtz
+set name = cytc_refmac_
+set last =  0
+set cycles = 1
+set count = 0
+while ($count != $cycles)
+@ curr = $last + 1
+refmac5 \
+HKLIN $inmtz \
+HKLOUT ${name}${curr}.mtz \
+XYZOUT ${name}${curr}.pdb \
+XYZIN ${name}${last}.pdb    \
+   &lt;&lt; eop
+#
+#   Input file labels. Experimental phases are present in the
+#   form of Hendrickson and Lattman coefficients.
+#   
+<a href="../keywords/xray-principal.html#labin">LABI</a> FP=Fnata SIGFP=SIGFnata FREE=FreeR_flag -
+          HLA=HLA_pt2 HLB=HLB_pt2 HLC=HLC_pt2 HLD=HLD_pt2 
+#
+#   Output mtz labels. They correspond to experimental phases combined with
+#   caclulated ones:
+#
+#   FWT*exp(i*phwt) = 2.0 mcomb Fo*exp(i*phcomb) - D Fc *exp(i*phcalc)
+#
+#
+<a href="../keywords/xray-general.html#labout">LABO</a> FC=FC_DP5 PHIC=PHIC_1 FWT=2FOFCWT DELFWT=FOFCWT
+#
+#   If phases are from Density modification programs
+#   sometimes it is good idea to blur them. Usually density
+#   modification programs estimate reliability of phases wuth 
+#   high optimism. Being a little bit sceptic would not harm
+#
+<a href="../keywords/xray-principal.html#refi_phas">REFI PHASE</a> BBLUrring 30.0  SCBLurring 0.9 
+#
+#   Use maximum likelihood residual between resoltution 15 and 2.0 &#197;
+#
+<a href="../keywords/xray-principal.html#refi_type">REFI TYPE</a> RIGI RESI MLKF RESO  15  2.0  ! Maximum likelihood refinement 
+#
+#   Fixing bulk solvent could give better results. But I would run
+#   few cycles without fixing them. <!--mgwt:hereiwas-->
+SCALe LSSC FIXBulk BBULk 200.0 
+#
+#   Use working reflections for SigmaA (likelihood parameters).
+#   It could be useful at the early stages fo refinement.
+#
+SCAL MLSC WORK       
+#
+#   Fix SigmaA bulk solvent parameters
+#
+SCAL MLSC FIXBulk BBULk 100.0 SCBUlk -0.1 
+#
+#   Do not use bulk solvent based on constant value. You may remove
+#   it. Then at each cycle program will recalculate contribution 
+#   from bulk solvent
+#
+SOLVent NO
+#
+#   Rigid body parameters
+#
+#   Number of rigid body refinement cycles
+#
+RIGIdbody NCYCle 10           
+#
+#   Rigid body groups. 
+#                    
+RIGIdbody GROUp 1 FROM 2   A TO 32 A 
+RIGIdbody GROUp 2 FROM 38  A TO 55 A  
+RIGIdbody GROUp 3 FROM 76  A TO 99 A 
+RIGIdbody GROUp 4 FROM 101 A TO 126 A  
+RIGIDbody GROUp 5 FROM 56  A to 75 A  
+#
+#  Give only overall R and free R value at each cycle
+#
+MONI FEW
+END
+eop
+if ($status) exit
+#
+@ last++
+@ count++
+end
+
+
+</pre>
+
+<h3><a name="exam7"></a>Example 7</h3>
+
+<p>Example of using experimental phase information . Very bad model ( RMS
+error 2A) </p>
+
+<pre>#!/bin/csh -f
+#
+#!/bin/csh -f
+#set verbose
+set name = tnc_test_
+set last =   0
+set cycles = 1
+set count = 0
+while ($count != $cycles)
+@ curr = $last + 1
+#goto refmac
+#
+
+refmac:
+refmac5 \
+HKLIN tnc_test.mtz \
+HKLOUT ${name}${curr}.mtz \
+XYZOUT ${name}${curr}.pdb \
+XYZIN ${name}${last}.pdb    \
+   &lt;&lt; eop
+#
+####Do not add hydrogens.
+#
+MAKE HYDRogens No
+#
+####Rely on users naming. Monomer names and atoms in monomers should
+####correspond what is in the dictionary.
+#
+MAKE CHECK 0
+#
+#  Input file lables. Phase are present in the form of Hendrickson and
+#  Lattman coefficients. They tell program that phased refinement
+#  should be used
+#
+LABI FP=Fnati SIGFP=SIGFnati FREE=FreeR_flag  -
+HLA=HLA_t HLB=HLBt HLC=HLC_t HLD=HLD_t    
+#
+#   ALternative to Hendrickson and Lattman coefficients is using
+#   centroid of phases and their figure of merit
+#PHIB=PHIDM_t FOM=FOMDM_t      
+#
+#   Output mtz labels for map calculation.
+#
+LABO FC=FC_main PHIC=PHIC_main FWT=2FOFCWT DELFWT=FOFCWT  
+#
+#  Refinement parameters
+#
+#   Restrained refinement. Reflections between 100 and 2.8A will be used
+#
+REFI TYPE RESTrained RESOlution 100 2.8  
+#
+#   Maximum likelihood refinement
+#
+REFI RESI MLKF    
+#
+#   Overall B value refinement
+#
+REFI BREF OVER      ! Refine overall B-values
+#
+#   Tight restraints
+#
+WEIG MATR 0.15      
+#
+#   Scale down shifts at every cycle by factor 0.5
+#
+DAMP 0.5 0.5 
+#
+#   Blur (scale down reliability of) phases
+#
+REFI PHASed  BBLUrring 20.0  SCBLurring 0.7 
+#
+#  Babinet's bulk solvent scale parameters. But fix B value
+#
+SCALe TYPE BULK
+SCALe LSSCale FIXBulk BBULk 200.0
+#
+#   Anisotropic scaling. It is default
+#
+SCALe LSSCale ANISotropic
+#
+#   Fix Babinet's bulkd solvent for sigmaA
+SCAL MLSC FIXBulk BBULk 200.0 SCBUlk -0.05 
+#
+#  Number of refinement cycles 5
+#
+NCYC 5
+#
+#   Give more detailed statistics at the first and last cycles. 
+#   
+MONI MEDI 
+#
+#   Number of resolution bins
+#
+BINS 20  
+END
+eop
+if ($status) exit
+#
+@ last++
+@ count++
+end
+
+</pre>
+
+<h3><a name="exam8"></a>Example 8</h3>
+
+<p>Example of refinement of individual anisotropic B values. Hydrogens must be
+included. They will be used for geoemtry gradient and second derivatives
+and structure factor calculations. But they do not contribute to X-ray 
+gradients and second derivatives  </p>
+
+<pre>
+#!/bin/csh -f
+#set verbose
+#
+###########################################################################
+# You have to edit labi, reso, name, data                                 #
+#                                                                         #
+# data     - mtz file                                                     #
+# name     - name of coordinate file                                      #
+# reso     - resolution of data or resoloution limits you want to refine  #
+# labi     - input file labels                                            #
+#                                                                         #
+#######Following things should be optimised according to data used        #
+#                                                                         #
+# WEIG MATR &lt;number&gt; weighting x-ray and geometry. At low resolution#
+#                          it should be small (sometimes 0.1) at high     #
+#                          resolution high (sometimes 6.0 or even higher) #
+# SPHEricity               restraints on sphericity of atoms. Larger      #
+#                          less spherical                                 #
+#                                                                         #
+# NB: with current version only CDIR (conjugate direction) method of      #
+#     minimisation is active                                              #
+#                                                                         #
+###########################################################################
+set name   = 'p1lys_'
+set last   = 0
+set cycles = 1
+set count  = 0
+set data   = 'p1lys_val-unique'
+set reso   = '100 0.92'
+set spgr   = '1'
+set labi   = 'FP=FO SIGFP=SIGFO FREE=FreeR_flag'
+while ($count != $cycles)
+@ curr = $last + 1
+#goto refmac
+#
+#
+#      Run refmac to refine structure. It is refinement with 
+#      anisotropic B values
+###################################################################
+refmac5 \
+HKLIN  ${data}_hydr.mtz \
+HKLOUT ${name}${curr}.mtz \
+XYZOUT ${name}${curr}.pdb \
+XYZIN ${name}${last}.pdb    \
+   &lt;&lt; eop
+#
+#   Input mtz labels
+#
+LABI $labi
+#
+#  Output mtz labels
+#
+LABO FC=FC_main PHIC=PHIC_main FWT=2FOFCWT DELFWT=FOFCWT  
+#
+#    Refinement parameters
+#
+#    Restrained refinement. Resolution has been defined above
+#
+REFI TYPE REST RESO $reso 
+#
+#   Resildual is likelihood function
+#
+REFI RESI MLKF
+#
+#   Individual anisotropic B value refinement
+REFI BREF ANISotropic
+#
+#   Weight X-ray and geometry. Sometimes this value for high resolution 
+#   should be set to very high value. In one case WEIGht MATRix 50.0 gave
+#   good result
+    
+WEIG MATR 4.0
+#
+#   Sphericity restraint
+SPHERicity 5.0     
+SCAL TYPE BULK 
+#
+#   Change limits for B values
+BLIM 1.0 150.0 
+#
+#   Number of refinement cycles
+NCYC 5  
+#
+#  Monitor only overall statistics
+#
+MONI FEW 
+#
+#  Number of resolution bins
+#
+BINS 20 
+END
+eop
+if ($status) exit
+#exit
+#
+@ last++
+@ count++
+end
+
+</pre>
+<h3><a name="exam9"></a>Example 9</h3>
+
+<p>Example of TLS refinement prior to individual isotropic B value
+and positional parameters. </p>
+
+<pre>
+#!/bin/csh -f
+start:
+set name = gere_test_
+set last = 1
+set cycles = 1
+set count = 0
+#
+set title  = ' GERE MAD (MAD data only + HL coeff.from mlphare)'
+set resol  = '6 2.05'
+set cell   = '109.019   61.749   71.743   90.000   97.082   90.000'
+set symm   = 'C2'
+set xyzlim = '0 0.5 0 1.0 0 0.5'
+set data = 'gere_new-rfree.mtz'
+#
+while ($count != $cycles)
+echo '*******************************************************************'
+echo  $count
+echo '*******************************************************************'
+@ curr = $last + 1
+
+#
+refmac:
+refmac5 \
+#refmac \
+HKLIN  $data \
+HKLOUT   ${name}${curr}.mtz \
+XYZIN    ${name}${last}.pdb \
+XYZOUT   ${name}${curr}.pdb \
+TLSIN <a href="tls.html">tls.in</a> \
+&lt;&lt; eor
+#
+#####   Makecif parameters
+#       Do not define links automatically
+#       Do not add hydrogens
+MAKE LINK N
+MAKE HYDR N
+#
+#   Use NCS. 
+NONX NCHAIns 6 CHNID A B C D E F NSPANS 1 12 72 5
+#
+#   Input mtz labels
+#
+LABIN FP=FP SIGFP=SIGFP FREE=FreeR_flag
+#
+#   Output mtz labels
+#
+LABO FC=FC PHIC=PHIC  FWT=2FOFCWT DELFWT=FOFCWT
+#
+#   Parameters of bulk solvent based on constant value. They are default 
+#
+SOLVENT VDWP 1.4 IONP 0.80 RSHR 0.8
+#
+#  Weignting X-ray and geometry. Fairly tight restrants
+#
+WEIG MATR 0.2
+#
+#   This keyword says program that use 20 cycles of tls before
+#   going to individual atomic reifnement. Parameters of rigid 
+#   body groups are defined in TLSIN tls.in
+REFI TLSC 20
+#
+#  It is good idea to set all B values to some value prior to 
+#  TLS refinement
+#
+BFACtor SET_to 40
+#
+#   Use restrained refinement after TLS. Reflections between 20 and 2.05
+#   will be used
+REFInement TYPE RESTrained RESOLUTION  20.0 2.05
+#
+#   Maximum likelihood refinement
+#
+REFInement RESIdual MLKF
+#
+#   After TLS use istotropic B values refinement. In very low resolution
+#   it could be set to Overall B value refinement
+#
+REFInement BREFinement ISOTropic
+#
+#   Damp down shifts
+3
+DAMPing factor 0.5 0.5
+#
+#   First and last cycles will print information about outliers
+#   In all other cycles only overall statistics will be monitorred
+#
+MONI MEDI
+#
+#   Fix Babinet's bulk B value to 200.0. Usually it stabilises refinement
+#
+SCALE LSSCale FIXBulk  BBULk 200
+#
+#   Use Aanitoropic scaling. It is default
+#
+SCAL LSSC ANISOT
+#
+#   Use Babinet's bulk solvent also.
+SCAL TYPE BULK
+#
+#   Number of individual atomic refinement 8
+NCYC 8
+eor
+if ($status) exit
+end
+</pre>
+
+</body>
+</html>

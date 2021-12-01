@@ -1,0 +1,43 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+# Draw specific maps for review after run of solomon 
+# This script is used stand-alone from task_maps or sourced from solomon script
+
+  source [SearchPath TOP utils map_utils.tcl]
+
+  set FWT FWT
+  set PHFWT PHFWT
+  set mapin [SetOutputFileRoot -map]_in.map
+  set mapout [SetOutputFileRoot -map]_out.map
+
+  CreateMap $MAPOUT_FORMAT $HKLIN mapin "Map input to Solomon" \
+        [list F1 PHI ] [list $FO $PHIIN ]
+
+  CreateMap $MAPOUT_FORMAT $HKLOUT mapout "Map after Solomon" \
+	[list F1 PHI ] [list $FWT $PHFWT ]
+  AddOutputFile $mapin MAP_DEFAULT $mapout MAP_DEFAULT
+
+# Make macros for O and XtalView
+
+  switch -regexp -- $MAPOUT_FORMAT \
+  O {
+    set macro_file [SetOutputFileRoot].mac
+    MakeOMapMacro $macro_file [list $mapin $mapout ] \
+	[list sol_in sol_out ] [ list 1.0 1.0 ] \
+	[list slate_blue  red]  200.0 -mtz $HKLOUT -centre
+    AddOutputFile $macro_file PROJECT
+  } XtalView {
+    set crystal_file [SetOutputFileRoot].xtal
+    set macro_file [SetOutputFileRoot]_xtal.script
+
+    MakeXtalMacro $HKLOUT $crystal_file $macro_file \
+	[list $mapin $mapout] [list Fo Fo ] [list 8 8 ]
+    AddOutputFile $crystal_file PROJECT $macro_file PROJECT
+  }

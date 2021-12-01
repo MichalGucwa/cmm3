@@ -1,0 +1,149 @@
+#!/usr/bin/env ccp4-python
+
+import sys
+from CCP4pipeline import Control
+
+keywords = """
+<key name="title"        text default="nautilus auto-build"></key>
+<key name="mtzin"        text compulsory>Input MTZ (post density mod)</key>
+<key name="seqin"        text compulsory>Input sequence file</key>
+<key name="pdbin"        text>Initial model to extend</key>
+<key name="pdbout"       text default="nautilus.pdb"></key>
+<key name="colin-fo"     text list compulsory>Observed F/sigma</key>
+<key name="colin-hl"     text list>HL coeffs</key>
+<key name="colin-phifom" text list>PHI/FOM</key>
+<key name="colin-fc"     text list>Initial map coeffs scaled to F</key>
+<key name="colin-free"   text list>Free-R flag</key>
+<key name="cycles"       int default="5">Number of build/refine cycles</key>
+<key name="nautilus-anisotropy-correction"     bool></key>
+<key name="nautilus-resolution"                float default="2.0" ></key>
+<key name="pdbin-ref"     text list>Reference data</key>
+<key name="refmac-twin"   bool default="false"></key>
+<key name="refmac-mlhl"   bool default="true" ></key>
+<key name="refmac-weight" float></key>
+<key name="refmac-colin-hl"     text list>HL coeffs</key>
+<key name="prefix"        text default="nautilus/"></key>
+<key name="verbose"       int></key>
+<key name="nautilus-keyword" text multiple></key>
+<key name="refmac-keyword"   text multiple></key>
+"""
+
+#
+# Nautilus script template (1st cycle)
+#
+
+nautilus_1st = ( 'cnautilus', '-stdin', '''
+title  <=title>
+
+<if pdbin-ref>pdbin-ref <=pdbin-ref></if>
+
+seqin <=seqin>
+
+mtzin <=mtzin>
+colin-fo <=colin-fo>
+<if colin-hl    >colin-hl     <=colin-hl    ></if>
+<if colin-phifom>colin-phifom <=colin-phifom></if>
+<if colin-fc    >colin-fc     <=colin-fc    ></if>
+<if colin-free  >colin-free   <=colin-free  ></if>
+
+<if pdbin>pdbin <=pdbin></if>
+
+pdbout <=build-pdbout>
+
+<if nautilus-anisotropy-correction>anisotropy-correction</if>
+
+resolution <=nautilus-resolution>
+
+<if verbose>verbose <=verbose></if>
+
+<foreach nautilus-keyword><=.>
+</foreach>
+''' )
+
+#
+# Nautilus script template (nth cycle)
+#
+
+nautilus_nth = ( 'cnautilus', '-stdin', '''
+title  <=title>
+
+<if pdbin-ref>pdbin-ref <=pdbin-ref></if>
+
+seqin <=seqin>
+
+mtzin <=refine-mtzout>
+colin-fo <=colin-fo>
+colin-fc FWT,PHWT
+<if colin-free  >colin-free   <=colin-free  ></if>
+
+pdbin <=refine-pdbout>
+
+pdbout <=build-pdbout>
+
+<if nautilus-anisotropy-correction>anisotropy-correction</if>
+
+resolution <=nautilus-resolution>
+
+<if verbose>verbose <=verbose></if>
+
+<foreach nautilus-keyword><=.>
+</foreach>
+''' )
+
+#
+# Refmac script template
+#
+
+refmac_all = ( 'refmac5', '''
+HKLIN  <=mtzin>         XYZIN  <=build-pdbout>
+HKLOUT <=refine-mtzout> XYZOUT <=refine-pdbout>
+''', '''
+title  <=title>
+ncyc 10
+labin -
+  <if refmac-mlhl="1"> -
+    <if colin-hl> -
+      HLA=<=colin-hl/list[1]> HLB=<=colin-hl/list[2]> -
+      HLC=<=colin-hl/list[3]> HLD=<=colin-hl/list[4]> -
+    </if> -
+    <if colin-phifom> -
+      PHIB=<=colin-phifom/list[1]> FOM=<=colin-phifom/list[2]> -
+    </if> -
+    <if refmac-colin-hl> -
+      HLA=<=refmac-colin-hl/list[1]> HLB=<=refmac-colin-hl/list[2]> -
+      HLC=<=refmac-colin-hl/list[3]> HLD=<=refmac-colin-hl/list[4]> -
+    </if> -
+  </if> -
+  <if colin-free>FREE=<=colin-free/list[1]></if> -
+  FP=<=colin-fo/list[1]> SIGFP=<=colin-fo/list[2]>
+<if    (refmac-weight)>weight MATRIX <=refmac-weight></if>
+<if not(refmac-weight)>weight AUTO            </if>
+<if refmac-twin="1">twin</if>
+make check NONE
+PNAME nautilus
+DNAME nautilus
+<foreach refmac-keyword><=.>
+</foreach>
+END
+''' )
+
+#
+# Pipeline control program
+#
+
+control = Control()
+control.parse_input( keywords )
+print control.display_params( "nautilus-pipeline v0.3" )
+
+prefix = control.xml.get( "prefix" )
+if ( prefix[-1:] == "/" ): control.mkdir( prefix )
+control.xml.set( "build-pdbout", prefix+"build.pdb" )
+control.xml.set( "refine-pdbout", prefix+"refine.pdb" )
+control.xml.set( "refine-mtzout", prefix+"refine.mtz" )
+
+control.run_program_template( nautilus_1st )
+control.run_program_template( refmac_all )
+for i in range( 1, int(control.xml.get("cycles")) ):
+  control.run_program_template( nautilus_nth )
+  control.run_program_template( refmac_all )
+control.copy( control.xml.get("refine-pdbout"), control.xml.get("pdbout") )

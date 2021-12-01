@@ -1,0 +1,57 @@
+#! /bin/sh
+
+# Example for DM 1.8
+
+# solvent/histogram calculation with dm. Free indicator will be calculated 
+# for complete cross validation. Will terminate automatically
+
+set -e
+
+# bug # 3192 - run-all examples produce harvest files - well to counteract
+# this here set HARVESTHOME to somewhere in $CCP4_SCR
+
+HARVESTHOME=$CCP4_SCR
+export HARVESTHOME
+
+if test ! -f $CCP4_SCR/toxd_phase_mir.mtz; then
+  echo "! run the mlphare.exam procedure first" 1>&2
+  exit 1
+fi
+
+dm hklin $CCP4_SCR/toxd_phase_mir hklout $CCP4_SCR/toxd_dm \
+   solout $CCP4_SCR/solvent.msk <<+ 
+solc 0.48
+mode solv hist
+NCYC AUTO
+SCHEME ALL
+COMBINE OMIT SETS 10
+LABIN FP=FTOXD3 SIGFP=SIGFTOXD3 PHIO=PHI_mir FOMO=W_mir
+LABOUT PHIDM=PHI1 FOMDM=W1
++
+#
+
+# Calculate maps from density modified map.
+
+fft hklin $CCP4_SCR/toxd_dm MAPOUT $CCP4_SCR/toxd_dm.map << +
+TITLE Map from solvent flattening and Hist. Matching
+reso 20.0 3.0
+LABIN F1=FTOXD3 SIG1=SIGFTOXD3 PHI=PHI1 W=W1
+END
++
+
+
+# Plot map sections, better to look with O
+
+npo mapin $CCP4_SCR/toxd_dm.map xyzin1 $CEXAM/toxd/toxd.pdb \
+plot $CCP4_SCR/dm.plt << +
+MAP SCALE 2
+CONTRS SIG 1.0 2.0
+SECTNS 0 6 1
+INPUT BROOK
+RESIDUE RED SELECT ALL
+JOIN RADII RESIDU I 1.1 CA 0.9 C 0.9 O 0.9 N 0.9 S 1.1
+SOLID
+RADII ATOMS ALL 0.2
+PLOT
++
+

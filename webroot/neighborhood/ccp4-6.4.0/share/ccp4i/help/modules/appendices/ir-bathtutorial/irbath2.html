@@ -1,0 +1,170 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4 Interface: I. Tickle tutorial MIR (continuation 2)</title>
+<link rel="stylesheet" type="text/css" href="../../../ccp4idocs.css" title="CCP4i" />
+<link rev="made" href="mailto:mgwt@yorvic.york.ac.uk" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta name="AUTHOR" content="Maria and Liz" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="2"><img src="../../../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logotitle">MIR Tutorial Bath - Scaling</td></tr>
+</table>
+
+<table class="bathbuttons" width="100%">
+<tr>
+<td><a href="irbath1.html"><img src="back.gif" /></a></td>
+<td align="center"><a href="irbath98.html">BACK TO INDEX</a></td>
+<td align="right"><a href="irbath3.html"><img src="forward.gif" /></a></td>
+</tr>
+</table>
+
+<h1>2. Scaling</h1>
+
+<h3>2.1. Background</h3>
+
+<p>Two CCP4 programs are available for determining and applying the scale factor(s)
+of the derivative dataset(s) relative to the reference native dataset:
+<a href="../../../../../../html/scaleit.html" target="_PROGDOC">SCALEIT</a> and
+<a href="../../../../../../html/fhscal.html" target="_PROGDOC">FHSCAL</a>. In accordance with the CCP4
+philosophy of accumulating all reflection
+data in one file, the datasets must be contained within different columns in the same
+file (column-merging of files is accomplished with the
+<a href="../../../../../../html/mtzutils.html" target="_PROGDOC">MTZUTILS</a> program).</p>
+
+<p>It should be realised however that the FHSCAL program is designed specifically for
+derivative-to-native scaling, whereas SCALEIT is more general purpose, and can also
+be used for scaling of observed to calculated structure factor amplitudes. FHSCAL
+uses the &quot;<strong>Kraut</strong>&quot; scaling procedure, which is inherently more accurate than the
+&quot;<strong>Wilson</strong>&quot; and/or <strong>least squares</strong> procedure used by SCALEIT.
+Another difference is
+that SCALEIT uses one formula to fit all the scale factors, whereas FHSCAL divides
+the data into resolution shells, smooths the shell scale factors and then interpolates
+to get the final scale factor for each reflection. A third option is &quot;<strong>local</strong>&quot;
+scaling, where each reflection gets an individual scale factor which only depends on the relative
+scales of the reflections in its immediate neighbourhood.</p>
+
+<p>Usually these differences are not important because initially only a rough scale factor
+is needed for the isomorphous difference Patterson, and the scale factor is refined
+later along with the heavy-atom parameters (<em>i.e.</em> 3-D coordinates, site occupancies,
+individual isotropic and/or anisotropic thermal parameters), and the relative overall
+thermal parameter for each derivative. SCALEIT has a very useful extra feature, the
+display of <strong>Normal probability analysis plots</strong> that can be used to decide whether the
+observed isomorphous and anomalous differences are really significant, or just due
+to errors in the measurements.</p>
+
+<h3>2.2. Scaling procedures.</h3>
+
+<p>The &quot;Kraut&quot; and &quot;Wilson&quot; scale factors are derived by considering the origin peak
+heights of the native (<strong><em>F</em></strong><sub>P</sub>), derivative
+(<strong><em>F</em></strong><sub>PH</sub>) and heavy-atom (<strong><em>F</em></strong><sub>H</sub>)
+Patterson maps. Any point in a Patterson represents a vector, and the Patterson density at the point equals
+the sum of products of pairs of electron densities at points in the unit cell of the
+crystal that are separated by that vector. So the Patterson origin peak represents the
+sum of squares of electron densities in the unit cell. Because of the <strong>Fourier transform</strong>
+relationship between the Patterson and the <strong>measured intensities</strong> (= amplitude&#178;), the
+Patterson origin peak height is simply the sum of squares of the corresponding
+amplitudes (this is basically Wilson's equation).</p>
+
+<p>Provided the derivative structure is obtained simply by summing the native and
+heavy-atom structures, in other words that it is perfectly <strong>isomorphous</strong>, the derivative
+Patterson origin peak is just the sum of the native and heavy-atom Patterson origin
+peaks. Of course, the &quot;heavy-atom structure&quot; exists only in the imagination, as it
+consists only of heavy atoms in the same position as in the derivative structure, but
+otherwise completely empty space. Consequently we have:</p>
+
+<blockquote>
+<a href="../chargifs/siu.gif"><font face="symbol">S</font></a>
+(<em>k</em>|<strong><em>F</em></strong><sub>PH</sub>|)&#178; =
+<a href="../chargifs/siu.gif"><font face="symbol">S</font></a>
+|<strong><em>F</em></strong><sub>P</sub>|&#178; +
+<a href="../chargifs/siu.gif"><font face="symbol">S</font></a>
+|<strong><em>F</em></strong><sub>H</sub>|&#178;
+</blockquote>
+
+<p>Here <em>k</em> is the unknown scale factor needed to multiply all the measured derivative
+amplitudes to put them on the same scale as the measured native amplitudes. Both
+are of course on completely arbitrary scales, because the X-ray experiment does not
+take into account the incident beam intensity, crystal size, wavelength, and all the
+other factors that one would need to know to calculate absolute diffracted intensities.
+Consequently, <strong>all</strong> structure factors and occupancies in subsequent calculations are
+scaled relative to the arbitrarily scaled native amplitudes. This is an important point
+to grasp; if you don't, you will be baffled later on by occupancies greater than 1!</p>
+
+<p>The heavy-atom amplitudes |<strong><em>F</em></strong><sub>H</sub>| are of course completely unknown at this stage,
+and because they are on average smaller than |<strong><em>F</em></strong><sub>P</sub>| or
+|<strong><em>F</em></strong><sub>PH</sub>|, a possible assumption
+is simply to assume that they do not make a significant contribution and to ignore
+them; this gives the &quot;Wilson&quot; scale factor:</p>
+
+<blockquote>
+<em>k</em><sub>Wilson</sub> =
+<a href="../chargifs/squ.gif"><font face="symbol">&#214;</font></a>(<a href="../chargifs/siu.gif"><font
+face="symbol">S</font></a>
+|<strong><em>F</em></strong><sub>P</sub>|&#178; /
+<a href="../chargifs/siu.gif"><font face="symbol">S</font></a>
+|<strong><em>F</em></strong><sub>PH</sub>|&#178;)
+</blockquote>
+
+<p>Alternatively, the heavy-atom amplitude can be estimated from the <strong>isomorphous
+difference</strong>:
+|&nbsp;<em>k</em>|<strong><em>F</em></strong><sub>PH</sub>|&nbsp;-&nbsp;|<strong><em>F</em></strong><sub>P</sub>|&nbsp;|.
+In fact, except for weak reflections where we may get a <strong>cross-over</strong> such that
+|<strong><em>F</em></strong><sub>H</sub>|&nbsp;=&nbsp;<em>k</em>|<strong><em>F</em></strong><sub>PH</sub>|&nbsp;+&nbsp;|<strong><em>F</em></strong><sub>P</sub>|,
+in the case of <strong>centric</strong> reflections (where
+the phase can only take 1 of 2 values differing by 180&#176; so the complex structure
+factors are collinear), they are the same. For the remaining <strong>acentric</strong> reflections, which
+are almost always the majority, because the unknown native and heavy-atom phases
+are uncorrelated, it can be shown that the average isomorphous difference squared
+is half the average |<strong><em>F</em></strong><sub>H</sub>|&#178;. It is of course this fact that will
+allow us to use the
+<strong>isomorphous difference Patterson</strong> as an approximation to the <strong>heavy-atom Patterson</strong>.
+These relationships allow the unknown
+<a href="../chargifs/siu.gif"><font
+face="symbol">S</font></a>|<strong><em>F</em></strong><sub>H</sub>|&#178; term to be eliminated, rather than
+ignored, so a more accurate estimate of the scale factor <em>k</em><sub>Kraut</sub> is obtained from the
+resulting quadratic. For full details of the algebra, consult the <a href="../../../../../../html/fhscal.html" target="_PROGDOC">FHSCAL
+program documentation</a>.</p>
+
+<p>Finally, the least-squares estimate of the scale factor is obtained by minimising the
+sum of weighted squares of isomorphous differences:
+<a href="../chargifs/siu.gif"><font
+face="symbol">S</font></a><em>w</em>(<em>k</em>|<strong><em>F</em></strong><sub>PH</sub>|&nbsp;-&nbsp;|<strong><em>F</em></strong><sub>P</sub>|)&#178; with
+respect to the unknown scale factor, where <em>w</em> is a weight equal to the reciprocal
+variance of the isomorphous difference:
+<em>w</em>&nbsp;=&nbsp;1/((<em>k</em><a href="../chargifs/si.gif"><font
+face="symbol">s</font></a><sub>PH</sub>)&#178;&nbsp;+&nbsp;<a href="../chargifs/si.gif"><font
+face="symbol">s</font></a><sub>P</sub>&#178;).
+However, the inherent
+assumption is again that the |<strong><em>F</em></strong><sub>H</sub>| can be ignored; in practice this introduces an error
+of 5-10% in the scale factor, which may affect correct interpretation of the Patterson.</p>
+
+<p>To illustrate the effect of the heavy atoms on the scale factor, consider a small protein
+of 1000 atoms (assume for simplicity they are all N atoms). The mean scattering
+intensity of the protein &lt;|<strong><em>F</em></strong><sub>P</sub>|&#178;&gt; will be proportional to
+1000x7&#178; = 49000. If a single
+mercury atom is then introduced it will contribute 80&#178; = 6400, so the fractional mean
+intensity difference between native and derivative will be 6400/49000 = 0.13.</p>
+
+<p>In practice, because the introduction of the heavy atoms into the protein can
+anisotropically increase the disorder in the crystal, and also because of effects like
+absorption of X-rays by the heavy atoms, the relative scale factor can vary both with
+resolution and in direction, and so the procedure is a little more complicated.
+Programs may therefore have the option of applying an overall relative isotropic or
+anisotropic temperature factor to the |<strong><em>F</em></strong><sub>PH</sub>|'s, or of applying scale factors either in
+equi-volume shells or in localised regions of reciprocal space.</p>
+
+<table class="bathbuttons" width="100%">
+<tr>
+<td><a href="irbath1.html"><img src="back.gif" /></a></td>
+<td align="center"><a href="irbath98.html">BACK TO INDEX</a></td>
+<td align="right"><a href="irbath3.html"><img src="forward.gif" /></a></td>
+</tr>
+</table>
+
+</body></html>

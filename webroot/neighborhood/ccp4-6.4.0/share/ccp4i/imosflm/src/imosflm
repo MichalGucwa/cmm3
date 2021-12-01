@@ -1,0 +1,380 @@
+#!/bin/sh
+# echo $USER `date` | cat >> /public/xtal/imosflm/users.lst
+# At LMB (and probably elsewhere!) ignore the following 3 lines - this should 
+# be set up in a site-wide setup file. 
+#
+# N.B. If you want to setup a site-wide installation, you'll probably want to
+#  edit and uncomment the following lines to point to the site-wide wish8.4
+#  and Mosflm executables
+
+#export MOSFLM_WISH=/path/to/your/wish8.4
+export MOSFLM_EXEC=${MOSFLM_EXEC:-"ipmosflm"}
+echo "MOSFLM_EXEC set to "$MOSFLM_EXEC
+STARTDIR=
+IMAGEDIR=
+FILE=
+STARTDIRSET=
+IMAGEDIRSET=
+FILEGIVEN=
+MOSFLM_LOGGING=0
+MOSFLMFILE=""
+EXPERTDETECTORSETTINGS=0
+IMOSFLM_VERSION="iMosflm 1.0.7 - May 2012 (using Mosflm 7.0.9)"
+export MOSFLM_LOGGING
+export MOSFLMFILE
+export EXPERTDETECTORSETTINGS
+export IMOSFLM_VERSION
+
+usage() {
+echo "Usage: imosflm [options]..."
+echo "Options:"
+echo "--debug    Creates a large output file for debugging purposes"
+echo "           Don't use this unless asked to by a developer"
+echo "--expert   Permits access to advanced detector settings."
+echo "           This should not normally be required"
+echo "--help     Displays this message, then exits"
+echo "--imagedir <directory>"
+echo "           Starts the image browser in this directory; if <directory>"
+echo "           is given as an environment variable, it will be expanded"
+echo "           to its full value"
+echo "--startdir <directory>"
+echo "           Starts mosflm in directory <startdir> rather than the current"
+echo "           directory. This will only work if the directory exists and "
+echo "           you have write permission to it, otherwise iMosflm will exit."
+echo "           All the normal mosflm output files will be in this directory"
+echo "--init     <filename>"
+echo "           Starts Mosflm and sets parameters from the given file" 
+echo "--version  Displays the program version and required Mosflm version, "
+echo "           then exits"
+exit
+}
+
+# Remove any previous copy of the startup file
+if [ -e $HOME/.mosflm/initfile ]
+then
+    /bin/rm -f $HOME/.mosflm/initfile
+fi
+
+# command-line options
+for X
+do
+case $X in
+"--debug")
+#echo "* full debugging turned on - a log of your session will be stored in a"
+#echo "  datestamped file called something like \"logfile`date \"+%Y%m%d_%H%M%S\"`.debug\""
+MOSFLM_LOGGING=1
+export MOSFLM_LOGGING
+sleep 2
+;;
+"--expert")
+echo "* Expert mode on - be VERY sure you want this"
+EXPERTDETECTORSETTINGS=1
+export EXPERTDETECTORSETTINGS
+;;
+"--help")
+usage
+;;
+"--imagedir")
+IMAGEDIRSET=1
+;;
+"--startdir")
+STARTDIRSET=1
+;;
+"--init")
+FILEGIVEN=1
+;;
+"--version")
+echo "* ${IMOSFLM_VERSION}"
+exit
+;;
+*)
+if [ "$IMAGEDIRSET" != "" ]
+    then
+    IMAGEDIR=$X
+    export IMAGEDIR
+    if [ -d $IMAGEDIR ]
+	then
+	if [ -r $IMAGEDIR ]
+	    then
+	    echo "* mosflm will start by looking for images in $IMAGEDIR"
+	else
+	    echo ""
+	    echo "You don't have read permission for directory $IMAGEDIR"
+	    echo "iMosflm will revert to the current start directory "
+	    exit
+	fi
+    else
+	echo ""
+	echo "$IMAGEDIR is not a directory"
+	echo "iMosflm will revert to the current start directory "
+	exit
+    fi
+    IMAGEDIRSET=
+elif [ "$STARTDIRSET" != "" ]
+    then
+    STARTDIR=$X
+    export STARTDIR
+    if [ -d $STARTDIR ]
+	then
+	if [ -w $STARTDIR ]
+	    then
+	    echo "* mosflm will start in directory $STARTDIR"
+	    echo "  all the mosflm log files will be there"
+	else
+	    echo ""
+	    echo "You don't have write permission for directory $STARTDIR"
+	    echo "exiting iMosflm now"
+	    exit
+	fi
+    else
+	echo ""
+	echo "$STARTDIR is not a directory"
+	echo "exiting iMosflm now"
+	exit
+    fi
+    STARTDIRSET=
+elif [ "$FILEGIVEN" != "" ]
+    then
+    FILE=$X
+    export FILE
+    if [ "$STARTDIR" != "" ]; then :; else
+        STARTDIR=${PWD}
+        export STARTDIR
+    fi
+    if [ -e $STARTDIR/$FILE ]
+	then
+	if [ -r $STARTDIR/$FILE ]
+	    then
+	    echo "* mosflm will initialize values from file $STARTDIR/$FILE"
+            export MOSFLMFILE
+            if [ -d $HOME/.mosflm ]; then :; else
+                /bin/mkdir $HOME/.mosflm
+            fi
+            /bin/cp -f $STARTDIR/$FILE $HOME/.mosflm/initfile
+            MOSFLMFILE=1
+            export MOSFLMFILE
+	else
+	    echo ""
+	    echo "You don't have read permission for file $STARTDIR/$FILE"
+	    echo "exiting iMosflm now"
+	    exit
+	fi
+    else
+	echo ""
+	echo "File $STARTDIR/$FILE does not exist"
+	echo "exiting iMosflm now"
+	exit
+    fi
+    FILEGIVEN=
+else
+    echo "$X is not an option"
+    usage
+fi
+;;
+esac
+done
+
+if [ "`uname`" = "Darwin" ]
+# echo looks like an Intel Mac to me...
+then
+    export GFORTRAN_UNBUFFERED_ALL=1
+fi
+
+case $0 in
+  /*) abspath=$0 ;;
+  *) abspath=$PWD/$0 ;;
+esac
+
+# function to test wish executable
+test_wish()
+{
+WISH_FAIL=0
+$1<<EOF
+exit [catch {package require Itcl 3.3}]
+EOF
+ITCL_FAIL=$?
+if [ $ITCL_FAIL -eq 1 ]
+then WISH_FAIL=1
+fi
+$1<<EOF
+exit [catch {package require Itk 3.3}]
+EOF
+ITK_FAIL=$?
+if [ $ITK_FAIL -eq 1 ]
+then WISH_FAIL=1
+fi
+$1<<EOF
+exit [catch {package require Iwidgets 4.0}]
+EOF
+IWIDGETS_FAIL=$?
+if [ $IWIDGETS_FAIL -eq 1 ]
+then WISH_FAIL=1
+fi
+$1<<EOF
+exit [catch {package require img::jpeg 1.3}]
+EOF
+IMG_FAIL=$?
+$1<<EOF
+exit [catch {package require img::png 1.3}]
+EOF
+IMG_FAIL=$(( $? && $IMG_FAIL ))
+$1<<EOF
+exit [catch {package require img::gif 1.3}]
+EOF
+IMG_FAIL=$(( $? && $IMG_FAIL ))
+if [ $IMG_FAIL -eq 1 ]
+then WISH_FAIL=1
+fi
+$1<<EOF
+exit [catch {package require tdom 0.8}]
+EOF
+TDOM_FAIL=$?
+if [ $TDOM_FAIL -eq 1 ]
+then WISH_FAIL=1
+fi
+$1<<EOF
+exit [catch {package require treectrl 2.1}]
+EOF
+TREECTRL_FAIL=$?	
+if [ $TREECTRL_FAIL -eq 1 ]
+then WISH_FAIL=1
+fi
+return $WISH_FAIL
+}
+
+# method to report on wish shortcomings
+diagnoze_failure()
+{
+    if [ $ITCL_FAIL -eq 1 ]
+    then echo "Itcl 3.3"
+    fi
+    if [ $ITK_FAIL -eq 1 ]
+    then echo "Itk 3.3"
+    fi
+    if [ $IWIDGETS_FAIL -eq 1 ]
+    then echo "Iwidgets 4.0"
+    fi
+    if [ $IMG_FAIL -eq 1 ]
+    then echo "Img 1.3"
+    fi
+    if [ $TDOM_FAIL -eq 1 ]
+    then echo "tdom 0.8"
+    fi
+    if [ $TREECTRL_FAIL -eq 1 ]
+    then echo "treectrl 2.1"
+    fi
+}
+
+# Get wish executable pointed to by MOSFLM_WISH environment variable
+FOUND_WISH=0
+
+if [ "$MOSFLM_WISH" != "" ]
+then
+    # Check it's a valid executable
+    type $MOSFLM_WISH > /dev/null
+    if [ $? -eq 0 ]
+    then
+	    echo testing MOSFLM_WISH \($MOSFLM_WISH\)
+	# Test that it has all require packages
+	test_wish $MOSFLM_WISH
+	if [ $WISH_FAIL -eq 1 ]
+	then
+	    echo ""
+	    echo "Cannot use wish8.4 executable pointed to by"
+	    echo "MOSFLM_WISH environment variable."
+	    echo "Your tcl/tk installation ($MOSFLM_WISH) is"
+	    echo "missing the following required tcl/tk packages:"
+	    diagnoze_failure
+	    echo "To use a different tcl/tk installation set the"
+	    echo "environment variable \"MOSFLM_WISH\" to the"
+	    echo "full pathname of your prefered wish8.4 executable"
+	    echo ""
+	else
+	    FOUND_WISH=1
+# normal start of iMosflm here  
+	    if [ "$STARTDIR" != "" ]
+		then
+		cd $STARTDIR
+	    fi
+	    exec $MOSFLM_WISH ${abspath}.tcl
+	fi
+    else
+	echo ""
+	echo "Environment variable MOSFLM_WISH does not point to"
+	echo "a valid wish8.4 executable!"
+	echo ""
+    fi
+fi
+
+if [ $FOUND_WISH != 1 ]
+then
+    # Test wish8.4 in path
+    type wish8.4 &> /dev/null
+    if [ $? -eq 0 ]
+    then
+	# Test found wish8.4
+	DEFAULT_WISH=`which wish8.4`
+	echo "Testing default wish8.4 executable ($DEFAULT_WISH)."
+	test_wish $DEFAULT_WISH
+	if [ $WISH_FAIL -eq 1 ]
+	then
+	    echo "The default wish8.4 installation is missing the"
+	    echo "following required tcl/tk packages:"
+	    diagnoze_failure
+	    echo ""
+	else
+	    echo "Running imosflm with default wish8.4 executable ($DEFAULT_WISH)."
+	    FOUND_WISH=1
+# normal start of iMosflm here 
+	    if [ "$STARTDIR" != "" ]
+		then
+		cd $STARTDIR
+	    fi
+	    exec $DEFAULT_WISH ${abspath}.tcl
+	fi
+    fi
+fi
+
+if [ $FOUND_WISH != 1 ]
+then
+    echo "Please enter the path of a wish8.4 executable from"
+    echo "the tcl/tk installation you wish to use:"
+    echo "(Or just hit <Return> to exit):"
+    read MY_WISH
+    if [ "$MY_WISH" != "" ]
+    then
+	type $MY_WISH &> /dev/null
+	if [ $? -eq 0 ]
+	then
+	    test_wish $MY_WISH
+	    if [ $WISH_FAIL -eq 1 ]
+	    then
+		echo "Your wish8.4 executable ($MY_WISH) is missing"
+		echo "the following required packages:"
+		diagnoze_failure
+		echo ""
+	    else
+		FOUND_WISH=1
+# normal start of iMosflm here 
+	    if [ "$STARTDIR" != "" ]
+		then
+		cd $STARTDIR
+	    fi
+		exec $MY_WISH ${abspath}.tcl
+	    fi
+	else
+	    echo "Could not run $MY_WISH"
+	    echo "Please check file permissions and try again."
+	    echo ""
+	    exit
+	fi
+    fi
+fi
+if [ $FOUND_WISH -ne 1 ]
+then
+    echo "No wish8.4 executable with all required packages was found."
+    echo "You can download a \"batteries included\" tcl/tk distribution"
+    echo "which includes wish8.4 executable and all require packages from:"
+    echo "www.activestate.com"
+    echo ""
+fi

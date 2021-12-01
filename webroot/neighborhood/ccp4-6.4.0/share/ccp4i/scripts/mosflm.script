@@ -1,0 +1,63 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#===========================================================================
+#
+# mosflm.script
+#
+#===========================================================================
+
+# Source pdb_utils for harvest handling & move to project directory
+# if we are going to dump harvest file to current directory
+  source [SearchPath TOP utils pdb_utils.tcl ] 
+  if { [StringSame $HARVEST_MODE  CURRENTDIR ] } {
+    ChangeDirectory [GetDefaultDirPath]
+   }
+
+CreateComScript mosflm mosflm_script
+
+# Assign SUMMARY filename
+set summary "[SetOutputFileRoot]_SUMMARY.loggraph"
+AddOutputFile $summary PROJECT
+
+# Set temporary file for SPOTOD
+set spotod  [GetTmpFileName -ext spotod]
+
+# Add them as output files so that they will be available for
+# clean up if the script exits prematurely
+AddOutputFile $spotod TEMPORARY
+
+# Build the command line and run
+set cmd "[BinPath ipmosflm] HKLOUT $HKLOUT SUMMARY $summary SPOTOD $spotod"
+
+# Set temporary file for COORDS
+if { $SEPARATION_CLOSE } {
+  set coords  [GetTmpFileName -ext coords]
+  AddOutputFile $coords TEMPORARY
+  append cmd " COORDS $coords"
+}
+
+set status [Execute $cmd $mosflm_script program_status report]
+
+# Delete the spotod files
+DeleteFile $spotod
+
+# Delete the coords file
+if { $SEPARATION_CLOSE } {
+  DeleteFile $coords
+}
+
+# Deal with harvest file
+# Note that Mosflm's harvest files use a different naming scheme:
+# dataset.mosflm_run_#1_#2
+# where #1 and #2 are the extreme image numbers specified in the
+# last processing run.
+set progname mosflm_run
+append progname _ $FIRST_IMAGE _ $LAST_IMAGE
+HandleHarvestFile $HARVEST_MODE $HARVEST_PNAME $HARVEST_DNAME $progname

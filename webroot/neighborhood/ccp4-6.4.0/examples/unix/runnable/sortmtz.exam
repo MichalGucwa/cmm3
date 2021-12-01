@@ -1,0 +1,48 @@
+#!/bin/sh
+
+set -e
+
+# A complicated sortmtz example to test dataset handling.
+# WARNING: this does not represent a real-life program sequence!
+# There is a simpler example of sortmtz in scala.exam
+
+na4tomtz hklin $CEXAM/data/aucn.na4 hklout $CCP4_SCR/aucn.mtz
+
+# Create 3 files with different datasets. The datasets have
+# different cell dimensions as well as different wavelengths and 
+# so represent different crystals.
+rebatch HKLIN $CCP4_SCR/aucn.mtz HKLOUT $CCP4_SCR/aucn_1.mtz <<EOF
+batch add 1000
+batch pname DMSO xname red_aucn_1 dname SRS_9_6
+cell 88.1100   88.1100  229.2200   90.0000   90.0000   90.0000
+wave 0.91
+EOF
+
+rebatch HKLIN $CCP4_SCR/aucn.mtz HKLOUT $CCP4_SCR/aucn_2.mtz <<EOF
+batch add 2000
+batch pname DMSO xname red_aucn_2 dname SRS_9_6
+cell 88.2100   88.2100  229.2200   90.0000   90.0000   90.0000
+wave 0.92
+EOF
+
+rebatch HKLIN $CCP4_SCR/aucn.mtz HKLOUT $CCP4_SCR/aucn_3.mtz <<EOF
+batch add 3000
+batch pname DMSO xname red_aucn_3 dname SRS_9_6
+cell 88.3100   88.3100  229.2200   90.0000   90.0000   90.0000
+wave 0.93
+EOF
+
+# Now sort and merge the 3 files.
+sortmtz HKLOUT $CCP4_SCR/aucn_sortmtz.mtz <<EOF
+H K L M/ISYM BATCH 
+$CCP4_SCR/aucn_1.mtz
+$CCP4_SCR/aucn_2.mtz
+$CCP4_SCR/aucn_3.mtz
+EOF
+
+# Check the output. Note that the batch headers were not changed by
+# the rebatch runs, but the main header should be correct.
+mtzdump HKLIN $CCP4_SCR/aucn_sortmtz.mtz<<EOF
+BATCH
+EOF
+

@@ -1,0 +1,400 @@
+# -------------------------------------------------------------------
+#
+# Copyright (C) 2005-2011 by Global Phasing Limited
+#
+# This code is distributed under the terms and conditions of the CCP4
+# Program Suite Licence Agreement as a CCP4 Application.  A copy of
+# the CCP4 licence can be obtained by writing to the CCP4 Secretary,
+# Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+# Authors: (2005-2011) Clemens Vonrhein
+#
+# -------------------------------------------------------------------
+
+#CCP4i_cvs_Id $Id$
+
+global job_params
+global system
+global env
+global configure
+
+set workdir [GetDefaultDirPath]
+set log_file $job_params(LOG_FILE)
+set job_id $job_params(JOB_ID)
+set taskname $job_params(TASKNAME)
+set log_dir $job_params(JOB_ID)_$job_params(TASKNAME)
+set ccp4i_deffile [FileJoin [GetDefaultDirPath] CCP4_DATABASE $job_params(JOB_ID)_$job_params(TASKNAME).def ]
+set tcl_version [info tclversion]
+
+append text "\n"
+# create initial directory for autoSHARP run
+while { [file exists "$workdir/$log_dir/$TITLE.$autoSHARP_jobi"] } {
+    incr $autoSHARP_jobi
+}
+set autoSHARP_dir "$workdir/$log_dir/$TITLE.$autoSHARP_jobi"
+if { ![file isdirectory $autoSHARP_dir] } {
+    file mkdir $autoSHARP_dir
+} 
+AddOutputDir $autoSHARP_dir
+
+set dot_autoSHARP "$autoSHARP_dir/.autoSHARP"
+
+#puts "dot_autoSHARP = $dot_autoSHARP"
+
+append dot_autoSHARP_text "# ----------------------------------------\n"
+append dot_autoSHARP_text "# General information about project\n"
+append dot_autoSHARP_text "# ----------------------------------------\n"
+append dot_autoSHARP_text "  autoSHARP_proj=\"$TITLE\"\n"
+append dot_autoSHARP_text "  autoSHARP_jobi=\"$autoSHARP_jobi\"\n"
+append dot_autoSHARP_text "  autoSHARP_titl=\"$autoSHARP_titl\"\n"
+append dot_autoSHARP_text "  autoSHARP_type=\"$autoSHARP_type\"\n"
+append dot_autoSHARP_text "  autoSHARP_rate=\"$autoSHARP_rate\"\n"
+append dot_autoSHARP_text "  autoSHARP_molw=\"$autoSHARP_molw\"\n"
+append dot_autoSHARP_text "  autoSHARP_nres=\"$autoSHARP_nres\"\n"
+if { [IfSet $autoSHARP_pirf] }  {
+    set autoSHARP_pirf [GetFullFileName1 $autoSHARP_pirf $DIR_autoSHARP_pirf]
+    set autoSHARP_pirf_tail [file tail $autoSHARP_pirf]
+    set autoSHARP_pirf_root [file rootname $autoSHARP_pirf_tail]
+    if { ! [file exists "$autoSHARP_dir/${autoSHARP_pirf_root}.pir"] } {
+	if { $tcl_version > 8.3 } {
+	    file link -symbolic "$autoSHARP_dir/${autoSHARP_pirf_root}.pir" $autoSHARP_pirf
+	} else {
+	    file copy $autoSHARP_pirf "$autoSHARP_dir/${autoSHARP_pirf_root}.pir"
+	}
+    }
+    set autoSHARP_pirf $autoSHARP_pirf_root
+}
+append dot_autoSHARP_text "  autoSHARP_pirf=\"$autoSHARP_pirf\"\n"
+append dot_autoSHARP_text "  autoSHARP_spgr=\"$autoSHARP_spgr\"\n"
+append dot_autoSHARP_text "  autoSHARP_resl=\"$autoSHARP_resl\"\n"
+append dot_autoSHARP_text "  autoSHARP_resh=\"$autoSHARP_resh\"\n"
+append dot_autoSHARP_text "  autoSHARP_nset=\"$autoSHARP_nset\"\n"
+append dot_autoSHARP_text "  autoSHARP_user=\"[GetUserId]\"\n"
+append dot_autoSHARP_text "  autoSHARP_ulvl=\"$autoSHARP_ulvl\"\n"
+append dot_autoSHARP_text "  autoSHARP_chtm=\"$autoSHARP_chtm\"\n"
+append dot_autoSHARP_text "  autoSHARP_csum=\"$autoSHARP_csum\"\n"
+append dot_autoSHARP_text "# ----------------------------------------\n"
+append dot_autoSHARP_text "# autoSHARP protocol information\n"
+append dot_autoSHARP_text "# ----------------------------------------\n"
+if { [IfSet $autoSHARP_data_format] && $autoSHARP_data_format == "SCAU" } {
+    set autoSHARP_EntryPoint 1
+}
+if { [IfSet $autoSHARP_data_format] && $autoSHARP_data_format == "HKL" } {
+    set autoSHARP_EntryPoint 1
+}
+if { [IfSet $autoSHARP_data_format] && $autoSHARP_data_format == "MTZS" } {
+    set autoSHARP_EntryPoint 3
+}
+append dot_autoSHARP_text "  autoSHARP_EntryPoint=\"$autoSHARP_EntryPoint\"\n"
+set autoSHARP_EntryPoint3_Path3_Opt [string index $autoSHARP_EntryPoint3_Path 0]
+set autoSHARP_EntryPoint3_Path [string index $autoSHARP_EntryPoint3_Path 1]
+append dot_autoSHARP_text "  autoSHARP_EntryPoint3_Path=\"$autoSHARP_EntryPoint3_Path\"\n"
+append dot_autoSHARP_text "  autoSHARP_EntryPoint3_Path3_Opt=\"$autoSHARP_EntryPoint3_Path3_Opt\"\n"
+append dot_autoSHARP_text "  autoSHARP_DetectPgm=\"$autoSHARP_DetectPgm\"\n"
+append dot_autoSHARP_text "# ----------------------------------------\n"
+append dot_autoSHARP_text "# CCP4i specific\n"
+append dot_autoSHARP_text "# ----------------------------------------\n"
+append dot_autoSHARP_text "  autoSHARP_RunningType=\"ccp4i\"\n"
+append dot_autoSHARP_text "  autoSHARP_ccp4i_workdir=\"$workdir\"\n"
+append dot_autoSHARP_text "  autoSHARP_ccp4i_fileroot=\"[SetOutputFileRoot]\"\n"
+append dot_autoSHARP_text "  autoSHARP_ccp4i_log_file=\"$log_file\"\n"
+append dot_autoSHARP_text "  autoSHARP_ccp4i_log_dir=\"$log_dir\"\n"
+append dot_autoSHARP_text "  autoSHARP_ccp4i_job_id=\"$job_id\"\n"
+append dot_autoSHARP_text "  autoSHARP_ccp4i_taskname=\"$taskname\"\n"
+append dot_autoSHARP_text "  autoSHARP_ccp4i_autoSHARP_dir=\"$autoSHARP_dir\"\n"
+append dot_autoSHARP_text "  autoSHARP_viewer=\"$autoSHARP_viewer\"\n"
+append dot_autoSHARP_text "  CCP4I_DEFFILE=\"$ccp4i_deffile\"\n"
+
+for {set i 1} {$i<=$autoSHARP_nset} {incr i} {
+    append dot_autoSHARP_text "# ----------------------------------------\n"
+    append dot_autoSHARP_text "# Dataset $i\n"
+    append dot_autoSHARP_text "# ----------------------------------------\n"
+    append dot_autoSHARP_text "  autoSHARP_iden_$i=\"$autoSHARP_iden($i)\"\n"
+    append dot_autoSHARP_text "  autoSHARP_wave_$i=\"$autoSHARP_wave($i)\"\n"
+    if { $autoSHARP_type == "MAD" } {
+	append dot_autoSHARP_text "  autoSHARP_hatm_$i=\"$autoSHARP_hatm(0)\"\n"
+	append dot_autoSHARP_text "  autoSHARP_nsit_$i=\"$autoSHARP_nsit(0)\"\n"
+    } else {
+	if { $i == 1 } {
+	    append dot_autoSHARP_text "  autoSHARP_hatm_$i=\"\"\n"
+	    append dot_autoSHARP_text "  autoSHARP_nsit_$i=\"0\"\n"
+	} else {
+	    append dot_autoSHARP_text "  autoSHARP_hatm_$i=\"$autoSHARP_hatm($i)\"\n"
+	    append dot_autoSHARP_text "  autoSHARP_nsit_$i=\"$autoSHARP_nsit($i)\"\n"
+	}
+    }
+    if { $autoSHARP_type == "MAD" && [IfSet $autoSHARP_sitf_mad] && [IfSet $DIR_autoSHARP_sitf_mad] } {
+	set autoSHARP_sitf($i) $autoSHARP_sitf_mad
+	set DIR_autoSHARP_sitf($i) $DIR_autoSHARP_sitf_mad
+    }
+    if { $autoSHARP_type == "MAD" && [IfSet $autoSHARP_sitf_mad] && [IfSet $DIR_autoSHARP_sitf_mad] } {
+	set autoSHARP_sitf($i) $autoSHARP_sitf_mad
+	set DIR_autoSHARP_sitf($i) $DIR_autoSHARP_sitf_mad
+    }
+    if { [IfSet $autoSHARP_sitf($i)] }  {
+	set autoSHARP_sitf($i) [GetFullFileName1 $autoSHARP_sitf($i) $DIR_autoSHARP_sitf($i)]
+	set autoSHARP_sitf_tail [file tail $autoSHARP_sitf($i)]
+	set autoSHARP_sitf_root [file rootname $autoSHARP_sitf_tail]
+	if { ! [file exists "$autoSHARP_dir/${autoSHARP_sitf_root}.hatom"] } {
+	    if { $tcl_version > 8.3 } {
+		file link -symbolic "$autoSHARP_dir/${autoSHARP_sitf_root}.hatom" $autoSHARP_sitf($i)
+	    } else {
+		file copy $autoSHARP_sitf($i) "$autoSHARP_dir/${autoSHARP_sitf_root}.hatom"
+	    }
+	}
+	set autoSHARP_sitf($i) $autoSHARP_sitf_root
+    }
+    if { $autoSHARP_type == "MAD" || $i > 1 } {
+	append dot_autoSHARP_text "  autoSHARP_sitf_$i=\"$autoSHARP_sitf($i)\"\n"
+	append dot_autoSHARP_text "  autoSHARP_fone_$i=\"$autoSHARP_fone($i)\"\n"
+	append dot_autoSHARP_text "  autoSHARP_ftwo_$i=\"$autoSHARP_ftwo($i)\"\n"
+    } else {
+	append dot_autoSHARP_text "  autoSHARP_sitf_$i=\"\"\n"
+	append dot_autoSHARP_text "  autoSHARP_fone_$i=\"0.0\"\n"
+	append dot_autoSHARP_text "  autoSHARP_ftwo_$i=\"0.0\"\n"
+    }
+    set fmid $autoSHARP_fmid($i)
+    if { $fmid == "Unassigned" } { set fmid "" }
+    set smid $autoSHARP_smid($i)
+    if { $smid == "Unassigned" } { set smid "" }
+    if { $autoSHARP_type == "MAD" || $i > 1 } {
+	set dano $autoSHARP_dano($i)
+	if { $dano == "Unassigned" } { set dano "" }
+	set sano $autoSHARP_sano($i)
+	if { $sano == "Unassigned" } { set sano "" }
+	set isym $autoSHARP_isym($i)
+	if { $isym == "Unassigned" } { set isym "" }
+    } else {
+	set dano ""
+	set sano ""
+	set isym ""
+    }
+    append dot_autoSHARP_text "  autoSHARP_fmid_$i=\"$fmid\"\n"
+    append dot_autoSHARP_text "  autoSHARP_smid_$i=\"$smid\"\n"
+    append dot_autoSHARP_text "  autoSHARP_dano_$i=\"$dano\"\n"
+    append dot_autoSHARP_text "  autoSHARP_sano_$i=\"$sano\"\n"
+    append dot_autoSHARP_text "  autoSHARP_isym_$i=\"$isym\"\n"
+    set data $autoSHARP_data_mtz($i)
+    set DIR_data $DIR_autoSHARP_data_mtz($i)
+    set dtyp MTZ
+    if { ![IfSet $data] }  {
+	set data $autoSHARP_data_sca($i)
+	set DIR_data $DIR_autoSHARP_data_sca($i)
+	if { $autoSHARP_data_format != "HKL" } {
+	    set dtyp SCA
+	} else {
+	    set dtyp HKL
+	}
+    }
+    append dot_autoSHARP_text "  autoSHARP_dtyp_$i=\"$dtyp\"\n"
+    if { [IfSet $data] }  {
+	set data [GetFullFileName1 $data $DIR_data]
+	set data_tail [file tail $data]
+	if { ! [file exists "$autoSHARP_dir/$data_tail"] } {
+	    if { $tcl_version > 8.3 } {
+		file link -symbolic "$autoSHARP_dir/$data_tail" $data
+	    } else {
+		file copy $data "$autoSHARP_dir/$data_tail"
+	    }
+	}
+	set data $data_tail
+    }
+    append dot_autoSHARP_text "  autoSHARP_data_$i=\"$data\"\n"
+#    set sitf $autoSHARP_sitf($i)
+#    set DIR_sitf $DIR_autoSHARP_sitf($i)
+#    if { [IfSet $sitf] }  {
+#	set sitf [GetFullFileName1 $sitf $DIR_sitf]
+#	set sitf_tail [file tail $sitf]
+#	if { ! [file exists "$autoSHARP_dir/$sitf_tail"] } {
+#	    if { $tcl_version > 8.3 } {
+#		file link -symbolic "$autoSHARP_dir/$sitf_tail" $sitf
+#	    } else {
+#		file copy $sitf "$autoSHARP_dir/$sitf_tail"
+#	    }
+#	}
+#	set sitf $sitf_tail
+#    }
+#    append dot_autoSHARP_text "  autoSHARP_sitf_$i=\"$sitf\"\n"
+    if { [IfSet $autoSHARP_cel1($i)] }  {
+      append dot_autoSHARP_text "  autoSHARP_cell_$i=\"$autoSHARP_cel1($i) $autoSHARP_cel2($i) $autoSHARP_cel3($i) $autoSHARP_cel4($i) $autoSHARP_cel5($i) $autoSHARP_cel6($i)\"\n"
+    }
+}
+
+WriteFile $dot_autoSHARP $dot_autoSHARP_text
+AddOutputFile $dot_autoSHARP PROJECT
+
+# check various environmental variables
+set warpbin_tmp $env(warpbin)
+if { [IfSet $warpbin_tmp] } {
+    if { [file isdirectory $warpbin_tmp] } {
+	set env(sharp_SkipReading_arpwarp) "yes"
+	set env(sushi_SkipReading_arpwarp) "yes"
+        append text  "# using ARP/wARP binaries from $warpbin_tmp\n"
+    }
+}
+set ccp4_tmp $env(CCP4)
+set cbin_tmp $env(CBIN)
+set clib_tmp $env(CLIB)
+set cscr_tmp $env(CCP4_SCR)
+if { [IfSet $ccp4_tmp] && [IfSet $cbin_tmp] && [IfSet $clib_tmp] && [IfSet $cscr_tmp] } {
+    if { [file isdirectory $ccp4_tmp] && [file isdirectory $cbin_tmp] && [file isdirectory $clib_tmp] && [file isdirectory $cscr_tmp] } {
+	set env(sharp_SkipReading_ccp4) "yes"
+	set env(sushi_SkipReading_ccp4) "yes"
+        append text  "# using CCP4 binaries from $cbin_tmp\n"
+   }
+}
+set BDG_shelxbin ""
+foreach path [split $env(PATH) : ] {
+    if { [file executable "$path/shelxc"] && [file executable "$path/shelxd"] } {
+	set BDG_shelxbin $path
+	break
+    }
+}
+if { [IfSet $BDG_shelxbin] } {
+    set env(sharp_SkipReading_shelx) "yes"
+    set env(sushi_SkipReading_shelx) "yes"
+    set env(BDG_shelxbin) $BDG_shelxbin
+    append text  "# using $BDG_shelxbin for shelxc/shelxd binaries\n"
+}
+# set various environmental variables
+if { [file executable "/bin/uname" ] } {
+    set BDG_uname "/bin/uname"
+} elseif { [file executable "/usr/bin/uname" ] } {
+    set BDG_uname "/usr/bin/uname"
+}
+set BDG_hwsp_ini [exec $BDG_uname]
+set BDG_hwsp "unknown"
+#puts $BDG_hwsp
+#puts $BDG_hwsp_ini
+if { $BDG_hwsp_ini == "Linux" } {
+    set BDG_machine [exec $BDG_uname -m]
+    if { $BDG_machine == "ia64" } {
+	set BDG_hwsp "linuxa64"
+    } elseif { $BDG_machine == "x86_64" } {
+	set BDG_hwsp "linux64"
+    } else {
+	set BDG_hwsp "linux"
+    }
+}
+if { $BDG_hwsp_ini == "IRIX" || $BDG_hwsp_ini == "IRIX64" } {
+    set BDG_hwsp "irixn32"
+}
+if { $BDG_hwsp_ini == "OSF1" } {
+    set BDG_hwsp "alpha"
+}
+if { $BDG_hwsp_ini == "Darwin" } {
+    set BDG_hwsp "darwin"
+}
+if { $BDG_hwsp != "unknown" } {
+    set SHARP_home [GetEnvPath SHARP_home]
+    if { [IfSet $SHARP_home] } {
+        set env(BDG_home) [GetEnvPath SHARP_home]
+    }
+    set BDG_home [GetEnvPath BDG_home]
+    set cscr_tmp [GetEnvPath CCP4_SCR]
+    if { [IfSet $cscr_tmp] && [file isdirectory $cscr_tmp] } {
+	set BDG_scr $cscr_tmp
+    } else {
+	set BDG_scr "/tmp"
+    }
+    foreach path [split $env(PATH) : ] {
+	if { [file executable "$path/perl"] } {
+	    set BDG_perl "$path/perl"
+	    break
+	}
+    }
+    if { [IfSet $BDG_home] && [IfSet $BDG_scr] && [IfSet $BDG_perl] } {
+	set env(BDG_scr) $BDG_scr
+	set env(BDG_perl) $BDG_perl
+	set env(BDG_exe) [FileJoin $BDG_home bin ${BDG_hwsp}_exe ]
+	set env(BDG_com) [FileJoin $BDG_home bin sharp ]
+	set env(SYMOP) [FileJoin $BDG_home database symop ]
+	set env(ATOMSF) [FileJoin $BDG_home database atomsf ]
+	if { [file exists [FileJoin $BDG_home database sphcluster ] ] } {
+	    set env(SPHCLUSTER) [FileJoin $BDG_home database sphcluster ]
+	}
+	if { [file exists [FileJoin $BDG_home database syminfo.lib ] ] } {
+	    set env(SYMINFO) [FileJoin $BDG_home database syminfo.lib ]
+	}
+	set env(sharp_SkipReading_sharp) "yes"
+	set env(sushi_SkipReading_sharp) "yes"
+    }
+
+}
+
+set browsercmd ""
+set browser ""
+if { [IfSet $configure(HYPERTEXT_VIEWER)] } {
+    set browsercmd $configure(HYPERTEXT_VIEWER)
+    if { ! [file executable $browsercmd] } {
+	foreach path [split $env(PATH) : ] {
+	    if { [file executable "$path/$browsercmd"] } {
+		set browser "$path/$browsercmd"
+		break
+	    }
+	}
+    } else {
+	set browser $browsercmd
+    }
+}
+
+append text  "# ------------------------------------------------------------\n"
+if { ! [IfSet $browser] } {
+    append text  "# You haven't configured the browser to be used with CCP4i,\n"
+    append text  "# so please open\n"
+    append text  "#\n"
+    append text  "#     $autoSHARP_dir/LISTautoSHARP.html\n"
+    append text  "#\n"
+    append text  "# in a browser (like firefox, mozilla etc). In any case:\n"
+    append text  "# remember to hit the \"reload\" button of your browser\n"
+    append text  "# from time to time when looking at this main log-file!\n"
+    append text  "#\n"
+} else {
+    append text  "# If a browser didn't automatically open the following\n"
+    append text  "# file, please open\n"
+    append text  "#\n"
+    append text  "#     $autoSHARP_dir/LISTautoSHARP.html\n"
+    append text  "#\n"
+    append text  "# in a browser (like firefox, mozilla etc). In any case:\n"
+    append text  "# remember to hit the \"reload\" button of your browser\n"
+    append text  "# from time to time when looking at this main log-file!\n"
+    append text  "#\n"
+}
+append text  "# ------------------------------------------------------------\n"
+append text  "#\n"
+append text  "#  Please cite:\n"
+append text  "#      Vonrhein, C, Blanc, E., Roversi, P and Bricogne,\n"
+append text  "#      G. (2007). Automated structure solution with autoSHARP.\n"
+append text  "#      Methods Mol Biol. 364, 215-30.\n"
+append text  "#\n"
+append text  "# ------------------------------------------------------------\n"
+append text  "#\n"
+append text  "# SHARP/autoSHARP: http://www.globalphasing.com/sharp/\n"
+append text  "#\n"
+append text  "# ------------------------------------------------------------\n\n"
+puts -nonewline $text
+WriteToLog $text
+
+#puts "# ------------------------------------------------------------"    >> $log_file
+#puts "# Please open $autoSHARP_dir/LISTautoSHARP.html in a browser"      >> $log_file
+#puts "# ------------------------------------------------------------"    >> $log_file
+#puts "  Please cite:"                                                    >> $log_file
+#puts "      Vonrhein, C, Blanc, E., Roversi, P and Bricogne,"            >> $log_file
+#puts "      G. (2007). Automated structure solution with autoSHARP."     >> $log_file
+#puts "      Methods Mol. Biol. 364, 215-30."                             >> $log_file
+#puts "# ------------------------------------------------------------"    >> $log_file
+
+cd $autoSHARP_dir
+set TheOS $system(OPSYS)
+if { $TheOS == "WINDOWS" } {
+   WriteToLog {You can not run autoSHARP on a Windows machine!} -nofoot -nohead
+   WriteToLog {Please get a version for a supported platform from} -nofoot -nohead
+   WriteToLog {http://www.globalphasing.com/sharp/} -nofoot -nohead
+   TerminateScript 0 -report {Windows not supported for autoSHARP}
+}
+
+set env(BDG_UseOldPath) {yes}
+if { [IfSet $browser] } {
+    exec $browser file://$autoSHARP_dir/LISTautoSHARP.html &
+}
+catch {exec [GetEnvPath BDG_home]/bin/sharp/detect.sh > LISTautoSHARP.html}

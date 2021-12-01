@@ -1,0 +1,62 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#=====================================================================
+#
+# Run dm
+#
+#=====================================================================
+
+  switch $DM_NCROSS_MODE \
+  RANDOM {
+   set DM_NCROSS 1
+  } FIXED {
+   set DM_NCROSS 2
+  } MULTI {
+   set DM_NCROSS [expr $DM_NCROSS_NSETS +1]
+  }
+
+  CreateComScript dmmulti dmmulti_script
+
+  set cmd "[BinPath dmmulti] "
+  for { set n 1 } { $n <= $NCRYSTALS } { incr n } {
+    append cmd "HKLIN$n \"$HKLIN($n)\" HKLOUT$n \"$HKLOUT($n)\" "
+    if { $SOLVENT_MASK_MODE($n) } {
+      append cmd " SOLIN$n \"$SOLIN($n)\" "
+    } else {
+      append cmd " SOLOUT$n \"$SOLOUT($n)\" "
+    }
+  }
+
+  for { set i 1 } { $i <= $NDOMAINS } { incr i } {
+    append cmd " MSKIN$i \"$MASKIN($i)\"" 
+  }
+
+#  if { $IFVUOUT } {
+#      set vuout [SetOutputFileRoot]_ncs.$VUOUT_FORMAT
+#      append cmd " VUOUT $vuout"
+#  }
+
+  set status [Execute $cmd $dmmulti_script program_status report ]
+
+#  if { $IFVUOUT } { AddOutputFile $vuout PROJECT }
+
+#--------------------------------------------------------------------
+# generate map
+#--------------------------------------------------------------------
+
+  if { $IF_MAPOUT } {
+
+    WriteHtml beg pre
+
+    source [SearchPath TOP utils map_utils.tcl]
+
+    source [SearchPath TOP scripts dm_maps.script]
+
+  }

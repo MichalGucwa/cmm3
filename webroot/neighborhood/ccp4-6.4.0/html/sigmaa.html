@@ -1,0 +1,576 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>CCP4 Program Suite</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]">
+</HEAD>
+<BODY>
+
+<!-- ::INDEX_INFO::SIGMAA::Supported::Map calculation and manipulation::Improved Fourier coefficients using calculated phases:::::::: -->
+
+<H1>SIGMAA (CCP4: Supported Program)</H1>
+<H2>NAME</H2>
+<B>sigmaa </B>
+- Improved Fourier coefficients using calculated phases
+
+<H2>SYNOPSIS</H2>
+
+<P><B>sigmaa HKLIN</B> <I>foo_in.mtz </I>[ <B>HKLOUT</B> <I>foo_out.mtz</I>
+] <BR>
+[<A HREF="#keywords">Keyworded input</A>] </P>
+
+<H2><A NAME="description"></A>DESCRIPTION</H2>
+
+<P>The program SIGMAA (<A HREF="#reference1">Read, 1986</A>) can be used to combine a set of calculated
+phases with a set of previously determined phases for which the phase probability
+profiles are held in the form of Hendrickson-Lattman coefficients. </P>
+
+<P>It calculates weighted Fourier coefficients either from the calculated
+phase from a (partial) model structure, or by combining phase probabilities
+from isomorphous phases with those from one or more (partial) structures.
+</P>
+
+<P>WARNING: SIGMAA has been converted so that it will work with MNFs. In
+a similar fashion to <A HREF="fft.html">FFT</A> (see also
+<A HREF="mtzmnf.html">documentation on Missing Number Flags</A>); Fo will be replaced by DFc, if it is missing,
+for the FWT map coefficient. Also, when combining phases of missing data,
+the phase probability will be assumed to be uniform. However, the procedure
+may not be optimal, hopefully a version from Randy Read will be available
+in a subsequent version. </P>
+
+<P>There are 3 main options: </P>
+
+<OL TYPE=a>
+<LI><A NAME="optiona"></A><DL>
+<DT>PARTIAL</DT>
+
+<DD> use partial structure information, writing out a weight and coefficients
+for maps in columns as follows:
+<DL>
+<DT>WCMB</DT>
+
+<DD> A weight (analogous to `Sim weight') to estimate the reliability of
+AlphaCalc. </DD>
+
+<DT>DELFWT (m|Fo| - D|Fc|) exp(i AlphaCalc) </DT>
+
+<DD>For a difference map, FFT input: F1=DELFWT PHI=PHIC </DD>
+
+<DT>FWT (2m|Fo| - D|Fc|) exp(i AlphaCalc)</DT>
+
+<DD> Analogous to 2Fo-Fc map, FFT input: F1=FWT PHI=PHIC </DD>
+</DL>
+
+<P>where Fo, Fc are observed and calculated structure factors. Note that
+for centric terms, the (2m|Fo|-D|Fc|) coefficients are replaced by m|Fo|;
+these coefficients reduce/remove model bias. </DD>
+</DL></LI>
+
+<LI><A NAME="optionb"></A><DL>
+<DT>COMBINE PART</DT>
+
+<DD> combine isomorphous phase (preferably input by Hendrickson-Lattman
+coefficients ABCD) with calculated phases from up to 3 sources; output
+the combined phase (PHCMB WCMB) and coefficients which minimise model bias.
+(labelled again: FWT PHFWT and DELFWT PHDELFWT) </DD>
+</DL></LI>
+
+<LI><A NAME="optionc"></A><DL>
+<DT>COMBINE MIR2</DT>
+
+<DD> combine two sets of experimental phases with or without Hendrickson-Lattman
+coefficients. This can only be done pair-wise, it might be argued that
+instead all data should be used in calculating the phase. </DD>
+</DL></LI>
+</OL>
+
+<P>The program first calculates, iteratively in resolution bins, the value
+of SigmaA as defined by <A HREF="#reference2">Srinivasan, 1966</A>; and then for each reflection,
+the figure of merit m and the estimate of the error in the partial structure
+from coordinate errors D (<A HREF="#reference4">Luzzati, 1952</A>). There is an option to scale these
+to modify the weight assigned to the partial structure information, or
+to read in values of SigmaA derived previously. </P>
+
+<P>If EPS is the multiplicity for the reflection zone (<A HREF="#reference5">Rogers, 1965</A>), </P>
+
+<PRE>           SigmaA = D*sqrt(sigmaP/sigmaN)
+             Eo   = Fo/sqrt(EPS*sigmaN)
+       and   Ec   = Fc/sqrt(EPS*sigmaN)
+    where  sigmaN = &lt;Fo**2/EPS&gt; and sigmaP = &lt;Fc**2/EPS&gt;.
+</PRE>
+
+<P>The figure of merit m = &lt;cos(AlphaTrue - AlphaCalc)&gt; is calculated
+from Eo, Ec and SigmaA, while the map coefficients arise from the approximation
+that </P>
+
+<PRE>    m Eo exp(iAlphaCalc) = 0.5 Eo exp(iAlphaTrue) 
+                          +  0.5 SigmaA Ec exp(iAlphaCalc) 
+</PRE>
+
+<P>If coordinate errors are assumed to be normally distributed, </P>
+
+<PRE>    ln SigmaA = intercept - slope * (sintheta/lambda)**2
+       where intercept = 0.5 * ln(sigmaP/sigmaN)
+         and     slope = pi**3 * (mean square coordinate error)
+</PRE>
+
+<H2><A NAME="keywords"></A>KEYWORDED INPUT</H2>
+
+<P>The various data control lines are identified by keywords. Only the
+first 4 characters need be given. Those available are: </P>
+<BLOCKQUOTE>
+<A HREF="#combine"><B>COMBINE</B></A>,
+<A HREF="#end"><B>END</B></A>,
+<A HREF="#error"><B>ERROR</B></A>,
+<A HREF="#labin"><B>LABIN</B></A>,
+<A HREF="#labout"><B>LABOUT</B></A>,
+<A HREF="#partial"><B>PARTIAL</B></A>,
+<A HREF="#ranges"><B>RANGES</B></A>,
+<A HREF="#resolution"><B>RESOLUTION</B></A>,
+<A HREF="#sigmaa"><B>SIGMAA</B></A>,
+<A HREF="#symmetry"><B>SYMMETRY</B></A>,
+<A HREF="#title"><B>TITLE</B></A>
+</BLOCKQUOTE>
+
+<H3><A NAME="combine"></A>COMBINE [ PART &lt;nps&gt; ] 
+[ DAMP &lt;d1&gt; [ &lt;d2&gt; [ &lt;d3&gt; ]]] 
+[ RESOLUTION &lt;Rmin&gt; &lt;Rmax&gt; ]</H3>
+
+<P>[Required for <A HREF="#optionb">option (b)</A>.] </P>
+
+<P>Use this option to combine experimental phase information from isomorphous
+replacement (columns PHIBP, WP, HLA, HLB, HLC, HLD from the input data
+file) with that from (partial) model structures. This option produces an
+output data file assigned to HKLOUT.
+
+
+<DL>
+<A NAME="combine_part"></A><DT>PART &lt;nps&gt;</DT>
+
+<DD>&lt;nps&gt; is the number of (partial) model structures, default: 1, 
+maximum allowed: 3. </DD>
+
+<A NAME="combine_damp"></A><DT>DAMP &lt;d1&gt; &lt;d2&gt; &lt;d3&gt;</DT>
+
+<DD>&lt;d1&gt; &lt;d2&gt; &lt;d3&gt; (default 1.0) are values to multiply the SigmaA values generated for
+the partial structures. Once the Rfactor between Fobs and Fcalc is below
+30% or thereabouts the SigmaA Weights become close to 1. This means that
+there will be very little contribution to the combined phase from the MIR
+information. Giving values of di&lt;1.0 may be helpful. See keyword <A HREF="#sigmaa">SIGMAA</A>
+for Randy's preferred solution. </DD>
+
+<A NAME="combine_resolution"></A><DT>RESOLUTION &lt;Rmin&gt; &lt;Rmax&gt;</DT>
+<DD>If resolution limits &lt;Rmin&gt;,
+&lt;Rmax&gt; are given here, phase combination is only done within this
+resolution shell: typically this would be used to include experimental
+phases only for high resolution data during a phase extension process.
+In this case, a low resolution limit would be set,
+allowing lower resolution data which has already been phased in previous
+cycles to diverge from the (incorrect) experimental phases according to
+phase information from averaging or density modification. </DD>
+</DL>
+
+<H3><A NAME="combine_mir"></A>COMBINE [MIR2] [ RESOLUTION &lt;Rmin&gt; &lt;Rmax&gt; ]</H3>
+
+<P>Merge together two sets of MIR phases. RESOLUTION is the same as <A HREF="#combine_resolution">above</A>.
+</P>
+
+<H3><A NAME="error"></A>ERROR</H3>
+
+<P>If this command is present, a straight line is fitted to the plot of
+ln (SigmaA) against resolution in order to estimate the rms coordinate
+error. </P>
+
+<H3><A NAME="labin"></A>LABIN &lt;program label&gt;=&lt;file label&gt;
+.....</H3>
+
+<P>Input column assignments. If you wish to make use of Hendrickson Lattman coefficients
+in the input MTZ file, the program assumes that they will have the column
+labels HLA, HLB, HLC and HLD. If you wish to use alternative column
+labels for the HL coefficients then they must be specified using LABIN. 
+Program labels for the various options are:
+</P>
+
+<DL>
+<DT><A HREF="#partial">PARTIAL</A> </DT>
+
+<DD>FP SIGFP FC PHIC </DD>
+
+<DT><A HREF="#combine_part">COMBINE PART</A> ...</DT>
+
+<DD> FP SIGFP PHIBP WP [HLA HLB HLC HLD], with FC PHIC or FC1 PHIC1 FC2
+PHIC2 [FC3 PHIC3] </DD>
+
+<DT><A HREF="#combine_mir">COMBINE MIR2</A> ...</DT>
+
+<DD> FP SIGFP PHIBP WP [HLA HLB HLC HLD], with PHIB2 W2 [HLA2 HLB2 HLC2
+HLD2] </DD>
+</DL>
+
+<H3><A NAME="labout"></A>LABOUT &lt;program label&gt;=&lt;file label&gt;
+.....</H3>
+
+<P>Output column assignments. Program labels for the options producing
+output data are: </P>
+
+<DL>
+<DT><A HREF="#partial">PARTIAL</A></DT>
+
+<DD> DELFWT FWT WCMB </DD>
+
+<DT><A HREF="#combine_mir">COMBINE MIR2</A></DT>
+
+<DD> HLAC HLBC HLCC HLDC WCMB PHCMB </DD>
+
+<DT><A HREF="#combine_part">COMBINE PART</A> ...</DT>
+
+<DD> DELFWT PHDELFWT FWT PHFWT WCMB PHCMB For details of these, see <A HREF="#files">INPUT
+AND OUTPUT FILES</A>. </DD>
+</DL>
+
+<H3><A NAME="partial"></A>PARTIAL [ DAMP &lt;d1&gt; ]</H3>
+
+<P>Produce weighted map coefficients from a partial structure. This is
+the default option. It produces an output .mtz data file. </P>
+
+<DL>
+<A NAME="partial_damp"></A><DT>DAMP &lt;d1&gt;</DT>
+<DD>&lt;d1&gt; is the damping factor for the SigmaA weights (default 1.0).</DD>
+</DL>
+
+<H3><A NAME="ranges"></A>RANGES [ &lt;nbin&gt; &lt;mon&gt; ]</H3>
+
+<P>Set the number of resolution bins &lt;nbin&gt; and the reflection monitoring
+interval &lt;mon&gt;. Defaults: 20 1000; maximum &lt;nbin&gt; allowed:
+50. </P>
+
+<P>&lt;nbin&gt; is the number of resolution bins (equal width in [sin(theta)/(lambda)]**2
+in which to divide partial structure data for normalization and sigmaA
+estimation. It is IMPORTANT that resolution ranges contain sufficient reflections.
+It is best to use as large a value of &lt;nbin&gt; as possible, as long
+as the estimates of sigmaA vary smoothly with resolution. If they do not,
+&lt;nbin&gt; should be reduced until sigmaA does vary smoothly. A good
+first guess is the number of reflections divided by 1000. If sigmaA refinement
+converges to zero in one or more of the ranges (which happens sometimes
+when the correct value is low), this can usually be circumvented by decreasing
+&lt;nbin&gt;. </P>
+
+<P>Information about every &lt;nmon&gt;-th reflection will be written to
+the log file. </P>
+
+<H3><A NAME="resolution"></A>RESOLUTION [ &lt;rmin&gt; ] &lt;rmax&gt;</H3>
+
+<P>Low and high resolution limits in either order or upper limit if only
+one is specified. These may are in Angstroms or if both are &lt;1.0, units
+of 4(sintheta/lambda)**2. By default, all the data in the file are used.
+</P>
+
+<H3><A NAME="sigmaa"></A>SIGMAA &lt;nps&gt; &lt;nbin&gt;</H3>
+
+<P>Input SigmaA values from another source. Normally these values will
+be calculated in the program so this keyword is unnecessary. However if
+the agreement between Fobs and Fcalc becomes very good - for example if
+the Rfactor is &lt;25% - then the calculated SIGMAA values weight up the
+PHIcalc at the expense of the experimental phases. This may not be desirable
+and you may need either to invoke the <A HREF="#combine_damp">DAMP keyword</A>
+or retain an early estimate of sigmaA. </P>
+
+<DL>
+<DT>&lt;nps&gt;</DT>
+
+<DD> number of partial structures. </DD>
+
+<DT>&lt;nbin&gt;</DT>
+
+<DD> number of bins, followed by &lt;nbin&gt; lines of the form: </DD>
+
+<PRE> SigmaA(1,1)    [ SigmaA(2,1)  ...   [SigmaA(nps,1)]]
+ SigmaA(1,2)    [ SigmaA(2,2)  ...   [SigmaA(nps,2)]]
+  ..........
+ SigmaA(1,nbin) [ SigmaA(2,nbin) ... [SigmaA(nps,nbin)]]
+</PRE>
+</DL>
+
+<H3><A NAME="symmetry"></A>SYMMETRY &lt;name&gt; | &lt;number&gt; | &lt;operators&gt;</H3>
+
+<P>Spacegroup number or name or operators in International Tables format.
+By default, symmetry information is read from the input file header. </P>
+
+<H3><A NAME="title"></A>TITLE &lt;title&gt;</H3>
+
+<P>A title written to the log file and in the header of the output MTZ
+data file (if produced). </P>
+
+<H3><A NAME="end"></A>END</H3>
+
+<P>End of input. </P>
+
+<H2><A NAME="files"></A>INPUT AND OUTPUT FILES</H2>
+
+<H3>Input reflection data file</H3>
+
+<P>This is an MTZ file assigned to logical name HKLIN. The following column
+assignments are required (those which are optional are enclosed in square
+brackets): </P>
+
+<OL TYPE=a>
+<LI><DL>
+    <DT>PARTIAL option:</DT>
+    <DD>H K L FP SIGFP FC PHIC<BR>with</DD>
+
+       <DL>
+       <DT>FP, SIGFP</DT>
+       <DD> native amplitude and standard deviation </DD>
+
+       <DT>FC, PHIC</DT>
+       <DD> calculated amplitude and phase (degrees) </DD>
+       </DL>
+
+    </DL></LI>
+
+<LI><DL>
+    <DT>COMBINE option:</DT>
+
+       <OL TYPE=i>
+       <LI><DL>
+           <DT>Combination of two sets of MIR phases:</DT>
+           <DD>H K L FP SIGFP PHIBP WP [HLA HLB HLC HLD]<BR>
+               PHIB2 W2 [HLA2 HLB2 HLC2 HLD2]<BR>
+               with</DD>
+
+               <DL>
+               <DT>FP, SIGFP</DT>
+               <DD>native amplitude and standard deviation</DD>
+
+               <DT>PHIBP</DT>
+               <DD>isomorphous centroid phase (degrees)</DD>
+
+               <DT>WP</DT>
+               <DD>figure of merit</DD>
+
+               <DT>HLA...HLD</DT>
+               <DD>Hendrickson-Lattman probability coefficients corresponding to isomorphous
+                   phase. If these are absent, a unimodal probability distribution will be
+                   set up around PHIBP.</DD>
+
+               <DT>PHIB2</DT>
+               <DD>isomorphous centroid phase for second set</DD>
+
+               <DT>W2</DT>
+               <DD>figure of merit for second set</DD>
+
+               <DT>HLA2..HLD2</DT>
+               <DD>Hendrickson-Lattman probability coefficients for second set. If these
+                   are absent, a unimodal probability distribution will be set up around PHIB2.</DD>
+               </DL>
+           </DL></LI>
+
+       <LI><DL>
+           <DT>Combination of one set of MIR phases with PARTIAL information:</DT>
+           <DD>H K L FP SIGFP PHIBP WP [HLA HLB HLC HLD]<BR>
+               plus FC PHIC<BR>
+               or FC1 PHIC1 FC2 PHIC2 [FC3 PHIC3]<BR>
+               with</DD>
+
+               <DL>
+               <DT>FP, SIGFP</DT>
+               <DD>native amplitude and standard deviation</DD>
+
+               <DT>PHIBP</DT>
+               <DD>isomorphous centroid phase (degrees)</DD>
+
+               <DT>WP</DT>
+               <DD>figure of merit</DD>
+
+               <DT>HLA...HLD</DT>
+               <DD>Hendrickson-Lattman probability coefficients corresponding to isomorphous
+                   phase. If these are absent, a unimodal probability distribution will be
+                   set up around PHIBP.</DD>
+
+               <DT>FC, PHIC</DT>
+               <DD>calculated amplitude and phase (degrees) for one partial structure</DD>
+
+               <DT>FC1, PHIC1</DT>
+               <DD>calculated amplitude and phase (degrees) for first partial structure
+                   when nps &gt; 1</DD>
+
+               <DT>FC2, PHIC2</DT>
+               <DD>calculated amplitude and phase (degrees) for second partial structure
+                   when nps = 2</DD>
+
+               <DT>FC3, PHIC3</DT>
+               <DD>calculated amplitude and phase (degrees) for third partial structure
+                   when nps = 3</DD>
+               </DL>
+           </DL></LI>
+       </OL>
+    </DL></LI>
+</OL>
+
+<H3>Output reflection data file</H3>
+
+<P>This is an MTZ file assigned to logical name HKLOUT. The file will contain
+all the columns from the input file with extra columns appended, the number
+depending on which option was used. The default labels of these columns
+are given below; these may be changed with <A HREF="#labout">LABOUT</A> command.</P>
+
+<OL TYPE=a>
+<LI><DL>
+<DT>PARTIAL option:</DT>
+<DD>The new columns are: WCMB DELFWT FWT, with</DD>
+
+<DL>
+<DT>WCMB</DT>
+<DD>figure of merit m of calculated phase (Sim weight)</DD>
+
+<DT>DELFWT</DT>
+<DD>Fourier amplitude for `difference' map (mFo-DFc)</DD>
+
+<DT>FWT</DT>
+<DD>Fourier amplitude for '2Fo-Fc' map (2mFo-DFc) These terms may be positive
+    or negative.</DD>
+</DL>
+</DL>
+
+<P>The phases used for these maps will always be PHIC.<BR><BR></LI>
+
+<LI><DL>
+<DT>COMBINE option:</DT>
+<DD>The new columns are: PHCMB WCMB FWT PHFWT DELFWT PHDELFWT, with</DD>
+
+<DL>
+<DT>PHCMB</DT>
+<DD>combined phase angle (degrees)</DD>
+
+<DT>WCMB</DT>
+<DD>combined figure of merit</DD>
+
+<DT>FWT</DT>
+<DD>Fourier amplitude for '2mFo-DFc' map</DD>
+
+<DT>PHFWT</DT>
+<DD>Combined phase for this term</DD>
+
+<DT>DELFWT</DT>
+<DD>Fourier amplitude for 'mFo-DFc' map</DD>
+
+<DT>PHDELWT</DT>
+<DD>Combined phase for this term</DD>
+</DL>
+</DL></LI>
+</OL>
+
+<H2>AUTHORS</H2>
+
+<P>Originator: August 1986: R.J. Read. </P>
+
+<P>Incorporates updates from [<A HREF="#reference11">11</A>]. </P>
+
+<H2><A NAME="examples"></A>EXAMPLES</H2>
+
+<H3><A NAME="example1"></A>Difference and 2Fo-Fc maps from calculated phases</H3>
+
+<PRE>sigmaa HKLIN hktmpico.mtz HKLOUT hksigmaa1.mtz 
+TITLE   SIGMAA m*Fo-Fc map  pfk B.st. BP2.. PROLSQ cycle&lt;1&gt;..
+RESOLUTION 100.0 2.6 ! Resolution limits in Angstroms
+RANGES   30 5000     ! Number of bins for analysis v. resolution 
+                     ! Monitor every 5000th reflection
+PARTIAL              ! Option for difference map coefficients
+ERROR                ! Use sigmaA v resolution for coordinate error
+LABIN FP=FO SIGFP=SIGFO FC=FC PHIC=PHIC
+END
+</PRE>
+
+<P>Note: This example uses the default output file labels. To calculate
+the `difference' map, use DELFWT in <A HREF="fft.html">FFT</A>. To calculate the `2Fo-Fc' map,
+use FWT. </P>
+
+<H3><A NAME="example2"></A>Phase combination </H3>
+
+<PRE>sigmaa            
+HKLIN ../data/sp400_monster2.mtz    
+HKLOUT ../data/sp400_phase_comb.mtz    
+&lt;&lt; END-sigmaa
+TITLE   TRYIT
+RANGES  10 1000      ! Number of analysis bins, monitor interval
+RESOLUTION 0.0 0.25  ! Resolution limits in 4(sintheta/lambda)**2
+ERROR                ! Use sigmaA v resolution for coordinate error
+COMBINE PART 1       ! Combine isomorphous + 1 partial model
+LABOUT  PHCMB=PHCMB WCMB=WCMB FWT=FWT PHWT=PHWT
+LABIN   FP=F(Mer) SIGFP=SIGF(Mer) PHIBP=PHIBEST WP=FOM -
+        HLA=A HLB=B HLC=C HLD=D -
+        FC=FC PHIC=AC
+END
+END-sigmaa
+</PRE>
+
+<H2><A NAME="notes"></A>NOTES</H2>
+
+<H3><A NAME="example3"></A>Phase combination</H3>
+
+<P>The phase combination method used in sigmaa depends on the <A HREF="#reference6">Hendrickson
+and Lattman (1970)</A> formulation of the phase probability profile for a phase
+Alpha: </P>
+
+<PRE>
+  P(Alpha) = exp(A cosAlpha + B sinAlpha + C cos2Alpha + D sin2Alpha)
+
+</PRE>
+
+<P>A, B, C, D are known as the phase coefficients. Phase information from
+different sources can be combined by a simple addition of the phase coefficients
+from each determination. The application of a weighting scheme proposed
+by <A HREF="#reference8">Sim (1959)</A> allows for the inclusion of phase information determined
+from a partial structure. </P>
+
+<P>The principles of the method and details of the original phase combination
+program are described by <A HREF="#reference7">Bricogne (1976)</A>. </P>
+
+<H3><A NAME="example4"></A>Model bias on combination </H3>
+
+<P>It is assumed that the coefficients giving least bias vary as a linear
+function of partial structure influence. The variation of information is
+the parameter used to measure the contribution of each partial structure
+to the combined phase probability profile; and this is normalised to give
+partial structure weights w. These are tabulated as a function of resolution
+in the log file. If there are p partial structures, the modified map coefficients
+are given by </P>
+
+<PRE>         [2mFo - sum_over_p(wDFc)] / [2 - sum_over_p(w)] 
+</PRE>
+
+<H2><A NAME="references"></A>REFERENCES</H2>
+
+<OL>
+<P><!-- KEEP startreferencelist --></P>
+
+<LI><A NAME="reference1"></A>Read, R.J.: Acta Cryst. A42 (1986) 140-149. </LI>
+
+<LI><A NAME="reference2"></A>Srinivasan, R.: Acta Cryst. 20 (1966) 143-144. </LI>
+
+<LI><A NAME="reference3"></A>Hauptman, H.: Acta Cryst. A38 (1982) 289-294. </LI>
+
+<LI><A NAME="reference4"></A>Luzzati, V.: Acta Cryst. 6 (1953) 142-152. </LI>
+
+<LI><A NAME="reference5"></A>Rogers, D. in Computing Methods in Crystallography (Rollett, J.S.,ed.)
+(1985) pp. 126-127, Pergamon Press. </LI>
+
+<LI><A NAME="reference6"></A>Hendrickson, W.A. &amp; Lattman, E.E.: Acta Cryst. B26 (1970) 136-143.
+</LI>
+
+<LI><A NAME="reference7"></A>Bricogne, G.: Acta Cryst. A32 (1976) 832-847. </LI>
+
+<LI><A NAME="reference8"></A>Sim, G.A.: Acta Cryst. 12 (1959) 813-815; 13 (1960) 511-512. </LI>
+
+<LI><A NAME="reference9"></A>Read, R. J.: Acta Cryst. A46 (1990) 140-9. </LI>
+
+<LI><A NAME="reference10"></A>Read, R. J.: Acta Cryst. A46 (1990) 900-12. </LI>
+
+<LI><A NAME="reference11"></A>Vellieux, F.M.D., Livnah, O., Dym, O., Read, R.J. &amp; Sussman, J.L.,
+manuscript in preparation. </LI>
+
+<!-- KEEP endreferencelist -->
+</OL>
+
+</BODY>
+</HTML>

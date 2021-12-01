@@ -1,0 +1,2070 @@
+<!DOCTYPE html
+                     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                     "DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+   <meta name="Author" content="Martyn Winn, Elspeth Garman, Harry Powell and Andrew Leslie" />
+   <meta name="Changedby" content="Eleanor and Maria" />
+   <meta name="Description" content="A step-by-step structure solution using CCP4i" />
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+   <title>CCP4 Tutorial - Session 2</title>
+<link rel="stylesheet" type="text/css" href="../tut.css" title="CCP4i tutorial" />
+</head>
+<body>
+
+<h1 align="center">CCP4 Tutorial: Session 2 - Data Processing and Reduction</h1>
+
+<p><em>See also the <a href="dataproc-doc.html">accompanying document</a> giving background information.</em></p>
+
+<p>In the following instructions, when you need to type something, or
+click on something, it will be shown <font color="#ff0000">in red</font>.
+Output from the programs or text from the interface is given
+<font color="#009900">in green</font>.</p>
+
+<h2>Outline of the Method</h2>
+<ol type="a">
+<li><a href="#step_2a">Data processing</a></li>
+<li><a href="#step_2bI">Data reduction - Alternative I</a>; MOSFLM into SCALA</li>
+<li><a href="#step_2bII">Data reduction - Alternative II</a>; scaled data from DENZO</li>
+<li><a href="#step_2c">Combine native data with MAD data ready for experimental phasing</a></li>
+</ol>
+
+<h2>The Data Files</h2>
+
+<p>Files in directory <font color="#009900">DATA</font>:</p>
+<table>
+<tr>
+<td><font color="#ff0000">runit</font></td><td>file with starting parameters for MOSFLM</td>
+</tr>
+<tr>
+<td><font color="#ff0000">process.sav</font></td><td>input command file for CCP4i processing job: integrating all images</td>
+</tr>
+<tr>
+<td><font color="#ff0000">process.mat</font></td><td>MOSFLM Matrix file needed for CCP4i processing job</td>
+</tr>
+<tr>
+<td><font color="#ff0000">hg_a_1to84_h3.mtz</font></td><td>reflection file produced by MOSFLM for data reduction with SCALA</td>
+</tr>
+<tr>
+<td><font color="#ff0000">hg_a_1to84_h3_scala2.mtz</font></td><td>reflection file from MOSFLM/SCALA, rogue image excluded</td>
+</tr>
+<tr>
+<td><font color="#ff0000">gere_nat.sca</font></td><td>SCALEPACK output reflection file</td>
+</tr>
+<tr>
+<td><font color="#ff0000">gere_hrm.mtz</font></td><td>reflection file from data collection at high-energy remote wavelength</td>
+</tr>
+<tr>
+<td><font color="#ff0000">gere_infl.mtz</font></td><td>reflection file from data collection at inflection point wavelength</td>
+</tr>
+<tr>
+<td><font color="#ff0000">gere_safepeak.mtz</font></td><td>reflection file from data collection at high-energy side of peak wavelength</td>
+</tr>
+<tr>
+<td><font color="#ff0000">gere_peak.mtz</font></td><td>reflection file from data collection at peak wavelength</td>
+</tr>
+</table>
+
+<p>Files in directory <font color="#009900">RESULTS</font>:</p>
+<table>
+<tr>
+<td><font color="#ff0000">SUMMARY</font></td><td>MOSFLM SUMMARY from CCP4i processing job</td>
+</tr>
+<tr>
+<td><font color="#ff0000">scala-all-h3.log</font></td><td>.log of scaling all batches from MOSFLM</td>
+</tr>
+<tr>
+<td><font color="#ff0000">anomalouspatterson-h3.log</font></td><td>.log of anomalous Patterson map calculations in spacegroup H3</td>
+</tr>
+<tr>
+<td><font color="#ff0000">reindex-h3-to-h32.log</font></td><td>.log of reindexing from spacegroup H3 to H32</td>
+</tr>
+<tr>
+<td><font color="#ff0000">anomalouspatterson-h32.log</font></td><td>.log of anomalous Patterson map calculations in spacegroup H32</td>
+</tr>
+<tr>
+<td><font color="#ff0000">inmport-scaled.log</font></td><td>.log of importing a scaled reflection file from SCALEPACK</td>
+</tr>
+<tr>
+<td><font color="#ff0000">inmport-scaled.def</font></td><td>CCP4i .def of importing a scaled reflection file from SCALEPACK</td>
+</tr>
+</table>
+
+
+<h2><a name="mosflm"></a><a name="step_2a"></a>2a) Data processing - MOSFLM</h2>
+
+<p>MOSFLM can process diffraction images from a wide range of detectors and
+produces, as output, an MTZ file of reflection indices with their intensities
+and standard deviations. This MTZ file is passed onto other programs of the
+CCP4 program suite for data reduction, scaling and merging.</p>
+
+<h4>The problem</h4>
+<p>After <a href="#mosflm_setup">setting up to run Mosflm</a>, and
+<a href="#mosflm_introgui">an introduction to the Mosflm GUI</a>,
+in the normal course of things, a data processing protocol with MOSFLM would be:</p>
+<ol type="i">
+<li><a href="#mosflm_autoindexing">autoindexing</a></li>
+<li><a href="#mosflm_parameter_refinement">parameter refinement (accurate cell determination)</a></li>
+<li><a href="#mosflm_strategy">running the <tt>STRATEGY</tt> option to determine data collection strategy</a></li>
+<li><a href="#mosflm_optimising_parameters">optimising parameters for integration</a></li>
+<li><a href="#mosflm_integration">integration</a></li>
+</ol>
+<p>Experience has shown, that most people benefit from being familiar with the program
+before learning about the <tt>STRATEGY</tt> option, which therefore in this tutorial features
+only after integration. The tutorial also covers
+<a href="#mosflm_changing_parameters">the effects of changing integration parameters</a>,
+<a href="#mosflm_locating_outliers">locating outliers</a> and
+<!--<a href="#mosflm_locating_outliers">locating outliers</a>,
+<a href="#mosflm_running_background">running Mosflm as a background process</a> and-->
+<a href="#mosflm_restart">restarting an interactive Mosflm process</a>.</p>
+
+<h3><a name="mosflm_setup"></a>Setting up to run Mosflm</h3>
+<p>MOSFLM can process diffraction images from a wide range of detectors and
+produces, as output, an MTZ file of reflection indices with their intensities
+and standard deviations. This MTZ file is passed onto other programs of the
+CCP4 program suite for data reduction scaling and merging.</p>
+<p>Your task is to process 84 images, hg_001.mar1600 to hg_084.mar1600,
+collected in Hamburg on BW7A beamline with a mar345 image plate detector.
+These are crystals of a small domain (91 amino acids) that have been soaked in
+a mercury compound.</p>
+ 
+<h4>Exercise</h4>
+<ol>
+<li><p>Logon to your terminal</p></li>
+<li><p>Create a subdirectory for Mosflm files:</p>
+<dl>
+<dd><font color="#009900">&gt;</font> <font color="#ff0000">mkdir $HOME/TEST/mosflm</font></dd>
+</dl><br /></li>
+<li><p>Create a subdirectory for the tutorial images:</p>
+<dl>
+<dd><font color="#009900">&gt;</font> <font color="#ff0000">mkdir $HOME/TEST/mosflm/images</font></dd>
+</dl>
+<p><i>N.B.</i> This could be a temporary or scratch area.</p></li>
+<li><p>Go to the images directory:</p>
+<dl>
+<dd><font color="#009900">&gt;</font> <font color="#ff0000">cd $HOME/TEST/mosflm/images</font></dd>
+</dl>
+<p><i>N.B.</i> If you want to process your own data, ignore this step and the next.</p></li>
+<li><p>Take the tutorial images from the testdata directory at www.autostruct.org:</p>
+<dl>
+<dd><font color="#009900">&gt;</font> <font color="#ff0000">ftp ftp.ccp4.ac.uk</font></dd>
+<dd><font color="#009900">name:</font> <font color="#ff0000">anonymous</font></dd>
+<dd><font color="#009900">password:</font> <font color="#ff0000">&lt;your username&gt;</font></dd>
+<dd><font color="#009900">ftp&gt;</font> <font color="#ff0000">cd /autostruct/testdata/mosflm/</font></dd>
+<dd><font color="#009900">ftp&gt;</font> <font color="#ff0000">bin</font></dd>
+<dd><font color="#009900">ftp&gt;</font> <font color="#ff0000">get hg_images.tar</font></dd>
+<dd><font color="#009900">ftp&gt;</font> <font color="#ff0000">bye</font></dd>
+<dd><font color="#009900">&gt;</font> <font color="#ff0000">tar xvf hg_images.tar</font></dd>
+</dl>
+<p>Alternatively, get the images directly from
+http://www.autostruct.org/testdata/index.html - half-way down the page you will find the HypF domain and
+hg_images.tar.</p></li>
+
+<li><p>Go to the mosflm directory:</p>
+<dl>
+<dd><font color="#009900">&gt;</font> <font color="#ff0000">cd $HOME/TEST/mosflm</font></dd>
+</dl><br /></li>
+
+<li><p>Get a startup file:</p>
+<dl>
+<dd><font color="#009900">&gt;</font> <font color="#ff0000">cp
+$CEXAM/tutorial/data/runit .</font></dd>
+</dl>
+ 
+<p>The input file <tt>runit</tt> contains the minimum information required to start
+analysing the data:</p>
+<blockquote><pre>detector mar                          ! detector type
+directory $HOME/TEST/mosflm/images/   ! directory on which the images are stored (edit this)
+image hg_001.mar1600                  ! name of an image
+go</pre></blockquote>
+
+<p>[NOTE that the program will pick up distance, wavelength and phi values from
+the image header for most types of detector. However, this depends on the
+software being correctly installed at the beamline, and the necessary
+communication between the program controlling data collection and the MAR
+software, and this is not always reliable.]</p>
+</li>
+
+<li><p>Now you are ready to run MOSFLM.</p>
+<dl>
+<dd><font color="#009900">&gt;</font> <font color="#ff0000">ipmosflm</font> (or another version of Mosflm most appropriate for your setup)</dd>
+<dd><font color="#009900">MOSFLM =&gt;</font> <font color="#ff0000">@runit</font> (you may need
+to adjust the definition of "directory" in the file runit)</dd>
+</dl>
+<p>The image will be displayed in the GUI.</p></li>
+</ol>
+
+<h3><a name="mosflm_introgui"></a>Introduction to the Mosflm GUI</h3>
+<p>Various processing parameters can be entered in the &quot;Processing params&quot; panel on the left.</p>
+<table>
+<tr>
+<td bgcolor="#009900"><img src="images/crystal_params.jpg" alt="(Image of crystal parameter panel)" width="187" height="185" /></td>
+<td>Crystal parameters are at the top of the list,</td>
+</tr> 
+<tr>
+<td bgcolor="#009900"><img src="images/beam_params.jpg" alt="(Image of crystal parameter panel)" width="187" height="85" /></td>
+<td>followed by the beam parameters,</td>
+</tr>
+<tr>
+<td bgcolor="#009900"><img src="images/detector_params.jpg" alt="(Image of detector parameter panel)" width="187" height="141" /></td>
+<td>and finally the detector parameters.</td>
+</tr>
+<tr>
+<td bgcolor="#009900"><img src="images/search_params.jpg" alt="(Image of spot search parameter panel)" width="187" height="185" /></td>
+<td>Below this are parameters that control the spot search, used to locate spots for autoindexing,</td>
+</tr>
+<tr>
+<td bgcolor="#009900"><img src="images/index_params.jpg" alt="(Image of autoindexing threshold parameter panel)" width="187" height="31" /></td>
+<td>and finally a single parameter that controls spot selection for autoindexing.</td>
+</tr>
+<tr>
+<td></td>
+<td><font size="+1">To enter a new value for any of these, just click on the appropriate
+parameter, enter the value and hit Enter.</font></td>
+</tr>
+</table>
+
+<p>There are four &quot;toggles&quot; below this:</p>
+<table>
+<tr>
+<td bgcolor="#009900"><img src="images/prompts.jpg" alt="(Image of prompts panel)" width="187" height="30" /></td>
+<td>&quot;Prompts&quot; controls the amount of text written to the output window during
+operations like spot finding.</td>
+</tr>
+<tr>
+<td bgcolor="#009900"><img src="images/update.jpg" alt="(Image of update panel)" width="187" height="44" /></td>
+<td>&quot;Update display&quot; refreshes the spot prediction at different points in the
+integration.</td>
+</tr>
+<tr>
+<td bgcolor="#009900"><img src="images/timeout.jpg" alt="(Image of timeout panel)" width="187" height="52" /></td>
+<td>&quot;Timeout mode&quot; saves you having to keep hitting the &quot;Continue&quot; menu item when
+integrating a lot of images.</td>
+</tr>
+</table>
+
+<p>The &quot;Main menu&quot; next to the Processing params panel.</p>
+<table>
+<tr>
+<td bgcolor="#009900"><img src="images/main_menu.jpg" alt="(Image of main menu)" width="227" height="578" /></td>
+<td>The program options can be selected from the &quot;Main menu&quot;.</td>
+</tr>
+</table>
+<p>The &quot;Output&quot; panel underneath the Main menu.</p>
+<table>
+<tr>
+<td bgcolor="#009900"><img src="images/output.jpg" alt="(Image of output panel)" width="226" height="342" /></td>
+<td>The &quot;Output&quot; panel displays information on mouse position (click left mouse
+button) or on particular reflections if a predicted pattern is displayed
+(click left mouse on prediction box.)</td>
+</tr>
+</table>
+
+<h4>Exercise</h4>
+
+<ol start="10">
+<li><p>Within the image display section, there is a small &quot;blow-up&quot; window in the top
+left corner (approximately 20mm square).</p>
+<dl>
+<dd>Click <font color="#ff0000">middle mouse botton</font> inside this square
+to enlarge it.</dd>
+</dl><br /></li>
+
+<li><p>When the mouse is in the image display, clicking middle mouse
+button will improve the resolution of this window, but it can no longer be
+moved.</p>
+<dl>
+<dd>Click <font color="#ff0000">middle mouse button</font> again in the small blow-up window
+to be be able to move.</dd>
+</dl><br /></li>
+
+<li><p>The <tt>Zoom</tt> button can be used to blow up part of the image.</p>
+<dl>
+<dd>Click on <font color="#ff0000">Zoom</font> and then
+<font color="#ff0000">drag out the area of interest</font> with the mouse.</dd>
+</dl>
+<p>To get back to the full image, click on <tt>Zoom</tt> twice.</p>
+<p><i>N.B.</i> The Zoom feature has been disabled on some SGIs because it can cause the
+terminal to freeze.</p></li>
+<li><p>Change the <font color="#009900">Max</font> value in the image display window to
+<font color="#ff0000">600</font> and zoom an outer part of the image
+to get a better idea of the quality of the image.</p></li>
+<li><p>Click on <font color="#ff0000">Circles</font> (in the Main menu) to display
+resolution circles. The resolution of the circles is given in the Output panel.</p></li>
+</ol>
+
+<p><em>N.B.</em> Never close a MOSFLM &quot;input&quot; window (the ones headed
+&quot;xdl_io_window&quot;) by clicking the symbol in the very top left corner of
+the display box and selecting &quot;Close&quot;, as this will cause the program
+to crash! The window will be closed automatically when the task has been finished.
+The shape of the symbol depends on the terminal program you are running - it could
+be a rectangle (seen on Unix), a letter (seen on Linux), or a Windows symbol.</p>
+
+<h3><a name="mosflm_directbeam"></a>Checking the direct beam position</h3>
+
+<p>The success of autoindexing is critically dependent on the accuracy of
+the direct beam coordinates. The required accuracy will depend on the
+spot spacing (to avoid mis-indexing), but in general you should know
+the direct beam position to within 0.5mm (or better for very close spots).</p>
+<p>The best way to locate the direct beam position is to look at a
+powder diffraction ring <em>e.g.</em> take a shot with just water in the loop to
+give an ice ring.</p>
+<p>These images have two very faint ice rings at 3.91 and 3.67&#197;.</p>
+
+<p><b><em>N.B.</em> This option (Beam/backstop) has two functions. It is EITHER used to
+define the main beam position by fitting a circle to points on a
+diffraction powder ring (<em>e.g.</em> wax or ice), OR it is used to define a
+circular backstop shadow. In this example it is being used to define the
+direct beam position.</b></p>
+
+<h4><a name="beam-backstop"></a>Exercise</h4>
+
+<ol start="15">
+<li><p>From the Main menu</p>
+<dl>
+<dd>Select <font color="#ff0000">Beam / backstop</font> or <font
+color="#ff0000">Beam/mask areas -&gt; circular backstop</font></dd>
+</dl>
+<p>A small window will appear, headed <tt>xdl_io_window</tt>, with some instructions.</p>
+<dl>
+<dd>With the left mouse button, <font color="#ff0000">pick out 6-10 points</font>
+around a ring, then click on <font color="#ff0000">Fit points</font> on the main menu.</dd>
+</dl>
+<p>The program will find the best circle that fits the selected points, and this will
+be displayed.</p>
+<p><em><b>Read</b></em> what is in the small window because you have the option of
+changing both the beam position and the position and size of the backstop; you only
+want to do the former in this case!</p>
+<p>If you want to remove the circle, select <font color="#ff0000">Circles</font> and
+then <font color="#ff0000">Erase circles</font> from the main menu.</p>
+</li>
+</ol>
+
+<h3><a name="mosflm_autoindexing"></a>Autoindexing</h3>
+
+<p>Auto-indexing works well with either single or multiple
+images, and with 100 - 750 spots: it is particularly good if your cell
+is very anisotropic or if you have strong diffraction.</p>
+
+<h4>Exercise</h4>
+
+<ol start="20">
+<li><p>From the Main menu</p>
+<dl>
+<dd>click on <font color="#ff0000">Autoindex</font>.</dd>
+</dl>
+<p>It may/will complain that the direct beam position has not been specified
+(default is the centre of the image).</p></li>
+
+<li><p>If it does, just ignore the complaint, click <font color="#ff0000">Enter</font> to continue,
+and</p>
+<dl>
+<dd>click <font color="#ff0000">Autoindex</font> again</dd>
+</dl><br /></li>
+
+<li><p>Then, and also if the direct beam position was already OK</p>
+<dl>
+<dd>just use the defaults, so just hit <font color="#ff0000">Enter</font> to all the questions.</dd>
+</dl>
+<p>Note that only the spots to be used in autoindexing (above the I/sig(I)
+cutoff) are displayed.</p>
+
+<p><em>N.B.</em> For these data, the true direct beam position is within 0.5mm of the centre of the
+image. If it were much further away, autoindexing would not work.</p></li>
+
+<li><p>Look at the 'PENALTY' in the output list ('Input reply'), and choose the autoindexing
+solution with the highest symmetry but a low PENALTY. A clue here is a large and sudden
+increase in the PENALTY between possible solutions. Look for a gap of around
+50-100 (<i>e.g.</i> if PENALTY of solution 6 is 10 and of solution 7 is 65 then choose
+solution 6).</p>
+<dl>
+<dd>Enter a <font color="#ff0000">solution number</font> AND <font color="#ff0000">space group</font>
+(H3, in this case) and answer the questions (just use the defaults, so hit <font color="#ff0000">Enter</font>).</dd>
+</dl>
+<p>There are a few other considerations to take into account when choosing the solution:</p>
+<ul>
+<li>In general, the penalty for a correct (fully refined) solution would be well below 20 (although
+it could be higher if there is an error in the direct beam coordinates, or the distance or
+wavelength);</li>
+<li>It is crucial for the cell parameters to conform very closely to the requirement of the
+proposed crystal class - a deviation of 3 degrees from 90 for the alpha or beta angles in a hexagonal
+space group, for instance, is already unacceptable.</li>
+<li>If there is no obvious solution (other than triclinic) and not many spots have been found
+(shown as red crosses), you could try reducing the I/sig(I) cut-off. Enter
+<font color="#ff0000">T</font> and then supply a new value when prompted.</li>
+</ul>
+<p><em>NOTE</em> that the true space group symmetry can only be established once data have
+been integrated. It is best to be conservative and use the lower symmetry, <em>i.e.</em> H3 in this
+case. After integration, you can use REINDEX to check different space groups with SCALA without
+having to re-integrate them with MOSFLM (or use 'Sort/Reindex MTZ Files' in CCP4i). Choosing H3 and
+not H32 will not affect the integration at all, but it WILL affect the
+<a href="#mosflm_strategy">Strategy</a> calculation.</p></li>
+
+<li><p>The cell parameters derived from the autoindexing will now be refined using
+the observed spot positions (note that the <i>a</i> and <i>b</i> cell parameters are not
+equal in the initial cell).</p>
+<p>The program first asks if you want to change the cutoff for rejecting
+individual reflections from the refinement:</p>
+<dl> 
+<dd><font color="#009900">Positional sigma cutoff [ 2.50]:</font></dd>
+</dl>
+<p>Normally this does not need to be changed,</p>
+<dl>
+<dd>so just hit <font color="#ff0000">Enter</font>.</dd>
+</dl>
+<p>The cell parameters will be refined imposing the constraints for that spacegroup
+(<i>e.g.</i> a=b, alpha=beta=90, gamma=120 for trigonal/hexagonal).</p>
+ 
+<p>The final sd in spot positions should be one pixel or less. If it is more than
+two pixels, the autoindexing may have failed (if you do not know the pixel
+size, look in the &quot;mosflm.lp&quot; file that records the output from the program).</p>
+<p>You will then be given the option to update the cell parameters:</p>
+<dl>
+<dd>hit <font color="#ff0000">Enter</font> to accept the new values.</dd>
+</dl><br /></li>
+
+<li><p>Then the refined direct beam coordinates will be
+given, with the option of accepting them. In this case, the default is to
+accept the refined direct beam UNLESS it has moved MORE than 0.4*minimum spot
+separation, in which case there is NO default, you MUST enter either Y or N.</p>
+<p>In such cases you should check that you supplied the correct beam coordinates,
+to avoid the risk of mis-indexing the image.</p>
+<p>(*** NOTE *** A bug in the current code will give this warning even if the
+direct beam position was worked out from the ice ring)</p>
+<p>The shift, though rather large, is still an acceptable amount, so</p>
+<dl>
+<dd>answer <font color="#ff0000">Y</font> to accept the new direct beam position.</dd>
+</dl><br /></li>
+
+<li><p>Finally you are given the option of selecting the solution (default yes). If
+you want to try another solution from the list, reply <font color="#ff0000">N</font>
+and you will be prompted to select a new solution. Sometimes it is possible to distinguish
+between similar solutions (<i>e.g.</i> an orthorhombic space group and a monoclinic
+space group with a beta close to 90 degrees) by comparing the final sd in spot
+positions for the two solutions.</p></li>
+
+<li><p><b>Using a second image in autoindexing</b></p>
+<p>If you need another image (preferably at a very different phi value) to get the
+autoindexing to work, click on <font color="#ff0000">Read image</font> to get the new one, and
+then on <font color="#ff0000">Find spots</font>, and then <font color="#ff0000">Autoindexing</font>.
+By default all found spots (from all images) will be used in autoindexing, but any combination of
+images can be selected using <font color="#ff0000">Select images</font>. Many images can be used
+in the autoindexing (although there is a limit of 2000 spots).</p>
+<p>For orthorhombic or lower symmetries, the use of two (or more) images will
+give better estimates of the cell parameters, and this is recommended.</p>
+<p>Try reading in another image, run <font color="#ff0000">Find spots</font>
+and <font color="#ff0000">Autoindex</font> again. See how
+much the cell parameters change. Note that when you run the autoindexing the
+second time, by default it will use the symmetry you chose (H3) when you
+first ran the autoindexing. If you want the complete list of possibilities
+again, give the reply <font color="#ff0000">N</font> to the following question
+(the second question that is asked when running the autoindexing):</p>
+<dl> 
+<dd><font color="#009900">Do you want to change spacegroup to 0 (N) ?:</font></dd>
+</dl>
+<p>Spacegroup &quot;0&quot; is interpreted as not knowing the spacegroup.</p>
+<p>Look at the final sd in spot positions. It is not unusual for this to be
+higher for two images than for a single image, because the crystal orientation
+may have changed between collecting the two images.</p></li>
+
+<li><p><b>Checking the results</b></p>
+<p>Click on <font color="#ff0000">Clear spots</font> and hit
+<font color="#ff0000">Enter</font> to remove the crosses from the image.</p>
+<p>Click on <font color="#ff0000">Predict</font>.</p>
+<p>The image will be displayed with the predicted pattern overlaid as rectangular
+boxes with the following colour codes:</p>
+<table>
+<tr><td>Blue</td><td>Fully recorded reflection</td></tr>
+<tr><td>Yellow</td><td>Partially recorded reflection</td></tr>
+<tr><td>Red</td><td>Spatially overlapped reflection; these will NOT be integrated</td></tr>
+<tr><td>Green</td><td>Reflection width too large (more than 5 degrees in phi, default can
+be reset with keyword <tt>MAXWIDTH</tt>); not integrated.</td></tr>
+</table>
+<p>There will probably be some diffraction spots which are not covered by a
+prediction box; this means that with the current mosaic spread, these
+spots would not be predicted. Using a higher value for the mosaic spread
+will result in more boxes being overlaid, and some of the blue boxes
+will change to yellow. It is also likely that the number of overlapped
+reflections will increase, as will the number of reflections with green
+prediction boxes.</p>
+<p>Those reflections which appear on the image near the rotation axis cannot
+be measured accurately by any method (the student is encouraged to become
+familiar with the Ewald Sphere construction which explains why this is
+so). This region of the detector is therefore called the &quot;blind region&quot;;
+because of its appearance in the image, it often also called the
+&quot;bow-tie&quot;, &quot;apple-core&quot; or &quot;cusp&quot; region.
+Blind region reflections have green prediction boxes.</p>
+
+<p>Click (left mouse) on any reflection. Its indices, phi value and phi width
+will be displayed in the Output window of the GUI.</p>
+<p>Look at the predictions of the reflections on the image. They should agree with
+the positions of the measured reflections. If not, then the autoindexing has
+failed (check the direct beam coordinates, wavelength, detector distance).</p></li>
+
+<li><p><b>Effect of inaccurate direct beam coordinates</b></p>
+<p>See how sensitive the autoindexing is to the main beam values. Try changing
+them by 1-2mm. The direct beam coordinates can be input in the Processing params panel (Beam X and Y).
+To revert, use the <tt>Beam/backstop</tt> option and repeat the autoindexing
+as <a href="#beam-backstop">above</a>, before going on to the next stage.</p></li>
+</ol>
+
+<h3><a name="mosflm_mosaic_spread"></a>Estimating the mosaic spread</h3>
+
+<p>The program can provide an initial estimate of the mosaic spread.</p>
+
+<h4>Exercise</h4>
+
+<ol start="30">
+<li><p>From the Main menu</p>
+<dl>
+<dd>Select <font color="#ff0000">Estimate mosaicity</font></dd>
+</dl>
+<p>Check that this value is reasonable (<i>i.e.</i> predicts all observed spots, but does
+not over-predict, remembering that some spots can be missing because they are weak!).</p>
+</li>
+<li><p>Try varying the mosaic spread (Processing params panel) and see the effect on
+the predicted pattern (select <font color="#ff0000">Predict</font> from the main menu after
+any change in mosaic spread).</p>
+<p>If the mosaic spread is very high (1 degree or more) a significant number of
+reflections will be flagged as &quot;too wide in phi&quot; (green boxes). The maximum
+reflection width can be changed as follows:<br />from the Main menu</p>
+<dl>
+<dd>Select <font color="#ff0000">Keyword input</font></dd>
+</dl>
+<p>In the Input reply window</p>
+<dl>
+<dd>Type <font color="#ff0000">MAXWIDTH 10</font> and click <font color="#ff0000">Enter</font></dd>
+<dd>Type <font color="#ff0000">GO</font> and click <font color="#ff0000">Enter</font></dd>
+</dl>
+<p>This changes the maximum reflection width to 10 degrees.</p></li>
+</ol>
+
+<h3><a name="mosflm_saving_parameters"></a>Saving the current parameters</h3>
+
+<p>It is possible to save the current values of the detector, beam and
+crystal parameters to a file, which can be executed (by typing
+<font color="#ff0000">&#64;filename</font>) to restore these values if
+something goes badly wrong or if the program crashes (should never
+happen of course!).</p>
+ 
+<h4>Exercise</h4>
+<ol start="35">
+<li><p>From the Main menu</p>
+<dl>
+<dd>Select <font color="#ff0000">Save/Exit</font></dd>
+<dd>Click <font color="#ff0000">Enter</font> to the queries about
+saving current parameters and the filename.</dd>
+<dd>Answer <font color="#ff0000">N</font> to the query
+<font color="#009900">Do you want to exit</font> and the GUI becomes
+active again.</dd>
+</dl><br /></li>
+</ol>
+
+<p>If you do exit, follow the instructions at the <a href="#mosflm_restart">end of
+this section</a> on how to restart from saved parameters. 
+The program writes a file of MOSFLM commands which can be used as input. In
+this case, it will be written to the file <tt>hg_001.sav</tt> and should look
+like:</p>
+<blockquote><pre>! This input created from an interactive session
+DETECTOR mar
+BEAM  119.56  120.08
+GAIN 1.00
+ADCOFFSET   8
+DISTANCE  250.000
+DISTORTION YSCALE   1.0000 ROFF   0.00 TOFF   0.00 TILT    0 TWIST    0
+MATRIX hg_001.mat
+!This matrix was obtained from autoindexing
+! The following images were used:   1  84
+SYMMETRY  146
+MOSAIC  0.69
+IDENT hg
+DIRECTORY images/
+EXTENSION mar1600
+RASTER    19   19   11    6    6
+SEPARATION  1.20 1.20
+OVERLOAD CUTOFF  150000
+PROFILE TOLERANCE    0.020   0.030</pre></blockquote>
+
+<h3><a name="mosflm_backstop_parameters"></a>Setting the backstop parameters</h3>
+
+<p>It is important not to try to integrate data that are behind the backstop shadow!</p>
+
+<p>There are two different ways to give the program the position and size of the backstop.</p>
+
+<h4><a name="beam-backstop"></a>Exercise</h4>
+ 
+<ol start="40">
+<li><p>The easiest way:</p>
+<dl>
+<dd>Select <font color="#ff0000">Beam / backstop</font> (from the Main menu)</dd>
+</dl>
+<p>A small window will appear, with some instructions.</p>
+<dl>
+<dd><font color="#ff0000">Zoom</font> the part of the image that contains the backstop shadow.</dd>
+<dd>With the left mouse button, <font color="#ff0000">pick out 6-10 points</font>
+on the edge of the (circular) backstop shadow.</dd>
+<dd>Select <font color="#ff0000">Fit points</font> (on the main menu).</dd>
+</dl>
+<p>The program will find the best circle that fits the selected points, and this
+will be displayed.</p>
+<p><em><b>Read</b></em> what is in the small window because you have the option of changing
+both the beam position and the position and size of the backstop; you only want to do the latter!</p>
+</li>
+<li><p>The alternative:</p>
+<p>Find out the centre and extent of the backstop shadow using the left mouse button
+and looking at XC and YC in the Output panel. Make a note of these values, then mask
+out the backstop shadow by clicking on <font color="#ff0000">Keyword input</font>
+and typing in <font color="#ff0000">backstop centre X Y radius Z</font> (X, Y and Z
+are in mm) and then <font color="#ff0000">run</font> to get back to screen control.
+The masked area will come up as a red circle.</p>
+</li>
+</ol>
+
+<p>NOTE: It is assumed that the backstop shadow is circular. Irregular backstops can
+be dealt with using the <tt>NULLPIX</tt> keyword, providing all pixels in the shadow
+have pixel values less than any &quot;active&quot; part of the detector. Giving the
+keyword <tt>NULLPIX 100</tt> will mean that any predicted reflection that has a pixel
+within its measurement box with a value less than 100 will be rejected during
+integration.</p>
+
+<h3><a name="mosflm_parameter_refinement"></a>Accurate cell determination</h3>
+
+<p><em>It is essential that the spot prediction is OK before trying to refine
+the cell.</em></p>
+
+<p>If you are going to use more than one segment, ensure that the
+prediction is also OK for the first image of the other segments. If it
+is not (because the crystal has moved) then get a new orientation matrix
+for each segment, using ONLY spots from that image (<tt>Select images</tt>).
+These matrices will be written to different files. When setting up the
+cell refinement, when asked &quot;Use the current orientation&quot; reply &quot;no&quot;
+and then supply the name of the appropriate matrix file.</p>
+
+<p>Before starting the cell refinement, read in image 1 (if it is not already
+displayed), select <font color="#ff0000">Predict</font> and make sure that the spot positions are
+correctly predicted. If not, check the values for the following parameters in
+the Processing Parameters window and reset them if necessary:</p>
+ 
+<blockquote>PsiX, PsiY, PsiZ should all be 0.0<br />
+Distance should be 250.<br />
+Beam X, Y should be (about)119.6 120.0<br />
+CCOMEGA, ROFF, TOFF should be 0.0<br />
+YSCAL should be 1.0</blockquote>
+ 
+<p>Try predicting again. If the fit is still not good, repeat the autoindexing.</p>
+
+<h4>Exercise</h4>
+
+<ol start="45">
+<li><p>Select <font color="#ff0000">Refine cell</font> (Main menu) and use one
+segment of 2 or 3 images (for orthorhombic or lower symmetries you should use 2 or 3
+segments with images widely separated in phi).</p></li>
+
+<li><p>Click on <font color="#ff0000">Continue</font> (adapted Main menu),
+until you get back to the starting
+menu (or else click the &quot;Timeout mode&quot; toggle in the Processing params panel).</p></li>
+</ol>
+
+<p>The program will now integrate these images, and use the resulting intensities
+to refine the cell parameters, crystal orientation and mosaic spread using the
+post-refinement procedure.</p>
+<p>As the images are integrated, a new window will pop up showing the average
+spot shape for spots near the centre of the detector, and giving the rms
+residual (the positional error in predicting the spot positions) and the
+weighted residual. Example of this window:</p>
+<blockquote><pre>Central profile:hg_003.mar1600
+-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0
+-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0
+-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0
+-0-0-0-0-0-0-0-0-0-0*0-0-0-0-0-0-0-0-0
+-0-0-0-0-0-0-0*0*0*1*0*0-0-0-0-0-0-0-0
+-0-0-0-0-0-0*0*1*1*1*1*1*0*0-0-0-0-0-0
+-0-0-0-0*0*0*1*2 3 4 3*2*1*0-0-0-0-0-0
+-0-0-0-0*0*1*2 5 9 B 8 4*1*0-0-0-0-0-0
+-0-0-0-0*0*1 4 B L Q I 8 2*1-0-0-0-0-0
+-0-0-0-0*0*1 4 D Q Z R C 3*1-0-0-0-0-0
+-0-0-0-0-0*1 3 9 H Q M B 3*1*0-0-0-0-0
+-0-0-0-0-0*1*2 4 7 B A 6*2*1-0-0-0-0-0
+-0-0-0-0-0*0*1*2 2 3 4*2*1*0-0-0-0-0-0
+-0-0-0-0-0-0*0*1*1*1*1*1*1*0-0-0-0-0-0
+-0-0-0-0-0-0-0*0*0*0*0*0*0-0-0-0-0-0-0
+-0-0-0-0-0-0-0-0*0*0*0-0-0-0-0-0-0-0-0
+-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0
+-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0
+-0-0*0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0
+Rms residual  0.05mm, weighted residual   0.6</pre></blockquote>
+
+<p>Pixel values are represented by numbers 0-9 and then letters A-Z.
+Thus <font color="#009900">Z</font> should be in the middle of the box.</p>
+<dl>
+<dd>Check that the program has correctly distinguished background pixels (denoted
+by a &quot;-&quot; in front of the number/letter) and peak pixels, <i>i.e.</i>
+there should not be values above 2 or 3 with a &quot;-&quot; in front of them,
+and there should not be a lot of pixels of value &quot;0&quot; in the peak region.</dd>
+<dd>Pixels with a &quot;*&quot; are in the tails of the spot; these can be ignored.</dd>
+</dl>
+
+<p>It is often necessary to integrate the images several times before the
+refinement converges; if the shift in cell parameters is more than 2.5
+standard deviations, the integration of all images is repeated.</p>
+
+<p>When the refinement has finished, image 1 will be displayed (with NO spots
+predicted) and the message &quot;Waiting for input&quot; will appear over the image, and
+a summary of the refinement will be given in an output window:</p>
+<blockquote><pre>Cell refinement is complete
+Starting cell   58.563   58.563  156.405   90.000   90.000  120.000
+Refined cell    58.437   58.437  155.886   90.000   90.000  120.000
+ 
+Rms positional error (mm) as a function of cycle for each image.
+     Image   1     2     3
+Cycle 1    0.040 0.038 0.048
+Cycle 2    0.037 0.041 0.050
+ 
+YSCALE as a function of cycle for each image:
+     Image   1     2     3
+Cycle 1    1.000 1.000 1.000
+Cycle 2    1.001 1.002 1.001
+ 
+Detector distance as a function of cycle for each image:
+     Image   1     2     3
+Cycle 1    250.2 250.2 250.0
+Cycle 2    249.4 249.4 249.4
+ 
+Refined mosaic spread (excluding safety factor):   0.96
+ 
+ 
+Missets for first image (   1)  0.04  0.13 -0.08
+Missets for last image  (   3) -0.01  0.16 -0.07
+ 
+The current missets are for the last image to be processed.
+If you want to integrate the data starting at the first image, you should
+reset the misseting angles.
+ 
+Reset missets to those of the first image ? (Y)</pre></blockquote>
+
+<p>Normally you will want to reset the misseting angles to those of the first
+image, because you will start integration with that image.</p>
+
+<p>Note the value for mosaic spread in the text window giving the refinement.
+This should be a more reliable value than that obtained earlier, but for
+mosaic spread greater than 0.5 degrees it is not always totally reliable.
+Enter this value via &quot;Processing params&quot; panel and repeat the prediction
+to see if it looks better. If not, revert to the original value.</p>
+
+<p>Post-refinement does not work well if the effective resolution of the data is
+less than 3.5&#197;. For these cases, the cell obtained from autoindexing may be
+better.</p>
+ 
+<p>To check how well it has worked, look at the Rms positional error (between
+observed and predicted spot positions) in the summary. This should get smaller
+if more than one cycle of refinement has been performed.</p>
+
+<p>For a reasonable refinement of the parameters, the positional residual
+(standard deviation of the spot position) should be below 0.2-0.3mm for image
+plates or 0.15mm for CCDs. If it is above 0.3mm it is highly suspect. 0.08mm
+to 0.12mm are typical of a correct solution. Note however that the positional
+residual will be higher for weak data, as the spot positions are not as well
+defined. It may be useful to check the residual for the central region of the
+detector in these cases. This is given just before the &quot;average spot
+profile&quot; in the &quot;mosflm.lp&quot; file.</p>
+
+<p>The YSCALE parameter (a scale factor in the Y direction) should be exactly
+1.000. Errors in the initial cell may give different values, especially if
+more than one segment is being used. By the end of the refinement, YSCALE
+should be 1.000 for all images (except the R-axis II). Values below 0.998 or
+above 1.002 suggest that the refinement is not optimal, and more images should
+be used. (If the data are only good to 3.3-3.5&#197; or worse, it may not be
+possible to get better values).</p>
+
+<p>The refined detector distance may also differ for images in different segments
+at the start of refinement (compensating for errors in cell parameters). At
+the end of refinement, the distance should be the same for all images,
+typically to within 0.1-0.2mm.</p>
+
+<h4>Exercise</h4>
+
+<ol start="47">
+<li>Try using two segments of data rather than one and see how
+this affects the cell parameters.</li>
+ 
+<li>*** NOW SAVE YOUR CURRENT PARAMETERS (see <a href="#mosflm_saving_parameters">above</a>)***</li>
+</ol>
+
+<h3><a name="mosflm_optimising_parameters"></a>Optimising parameters for integration</h3>
+
+<p>The program automatically sets suitable values for various parameters and they will not
+normally have to be changed. It can, however, be very informative (or even necessary, in
+some cases), to change them. Investigate this in the exercise below.</p>
+
+<h4>Exercise</h4>
+
+<ol start="50">
+<li><p>Select <font color="#ff0000">Integrate</font> from the Main menu.</p></li>
+
+<li><p>Hit <font color="#ff0000">Enter</font> to the first query, then give the first and last
+image numbers: <i>e.g.</i> <font color="#ff0000">1  10</font> for the images to be
+integrated, then <font color="#ff0000">Enter</font> to all other queries.</p></li>
+
+<li><p>The program will then integrate these images in turn. The program
+will pause for detector parameter refinement for the centre of the image.</p>
+<dl>
+<dd>Select <font color="#ff0000">Continue</font> (from the adapted Main menu) to carry on.</dd>
+</dl>
+<p>It will display a new window showing the average spot shape for the centre of the
+image, and the positional residuals. On subsequent images, it will only pause once per image.
+After the ten images have been displayed (select <font color="#ff0000">Continue</font>
+to step through), the program will form the standard profiles (in this example, 24 different
+profiles for different areas of the detector) and integrate
+the images...the display will not change while this is done unless you have
+previously activated the &quot;Update display..After integration&quot; toggle.</p></li>
+
+<li><p>If the program finds any &quot;Bad spots&quot; (rejected reflections) it will ask the
+user if they wish to reclassify the spot or inspect it.</p>
+<dl>
+<dd>Reply <font color="#ff0000">N</font> (or hit <font color="#ff0000">Return</font>).</dd>
+</dl>
+<p>If you reply &quot;Y&quot;, the image will be displayed with the &quot;bad spots&quot;
+flagged with red crosses. BEWARE that once this option has been turned on, it
+will remain on for all subsequent images.</p>
+<p>There should only be a few (less than 10) bad spots per image. If there are
+more, it is often because of problems with the backstop shadow (use NULLPIX
+and/or the circular backstop shadow definition).</p>
+<p>Sometimes strong fully recorded reflections will be rejected as having a poor
+profile fit (PKRATIO &gt; 3.5). This can happen if the mosaic spread is too
+small, so that these reflections are actually partials. If this is not the
+case, then change the rejection criterion to avoid rejecting these reflections
+(<em>e.g.</em> REJECTION PKRATIO 5.0). <em>Rejecting a significant number of the strongest
+reflections can give problems in structure solution</em>.</p></li>
+
+<li><p>When it has finished, look at the warning messages in the terminal window
+where you started MOSFLM. Sometimes you can change processing parameters in
+response to these warnings, using the keywords given in the warning (but not
+always !!).</p></li>
+
+<li><p>Check the appearance of the &quot;standard profiles&quot; in the terminal window (or by
+reading the file &quot;mosflm.lp&quot; into an editor...all output to the terminal
+window is also written to this file).</p>
+<p><em>Note that this example is not for images hg_00n.img, because they do not have any
+overlapped reflections</em> (see below).</p>
+<pre> Profile for box  2
+ X limits   0 to  91 mm, Y limits  91 to 209 mm
+ Number of reflections in profile  288  RMSBG  2.8 Profile factor 0.49
+                    -]-0-0-0-0*0*0*0*0*0*0*0*0*0*0*0*0*]*0*0-0-0-0-0-0
+                    -0-0-]-0-]*0*0*0*0*0*0*1*0*0*0*0*0*0*0*1-0-0-0-0-0
+                    -0-0-0-0-]-0*0*1*0*0*0*1*0*1*1*1*0*0*0-0-]-0-0-0-0
+                    -0-0-0-0-0-0-0*0*1*0*1*1*0*1*1*1*0*0-0-0-0-0-0-0-0
+                    -0-0-0-0-0-0-0-0*0*0*1*1*1*2*2*1*1-0-0-0-0-0-0-0-0
+                    -]-0-0-0-0-0-1-1 1 1 2 2 3 3 2 2 1-1-0-0-0-0-0-]-0
+                    -0-0-0-0-0-0-0 1 1 2 3 4 5 6 5 4 3 2-1-1-0-0-]-]-0
+                    -0-0-0-0-1-0 1 1 2 3 6 8 B C B 8 5 3 1-1-0-0-0-0-0
+                    -0-0-0-1-1 0 1 2 4 7 B F I J G C 7 4 2 1-0-0-0-0-0
+                    -0-]-0-0-0 1 2 3 6 C I N R Q L F 9 5 3 1-0-0-0-0-]
+                    -0-0-0-0-0 1 2 5 A H P V W U O H B 5 3 1-1-0-0-0-]
+                    -0-0-0-1-1 1 2 6 C K T Y Z W P I B 6 3 1-0-0-0-]-]
+                    -0-0-0-0-1 1 2 5 B K S X Y V O H A 6 3 1-1-0-0-0-]
+                    -]-0-0-1-1 1 2 4 9 G O T U R L E 9 5 2 1-1-0-]-0-]
+                    -]-0-0-1-1 1 1 3 6 A G L M K F A 7 4 2 0-1-0-0-0-0
+                    -]-0-1-0-1-1 1 2 4 6 9 D E C A 7 4 3 1-1-0-0-0-0-0
+                    -]-0-0-0-0-0-1 1 2 3 5 6 7 6 5 4 3 2-1-0-0-0-0-0-0
+                    -0-]-]-0-1-0-0-1 1 2 3 3 3 3 2 2 2-1-0-0-0-0-]-]-0
+                    -]-0-0-0-0-1-0-1*1*1*1*1*1*1*1*2*1-1-0-0-0-0-]-]-0
+                    -]-0-0-0-0-0-0*0*0*0*1*1*1*1*1*0*0*1-1-0-0-0-0-0-]
+                    -]-]-0-0-0-0*0*0*0*0*1*1*0*0*0*0*0*1*0-0-0-0-0-]-]
+                    -]-]-0-0-0*0*]*0*0*0*0*0*1*0*0*0*0*1*0*0-0-0-0-]-]
+                    -]-]-0-0-0*0*0*0*0*]*]*0*0*0*0*0*0*0*0*0-0-0-0-0-0</pre></li>
+
+<li><p>Check that the program has correctly distinguished background pixels (denoted
+by a &quot;-&quot; in front of the number/letter) and peak pixels. A &quot;*&quot; in front of a
+pixel indicates that this pixel is overlapped by the peak of a neighbouring
+spot. Such pixels are excluded from the integration. This will not cause a
+problem as long as there are a reasonable number of background pixels that are not overlapped
+(ideally more than 50). If the &quot;*&quot; pixels extend as far as the &quot;peak&quot;
+region of the profile, this indicates that the spots are overlapping. If the
+overlap is serious, the detector should be moved back or the collimation
+improved.</p>
+<p>The spot overlap in this case is acceptable, as the profile values for the &quot;*&quot;
+pixels are small (they are represented as 0-9, A-Z).</p>
+<p>If the spot extends outside the peak region into the background, try lowering the PROFILE
+TOLERANCE by a small amount (0.01 or 0.005). The default values are 0.020, 0.030 (first
+value for the centre of the detector, second value for the outside of the detector) for
+synchrotron data.</p>
+<dl>
+<dd>Click <font color="#ff0000">keyword input</font> (Main menu) and type in 'Input reply' window:</dd>
+<dd><font color="#009900">MOSFLM =&gt;</font> <font color="#ff0000">profile tolerance 0.015 0.025</font></dd>
+</dl>
+<p>(You can find the current values in the mosflm.lp file). If the peak region is
+too big (<em>i.e.</em> contains a lot of &quot;0&quot; values), try increasing the tolerance by
+similar amounts.</p>
+<p>If the spots are not fully resolved, you may need to increase the tolerance to
+avoid the &quot;tails&quot; of adjacent spots being included in the peak region.</p>
+<p>Before the listing of the standard profiles, there is a table headed:</p>
+<blockquote>&quot;Statistics on the standard PROFILES&quot;</blockquote>
+<p>In this table, DELX,DELY are the distances (in mm) of the centre of the
+profile from the centre of the box. These values should be a fraction of a
+pixel. If they are more than this, it could indicate poor cell parameters.</p>
+<p>RMSBG indicates the &quot;noisiness&quot; of the profile (it is the variation in the
+background after scaling the peak to 255). If it is bigger than 10.0, the
+profile will be &quot;averaged&quot;, meaning that spots from adjacent areas will be
+included. This should be avoided if possible, and it may be worth increasing
+the maximum allowed value from 10.0 to 20.0 (PROFILE RMSBG 20.0).</p>
+<p>The final column (CORRLN) is the correlation coefficient between that profile
+and the one for the centre of the detector. If this is less than 0.5, it could
+mean that you are integrating further than the resolution limit of the spots.
+It could also mean that the cell (or refined detector parameters) are not
+well defined (see DELX, DELY also).</p>
+<p>If you have time, test the effect of changing this parameter.</p>
+<dl>
+<dd>Click <font color="#ff0000">keyword input</font> (Main menu) and type in 'Input reply' window:</dd>
+<dd><font color="#009900">MOSFLM =&gt;</font> <font color="#ff0000">profile tolerance 0.025 0.04</font></dd>
+</dl>
+<p>Integrate the 10 images again, and compare the resulting profiles with those
+obtained using the default value.</p></li>
+</ol>
+
+<h3><a name="mosflm_integration"></a>Integrating all the images</h3>
+
+<p>Normally the integration would be done as a background job (it is 2-4 times
+faster, because there is a big overhead associated with displaying the images
+in the GUI).</p>
+ 
+<p>The simplest way to do this is through CCP4i. When things look OK, integrate the whole dataset
+(images 1 to 84).</p>
+
+<h4>Exercise</h4>
+
+<ol start="60">
+<li><p>Select the <font color="#ff0000">Data reduction</font> module, and open the
+<font color="#ff0000">Integrate Images</font> task window.</p></li>
+<li><p>At the top, on the line <font color="#009900">Load Parameters from command file</font>, browse for</p>
+<dl>
+<!--<dd><font color="#009900">Take parameters from command file</font></dd>-->
+<dd><font color="#ff0000">DATA process.sav</font></dd>
+</dl>
+<p>then click the button underneath which says</p>
+<dl>
+<dd><font color="#009900">Load Parameters from command file</font>
+</dl>
+<p>This should fill in the bulk of the interface window. There may/will be a warning that the interface cannot
+process certain lines. These will be dealt with below, so click <font color="#009900">Dismiss</font>.</p></li>
+<li><p>On the first line, adapt the job title to something more meaningful such as</p>
+<dl>
+<dd><font color="#009900">Job title</font>
+<font color="#ff0000">Integrating images 1 to 84 HypF Hg (dataproc tutorial step 60)</font></dd>
+</dl><br /></li>
+<li><p>In the Files folder, <b>un-select</b></p>
+<dl>
+<dd><font color="#009900">Use current working directory</font></dd>
+</dl>
+<p>For Directory 1, Browse for</p>
+<dl>
+<dd><font color="#009900">TEST/mosflm/images/</font></dd>
+</dl><br /></li>
+<li><p>Select the Matrix file</p>
+<dl>
+<dd><font color="#009900">Matrix file</font>
+<font color="#ff0000">DATA process.mat</font></dd>
+</dl><br /></li>
+<li><p>Choose a name for the MTZ output file</p>
+<dl>
+<dd><font color="#009900">MTZ out</font>
+<font color="#ff0000">TEST hg_a_1to84_h3.mtz</font></dd>
+</dl><br /></li>
+<li><p>In the Harvesting Parameters folder, select</p>
+<dl>
+<!--<dd><font color="#ff0000">Use current working directory</font></dd>-->
+<font color=blue><dd><font color="#ff0000">Create Harvest file in project harvesting directory</font></dd></font>
+</dl>
+<p>and</p>
+<!--<dl>
+<dd><font color="#009900">Harvest project name</font>
+<font color="#ff0000">HypF</font>
+<font color="#009900">and dataset name</font>
+<font color="#ff0000">Hg</font></dd>
+</dl>-->
+
+
+<dl>
+<dd><font color="#009900">Crystal</font>
+<font color="#ff0000">HypF</font>
+<font color="#009900">belonging to Project</font>
+<font color="#ff0000">TutorialsHypF</font></dd>
+<dd><font color="#009900">Dataset Name</font>
+<font color="#ff0000">Hg</font></dd>
+</dl>
+
+<p>The use of these names and the CCP4 harvesting routines is very strongly recommended. They are
+also used by SCALA when automatically assigning different images to different runs.</p></li>
+
+<li><p>In the Images to Integrate folder, enter</p>
+<dl>
+<dd><font color="#009900">Integrate images from</font>
+<font color="#ff0000">1</font>
+<font color="#009900">to</font>
+<font color="#ff0000">84</font></dd>
+</dl><br /></li>
+
+<li><p>In the Crystal Parameters folder, verify Space group <font color="#ff0000">H3</font>
+(the true space group symmetry can only be established once data have been integrated.
+It is best to be conservative and use the lower symmetry which still
+matches the information we have about cell parameters and systematic absences)
+and the entries for the cell parameters. Enter an estimate for the mosaicity:</p>
+<dl>
+<dd><font color="#009900">Mosaicity</font>
+<font color="#ff0000">0.96</font></dd>
+</dl><br /></li>
+<li><p>Do not change any of the remaining options (unless you know what you are doing and want
+to adapt them to your own findings from a previous run of Mosflm), and click on
+<font color="#ff0000">Run -&gt; Run Now</font>.</p></li>
+
+<li><p>When this has finished, <font color="#ff0000">sort and scale</font>
+the data using the program
+SCALA (see <a href="#step_2bI">step 2bI</a>).</p></li>
+
+<li><p>MOSFLM produces a summary file listing refined parameters for each
+image. Unless assigned to a different filename, this file will be called
+SUMMARY, and it is stored in the current working directory ($HOME/TEST). It can be inspected
+graphically with the CCP4 program LOGGRAPH, as follows:</p>
+<dl>
+<dd>Select <font color="#ff0000">View Any File</font> from the menu on the right of CCP4i</dd>
+<dd>In the Select File to View window, select
+<font color="#009900">File type</font>
+<font color="#ff0000">CCP4 graph file</font>
+<font color="#009900">filename filter</font>
+<font color="#ff0000">*</font></dd>
+<dd>Select <font color="#ff0000">SUMMARY</font> from the right-hand panel</dd>
+<dd>Click <font color="#ff0000">Display&amp;Exit</font></dd>
+</dl>
+<p>This is very useful to identify &quot;rogue&quot; images (with unusually high positional residual, or low
+I/sig(I)). If you find any, read that image into MOSFLM and see what is wrong with it
+[Clue: the image headers contain quite a lot of information that is not used by MOSFLM,
+including the date and time that the image was collected].</p>
+<p>If you have done more than one integration run during your MOSFLM session, you will find multiple
+entries of the tables. Look at the last set for integration of the 84 images.</p>
+<dl>
+<dd>Click on the <font color="#009900">Refined detector parameter</font> tables and check on the
+stability of parameters like the TILT and TWIST of the detector (units are hundredths of a degree)
+and, for Mar Research (or DIP) image plate data, the distortion parameters ROFF and TOFF (units are
+in mm).</dd>
+</dl>
+<p>If they are varying a lot (more than 20 for TWIST/TILT or 0.15 for ROFF/TOFF) then it is
+probably a good idea to fix these parameters at the average value (or the known values of this
+detector, if they are available). This will happen if you have rather weak images (no strong spots
+in the outer regions of the detector). To do this:</p>
+<dl>
+<dd><font color="#009900">MOSFLM =&gt;</font> <font color="#ff0000">REFINEMENT FIX TILT TWIST ROFF TOFF</font></dd>
+</dl>
+<p>Next</p>
+<dl>
+<dd>Click on the <font color="#009900">Post refinement</font> table and check the missets.</dd>
+</dl>
+<p>It does not matter if they change slowly and by an amount (per images) that is less than
+0.1*mosaic&nbsp;spread. If they are changing more than this then there could be a problem with
+processing the data (there is not much you can do about this). Check how the mosaic spread is
+changing. Remember that, by default, although the mosaic spread is refined, the program actually
+uses the INPUT value. If there is clearly a trend that the mosaic spread is changing with phi
+(it can increase due to radiation damage or change because it is anisotropic) then you can either
+make the program use the refined value:</p>
+<dl>
+<dd><font color="#009900">MOSFLM =&gt;</font> <font color="#ff0000">POSTREFINEMENT USEBEAM</font></dd>
+</dl>
+<p>OR you can process the data in blocks of, say, 10-20 images, giving a different input mosaic
+spread for each block.</p>
+</li>
+</ol>
+
+<p><a name="rogue74"></a>There was a beam dump during the collection of these data, which gives a serious
+spike in the statistics at image 74. This is most noticeable in the following graphs:</p>
+<ul>
+<li>Post refinement -&gt; Missets phix phiy phiz v image</li>
+<li>Post refinement -&gt; Mosaic spread v image</li>
+</ul>
+<p>There are three ways of dealing with such an eventuality:</p>
+<ol type="a">
+<li>ignore this during processing, to be dealt with at a later stage</li>
+<li>just use the first 73 images</li>
+<li>use 1-73 and 75-84 in processing</li>
+</ol>
+
+<h3><a name="mosflm_strategy"></a>Running the <tt>STRATEGY</tt> option to determine data collection strategy</h3>
+<p>First, you must start the GUI and get as far as
+<a href="#mosflm_autoindexing">indexing the image</a> (but you don't need to determine the
+<a href="#mosflm_parameter_refinement">cell parameters accurately</a>).</p>
+
+<p>Try the <tt>STRATEGY</tt> option: this allows you to PLAN your data collection to
+optimise the completeness etc.</p>
+
+<ol start="75">
+<li><p>Type the input into the control window which comes up when you click on
+<font color="#ff0000">Strategy</font> (from the Main menu).</p>
+<dl>
+<dd><font color="#009900">MOSFLM =&gt;</font> <font color="#ff0000">strategy</font> (if collecting anomalous data,
+type <font color="#ff0000">strategy anomalous</font>).</dd>
+<dd><font color="#009900">MOSFLM =&gt;</font> <font color="#ff0000">go</font></dd>
+</dl>
+<p>This will tell you how best to collect a full data set. Here is an example of how this
+will look:</p>
+<pre> Optimum rotation gives  99.9% of unique data
+ This corresponds to the following rotation range(s):
+ From  -73.0 to  47.0 degrees
+ Type &quot;STATS&quot; for full statistics.
+ 
+Use the TESTGEN option to determine appropriate oscillation angles to avoid
+spatial overlaps.
+STRATEGY =&gt;</pre></li>
+
+<li><p>To get more detailed statistics on completeness and multiplicity as a function
+of rotation angle and resolution, type <font color="#ff0000">STATS</font> at the
+<font color="#009900">STRATEGY=&gt;</font> prompt. You can scroll up and down this output
+using the scroll buttons (Up/Dn) at the top right of the window.</p></li>
+
+<li><p>You can test what completeness you would get from starting somewhere, <em>as long
+as the range is within the range recommended above by the program</em>. This range is
+given in the i/o window as, for example:</p>
+<pre>Generated reflections for phi range -84.0 to 58.0 Sorting the generated list etc.</pre>
+<p>Then</p>
+<dl>
+<dd><font color="#009900">STRATEGY =&gt;</font> <font color="#ff0000">start -40 end 20</font> (use appropriate values for your example)</dd>
+<dd><font color="#009900">STRATEGY =&gt;</font> <font color="#ff0000">go</font></dd>
+</dl><br /></li>
+
+<li><p>It is generally possible to collect high completeness data without doing the
+full rotation range. For example, a completeness greater than 90% can be
+achieved for two 30 degree segments in an orthorhombic spacegroup. If you are
+short of time, or are worried about radiation damage, it may be a good idea to
+collect this data first, then fill in the rest.</p>
+<p>In this case (H3) high completeness can be achieved with a 40 degree rotation in two
+20 degree segments:</p>
+<dl>
+<dd><font color="#009900">STRATEGY =&gt;</font> <font color="#ff0000">rotate 40 segment 2</font></dd>
+<dd><font color="#009900">STRATEGY =&gt;</font> <font color="#ff0000">go</font></dd>
+</dl>
+<p>Here, the <tt>ROTATE</tt> keyword specifies the total rotation you want to do, and <tt>SEGMENTS 2</tt>
+specifies how many different segments you want to use. This example will find two 20 degree segments that
+give maximum completeness (of course, the multplicity will suffer !). Beware of using more than 3
+segments; the calculation can take a very long time and you gain very little!</p></li>
+
+<li><p><b>Selecting an oscillation angle:</b></p>
+<p>For each segment of data, find the MAXIMUM oscillation angle you can use to
+avoid overlaps.</p>
+<dl>
+<dd><font color="#009900">STRATEGY =&gt;</font> <font color="#ff0000">testgen start -83 end -43</font> (use appropriate values
+for your example)</dd>
+<dd><font color="#009900">STRATEGY =&gt;</font> <font color="#ff0000">go</font></dd>
+</dl><br /></li>
+
+<li><p>This will tell you the maximum angle at 5 degree intervals. This depends on
+the mosaic spread and minimum separation. To see how sensitive it is to these
+parameters, you can enter new values and rerun TESTGEN:</p>
+<dl>
+<dd><font color="#009900">STRATEGY =&gt;</font> <font color="#ff0000">mosaic 1.5</font></dd>
+<dd><font color="#009900">STRATEGY =&gt;</font> <font color="#ff0000">testgen start -83 end -43</font></dd>
+<dd><font color="#009900">STRATEGY =&gt;</font> <font color="#ff0000">go</font></dd>
+</dl><br />
+<dl>
+<dd><font color="#009900">STRATEGY =&gt;</font> <font color="#ff0000">separation 1.8 1.8</font></dd>
+<dd><font color="#009900">STRATEGY =&gt;</font> <font color="#ff0000">testgen start -83 end -43</font></dd>
+<dd><font color="#009900">STRATEGY =&gt;</font> <font color="#ff0000">go</font></dd>
+</dl>
+ 
+<p>(Note that you may get better data using a smaller oscillation angle than that
+suggested here. This is an UPPER limit.)</p></li>
+ 
+<li><p>If you want to test the effect of using a specific oscillation angle, use the <tt>ANGLE</tt> keyword:</p>
+<dl>
+<dd><font color="#009900">STRATEGY =&gt;</font> <font color="#ff0000">testgen start -83 end -43 angle 0.8</font></dd>
+<dd><font color="#009900">STRATEGY =&gt;</font> <font color="#ff0000">go</font></dd>
+</dl>
+<p>This will give the number of overlaps using an 0.8 degree oscillation angle.</p>
+<p><em>Do not worry if you are predicted to get no fully recorded reflections.</em></p>
+<p>MOSFLM will integrate images when every reflection is a partial without any difficulty.</p></li>
+
+<li><p>If you want to know the completeness for a phi range outside the one
+originally recommended by <tt>STRATEGY</tt> you MUST come out of the <font color="#009900">STRATEGY=&gt;</font>
+window by typing <font color="#ff0000">EXIT</font> and re-click on <font color="#ff0000">STRATEGY</font> menu item.
+Then do for example:</p>
+<dl>
+<dd><font color="#009900">MOSFLM =&gt;</font> <font color="#ff0000">strategy start 0 end 180</font></dd>
+</dl>
+
+<p>You can then interrogate the program about completeness for any phi segments in
+the range phi=0 to phi=180.</p></li>
+
+<li><p>If some data have already been collected:<br />
+If you have already taken, say, 20 degrees of data from phi=-10 to phi=10, and
+wanted to find out how to complete the data with an additional 30 degrees, do:</p>
+<dl>
+<dd><font color="#009900">MOSFLM =&gt;</font> <font color="#ff0000">strategy start -10 end 10 parts 2</font></dd>
+<dd><font color="#009900">MOSFLM =&gt;</font> <font color="#ff0000">go</font></dd>
+<dd><font color="#009900">MOSFLM =&gt;</font> <font color="#ff0000">strategy rotate 30 segments 2</font></dd>
+<dd><font color="#009900">MOSFLM =&gt;</font> <font color="#ff0000">go</font></dd>
+</dl>
+<p>The program will then come up with 2 segments of 15 degrees to get the most
+complete data possible. If you have collected data from one crystal (xtal1) using the phi range -10 to 10,
+and now want to collect data from xtal2 and want to know what phi range to collect to maximise completeness,
+do the following:</p>
+<dl>
+<dd><font color="#009900">MOSFLM =&gt;</font> <font color="#ff0000">strategy start -10 end 10 parts 2</font></dd>
+<dd><font color="#009900">MOSFLM =&gt;</font> <font color="#ff0000">matrix xtal1.mat</font></dd>
+<dd><font color="#009900">MOSFLM =&gt;</font> <font color="#ff0000">go</font></dd>
+<dd><font color="#009900">MOSFLM =&gt;</font> <font color="#ff0000">strategy rotate 30 segments 2</font></dd>
+<dd><font color="#009900">MOSFLM =&gt;</font> <font color="#ff0000">matrix xtal2.mat</font></dd>
+<dd><font color="#009900">MOSFLM =&gt;</font> <font color="#ff0000">go</font></dd>
+</dl>
+<p>Here, <tt>xtal1.mat</tt> is the name of the file containing the orientation matrix for crystal xtal1, and <tt>xtal2.mat</tt>
+is that for xtal2. The program will then work out the best two 15 degree segments. You can test the effect of
+smaller rotations (than 30 degrees) by:</p>
+<dl>
+<dd><font color="#009900">MOSFLM =&gt;</font> <font color="#ff0000">rotate 20</font></dd>
+<dd><font color="#009900">MOSFLM =&gt;</font> <font color="#ff0000">go</font></dd>
+</dl><br /></li>
+<li><p><em>If you have not already done it, close the STRATEGY window now by typing <font color="#ff0000">exit</font>
+at the prompt.</em></p></li>
+</ol>
+
+<h3><a name="mosflm_changing_parameters"></a><a name="mosflm_different_mosaic_spreads"></a>The
+effects of changing integration parameters - different mosaic spreads</h3>
+
+<p>If you have time:</p>
+<ol start="85">
+<li><p>Different mosaic spreads:</p>
+<dl>
+<dd>Try repeating the processing with the <font color="#009900">mosaic spread</font>
+<font color="#ff0000">0.2 degrees larger</font>. Try changing the mosaic spread by
+as much as 25%.</dd>
+</dl>
+<p>Can you tell from the merging statistics if this data is better?</p></li>
+</ol>
+
+<h3><a name="mosflm_locating_outliers"></a>The effects of changing integration parameters -
+locating outliers</h3>
+
+<p>If you have time:</p>
+<ol start="86">
+<li><p>Checking up on outliers:</p>
+<p>SCALA writes a file called ROGUES which lists reflections which show
+very poor agreement between symmetry mates, or which are implausibly
+large.</p>
+<p>Look in this file (it is ASCII), and try to work out why this has
+happened. The ROGUES file gives you the image (Batch) on which the
+reflections have been recorded (for partials, this is the image
+nearest the centre of the reflection, so you may need to look on the
+preceeding and following image as well). Select a reflection which shows
+very poor agreement with its symmetry mates (a value greater than 10 in the
+DelI/sd column in the ROGUES file). Read in the image using
+<font color="#ff0000">Read image</font> in the main menu.
+<font color="#ff0000">Predict</font> the reflections, then use
+<font color="#ff0000">Find hkl</font>
+to locate the offending reflection in the image (you must give the
+measured indices, the first set of values in the ROGUES file, when
+doing this). See if there is <font color="#ff0000">anything odd</font> about the spot.
+Remember to check adjacent images for partials.</p></li>
+</ol>
+
+<h3><a name="mosflm_how_accurate_cell"></a>The effects of changing integration parameters -
+how accurate does the cell have to be?</h3>
+
+<p>If you have time:</p>
+<ol start="87">
+<li><p>Investigating the need for accuracy of the cell parameters:</p>
+<dl>
+<dd>Try changing the <font color="#ff0000">cell parameters</font> by (say)
+<font color="#ff0000">1.0%</font> and <font color="#ff0000">integrate</font> the images again.</dd>
+</dl>
+<p>What is the effect on the merging statistics?</p>
+</li>
+</ol>
+
+<!--<h3><a name="mosflm_running_background"></a>Running Mosflm as a background process</h3>
+
+<p>Normally the integration would be done as a background job (it is 2-4 times
+faster, because there is a big overhead associated with displaying the images
+in the GUI).</p>
+ 
+<p>The simplest way to do this is to have a &quot;standard&quot; command file, and use the
+&quot;save&quot; file written by MOSFLM to provide the input for any particular project.</p>
+
+<h4>Exercise</h4>
+
+<ol start="90">
+<li><p>For integration in a background job, <font color="#ff0000">exit</font>
+the graphics program (from Main menu).  When asked to <font color="#009900">save your
+parameters</font>, say <font color="#ff0000">yes</font> (default).</p></li>
+
+<li><p>You can integrate the whole data set by adding the following lines to the end
+of the file (hg_001.sav):</p>
+<dl>
+<dd><font color="#ff0000">POSTREF FIX ALL</font></dd>
+<dd><font color="#ff0000">process 1 to 84</font></dd>
+<dd><font color="#ff0000">RUN</font></dd>
+</dl><br /></li>
+
+<li><p>Execute this by running the command file <tt>mosflm.com</tt>:</p>
+<blockquote><pre>#!/bin/csh -f
+ipmosflm coords mosflm1.crd spotod mosflm1.spt \
+         genfile mosflm1.gen hklout mosflm1.mtz \
+         summary mosflm1.sum &lt; hg_001.sav
+rm mosflm1.crd
+rm mosflm1.spt
+rm mosflm1.gen
+exit</pre></blockquote>
+<p><i>N.B.</i> make sure not to have any trailing spaces on the lines ending with '\'.</p></li>
+</ol> -->
+
+<h3><a name="mosflm_restart"></a>Restarting an interactive Mosflm process</h3>
+
+<ol start="95">
+<li><p>Start Mosflm as normal (<font color="#009900">&gt;</font>
+<font color="#ff0000">mosflm</font>). Then</p>
+<dl>
+<dd><font color="#009900">MOSFLM =&gt;</font> <font color="#ff0000">@hg_001.sav</font></dd>
+</dl>
+<p>Make sure the .sav file contains an 'IMAGE' record (copy from <tt>runit</tt>, for instance, or type
+in at MOSFLM =&gt;):</p>
+<dl>
+<dd><font color="#009900">MOSFLM =&gt;</font> <font color="#ff0000">IMAGE hg_001.mar1600</font></dd>
+<dd><font color="#009900">MOSFLM =&gt;</font> <font color="#ff0000">go</font></dd>
+</dl><br /></li>
+</ol>
+
+<h3><a name="mosflm_processing_own_data"></a>Processing your own data</h3>
+<p>You should now be in a position to process your own data. Refer to
+these notes, and also make use of the
+<a href="http://www.mrc-lmb.cam.ac.uk/harry/mosflm/mosflm_user_guide.html">on-line Mosflm user guide</a> and
+other documents available on the
+<a href="http://www.mrc-lmb.cam.ac.uk/harry/mosflm/">same site</a>. For answers to problems not resolved by
+these sources, feel free to e-mail <a href="mailto:harry@mrc-lmb.cam.ac.uk">Harry Powell</a>.</p>
+<p>Another source of information is &quot;on-line&quot; help. If you type &quot;help&quot;
+at the &quot;MOSFLM =&gt;&quot; prompt (after starting the program) all possible
+keywords are listed, with information on each keyword. This
+information is stored in an ascii file (mosflm.hlp) which can also be
+read (and searched) with an editor. This relies on having the
+environment variable &quot;CCP4_HELPDIR&quot; set to the directory containing this
+file.</p>
+
+<h2><a name="scala"></a><a name="step_2bI"></a>2bI) Data reduction - Alternative I</h2>
+
+<h4>The Problem</h4>
+
+<p>This example will take the output from step 2a. We will do the scaling in spacegroup H3,
+look at the output, look at excluding 'rogue' images from scaling, check statistics tabulated
+by program TRUNCATE and investigate the true spacegroup (H3 or H32?). We will optionally
+look at an anomalous Patterson (Harker section Z=0).</p>
+
+<h4>Exercise</h4>
+
+<ol start="100">
+<li>Select the <font color="#ff0000">Data reduction</font> module, and open the
+<!--<font color="#ff0000">Scale experimental intensities</font> task window.</li>-->
+<font color="#ff0000">Scale and merge Intensities</font> task window.</li>
+ 
+<li><p>On the first line, enter a suitable job title such as</p>
+ 
+<dl>
+<dd><font color="#009900">Job title</font>
+<font color="#ff0000">MOSFLM into SCALA HypF Hg H3 (dataproc tutorial step 100)</font></dd>
+</dl><br /></li>
+ 
+<li><p>On the third line <b>Select</b></p>
+<dl>
+<dd><font color="#009900">Separate anomalous pairs for merging statistics</font></dd>
+</dl>
+<p>(the crystals have been soaked in a mercury compound).</p>
+</li>
+<li><p>Select the input MTZ file</p>
+<dl>
+<dd><font color="#009900">MTZ in</font>
+<font color="#ff0000">TEST hg_a_1to84_h3.mtz</font></dd>
+</dl>
+<p>(If you do not have this file from the previous session, take the file from the DATA directory).</p>
+</li>
+ 
+<li><p>In the folder <font color="#009900">Convert to SFs &amp; Wilson Plot</font>
+<b>Enter</b></p>
+<dl>
+<dd><font color="#009900">Estimated number of residues in the asymmetric unit</font>
+<font color="#ff0000">91</font></dd>
+</dl><br /></li>
+
+<li><p>In the folder <font color="#009900">Data Harvesting</font> <b>Select</b></p>
+<dl>
+<dd><font color="#ff0000">Use current working directory</font></dd>
+</dl><br /></li>
+ 
+<li><p>In the folder <font color="#009900">Scaling Protocol</font> <b>Select</b></p>
+<dl>
+<dd><font color="#009900">Scale</font>
+<font color="#ff0000">On rotation axis with secondary beam correction</font>
+<font color="#009900">with</font>
+<font color="#ff0000">Isotropic</font>
+<font color="#009900">Bfactor scaling</font></dd>
+</dl><br /></li>
+ 
+<li><p>Do not change any of the remaining options, and
+click on <font color="#ff0000">Run -&gt; Run Now</font>.</p></li>
+
+<li><p>When the job has finished, return to the main window,
+highlight the job in the <strong>Job List</strong>, and select
+<font color="#ff0000">View Files from Job -&gt; View Log Graphs</font>.
+This opens up the <tt>loggraph</tt> viewer. Graphs are selected by
+first clicking in the middle window to select a group of graphs,
+and then clicking in the bottom window to select a particular
+graph. Please note that you can alter the layout of the loggraph
+window by using the Appearance, Edit and Utilities facilities
+provided (<i>e.g.</i> <i>Legend Position</i> can be found under
+<tt>Edit&nbsp;&gt;&nbsp;Title&amp;Legend</tt>).</p>
+<dl>
+<dt><font color="#009900">&gt;&gt;&gt; Scales v rotation range</font></dt>
+<dd><p>Check for smooth variation in the scale factor.</p></dd>
+<dd><p>Check the variation in B-factor with image (<font color="#009900">B v range</font>),
+and if there is no real variation (less than 2 or 3 units, either positive or negative)
+it is best to turn off the B-factor refinement.</p></dd>
+<dd><p>Check the <font color="#009900">Number rejected v range</font> graph for
+oddities - this may tell you something about 'rogue' images.</p></dd>
+
+<dt><font color="#009900">Analysis against batch</font></dt>
+<dd><p>Use to detect &quot;bad&quot; images.</p></dd>
+<dd><p>Check <font color="#009900">Rmerge v Batch</font> for batches with high R-factor.</p></dd>
+<!--<dd><p>(what can we say about the graphs <font color="#009900">Imean &amp; RMS Scatter</font>
+and <font color="#009900">Imean/RMS scatter</font>? Could they be grouped in the loggraph
+set somehow, seeing as they work with the same parameters?)</p></dd>-->
+<dd><p>Check <font color="#009900">Number of rejections v Batch</font>
+for a large number of rejected spots.</p></dd>
+
+<dt><font color="#009900">Analysis against resolution</font></dt>
+<dd><p>Gives some useful statistics as a function of resolution. It uses two different ways
+of estimating the standard deviations of the observed merged intensities:</p>
+  <ol>
+    <li>The data integration software estimates experimental SDs (<b>Sd_Exptl</b>)
+based on the number of pixels measured, plus other parameters, and a standard
+deviation for each mean intensity can be derived from these.</li>
+    <li>The other approach uses the scatter (spread) of observations around the mean.
+If there are enough observations (more than 12 perhaps), the standard deviation could
+be estimated from the rms <b>scatter</b> of the observations, where <b>observed scatter</b>
+is defined as the differences between an individual estimate of intensity and the mean of
+all other estimates from symmetry mates.</li>
+  </ol>
+</dd>
+<dd><p><font color="#009900">I/scatter, Mn(I)/sd_Exptl, (Mn(I))</font></p>
+<p>Once the standard deviations are corrected (see <a href="#standard_deviation_estimations">below</a>),
+the effective resolution limit of the data is determined from the ratio <b>Mn(I)/sd_Exptl</b>.
+This is the best indicator of data quality. This table also shows shell and cumulative R-factors.</p></dd>
+<dd><p><font color="#009900">Rmerge v Resolution</font></p></dd>
+<dd><p><font color="#009900">Average I, sd_Exptl, Scatter</font></p></dd>
+<dd><p><font color="#009900">Fractional bias</font> may show an indication of &quot;Partial bias&quot;.
+A negative partial bias will result if the mosaic spread is underestimated, or if there
+is a lot of diffuse scatter. The TAILS correction can be used in SCALA to correct for diffuse
+scatter. The Fractional bias should be less than 1-2%, although it will often exceed this
+for weak data (<em>e.g.</em> in the high resolution bins).</p></dd>
+
+<dt><font color="#009900">Analysis against intensity</font></dt>
+<dd><p><font color="#009900">Rmerge v Intensity</font></p></dd>
+<dd><a name="standard_deviation_estimations"></a>
+<p><font color="#009900">Standard deviation estimations</font></p>
+<p>Statistics about the ratio of <b>scatter/Sd_Exptl</b> for the whole data set can
+be used to judge the accuracy of the experimental estimate. The distribution should have a
+mean of 0.0, and a standard deviation of 1.0 (since the mean is 0, the SD of the ratio also
+happens to be equal to its RMS value). 
+This is described as the chi<sup>2</sup> test in SCALEPACK,
+and is the basis of the widely used normal probability analysis.</p>
+<p>The Sd_Exptl that come from MOSFLM are almost always underestimates of the
+true error, and these values can be scaled up in SCALA using a two-term correction:</p>
+<blockquote>sd_corrected = SdFac * Sqrt[sd_Exptl(I)**2 + (SdAdd I)**2]</blockquote>
+<p>Here &quot;SdFac&quot; is an overall scale factor, and &quot;SdAdd&quot; is an intensity
+dependent factor.
+SCALA will automatically work out a suitable correction factor, SdFAc,  for Sd_Exptl
+to make the standard deviation of the ratio equal 1.0, as is done in SCALEPACK.
+This ratio is tabulated in <font color="#009900">Standard deviation v. Intensity</font>
+(standard deviation estimations as a function of intensity), and you may need to adjust SdAdd to get it
+close to 1.0 for all intensity ranges (if it is greater than 1.0
+for strong reflections, SdAdd should be increased, if less than 1.0 then SdAdd should
+be decreased).</p></dd>
+
+
+<dt><font color="#009900">Axial reflections</font></dt>
+<dd><p>These graphs are useful for detecting systematic absences, which can be used to identify the true space group.</p></dd>
+<dd><p><font color="#009900">I/sigI vs. index (h, k or l)</font></p></dd>
+<dd><p><font color="#009900">I vs. index (h, k or l)</font></p></dd>
+
+
+
+<!-- SIGMA   :- rms scatter of observations
+          sd      :- average standard deviation derived from experimental SDs, after
+                  :- application of SDFAC SDADD
+
+<li><p>It can also be useful to look at the logfile itself, in particular the table giving
+statistics as a function of resolution. The effective resolution limit of the data can
+be determined by looking at the Mn(I)/sd column (this is the mean I/sig(I) AFTER
+merging symmetry mates, and is the best indicator of data quality. This table also shows
+shell and cumulative R-factors.</p>
+<p>The Mn(I)/sd values depend on having realistic values of the standard deviation (errors)
+in the intensities. As the values that come from MOSFLM are always underestimates of the
+true error, these values are scaled up in SCALA using a two-term correction:</p>
+<blockquote>sdcorrected = SdFac * Sqrt[sd(I)**2 + (SdAdd I)**2]</blockquote>
+<p>Here &quot;SdFac&quot; is an overall scale factor, and &quot;SdAdd&quot; is an intensity
+dependent factor.</p>
+<p>SCALA will automatically work out a suitable value for SdFac, in order to make the mean
+value of (observed scatter)/(sdestimate) equal to 1.0, where &quot;observed scatter&quot;
+is the differences between an individual estimate of intensity and the mean of all other
+estimates (from symmetry mates).</p>
+<p>This ratio is tabulated as a function of intensity, and you may need to adjust SdFac
+to get a ration close to 1.0 for all intensity ranges (if the ratio is greater than 1.0
+for strong reflections, SdAdd should be increased, if less than 1.0 then SdAdd should
+be decreased). In the SCALA logfile, this table comes under the heading:</p>
+<blockquote><pre>                               ANALYSIS OF STANDARD DEVIATIONS
+                               ===============================</pre></blockquote>
+<dl>
+<dd>Can you identify a bad image in this data?</dd>
+<dd>Can you work out why it is bad?</dd>
+</dl>
+<p>[Clue: the image headers contain quite a lot of information that is not used by MOSFLM,
+including the date and time that the image was collected.]</p></li>-->
+</dl>
+</li>
+</ol>
+
+<p>You can exclude a given batch from the scaling. As established <a href="#rogue74">above</a>, batch number 74 is a rather
+serious outlier.</p>
+<ol start="110">
+<li><p>Change the job title:</p>
+<dl>
+<dd><font color="#009900">Job title</font>
+<font color="#ff0000">MOSFLM into SCALA HypF Hg H3 exclude batch 74 (dataproc tutorial step 110)</font></dd>
+</dl><br /></li>
+<li><p>Change the number for the output MTZ file:</p>
+<dl>
+<dd><font color="#009900">MTZ out</font>
+<font color="#ff0000">TEST hg_a_1to84_h3_scala2.mtz</font></dd>
+</dl>
+<p>In the Excluded Data folder, select</p>
+<dl>
+<dd><font color="#ff0000">Exclude selected batches</font></dd>
+</dl>
+<p>Then</p>
+<dl>
+<dd><font color="#009900">Exclude a</font>
+<font color="#ff0000">list</font>
+<font color="#009900">of batches:</font>
+<font color="#ff0000">74</font></dd>
+</dl><br />
+</li>
+<li><p>Do not change any of the remaining options, and click on
+<font color="#ff0000">Run -&gt; Run Now</font>.</p></li>
+</ol>
+
+<p>As part of the SCALA task, the program TRUNCATE was run. This program converts intensities
+to amplitudes, and also compiles some useful statistics. The so called &quot;cumulative
+intensity statistics&quot; tabulated by TRUNCATE (and plotted by LOGGRAPH) provides the only
+point at which you will be able to detect merohedral twinning (when the two lattices of the
+twin components exactly overlap, and every measured intensity is actually the sum of two
+intensities).</p>
+<ol start="115">
+<li><p>For a good dataset, the observed distribution should be within 1% of the theoretical
+distribution. Is this the case for this data?</p></li>
+</ol>
+
+<p><a name="anompatt"></a>At this stage, we can have a look at the anomalous Patterson for these data.</p>
+
+<ol start="120">
+<li><p>Select the <font clor="#ff0000">Map &amp; Mask Utilities</font> module, and
+open the <font color="#ff0000">Generate Patterson Map</font> task window.</p></li>
+
+<li><p>On the first line, enter a suitable job title such as</p>
+<dl>
+<dd><font color="#009900">Job title</font>
+<font color="#ff0000">Anomalous Peak Patterson HypF Hg (dataproc tutorial step 120)</font>.</dd>
+</dl><br /></li>
+<li><p>On the next line, select</p>
+<dl>
+<dd><font color="#009900">Run FFT to generate</font>
+<font color="#ff0000">Patterson using anom diff (D) data</font></dd>
+</dl>
+<p>then select with the radio button</p>
+<dl>
+<dd><font color="#009900">Plot</font>
+<font color="#ff0000">user defined</font>
+<font color="#009900">map sections with</font>
+<font color="#ff0000">no coordinates</font></dd>
+</dl><br /></li>
+<li><p>Select the input MTZ file</p>
+<dl>
+<dd><font color="#009900">MTZ in</font>
+<font color="#ff0000">TEST</font>
+<font color="#ff0000">hg_a_1to84_h3_scala2.mtz</font></dd>
+</dl>
+<p>(If you do not have this file from the previous session, take the file from the DATA
+directory.)</p>
+
+<p>The rest of the Files folder should be filled in automatically. Please check:</p>
+<dl>
+<dd><font color="#009900">AnomDif</font>
+<font color="#ff0000">DANO_Hg</font>
+<font color="#009900">SigmaD</font>
+<font color="#ff0000">SIGDANO_Hg</font></dd>
+<dd><font color="#009900">FPH</font>
+<font color="#ff0000">F_Hg</font>
+<font color="#009900">SigmaFPH</font>
+<font color="#ff0000">SIGF_Hg</font></dd>
+<dd><font color="#009900">Map</font>
+<font color="#ff0000">TEMPORARY</font>
+<font color="#ff0000">hg_a_1to84_h3_patterson1.map</font></dd>
+<dd><font color="#009900">Peak coord</font>
+<font color="#ff0000">TEST</font>
+<font color="#ff0000">hg_a_1to84_h3_peaks1.pdb</font></dd>
+</dl><br /></li>
+<li><p>In the folder <font color="#009900">Exclude Reflections</font>, enter</p>
+<dl>
+<dd><font color="#009900">Exclude reflections with difference between F1 and F2 &gt;</font>
+<font color="#ff0000">9999</font></dd>
+</dl><br /></li>
+<li><p>In the folder <font color="#009900">Select Plot Sections</font>, select</p>
+<dl>
+<dd><font color="#009900">Define sections in</font>
+<font color="#ff0000">grid units</font></dd>
+</dl>
+<p>Use the <font color="#009900">Add sections</font> button to select:</p>
+<dl>
+<dd><font color="#009900">Plot sections on</font>
+<font color="#ff0000">Z</font>
+<font color="#009900">axis from</font>
+<font color="#ff0000">0</font>
+<font color="#009900">to</font>
+<font color="#ff0000">0</font>
+<font color="#009900">in steps of</font>
+<font color="#ff0000">1</font></dd>
+</dl><br /></li>
+<li><p>In the folder <font color="#009900">Plot Details</font>, enter</p>
+<dl>
+<dd><font color="#009900">Contour levels from</font>
+<font color="#ff0000">1.0</font>
+<font color="#009900">to</font>
+<font color="#ff0000">20.0</font>
+<font color="#009900">by intervals of</font>
+<font color="#ff0000">0.5</font></dd>
+<dd><font color="#009900">Set maximum plot size</font>
+<font color="#ff0000">15.0</font>
+<font color="#009900">cms&nbsp;&nbsp;Or define plot scale</font>
+<font color="#ff0000">2.0</font>
+<font color="#009900">mm/A&nbsp;&nbsp;Character size</font>
+<font color="#ff0000">3.0</font></dd>
+</dl>
+<p>Leave the rest of this folder as is.</p></li>
+<li><p>Select <font color="#ff0000">Run -&gt; Run Now</font>.</p></li>
+<li><p>After the job has finished, click on <font color="#ff0000">View Files from Job -&gt;
+TEST_<em>jobnumber</em>_1.plt</font> and look at the plot. Also click on
+<font color="#ff0000">View Files from Job -&gt; View Log File</font>. In the
+log file, <font color="#ff0000">Find</font> the string
+<font color="#ff0000">height/rms</font>. Look at peaks with Z=0 (which is
+the Harker section, shown in the plot) and compare. There should be 7 peaks
+above the threshold, many of which are true symmetry equivalents. We will see
+later that all but the 0,0,0 peak are symmetry equivalents.</li>
+</ol>
+
+<p>We do not know at this stage if the spacegroup is H3 or H32. To test the higher symmetry,
+do the following:</p>
+<ol start="130">
+<li><p>From the list of options at the left hand side of the main window, <font color="#ff0000">select
+Sort/Modify/Combine MTZ files</font>. In the new window give a new title such as</p>
+<dl>
+<dd><font color="#ff0000">Domain Hg reindex as H32 (tutorial step 130)</font></dd>
+</dl><br /></li>
+<li><p>In the Protocol folder, select</p>
+<dl>
+<dd><font color="#009900">Change space group and/or reindex reflections</font></dd>
+</dl><br /></li>
+<li><p>In the Files folder, browse for the input MTZ file:</p>
+<dl>
+<dd><font color="#009900">MTZ in</font>
+<font color="#ff0000">TEST</font>
+<font color="#ff0000">hg_a_1to84_h3.mtz</font></dd>
+</dl>
+<p>The output filename will be generated automatically, but is better to change it to:</p>
+<dl>
+<dd><font color="#009900">MTZ out</font>
+<font color="#ff0000">TEST</font>
+<font color="#ff0000">hg_a_1to84_h32.mtz</font></dd>
+</dl><br /></li>
+<p>In the folder <font color="#009900">Reindex Details</font> enter</p>
+<dl>
+<dd><font color="#009900">Change spacegroup to</font> <font color="#ff0000">H32</font></dd>
+</dl><br /></li></font>
+<li><p>Do not change any of the remaining options, and
+click on <font color="#ff0000">Run -&gt; Run Now</font>.</p></li>
+<li><p>When the job has finished, return to the <font color="#009900">Scala - Scale Experimental Intensities</font>
+window, select the newly reindexed MTZ file as input for scaling and change the job title.</p></li>
+<li><p>Do not change any of the remaining options, and
+click on <font color="#ff0000">Run -&gt; Run Now</font>.</p>
+<p>The scaling will now be performed in space group H32. After the job has finished, click on
+<font color="#ff0000">View Files from Job -&gt; View Log Graphs</font> and then, in the Loggraph window,
+from the <font color="#009900">Tables in File</font> panel, select
+<font color="#ff0000">Completeness, multiplicity, Rmeas v. resolution</font>.</p></li>
+<li><p>Now we can revisit the anomalous Patterson. From the Job List of the Main Window of CCP4i,
+select the Patterson job that was run <a href="#anompatt" target="_self">before</a>; then click
+on <font color="#ff0000">ReRun Job..</font> (on the right-hand side of the Main Window).</p>
+<p>In the Generate Patterson Map Task window, adapt the title to reflect the new spacegroup:</p>
+<dl>
+<dd><font color="#009900">Job title</font>
+<font color="#ff0000">anomalous patterson for domain Hg H32 exclude batch 74 (tutorial step 137)</font></dd>
+</dl>
+<p>In the Files folder, change the input MTZ file</p>
+<dl>
+<dd><font color="#009900">MTZ in</font>
+<font color="#ff0000">TEST</font>
+<font color="#ff0000">hg_a_1to84_h32_scala2.mtz</font></dd>
+</dl>
+<p>Leave everything else as is, and click on
+<font color="#ff0000">Run -&gt; Run Now</font>.</p>
+<p>After the job has finished, compare the plot for H32 with that of H3. Also have a look at
+the height/rms table in the log file. All peaks with Z=0 should now have the same value - they
+are true equivalents in this spacegroup.</p>
+</li>
+</ol>
+
+<h2><a name="truncate"></a><a name="step_2bII"></a>2bII) Data reduction - Alternative II</h2>
+
+<h4>The Problem</h4>
+
+<p>This example will start with intensity data that has already been scaled
+and merged (<i>e.g.</i> with <tt>scala</tt> or <tt>scalepack</tt>).
+The data are from the crystal structure of GerE, a transcription activator from <i>Bacillus
+subtilis</i>, which was solved by MAD phasing using the Se signal
+(V.M.A. Ducros, R.J. Lewis, C.S. Verma, E.J. Dodson, G. Leonard, J.P. Turkenburg,
+G.N. Murshudov, A.J. Wilkinson and J.A. Brannigan, <i>J. Mol. Biol.</i> (2001)
+<b>306</b> 759-771).</p>
+
+<p>We are first going to
+convert the intensities from scalepack output to structure factor amplitudes, then
+from scala output to structure factor amplitudes, and discuss some
+statistics that are generated. These statistics are essential for
+assessing the quality of the data, whether there is anisotropy,
+and whether there is twinning.</p>
+
+<p>This procedure will output a file of structure factor amplitudes and intensities for the
+reflections that were collected. It is considered good practice
+to add in all other reflections appropriate to the spacegroup
+and resolution, even if there is no data for them (&quot;completing the
+dataset&quot;) and to add a column of free-R flags at this stage to the master dataset.</p>
+
+<h4>Exercise</h4>
+
+<ol start="200">
+<li><p>Select the <font color="#ff0000">Data Reduction</font> module,
+and open the <font color="#ff0000">Import Merged Data</font>
+task window.</p></li>
+
+<li><p>On the first line, enter a suitable job title such as</p>
+<dl>
+<dd><font color="#009900">Job title</font>
+<font color="#ff0000">Input scalepack and generate SFs for GerE native data (dataproc tutorial step 200)</font>.</dd>
+</dl><br /></li>
+
+<li><p>On the next line <strong>Select</strong></p>
+<dl>
+<dd><font color="#009900">Convert scaled data output from <font color="#ff0000">Scalepack (DENZO)</font>
+into MTZ format</font></dd>
+</dl>
+
+<p><strong>Select</strong></p>
+<dl>
+<dd><font color="#009900">Use anomalous data</font> (default)</dd>
+</dl>
+
+<p><strong>Select</strong></p>
+<dl>
+<dd><font color="#009900">Run Truncate to convert intensities to structure factors </font> (default)</dd>
+</dl>
+
+<p><strong>Select</strong></p>
+<dl>
+<dd><font color="#009900">Keep the input intensities in the output MTZ file</font></dd>
+</dl>
+
+<p><strong>Select</strong></p>
+<dl>
+<dd><font color="#009900">Ensure unique data &amp; add FreeR column for</font>
+<font color="#ff0000">0.05</font>
+<font color="#009900">fraction of data.</font></dd>
+</dl>
+<p>using the radiobuttons (do NOT select 'Copy FreeR from another MTZ').</p>
+</li>
+
+<li><p>Now enter the input file as:</p>
+<dl>
+<dd><font color="#009900">in </font><font color="#ff0000">DATA gere_nat.sca</font></dd>
+</dl>
+
+<p>The output file will be automatically set to:</p>
+<dl>
+<dd><font color="#009900">MTZ out</font> <font color="#ff0000">TEST gere_nat.mtz</font></dd>
+</dl><br /></li>
+
+<li><p>In the folder <font color="#009900">MTZ Project, Crystal, Dataset Names &amp; Data Harvesting</font>,</p>
+<p><strong>Select</strong></p>
+<dl>
+<dd><font color="#009900">Create harvest file in project harvesting directory</font></dd>
+</dl>
+
+<p><strong>Enter</strong></p>
+<dl>
+<dd><font color="#009900">Crystal</font>
+<font color="#ff0000">gereTEST</font>
+<font color="#009900">belonging to Project</font>
+<font color="#ff0000">gere</font></dd>
+<dd><font color="#009900">Dataset name</font>
+<font color="#ff0000">nat</font></dd>
+<dl><br /></li>
+
+<li><p>In the folder <font color="#009900">Extra Information for MTZ File</font>,</p>
+<p>leave the space group as <font color="#ff0000">C2</font></p>
+<p>and cell as <font color="#ff0000">108.742    61.679    71.652    90.000    97.151    90.000</font></p>
+<p>We need to enter the wavelength the data was collected at:</p>
+<dl>
+<dd><font color="#009900">Data collected at wavelength</font>
+<font color="#ff0000">0.870</font>
+<font color"#009900">Angstroms</font></dd>
+</dl>
+<p>We also need to enter an estimate of the number of residues in the
+asymmetric unit. This is used in Wilson scaling, which allows one
+to put the data on an approximate absolute scale.</p>
+<dl>
+<dd><font color="#009900">Estimated number of residues in the asymmetric unit</font>
+<font color="#ff0000">444</font></dd>
+</dl>
+
+<p>(there are 6 chains of 74 residues each in the asymmetric unit).</p>
+</li>
+
+<li><p>Do not change any of the remaining options, and
+click on <font color="#ff0000">Run -&gt; Run Now</font>.</p></li>
+
+<li><p>When the job has finished, return to the main window,
+highlight the job in the <strong>Job List</strong>, and select
+<font color="#ff0000">View Files from Job -&gt; View Log Graphs</font>.
+This opens up the <tt>loggraph</tt> viewer. Graphs are selected by
+first clicking in the middle window to select a group of graphs,
+and then clicking in the bottom window to select a particular
+graph.</p></li>
+
+<li><p>The graphs in <font color="#ff0000">Acentric Moments of ...</font>,
+<font color="#ff0000">Centric Moments of ...</font> and
+<font color="#ff0000">Cumulative intensity distribution</font> are
+useful for deciding whether twinning is present. Have a look at
+these graphs. Use the cross-wires to estimate values. Compare
+the plotted values of the moments with the
+<font color="#009900">Expected values</font> shown at the top
+of the window. These plots
+confirm there is no problem with twinning.
+The graph of the 2nd moment is the clearest.</p>
+
+<p>(<em>See the <a href="dataproc-doc.html#twinning">accompanying
+document</a> for an example where twinning occurs.</em>)</p></li>
+
+<li><p>Next, look at the graphs in <font color="#ff0000">Anisotropy
+analysis (FALLOFF)</font>. The graph of
+<font color="#ff0000">Mn(F/sd) v. resolution</font>
+suggests that the data is slightly
+poorer along direction 3, which is defined to be perpendicular
+to a* and b*, <em>i.e.</em> there is some anisotropy in the data.</p></li>
+
+<li><p>Close the loggraph window using
+<font color="#ff0000">File -&gt; Exit</font>.
+Close all other interface windows except the main window.</p></li>
+
+<li><p>Next, view the output MTZ file by selecting
+in the main window <font color="#ff0000">View Files from Job -&gt;
+gere_nat.mtz</font>. First, notice that there are now
+extra columns, including one holding FreeR flags:</p>
+
+<pre class="green"> * Column Labels :
+ 
+      H K L FreeR_flag F_nat SIGF_nat DANO_nat SIGDANO_nat F_nat(+) SIGF_nat(+)
+      F_nat(-) SIGF_nat(-) IMEAN_nat SIGIMEAN_nat I_nat(+) SIGI_nat(+)
+      I_nat(-) SIGI_nat(-) ISYM_nat
+</pre></li>
+
+<li><p>Click on <font color="#ff0000">List More Info</font> at the
+bottom of the display window. Accept the defaults
+and click <font color="#ff0000">Apply&amp;Exit</font>. Now
+look at the table of statistics near the bottom of the display window:</p>
+
+<pre class="green"> OVERALL FILE STATISTICS for resolution range   0.000 -   0.216
+ =======================
+ 
+ 
+ Col Sort    Min    Max    Num      %     Mean     Mean   Resolution   Type Column
+ num order               Missing complete          abs.   Low    High       label
+ 
+   1 ASC    -50      50      0  100.00     -1.9     19.0  71.07   2.15   H  H
+   2 NONE     0      28      0  100.00     10.5     10.5  71.07   2.15   H  K
+   3 NONE     0      33      0  100.00     12.5     12.5  71.07   2.15   H  L
+   4 NONE    0.0    19.0     0  100.00     9.47     9.47  71.07   2.15   I  FreeR_flag
+   5 NONE   16.1  1700.4   298   98.84   191.79   191.79  14.95   2.15   F  F_nat
+   6 NONE    2.3    92.8   298   98.84    11.45    11.45  14.95   2.15   Q  SIGF_nat
+   7 BOTH    0.0     0.0 24528    4.82     0.00     0.00  14.22   2.15   D  DANO_nat
+   8 BOTH    0.0     0.0 24528    4.82     0.00     0.00  14.22   2.15   Q  SIGDANO_nat
+   9 NONE   16.1  1700.4   298   98.84   191.79   191.79  14.95   2.15   G  F_nat(+)
+  10 NONE    2.3    92.8   298   98.84    11.45    11.45  14.95   2.15   L  SIGF_nat(+)
+  11 NONE   16.1  1700.4 24528    4.82   221.49   221.49  14.22   2.15   G  F_nat(-)
+  12 NONE    5.0    92.8 24528    4.82    17.89    17.89  14.22   2.15   L  SIGF_nat(-)
+  13 NONE    2.9 29120.6   298   98.84   672.49   672.49  14.95   2.15   J  IMEAN_nat
+  14 NONE    3.8  1633.6   298   98.84    41.16    41.16  14.95   2.15   Q  SIGIMEAN_nat
+  15 NONE    2.9 29120.6   298   98.84   672.49   672.49  14.95   2.15   K  I_nat(+)
+  16 NONE    3.8  1633.6   298   98.84    41.16    41.16  14.95   2.15   M  SIGI_nat(+)
+  17 NONE    2.9 29120.6 24528    4.82  1081.29  1081.29  14.22   2.15   K  I_nat(-)
+  18 NONE    5.4  1633.6 24528    4.82    81.38    81.38  14.22   2.15   M  SIGI_nat(-)
+  19 BOTH     1       1    298   98.84      1.0      1.0  14.95   2.15   Y  ISYM_nat
+ 
+ 
+ No. of reflections used in FILE STATISTICS    25769</pre>
+
+<p>The standardise procedure has added 298 reflections, for which the
+structure factor amplitude is labelled as missing. The completeness
+is thus calculated as (25769 - 298)/25769 = 98.84%</p></li>
+
+<li><p>Close all interface windows except the main window.</p></li>
+</ol>
+
+<h2><a name="step_2c"></a>2c) Combine native data with MAD data ready for experimental phasing</h2>
+
+<h4>The Problem</h4>
+
+<p>You now have a file of structure factors suitable for using in
+structure solution. To carry out experimental phasing, you will need
+two or more datasets. You need to repeat steps 200 to 206 (or 213) for all these.
+Thus you will have several files, obtained from
+different crystals, different wavelengths or for heavy atom derivatives. It is convenient
+to combine all these files into one MTZ file. In this example, we
+will combine the native data we have just processed with some MAD
+data for a selenomethionine derivative of GerE.</p>
+
+<p>There are four wavelengths collected. Here are the approximate wavelengths
+and f' and f&quot; values for Se.</p>
+<table>
+<tr><th></th><th>&nbsp;&nbsp;Wave</th><th>&nbsp;&nbsp;f'</th><th>&nbsp;&nbsp;f&quot;</th></tr>
+<tr><td>hrm</td><td>&nbsp;&nbsp;0.886</td><td>&nbsp;&nbsp;-3</td><td>&nbsp;&nbsp;1</td></tr>
+<tr><td>safepeak</td><td>&nbsp;&nbsp;0.9793</td><td>&nbsp;&nbsp;3</td><td>&nbsp;&nbsp;3</td></tr>
+<tr><td>peak</td><td>&nbsp;&nbsp;0.9795</td><td>&nbsp;&nbsp;-4</td><td>&nbsp;&nbsp;4</td></tr>
+<tr><td>infl</td><td>&nbsp;&nbsp;0.9797</td><td>&nbsp;&nbsp;-6</td><td>&nbsp;&nbsp;2</td></tr>
+</table>
+
+<p>The related file names are:</p>
+
+<blockquote><pre>gere_hrm.mtz
+
+gere_safepeak.mtz
+
+gere_peak.mtz
+
+gere_infl.mtz</pre></blockquote>
+
+<h4>Exercise</h4>
+
+<ol start="300">
+<li><p>Select the <font color="#ff0000">Experimental Phasing</font>
+module, and open the <font color="#ff0000">Merge Data sets (Cad)</font>
+task window.</p></li>
+
+<li><p>On the first line, enter a suitable job title such as</p>
+<dl>
+<dd><font color="#009900">Job title </font>
+<font color="#ff0000">Merge native with MAD data (dataproc tutorial step 300)</font>.</dd>
+</dl><br /></li>
+
+<li><p>Now enter the first input file as:</p>
+
+<dl>
+<dd><font color="#009900">MTZ in </font>
+<font color="#ff0000">TEST gere_nat.mtz</font></dd>
+</dl>
+
+<p>This contains the standardised native data, and was created during the
+previous tutorial step (if you do not have this file from the previous session,
+take the file from the DATA directory). Leave the next line as:</p>
+
+<dl>
+<dd><font color="#009900">Input</font>
+<font color="#ff0000">all columns</font>
+<font color="#009900">from this file</font></dd>
+</dl><br /></li>
+
+<li><p>Click on <font color="#ff0000">Add input MTZ file</font>.
+Enter the second input file as:</p>
+
+<dl>
+<dd><font color="#009900">MTZ in</font>
+<font color="#ff0000">DATA gere_hrm.mtz</font></dd>
+</dl>
+
+<p>This contains the high-energy remote data.</p>
+<pre>
+    * Column Labels :
+
+     H K L F_hrm SIGF_hrm DANO_hrm SIGDANO_hrm F_hrm(+) SIGF_hrm(+) F_hrm(-) SIGF_hrm(-) ISYM_hrm
+</pre>
+ 
+<p>Again, leave the next line as:</p>
+
+<dl>
+<dd><font color="#009900">Input</font>
+<font color="#ff0000">all columns</font>
+<font color="#009900">from this file</font></dd>
+</dl><br /></li>
+
+<li><p>Click on <font color="#ff0000">Add input MTZ file</font>,
+and enter the third, fourth and fifth input files (gere_safepeak.mtz, gere_peak.mtz and
+gere_infl.mtz) in the same way.</p></li>
+
+<li><p>Now enter the output file name as:</p>
+
+<dl>
+<dd><font color="#009900">Output MTZ </font>
+<font color="#ff0000">TEST gere_MAD_nat.mtz</font></dd>
+</dl><br /></li>
+
+<li><p>In the <font color="#009900">File completion and freeR extension</font> folder, make sure the radio button is off.
+You have already completed the native set, and the MAD measurements extend to a lower resolution.</p></li>
+
+<li><p>The remainder of the task window can be left unchanged, so go to
+the bottom of the task window and click on <font color="#ff0000">Run -&gt;
+Run Now</font>.</p></li>
+
+<li><p>When the job has finished, view the output file by selecting
+in the main window <font color="#ff0000">View Files from Job -&gt;
+gere_MAD_nat.mtz</font>. The output file has 49 columns:</p>
+
+<pre class="green"> * Column Labels :
+
+ H K L FreeR_flag
+ F_nat SIGF_nat DANO_nat SIGDANO_nat F_nat(+) SIGF_nat(+) F_nat(-) SIGF_nat(-) ISYM_nat
+ F_hrm SIGF_hrm DANO_hrm SIGDANO_hrm F_hrm(+) SIGF_hrm(+) F_hrm(-) SIGF_hrm(-) ISYM_hrm
+ F_safepeak SIGF_safepeak DANO_safepeak SIGDANO_safepeak F_safepeak(+) SIGF_safepeak(+) F_safepeak(-) SIGF_safepeak(-) ISYM_safepeak
+ F_peak SIGF_peak DANO_peak SIGDANO_peak F_peak(+) SIGF_peak(+) F_peak(-) SIGF_peak(-) ISYM_peak
+ F_infl SIGF_infl DANO_infl SIGDANO_infl F_infl(+) SIGF_infl(+) F_infl(-) SIGF_infl(-) ISYM_infl</pre>
+
+<p>3 columns for the hkl indices, 10 data columns from the native data
+file and 36 data columns from the MAD data files. For the MAD data,
+there are 9 columns for each of 4 wavelengths. These 9 columns
+are the average structure factor amplitude FSE, the anomalous
+difference DSE, the Friedel pair F(+)SE and F(-)SE, and the
+corresponding standard deviations plus a flag ISYM used by SHARP.</p></li>
+
+<li><p>Close all interface windows except the main window.</p></li>
+</ol>
+
+<hr />
+<p>On to the next tutorial - <a href="heavy-tutorial-mir.html">Experimental Phasing (by MIR)</a>.</p>
+<p>Back to the previous tutorial - <a href="intro-tutorial.html">Introduction to CCP4i, MTZ files and the Loggraph Utility</a>.</p>
+<p>Back to the <a href="index.html">index</a>.</p>
+
+<hr />
+<p>For Mosflm-related queries, use the direct line to
+<a href="mailto:harry@mrc-lmb.cam.ac.uk">Harry Powell</a> or
+<a href="mailto:andrew@mrc-lmb.cam.ac.uk">Andrew Leslie</a>.</p>
+<p>
+<a href="http://jigsaw.w3.org/css-validator/"><img width="88" height="31"
+src="images/vcss" alt="Valid CSS!" /></a>
+<a href="http://validator.w3.org/"><img src="images/valid-xhtml10"
+alt="Valid XHTML 1.0!" height="31" width="88" /></a>
+</p>
+
+</body>
+</html>

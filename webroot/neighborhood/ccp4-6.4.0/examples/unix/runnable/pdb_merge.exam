@@ -1,0 +1,37 @@
+#!/bin/sh
+
+set -e
+
+# Test 1: the NOMERGE option
+# Merge original rnase with a file of symmetry mates
+
+pdbcur xyzin $CEXAM/rnase/rnase.pdb xyzout $CCP4_SCR/rnase_symop.pdb <<EOF
+symop -X+1/2,-Y,Z+1/2
+symcommit
+EOF
+
+pdb_merge xyzin1 $CEXAM/rnase/rnase.pdb xyzin2 $CCP4_SCR/rnase_symop.pdb \
+          xyzout $CCP4_SCR/rnase_x2.pdb <<eof
+nomerge
+end
+eof
+
+
+# Test 2: merge option
+# Split rnase chain A into 2 parts, potentially do something
+# with each part, merge back together
+
+pdbcur xyzin $CEXAM/rnase/rnase.pdb xyzout $CCP4_SCR/rnase_lowA.pdb <<EOF
+lvres A/1-50
+EOF
+
+pdbcur xyzin $CEXAM/rnase/rnase.pdb xyzout $CCP4_SCR/rnase_hiA.pdb <<EOF
+lvres A/41-96
+EOF
+
+pdb_merge xyzin1 $CCP4_SCR/rnase_lowA.pdb xyzin2 $CCP4_SCR/rnase_hiA.pdb \
+          xyzout $CCP4_SCR/rnase_together.pdb <<eof
+end
+eof
+#
+

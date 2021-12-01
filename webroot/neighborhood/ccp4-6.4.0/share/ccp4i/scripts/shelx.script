@@ -1,0 +1,170 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#=========================================================================
+#
+# shelx script  -  for patterson search or direct methods
+#
+#=========================================================================
+  global configure
+
+# Source file with utility procedures
+  source [SearchPath TOP src CCP4_utils.tcl]
+# Read the crystal parameters files - including all the symmetry operations
+  ReadSymops [FileJoin [GetEnvPath CLIBD] symop.lib] 1
+
+
+# Shelx just writes to the directory it runs in so make sure this is scratch
+  ChangeDirectory [GetEnvPath CCP4_SCR]
+  
+# Set up a Shelx root name 
+  append shelx_name  $job_params(PROJECT) _ $job_params(JOB_ID)
+  append hklin $shelx_name .hkl
+
+
+# Convert MTZ file to Shelx hkl file
+
+  if { [regexp MTZ $INPUT_FORMAT] } {
+
+    set HKLOUT [FileJoin [GetEnvPath CCP4_SCR] $hklin]
+    set OUTPUT_FORMAT SHELX
+
+    CreateComScript mtz2various export_script
+
+    set status [Execute "[BinPath mtz2various] HKLIN \"$MTZIN\" HKLOUT \"$HKLOUT\" " \
+		$export_script program_status report ]
+
+  } else {
+
+    CopyFile $HKLIN [FileJoin [GetEnvPath CCP4_SCR] $hklin] -overwrite
+
+  }
+
+#---------------------------------------------------------------------------------
+  set shelx_ins_file [FileJoin [GetEnvPath CCP4_SCR] $shelx_name.ins ]
+
+  set NSYMM 0
+  set nl -1
+  set nlmax 0
+  set instext {}
+# Try getting the symops etc. from the hkl file (as output by mtz2various)
+  if { [ReadFile [FileJoin [GetEnvPath CCP4_SCR] $hklin] hkl_text -split ] } {
+    foreach line [lrange $hkl_text 0 20]  {
+      incr nl
+      if { [regexp SYMM  $line] } { 
+        incr NSYMM; set SYMM($NSYMM) [lrange $line 1 end] 
+         append instext "$line\n"
+      } else {
+        if { $NSYMM <= 0 } { 
+          append instext "$line\n" 
+        } elseif { $nlmax == 0 } { 
+          set nlmax [expr $nl - 1] 
+        }
+      }
+    }
+  }
+
+# If NSYMM is zero then probably have not got anything out of the hkl file header
+# At least try getting the symops from the symmetry library
+  if { $NSYMM <= 0 } {
+    if { [set symops [GetSpaceGroupSymops  $SPACE_GROUP] ] == 0 } {
+      TerminateScript 0 -report \
+        "ERROR: can not find symmetry operationd for space group $SPACE_GROUP"
+    } else {
+# Set the SYMM array to the symmtry operations - skip the first (identity operation)
+# which Shelx does not require
+      foreach symop [lrange $symops 1 end] {
+        incr NSYMM
+        set SYMM($NSYMM) "$symop"
+      }
+    }
+  } else {
+# We've got useful stuff from the hkl header so copy it to the ins file
+    regsub \n$ $instext {} newtext
+    WriteFile $shelx_ins_file $newtext -overwrite
+
+# rewrite the temporary hkl file without the header
+    incr nlmax
+    set textout {}
+    foreach line [lrange $hkl_text $nlmax end] {
+      append textout $line \n
+    }
+    regsub \n$ $textout {} newtext; set textout $newtext
+    WriteFile [FileJoin [GetEnvPath CCP4_SCR] $hklin] $textout -overwrite
+    
+# Set NSYMM to zero so symops don't get written to the ins file twice
+    set NSYMM 0
+    set TITLE {}
+    set CELL_LAMBDA {}
+    set CELL_Z {}
+    set LATTICE {}
+
+  }
+
+    
+
+#----------------------------------------------------------------------------------
+
+  CreateComScript shelx shelx_script
+
+  TranscribeFile $shelx_script $shelx_ins_file
+  CopyFile $shelx_ins_file $shelx_script -overwrite
+
+  set status [Execute "$configure(SHELX) $shelx_name " \
+                $shelx_script program_status report ]
+
+
+# Add the name of the command file created by shelx to the list of output files
+# First move it from scratch to temporary directory (these may be the same thing!)
+  set comfile $shelx_name.res
+  MoveFile $comfile [FileJoin [GetDefaultDirPath PROJECT] $comfile]
+  AddOutputFile $comfile PROJECT
+
+
+# Copy the shelx log file to the CCP4I log file
+  TranscribeFile $shelx_name.lst $LOG_FILE
+  DeleteFile $shelx_name.ins 
+  DeleteFile $shelx_name.lst 
+# hklin is either a copy of the original hkl file or a temporary shelx format file
+# so delete it
+  DeleteFile $hklin
+# Delete the ins file - there is a copy with standard ccp4 file name
+  DeleteFile $shelx_ins_file
+
+#-------------------------------------------------------------------------
+# Read the output .res file and generate HA files 
+#-------------------------------------------------------------------------
+
+  if { ![ReadFile [FileJoin [GetDefaultDirPath PROJECT] $comfile] resfile -split] } {
+    TerminateScript 1 -report "Can not read Shelx output .res file to create CCP4i .ha files"  }
+
+  set nsets 0
+  set na 0
+  set header [format "CELL%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f" \
+	$CELL_1 $CELL_2 $CELL_3 $CELL_4 $CELL_5 $CELL_6]\n
+  set textout $header
+  set addoutput AddOutputFile
+  foreach line $resfile {
+# find a line which begins with the heavy atom name and does not have any other
+# character A-Z in the first word on the line
+    if { [regsub ^$HEAVY_TYPE $line "" ll] && ![regexp {[A-Z]} [lindex $ll 0] ]  } {
+      incr na 
+      append textout [format "ATOM   %4s  %7.4f %7.4f %7.4f    %12.2f  0.0 BFAC  20.0" \
+	$HEAVY_TYPE [lindex $ll 2] [lindex $ll 3] [lindex $ll 4] [lindex $ll 1]]\n
+    } elseif {  $na > 0 } {
+# have come to the end of a list of ha atoms in a set
+       incr nsets
+       set hafile [subst $shelx_name]_$nsets.ha
+       WriteFile [ FileJoin [GetDefaultDirPath] $hafile] $textout -overwrite
+       append addoutput " " $hafile " " PROJECT
+       set na 0
+       set textout $header
+    }
+  }
+  if { $nsets > 0 } { eval $addoutput }

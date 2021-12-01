@@ -1,0 +1,124 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4 Program Suite : refmac</title>
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX64 6.2 IP19) [Netscape]" />
+</head>
+<body>
+
+<!-- ::INDEX_INFO::REFMAC::Supported::Model Refinement::macromolecular refinement program:::::::: -->
+
+<h1>REFMAC (CCP4: Supported Program)</h1>
+<h2>NAME</h2>
+<b>refmac version 5.0.32</b>  -  macromolecular refinement program
+
+<h2>SYNOPSIS</h2>
+
+<p><b>refmac5</b> <b>XYZIN</b> <i>foo_cycle_i.brk</i> <b>HKLIN</b> <i>foo.mtz</i>
+<b>TLSIN</b> <i>tlsin.txt</i> <b>TLSOUT</b> <i>tlsout.txt</i>
+<b>XYZOUT</b> <i>foo_cycle_j.brk</i> <b>HKLOUT</b> <i>foo_cycle_j.mtz</i>
+<br />
+[<a href="keywords/index.html">Keyworded input</a>] 
+</p>
+
+<h2><A NAME="description"></A>DESCRIPTION</h2>
+
+<p>REFMAC now has two 'modes': REVIEW which only checks and updates the input model 
+to establish that the geometric restraints can be properly  
+set up, and the standard REFINE mode documented in <a href="keywords/index.html">keywords</a>.</p>
+
+<h3>REFMAC in REVIEW mode</h3>
+
+<ol>
+<li>Checking the model coordinates and writing an extended output set of coordinates.
+<p>This replaces and extends one of the roles of PROTIN.
+The input model (or PDB file) will contain coordinates identified by a CHAIN identifier,
+a RESIDUE (or more precisely, a monomer) identifier (<em>e.g.</em> ALA TYR HEM HOH) and an atom name
+(<em>e.g.</em> CA or Fe+3). The output file will have the following extra information.</p>
+</li>
+
+<li><b>Refmac actions:</b> Finding disulphide bonds, and other covalent links.
+<p>REFMAC now does a preliminary distance angles check on the input coordinates
+and suggests likely di-sulphide bonds and other links. These are written to the
+output PDB file in the standard PDB format:</p>
+
+<pre>
+SSBOND   1 CYS A   48    CYS D   48                          1555   2555
+SSBOND   2 CYS B   48    CYS C   48                          1555   2555
+LINK     1   OE1 GLU A 276                CA   CA  W   1     1555   1555
+LINK     1   OE1 GLU A 276                CA   CA  W   1     1555   1555
+LINK     1   OD2 ASP A 307                CA   CA  W   1     1555   2556
+LINK     1   O   HOH W 133                CA   CA  W   1     1555   1555
+</pre>
+
+<p>The LINK record can be modified by the user to include the target distance.
+In this format: the distance has format F10.5.</p>
+<pre>
+LINK     1   OE1 GLU A 276        2.13400 CA   CA  W   1     1555   1555
+LINK     1   OE1 GLU A 276        2.13400 CA   CA  W   1     1555   1555
+LINK     1   OD2 ASP A 307        2.13400 CA   CA  W   1     1555   2556
+LINK     1   O   HOH W 133        2.40000 CA   CA  W   1     1555   1555
+</pre>
+</li>
+
+<li><b>Refmac actions:</b> Finding cis-peptides.
+<p>REFMAC now does a preliminary survey of cis-peptides and writes the
+records to the output PDB file.</p>
+<pre>
+CISPEP   1 SER A   26    PRO A   27          0         0.00
+CISPEP   1 HIS A  220    PRO A  221          0         0.00
+</pre>
+</li>
+
+<li><b>Refmac actions:</b> Outputting the sequence and REMARK records.
+<p>REFMAC does not output the SEQRES records to the XYZOUT file. All REMARK records
+are stripped out; those relevant to refinement are replaced.</p>
+
+<p><b>All this output needs to be carefully checked, and edited by the user.</b></p>
+<p>If this is enough to describe the chemistry of the model completely,
+the REFINE mode of refmac can be started without any other action.
+However, if the molecule under study has a novel group REFMAC in REVIEW mode
+will exit with a message requiring the user to provide a complete chemical description of this.</p>
+
+<p>Obviously, before starting restrained refinement it is necessary that the chemical
+properties of each monomer in the model (<em>i.e.</em> the identifier and charge for
+each atom, the connectivity and bond types with target distances and
+standard uncertainities, the angles, chiral centres, planar groups, target
+torsion angles) are described. For the standard peptides,
+sugars, and nucleotides plus some common ligands these are provided in
+distributed library files in $CLIBD_MON/. For any other monomers the user
+must provide their own library.</p>
+</li>
+
+<li><b>SKETCHER/LIBCHECK actions:</b> These are the tools used within CCP4
+for creating a complete chemical description of a novel monomer. The user
+should first sketch on paper a detailed picture of the expected ligand,
+showing single and double bonds, hydrogens, chiral centres and planar groups,
+and possibly atomic charges (for example see
+<a href="dictionary/minimum-dict.html">Dictionary entry from minimum description</a>).
+This can be entered into SKETCHER, either by actually adding atoms to the sketch,
+or by reading in a PDB file with a similar ligand. This can be edited in SKETCHER,
+and once the user is satisfied that there is a reasonable depiction of the ligand
+on the screen, SKETCHER will generate a minimal description tabulating all the given
+information. This minimal description is then
+extended by LIBCHECK to create a complete monomer description written to
+the file assigned to LIBOUT.</p>
+</li>
+ 
+</ol>
+
+<h3>REFMAC in REFINEMENT mode</h3>
+
+<p>The REFMAC program can carry out rigid body, <a href="usage/tls_usage.html">tls</a>, restrained or unrestrained
+refinement against Xray data, or idealisation of a macromolecular structure.
+It minimises the coordinate parameters to satisfy either a Maximum Likelihood
+or Least Squares residual. There are options to use different minimization
+methods. <em>(At the moment only CGMAT is active.)</em> REFMAC also produces an MTZ output
+file containing weighted coefficients for SigmaA weighted mFo-DFcalc and
+2mFo-DFcalc maps, where &quot;missing data&quot; have been restored.</p>
+
+<p>[Program organisation and communication with it is illustrated in the
+<a href="usage/examples.html">EXAMPLES</a> section.]</p>
+
+</body>
+</html>

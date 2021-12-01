@@ -1,0 +1,1015 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+
+<!-- ::INDEX_INFO::prosmart::Supported::::Comparison of chains, and restraints generation::supported:::::: -->
+
+<body style="padding:5px">
+
+<h1> ProSMART (version 0.8) Documentation </h1>
+
+<p>
+Pre-distribution version, for Linux, Mac OS X and Windows. 
+Contact <a href="mailto:nicholls@mrc-lmb.cam.ac.uk">Rob Nicholls</a> for more information. 
+</p>
+
+<p>
+This software is under development - if any aspect of the 
+functionality/implementation is considered undesirable, or if any bugs, 
+strange behavior or unexpected results are encountered, please email - 
+any comments, questions and suggestions are very much appreciated.
+</p>
+
+<h2> Contents: </h2>
+
+<ul class="big">
+<li><a href="#summary">Summary</a>
+</li><li><a href="#instructions">Installation Instructions for Linux and Mac OS X</a>
+</li><li><a href="#instructions_windows">Installation Instructions for Windows</a>
+</li><li><a href="#instructions_ccp4i">Installation Instructions for CCP4i task interfaces</a>
+</li><li><a href="#operation">Operational Instructions</a>
+</li><li><a href="#example">Quick Basic Tutorial</a>
+</li><li><a href="#refmac">Using External Restraints With REFMAC5</a>
+</li><li><a href="#arguments">ProSMART Command Line Arguments</a>
+</li><li><a href="#other">Further Notes On Methodology, Functionality And Implementation</a>
+</li><li><a href="#references">References and Links</a>
+</li></ul>
+<br>
+<hr>
+
+<a name="summary"></a>
+<h2> Summary: </h2>
+
+<p>
+ProSMART (<b>Pro</b>crustes <b>S</b>tructural <b>M</b>atching <b>A</b>lignment and <b>R</b>estraint <b>T</b>ool)
+ is a software tool designed for the conformation-independent structural
+ comparison of protein chains. At current, ProSMART has two components:
+</p><ul class="big">
+<li>ProSMART ALIGN - for the alignment, superposition, and scoring of protein chains;</li>
+<li>ProSMART RESTRAIN - for the generation of external restraints for use in the crystallographic refinement of protein structures.</li>
+</ul>
+<p></p>
+
+<p>
+ProSMART ALIGN allows the pairwise alignment of chain-pairs, and also 
+allows the batch-processing of multiple pairwise alignments. Similarity 
+is based on the conservation of local structure, and is consequently 
+independent of global conformation. For each chain-pair, multiple 
+superpositions may be provided: a global superposition based on the 
+achieved alignment, and a superposition for each identified common rigid
+ substructure (e.g. domain), if any are identified. Output includes 
+residue-based, sidechain-based and global similarity scores, thus 
+providing a multi-resolution view of chain similarity. Residue-based and
+ sidechain-based scores may be viewed in color, using the graphics 
+software <a href="#references">PyMOL</a>. Experimental ProSMART analysis features are under development and available in the latest versions of <a href="#references">CCP4mg</a>.
+</p>
+
+<p>
+ProSMART RESTRAIN uses the results from ProSMART ALIGN in order to 
+generate restraints for a target protein, based on one (or multiple) 
+other homologous protein structures. Restraints may also be generated 
+for individual fragments (e.g. secondary structure elements). The use of
+ restraints from ProSMART is intended to improve refinement by <a href="#references">REFMAC5</a>.
+ Note that parameter tweaking in refmac will almost certainly be 
+required. If you have a higher-resolution structure that is 
+well-refined, then you can attempt to use information from this 
+structure in order to improve reliability of refinement, providing this 
+"external reference" structure is sufficiently similar to the "target" 
+structure that you are trying to refine. Generally, external structures 
+should be identical or close homologs, although in theory even 
+structures with low sequence similarity might be used under the employed
+ formalism; the user must decide what is sensible/appropriate.
+</p>
+
+<br>
+<hr>
+
+<a name="instructions"></a>
+<h2> Installation Instructions for Linux and Mac OS X: </h2>
+
+<p>
+A basic understanding of directory navigation in the unix command line is assumed.
+</p>
+<br>
+
+<a name="untar"></a>
+<h3> How to unpack the ProSMART <code>.tar.gz</code> file: </h3>
+
+<p>
+ProSMART is provided as a <code>prosmart_source_XXX.tar.gz</code>
+ file (with the X's replaced by the appropriate date). After downloading
+ this file, navigate to the location where you downloaded this file, 
+using the command line. It may be unpacked by typing (with the X's 
+replaced, as appropriate):
+<br><code><b>tar zxf prosmart_source_XXX.tar.gz</b></code>
+</p>
+
+<p>
+A directory called <code>ProSMART/</code> will have been created within the current working directory (this may be confirmed by typing <code><b>ls</b></code> to list the contents of the current working directory). In the rest of this installation guide, we shall refer to the <code>ProSMART/</code> directory as the 'ProSMART directory'.
+</p>
+
+<br>
+
+<a name="configuration"></a>
+<h3> How to configure ProSMART for installation on your system (optional): </h3>
+
+<p>
+Installation of ProSMART is achieved using the makefile located in the 
+ProSMART directory. On most systems, the default configuration settings 
+will be suitable. However, on other systems it may be necessary or 
+desirable to alter the ProSMART's installation directories, particularly
+ if you don't have sufficient permissions to install into the default 
+directories (which may require superuser/administrator privileges).
+</p>
+
+<p>
+To reconfigure ProSMART, open the makefile (located: <code>ProSMART/makefile</code>) using a text editor. Near the top of this file, you will see these lines (or similar, depending on the particular version):
+<br><code><b>
+BIN_DIR = /usr/local/bin/<br>
+LIB_DIR = /usr/local/share/<br>
+</b></code>
+</p>
+
+<p>
+You may choose to change any of the locations specified by these 
+variables. For example, to put binaries/library in CCP4 directories, set
+ <code>BIN_DIR = $(CBIN)</code>, and <code>LIB_DIR = $(CLIBD)</code> (sufficient privileges will be required to install). For more information, see the makefile (version 0.807 or later).
+</p>
+
+<p>
+The <code>BIN_DIR</code> variable specifies the location that the 
+ProSMART binaries will be copied to upon installation. It is important 
+that this directory is specified by the <code>PATH</code> environment variable, so that ProSMART can be executed from any directory. Type <code>echo $PATH</code> to list the directories specified in the <code>PATH</code>.
+</p><p></p>
+The <code>LIB_DIR</code> variable specifies the location that the 
+ProSMART library will be copied to upon installation. This can be any 
+directory that has appropriate permissions.
+<p>
+
+<br>
+
+
+</p><h3> How to compile and install ProSMART: </h3>
+
+<p>
+Installation of ProSMART is done using the makefile located in the ProSMART directory. 
+</p>
+
+<ol>
+<li>
+In the unix terminal, navigate into the ProSMART directory (<code>ProSMART/</code>).
+</li>
+<br>
+<li>
+<p>Type <code><b>make</b></code> and hit enter. This will compile ProSMART. Upon success, three binaries will be created in the ProSMART directory: <code>prosmart</code>, <code>prosmart_align</code>, and <code>prosmart_restrain</code>.</p>
+</li>
+<li><p>
+Type <code><b>make install</b></code> and hit enter. Upon success, this will copy the three binaries to <code>BIN_DIR</code> and copy the library to <code>LIB_DIR</code> (as specified in the makefile). 
+</p></li>
+<li><p>
+Optional: to clean up the ProSMART directory, type <code><b>make clean</b></code> and hit enter. This will remove all created object files and binaries from the current directory.
+</p></li>
+</ol>
+
+<p>
+Upon successful installation, ProSMART can be executed by typing: <code><b>prosmart</b></code>. This will display a list of command line arguments, equivalent to typing <code><b>prosmart -help</b></code>.
+</p><p>
+
+</p><p>
+If installation was unsuccessful, the most common problem is that you 
+don't have enough privileges to write to the desired directories. In 
+this case, you may wish to ask for help from your system administrator, 
+or obtain appropriate permissions (e.g. super user or administrator 
+privileges, as required; e.g. typing <code>sudo make install</code> may 
+work, providing you have super user privileges). Otherwise, you could 
+reconfigure the makefile, changing the ProSMART installation directories
+ to some directories that you do have appropriate permissions for (see <a href="#configuration">above</a>).
+</p>
+
+<p></p>
+If any unknown errors occur, or if you would like assistance, please seek help from your system administrator or contact the <a href="mailto:nicholls@mrc-lmb.cam.ac.uk">author</a>.
+<p></p>
+<br>
+
+
+<hr>
+
+
+<a name="instructions_windows"></a>
+<h2> Installation Instructions for Windows: </h2>
+
+<p>
+The experimental Windows version of ProSMART has been tested on Windows 
+7, and assumes that the CCP4 suite is installed. For more information on
+ installation without CCP4 (or on different versions of Windows), please
+ contact the <a href="mailto:nicholls@mrc-lmb.cam.ac.uk">author</a>. The
+ Windows version of ProSMART does not support the simultaneous execution
+ of multiple child processes (for better performance, try using the 
+Linux/MacOSX version).
+</p>
+
+<a name="install_windows"></a>
+<h3> How to install ProSMART: </h3>
+
+<ol>
+<li><p>
+Unzip the <code>prosmart_windows_XXX.zip</code> file (in Windows 7, right click on the compressed folder and select the "Extract All..." option).
+</p></li>
+<li><p>
+From within the unzipped folder, double-click the <code>install.bat</code> file (warning: do not attempt to run <code>install.bat</code> from within the compressed folder). 
+</p></li>
+</ol>
+
+<p>
+The <code>install.bat</code> batch file will copy the three ProSMART executables <code>prosmart.exe</code>, <code>prosmart_align.exe</code>, and <code>prosmart_restrain.exe</code>, and the directory <code>Prosmart_Library</code> into the CCP4 directory for binaries (specified by the <code>CBIN</code> environment variable, e.g. <code>C:\CCP4-Packages\ccp4-6.2.0\bin</code>). Upon successful installation, ProSMART should be runnable from the Command Prompt (by typing <code>prosmart</code>),
+ and from within CCP4i, if the appropriate CCP4i task interfaces have 
+been installed. To uninstall ProSMART, double-click the supplied <code>uninstall.bat</code> file, which remvoes ProSMART from <code>CBIN</code>.
+</p>
+<p>
+If any unknown errors occur, or if you would like assistance, please seek help from your system administrator or contact the <a href="mailto:nicholls@mrc-lmb.cam.ac.uk">author</a>.
+</p>
+<br>
+
+
+<hr>
+
+<a name="instructions_ccp4i"></a>
+<h2> Installation Instructions for CCP4i Task Interfaces: </h2>
+
+<ol>
+<li>
+After downloading the task interface <code>.tar.gz</code> file, open CCP4i.
+</li>
+<br>
+<li>
+<p>In the "System Administration" drop-down menu on the right side of 
+the screen, select "Install/uninstall Tasks", which should open a pop-up
+ window.</p>
+</li>
+<li><p>
+Select "Run the Installation Manager to <b>Install a new task</b>", and "Perform <b>automatic</b> installation of tasks into <b>user's local CCP4i</b> area" (if wanting to install for all users, change "user's local CCP4i" to "main CCP4i").
+</p></li>
+<li><p>
+In the "Task archive" field, browse to find the downloaded <code>.tar.gz</code> file (the name of the package and version number should automatically appear). Click "Apply".
+</p></li>
+<li><p>
+Restart CCP4i.
+</p></li>
+</ol>
+
+<p>
+Note: it may be advisable to uninstall any existing interface versions before attempting to install a new task interface.
+</p>
+
+<br>
+
+<hr>
+
+<a name="operation"></a>
+<h2> Operational Instructions: </h2>
+
+<p>
+Run ProSMART. From the command line, run the executable <code>prosmart</code> with the appropriate arguments (see <a href="#arguments">below</a>). Arguments can be either passed to the program as command line arguments and/or via a configuration file (see <code>-f</code> argument <a href="#arguments">below</a>). 
+</p>
+<p>
+Note: never run the <code>prosmart_align</code> or <code>prosmart_restrain</code> binaries - these are called automatically by <code>prosmart</code>.
+</p>
+<p>
+The residue alignment must be reasonable in order to successfully 
+generate external restraints for use in refinement. Consequently, if 
+external restraints are to be generated, it is advised to manually check
+ the ProSMART residue alignment (by viewing the outputted pdb files in 
+PyMOL, with the outputted PyMOL color scripts) to confirm it is correct 
+(or at least reasonable) by checking the generated alignment file. If it
+ is not, then try different alignment parameters or seek help. 
+Importantly, note also that the argument <code>-id</code> can be used to
+ force the correct alignment of sequence-identical structures, which is 
+particularly useful when intending to generate restraints using 
+identical structures, as well as for other applications.
+</p>
+<p>
+Output is communicated through a HTML-format results page, called <code>ProSMART_Results.html</code>, which may be found in the output directory. The log files automatically generated by ProSMART (<code>prosmart_align_logfile.txt</code>, <code>prosmart_restrain_logfile.txt</code>) provide useful information, indicate which files have been created, and may help any troubleshooting.
+</p>
+<p>
+The strength and qualitative nature of the generated atomic bond 
+restraints (and other parameters) can be adjusted within ProSMART (see <a href="#arguments">below</a>),
+ and can also be adjusted within REFMAC5 (version 5.7.0005 or later). 
+These parameters may be played with in order to get a successful 
+refinement using the external restraints. Appropriate parameters will be
+ dependent on your particular case - data quality, resolution, 
+similarity of external structure, etc.
+</p>
+<br>
+
+<hr>
+
+<a name="example"></a>
+<h2> Quick Basic Tutorial: </h2>
+
+<p>
+Suppose you are trying to refine a low-resolution structure <code>mypdb1.pdb</code>, and want to utilise information from a known higher-resolution structure <code>mypdb2.pdb</code> during refinement. The simplest example of aligning and generating restraints for all chains in <code>mypdb1.pdb</code> using all chains in <code>mypdb2.pdb</code> as external information is:
+<br><code><b>prosmart -p1 mypdb1.pdb -p2 mypdb2.pdb</b></code>
+</p>
+
+<p>
+For the alignment of <code>mypdb1</code> chain <code>A</code> with <code>mypdb2</code> chain <code>B</code>, the alignment and generation of external restraints from <code>mypdb2_B</code> for use in the refinement of <code>mypdb1_A</code> can be achieved as follows:
+<br><code><b>prosmart -p1 mypdb1.pdb -p2 mypdb2.pdb -c1 A -c2 B</b></code>
+</p>
+
+<p>
+To perform alignment, but not generate restraints, use the <code>-a</code> argument:
+<br><code><b>prosmart -p1 mypdb1.pdb -p2 mypdb2.pdb -a</b></code>
+</p>
+
+<p>
+To perform generate restraints, but not perform alignment, use the <code>-r</code>
+ argument (note that a valid alignment file must already exist! This 
+functionality is useful if you want to edit the alignment before 
+generating restraints based on the alignment):
+<br><code><b>prosmart -p1 mypdb1.pdb -p2 mypdb2.pdb -r</b></code>
+</p>
+
+<b><i>Notes on protocol:</i></b>
+
+<ul class="normal">
+<li><p>
+The chains do not need to be specified - to perform pairwise alignment of all chains from <code>mypdb1.pdb</code> with all chains in <code>mypdb2.pdb</code>, then generate restraints for all chains in <code>mypdb1.pdb</code>, the following command would be appropriate:
+<br><code><b>prosmart -p1 mypdb1.pdb -p2 mypdb2.pdb</b></code>
+</p></li>
+
+<li><p>
+If the second PDB file is not specified, then an all-on-all alignment will be performed. All chains within <code>mypdb1.pdb</code> will be pairwise aligned, and restraints generated for each other, e.g. this is valid:
+<br><code><b>prosmart -p1 mypdb1.pdb</b></code><br>
+<br>
+Note that, in an all-on-all alignment, each chain will not be aligned/restrained to itself by default.
+</p></li>
+
+<li><p>
+For fragment motif alignment, and generation of motif restraints, appropriate syntax may be:
+<br><code><b>prosmart -p1 mypdb1.pdb -helix</b></code><br>
+<br>
+This command will identify sufficiently helical regions, and generate 
+the corresponding restraints. Note that the default library consists of 
+two entries: an ideal helix and a typical strand. These are located in 
+the ProSMART library. This library (and alignment rules) may be edited 
+and extended by the user. To run ProSMART using all fragments in the 
+local library, use the <code>-lib</code> argument. Note also that use of the <code>-lib</code> or <code>-helix</code> arguments automatically overrides any secondary reference PDB files specified using the <code>-p2</code> argument.
+</p></li>
+
+<li><p>
+It is possible to specify multiple PDB files and chains in order to 
+automatically perform multiple pairwise alignments, e.g. this is valid:
+<br><code><b>prosmart -p1 mypdb1.pdb mypdb2.pdb -p2 mypdb3.pdb mypdb4.pdb mypdb5.pdb</b></code><br>
+</p></li>
+
+<li><p>
+If more than one PDB file is specified and chains are specified then the
+ PDB files must be repeated for each chain so that a one-to-one 
+correspondence exists between the arguments of <code>-p1</code> and <code>-c1</code>, and between <code>-p2</code> and <code>-c2</code>. E.g. this is a valid command to perform an all-on-all alignment of <code>mypdb1A</code>, <code>mypdb2A</code> and <code>mypdb2B</code>:
+<br><code><b>prosmart -p1 mypdb1.pdb mypdb2.pdb mypdb2.pdb -c1 A A B -a</b></code><br>
+<br>
+However, this is not:
+<br><code><b>prosmart -p1 mypdb1.pdb mypdb2.pdb -c1 A A B -a</b></code><br>
+<br>
+If only one PDB file is specified then multiple chains may be selected, e.g. this is valid:
+<br><code><b>prosmart -p1 mypdb1.pdb -c1 A B C -a</b></code><br>
+<br>
+These rules apply separately for the target (<code>-p1</code> and <code>-c1</code>) and the secondary (<code>-p2</code> and <code>-c2</code>) inputs.
+</p></li>
+</ul>
+
+<br>
+
+<hr>
+
+<a name="refmac"></a>
+<h2> Using External Restraints With REFMAC5: </h2>
+
+<p>
+Suppose you have two structures: the low-resolution structure that you 
+want to refine (target.pdb) and a sequence-identical higher-resolution 
+structure that you want to use as prior information (external.pdb). Then
+ to generate restraints for all chains in target.pdb, using all chains 
+from external.pdb, type: <br>
+<code>prosmart -id -p1 target.pdb -p2 external.pdb</code>. 
+</p>
+<p>
+The "<code>-id</code>" keyword indicates that the structures are 
+sequence-identical, and so it will assume that the residues are 
+equivalent, bypassing the alignment stage and assuming equivalence of 
+residue numbering. This should be used for identical structures. 
+However, the "<code>-id</code>" keyword should not be used if the 
+structures are non-identical in sequence. If the structures are 
+homologous in structure but non-identical in sequence then do not use the "<code>-id</code>" keyword, as the generated restraints would be non-sensical and likely destructive during refinement.
+</p>
+<p>
+You can do other things, like generate restraints using only the best-scoring chains ("<code>-restrain_best</code>").
+ However, note that it may be reasonable to use the default all-on-all 
+chain restraint generation in some cases, since REFMAC5 currently 
+selects only the best restraint for each atom-pair when multiple 
+restraints are generated.
+</p>
+<p>
+An example of a possible execution of REFMAC5 with external restraints is:
+</p>
+
+<code></code><pre><code>refmac5 \
+    XYZIN  pdb_in.pdb  \
+    HKLIN  mtz_in.mtz  \
+    XYZOUT pdb_out.pdb \
+    HKLOUT mtz_out.mtz \
+&lt;&lt;<!---->EOF
+NCYC 20
+EXTERNAL USE MAIN
+EXTERNAL DMAX 4.2
+EXTERNAL WEIGHT SCALE 10
+EXTERNAL WEIGHT GMWT 0.15
+@prosmart_restraints_file.txt
+MONI DIST 1000000
+END
+EOF
+</code></pre>
+
+<i>Description of used keywords:</i>
+<table>
+<tbody>
+
+<tr>
+<td width="250"><code>NCYC 20</code></td>
+<td>Number of REFMAC5 refinement cycles. Note that external restraints will seem to have little effect if using only few refinement cycles (e.g. 5). Something like 20-40 cycles may be required, and even more if also using jelly-body restraints (see below).</td>
+</tr>
+
+<tr>
+<td><code>EXTERNAL USE MAIN</code></td>
+<td>Discards any side-chain restraints that may be present in the external restraints file (remove this keyword to keep side-chains restraints; the <code>EXTERNAL USE ALL</code> keyword can be used to ensure that all restraints will be used). This may or may not be appropriate, depending on the particular case. If used, side-chain restraints will generally have a larger effect on refinement (note that the optimal weight and Geman-McClure parameter values will be very different if using side-chain restraints). Recommendations: if at early/intermediate stages of refinement, and just trying to stabilise the conformation of a poorly-defined backbone in poor density, only use main-chain restraints at first (i.e. use <code>EXTERNAL USE MAIN</code>); otherwise, try using both main and side-chain restraints (i.e. remove the REFMAC5 keyword: <code>EXTERNAL USE MAIN</code>, and make sure the ProSMART keyword: <code>-side</code> is used).</td>
+</tr>
+
+<tr>
+<td><code>EXTERNAL DMAX 4.2</code></td>
+<td>Maximum restraint interatomic distance. Highly recommended value: 4.2.</td>
+</tr>
+
+<tr>
+<td><code>EXTERNAL WEIGHT SCALE 10</code></td>
+<td>External restraints weight. Increasing this weight increases the influence of external restraints during refinement. Optimal value: varies dramatically - note that the value 10 shown here is rather arbitrary.</td>
+</tr>
+
+<tr>
+<td><code>EXTERNAL WEIGHT GMWT 0.15</code></td>
+<td>Geman-McClure parameter, which controls robustness to outliers. Increasing this value reduces the influence of outliers (i.e. restraints that are very different from the current interatomic distance). However, increasing this value too high results in too many restraints being considered outliers - this means that only the restraints that are very similar to the current interatomic distances will have much effect. Optimal value: varies dramatically - note that the value 0.15 shown here is rather arbitrary. Note also that the optimal value is highly correlated with the external restraints weight parameter.</td>
+</tr>
+
+<tr>
+<td><code>@prosmart_restraints_file.txt</code></td>
+<td>Specifies the location of the external restraints file generated by ProSMART, e.g. called <code>prosmart_restraints_file.txt</code>. This file will be located in the ProSMART output directory (by default: <code>ProSMART_Output/</code>). Only the <code>EXTERNAL</code> keywords supplied <i>before</i> specifying this file will be applied to the external restraints in this file.<code>
+</td>
+</tr>
+
+<tr>
+<td><code>MONI DIST 1000000</code></td>
+<td>Only monitor distances (i.e. identify individual restraints as potential outliers in the log file) greater than this value relative to the restraint sigma (i.e. 1000000*sigma in this example). Consequently, since the default value is 10, many unnecessary extra lines will be written to the REFMAC5 log file by default when using external restraints - this is avoided by setting the value of <code>MONI DIST</code> to be arbitrarily high. Note that outliers are expected when using external restraints (and the use of the Geman-McClure robust estimator function allows true outliers to be dealt with automatically).
+</td>
+</tr>
+
+</tbody></table>
+
+<p>Appropriate values of <code>EXTERNAL WEIGHT SCALE</code> and <code>EXTERNAL WEIGHT GMWT</code> will depend on many factors, including the existing geometry weight, the resolution and quality of the data and reference structure(s), the number of NCS-restrained chains, and the local similarity between the target and external structures. Different values will generally have to be tried in order to have any chance of successfully using external restraints. 
+For more information about external restraints, including the external restraints weight and the Geman-McClure parameter, see Nicholls <i>et al.</i> (2012).</p>
+
+<p>Note that the "<code>RIDGE DISTANCE SIGMA 0.1</code>" keyword can be used to specify for jelly-body restraints (also called harmonic restraints) to be used in regions where there are no external restraints. For more information, see Murshudov <i>et al.</i> (2011), and for more information about the <code>RIDGE</code> keywords, see <a href="http://www.ysbl.york.ac.uk/refmac/data/refmac_news.html#Ridge" target="_blank">here</a>.</p>
+
+
+<br>
+<hr>
+
+<a name="arguments"></a>
+<h2> ProSMART Command Line Arguments: </h2>
+
+<b><i>Program Options:</i></b>
+<table>
+<tbody><tr><td width="200"><code>-a</code></td>
+<td>run only ProSMART ALIGN, default alignment method. This uses all mainchain atoms for superposition and scoring.</td></tr>
+
+<tr><td><code>-a1</code></td>
+<td>run only ProSMART ALIGN, alternative method 1 (faster). This uses only C-alpha atoms for superposition and scoring.</td></tr>
+
+<tr><td><code>-a2</code></td>
+<td>run only ProSMART ALIGN, alternative method 2 (slower). This uses 
+all mainchain atoms for superposition, then uses only C-alpha atoms for 
+scoring.</td></tr>
+
+<tr><td><code>-r</code></td>
+<td>run only ProSMART RESTRAIN (assumes alignment exists in correct location).</td></tr>
+
+<tr><td><code>-o [dir path]</code></td>
+<td>directory for output files relative to current directory (default: <code>./ProSMART_Output/</code>). Directories will be created if they do not exist.</td></tr>
+
+<tr><td><code>-f [file path]</code></td>
+<td>external text file used as an alternative way to provide arguments 
+to the program. Arguments can be space and/or newline separated.</td></tr>
+
+<tr><td><code>-threads [integer]</code></td>
+<td>max number of threads - max number of child processes to be executed
+ simultaneously by ProSMART. For optimal performance, this value should 
+be equal to the number of logical cores (threads) in the CPU. 
+Alternatively, this value may be reduced in order to free cpu resources,
+ increasing system performance at the expense of ProSMART.</td></tr>
+
+<tr><td><code>-xml</code></td>
+<td>output a log file in XML format, called <code>xmlout.xml</code>, into the current working directory.</td></tr>
+
+<tr><td><code>-xml [file path]</code></td>
+<td>output a log file in XML format, to the location specified.</td></tr>
+
+<tr><td><code>-refmac [exec. name]</code></td>
+<td>name of REFMAC binary executable (default: <code>refmac5</code>).</td></tr>
+
+<tr><td><code>-nmr</code></td>
+<td>specifies that input structure is an NMR/MD ensemble (this 
+functionality is experimental). Only one target PDB file should be 
+specified, and no external reference. The first state (chain) will be 
+used as target, and all other states as secondary references.</td></tr>
+
+<tr><td><code>-merge</code></td>
+<td>allows oligomers/complexes to be considered as individual structural units by merging multiple chains within a PDB file. This is achieved by combining all (or desired) chains into a single chain; all residue numbers are renamed accordingly.</td></tr>
+
+</tbody></table>
+<br>
+
+
+<b><i>Target and Secondary Chain Selection:</i></b>
+<table>
+<tbody><tr><td width="200"><code>-p1 [file path]</code></td>
+<td>location of target PDB file(s) (required).</td></tr>
+
+<tr><td><code>-p2 [file path]</code></td>
+<td>location of secondary external reference PDB file(s).</td></tr>
+
+<tr><td><code>-c1 [char]</code></td>
+<td>chains of interest in PDB file(s) 1 (if unspecified, all will be used).</td></tr>
+
+<tr><td><code>-c2 [char]</code></td>
+<td>chains of interest in PDB file(s) 2 (if unspecified, all will be used).</td></tr>
+
+<tr><td><code>-id</code></td>
+<td>specifies that the chains to be aligned are sequence-identical. More
+ specifically, assumes that the residue numbering is the same between 
+the two structures.
+</td></tr>
+
+<tr><td><code>-allonall</code></td>
+<td>if only target chains are specified (i.e. <code>-p2</code> is not 
+specified) then by default all-on-all comparison of target chains will 
+be performed, using only the upper triangular half-matrix of chain-pair 
+combinations. Specifying the <code>-allonall</code> argument will result in the full matrix of combinations being used.</td></tr>
+
+<tr><td><code>-align&nbsp;[pdb]&nbsp;[chain(s)]&nbsp;[resnum]&nbsp;[resnum]</code></td>
+<td>specify residue ranges, so that only portion of PDB files may be 
+used during alignment (applied during PDB file processing - simply 
+removes residues outside this range). The <code>-align</code> keyword may be used multiple times, in order to specify multiple ranges. The <code>resnum</code> arguments must be integer (i.e. cannot specify an insertion code - combine with the <code>-align_rm</code> keyword for more flexibility with insertion codes). Can use the string <code>ALL</code> for the <code>pdb</code> and/or <code>chain</code> arguments, so that the filtering is applied to all files/chains, as desired. Multiple chains can be specified using the <code>chain(s)</code> argument, e.g. the string <code>ABC</code> would specify for the instance of <code>-align</code> to be applied to chains <code>A</code>, <code>B</code>, and <code>C</code>, if they exist, and not applied to any other chains. Note that different instances of the <code>-align</code> keyword may be used in order to filter different regions from different chains.
+</td></tr>
+
+<tr><td><code>-align_rm&nbsp;[pdb]&nbsp;[chain(s)]&nbsp;[resnum(ins)]</code></td>
+<td>specify individual residues to be removed (applied during PDB file 
+processing - simply removes these residues from consideration prior to 
+structural alignment). The <code>-align_rm</code> keyword may be used multiple times, in order to remove multiple residues. The <code>resnum</code> argument may optionally be appended by an insertion code. Can use the string <code>ALL</code> for the <code>pdb</code> and/or <code>chain</code> arguments, so that the filtering is applied to all files/chains, as desired. Multiple chains can be specified using the <code>chain(s)</code> argument, e.g. the string <code>ABC</code> would specify for the instance of <code>-align_rm</code> to be applied to chains <code>A</code>, <code>B</code>, and <code>C</code>, if they exist, and not applied to any other chains. Note that different instances of the <code>-align_rm</code> keyword may be used in order to filter different regions from different chains.
+</td></tr>
+
+</tbody></table>
+<br>
+
+<b><i>Fragment Library Options:</i></b>
+<table>
+<tbody><tr><td width="200"><code>-lib</code></td>
+<td>specifies to run alignment of all fragments in the ProSMART library 
+instead of pairwise alignment of two chains (any secondary PDB file(s) 
+specified using <code>-p2</code> will be ignored).
+</td></tr>
+
+<tr><td><code>-helix</code></td>
+<td>specifies to run fragment alignment of the helix entry in the 
+ProSMART library instead of pairwise alignment (any secondary PDB 
+file(s) specified using <code>-p2</code> will be ignored). This is a subset of <code>-lib</code>, which uses only the representative helix fragment instead of all fragments in the library.
+</td></tr>
+
+<tr><td><code>-strand</code></td>
+<td>specifies to run fragment alignment of the strand entry in the 
+ProSMART library instead of pairwise alignment (any secondary PDB 
+file(s) specified using <code>-p2</code> will be ignored). This is a subset of <code>-lib</code>, which uses only the representative strand fragment instead of all fragments in the library.
+</td></tr>
+
+<tr><td><code>-library_config [file]</code></td>
+<td>provide a library configuration file, to use instead of the default <code>config.txt</code> located in the <code>ProSMART_Library/</code> directory.
+</td></tr>
+
+<tr><td><code>-library [dir_path]</code></td>
+<td>provide the location of a library to be used instead of the default <code>ProSMART_Library/</code>.
+</td></tr>
+
+<tr><td><code>-lib_score [double]</code></td>
+<td>override all Procrustes score thresholds in the fragment library (warning - will be applied to all fragments).
+</td></tr>
+
+<tr><td><code>-lib_fraglen [int]</code></td>
+<td>override all fragment lengths in the fragment library (warning - will be applied to all fragments).
+</td></tr>
+
+</tbody></table>
+<br>
+
+
+
+<b><i>ProSMART ALIGN Alignment Options:</i></b>
+<table>
+<tbody><tr><td width="200"><code>-len [integer]</code></td>
+<td>length of fragment, in residues (default <code>9</code>, but is overriden by values in the ProSMART library <code>config.txt</code> file if <code>-lib</code> is specified). Must be odd.</td></tr>
+
+<tr><td><code>-score [double]</code></td>
+<td>Procrustes score dissimilarity threshold. Can be used to remove 
+regions from the alignment that are not locally conserved. By default, 
+no threshold is used.</td></tr>
+
+<tr><td><code>-superpose [double]</code></td>
+<td>only fragments with Procrustes scores less than this value will be used for producing the global superposition.</td></tr>
+
+<tr><td><code>-helixcutoff [double]</code></td>
+<td>helix-sharing is used to help align pairs of structures. This value 
+is the cutoff for defining helix similarity at the chosen fragment 
+length (note: this has nothing to do with helix alignment).</td></tr>
+
+<tr><td><code>-helixpenalty [double]</code></td>
+<td>helix-sharing is used to help align pairs of structures. This value 
+is the dynamic alignment penalty for pairs of helix fragments (note: 
+this has nothing to do with helix alignment).</td></tr>
+
+<tr><td><code>-no_reward_seq</code></td>
+<td>specifies to perform pure structure-based alignment, ensuring that sequence conservation has no influence.
+</td></tr>
+
+<tr><td><code>-reward_seq [double]</code></td>
+<td>fragment-pairs whose corresponding residues are all sequence-identical are assigned a fixed dissimilarity score (which may be negative) instead of the ordinary Procrustes score during alignment. This effectively forces the alignment to obey sequence conservation, for structure-pairs with very high sequence identity.
+</td></tr>
+
+<tr><td><code>-skip_refine</code></td>
+<td>specifies that fragment-based alignment refinement and residue-based
+ alignment optimisation should not be performed, taking the raw 
+alignment resulting from dynamic programming.
+</td></tr>
+
+<tr><td><code>-main_dist</code></td>
+<td>specifies for all main chain atoms (N, CA, C and O) to contribute to side chain scores. Only CA is included by default.
+</td></tr>
+
+<tr><td><code>-num_dist [double]</code></td>
+<td>interatomic distance threshold for the 'NumDist' score, which is the number of corresponding side chain atoms that deviate more than the threshold, after local backbone superposition.
+</td></tr>
+
+<tr><td><code>-no_fix_errors</code></td>
+<td>specifies to not account for potential side chain flips during scoring. By default, flips are applied in order to achieve the lowest net interatomic distance after local superposition.
+</td></tr>
+
+</tbody></table>
+<br>
+
+
+<b><i>ProSMART ALIGN Rigid Substructure Identification Options:</i></b>
+<table>
+<tbody><tr><td width="200"><code>-cluster_skip</code></td>
+<td>do not perform the rigid substructure identification functionality.</td></tr>
+
+<tr><td><code>-cluster_score [double]</code></td>
+<td>Procrustes dissimilarity score threshold; only fragments with scores
+ below this value will be used for rigid substructure identification.</td></tr>
+
+<tr><td><code>-cluster_angle [double]</code></td>
+<td>intrafragment rotational dissimilarity score threshold (unit: angle 
+in degrees); only fragments with scores below this value will be used 
+for rigid substructure identification.</td></tr>
+
+<tr><td><code>-cluster_min [double]</code></td>
+<td>minimum number of fragments (size of cluster) when performing rigid substructure identification.</td></tr>
+
+<tr><td><code>-cluster_link [double]</code></td>
+<td>single linkage clustering threshold for rigid substructure identification (unit: cosine of angle).</td></tr>
+
+<tr><td><code>-cluster_rigid [double]</code></td>
+<td>controls final cluster rigidity of identified rigid substructures 
+(unit: cosine of angle). Increasing this value will force the 
+superposition to agree better with fewer fragments in the centre of the 
+cluster, rather than being based on agreement with the whole 
+substructure. Higher values are better for superposition, although may 
+result in rigid substructures not being identified at all.</td></tr>
+
+<tr><td><code>-cluster_color [double]</code></td>
+<td>scales cluster colour resolution (i.e. dissimilarity threshold) in outputted PyMOL colour scripts.</td></tr>
+
+<tr><td><code>-output_dm</code></td>
+<td>output cluster distance matrices, for subsequent inspection using other software (e.g. R).</td></tr>
+
+</tbody></table>
+<br>
+
+
+<b><i>ProSMART ALIGN Output Options:</i></b>
+<table>
+<tbody><tr><td width="200"><code>-cosine</code></td>
+<td>display intrafragment rotation scores as a cosine distance ( = 1 - cos(theta) ), rather than as the default angle (degrees).
+</td></tr>
+
+<tr><td><code>-quick</code></td>
+<td>do not output superposed PDB files and PyMOL colour code scripts.
+</td></tr>
+
+<tr><td><code>-out_pdb</code></td>
+<td>output superposed PDB files.
+</td></tr>
+
+<tr><td><code>-out_pdb_full</code></td>
+<td>any output superposed PDB files will comprise all chains, rather 
+than just the particular chain of interest (i.e. the one aligned and 
+superposed).
+</td></tr>
+
+<tr><td><code>-out_color</code></td>
+<td>output PyMOL colour code scripts.
+</td></tr>
+
+<tr><td><code>-colour_score [double]</code></td>
+<td>adjusts the color resolution in the output PyMOL color files corresponding to main chain scores.</td></tr>
+
+<tr><td><code>-side_score [double]</code></td>
+<td>adjusts the color resolution in the output PyMOL color files corresponding to side chain scores.</td></tr>
+
+<tr><td><code>-col1 [d. d. d.]</code></td>
+<td>RGB colour code for used for defining similarity.</td></tr>
+
+<tr><td><code>-col2 [d. d. d.]</code></td>
+<td>RGB colour code for used for defining dissimilarity.</td></tr>
+
+</tbody></table>
+<br>
+
+
+<b><i>ProSMART RESTRAIN Options:</i></b>
+<table>
+<tbody><tr><td width="200"><code>-self_restrain</code></td>
+<td>generates generic self-restraints for the primary structures, ignoring any secondary input structures. This feature is generalised and may be applied to any molecules, e.g. can be used for DNA/RNA.</td></tr>
+
+<tr><td><code>-restrain_all</code></td>
+<td>generates restraints for all target chains, using all secondary chains as external reference structures.</td></tr>
+
+<tr><td><code>-restrain_best</code></td>
+<td>only use the best external reference chain. For each of the target 
+chains, only one of the external reference chains is used for restraint 
+generation. Which chain is the best is determined by the global 
+alignment score, which is based on net agreement of local structure, 
+independent of global conformation.</td></tr>
+
+<tr><td><code>-restrain_to_self</code></td>
+<td>by default, self-restraints are not generated (i.e. restraints for 
+pdb1.pdb chain A will not be generated using pdb1.pdb chain A as an 
+external reference). This parameter allows self-restraints to be 
+generated.</td></tr>
+
+<tr><td><code>-rmax [double]</code></td>
+<td>max restraint distance - size of sphere around atom in which restraints can exist.</td></tr>
+
+<tr><td><code>-rmin [double]</code></td>
+<td>min restraint distance - restraints of length below this value are not included.</td></tr>
+
+<tr><td><code>-sigma [double]</code></td>
+<td>default sigma used to weight atomic distance restraints in external 
+refinement (only if sigma parameter estimation is not used, or fails to 
+find a suitable solution).</td></tr>
+
+<tr><td><code>-min_sigma [double]</code></td>
+<td>minimum possible value of sigma, which overrides sigma parameter estimation where appropriate.</td></tr>
+
+<tr><td><code>-sigmatype [integer]</code></td>
+<td>possible values are <code>0</code>, <code>1</code> or <code>2</code>. Description: <code>0</code>: use default constant sigma. <code>1</code>: estimate constant sigma by maximum likelihood estimation. <code>2</code>: generate distance-dependent sigmas by maximum likelihood estimation.</td></tr>
+
+<tr><td><code>-cutoff [double]</code></td>
+<td>alignment score cutoff for restraints (default <code>10.0</code>, which effectively turns this feature off) - filters out restraints corresponding to residues with worse Procrustes scores.</td></tr>
+
+<tr><td><code>-side_cutoff [double]</code></td>
+<td>"side chain average" score cutoff for restraints (default <code>10.0</code>, which effectively turns this feature off) - filters out restraints corresponding to residues with worse scores.</td></tr>
+
+<tr><td><code>-multiplier [double]</code></td>
+<td>value (default <code>10.0</code>, which effectively turns this 
+feature off) that is multiplied by the restraint sigma in order to 
+determine a cutoff value with which to filter restraints that are too 
+far from the original distance. This effectively removes extreme 
+outliers.</td></tr>
+
+<tr><td><code>-weight [double]</code></td>
+<td>scales sigmas so that restraints have different weighting (default <code>1.0</code>). The lower the value, the higher the influence that the restraints have during refinement.</td></tr>
+
+<tr><td><code>-rm_bonds</code></td>
+<td>specifies that restraints on bonds/angles will be removed (REFMAC5 
+may be executed to generate list of bonded atom-pairs, if required). If 
+bonds/angles are not removed, then default sigmas will be used, since 
+the assumptions for estimated sigmas will be violated. Specification to 
+use estimated sigmas will by default cause bonds/angles to be removed.</td></tr>
+
+<tr><td><code>-main</code></td>
+<td>specifies that only restraints for main chain atoms should be generated; side chain atoms will be ignored.</td></tr>
+
+<tr><td><code>-side</code></td>
+<td>specifies that restraints for both main chain and side chain atoms should be generated.</td></tr>
+
+<tr><td><code>-restrain&nbsp;[pdb]&nbsp;[chain(s)]&nbsp;[resnum]&nbsp;[resnum]</code></td>
+<td>specify residue ranges, so that restraints are only generated for a portion of a structure (similar to the <code>-align</code>
+ keyword, only the filtering is applied at the end of the process after 
+structural alignment - applies a filter to final restraints lists). The <code>-restrain</code> keyword may be used multiple times, in order to specify multiple ranges. The <code>resnum</code> arguments must be integer (i.e. cannot specify an insertion code - combine with the <code>-restrain_rm</code> keyword for more flexibility with insertion codes). Can use the string <code>ALL</code> for the <code>pdb</code> and/or <code>chain</code> arguments, so that the filtering is applied to all files/chains, as desired. Multiple chains can be specified using the <code>chain(s)</code> argument, e.g. the string <code>ABC</code> would specify for the instance of <code>-restrain</code> to be applied to chains <code>A</code>, <code>B</code>, and <code>C</code>, if they exist, and not applied to any other chains. Note that different instances of the <code>-restrain</code> keyword may be used in order to filter different regions from different chains.
+</td></tr>
+
+<tr><td><code>-restrain_rm&nbsp;[pdb]&nbsp;[chain(s)]&nbsp;[resnum(ins)]</code></td>
+<td>specify individual residues to be removed (similar to the <code>-align_rm</code>
+ keyword, only the filtering is applied at the end of the process after 
+structural alignment - simply removes these residues from the final 
+restraints lists). The <code>-restrain_rm</code> keyword may be used multiple times, in order to remove multiple residues. The <code>resnum</code> argument may optionally be appended by an insertion code. Can use the string <code>ALL</code> for the <code>pdb</code> and/or <code>chain</code> arguments, so that the filtering is applied to all files/chains, as desired. Multiple chains can be specified using the <code>chain(s)</code> argument, e.g. the string <code>ABC</code> would specify for the instance of <code>-restrain_rm</code> to be applied to chains <code>A</code>, <code>B</code>, and <code>C</code>, if they exist, and not applied to any other chains. Note that different instances of the <code>-restrain_rm</code> keyword may be used in order to filter different regions from different chains.
+</td></tr>
+
+<tr><td><code>-output_pdb_chain_restraints</code></td>
+<td>Further to chain-chain restraints files and the final pdb-all 
+restraints files, also output the intermediate pdb-chain restraints 
+files. This is disabled by default, to save disk space.</td></tr>
+
+<tr><td><code>-no_copy</code></td>
+<td>don't copy final restraints files to main output dir.</td></tr>
+
+<tr><td><code>-type [int]</code></td>
+<td>Specifies the REFMAC5 restraint type (as specified <a href="http://www.ysbl.york.ac.uk/refmac/data/refmac_news.html#External" target="_blank">here</a>). Possible values: <code>0</code> (bond type restraints - replace existing), <code>1</code> (bond type restraints - add to existing), and <code>2</code> (external restraints - default, recommended).</td></tr>
+
+</tbody></table>
+<br>
+
+<b><i>ProSMART RESTRAIN Generic Bond Restraints (default: Secondary-Structure H-Bond Restraints):</i></b>
+<br>NOTE: if <code>-h</code> is specified then general main-chain h-bond restraints, including those for helices and sheets, will be generated together. In contrast, if <code>-h_helix</code> and <code>-h_sheet</code> are both specified then restraints for helices and sheets will be generated separately.
+<br>NOTE: if generating generic bonds, cannot also use keywords: <code>-p2</code>, <code>-c2</code>, <code>-lib</code>, <code>-helix</code>, <code>-strand</code>.
+<br>NOTE: fragment library alignment info will only be used if the <code>-strict</code> keyword is used.
+<table>
+<tbody><tr><td width="200"><code>-h</code> (or <code>-bond</code>)</td>
+<td>generate generic bond restraints. By default, these restraints represent h-bonds, and are generated for the whole main chain, including all helices, sheets, loops, etc. according to detected hydrogen bonding patterns.</td></tr>
+
+<tr><td><code>-h_helix</code></td>
+<td>generate generic bond restraints for helices. This includes all types of helices (not just alpha). Types of helix restraints can be specified using keywords <code>-3_10</code>, <code>-alpha</code>, or <code>-pi</code>, or alternatively by manually specifying the residue separation between restrained atom-pairs (see keywords: <code>-min_sep</code>, <code>-max_sep</code>, <code>-allow_sep</code>, <code>-rm_sep</code>, <code>-bond_opt</code>).</td></tr>
+
+<tr><td><code>-h_sheet</code></td>
+<td>generate generic bond restraints across beta-sheets.</td></tr>
+
+<tr><td><code>-strict</code></td>
+<td>require strict structural conservation to helix/strand conformations in order for generic restraints to be generated for those regions. Uses fragment library to determine which regions are sufficiently helical/strand-like.</td></tr>
+
+<tr><td><code>-3_10</code></td>
+<td>generate restraints for potential 3_10-helices. Specifically, requires residue separation of 3 residues.</td></tr>
+
+<tr><td><code>-alpha</code></td>
+<td>generate restraints for potential alpha-helices. Specifically, requires residue separation of 4 residues.</td></tr>
+
+<tr><td><code>-pi</code></td>
+<td>generate restraints for potential pi-helices. Specifically, requires residue separation of 5 residues.</td></tr>
+
+<tr><td><code>-bond_dist [double]</code></td>
+<td>target value of the generic bond restraints.</td></tr>
+
+<tr><td><code>-bond_min [double]</code></td>
+<td>minimum interatomic distance for restrained atom-pairs.</td></tr>
+
+<tr><td><code>-bond_max [double]</code></td>
+<td>maximum interatomic distance for restrained atom-pairs.</td></tr>
+
+<tr><td><code>-min_sep [int]</code></td>
+<td>minimum number of residues between restrained atom-pairs.</td></tr>
+
+<tr><td><code>-max_sep [int]</code></td>
+<td>maximum number of residues between restrained atom-pairs.</td></tr>
+
+<tr><td><code>-allow_sep [int]...</code></td>
+<td>specify to allow only specific number(s) of residues between restrained atom-pairs.</td></tr>
+
+<tr><td><code>-rm_sep [int]...</code></td>
+<td>specify to disallow specific number(s) of residues between restrained atom-pairs.</td></tr>
+
+<tr><td><code>-bond_opt [int]</code></td>
+<td>controls how atom-pairs are selected, i.e. which atom-types can form bonds. Possible values: <code>1</code> (only O-N restraints - suitable for all helices), <code>2</code> (both O-N and N-O restraints - suitable for beta-sheets), <code>3</code> (do not filter - allow generic bond restraints between any main chain atoms).</td></tr>
+
+<tr><td><code>-bond_override [int]</code></td>
+<td>overrides the default number of allowed bonds per atom. Default is 1 for N, 2 for O.</td></tr>
+
+
+</tbody></table>
+<br>
+
+<b><i>Troubleshooting Options: (display extra info in logfiles)</i></b>
+<table>
+<tbody><tr><td width="200"><code>-troubleshoot_restraint_files</code></td>
+<td></td></tr>
+
+<tr><td><code>-troubleshoot_hbond_restraints</code></td>
+<td></td></tr>
+
+
+</tbody></table>
+<br>
+
+
+<b><i>Other Options:</i></b>
+<table>
+<tbody><tr><td width="200"><code>-renamechain [char]</code></td>
+<td>only for use in special cases where the target PDB file (specified with <code>-p1</code>)
+ has only one chain, but does not have a chain_ID letter specified. This
+ option can be used to regenerate the PDB file with a chain_ID as 
+specified by the user. Other ProSMART functionalities will not be 
+executed if <code>-renamechain</code> is specified. ProSMART should then be re-executed with the newly created PDB file.</td></tr>
+
+</tbody></table>
+<br>
+
+
+<br>
+<hr>
+
+<a name="other"></a>
+<h2> Further Notes On Methodology, Functionality And Implementation: </h2>
+
+<ul class="normal">
+<li><p>If alternative residue conformations are detected, only the first conformation present is used for alignment and scoring.</p></li>
+<li><p>Alignments achieved using ProSMART are forced to maintain order of sequence.</p></li>
+<li><p>If ProSMART is executed more than once with the same PDBs/chains,
+ then files generated during previous executions will be overwritten, 
+even if some of the command line arguments are different. If it is not 
+desired for files to be overwritten, then it is recommended for 
+different output directories to be used (this can be achieved using the <code>-o</code> argument).</p></li>
+<li><p>When performing more than one alignment in a single ProSMART 
+execution, the pairwise alignments are by default executed in parallel 
+as multiple jobs in order to utilise the multi-threading capabilities of
+ modern multi-core processors (preferences can be set using the <code>-threads</code>
+ argument). This allows a dramatic increase in the usage of system 
+resources and processing power. Consequently, specifying for multiple 
+chain alignments to be executed concurrently is often much quicker than 
+performing single pairwise alignments consecutively (performance scales 
+approximately linearly with the number of physical cores in the cpu, and
+ with cpu frequency). Furthermore, if both alignment and restraint 
+generation are performed in the same execution, and atomic bonds are to 
+be generated, then the generation of atomic bonds (using REFMAC5) and 
+alignment of structures will be performed in parallel in order to 
+increase efficiency.</p></li>
+</ul>
+<br>
+<hr>
+
+<a name="references"></a>
+<h2> References and Links: </h2>
+
+<ul class="big">
+<li>ProSMART:
+<ul class="big">
+<li>Home page: <a href="http://www2.mrc-lmb.cam.ac.uk/groups/murshudov/" target="_blank">www2.mrc-lmb.cam.ac.uk/groups/murshudov/</a></li>
+<li>Use of external restraints generated by ProSMART: 
+<br>R.A. Nicholls, F. Long and G.N. Murshudov (2012) Low Resolution Refinement Tools in REFMAC5. <i>Acta Cryst.</i> D.</li>
+<li>Details of methods used by ProSMART: 
+<br>R.A. Nicholls (2011) <a href="http://etheses.whiterose.ac.uk/2120/" target="_blank">Conformation-Independent Comparison of Protein Structures</a>. <i>University of York</i> (Ph.D. thesis) 
+<a href="http://www2.mrc-lmb.cam.ac.uk/groups/murshudov/content/prosmart/docs/rob_nicholls_thesis.pdf" target="_blank"><small>[Alternative Link]</small></a>.
+</li>
+</ul></li>
+<br>
+
+<li>REFMAC5:
+<ul class="big">
+<li>Home page: <a href="http://www2.mrc-lmb.cam.ac.uk/groups/murshudov/" target="_blank">www2.mrc-lmb.cam.ac.uk/groups/murshudov/</a> 
+(old: <a href="http://www.ysbl.york.ac.uk/%7Egarib/refmac/" target="_blank">www.ysbl.york.ac.uk/~garib/refmac/</a>)
+</li>
+<li>G.N. Murshudov, P. Skubak, A.A. Lebedev, N.S. Pannu, R.A. Steiner, R.A. Nicholls, M.D. Winn, F. Long and A.A. Vagin (2011) REFMAC5 for the Refinement of Macromolecular Crystal Structures. <i>Acta Cryst.</i> D67, 355-367.</li>
+<li>G.N. Murshudov, A.A. Vagin and E.J. Dodson (1997) Refinement of Macromolecular Structures by the Maximum-Likelihood Method. <i>Acta Cryst.</i> D53, 240-255.</li>
+</ul></li>
+<br>
+
+<li>CCP4:
+<ul class="big">
+<li>CCP4 home page: <a href="http://www.ccp4.ac.uk/" target="_blank">www.ccp4.ac.uk/</a></li>
+<li>Collaborative Computational Project, Number 4 (1994) The CCP4 Suite: Programs for Protein Crystallography. <i>Acta Cryst.</i> D50, 760-763.</li>
+</ul></li>
+<br>
+
+<li>CCP4mg:
+<ul class="big">
+<li>CCP4mg home page: <a href="http://www.ccp4.ac.uk/MG/" target="_blank">www.ccp4.ac.uk/MG/</a> (latest versions include experimental ProSMART analysis features)</li>
+<li>CCP4mg nightly builds: <a href="http://www.ysbl.york.ac.uk/%7Eccp4mg/nightly/" target="_blank">www.ysbl.york.ac.uk/~ccp4mg/nightly/</a></li>
+<li>S. McNicholas, E. Potterton, K.S. Wilson, and M.E.M. Noble (2011) 
+Presenting your structures: the CCP4mg molecular-graphics software. <i>Acta Cryst.</i> D67, 386-394.
+</li>
+</ul></li>
+<br>
+
+<li>PyMOL:
+<ul class="big">
+<li>PyMOL home page: <a href="http://www.pymol.org/" target="_blank">www.PyMOL.org/</a></li>
+<li>The PyMOL Molecular Graphics System, Version 1.3, Schr<!---->š<!---->dinger, LLC.</li>
+</ul></li>
+
+</ul>
+
+<br><br>
+
+ 
+</body></html>

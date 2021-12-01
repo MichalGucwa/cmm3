@@ -1,0 +1,541 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html>
+<head>
+<title>How to document CCP4i commands</title>
+<link rel="stylesheet" type="text/css" href="../ccp4idocs.css" title="CCP4i" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+</head>
+<body><html>
+<head>
+<title></title>
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="3" class="logopic"><img src="../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+
+<td class="logohead">CCP4i: Graphical User Interface</font></td></tr>
+<tr><td class="logoprog">Documentation for Programmers</td></tr>
+</table>
+<h1>CCP4i and MTZ Datasets: Programmer's Cookbook</h1>
+
+<h2>Introduction</h2>
+
+<p>The original design of CCP4i predated the introduction of the
+MTZ "crystal", "dataset" and "project" header information, and as
+a result support for these data within CCP4i has often been
+rather patchy.</p>
+
+<p>Over time some efforts have been made to allow developers who
+are responsible for existing and new task interfaces within CCP4i
+to exploit this data. However the ways of doing this are not
+always obvious, and so this document is intended to outline how to
+make use of the data within CCP4i.</p>
+
+<p>The format follows that of the "cookbook"-type manuals, which
+offer relatively generic "recipes" that aim to solve a particular
+problem that the programmer might encounter. For each recipe,
+the problem and solution are stated, followed by a discussion of
+the solution.</p>
+
+<p>This document assumes that you have some familiarity already
+with the concepts of crystals, datasets and projects within MTZ
+files. If not, or if you need to brush up on the details, then
+please refer to the MTZ file format documentation:</p>
+
+<ul>
+<li><a href="../../../../html/mtzformat.html#datamodel">Data
+    Model</a> section of the
+    <a href="../../../../html/mtzformat.html">MTZ file
+    format for CCP4</a></li>
+</ul>
+
+<h2>The Recipes</h2>
+
+<h3>Contents</h3>
+
+<ol>
+<li><a href="#core_commands">How to find the core CCP4i commands for accessing
+    MTZ data</a></li>
+<li><a href="#lists_of_xtals_etc">How to obtain lists of the crystals,
+    datasets and columns in an MTZ file</a></li>
+<li><a href="#find_type_of_column">How to obtain the type of an MTZ
+    column</a></li>
+<li><a href="#find_dataset_of_column">How to find out which dataset an MTZ
+    column belongs to</a></li>
+<li><a href="#general_header_info">How to access general MTZ header
+    information</a></li>
+<li><a href="#dataset_specific_info">How to access dataset-specific
+    information</a></li>
+<li><a href="#col_resolution_limits">How to get the resolution limits for a
+    particular MTZ column</a></li>
+<li><a href="#dataset_specific_cell">How to update dataset-specific cell
+    parameters within a task interface</a></li>
+<!--
+<li><a href="#"></a></li>
+<li><a href="#"></a></li>
+-->
+</ol>
+
+<hr />
+
+<a name="core_commands"></a>
+<h3>1. How to find the core CCP4i commands for accessing MTZ data</h3>
+
+<h4>Problem</h4>
+
+<p>You want to find information about which core CCP4i commands are
+available for accessing MTZ data, and how to use them.</p>
+
+<h4>Solution</h4>
+
+<p>See the CCP4i documentation. Specifically:</p>
+
+<ul>
+<li><a href="progdocs/index.html#Extracting_Data_from_MTZ_Files">Extracting
+     Data from MTZ Files</a></li>
+</ul>
+
+<h4>Discussion</h4>
+
+<p>The core documentation is generated from the source code, which contains
+doc-comments; the  source code for the commands are located in the
+<em>$CCP4/ccp4i/src/CCP4_utils.tcl</em> file.</p>
+
+<hr />
+
+<a name="lists_of_xtals_etc"></a>
+<h3>2. How to obtain lists of the crystals, datasets and columns in an MTZ file</h3>
+
+<h4>Problem</h4>
+
+<p>You need to obtain lists of:</p>
+<ul>
+<li>the crystals in an MTZ file, or</li>
+<li>the datasets associated with a crystal, or</li>
+<li>the MTZ columns associated with a dataset, or</li>
+<li>all the MTZ columns in the file.</li>
+</ul>
+
+<h4>Solution</h4>
+
+<p>For each of these there is a specific command:</p>
+
+<ul>
+<li><p><b><tt>GetMtzXtals</tt></b> will return the names of the crystals in the
+    MTZ file:</p>
+    <pre>GetMtzXtals <em>file</em></pre>
+    <p><em>file</em> is the full path to the MTZ file.</p></li>
+<li><p><b><tt>GetMtzDatasetsInXtal</tt></b> will return the names of the datasets
+    associated with a specific crystal:</p>
+    <pre>GetMtzDatasetsInXtal <em>file</em> <em>xtal</em></pre>
+    <p><em>file</em> is the full path to the MTZ file, and <em>xtal</em> is the
+    name of the crystal being examined.</p></li>
+<li><p><b><tt>GetMtzColsInDataset</tt></b> will return the names of the columns
+    associated with a crystal-dataset name pair:</p>
+    <pre>GetMtzColsInDataset <em>file</em> <em>xtal</em> <em>dataset</em></pre>
+    <p><em>file</em> is the full path to the MTZ file, and <em>xtal</em> and
+    <em>dataset</em> define the crystal and dataset names for the dataset
+     being examined.</p></li>
+<li><p><b><tt>GetMtzAllCols</tt></b> will return the names of all the columns in
+    the MTZ file:</p>
+    <pre>GetMtzAllCols <em>file</em></pre>
+    <p><em>file</em> is the full path to the MTZ file.</p></li>
+</ul>
+
+<h4>Discussion</h4>
+
+<p>The following code fragment gives an example of traversing the
+hierarchy of an MTZ file using some of these commands:</p>
+
+<pre>
+proc descend_example { mtzfile } {
+    foreach xtal [GetMtzXtals $mtzfile] {
+       # Loop over crystals
+       puts "Crystal: $xtal"
+       foreach dataset [GetMtzDatasetsInXtal $mtzfile $xtal] {
+          # Loop over datasets 
+          puts "\tDataset: $dataset"
+          foreach col [GetMtzColsInDataset $mtzfile $xtal $dataset] {
+             # Loop over columns
+             puts "\t\t$col"
+          }
+       }
+    }
+    return
+}
+</pre>
+
+<p><tt>GetMtzAllCols</tt> provides a simple way to acquire a list of all the
+columns in the file, if you are not particularly interested in the first instance
+in the crystal and dataset associations - these can always be acquired
+afterwards using recipe 4: <em><a href="#find_dataset_of_column">How to find
+out which dataset an MTZ column belongs to</a></em>.</p>
+
+<p>More sophisticated alternatives to <tt>GetMtzAllCols</tt> include
+<b><tt>GetMtzColumnList</tt></b>, <b><tt>GetMtzColumnByType</tt></b> and
+<b><tt>GetMtzGroupByType</tt></b> - each of which provides some degree of
+selection criteria to be applied to the columns before they are returned.</p>
+
+<hr />
+
+<a name="find_type_of_column"></a>
+<h3>3. How to obtain the type of an MTZ column</h3>
+
+<h4>Problem</h4>
+
+<p>You need to find out what type an MTZ column is.</p>
+
+<h4>Solution</h4>
+
+<p>Use the <b><tt>GetMtzColType</tt></b> command to get the type of an
+MTZ column:</p>
+
+<pre>
+GetMtzColType <em>file</em> <em>label</em>
+</pre>
+
+<p><em>file</em> is the name of the MTZ file, <em>label</em> is the MTZ
+column label of interest.</p>
+
+<h4>Discussion</h4>
+
+<p>MTZ column types are typically single character codes that indicate
+that the data is of a particular type. For example, type <tt>F</tt>
+indicates a structure factor amplitude, while <tt>Q</tt> indicates a
+sigma.</p>
+
+<p>The full list of types can be found in the MTZ file format
+documentation:</p>
+
+<ul>
+<li><a href="http://www.ccp4.ac.uk/dist/html/mtzformat.html#coltypes">Column
+    Types</a></li>
+</ul>
+
+<p>The typing information can be used to group sets of columns in a
+sensible way. The <b><tt>GroupMtzCols</tt></b> command will reformat an
+existing list of columns so that pairs of related columns (e.g. a structure
+factor amplitude and its sigma) or groups of four related columns (e.g.
+F(+) and F(-) and their sigmas) are grouped together in sublists.</p>
+
+<hr />
+
+<a name="find_dataset_of_column"></a>
+<h3>4. How to find out which dataset an MTZ column belongs to</h3>
+
+<h4>Problem</h4>
+
+<p>You need to find out which dataset an MTZ column belongs to.</p>
+
+<h4>Solution</h4>
+
+<p>Use the <b><tt>GetMtzDatasetFromLabel</tt></b> command to get the parent
+dataset for an MTZ column label:</p>
+
+<pre>
+GetMtzDatasetFromLabel <em>file</em> <em>label</em> <em>xtalVar</em> <em>datasetVar</em>
+</pre>
+
+<p><em>file</em> is the name of the MTZ file and <em>label</em> is the column
+label of interest. <em>xtalVar</em> and <em>datasetVar</em> are the names
+of variables in which the data is returned.</p>
+
+<h4>Discussion</h4>
+
+<p>Datasets are uniquely specified by a crystal name-dataset name pair,
+which is returned by this command. For example:</p>
+
+<pre>
+proc parent_dataset_example { mtzfile label } {
+   # Get the names of the parent dataset-crystal pair
+   if { [GetMtzDatasetFromLabel $mtzfile $label xtal dataset] } {
+     puts "Label $label in file $mtzfile"
+     puts "Crystal: $xtal Dataset $dataset"
+   }
+   return
+}
+</pre>
+
+<p>An example of using <tt>GetMtzDatasetFromLabel</tt> is also shown in recipe 8:
+<a href="#dataset_specific_cell"><em>How to update dataset-specific cell parameters
+within a task interface</em></a>.</p>
+
+<hr />
+
+<a name="general_header_info"></a>
+<h3>5. How to access general MTZ header information</h3>
+
+<h4>Problem</h4>
+
+<p>You need to access the general data from an MTZ file header within
+CCP4i, for example the spacegroup or number of batches.</p>
+
+<h4>Solution</h4>
+
+<p>Use the <b><tt>GetMtzParam</tt></b> command with the appropriate
+keyword:</p>
+<pre>
+GetMtzParam <em>file</em> <em>param</em> <em>dataVar</em>
+</pre>
+
+<p><em>file</em> is the full path and filename of the source MTZ
+file; <em>param</em> is the name of the keyword that is associated
+with the data that you want; <em>dataVar</em> is the name of the
+variable that the data will be returned in.</p>
+
+<h4>Discussion</h4>
+
+<p>The following keywords (specified via the <em>param</em> argument) are
+available to fetch the data:</p>
+
+<pre>
+   NBATCHES          : number of batches in the file
+   NDATASETS         : the number of datasets in the file.
+   NCOL              : number of columns
+
+   CELL              : the cell parameters
+   CELL_1            : global cell length "a"
+   CELL_2            : global cell length "b"
+   CELL_3            : global cell length "c"
+   CELL_4            : global cell angle "alpha"
+   CELL_5            : global cell angle "beta"
+   CELL_6            : global cell angle "gamma"
+
+   RESOLUTION_RANGE  : the resolution limits across the whole file
+   RESOLUTION_MIN    : the minimum resolution across the whole file
+   RESOLUTION_MAX    : the maximum resolution across the whole file
+
+   SPACE_GROUP_NAME  : the name of the spacegroup
+   SPACE_GROUP_NUMBER: the corresponding number
+   LATTICE           : the lattice type
+
+   SCALES_COLUMN   : whether the file contains a "SCALES" column
+</pre>
+
+<p>An example usage might be to get the spacegroup number from the file
+header:</p>
+
+<pre>
+proc spacegroup_example { mtzfile } {
+   if { [GetMtzParam $mtzfile SPACE_GROUP_NUMBER spgnum] } {
+      return $spgnum
+   } else {
+      return 0
+   }
+}
+</pre>
+
+<p><tt>GetMtzParam</tt> is best suited for returning "global" properties
+of the file; for dataset-specific properties, see recipe 6
+<a href="#dataset_specific_info"><em>How to access dataset-specific
+information</em></a>.</p>
+
+<hr />
+
+<a name="dataset_specific_info"></a>
+<h3>6. How to access dataset-specific information</h3>
+
+<h4>Problem</h4>
+
+<p>You need to access the dataset-specific cell parameters or
+wavelength within a CCP4i task interface.</p>
+
+<h4>Solution</h4>
+
+<p>Use the <b><tt>GetMtzParamFromDataset</tt></b> command to get the value of a
+specific parameter associated with a dataset:</p>
+
+<pre>
+GetMtzParamFromDataset <em>file</em> <em>xtal</em> <em>dataset</em> <em>param</em> <em>dataVar</em>
+</pre>
+
+<p><em>file</em> is the full path and filename of the source MTZ
+file; <em>param</em> is the name of the keyword that is associated
+with the data that you want; <em>dataVar</em> is the name of the
+variable that the data will be returned in.</p>
+
+<h4>Discussion</h4>
+
+<p><tt>GetMtzParamFromDataset</tt> is a more specific version of the 
+<tt>GetMtzParam</tt> command. The following keywords (specified via the
+<em>param</em> argument) are available to fetch the data:</p>
+
+<pre>
+   DCELL_1: the cell length 'a' for the dataset.
+   DCELL_2: the cell length 'b'.
+   DCELL_3: the cell length 'c'.
+   DCELL_4: the cell angle 'alpha'.
+   DCELL_5: the cell angle 'beta'.
+   DCELL_6: the cell angle 'gamma'.
+   DWAVES : the wavelength associated with the dataset.
+</pre>
+
+<p>An example of using <tt>GetMtzParamFromDataset</tt> is shown in
+recipe 8: <a href="#dataset_specific_cell"><em>How to update dataset-specific
+cell parameters within a task interface</em></a>. That recipe also shows
+how <tt>GetMtzParamFromDataset</tt> can be combined with
+<tt>GetMtzDatasetFromLabel</tt> (see recipe 4:
+<em><a href="#find_dataset_of_column">How to find out which dataset an MTZ
+column belongs to</a></em>) to get data associated with a particular column.</p>
+
+<p>One thing to note is that although in the MTZ libraries the cell is a
+property of a crystal, in CCP4i it is a property of the crystal-dataset
+pairing. This is an implementation detail and not a conceptual difference -
+all datasets associated with the same crystal will have the same cell within
+CCP4i.</p>
+
+<hr />
+
+<a name="col_resolution_limits"></a>
+<h3>7. How to get the resolution limits for a particular MTZ column</h3>
+
+<h4>Problem</h4>
+
+<p>You want to get the resolution limits (high and low resolution) for
+a specific column.</p>
+
+<h4>Solution</h4>
+
+<p>Use the <b><tt>GetMtzColumnResolution</tt></b> command:</p>
+
+<pre>
+GetMtzColumnResolution <em>file</em> <em>label</em> <em>maxresoVar</em> <em>minresoVar</em>
+</pre>
+
+<p><em>file</em> is the name of the MTZ file, <em>label</em> is the column
+label, and <em>maxresoVar</em> and <em>minresoVar</em> define the variables
+in which the minimum and maximum resolution limits will respectively be
+returned in.</p>
+
+<h4>Discussion</h4>
+
+<p>The <tt>RESOLUTION_MIN</tt> and <tt>RESOLUTION_MAX</tt> keywords in
+<tt>GetMtzParam</tt> return the "global" resolution limits (see
+recipe 5: <em><a href="#general_header_info">How to access general MTZ
+header information</a></em>). However the resolution limits associated with
+individual columns in the file can be significantly different.</p>
+
+<p>For most other properties the values for a particular column can be
+accessed by first acquiring the associated dataset for the column
+(recipe 4 <em><a href="#find_dataset_of_column">How to find out which dataset
+an MTZ column belongs to</a></em>) and then looking up the value using
+<tt>GetMtzParamFromDataset</tt> command (recipe 6 
+<a href="#dataset_specific_info"><em>How to access dataset-specific
+information</em></a>).</p>
+
+<hr />
+
+<a name="dataset_specific_cell"></a>
+<h3>8. How to update dataset-specific cell parameters within a task interface</h3>
+
+<h4>Problem</h4>
+
+<p>You need to update the dataset-specific cell parameters within a CCP4i
+task interface whenever a user selects a new MTZ file or MTZ column
+label.</p>
+
+<h4>Solution</h4>
+
+<p>This recipe involves threading together a number of different pieces:</p>
+
+<ol>
+<li>
+<p>In the <em>taskname</em><tt>_task_window</tt> procedure, use the
+<tt>-command</tt> argument of the <tt>CreateLabinLine</tt> command to
+invoke a callback function whenever the user selects a label. For example:</p>
+<pre>
+   CreateLabinLine line \
+      "F and sigF" HKLIN "F" F [list F] -sigma "sigF" SIGF {} \
+      -command "set_xtal_cell $arrayname"
+</pre>
+</li>
+<li>
+<p>In the same procedure, make sure that the callback function is also invoked
+by the <tt>-command</tt> option of the <tt>CreateInputFileLine</tt> command. For
+example:</p>
+<pre>
+    CreateInputFileLine line \
+         "Enter name of input reflection data file" \
+         "Native" HKLIN DIR_HKLIN \
+         -command "set_xtal_cell $arrayname"
+</pre>
+</li>
+<li>
+<p>Define the callback function (in this case called <tt>set_xtal_cell</tt>) to
+collect the correct cell and perform any task-specific operations. The
+<tt>GetMtzDatasetFromLabel</tt> command is required to fetch the dataset that
+MTZ column belongs to, and the <tt>GetMtzParamFromDataset</tt> command to
+acquire a specific dataset-specific bit of information.</p>
+<p>For example:</p>
+<pre>
+   proc set_xtal_cell { arrayname } {
+      # Get cell information based on HKLIN and F label
+      upvar \#0 $arrayname array
+
+      # Acquire actual values of task parameters
+      set filen [GetFullFileName0 $arrayname HKLIN]
+      set label [GetValue $arrayname "F"]
+
+      # Extract xtal and dataset names, given filename and a column name
+      if { ![GetMtzDatasetFromLabel $filen $label xtal dataset] } {
+          return 0
+      }
+
+      # Get crystal cell for the specific crystal/dataset
+      for { set i 1 } { $i <= 6 } { incr i } {
+          if { ![GetMtzParamFromDataset $filen $xtal $dataset \
+                 DCELL_$i dcell($i)] } {
+            return 0
+          }
+      }
+
+      # The required cell parameters are now in the local array "dcell"
+      # so you can do what you want with them below here
+      ...
+      return
+   }
+</pre>
+</li>
+</ol>
+
+<h4>Discussion</h4>
+
+<p>This recipe brings together solutions from the earlier recipes, in order
+to look up the dataset for a selected column and then use that to acquire
+the appropriate cell information. The solution provides a framework that
+allows the acquisition of the appropriate cell parameters. The remaining work
+is figuring out what to do with the cell once you have acquired it, which
+means writing the specifics of your <tt>set_xtal_cell</tt> equivalent.</p>
+
+<p>This recipe could equally be applied to acquiring the appropriate
+wavelength associated with an MTZ column, by using the following code to
+set the value of the local variable <em>dwave</em>:</p>
+
+<pre>
+          if { ![GetMtzParamFromDataset $filen $xtal $dataset \
+                 DWAVES dwave] } {
+            return 0
+          }
+</pre>
+
+<p>Something to note is that in some older or poorly assembled MTZ files, the
+dataset information may be missing. In this case be careful that your code can
+deal with the situation, for example by reverting to the global cell if the
+dataset association isn't found:</p>
+<pre>
+      # Extract xtal and dataset names, given filename and a column name
+      if { ![GetMtzDatasetFromLabel $filen $label xtal dataset] } {
+          # Use the global cell instead
+          for { set i 1 } { $i <= 6 } { incr i } {
+             if { ![GetMtzParam $filen CELL_$i dcell($i)] } {
+                return 0
+             }
+          }
+      }
+</pre>
+
+<hr />
+
+</body>
+</html>

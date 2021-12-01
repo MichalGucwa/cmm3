@@ -1,0 +1,322 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::MATTHEWS_COEF::Supported::Density Modification - Molecular Averaging::Misha Isupov's Jiffy to calculate Matthews coefficient:::::::: -->
+
+<h1>MATTHEWS_COEF (CCP4: Supported Program)</h1>
+
+<h2>NAME</h2>
+<p><b>matthews_coef</b>
+- Misha Isupov's Jiffy to calculate Matthews coefficient.</p>
+
+<h2>SYNOPSIS</h2>
+<p><b>matthews_coef</b><br />
+[<a href="#keywords">Keyworded input</a>]</p>
+
+<h2><a name="description"></a>DESCRIPTION</h2>
+
+<p>The Matthews Coefficient and solvent content are calculated from the unit cell
+and the molecular weight of the molecules in the unit cell. A description of 
+the Matthews coefficient Vm and how it relates to solvent content is given 
+below.</p>
+<p> The probabilities from the Matthews coefficient paper of 
+<a href="#reference2">Kantardjieff and Rupp</a> are also printed, 
+<em>P(reso)</em> for the probability using the input high resolution limit 
+and <em>P(tot)</em> for the probability across all resolution ranges.  This 
+gives the probability of a particular Matthews coefficient based upon the high 
+resolution limit.</p>
+
+<h3><a name="files"></a>Input:</h3>
+
+<p>The program requires the information below which is input via keywords. No
+input files are required.</p>
+<ul>
+<li>cell parameters</li>
+<li>the spacegroup <em>i.e.</em> number of symmetry operations</li>
+<li>the number of molecules in the asymmetric unit</li>
+<li>the molecular weight of 1 molecule ( ~ number of residues * 110),
+<strong>or</strong> the number of residues in 1 molecule</li>
+<li>the high resolution limit (optional)</li>
+</ul>
+
+<h3>Output:</h3>
+
+<p>No output files are generated; below is a sample of the log output.</p>
+<pre>
+  THE MATTHEWS COEF. IS :  1.74
+  SOL % IS : 28.96
+</pre>
+<p>or, if used with the <a href="#auto">AUTO</a> keyword:</p>
+<pre>
+or given protein molecular weight,  or estimated from number of residues 110 
+Nmol/asym  Matthews Coeff  %solvent       P(tot)
+ 
+  1         3.98            69.14         0.09 
+  2         1.99            38.28         0.90 
+  3         1.33             7.42         0.01 
+</pre>
+<p>Using both the <a href="#auto">AUTO</a> keyword and the <a href="#rso">RESO limit</a> (example at resolution 5.0):</p>
+<pre>
+For given protein molecular weight,  or estimated from number of residues 110 
+Nmol/asym  Matthews Coeff  %solvent       P(5.00)     P(tot)
+ 
+  1         3.98            69.14         0.19         0.09 
+  2         1.99            38.28         0.80         0.90 
+  3         1.33             7.42         0.01         0.01 
+</pre>
+<p>
+The highest <em>P(tot)</em> is a strong indicator of the preferred solution.
+</p>
+<h2> <a name="keywords"></a>KEYWORDED INPUT</h2>
+<p>Available keywords are:</p>
+<blockquote>
+<a href="#auto"><b>AUTO</b></a>,
+<a href="#cell"><b>CELL</b></a>,
+<a href="#mode"><b>MODE</b></a>,
+<a href="#molweight"><b>MOLWEIGHT</b></a>,
+<a href="#nmol"><b>NMOL</b></a>,
+<a href="#nres"><b>NRES</b></a>,
+<a href="#reso"><b>RESO</b></a>,
+<a href="#symmetry"><b>SYMMETRY</b></a>,
+<a href="#xmlo"><b>XMLOUTPUT</b></a>
+</blockquote>
+
+<h2><a name="keywords_compulsory"></a>Compulsory keywords</h2>
+
+<h3><a name="cell"></a>CELL a b c [alpha beta gamma]</h3>
+
+<p>You must give the unit cell parameters. The angles default to 90.0 if 
+omitted.</p>
+
+<h3><a name="symmetry"></a>SYMMETRY</h3>
+
+<p>Either the spacegroup number or name can be given. Alternatively, the 
+symmetry operators can be input explicitly, each separated with a '*'. 
+However, the program only requires the total number of operators.</p>
+
+<h2><a name="keywords_extra"></a>Extra keywords</h2>
+
+<h3><a name="nres"></a>NRES &lt;number_of_residues&gt;</h3>
+
+<p>This is used to estimate the molecular weight of one molecule in Daltons. 
+It is assumed that on average each protein residue contains 5 carbons, 1.35 nitrogens, 
+1.5 oxygen, 8 hydrogen and 0.05 sulphur atoms, and thus has a molecular weight of 
+112.5 Da. It is assumed that each DNA residue has an average weight of 325.96 Da.
+The average weight for a DNA/protein complex is calculated assuming a ratio
+of 0.25/0.75.</p>
+
+<p>Obviously, these estimates are very approximate, and it is better to input
+the real molecular weight.</p>
+
+<h3><a name="molweight"></a>MOLWEIGHT &lt;molecular_weight&gt;</h3>
+
+<p>The molecular weight of a molecule in Daltons. What is important is the
+total molecular weight of the molecules in the asymmetric unit. This keyword
+is used in conjunction with NMOL. If this is not given, the program 
+calculates a tentative  molecular weight of the molecule, 
+assuming the unit cell is 47% solvent in the case of protein, 64% for dna and 
+60% for a protein/dna complex.</p>
+
+<h3><a name="nmol"></a>NMOL &lt;number&gt;</h3>
+
+<p>This keyword is not compulsory but is used in conjunction with MOLWEIGHT.
+The &lt;number&gt; of molecules per asymmetric unit. Default 1.</p>
+
+<h3><a name="auto"></a>AUTO</h3>
+
+<p>This keyword is not compulsory and can be used in conjunction with NMOL and
+MOLWEIGHT. It produces a list of incrementing number of molecules, from NMOL (default 1),
+in the asymmetric unit whilst the %solvent is &gt;0.0.</p>
+
+<h3><a name="reso"></a>RESO &lt;high_resolution_limit&gt;</h3>
+
+<p>This keyword is not compulsory.  The high resolution limit is used in the probability scoring.
+
+<h3><a name="comp"></a>MODE &lt;Dna/Comp/other&gt;</h3>
+<p>Non-compulsory keyword.  Mode <em>C</em> indicates that a dna/protein complex is to be modelled, and mode <em>D</em> indicates that dna is to be modelled. Other input leads to the calculation with protein only. The default is protein only.
+
+<h3><a name="xmlo"></a>XMLOUTPUT</h3>
+
+<p>This keyword is of little use for the 'user'. When specified matthews_coef will 
+output a small XML file of the results. The name and location of the XML file can be 
+specified on the command line with XMLFILE, otherwise the file will be called 
+MATTHEWS_COEF.xml.</p>
+<p>Example of input<br>
+<pre>
+CELL 73.58 38.73 23.19
+SYMM 19
+MOLW 6600.0
+AUTO
+XMLO
+</pre>
+<p>Example of output file<br>
+<pre>
+&lt;?xml version="1.0"?&gt;
+ &lt;matthews_run&gt;>
+  &lt;MATTHEWS_COEF
+    ccp4_version="4.1" 
+    date=" 1/25/02" 
+   /&gt;
+  &lt;keyword
+  &gt;
+  
+  &lt;/keyword&gt;
+  &lt;cell
+    volume="   66085.78" 
+   /&gt;
+  &lt;result
+    nmol_in_asu="           1" 
+    matth_coef="   2.503249" 
+    percent_solvent="   50.89439"
+    prob_matth="  0.9962950"
+   /&gt;
+  &lt;result
+    nmol_in_asu="           2" 
+    matth_coef="   1.251625" 
+    percent_solvent="   1.788778"
+    prob_matth="   3.564707E-03"
+   /&gt;
+ &lt;/matthews_run&gt;
+</pre>
+
+
+<h2><a name="function"></a>PROGRAM FUNCTION</h2>
+
+<h3><a name="matthews_number"></a>Matthews Number</h3>
+
+<pre>
+Vm =   cell volume ( cubic As)      V
+       -----------------------   = ---  
+           M*nasymu*nmols_asu      M*Z 
+
+         M         =   molecular weight of protein in daltons 
+         V         =   volume of unit cell.
+         Z         =   no. of molecules in unit cell. = nasymu*nmols_asu
+         nasymu    =   number of asymm. units                 
+         nmols_asu =   number of molecules in asym unit.
+
+
+Molecular weight
+
+          = number of protein residues in molecule * 110
+                                              - very roughly!!!
+          = number of non hydrogen protein atoms in molecule *14 
+                                              - roughly!!!!
+</pre>
+
+<p>Use <a href="rwcontents.html">RWCONTENTS</a> to read your PDB file if you have 
+one; it will count number of atoms of each type.
+Alternatively, <a href="get_prot.html">GET_PROT</a> can be used to
+calculate the Molecular Weight from a sequence. Note that while the
+Matthews coefficient is not very sensitive to the Molecular Weight, the
+probabilities from the Matthews coefficient paper of 
+<a href="#reference2">Kantardjieff and Rupp</a> can be, especially
+if there are several molecules in the asymmetric unit. </p>
+
+<p>Matthews found  Vm somewhere between 1.66+  and 4.0+ corresponding to
+protein contents of 75% to 30% but proteins with higher solvent
+contents will give higher values of Vm. <em>E.g.</em> for a solvent content of
+90%, the Vm would be 12+.</p>
+<p>Using this you can calculate Vm assuming nmols_asu = 1/4,1/2,1,2,3 etc etc.. 
+You MAY be able to narrow down the number of possibilities for nmols_asu.
+If Vm falls outside the range above then the number of molecules per
+asymmetric unit assumed, is likely to be incorrect.</p>
+
+<h3><a name="protein_fraction"></a>Protein fraction</h3>
+
+<p>Turning this into fraction of protein in asymmetric unit:
+<pre>
+            Total mass of Protein in unit cell
+Vp  =    ---------------------------------------
+          Protein density   *  Unit cell volume
+
+
+Vp  = M*Z*u/(V*Dp)    = 1/(N*Dp*Vm) 
+ 
+where   Vp = fraction of protein volume in asymmetric unit.
+        Vm = <a href="#matthews_number">Matthews Number</a>        (A**3/Daltons)
+        Dp = density of protein = 1.35  (g/cc)   (<a href="#reference1">ref 1</a>)
+        N  = Avogadro constant  = 6.023*10**23  gmole**(-1)
+        u  = Mass of Hydrogen   = 1.66*10**-24  g
+  
+( It is sufficient to approximate the mass of a Hydrogen atom as 
+(1/N) because the mass of 1 mole of Hydrogen approximates to 1g.)
+
+==&gt;From this it is easy to obtain the formula derived in Matthews <em>i.e.</em>
+
+                       Vp = 1.66*v / Vm  
+                          = 1.23 / Vm
+                            1/Dp is Matthew's v = 0.74 cc/g )
+</pre>
+
+<p>Alternatively:
+<pre> 
+Vp  = Np* AV/V
+
+where   Np  = number of protein atoms in unit cell 
+             (including hydrogens)
+        AV  = average atomic volume in A**3 - = 10 approximately.
+
+             (There are about the same number of hydrogens 
+              as C N O etc.)
+
+
+If Vp equals fraction of protein volume  in asymmetric 
+unit
+
+Density  =    Dp *Vp  +   Ds* (1-Vp)
+         =   1.35*Vp  + 1.0 * (1-Vp)
+         =   0.35*Vp  + 1.0
+
+Ds = density of solvent.  = 1.0 for H<sub>2</sub>O 
+             
+therefore    Vp  =   (density -1.0)/0.35
+</pre>
+
+<p>If you know the density you can work backwards and find the number
+of molecules in the asymmetric unit exactly.</p>
+
+<h2><a name="examples"></a>EXAMPLES</h2>
+<ol>
+<li>
+<pre>
+matthews_coef &lt;&lt; eof
+CELL 73.58 38.73 23.19
+symm 19
+molweight 6600.0
+nmol 1
+eof
+</pre>
+</li>
+<li>With keyword 'AUTO'
+<pre>
+matthews_coef &lt;&lt; eof
+CELL 73.58 38.73 23.19
+SYMM 19
+MOLW 6600.0
+AUTO
+eof
+</pre>
+</li>
+</ol>
+
+<h2>AUTHORS</h2>
+<p>Originator: Misha Isupov<br />
+Additions by: Charles Ballard ccb@dl.ac.uk, Alun Ashton a.w.ashton@ccp4.ac.uk, Eleanor Dodson ccp4@ysbl.york.ac.uk</p>
+
+<h2><a name="references"></a>REFERENCES</h2>
+<ol>
+<!-- KEEP startreferencelist -->
+<li><a name="reference1"></a>
+Matthews, <i>J.Mol.Biol</i> <b>33</b>, 491-497 (1968).
+<li><a name="reference2"></a>
+Kantardjieff and Rupp, <i>Protein Science</i> <b>12</b>, 1865-1871 (2003).
+<!-- KEEP endreferencelist -->
+</ol>
+
+<h2> SEE ALSO</h2>
+<a href="get_prot.html">GET_PROT</a><br>
+<a href="rwcontents.html">RWCONTENTS</a>
+
+</body></html>

@@ -1,0 +1,565 @@
+<html>
+<head><title>CCP4 Program Suite: keyparse</title></head>
+<body>
+
+<!-- ::INDEX_INFO::KEYPARSE::Library::::high-level keyword parsing subroutines:::::::: -->
+
+<H1> KEYPARSE (CCP4: Library)</H1>
+
+<H2> NAME</H2>
+
+<b>keyparse </b> - high-level keyword parsing subroutines
+
+<H2>DESCRIPTION</H2>
+
+<b>keyparse</b> contains subroutines which taken together act as a simplified
+interface to those in <a href="parser.html">parser</a>.
+<p>
+These routines (actually all entry points to one  routine)
+simplify the work of decoding keyworded input that is of a
+decently regular, simple form (as it should be). They are a
+veneer on the PARSER and associated routines, hiding many of the gory
+details.
+
+<H2>Contents</H2>
+
+<ul><li><a href="#overview">Overview</a>
+    <li><a href="#list_of_subroutines">List of Subroutines</a>
+        <ol><li><a href="#core_routines">Core routines</a>
+            <li><a href="#complex_situations">Complex situations</a>
+            <li><a href="#standard_keywords">Standard keywords</a>
+            <li><a href="#atom_selection">Atom selection commands</a>
+        </ol>
+    <li><a href="#descriptions">Descriptions of the Subroutines</a>
+    <li><a href="#authors">Authors</a>
+    <li><a href="#see_also">See also</a>
+</ul>
+
+<a name="overview"></a><H2>Overview</H2>
+
+<p>The idea is to call a routine (<a href="#memoparse">MEMOPARSE</a>) to
+read a keyworded line into a hidden internal buffer and then have a
+simple chain of calls to a set of routines which check the appropriate
+keyword, look for any extra arguments associated with it, and set values in
+their arguments as appropriate.  No IF ... THEN ... ELSE (or, much
+worse, assigned GOTO) is necessary, nor maintaining the parser
+arrays - the relevant checking is done internally.  At the end of
+the checks, call <a href="#parsediagnose">PARSEDIAGNOSE</a> to print
+any appropriate messages and loop back to MEMOPARSE if PARSEDIAGNOSE's
+argument is true (otherwise continue and process the data read in).
+You don't need to check for `END' or end-of-file.
+<p>
+Escape hatch: use PARSEKEYARG to get all the
+tokens after a random keyword and call e.g. PARSE
+(from <a href="parser.html">parser</a>) to deal with them as necessary.
+This approach is deprecated, however - go for
+simply-structured input.
+<p>
+<b>Example:</b>
+<pre>
+            real rval, cell(6)
+            integer ival
+            character*80 rest
+            logical cont
+               ...
+         10 call memoparse (.true.)  ! setup and echo i/p
+            call parseint ('IVAL', ival)  ! ival.eq.3 after `IVAL 3'
+            call parsecell (cell)   ! assign cell from `CELL 20 30 40' etc.
+            call parsekeyarg ('FRED', rest)  ! get the full horror in REST
+            call parse (rest, ....)
+             &lt;firkle with the `parse'd arrays&gt;
+             &lt;more call parse&gt;... ...
+            call parsediagnose (cont) ! check
+            if (cont) goto 10
+             &lt;now do something useful with the results...&gt;
+
+
+</pre>
+
+<a name="list_of_subroutines"></a><H2>List of Subroutines</H2>
+
+<p>The subroutines have been broken into three groups: core subroutines,
+subroutines for dealing with complex situations, and subroutines for
+dealing with standard keywords.
+
+<a name="core_routines"></a><H3>1. Core subroutines</H3>
+
+<p>This group comprises the basic set of keyparser routines.
+
+<p><table border=1>
+<tr valign="top"><th>Routine and arguments <th>Purpose
+<tr valign="top"><td><a href="#memoparse">MemoParse</a>(echo)  <td>Call PARSER and stash the returned values away for later
+        testing when the other entrypoints are called. If logical <b>echo</b> is .true.
+        then echo input line to the standard output.
+<tr valign="top"><td>ParseFail()  <td>Internal routine?
+<tr valign="top"><td><a href="#parsediagnose">Parsediagnose</a>(cont)  <td>call at end of tests for possible 'Invalid keyword'
+        diagnostic or abort if at EOF and had an error.  Continue processing (no EOF)
+<tr valign="top"><td><a href="#parsekey">ParseKey</a>(key,flag)  <td>set logical <b>flag</b> to .true. if character <b>key</b>
+        is matched.
+<tr valign="top"><td>ParseKeyArg(key,rest)  <td>if <b>key</b> is matched then character <b>rest</b>
+        contains the rest of the line.
+<tr valign="top"><td><a href="#parseint">ParseInt</a>(key,ival)  <td>if <b>key</b> is matched then integer value is returned
+        in <b>ival</b>.
+<tr valign="top"><td><a href="#parsereal">ParseReal</a>(key,rval)  <td>if <b>key</b> is matched then real value is returned
+        in <b>rval</b>.
+<tr valign="top"><td>ParseNArgs(key,toks)  <td>if <b>key</b> is matched then the number of tokens
+        is returned in integer <b>ntoks</b>.
+<tr valign="top"><td><a href="#parsenints">ParseNInts</a>(key,n,ivals)  <td>if <b>key</b> is matched then up to <b>n</b>
+        integers will be returned in array <b>ivals</b>, and <b>n</b> will be returned
+        as the number of integers actually read from the input line.
+<tr valign="top"><td><a href="#parsenreals">ParseNReals</a>(key,n,rvals)  <td>if <b>key</b> is matched then up to <b>n</b>
+        reals will be returned in array <b>rvals</b>, and <b>n</b> will be returned
+        as the number of reals actually read from the input line.
+</table>
+
+<a name="complex_situations"></a><H3>2. Complex situations</H3>
+
+<p>This group includes routines to handle the more complex input structures
+used by many programs. By setting SUBKEY to a blank, mixed real, integer and
+character parameters may be read one-at-a-time from a line.
+By setting  SUBKEY  to  some other value, subsidiary keywords and their
+arguments may be read. By setting  FLAG  false, keywords with a variable number
+or variable type arguments may be read.
+
+<p><table border=1>
+<tr valign="top"><th>Routine and arguments <th>Purpose
+<tr valign="top"><td><a href="#parsesubkey">ParseSubKey</a>(key,subkey,flag)  <td>if <b>key</b> and <b>subkey</b> are
+        matched then <b>flag</b> will be set to .true.
+<tr valign="top"><td>ParseSubKeyArg(key,subkey,nth,rest)  <td>if <b>key</b> and <b>subkey</b> are
+        matched then the rest of the input line from the <b>nth</b> position after
+        the subkey is returned in character <b>rest</b>.
+<tr valign="top"><td><a href="#parsesubint">ParseSubInt</a>(key,subkey,nth,flag,ival)  <td>if <b>key</b> and <b>subkey</b> are
+        matched then the <b>nth</b> integer after the subkey is returned in <b>ival</b>.
+        If logical <b>flag</b> is set to .true. then an error is returned if the value
+        at the nth position is empty or is not an integer.
+<tr valign="top"><td><a href="#parsesubreal">ParseSubReal</a>(key,subkey,nth,flag,rval)  <td>if <b>key</b> and <b>subkey</b> are
+        matched then the <b>nth</b> real after the subkey is returned in <b>rval</b>.
+        If logical <b>flag</b> is set to .true. then an error is returned if the value
+        at the nth position is empty or is not a real.
+<tr valign="top"><td><a href="#parsesubchar">ParseSubChar</a>(key,subkey,nthmflag,rest)  <td>if <b>key</b> and <b>subkey</b> are
+        matched then the <b>nth</b> word after the subkey is returned in <b>rest</b>.
+        If logical <b>flag</b> is set to .true. then an error is returned if there is
+        no character or word at this position.
+</table>
+
+<a name="standard_keywords"></a><H3>3. Standard keywords</H3>
+
+<p>This group of routines automatically handles a variety of standard keywords.
+<p>
+<dl>
+<dt><tt>SYMMETRY</tt> &lt;<i>number</i>&gt; | &lt;<i>name</i>&gt; | &lt;<i>operators</i>&gt;
+   <dd>Specifies symmetry in terms of either<br>
+       &lt;<i>number</i>&gt; spacegroup number e.g. <tt>19</tt>;<br>
+       &lt;<i>name</i>&gt; spacegroup name e.g. <tt>P212121</tt>;<br>
+       &lt;<i>operators</i>&gt; explicit symmetry operators e.g.<br>
+       <tt> X,Y,Z * 1/2-X,-Y,1/2+Z * 1/2+X,1/2-Y,-Z * -X,1/2+Y,1/2-Z</tt></p>
+
+<dt><tt>RESOLUTION</tt> &lt;<i>limit</i>&gt; [ &lt;<i>limit</i>&gt; ]
+   <dd>Specifies resolution limits. If only a single limit is given, it is an
+       upper limit, otherwise the upper and lower limits can be in either order.
+       They are in &Aring; <i>unless</i> they are both &lt; 1.0, in which case
+       they are in units of 4sin<sup>2</sup> (theta)/(lambda)<sup>2</sup>.</p>
+
+<dt><tt>CELL</tt> <i>a</i> <i>b</i> <i>c</i> [ <i>alpha</i> <i>beta</i> <i>gamma</i> ]
+   <dd>Specifies cell dimensions (in &Aring;) and optionally angles in degrees
+       (which default to 90<sup>o</sup>).</p>
+
+<dt><tt>LABIN</tt> &lt;<i>program label</i>&gt;=&lt;<i>file label</i>&gt; ...
+   <dd>Associates the column labels that the program expects with column labels
+       in the input MTZ file. If there is no ambiguity, the program and file
+       labels can be swapped on the other side of the =.</p>
+
+<dt><tt>LABOUT</tt> &lt;<i>program label</i>&gt;=&lt;<i>file label</i>&gt; ...
+   <dd>Associates column labels in the output file with labels used by the
+       program, similarly to <tt>LABIN</tt>.</p>
+
+</dl>
+
+<p><table border=1>
+<tr><th>Routine and arguments <th>Purpose
+<tr valign="top"><td><a href="#parsecell">ParseCell</a>(cell)  <td>reads an input line of the form<br>
+         <i>CELL a b c [ alpha beta gamma]</i><br>
+        and returns the cell parameters in the array <b>cell</b>.
+<tr valign="top"><td><a href="#parsesymm">ParseSymm</a>(spgnam,numsp,pgnam,nysm,nsymp,rsym)  <td>reads an input line of
+        the form<br>
+         <i>SYMM spacegroup_name | spacegroup_no | list_of_sym_ops</i><br>
+        and returns spacegroup name <b>spgname</b>, spacegroup number <b>numsp</b>,
+        pointgroup name <b>pgname</b>, number of symmetry operations <b>nsym</b>,
+        number of primitive symmetry operations <b>nsymp</b>, and the symmetry
+        matrices <b>rsym</b>.
+<tr valign="top"><td><a href="#parsereso">ParseReso</a>(resmin,resmax,smin,smax)  <td>reads an input line of the form<br>
+         <i>RESOLUTION resmin resmax</i>
+<tr valign="top"><td><a href="#parselabin">ParseLabin</a>(mtznum,prglab,nprglab)  <td>reads an input LABIN line.
+<tr valign="top"><td><a href="#parselabout">ParseLabout</a>(mtznum,prglab,nrprglab)  <td>reads an input LABOUT line.
+</table>
+
+<a name="atom_selection"></a><H3>4. Atom selection commands</H3>
+
+<p>At present <b>keyparse</b> only supports one atom selection command syntax,
+through a call to <a href="#parseatomselect">PARSEATOMSELECT</a>. This will
+decode lines with the following type of atom selection commands:
+
+<p><tt>&lt;keyword&gt; </i> ATOM &lt;<i>inat0</i>&gt; [ [TO] &lt;<i>inat1</i>&gt; ] |
+                  RESIDUE [ ALL | ONS | CA ] [ CHAIN &lt;<i>chnam</i>&gt; ]
+                  &lt;<i>ires0</i>&gt; [ [TO] &lt;<i>ires1</i>&gt; ]</tt>
+
+<p>This is based on the syntax used in atom selection in DISTANG. For the
+purposes of decoding the selection commands the value of the preceding
+<tt>&lt;keyword&gt;</tt> is irrelevant.
+
+<p>The syntax described above is designed to allow selections such as:
+<pre>
+... ATOM 1 TO 1000
+... ATOM 7 9
+... ATOM 10
+... RESIDUE 11 TO 22
+... RESIDUE 10 CHAIN A
+... RESIDUE CHAIN S CA 12 19
+</pre>
+<p>The selection will specifies a range either of atom numbers or of residue
+numbers. In the latter case it can also optionally be used to specify
+a chain identifier (one character) and/or an ``atom type'' selection keyword:
+<pre>
+  ALL   all types of atoms in the selected range
+  ONS   only oxygens and nitrogens in the selected range
+  CA    only carbon atoms in the in the selected range
+</pre>
+
+<p>The ordering of the RESIDUE subarguments is flexible, so that
+<tt>RESIDUE 1 TO 9 CA CHAIN B</tt> is the same as <tt>RESIDUE
+CA CHAIN B 1 TO 9</tt> and so on.
+
+<p><table border=1>
+<tr><th>Routine and arguments <th>Purpose
+<tr valign="top"><td><a href="#parsatomselect">ParseAtomSelect</a>(key, inat0, inat1,
+ ires0, ires1, chnam, imode)  <td>reads an input line of the form<br>
+         <i>&lt;keyword&gt; </i> ATOM &lt;<i>inat0</i>&gt; [ [TO] &lt;<i>inat1</i>&gt; ] 
+                  | RESIDUE [ ALL | ONS | CA ] [ CHAIN &lt;<i>chnam</i>&gt; ]
+                  &lt;<i>ires0</i>&gt; [ [TO] &lt;<i>ires1</i>&gt; ]</i><br>
+        <p>If <b>key</b> is matched then returns a range of atom numbers (<b>inat0</b>,
+	<b>inat1</b>), <i>or</i> a range of residue numbers (<b>ires0</b>,
+	<b>ires1</b>) plus optionally:
+	<ul>
+	<li>Mode value <b>imode</b> (1=ALL, 2=ONS, 3=CA)
+	<li>chain id <b>chnam</b>
+	</ul>
+	Unset atom/residue numbers are returned as -99, unset chain as an
+	empty string ' ', and unset mode as 1.
+</table>
+
+<a name="descriptions"></a><H2>Descriptions of the Subroutines</H2>
+
+<dl>
+<dt><a name="memoparse"></a><H3>MEMOPARSE</H3>
+   <dd><pre>subroutine memoparse (ECHO)</pre>
+   <p>
+   <pre>
+       ECHO (input) LOGICAL
+              Input will be echoed iff ECHO is .TRUE.
+   </pre>
+       Call this at the head of a loop over potential keywords to
+       read a keyworded record, lex it and stash the tokens.
+   <p>
+<dt><a name="parsediagnose"></a><H3>PARSEDIAGNOSE</H3>
+   <dd><pre>
+   subroutine  parsediagnose (CONT)</pre>
+   <p>
+   <pre>
+       CONT (output) LOGICAL
+              Set to .FALSE. if end-of-file or END keyword hasn't
+              been reached, i.e. continue  the  loop  over  input
+              records if CONT is .TRUE.
+   </pre>
+       Call  this  at the end of the loop over possible keywords.
+       It will provide an 'Invalid keyword' diagnostic if no key-
+       words have been matched or abort if CONT would be returned
+       .FALSE. and there has been some input error (invalid  key-
+       word or bad argument).
+<p>
+<dt><a name="parsekey"></a><H3>PARSEKEY</H3>
+   <dd><pre>subroutine parsekey (KEY, FLAG)</pre>
+   <p>
+   <pre>
+       KEY (input) CHARACTER*(*)
+              Keyword  to  match against first four characters of
+              the first token in the keyworded record.
+       FLAG (output) LOGICAL
+              Updated (to .TRUE.) iff KEY is matched.
+   </pre>
+<p>
+<dt><a name="parseint"></a><H3>PARSEINT</H3>
+   <dd><pre>subroutine parseint (KEY, IVAL)</pre>
+   <p>
+   <pre>
+       KEY (input) CHARACTER*(*)
+              Keyword to match against first four  characters  of
+              the first token in the keyworded record.
+
+       IVAL (output) INTEGER
+              Updated  to contain the integer value of the second
+              token in the record iff KEY is matched,  there  are
+              only two tokens in the record and the second repre-
+              sents an integer (according to  PARSE).   Otherwise
+              if  KEY is matched, an error message will be gener-
+              ated.
+   </pre>
+<p>
+<dt><a name="parsereal"></a><H3>PARSEREAL</H3>
+   <dd><pre>subroutine parsereal (KEY, RVAL)</pre>
+   <p>
+   <pre>
+       KEY (input) CHARACTER*(*)
+              Keyword to match against first four  characters  of
+              the first token in the keyworded record.
+
+       RVAL (output) REAL
+              Updated  to contain the floating point value of the
+              second token in the  record  iff  KEY  is  matched,
+              there  are  only  two  tokens in the record and the
+              second  represents  a  real  number  (according  to
+              PARSE).  Otherwise if KEY is matched, an error mes-
+              sage will be generated.
+   </pre>
+<p>
+<dt><a name="parsenints"></a><H3>PARSENINITS</H3>
+   <dd><pre>subroutine parsenints (KEY, N, IVALS)</pre>
+   <p>
+   <pre>
+       KEY (input) CHARACTER*(*)
+              Keyword to match against first four  characters  of
+              the first token in the keyworded record.
+
+       N (input/output) INTEGER
+              On  input: maximum number of integer values to read
+              following KEY.  On output, updated to the number of
+              elements of IVALS which were updated.
+
+       IVALS(N) (output) INTEGER
+              If KEY is matched and followed only by a number (n)
+              of integer values between 1 and the input value  of
+              N,  then  the first n elements of IVALS are updated
+              with the values  of  the  corresponding  arguments.
+              Otherwise an error message will be generated.
+   </pre>
+<p>
+<dt><a name="parsenreals"></a><H3>PARSENREALS</H3>
+   <dd><pre>subroutine parsenreals (KEY, N, RVALS)</pre>
+   <p>
+   <pre>
+       KEY (input) CHARACTER*(*)
+              Keyword  to  match against first four characters of
+              the first token in the keyworded record.
+
+
+       N (input/output) INTEGER
+              On input: maximum number of floating  point  values
+              to  read  following KEY.  On output, updated to the
+              number of elements of RVALS which were updated.
+
+       RVALS(N) (output) REAL
+              If KEY is matched and followed only by a number (n)
+              of  floating  point  values between 1 and the input
+              value of N, then the first n elements of RVALS  are
+              updated  with the values of the corresponding argu-
+              ments.  Otherwise an error message will  be  gener-
+              ated.
+   </pre>
+
+
+<dt><a name="parsesubkey"></a><H3>PARSESUBKEY</H3>
+   <dd><pre>subroutine parsesubkey (KEY, SUBKEY, FLAG)</pre>
+   <p>
+   <pre>
+       KEY (input) CHARACTER*(*)
+              Keyword to match against first four  characters  of
+              the first token in the keyworded record.
+
+       SUBKEY (input) CHARACTER*(*)
+              Subsidiary  keyword to match against the first four
+              characters of any other token in  the  record.   If
+              SUBKEY is blank, the initial keyword is matched.
+
+       FLAG (output) LOGICAL
+              FLAG  is  set .true. iff KEY and SUBKEY are matched
+              or KEY is matched and SUBKEY is  blank.   Otherwise
+              FLAG is unchanged.
+   </pre>
+<p>
+<dt><a name="parsesubint"></a><H3>PARSESUBINT</H3>
+   <dd><pre>subroutine parsesubint (KEY, SUBKEY, NTH, FLAG, IVAL)</pre>
+   <p>
+   <pre>
+       KEY (input) CHARACTER*(*)
+              Keyword  to  match against first four characters of
+              the first token in the keyworded record.
+
+       SUBKEY (input) CHARACTER*(*)
+              Subsidiary keyword to match against the first  four
+              characters  of  any  other token in the record.  If
+              SUBKEY is blank, the initial keyword is matched.
+
+       NTH (input) INTEGER
+              The number of positions after the keyword (and sub-
+              keyword  if  present) of the token to be read as an
+              integer.
+
+       FLAG (input) LOGICAL
+              If the keyword and sub-keyword are matched and FLAG
+              is true then the absence of an integer value at the
+              given position will cause  an  error.  If  FLAG  is
+              false,  the  absence of an integer value will cause
+              no action to be taken.
+
+       IVAL (output) INTEGER
+              Updated to contain the real value of the NTH  token
+              after  the  keyword iff KEY and SUBKEY are matched,
+              the NTH token after the sub-keyword exists and rep-
+              resents an integer (according to PARSE).
+   </pre>
+<p>
+<dt><a name="parsesubreal"></a><H3>PARSESUBREAL</H3>
+   <dd><pre>subroutine parsesubreal (KEY, SUBKEY, NTH, FLAG, RVAL)</pre>
+   <p>
+   <pre>
+       KEY (input) CHARACTER*(*)
+              Keyword  to  match against first four characters of
+              the first token in the keyworded record.
+
+       SUBKEY (input) CHARACTER*(*)
+              Subsidiary keyword to match against the first  four
+              characters  of  any  other token in the record.  If
+              SUBKEY is blank, the initial keyword is matched.
+
+       NTH (input) INTEGER
+              The number of positions after the keyword (and sub-
+              keyword  if  present) of the token to be read as an
+              real.
+
+       FLAG (input) LOGICAL
+              If the keyword and sub-keyword are matched and FLAG
+              is  true then the absence of a numeric value at the
+              given position will cause  an  error.  If  FLAG  is
+              false, the absence of a numeric value will cause no
+              action to be taken.
+
+       RVAL (output) REAL
+              Updated to contain the real value of the NTH  token
+              after  the  keyword iff KEY and SUBKEY are matched,
+              the NTH token after the sub-keyword exists and rep-
+              resents an number (according to PARSE).
+   </pre>
+<p>
+<dt><a name="parsesubchar"></a><H3>PARSESUBCHAR</H3>
+   <dd><pre>subroutine parsesubchar (KEY, SUBKEY, NTH, FLAG, CVAL)</pre>
+   <p>
+   <pre>
+       KEY (input) CHARACTER*(*)
+              Keyword  to  match against first four characters of
+              the first token in the keyworded record.
+
+       SUBKEY (input) CHARACTER*(*)
+              Subsidiary keyword to match against the first  four
+              characters  of  any  other token in the record.  If
+              SUBKEY is blank, the initial keyword is matched.
+
+       NTH (input) INTEGER
+              The number of positions after the keyword (and sub-
+              keyword  if  present) of the token to be read as an
+              integer.
+
+       FLAG (input) LOGICAL
+              If the keyword and sub-keyword are matched and FLAG
+              is  true then the absence of a non-numeric value at
+              the given position will cause an error. If FLAG  is
+              false  and  there  is  a  numeric expression at the
+              given position, the character representation of the
+              numeric  expression  is returned.  If FLAG is false
+              and there is no expression at the  given  position,
+              no action is taken.
+
+       CVAL (output) CHARACTER
+              Updated  to contain the real value of the NTH token
+              after the keyword iff KEY and SUBKEY  are  matched,
+              the NTH token after the sub-keyword exists.
+   </pre>
+
+<p>
+<dt><a name="parsecell"></a><H3>PARSECELL</H3>
+   <dd><pre>subroutine parsecell (CELL)</pre>
+   <p>
+   <pre>
+       CELL(6) (output) REAL
+              Cell parameters.
+   </pre>
+       Updates the elements of CELL using RDCELL iff the  keyword
+       `CELL' is matched.
+<p>
+<dt><a name="parsesymm"></a><H3>PARSESYMM</H3>
+   <dd><pre>subroutine  parsesymm  (SPGNAM,  NUMSGP,  PGNAME, NSYM, NSYMP,
+       RSYM)</pre>
+   <p>
+       The arguments correspond to those  of  the  same  name  in
+       PARSESYMM,  which is called to update them iff the keyword
+       `SYMM' is matched.  NSYM, however, is input only, and  set
+       to 0 before calling RDSYMM.
+<p>
+<dt><a name="parsereso"></a><H3>PARSERESO</H3>
+   <dd><pre>subroutine parsereso (RESMIN, RESMAX, SMIN, SMAX)</pre>
+   <p>
+       The  arguments  correspond  to  those  of the same name in
+       RDRESO, which is called to update  them  iff  the  keyword
+       `RESO' is matched.
+<p>
+<dt><a name="parselabin"></a><H3>PARSELABIN</H3>
+   <dd><pre>subroutine parselabin(MINDX, LSPRGI, NLPRGI)</pre>
+   <p>
+       The  arguments  correspond  to  those  of the same name in
+       LKYIN, which is called to  update  them  iff  the  keyword
+       `LABI' is matched.
+<p>
+<dt><a name="parselabin"></a><H3>PARSELABOUT</H3>
+   <dd><pre>subroutine parselabout(MINDX, LSPRGO, NLPRGO)</pre>
+   <p>
+       The arguments correspond to those of the same name in LKY-
+       OUT, which is called to update them iff the keyword `LABO'
+       is matched.
+
+<p>
+<dt><a name="parseatomselect"></a><H3>PARSEATOMSELECT</H3>
+   <dd><pre>subroutine parseatomselect(KEY, INAT0, INAT1, IRES0, IRES1, CHNAM, IMODE)</pre>
+   <p>
+   <pre>
+       KEY (input) CHARACTER*(*)
+              Keyword  to  match against first four characters of
+              the first token in the keyworded record.
+
+       INAT0 (output) INTEGER
+              Lower limit of atom range, or -99 if unset
+
+       INAT1 (output) INTEGER
+              Upper limit of atom range, or -99 if unset
+
+       IRES0 (output) INTEGER
+              Lower limit of residue range, or -99 if unset
+
+       IRES1 (output) INTEGER
+              Upper limit of residue range, or -99 if unset
+
+       CHNAM (output) CHARACTER*1
+	      Chain identifier, or ' ' if not set
+
+       IMODE (output) INTEGER
+              Set atom type: 1 = ALL
+                             2 = ONS
+                             3 = CA
+</dl>
+
+<a name="authors"></a><H2>AUTHORS</H2>
+Dave Love, Kevin Cowtan, Peter Briggs
+
+<a name="see_also"></a><H2>SEE ALSO</H2>
+<a href="parser.html">parser</a>
+
+<hr>
+</body>
+</html>

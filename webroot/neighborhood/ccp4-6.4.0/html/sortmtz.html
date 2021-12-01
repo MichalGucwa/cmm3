@@ -1,0 +1,209 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>CCP4 Program Suite</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]">
+</HEAD>
+<BODY>
+
+<!-- ::INDEX_INFO::SORTMTZ::Supported::MTZ manipulations / conversions::Sort a MTZ reflection data file:::::::: -->
+
+<H1>SORTMTZ (CCP4: Supported Program)</H1>
+<H2>NAME</H2>
+<B>sortmtz </B>
+- Sort a MTZ reflection data file
+
+<H2>SYNOPSIS</H2>
+
+<P><B>sortmtz hklout</B> <I>foo_out.mtz</I> [ <B>hklin</B> <I>foo_in.mtz</I>
+] <BR>
+[<A HREF="#keywords">Keyworded input</A>]<BR>
+list of hklin files </P>
+
+<H2><A NAME="description"></A>DESCRIPTION</H2>
+
+<P>The program SORTMTZ is used to sort and combine standard or multi-record
+type MTZ reflection data files on up to 5 keys in either ascending or descending
+order to the output file HKLOUT. </P>
+
+<H2><A NAME="data_control"></A><A NAME="keywords"></A>DATA CONTROL CARDS</H2>
+
+<P>When using the program control data is expected from standard input
+in the FIXED order given below (please note that the END keyword is
+<b>not</b> supported for SORTMTZ): </P>
+
+<DL>
+<DT><A NAME="ascend"></A>[ ASCEND | 0 ] | [ DESCEND | 1]</DT>
+
+<DD> Specifies whether to sort in ascending (ASCEND or 0) or descending
+(DESCEND or 1) order. This record is OPTIONAL and sorting will default
+to ASCEND if it is not given. </DD>
+
+<DT><A NAME="vrset"></A>VRSET <em>magic_num</em></DT>
+
+<DD> Reset the value of the internal representation of Missing Number Flags
+to be <em>magic_num</em>. <em>magic_num</em> must be an integer. By default
+SORTMTZ uses -999999 as the internal representation, however it is possible
+that some programs (e.g. MOSFLM) can produce numbers which are smaller. In
+these cases VRSET should be used.</DD>
+
+<DT><A NAME="sort_keys"></A>SORT KEYS</DT>
+
+<DD> These are the labels for up to 5 sort keys to be used. Extra keys
+after the first five items will be ignored. This flag is OPTIONAL if HKLIN
+is assigned on the input and will default to H K L in this case. It is
+COMPULSORY if HKLIN is not assigned. The keys are specified in decreasing
+order of significance. </DD>
+
+<DT><A NAME="filenames"></A>&lt;filenames&gt;</DT>
+
+<DD> The rest of the input data are the filenames to be used for input,
+one filename per line. If HKLIN is assigned on input then these lines are
+ignored. </DD>
+</DL>
+
+<H2><A NAME="files"></A>INPUT AND OUTPUT FILES</H2>
+
+<P>The input files are the reflection data file(s) to be sorted in standard
+MTZ format. If HKLIN is assigned then only this file is used for input,
+otherwise the names of the input files are read as described in section
+DATA CONTROL CARDS. </P>
+
+<p>If there is more than one input MTZ file, the header from the first
+input file is used as the basis for the output file. For unmerged
+files (a.k.a. multi-record files) the order of the symmetry operators in
+the MTZ file header is significant since it is used to determine the
+ISYM value in the M/ISYM column. This order needs to be consistent
+across all files, since only the first order is retained in the output
+file. SORTMTZ checks for this consistency and exits if there is a problem.
+In that case, run the input files through <a href="reindex.html">REINDEX</a>
+with the SYMM keyword set to the file spacegroup, and the operators
+and ISYM values will be set to the standard order. </P>
+
+<P>For the purposes of sorting the missing number flag is temporarily altered
+to a large negative number. The columns H, K and L should never have a
+missing number flag, so this will only have an effect when sorting on other
+columns. The program will abort if there is a datum that is more negative
+than this temporary missing number flag. Note that in a multi-record file
+there should be no missing reflections. </P>
+
+<P>The output file is the sorted reflection data in MTZ format. The missing
+number flag for the output file will be the same as that for the first
+input file or the default NaN. The missing number flags for the input files
+need not necessarily be the same. </P>
+
+<H2><A NAME="output"></A>PRINTER OUTPUT</H2>
+
+<P>The printer output gives the following information (not necessarily
+in the order given): </P>
+
+<OL>
+<LI>The names of the sort keys </LI>
+
+<LI>The sort order (ascending or descending) </LI>
+
+<LI>Details from the opening of the input and output reflection data files
+</LI>
+
+<LI>Details of the header information for each file opened. </LI>
+
+<LI>The number of reflections read and written. </LI>
+</OL>
+
+<H2>ERROR MESSAGES</H2>
+
+<DL>
+<DT>SORTMTZ cannot find file:</DT>
+
+<DD> You have given a filename that the program could not find. The name
+of the file is also printed. </DD>
+
+<DT>SORTMTZ cannot find some labels in MTZ file:</DT>
+
+<DD> There is a mismatch between the sort keys you have specified and the
+column labels found in the input file. It also displays a list of sort
+keys and the position found or `not found'. </DD>
+
+<DT>SORTMTZ has detected a different number of columns in this file compared
+to the first file:</DT>
+
+<DD> A mismatch between two input files with different numbers of columns.
+</DD>
+
+<DT>SORTMTZ has detected different column types: </DT>
+
+<DD>You must ensure that you combine the same sort of data together from
+different files <EM>e.g.</EM> F with Fs and SIG with SIGs. This is checked by comparing
+the column types. This does not preclude merging different data types as
+R and I just define real and integer numbers. </DD>
+</DL>
+
+<P>The messages below are errors detected from the return value of the
+sort routines. They will prevent SORTMTZ from continuing but the error
+should be sought in the sort routines themselves.</P>
+
+<DL>
+<DT>SORTMTZ failed to initialise sort:</DT>
+
+<DD> An error was detected using the sort begin (SRTBEG) routine. A status
+number is also given. </DD>
+
+<DT>SORTMTZ failed to release record to sort procedure:</DT>
+
+<DD> An error was detected in the sort release (SRTRLS) routine. </DD>
+
+<DT>SORTMTZ detected failure in merge phase of sort procedure:</DT>
+
+<DD> An error was detected using the sort merge (SRTMRG) routine. </DD>
+
+<DT>SORTMTZ detected error on obtaining record from sort procedure in return
+phase:</DT>
+
+<DD> An error was detected using the sort release (SRTRET) routine. </DD>
+</DL>
+
+<H2>FURTHER INFORMATION</H2>
+
+<P>The program SORTMTZ was developed from the program SORTLCF in a workshop
+in Cambridge in May, 1991. The move from LCF to MTZ files is part of the
+cunning CCP4/EACBM master plan to improve the software for protein crystallography.
+</P>
+
+<H2><A NAME="examples"></A>EXAMPLES UNDER UNIX</H2>
+
+<H3>Single input file, ascending order</H3>
+
+<PRE>sortmtz HKLIN test_in HKLOUT test_out &lt;&lt; EOF-sortmtz
+# 
+# Sort keys since default keys are H K L
+#
+H K L M/ISYM
+EOF-sortmtz
+</PRE>
+
+<H3>Two input files, ascending order</H3>
+
+<PRE>sortmtz HKLOUT test_out &lt;&lt; EOF-sortmtz
+#
+# Sort order - this flag is optional
+#
+ASCEND
+# 
+# Sort keys
+#
+H K L M/ISYM
+# 
+# Input files
+#
+test_in_1.mtz
+test_in_2.mtz
+EOF-sortmtz
+</PRE>
+
+<H2>AUTHORS</H2>
+
+<P>Orginator : P. J. Daly <BR>
+Contact : Daresbury Laboratory </P>
+
+</BODY>
+</HTML>

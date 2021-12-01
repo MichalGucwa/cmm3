@@ -1,0 +1,26 @@
+#!/usr/bin/env tclsh
+# copies the whole content of input PDB (first argument) except of specified atom types (third argument) to output PDB (second argument)
+
+set input_pdb   [lindex $argv 0]
+set output_pdb  [lindex $argv 1]
+set input_atom  [lindex $argv 2]
+
+set input [open $input_pdb r]
+set indata [split [read $input] "\n"]
+set output [open $output_pdb w]
+
+foreach line  $indata {
+    if { [regexp {HETATM.*} $line junk] || [regexp {ATOM.*} $line junk] } {
+	scan $line "%6s%5d%*c%4s%*c%4s%*c%*c%*c%*c%*c%*c%*c%*c%*c%*c%*c%8f%8f%8f%6f%6f" label number atom residue x y z occ b 
+	if { $atom != $input_atom || ( $residue != $input_atom && $residue != "IOD" && $residue != "SO4" ) } {
+	    puts $output $line
+	}
+    } 
+    if { [regexp {CRYST.*} $line junk] || [regexp {SCALE.*} $line junk] } {
+    	    puts $output $line
+    }
+}
+
+close $input
+close $output
+

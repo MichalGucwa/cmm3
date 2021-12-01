@@ -1,0 +1,51 @@
+#=====================================================================
+#
+# Run balbes - the script file
+#
+#=====================================================================
+
+global env
+global job_params
+global system
+
+
+  if { [info exists env(BALBES_ROOT)] } {
+        set balbes_ccp4i [FileJoin [GetEnvPath BALBES_ROOT] bin_py balbes]
+  } else {
+        set balbes_ccp4i [FileJoin [GetEnvPath CCP4] bin balbes]
+  }
+
+
+  set NAME_ROOT $job_params(JOB_ID)_$job_params(TASKNAME)
+
+  set OUT_ROOTDIR1 [FileJoin $OUT_ROOTDIR $NAME_ROOT]
+                   
+  # Set program manager and PATH_OUT 
+  set cmd "[BinPath $balbes_ccp4i] OUT_ROOTDIR $OUT_ROOTDIR1 NAME_ROOT $NAME_ROOT "
+
+  # Append the command line files with input files 
+  # if { [StringSame $INPUT_SF_TYPE HKLIN] } {
+  append cmd " HKLIN $HKLIN"
+  # }
+  #if { [StringSame $INPUT_SF_TYPE CIFIN] } {
+  #    append cmd " HKLIN $CIFIN"
+  #}
+  #if { [StringSame $INPUT_SF_TYPE MAPIN] } {
+  #    append cmd " MAPIN $MAPIN"
+  #}
+
+  append cmd " SEQIN $SEQIN"
+
+  append cmd " XYZOUT $XYZOUT "
+
+  append cmd " HKLOUT $HKLOUT "
+
+  CreateComScript balbes balbes_script
+
+  set status [Execute $cmd $balbes_script program_status report]
+  
+  set MR_SEARCH_MOD [file join $OUT_ROOTDIR1 ${NAME_ROOT}_MR_SEARCH_MOD.pdb]
+
+  AddOutputFile $MR_SEARCH_MOD [GetDefaultDirPath]
+
+  AddOutputFile "" $OUT_ROOTDIR1

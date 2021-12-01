@@ -1,0 +1,754 @@
+<!DOCTYPE html
+                     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                     "DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<title>CCP4 Interface: Refinement Module</title>
+<link rel="stylesheet" type="text/css" href="../ccp4idocs.css" title="CCP4i" />
+<link rev="made" href="mailto:mgwt@ysbl.york.ac.uk" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta name="AUTHOR" content="Maria, Liz, Peter" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="2"><img src="../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logotitle">Refinement Module</td></tr>
+</table>
+<br />
+<table border="0">
+<tr><td>
+<a href="analysis.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="build.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="../index.html" target="_top">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td></tr>
+</table>
+
+<dl>
+<dt><font color="#cc3333"><strong>Background information</strong></font></dt>
+<dd><a href="#overview" target="_self">Module Overview</a></dd>
+<dd><a href="#restraints" target="_self">Overview of Restraints Handling</a></dd>
+</dl>
+<dl>
+<dt><font color="#cc3333"><strong>Tasks in this module:</strong></font></dt>
+</dl>
+
+<dl>
+<dt><strong><em>Model Preparation</em></strong></dt>
+<dd><a href="#coordconv" target="_self">Convert Coordinate Formats</a></dd>
+<dd><a href="#pdbset" target="_self">Edit PDB File</a></dd>
+<dd><a href="#edit_tls" target="_self">Create/Edit TLS File</a></dd>
+</dl>
+<dl>
+<dt><strong><em>Restraint Preparation</em></strong></dt>
+<dd><a href="#refmac5_review" target="_self">Refmac5 Review Restraints</a></dd>
+<dd><a href="#pdb_restraints" target="_self">Edit Restraints in PDB File</a>
+<dl>
+<dd><a href="#edit_pdb_modres" target="_self">MODRES - Modified Residues</a></dd>
+<dd><a href="#edit_pdb_ssbond" target="_self">SSBOND - Disulphide Bonds</a></dd>
+<dd><a href="#edit_pdb_link" target="_self">LINK - Inter-Residue Bonds</a></dd>
+<dd><a href="#edit_pdb_cispep" target="_self">CISPEP - Cis Peptides</a></dd>
+</dl></dd>
+<dd><a href="#sketch" target="_self">Monomer Library Sketcher</a></dd>
+<dd><a href="#merge_monomers" target="_self">Merge monomer libraries</a></dd>
+</dl>
+<dl>
+<dt><a href="#refmac5" target="_self">Run Refmac5</a> - Maximum Likelihood refinement</dt>
+<dd><a href="#refmac_foldernames" target="_self">Refmac Folder Names</a></dd>
+<dd><a href="#refmac_data_harvesting" target="_self">Data Harvesting</a></dd>
+<dd><a href="#refmac_maps" target="_self">Maps</a></dd>
+<dd><a href="#refmac_layout" target="_self">Refmac - Task Window Layout</a></dd>
+</dl>
+<dl>
+<dt><a href="#ncsref" target="_self">NCS Phased Refinement - NCSref</a></dt>
+<dd><a href="#ncsref_input" target="_self">Input</a></dd>
+<dd><a href="#ncsref_methodology" target="_self">Methodology</a></dd>
+<dd><a href="#ncsref_reviewing_results" target="_self">Reviewing Results</a></dd>
+<dd><a href="#ncsref_maps" target="_self">Maps</a></dd>
+</dl>
+<dl>
+<dt><strong><em>Model Completion &amp; Analysis</em></strong></dt>
+<dd><a href="#watertidy" target="_self">Add/Tidy Waters - Watertidy</a></dd>
+<dd><a href="#tlsanl" target="_self">Analyse TLS parameters</a></dd>
+<dd><a href="#anisoanl" target="_self">Analyse anisotropic U
+    parameters</a></dd>
+<dd><a href="#check" target="_self">Validate model and/or data - run SFCHECK
+    &amp; PROCHECK</a>
+<dl>
+<dd><a href="#check_note" target="_self">Note on Running PROCHECK within CCP4i</a></dd>
+<dd><a href="#check_layout" target="_self">CHECK - Task Window Layout</a></dd>
+</dl></dd>
+</dl>
+
+<p>The layout of each task window, <em>i.e.</em> the number of folders present,
+and whether these folders are open or closed by default, depends on the choices
+made in the <strong>Protocol</strong> folder of the task (see
+<a href="../general/intro.html#task_window_format" target="_self">Introduction</a>).
+Although certain folders are closed by default, there are specific reasons why you
+should or may want to look at them. These reasons are described in the Task Window
+Layout sections below.</p>
+
+<h3><a name="overview"></a>Module Overview</h3>
+
+<p>Refinement in CCP4 is usually done using the program 
+<a href="../../../../html/refmac5.html" target="_PROGDOC">Refmac5</a>,
+although there is also 
+<a href="../../../../html/restrain.html" target="_PROGDOC">Restrain</a>
+available. Before proceeding with refinement, it is important to check 
+that there are suitable restraints in place. This should be the case for the
+protein and common ligands, but needs to be checked for unusual ligands
+and protein linkages (<em>e.g.</em> disulphide bonds). Therefore, the first step
+should be to run Refmac5 in Review Mode (select <tt>review restraints</tt> in the
+protocol section of the <strong>Run Refmac5</strong> task). Certain restraints 
+will be placed in the PDB file, and these can be checked and changed if
+necessary via the <strong>Edit Restraints in PDB File</strong> task. Restraint
+dictionaries for ligands can be generated and/or edited using the
+<strong>Monomer Library Sketcher</strong>. Multiple dictionary files can
+be merged with the <strong>Merge monomer libraries</strong> task.</p>
+
+<p>Refinement of the model can then proceed via the <strong>Run Refmac5</strong> 
+task, as described <a href="#refmac" target="_self">below</a>. The special case of
+<a href="#ncsref" target="_self"><strong>NCS Phased Refinement</strong></a> is treated in 
+a separate task. For TLS refinement, an input file is required to
+define the TLS groups, and this can be generated in the 
+<strong>Create/Edit TLS File</strong> task.</p>
+
+<p>After refinement, a number of analyses and checks can be performed.
+The <strong>Tidy Waters</strong> task rationalises water molecules
+according to the protein chain with which they are most likely associated.
+The <strong>Analyse anisotropic U parameters</strong> task provides
+analyses of U's obtained from a full anisotropic refinement, while the
+<strong>Analyse TLS parameters</strong> task provides analyses of parameters
+from a TLS refinement. Finally, the <strong>Run Sfcheck &amp; Procheck</strong> 
+task must be run to validate the model structure.</p>
+
+<h3><a name="restraints"></a>Overview of Restraints Handling</h3>
+
+<p>Using Refmac for 'restrained refinement', 'structure idealisation' and
+'TLS &amp; restrained refinement', requires restraints to idealised geometry
+and these are also set up within Refmac. The options for 'unrestrained refinement' and 'rigid body
+refinement' do not require restraints. Although restraints can be generated automatically,
+the user is very strongly recommended on the first run of Refmac to check these restraints,
+particularly for any ligand. There is an option to 'review restraints' which will perform
+the restraint generation but no refinement.</p>
+
+<p>Refmac restraint generation will attempt to find a match in the
+geometry library for all residue types in the input PDB file; this will handle all standard
+amino acids and nucleic acids and their link regions automatically.
+The <strong>Review Restraints</strong> folder in the Refmac window controls the setting
+up of restraints.
+The user should be careful with the library descriptions of ligand molecules and wary that
+the names of monomers in the geometry library and the atom naming conventions may not
+be the same as in their structure. You can view the monomer in the geometry library using
+the <strong>Monomer Library Sketcher</strong> and the option under the <strong>File</strong>
+pull-down menu
+to <strong>Read File</strong> -&gt; <strong>Load Monomer from Library</strong>. If you
+have an unusual ligand you can use the <strong>Monomer Library Sketcher</strong> to
+create a geometry library description from either an input PDB coordinate file or from a
+structure that you sketch. If you generate your own geometry library, it must be given
+as one of the input files to Refmac.</p>
+
+<p>Refmac also needs additional restraints to define disulphide bonds, cis-peptides,
+inter-residue links and any modified residues.
+These are input to Refmac as the SSBOND, CISPEP, LINK
+and MODRES cards in the PDB file. They are also generated automatically and written to
+the PDB file when Refmac is run in 'review restraints' mode. The automatic restraint
+generation is very dependent on the quality of the input coordinates; the results should
+be reviewed and edited in the <strong>Edit Restraints in PDB File</strong> task. Note that
+the format used by Refmac for the MODRES and LINK lines is slightly non-standard: there
+is an option in the <strong>Edit Restraints in PDB File</strong> task to write the output
+PDB file in standard format.</p>
+
+<p>If there is non-crystallographic symmetry within the structure and you wish to restrain
+the related chains to be similar (as is recommended in early cycles of refinement) then use
+the <strong>Non-crystallographic symmetry</strong> folder in the Refmac window.</p>
+
+<p>There is a 
+<a href="../../../examples/tutorial/html/refine-tutorial.html" target="_TUTORIALS">
+tutorial</a> introducing restraint handling. For an
+introduction to this tutorial (and a route to the data to be used), see
+<a href="../../../examples/tutorial/html/index.html" target="_TUTORIALS">CCP4 
+Tutorial: Contents</a>.</p>
+
+<h3><a name="coordconv"></a>Convert Coordinate Formats</h3>
+
+<p>The program COORDCONV is used to convert coordinate files from various formats
+(including SHELX, CSD and XPLOR-style formats) to PDB, CCP4 and XPLOR formats. The new
+CCP4 Heavy Atom format is included, too. Take care in using the correct orthogonalisation
+code.</p>
+
+<p>See program documentation:
+<a href="../../../../html/coordconv.html" target="_PROGDOC">COORDCONV</a>.</p>
+
+<h3><a name="pdbset"></a>Edit PDB Model File - Pdbset</h3>
+
+<p>The task runs with a choice of PDBCUR or PDBSET as the underlying program,
+and can be used to perform various manipulations on coordinate files.</p>
+
+<p>See program documentation:
+<a href="../../../../html/pdbset.html" target="_PROGDOC">PDBSET</a>,
+<a href="../../../../html/pdbcur.html" target="_PROGDOC">PDBCUR</a></p>
+
+<h3><a name="edit_tls"></a>Create/Edit TLS File</h3>
+
+<p>TLS refinement requires a definition of the TLS groups to be used, and
+outputs the TLS parameters found for each group. This information is held
+in special TLSIN / TLSOUT files. These files are simple ASCII files which
+can be hand-edited, but they can also be created and edited with
+the Create/Edit TLS File task.</p>
+<p>You should first specify whether you are creating a TLS file from scratch,
+or editing an existing TLS file. The task can also extract TLS parameters from
+the REMARK 3 records of a PDB format file. This is less reliable than using a TLSIN
+file, but may be the only option for structures obtained from the PDB. You
+also need to specify whether to edit only the group definitions (as at the
+start of TLS refinement) or whether you want to include TLS parameters for
+each defined group.</p>
+<p>You should then add or change the values in the <em>TLS group definitions</em> 
+folder. You can have one or more groups, and each group can consist of one or 
+more atom ranges. If TLS parameters are included for each group, these
+are displayed, but obviously it is not a good idea to edit them!</p>
+
+<h3><a name="refmac5_review"></a>Refmac5 Review Restraints</h3>
+
+<p>The first step in refining a model should be to run Refmac5 in Review Mode,
+which can be done via this interface. Certain restraints will be placed in the
+PDB file, and these can be checked and changed if necessary via the
+<strong>Edit Restraints in PDB File</strong> task. Restraint dictionaries for
+ligands can be generated and/or edited using the <strong>Monomer Library
+Sketcher</strong>. Multiple dictionary files can be merged with the
+<strong>Merge monomer libraries</strong> task.</p>
+
+<h3><a name="pdb_restraints"></a>Edit Restraints in PDB File</h3>
+
+<p>This task will simplify editing the restraint records (MODRES, SSBOND,
+LINK and CISPEP) in the PDB file. Refmac will use these restraints
+specified in the PDB file dependent on the input commands from the <i>Setup
+Restraints</i> folder in the Refmac task interface. You will normally
+enter the name of an input PDB file (though this is not essential)
+and by default the changed records will be written out to the same file
+- but you can give an alternative output file name.</p>
+
+<p>The first folder provides some information to help you with the rest
+of the task. When the spacegroup is entered, the symmetry operations
+for that spacegroup are listed. The residue modifications
+and links currently defined in the geometry libraries are also listed.</p>
+
+<h4><a name="edit_pdb_modres"></a>MODRES - Modified Residues</h4>
+
+<p>By default the name of a residue in the PDB file should correspond
+to the name of a monomer in the geometry libraries and the restraints defined
+for that monomer will be used when refining the residue. The MODRES
+records can be used to handle two types of non-default cases:</p>
+
+<dl>
+<dt>Modified residues</dt>
+<dd>If there has been a small chemical change to
+a standard residue then a MODRES record will define that change.
+You should identify the modified residue (enter residue name, sequence
+number, chain ID and insertion code) and the <i>LibNam</i> (<em>i.e.</em> the name
+of the modification in the library).</dd>
+
+<dt>Renaming residues</dt>
+<dd>This is a means of aliasing the residue name
+from the PDB file to a different monomer name in the libraries.
+This may be necessary because the PDB file format does not allow residue
+names greater than three characters but the geometry library names may
+be up to six characters. To use the MODRES record in renaming
+mode: enter the PDB file residue name, sequence number, chain
+ID and insertion code; click on the button in the <i>Rename</i> column and
+enter the <i>LibNam</i>, the name of the monomer in the library file.</dd>
+</dl>
+
+<p>Note: CCP4 uses an extension to the MODRES record in the PDB file,
+the LibNam field is increased from 3 to 6 characters (extending into the
+field usually reserved for comments) and an extra 'mode' field is added
+to the end of the record. When using the MODRES record in rename
+mode the mode field is either RENAME or left blank. When
+MODRES is used to modify a residue the mode field contains the
+name of the modification (as taken from the geometry libraries) and the
+LibNam field is left blank.</p>
+
+<h4><a name="edit_pdb_ssbond"></a>SSBOND - Disulphide Bonds</h4>
+
+<p>Refmac will usually do a good job of finding close cysteine residues and
+automatically generating the restraints to maintain a disulphide bond but
+you may need to enter definitions for difficult cases. Normally the
+residue name sequence number, chain ID and insertion code should be entered
+for both residues in the disulphide bond.</p>
+
+<p>There are two cases which can complicate matters:</p>
+
+<dl>
+<dt>Alternative conformations</dt>
+<dd>It is possible for cysteine
+residues to adopt two or more alternative conformations and not all the
+conformations will have the same disulphide bonding. The PDB format
+does not allow for definition of alternative conformers in the SSBOND record
+and the LINK record must be used instead with the link ID set to 'SS'</dd>
+
+<dt>Symmetry Operators</dt>
+<dd>Disulphide bonds can be between residues in
+different asymmetric units of the crystal. It is not usually
+necessary for the user to specify the symmetry relation between the two linked
+units since the program can usually deduce them by testing
+inter-atomic distances to all possible neighbouring molecules in the crystal.
+All you need to do for disulphide bonds which are not within the same asymmetric
+unit is click on the button in the column labelled 'Find Symm'.
+Then the symmetry operations '1555' and '2555' will be written to the PDB
+file and this will prompt Refmac to check for links bonds to neighbouring
+asymmetric units (the PDB conventions for defining symmetry
+operations are defined in the documentation for REMARK 290 of the
+<a href="http://www.rcsb.org/pdb/docs/format/pdbguide2.2/part_31.html"
+target="_EXTERNAL">PDB guide for remarks 4-999</a>).</dd>
+</dl>
+
+<h4><a name="edit_pdb_link"></a>LINK - Inter-Residue Bonds</h4>
+
+<p>The LINK record is a means of defining any non-standard bond or interaction
+between residues. The standard links between consecutive peptides,
+nucleic acids and sugar residues are deduced automatically by the program
+from the coordinates and it is not necessary to enter them unless the coordinates
+are poor or the link is non-standard.</p>
+
+<p>To define a link you must enter the atom name, alternate indicator,
+the residue name, sequence number, chain ID and insertion code for
+two atoms. The link ID is a CCP4 specific field on the end of the
+LINK record which should contain the name of a type of link defined in
+the CCP4 geometry libraries.</p>
+
+<dl>
+<dt>Symmetry Operators</dt>
+<dd>Links can be between residues in different
+asymmetric units of the unit cell. It is not usually necessary
+for the user to specify the symmetry relation between the two linked units
+since the program can usually deduce them by testing inter-atomic
+distances to all possible neighbouring molecules in the crystal.
+All you need to do for links which are not within the same asymmetric unit
+is click on the button in the column labelled 'Find Symm'. Then the
+symmetry operations '1555' and '2555' will be written to the PDB file and
+this will prompt Refmac to check for links bonds to neighbouring asymmetric
+units (the PDB conventions for defining symmetry operations
+are defined
+<a href="http://www.rcsb.org/pdb/docs/format/pdbguide2.2/part_31.html"
+target="_EXTERNAL">as before</a>).</dd>
+</dl>
+
+<p>Note: CCP4 uses an extension to the PDB definition of a LINK record;
+there is an extra <i>ID</i> field at the end of the record.</p>
+
+<h4><a name="edit_pdb_cispep"></a>CISPEP - Cis Peptides</h4>
+
+<p>To restrain a bond to a cis-peptide linkage you must enter the residue
+name, sequence number, chain ID and insertion code for the two consecutive
+residues connected by the cis-peptide bond. Note that using
+this record is equivalent, within Refmac, to defining a link of type CIS or
+PCIS between the two residues.</p>
+
+<p>Note: The standard PDB definition of the CISPEP record includes
+two fields, the model number and the angle, which are not used in Refmac
+and are not in the interface.</p>
+
+<h3><a name="sketch"></a>Monomer library sketcher</h3>
+
+<p>See separate documentation:
+<a href="sketcher.html" target="_self">Sketcher</a></p>
+
+<h3><a name="merge_monomers"></a>Merge monomer libraries</h3>
+
+<p>This task allows the user to combine geometry descriptions held in multiple
+.cif files, into a single library file. The purpose is simply to enable all of a
+user's geometry descriptions to be held in one library file.</p>
+
+<h3><a name="refmac5"></a>Run Refmac5</h3>
+
+<p>The <strong>Protocol</strong> folder in Refmac requires the user to choose the
+type of refinement (default 'restrained') and the type of phase information to be
+used (default 'none'). For certain types of refinement, TLS parameters
+can be input as a fixed contribution to structure factors. Maps can be
+generated in various formats and
+the extent of map coverage (including the border) may be chosen here.</p>
+
+<p>Depending on the selected Protocol option, the <strong>Files</strong> folder requires input
+of various files (MTZ, PDB, TLS, library files), and names for the output files will be suggested.
+If map files are to be generated (through the toggle button in the Protocol folder) <em>and</em>
+the <a href="../general/preferences.html#creating_maps_refmac5" target="_self">Preferences</a> are set
+such that output map files may be chosen explicitly, the Files folder will contain lines
+for 'Fwt map' and 'DelFwt map'. Default filenames will be suggested, but they may be
+changed.</p>
+
+<p>Dependent on the selected Protocol option, other important choices can be made
+in the <strong>Required Parameters</strong> folder:</p>
+<ul>
+<li>The method to be used for the calculation of the
+crystallographic residual (maximum likelihood or least-squares).</li>
+<li>The number of refinement cycles to be run.</li>
+<li>In/Exclusion of hydrogens from structure factor calculation.</li>
+<li>The resolution range of the data to be used in this refinement run.</li>
+<li>The type of weighting (matrix/gradient) and the relative weights of the
+X-ray and geometry terms, and the in/exclusion of experimental sigmas in
+this weighting. The gold-coloured 'Message line help' at the top of the window
+indicates the direction of change (increase or decrease) for tightening the
+geometry.</li>
+<li>The type of temperature factor refinement.</li>
+<li>The handling of the 'free' reflections. Note that the MTZ label of the
+free R column is set here, rather than in the Files folder - you should
+make sure this is set correctly.</li>
+</ul>
+
+<h4><a name="refmac_foldernames"></a>Refmac Folder Names</h4>
+
+<p>The Refmac window potentially has the following folders&#170;:</p>
+<table border="1">
+<tr><th>Folder name</th><th>Visible for</th><th>Comment</th></tr>
+<tr>
+<td>Data Harvesting</td>
+<td>REST, TLS&#170;</td>
+<td>default is 'Do not create harvest file', but get ready to produce harvest
+files automatically in future</td>
+</tr>
+<tr>
+<td>Required Parameters</td>
+<td>REST, UNRE, RIGID, IDEA, TLS&#170;</td>
+<td>open by default</td>
+</tr>
+<tr>
+<td>Setup Restraints</td>
+<td>REVIEW, REST, IDEA, TLS&#170;</td>
+<td>open for REVIEW (with revised defaults), closed for the other options</td>
+</tr>
+<tr>
+<td>Non-crystallographic symmetry</td>
+<td>REVIEW, REST, IDEA, TLS&#170;</td>
+<td>closed by default</td>
+</tr>
+<tr>
+<td>TLS Parameters</td>
+<td>TLS&#170;</td>
+<td>open by default when TLS &amp; restrained refinement selected</td>
+</tr>
+<tr>
+<td>Rigid Domains Definition</td>
+<td>RIGID&#170;</td>
+<td>open by default when rigid body refinement selected</td>
+</tr>
+<tr>
+<td>Partial Structure Factors</td>
+<td>REST, UNRE, RIGID, TLS&#170;</td>
+<td>closed by default</td>
+</tr>
+<tr>
+<td>Data Output to MTZ file</td>
+<td>REST, UNRE, RIGID, TLS&#170;</td>
+<td>closed by default</td>
+</tr>
+<tr>
+<td>Crystal parameters</td>
+<td>all options</td>
+<td>closed by default</td>
+</tr>
+<tr>
+<td>Scaling Fobs and Fc</td>
+<td>REST, UNRE, RIGID, TLS&#170;</td>
+<td>closed by default</td>
+</tr>
+<tr>
+<td>SigmaA Estimation</td>
+<td>REST, UNRE, RIGID, TLS&#170;</td>
+<td>closed by default</td>
+</tr>
+<tr>
+<td>Other Parameters</td>
+<td>REST, UNRE, RIGID, IDEA, TLS&#170;</td>
+<td>closed by default</td>
+</tr>
+<tr>
+<td>Monitoring</td>
+<td>all options</td>
+<td>closed by default</td>
+</tr>
+<tr>
+<td>Geometric parameters</td>
+<td>REVIEW, REST, IDEA, TLS&#170;</td>
+<td>closed by default</td>
+</tr>
+<tr>
+<td colspan="3">&#170; REVIEW&nbsp;=&nbsp;review&nbsp;restraints,
+REST&nbsp;=&nbsp;restrained&nbsp;refinement,
+UNRE&nbsp;=&nbsp;unrestrained&nbsp;refinement,
+RIGID&nbsp;=&nbsp;rigid&nbsp;body&nbsp;refinement,
+IDEA&nbsp;=&nbsp;structure&nbsp;idealisation,
+TLS&nbsp;=&nbsp;TLS&nbsp;&amp;&nbsp;restrained&nbsp;refinement</td>
+</tr>
+</table>
+
+<h4><a name="refmac_data_harvesting"></a>Refmac - Data Harvesting</h4>
+
+<p>Refmac is one of the <a href="../../../../html/harvesting.html" target="_PROGDOC">Data Harvesting</a>
+programs. See <a href="../general/harvesting.html" target="_self">Data Harvesting in CCP4i</a>
+for implications for the Interface.</p>
+
+<h4><a name="refmac_maps"></a>Refmac - Maps</h4>
+
+<p>Refmac calculates special weighted differences to be used as coefficients for
+electron density maps. It is easiest to create those maps by running the FFT
+task inside the Refmac task. Do this by toggling on the option 'Generate weighted
+difference maps files ...' in the <strong>Protocol</strong> folder. The format
+of these maps can then be chosen.</p>
+
+<p>The Refmac map coefficients FWT and DELFWT should be treated as 'composite
+single Fourier coefficients'. Therefore, even though their appearance suggests
+their use for difference (nF1-mF2) maps, Refmac coefficients should be used in
+the calculation of a 'simple' map if the map is calculated independently from
+the Refmac task with the <a href="maputils.html#fft" target="_self">Run FFT -
+Create Map</a> task in the Map &amp; Mask Utilities module.</p>
+
+<p>Maps may also be (re)created independently from the Refmac task, through
+the <a href="maputils.html#task_maps" target="_self">Create Task-Specific Maps</a>
+task in the Map &amp; Mask Utilities module. The only input this task requires
+is the job number of the original job - all other parameters will be restored
+from the database. This task will produce the appropriate maps, even when
+they were not calculated in the original job.</p>
+
+<p>See program documentation:
+<a href="../../../../html/refmac5.html" target="_PROGDOC">Refmac5</a> or
+<a href="http://www.ysbl.york.ac.uk/~garib/refmac/docs/" target="_PROGDOC">Refmac5@YSBL</a>.</p>
+
+<p>For further information on TLS refinement, see
+<a href="http://www.ccp4.ac.uk/martyn/tls_research.html" target="_PROGDOC">Martyn's page</a>.</p>
+
+<h4><a name="refmac_layout"></a>Refmac - Task Window Layout</h4>
+
+<p>Following the <strong>Protocol</strong>, <strong>Files</strong>,
+and <strong>Required Parameters</strong>
+folders, features to look out for in the Refmac task are:</p>
+
+<table border="1">
+<tr><th>Protocol option</th><th>Folder title</th><th>Importance</th><th>Comment</th></tr>
+
+<tr>
+<td>REVIEW, REST, IDEA, TLS&#170;</td>
+<td>Setup Restraints</td>
+<td></td>
+<td>The default options are slightly different for the REVIEW mode.</td>
+</tr>
+
+<tr><td>RIGID&#170;</td><td>Rigid Domains Definition</td>
+<td>Initialise rotation and translation parameters</td><td>Define translation
+and/or rotation to be applied before refinement starts</td></tr>
+
+<tr><td>REST, UNRE, RIGID, TLS&#170;</td><td>Partial Structure Factors</td>
+<td>Include partial structure factors from known partial structures</td>
+<td>See <a href="../../../../html/refmac5/keywords/xray-principal.html#labin" target="_PROGDOC">
+Refmac partial structure factors</a></td></tr>
+
+<tr><td></td><td>Data Output to MTZ file</td>
+<td>Labels for MTZ output</td><td>Defaults suggested</td></tr>
+
+<tr><td></td><td>Scaling Fobs and Fc</td>
+<td colspan="2">NOTE: When doing ML refinement, the scale factors are only used to
+calculate R values</td></tr>
+<tr><td></td><td></td><td>Apply anisotropic scaling</td>
+<td>Different from program default, which is NOT to apply anisotropic scaling</td></tr>
+<tr><td></td><td></td><td>Use experimental sigmas</td><td>Are yours good enough?</td></tr>
+<tr><td></td><td></td><td>Fix scale and B for low resolution structures</td>
+<td><strong>Scale (<em>i.e.</em> subkeyword SCBULK) needs to be negative</strong></td></tr>
+
+<tr><td></td><td>SigmaA Estimation</td>
+<td>Use 'free' reflections</td><td>SigmaA can be successfully estimated using
+only 200 reflections</td></tr>
+<tr><td></td><td></td><td>Fix scale and B for low resolution structures</td>
+<td>Only use with EXTREME care; scale needs to be negative</td></tr>
+
+<tr><td>REST, UNRE, RIGID, IDEA, TLS&#170;</td><td>Other parameters</td>
+<td>Splitting resolution range, limit Bvalue range, damping parameters</td></tr>
+
+<tr><td>REVIEW, REST, IDEA, TLS&#170;</td><td>Geometric parameters</td>
+<td>Target values for the geometry</td><td>Sensible defaults in place</td></tr>
+
+<tr>
+<td colspan="4">&#170; REVIEW&nbsp;=&nbsp;review&nbsp;restraints,
+REST&nbsp;=&nbsp;restrained&nbsp;refinement,
+UNRE&nbsp;=&nbsp;unrestrained&nbsp;refinement,
+RIGID&nbsp;=&nbsp;rigid&nbsp;body&nbsp;refinement,
+IDEA&nbsp;=&nbsp;structure&nbsp;idealisation,
+TLS&nbsp;=&nbsp;TLS&nbsp;&amp;&nbsp;restrained&nbsp;refinement</td>
+</tr>
+</table>
+
+<h3><a name="ncsref"></a>NCS Phased Refinement</h3>
+
+<p>NCS Phased Refinement is expected to be very useful in the early stages of refining
+molecular replacement solutions when the structure contains NCS models. The method works
+by using the phases derived by '<tt>dm</tt>' from the NCS and solvent flattening and histogram
+matching as input phases to Refmac.<!--  (GARIB - some proper explanation here please!)--></p>
+
+<h4><a name="ncsref_input"></a>Input</h4>
+
+<p>The task requires you to input:</p>
+<ul>
+<li>a model which contains all of the chains in the asymmetric
+unit. CCP4i will automatically extract the names and residue ranges of
+the chains to define the NCS Units and list them in the task
+window.</li>
+<li>a MTZ file containing the experimental Fs and a FreeR flag. You can also, optionally,
+input experimental phases.</li>
+<li>an estimate of the solvent content; the
+<a href="coord_utils.html#matthews" target="_self">Cell Content Analysis</a> task in the
+Coordinate Utilities module may be helpful in determining this.</li>
+</ul>
+
+<h4><a name="ncsref_methodology"></a>Methodology</h4>
+
+<p>If the user has not input experimental phases, the task runs Refmac for one cycle to
+generate phases for input to '<tt>dm</tt>'. The task normally runs for two cycles and on
+each cycle:</p>
+<ol>
+<li>runs Pdbset to split the coordinate file to enable:</li>
+<li>running Lsqkab to determine the translation and rotation between the NCS elements</li>
+<li>runs '<tt>dm</tt>' to do solvent flattening, histogram matching and NCS averaging,
+inputting the calculated translation and rotation</li>
+<li>runs Refmac with input phases taken from '<tt>dm</tt>' for 5 cycles</li>
+<li>runs Refmac for one cycle without input phases but with the refined structure to
+generate unbiased phases</li>
+</ol>
+
+<p>After the refinement cycles, steps 1-3 are repeated so '<tt>dm</tt>' produces averaged
+phases. Three maps are generated automatically: the averaged map and the weighted difference
+maps based on phases from Refmac.</p>
+
+<h4><a name="ncsref_reviewing_results"></a>Reviewing Results</h4>
+
+<p><!--You should look expect (GARIB what in the log file and maps?)-->
+This is a novel procedure and we welcome all feedback and questions. Please send them to:
+<a href="mailto:garib@ysbl.york.ac.uk">garib@ysbl.york.ac.uk</a>.</p>
+
+<h4><a name="ncsref_maps"></a>Maps</h4>
+
+<p>It is easiest to create maps by running the FFT task inside the NCS Phased
+Refinement task. The option to 'Generate weighted difference maps files in ...'
+in this task is toggled on by default. The format of these maps can then
+be chosen.</p>
+
+<p>Maps may also be (re)created independently from the NCS Phased Refinement
+task, through the <a href="maputils.html#task_maps" target="_self">Create Task-Specific
+Maps</a> task in the Map &amp; Mask Utilities module. The only input this task requires is the
+job number of the original job - all other parameters will be restored
+from the database. This task will produce the appropriate maps, even
+when they were not calculated in the original job.</p>
+
+<p>In some cases it may be necessary to create maps through the
+<a href="maputils.html#fft" target="_self">Run FFT - Create Map</a> task in the
+Map &amp; Mask Utilities module. Extreme care needs to be taken in the choice
+of map type and coefficients. See <a href="#refmac_maps" target="_self">above
+for Refmac Maps</a>.</p>
+
+<p>See program documentation:
+<a href="../../../../html/refmac5.html" target="_PROGDOC">Refmac</a>,
+<a href="../../../../html/dm.html" target="_PROGDOC">'<tt>dm</tt>'</a>,
+<a href="../../../../html/lsqkab.html" target="_PROGDOC">LSQKAB</a>,
+<a href="../../../../html/pdbset.html" target="_PROGDOC">PDBSET</a>.</p>
+
+<h3><a name="watertidy"></a>Add/Tidy Waters - Watertidy</h3>
+
+<p>This task rationalises waters at the end of refinement.</p>
+
+<p>See program documentation:
+<a href="../../../../html/watertidy.html" target="_PROGDOC">Watertidy</a>,
+<a href="../../../../html/distang.html" target="_PROGDOC">Distang</a>.</p>
+
+<h3><a name="tlsanl"></a>Analyse TLS parameters</h3>
+
+<p>This task provides various analyses of TLS parameters, such
+as might have been obtained from a TLS refinement in Refmac.
+It will also generate anisotropic U parameters from the input TLS
+parameters and include them in the XYZOUT file, which can then 
+be visualised in an appropriate graphics program (such as CCP4mg or Coot). 
+It is important to remember that the U values have been derived from 
+TLS rather than being refined independently.</p>
+
+<p>By default, the derived anisotropic U parameters and the B factors 
+contained on the ATOM lines include both the contribution
+from the TLS parameters and the contribution of the input residual
+B factors. Using the pull-down menu in the protocol folder, one
+or other of these contributions can be selected on its own.</p>
+
+<p>The task also has an option to output a file containing the TLS axes
+in a format suitable for display in Molscript or in mmCIF format. The
+latter can be imported into the CCP4 Molecular Graphics package for
+display. </p>
+
+<p>Finally, the folder <em>Other options</em> contains an option
+for a detailed analysis of derived U values. This is useful if 
+you have MAKE_U_POSITIVE warnings in Refmac5 - this will tell you 
+which atoms are generating these warnings.</p>
+
+<p>See program documentation:
+<a href="../../../../html/tlsanl.html" target="_PROGDOC">Tlsanl</a>.</p>
+
+<h3><a name="anisoanl"></a>Analyse anisotropic U parameters</h3>
+
+<p>This task provides various analyses of anisotropic U parameters, held
+in ANISOU records of a PDB file, such as might have been obtained from a 
+full anisotropic refinement.</p>
+
+<p>See program documentation:
+<a href="../../../../html/anisoanl.html" target="_PROGDOC">Anisoanl</a>.</p>
+
+<h3><a name="check"></a>Validate model and/or data - SFCHECK &amp; PROCHECK</h3>
+
+<p>The program PROCHECK analyses the geometry of a structure and SFCHECK
+analyses the goodness of fit between structure and experimental data.
+Both programs are useful for identifying badly refined regions of a protein.</p>
+
+<p>Both programs output their analyses in the form of postscript files. From SFCHECK
+there is one file, but from PROCHECK there are, by default, ten postscript files.
+After you have run the task, you can use the option to <tt>View Files from Job</tt>
+(from the Database Menu on the right hand side of the Main Window) and select an
+output file to display. The file will be displayed using the postscript display
+program that is defined in your local CCP4i configuration (see
+<a href="../general/configure.html#postscript_viewers" target="_PROGRAMMERSDOCS">Postscript Viewers</a>).
+Also, when running PROCHECK, there is an option to print the output files automatically.</p>
+
+<h4><a name="check_note"></a>Note on Running PROCHECK within CCP4i</h4>
+
+<p>When PROCHECK is run through CCP4i, the script runs in the directory
+$CCP4_SCR so additional output files can be found there. There is a file
+<em>procheck.prm</em> which controls the running of PROCHECK. When the task is run by
+CCP4i, a default version of this file is copied to $CCP4_SCR if there is not one
+there already. This file is then edited to set the parameter which controls whether
+plots are colour or monochrome. If you wish to adjust any other PROCHECK
+parameters, you should edit <em>$CCP4_SCR/procheck.prm</em> before running the task
+(this will have to be done outside the Interface).</p>
+
+<p>Note that when PROCHECK is run within the Interface, the output file names are
+changed from the PROCHECK form (which is molecule_01_ramachand.ps,
+molecule_02_allramach.ps <em>etc.</em>) to <em>molecule_jobnumber_ramachan.ps</em>,
+<em>molecule_jobnumber_allramach.ps</em> <em>etc.</em> so file names are unique for
+each run of the program.</p>
+
+<p>See program documentation:
+<a href="../../../../html/procheck.html" target="_PROGDOC">PROCHECK</a>,
+<a href="../../../../html/procheck_man/index.html" target="_PROGDOC">PROCHECK MANUAL</a>,
+<a href="../../../../html/sfcheck.html" target="_PROGDOC">SFCHECK</a>,
+$CDOC/sfcheckdoc.ps.</p>
+
+<table border="0" width="100%">
+<tr><td>
+<a href="analysis.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="build.html" target="_self">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="../index.html" target="_top">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td>
+<td align="right"><a href="http://jigsaw.w3.org/css-validator/" target="_EXTERNAL">Valid CSS!</a>
+<a href="http://validator.w3.org/check/referer" target="_EXTERNAL">Valid XHTML 1.0!</a></td></tr>
+</table>
+
+</body>
+</html>

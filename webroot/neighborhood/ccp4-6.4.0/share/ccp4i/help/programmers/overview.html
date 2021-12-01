@@ -1,0 +1,445 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4i Documentation for Programmers: Task Interface Overview</title>
+<link rel="stylesheet" type="text/css" href="../ccp4idocs.css" title="CCP4i" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="3" class="logopic"><img border="0" src="../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logoprog">Documentation for Programmers</td></tr>
+<tr><td class="logotitle">Task Interface Overview</td></tr>
+</table>
+<br />
+<table border="0">
+<tr><td>
+<a href="window_demo.html" target="_PROGMAIN">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="intro.html" target="_PROGMAIN">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td></tr>
+</table>
+
+<p><a href="#organisation_of_directories" target="_self">The
+Organisation of CCP4i Directories</a></p>
+<dl>
+<dt><a href="#overview_of_files_required" target="_self">Overview
+of Files Required for a Task Interface</a></dt>
+<dd><a href="#command_template" target="_self">The Command
+Template File</a></dd>
+<dd><a href="#work_file" target="_self">The Work Script
+File</a></dd>
+<dd><a href="#def_file" target="_self">The
+<strong>.def</strong> File</a></dd>
+<dd><a href="#tcl_file" target="_self">The Tcl File</a></dd>
+</dl>
+<p><a href="#how_parameters_get" target="_self">How Parameters
+Get from Interface to Program</a></p>
+<p><a href="#how_tasks_are_run" target="_self">How Tasks are Run</a></p>
+
+<h3><a name="organisation_of_directories"></a>The Organisation of CCP4i Directories</h3>
+
+<p>Within the top directory usually referenced by the environment variable
+$CCP4I_top, are the following directories:</p>
+
+<table border="0">
+<tr><td><strong>bin</strong></td>
+<td>contains short scripts ccp4i, loggraph <em>etc.</em>,
+which are invoked to start up the ccp4i or the loggraph utilities. These startup scripts
+source the required files from the <strong>src</strong> directory</td></tr>
+
+<tr><td><strong>etc</strong></td>
+<td>contains various parameter files</td></tr>
+
+<tr><td><strong>help</strong></td>
+<td>contains HTML documentation for the Interface</td></tr>
+
+<tr><td><strong>loggraph</strong></td>
+<td>contains the source code for the loggraph utility</td></tr>
+
+<tr><td><strong>mapslicer</strong></td>
+<td>contains the source code for the MapSlicer utility</td></tr>
+
+<tr><td><strong>scripts</strong></td>
+<td>contains the 'work' scripts which actually run the CCP4
+(or other) programs. There is one work script for every task in the Interface</td></tr>
+
+<tr><td><strong>sketch</strong></td>
+<td>contains the source code for the Monomer Sketcher utility</td></tr>
+
+<tr><td><strong>src</strong></td>
+<td>contains the main source code for the Interface. Each
+file in this directory contains a group of procedures of related function, and
+each file is, in some ways, similar to a Fortran library (such as mtzlib
+or cciflib). However, Fortran libraries are linked in to the programs which require
+them, but Tcl scripts are not compiled or linked, so these files are
+<em><strong>sourced</strong></em> by the scripts which require them</td></tr>
+
+<tr><td><strong>tasks</strong></td>
+<td>contains one file with the source code for each individual
+task in the Interface and also one <strong>.def</strong> file
+(<em>i.e.</em> the parameter initialisation file) for each task in the Interface</td></tr>
+
+<tr><td><strong>templates</strong></td>
+<td>contains a <strong><em>program command template</em></strong> for
+each program run by the Interface. Note that if the same program is used
+by several tasks they should all use the same command template file</td></tr>
+</table>
+
+<h3><a name="overview_of_files_required"></a>Overview of Files Required for a Task Interface</h3>
+
+<p>To write an interface to a single task you will normally need to create
+four files - their format and function is introduced by some simple examples
+below. It is necessary to give these files the right names and put them
+in the right directories for the main Interface program to find them.</p>
+
+<p>The example used throughout this overview is for a task called <em>fiddleit</em>
+which is an interface to a single program called <em>fiddleprog</em>. You
+can look at this task interface by typing the command:</p>
+
+<p><strong>&gt; ccp4i -task fiddleit</strong></p>
+
+<p>The <em>fiddleit</em> task interface will be displayed. If you enter
+some parameters and then choose <strong><tt>Run&amp;View Com File</tt></strong> from the
+<strong><tt>Run</tt></strong> menu at the bottom left of the task window, you will see the
+program command line and command file that is created. You should then
+<strong><tt>Abort</tt></strong> rather than try to run the program, as a <em>fiddleprog</em>
+program does not exist.</p>
+
+<h4><a name="command_template"></a>The Command Template File</h4>
+
+<p>A <a href="command_template.html" target="_self">full description</a> of
+the command template file can be found elsewhere.</p>
+
+<p>CCP4 programs expect most of their input in a keyworded command file.
+The Interface uses a command template file to generate
+a command file. The format of this template file has been devised for the
+CCP4Interface - it is <strong>not</strong> Tcl.</p>
+
+<p>The command template contains the keywords and names of parameters required
+by the program. The parameter values will be automatically substituted
+into the template when the user runs the task. The command template also has
+a simple control language (<em>i.e.</em> it allows IFs, ELSEs and loops <em>etc.</em>)
+which is necessary for all but the simplest of program input. Look, for example,
+at <em>$CCP4I_top/templates/fft.com</em> in conjunction with the
+<a href="../../../../html/fft.html" target="_PROGDOC">documentation</a>
+for the FFT program.</p>
+
+<p>Assume the program <em>fiddleprog</em> expects the following keywords:</p>
+<dl>
+<dt><pre>
+title &lt;title&gt;
+fiddlefactors &lt;factor_1&gt; &lt;factor_2&gt; [&lt;factor_3&gt;]
+</pre></dt>
+<dd><em>i.e.</em> the keyword <tt>title</tt> followed by some parameter called
+<tt>&lt;title&gt;</tt>, and the keyword <tt>fiddlefactors</tt> followed by parameters
+<tt>&lt;factor_1&gt; &lt;factor_2&gt;</tt> and optionally <tt>&lt;factor_3&gt;</tt>.</dd>
+</dl>
+
+<p>The command template is then called <em>$CCP4I_top/templates/fiddleprog.com</em>
+and contains a few lines which look like this:</p>
+
+<pre>
+1 title $TITLE
+1 fiddlefactors $FACTOR_1 $FACTOR_2
+- $EXTRA_FIDDLE&nbsp;$FACTOR_3
+</pre>
+
+<p>The format is explained fully
+<a href="command_template.html" target="_self">later</a> but note the
+following two important features:</p>
+
+<ul>
+<li>If a line begins with a '-' it is a continuation of the previous line</li>
+
+<li>The first, non '-', word on a line is a logical value which determines
+if the line is written to the command file. If the logical is 'true' (or&nbsp;1)
+the line is written; if the logical is 'false' (or&nbsp;0) the line is not written.</li>
+</ul>
+
+<p>Assume the user has set the following parameters (<em>via</em> the Interface):</p>
+
+<dl>
+<dt><pre>
+set TITLE &quot;This should be a really good fiddle&quot;
+set FACTOR_1 0.1
+set FACTOR_2 400
+set FACTOR_3 27.1
+set EXTRA_FIDDLE 1
+</pre></dt>
+<dd><em>Note</em>: EXTRA_FIDDLE&nbsp;is set to 1 or 'true'</dd>
+</dl>
+<p>Then these values will be substituted into the template to generate the
+following command file:</p>
+
+<pre>
+title&nbsp;'This should be a really good fiddle'
+fiddlefactors 0.1 400 -
+27.1
+</pre>
+
+<ul>
+<li>Note that the '-' character on the end of the second line is the usual
+CCP4 line continuation character</li>
+
+<li>If the parameter EXTRA_FIDDLE had been zero (<em>i.e.</em> 'false')
+the final line containing the parameter FACTOR_3, and the dash on the second
+line, would not have been written to the command file.</li>
+</ul>
+
+<h4><a name="work_file"></a>The Work Script File</h4>
+
+<p>A <a href="run_scripts.html" target="_self">full description</a> of
+work files can be found elsewhere.</p>
+
+<p>The work file contains the functionality which is invoked when the user
+hits the <strong><tt>Run</tt></strong> button on the task window. The work file is
+written in Tcl which is an excellent language to use when you need to write complex
+scripts. For a simple case where one task corresponds to running one program,
+the work file can be very simple. For our example it could contain:</p>
+
+<blockquote>
+<pre>
+CreateComScript $CCP4I_top/templates/fiddleprog.com fp_script
+
+Execute &quot;fiddleprog HKLIN&nbsp;datain.mtx HKLOUT&nbsp;fiddleddata.mtz&quot; \
+      $fp_script $LOG_FILE&nbsp;program_status report
+</pre>
+</blockquote>
+
+<p>This script just calls the commands <em>CreateComScript</em> and
+<em>Execute</em>.<br /><em>N.B.</em> the backslash at the end of the second
+line is the line continuation character in Tcl scripts.</p>
+
+<p>The command <em>CreateComScript</em> uses the command template file (as described
+<a href="#command_template" target="_self">above</a>) to
+generate a useable program command file, substituted with
+the parameters from the Interface (how this is done is described
+<a href="#how_parameters_get" target="_self">later</a>).
+The command has two arguments: the name of the command template
+file is input, and the name of a temporary program command file is returned.</p>
+
+<p>The command <em>Execute</em> will run a CCP4 program (or any other program)
+using the command line which is given as its first argument . Note that,
+as is usual with CCP4 programs, this command line includes the definition
+of the input and output files, HKLIN and HKLOUT.</p>
+
+<p>The second argument to this command is the name of the temporary file
+which contains the keyworded input generated by <em>CreateComScript</em>.
+The remaining arguments will be described in
+<a href="command_template.html" target="_self">more detail later</a>.</p>
+
+<p>If the task is an interface to multiple programs, the work file
+will become more complex as it will usually have some flow control and
+may have to perform functions such as extracting information from log files.
+For two of the more complex examples look at <em>$CCP4I_top/scripts/fft.script</em>
+and <em>$CCP4I_top/scripts/patterson.script</em>.</p>
+
+<p>CCP4i provides a <a href="indexframeset.html" target="_PROGRAMMERSDOCS">library
+of commands</a> which could be useful in a work file, including <em>CreateComScript</em>
+and <em>Execute</em>, but someone writing a complex script may need to be
+familiar with some basic Tcl commands - particularly for control structures
+(<em>i.e.</em> IFs and loops <em>etc.</em>).</p>
+
+<h4><a name="def_file"></a>The <strong>.def</strong> File</h4>
+
+<p>A <a href="def_files.html" target="_self">more detailed description</a>
+of the <strong>.def</strong> file can be found elsewhere.</p>
+
+<p>The <strong>.def</strong> file defines the type and initial value for the parameters.
+A file of similar format is used to save parameters if the user picks the
+<strong><tt>Save Parameters</tt></strong> option at the bottom of the task window.</p>
+
+<p>For our example the <strong>.def</strong> file
+<em>$CCP4I_top/tasks/fiddleit.def</em> is:</p>
+
+<pre>
+#CCP4I VERSION CCP4Interface 1.0
+#CCP4I SCRIPT&nbsp;DEF fiddleit
+#CCP4I DATE 25/06/97
+#CCP4I USER&nbsp;lizp
+TITLE _text &quot;&quot;
+FACTOR_1 _fraction 0.1
+FACTOR_2 _positiveint 200
+FACTOR_3 _real 20.0
+EXTRA_FIDDLE _logical 0
+</pre>
+
+<p>The file identifiers, in lines beginning #CCP4I, which appear at the
+top of all <strong>.def</strong> files, are important to ensure the file is recognised and
+not used inappropriately.</p>
+
+<p>In the subsequent lines the parameters required by the program are defined.</p>
+
+<p>TITLE&nbsp;is defined as type _text with an initial value of
+&quot;&quot;&nbsp;(<em>i.e.</em> an empty string), FACTOR_1 is of type _fraction and has
+initial value 0.1 <em>etc</em>.</p>
+
+<h4><a name="tcl_file"></a>The Tcl File</h4>
+
+<p>For our example the tcl file has the name <em>$CCP4I_top/tasks/fiddleit.tcl</em>.
+This file is written in Tcl and contains the code to generate the graphical
+interface.</p>
+
+<p>CCP4i provides a library of commands to create the graphical window
+and most task windows can be created using just a handful of commands with
+minimal 'raw' Tcl. For example, to create the input widgets for the parameters
+in our example requires:</p>
+
+<pre>
+CreateLine line \
+     message &quot;Enter a title for this job (TITLE)&quot; \
+     label &quot;Title&quot; \
+     widget TITLE -width 80
+CreateLine line \
+     message &quot;Enter the fiddle factors (FIDDLEFACTORS)&quot; \
+     label &quot;Fiddle factors: first&quot; \
+     widget FACTOR_1 \
+     label &quot;second&quot; \
+     widget FACTOR_2
+CreateLine line \
+     message &quot;Use extra fiddle factor for really rough problem \
+     (FIDDLEFACTORS FACTOR_3)&quot; \
+     widget EXTRA_FIDDLE \
+     label &quot;Use third fiddle factor&quot; \
+     widget FACTOR_3
+</pre>
+
+<p>Here the command <em>CreateLine</em> has been used three times to create
+three lines in the task window. Note that the backslash at the end of lines
+is the line continuation character, so each call to the command has a long
+argument list but it has been laid out in this fashion to simplify reading.
+The <em>CreateLine</em> command has very flexible arguments - the only fixed
+argument is the first one (<tt>line</tt>) which returns an identifier for the
+line which is created. The remaining arguments to the command usually come in
+pairs - a keyword and a parameter:</p>
+
+<dl>
+<dt><strong><tt>message</tt></strong></dt><dd>followed by a short line of help
+text which will appear in the message line when the user puts the mouse
+over any of the widgets in the line.</dd>
+<dt><strong><tt>label</tt></strong></dt><dd>followed by the text which the
+user will see on the task window.</dd>
+<dt><strong><tt>widget</tt></strong></dt><dd>followed by the name of a parameter
+which must have been defined in the def file. This keyword will create
+either a menu or a button or an entry field (that is a field for the user
+to type in a parameter) dependent on the data type (defined in the def
+file) for the parameter. For all the parameters <tt>TITLE, FACTOR_1, FACTOR_2</tt>
+and <tt>FACTOR_3</tt> a simple entry field will be created with the initial
+value set to the initial value given in the def file. The widget for
+<em>EXTRA_FIDDLE</em>, which has data type <tt>_logical</tt>, will be different:
+it will be a small checkbutton.</dd>
+</dl>
+
+<p>Some keywords have optional extra parameters. In the first
+call to <tt>CreateLine</tt> in the example above, the keyword-parameter
+pair '<tt>widget TITLE</tt>' is followed by the extra parameter '<tt>-width
+80</tt>', which specifies that this field must be 80 characters wide.</p>
+
+<p>Most of the commands used to define the task window have a similar form
+- they return an identifier and have some fixed arguments and several optional
+arguments which have keywords beginning with a '-' character.</p>
+
+<h3><a name="how_parameters_get"></a>How Parameters Get from Interface to Program</h3>
+
+<p>The above descriptions of the different files do not really explain
+how the parameters get passed from the task window to the program. Here
+is a quick explanation.</p>
+
+<p>When the user clicks the <strong><tt>Run</tt></strong> button, the Interface
+creates a new script file called a <strong>.run</strong> file in the user's scratch
+directory. You should run a simple task and then look at the file with the extension
+.run in your scratch directory. At the top of the run file the values of the parameters
+from the task interface are declared. Below these is the script which
+has been copied from the work file. The run file is then run as an independent
+process. It will generate the program command script(s) and run the program(s).
+</p>
+
+<p>The <tt>CreateComScript</tt> command which creates the program command
+script does something which may seem impossible to a Fortran programmer:
+it can 'see' the values of the parameters although they have not been explicitly
+passed to command. It manages to do this by using the <tt>uplevel</tt>
+command to see variables at a different level in the stack and so is able
+to substitute the values declared in the run script into the command template
+file.</p>
+
+<h3><a name="how_tasks_are_run"></a>How Tasks are Run</h3>
+
+<p>When the user opts to run a task, the main ccp4i process does the following:
+<ul>
+<li>Saves the parameters set up for the task; to a <strong>.def</strong> file in the
+CCP4_DATABASE directory for the current project</li>
+<li>Start a completely separate process (usually referred to as the <em>run</em>
+process).</li>
+</ul></p>
+
+<p>The run process then:
+<ul>
+<li>Reads a small library of utility procedures which can subsequently be used
+by the script which controls the running of the program(s).</li>
+<li>Sends a message to the original ccp4i process to say that the job is RUNNING</li>
+<li>Reads the parameters from the saved .def file</li>
+<li>Sources the appropriate script file for the task:
+$CCP4I_top/scripts/<em>taskname</em>.script.
+This script controls the running of the program(s) and will be referred
+to as the <em>task</em> script.</li>
+<li>When the script complete, sends a message to the original ccp4i process
+to say that the job has finished.</li>
+<li>Terminates the process</li>
+</ul>
+
+<h4><a name="task_script"></a>The Task Script</h4>
+
+<p>The script which controls the running of a particular task is
+$CCP4I_top/scripts/<em>taskname</em>.script.
+For the simplest case of running just one program, this script might be
+only one or two lines long but it can potentially be much longer and run
+several programs, extract data from files and do significant processing
+of the data. The script is written in Tcl (but with no Tk which
+is the X-windows graphical part of Tcl/Tk). There is a library of
+utilities available to the task script and a simple script will need to
+use just one or two of the utility procedures and the programmer will
+need to know only very minimal Tcl.</p>
+
+<p>Most CCP4 programs expect both command line input (which usually specifies
+the input and output file names) and some additional commands which, when
+running from a script, can be piped in or read from a command file.
+CCP4i currently works by writing a temporary command file for each program
+that the script runs.</p>
+
+<p>A simple example to run the program <em>demoprog</em> which assumes that
+the parameters HKLIN, HKLOUT, RESOLUTION and MODE have been set:
+
+<blockquote>
+<pre>
+set comfile [GetTmpFileName -ext com]
+WriteFile $comfile \
+       &quot/mode $MODE
+         reso $RESOLUTION&quot;
+
+Execute &quot;demoprog hklin $HKLIN hklout $HKLOUT&quot;
+$comfile program_status report
+</pre>
+</blockquote>
+
+<p>In this script the first line calls the utility procedure <em>GetTmpFileName</em>
+to assign a name for a temporary command file, <em>comfile</em>. This
+utility return a file name which includes the users project name and job
+id the arguments <em>-ext com</em> mean that 'com' is included in
+the file name to identify the file as a command file.
+<br />The next three lines call the procedure <em>WriteFile</em> which will
+write to the file <em>comfile</em> the short command script enclosed in double
+quotation marks.
+<br />The final line of the script actually runs the program using the <em>Execute</em>
+procedure. The procedure does more than just run the program - it
+should handle program failures, puts output to the log file, and
+it can display the command script to the user and allow editing before
+running the program. The arguments to the <em>Execute</em> command are: the
+command line which is enclosed in double quotation marks, and the name of the
+command file <em>comfile</em>.</p>
+
+</body>
+</html>

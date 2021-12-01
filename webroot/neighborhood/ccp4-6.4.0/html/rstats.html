@@ -1,0 +1,340 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::RSTATS::Supported::Scaling data::scale together two sets of F's:::::::: -->
+
+<H1> RSTATS (CCP4: Supported Program)</H1>
+<H2> NAME</H2>
+<b>rstats </b>
+- scale together two sets of F's
+<H2> SYNOPSIS</H2>
+<b>rstats hklin</b>
+<i>foo_in.mtz </i>
+<b>hklout</b>
+<i>foo_out.mtz</i>
+<b>rstatsbkr</b>
+<i>rstatsbkr.dat</i>
+<br>
+ <a href="#keywords">[Keyworded input]</a>
+<H2><A NAME="description"></A> DESCRIPTION</H2>
+The program scales together two sets of F's, calculates
+statistics and outputs a reflection file.  Data can be split into 
+a working set, and a set reserved for calculation of a freeR factor.
+<P> 
+Rejected criterion can be specified as FC/FO ratio, 
+sigma multiple, or |FO-FC|.
+<H2> <a name="keywords"></a>KEYWORDED INPUT</H2>
+The various data control lines are identified by keywords, those
+available being:
+<BLOCKQUOTE>
+<a href="#cycles"><B>CYCLES</B></a>,
+<a href="#end"><B>END</B></a>,
+<a href="#free"><B>FREE</B></a>,
+<a href="#labin"><B>LABIN</B></a>,
+<a href="#labout"><B>LABOUT</B></a>,
+<a href="#list"><B>LIST</B></a>,
+<a href="#noabs"><B>NOABS</B></a>,
+<a href="#output"><B>OUTPUT</B></a>,
+<a href="#print"><B>PRINT</B></a>,
+<a href="#process"><B>PROCESS</B></a>,
+<a href="#reject"><B>REJECT</B></a>,
+<a href="#resolution"><B>RESOLUTION</B></a>,
+<a href="#rscb"><B>RSCB</B></a>,
+<a href="#scale"><B>SCALE</B></a>,
+<a href="#temperature_factor"><B>TEMPERATURE_FACTOR</B></a>,
+<a href="#title"><B>TITLE</B></a>,
+<a href="#weighting_scheme"><B>WEIGHTING_SCHEME</B></a>,
+<a href="#width_of_bins"><B>WIDTH_OF_BINS</B></a>
+</BLOCKQUOTE>
+<H3> <a name="title"></a>TITLE &lt;title&gt;</H3>
+The title string is written to the output reflection
+file, replacing the title from the input file.
+<P> 
+If TITLE is not specified then:
+<br>
+<A HREF="#output_fofc">OUTPUT FOFC</A>  will use  Output from RSTATS.
+<br>
+When using <A HREF="#labin_allin">LABOUT ALLIN</A>  then the title on the input file
+will be used.
+<H3> <a name="free"></a>FREE &lt;num&gt;</H3>
+The FreeR sub-set is defined, in the program, as those reflections which
+have a value of &lt;num&gt; in the FreeR_flag column. The default is for 
+FreeR_flag = 0.
+<H3>  <a name="resolution"></a>RESOLUTION &lt;x1&gt; &lt;x2&gt;</H3>
+If given then only reflections in the resolution range <b>&lt;x1&gt;</b>-<b>&lt;x2&gt;</b>
+will be used during the final (output) cycle in order to calculate statistics.
+<p> <i>Note that this a change to the functionality of the RESOLUTION keyword,
+which can no longer be used to exclude reflections from the output mtz file.</i>
+<p> If RESOLUTION is not specified then the limits <b>&lt;x1&gt;</b> and
+<b>&lt;x2&gt;</b> are taken from the input MTZ file, so no data is excluded from
+the statistics. The maximum and minimum resolution (in Angstroms) 
+can be given in either order, and if only one number is given this 
+is taken as the maximum resolution limit.
+<H3>  <a name="rscb"></a>RSCB &lt;x1&gt; &lt;x2&gt;</H3>
+If given then reflections in the resolution range <b>&lt;x1&gt;</b>-<b>&lt;x2&gt;</b> 
+will be used during the scaling cycles, in order to generate the scale
+and temperature factors. The maximum and minimum resolution (in Angstroms) 
+can be given in either order, and if only one number is given this 
+is taken as the maximum resolution limit.
+<p> If RSCB is not given, the limits are taken from the
+<a href="#resolution">RESOLUTION</a> keyword; if RESOLUTION has not been specified
+the default is to use all the data, <EM>i.e.</EM> the resolution limits are read from
+the input MTZ file header.
+<H3>  <a name="noabs"></a>NOABS</H3>
+If the NOABS keyword is present, the program will take the differences between
+the signed values of Fo and Fc, rather than using the moduli (<EM>i.e.</EM> use Fo and Fc
+rather than |Fo| and |Fc|). The default is to use the moduli.
+<H3>  <a name="scale"></a>SCALE &lt;scale&gt;</H3>
+Sets initial scale factor for Fc.  If zero cycles are selected
+on the CYCLES card, this scale factor is used for
+the calculation of R-factors and scaling output data.
+Default is 1.0.
+<H3> <a name="temperature_factor"></a>TEMPERATURE_FACTOR &lt;factor&gt;</H3>
+Sets initial value for the temperature factor.
+If zero refinement cycles selected using the <A HREF="#cycles">CYCLES</A> card,
+this temperature factor is used for calculation
+of R-factors and scaling output data.  Default: 0.0.
+<H3> <a name="width_of_bins"></a>WIDTH_OF_BINS [ RTHETA &lt;x1&gt; ] | [ FBINR &lt;x2&gt; ]</H3>
+[Optional]
+<P> 
+Controls the width of the bins used in the analysis.
+<P><A NAME="width_of_bins_rtheta"></A> 
+RTHETA = &lt;x1&gt; sets the width of ranges of 4(sintheta/lambda)**2;
+default: 0.01.
+<P><A NAME="width_of_bins_fbinr"></A>
+FBINR = &lt;x2&gt; sets the width of ranges on Fobs. If x2 is not specified
+or the card absent then Fobs range will be set by the program. The width
+is altered accordingly if the scale is applied to Fobs.
+<H3> <a name="list"></a>LIST &lt;x&gt;</H3>
+[Optional]
+<P> 
+Sets the value for listing of reflections with
+|Fo-Fc| &gt; &lt;x&gt;.  Default: 4000.0.
+<H3> <a name="cycles"></a>CYCLES &lt;ncyc&gt;</H3>
+[Optional]
+<P> 
+&lt;ncyc&gt; is the maximum number of cycles for scaling; default: 6.
+<P> 
+The program will always make one additional pass through the
+reflection file to calculate statistics and write
+the output file.
+If zero cycles are specified then the program will simply
+apply the input scale and temperature factor.
+If a linear least-squares problem is selected with
+no rejections, the program will only make two passes
+through the input file.
+The program will stop iterating when the magnitude of the
+fractional shift in the scale factor is less than 0.005
+and the magnitude of the shift in the temperature factor
+is less than 0.01.
+<H3> <a name="print"></a>PRINT ALL | LAST</H3>
+<A NAME="print_all"></A>ALL  sets IPRINT on all cycles
+<P> 
+<A NAME="print_last"></A>LAST (default) sets IPRINT, then print out on ONLY final least squares cycle.
+<H3> <a name="reject"></a>REJECT [ SIGMA=&lt;sig&gt; ] [ RATIO=&lt;rat&gt; ] [ DELTA=&lt;delta&gt; ]</H3>
+This option sets criteria for rejecting reflections from the scaling calculations.
+The rejected reflections are still written to the output file. More than one of the
+following options may be specified simultaneously for REJECT:
+<dl>
+<dt><A NAME="reject_ratio"></A>RATIO <dd>
+Reflections will be rejected if K*Fc*TFAC/FO &lt; &lt;rat&gt; (<EM>i.e.</EM> those with
+FC&lt;&lt;FO). Default is &lt;rat&gt;=0.0. 
+<dt><A NAME="reject_sigma"></A>SIGMA <dd>
+Reflections will be rejected if Fo &lt; &lt;sig&gt;*SigFo. Default is &lt;sig&gt;=0.0.
+<dt><A NAME="reject_delta"></A>DELTA <dd>
+Reflections will be rejected if abs(Fo - K*TFAC*Fc) &gt; &lt;delta&gt;. The default
+is &lt;delta&gt;=99999.0 (<EM>i.e.</EM> no rejection tests).
+</dl>
+<H3> <a name="output"></a>OUTPUT [ NOHKL | FOFC ] [ BKR ]</H3>
+The output reflection file contains all the reflections present in the input
+file. <i>Note that this is different from previous versions of rstats.</i>
+If OUTPUT is not given or it is not followed
+by a sub-keyword, then FOFC is assumed. Exception when you have <A HREF="#labout_allin">LABOUT ALLIN</A>.
+<dl>
+<dt><A NAME="output_nohkl"></A> NOHKL<dd>
+No output file
+<dt><A NAME="output_fofc"></A>  FOFC<dd>
+The output reflection file has H, K, L, FP, FC with
+optionally SIGFP, SIGFC, PHIC, FREE if these are present
+on the input file.  If weights are used in the scaling
+then the output file will include this weight as WT.
+<p>Under this option RSTATS will also write an additional history line to the mtz header,
+containing: the date; the R-factor; the scale and temperature factors. In this case the
+R-factor is that calculated on the final cycle with reflections excluded as defined
+by the <a href="#resolution">RESOLUTION</a> keyword.
+<dt><A NAME="output_bkr"></A>  BKR<dd>
+The final temperature factor (B), scale factor (K), R factor and the sum of w*(Fo-Fc)**2
+are written on one line in the file RSTATSBKR (<EM>i.e.</EM> RSTATSBKR.DAT in the default
+directory unless otherwise assigned) along with the date (as day-month-year). The
+format statement controlling this output is
+<pre>
+    FORMAT(2F10.5,F7.3,E13.6,1X,I2,"-",I2,"-",I2)
+</pre>
+(The output file is scaled as defined by <A HREF="#process">PROCESS</A>.)
+</dl>
+<H3> <a name="process"></a>PROCESS [ FCAL | FOBS | FOBC | SUMF | SUMC | LGFC | LGFO ]</H3>
+For the <A HREF="#process_fcal">FCAL</A>, <A HREF="#process_fobs">FOBS</A> and <A HREF="#process_fobc">FOBC</A> options, the scale factor (K)
+and temperature factor (B) are determined by minimising
+<P>
+<center> 
+Sum w(Fo - K*Fc*exp(-B*s))**2
+</center>
+<P> 
+This non-linear least squares minimisation takes several cycles
+to converge.
+<P> 
+For the <A HREF="#process_sumf">SUMF</A> and <A HREF="#process_sumc">SUMC</A> options, the temperature factor is not
+considered and the scale factor is calculated by minimising
+<P> 
+<center>
+Sum w(Fo - K*Fc)**2
+</center>
+<br>
+So that K = Sum(wFoFc)/Sum(wFc**2)
+<P> 
+Although a linear problem, if reflections are being rejected
+using the DELTA test (see <A HREF="#reject_delta">REJECT</A>), several cycles may be required for
+convergence.
+<P> 
+For the <A HREF="#process_lgfc">LGFC</A> and <A HREF="#process_lgfo">LGFO</A> options, the scale and temperature factors
+are determined by minimising
+<P> 
+<center>
+Sum w( Log(Fo) - Log(K*Fc*exp(-B*s)) )**2
+</center>
+<P> 
+By considering the logarithms, the least squares minimisation 
+becomes a linear problem but with different relative weighting.  
+This scaling gives greater weight to the weak reflections than
+the minimisation without taking logs.
+<P> 
+A weight of W=(Fo/SigFo)**2 should give similar results to a
+weight of W=(1/SigFo)**2 in the non-linear case.
+<dl>
+<dt><A NAME="process_fcal"></A>    FCAL<dd>
+Apply scale and B-factor to Fcalc and sigFc
+<dt><A NAME="process_fobs"></A> FOBS<dd>
+Apply scale and B-factor to Fobs and sigFobs
+<dt><A NAME="process_fobc"></A> FOBC<dd>
+Apply scale to Fobs and sigFobs, and B-factor to Fcalc
+<dt><A NAME="process_sumf"></A> SUMF<dd>
+Calculate scale by Sum(FoFc)/SumFcFc) and apply inverse of this to Fo
+<EM>i.e.</EM> temperature factors are not refined and scale calculated without
+considering it.
+<dt><A NAME="process_sumc"></A> SUMC<dd>
+as SUMF but apply scale to Fc
+<dt><A NAME="process_lgfc"></A> LGFC<dd>
+Apply scale and B-factor to Fcalc and sigFc   
+<dt><A NAME="process_lgfo"></A> LGFO<dd>
+Apply scale and B-factor to Fobs and sigFobs
+</dl>
+<H3> <a name="weighting_scheme"></a>WEIGHTING_SCHEME [ NONE | DELF=&lt;x1&gt;,&lt;x2&gt;,&lt;x3&gt;,&lt;x4&gt; | DSIG=&lt;x1&gt;,&lt;x2&gt;,&lt;x3&gt;,&lt;x4&gt; | EXP=&lt;x1&gt;,&lt;x2&gt;,&lt;x3&gt; | SIGMA=&lt;x1&gt; ]</H3>
+Weight reflections according to one of the following schemes
+[Default is NONE]:
+<dl>
+<dt><A NAME="weighting_scheme_none"></A>   NONE<dd>
+No weighting scheme to be used
+<dt><A NAME="weighting_scheme_sigma"></A>   SIGMA<dd>
+W=&lt;x1&gt;*(1/SD(FO))**2
+<br>
+default: x1=1.0.
+<dt><A NAME="weighting_scheme_delf"></A> DELF<dd>
+W=1/(&lt;x1&gt;+&lt;x2&gt;*S) for S &gt; &lt;x4&gt; (S=sintheta/lambda)
+<br>
+W=1/(&lt;x1&gt;+&lt;x2&gt;*S+&lt;x3&gt;*(&lt;x4&gt;-S)**2 for S &lt; &lt;x4&gt;
+<br>
+there are no defaults for this option and all parameters must be specified.
+<dt><A NAME="weighting_scheme_dsig"></A> DSIG<dd>
+As DELF but multiplied by (1/SD(FO))**2
+<dt><A NAME="weighting_scheme_exp"></A> EXP<dd>
+W=((1/SD(FO))**2)*&lt;x1&gt;/exp(&lt;x2&gt;+&lt;x3&gt;*S)
+<br>
+the defaults are x1=1.0 x2=0.0 and x3=0.0.
+</dl>
+<H3> <a name="labin"></a>LABIN &lt;program_label&gt;=&lt;file_label&gt; ...</H3>
+Input reflection file column assignments.
+<P> 
+Assigns the program labels to the columns on the input file.  The
+program labels are:
+<dl>
+<dt><dd>
+       H  K  L   FP  SIGFP FC SIGFC PHIC FREE
+</dl>
+<P> 
+Data must always be present for H K L FP and FC.
+SIGFP must also be present when using the <A HREF="#weighting_scheme_sigma">SIGMA weighting scheme</A>.
+FREE flags reflections to be considered separately, to give 
+statistics needed for Free R factors.
+<H3> <a name="labout"></a>LABOUT [ALLIN] &lt;program_label&gt;=&lt;file_label&gt; ...</H3>
+Output reflection file column assignments.
+<P> 
+For <A HREF="#output_fofc">OUTPUT FOFC</A> the output program labels are
+<dl>
+<dt><dd>
+    H  K  L  FP  FC [ SIGFP  SIGFC PHIC WT FREE ] 
+</dl>
+<P> 
+Where SIGFP, SIGFC and PHIC are only written if they are
+present on the input file.  The weight WT is only written
+if a <A HREF="#weighting_scheme">WEIGHTING_SCHEME</A> option is specified.
+By default the output columns will have the same column
+labels as used on the input file.
+<P> 
+<A NAME="labout_allin"></A>If ALLIN is given as a sub-keyword then all columns in the input file will 
+be written to the output MTZ file. This option has preference over the other
+options for MTZ files.
+<H3> <a name="end"></a>END</H3>
+Terminate input (equivalent to end-of-file). Must be last keyword.
+<H2><A NAME="examples"></A> EXAMPLES   </H2>
+<pre>
+
+#
+#  Produce file containing h,k,l,s,Fp,Sigfp,Fc,Phic with Fc scaled
+#  to Fo for input to the FFT program.  No reflections rejected.
+#
+#
+rstats hklin sample_file hklout fuo_map &lt;&lt;eof-rstats
+LABIN FP=FNAT2 SIGFP=SIGFNAT2 FC=FCCYC7 PHIC=PHI FREE=FreeR_flag
+RESOLUTION 8.0 2.7    ! If omitted then all data used
+eof-rstats
+
+#
+#
+#  A more complicated example:
+#  All input columns output with an additional weight column.
+#  Contents of the output FNAT2 and SIGFNAT2 columns will have
+#  a scale and temperature factor applied. 
+#
+rstats hklin sample_file hklout fuo_map &lt;&lt;eof-rstats
+LABIN FP=FNAT2 SIGFP=SIGFNAT2 FC=FNAT1 FREE=FreeR_flag
+LABOUT ALLIN WT=SIGMAWT
+TITLE  FNAT2 column scaled to FNAT1 using sigma weights
+RESOLUTION 10.0 2.3                    ! default is 1 to 100 Ang
+PRINT ALL                              ! default is LAST
+CYCLES 3                               ! default is 6
+LIST 3000
+SCALE 2.3                              ! default is 1.0
+TEMPERATURE_FACTOR 6.2                 ! default is 0.0
+OUTPUT FOFC                            ! this is OVERRIDEN by LABOUT
+REJECT DELTA 4000                      ! default is no rejections
+WEIGHTING_SCHEME SIGMA                 ! default is NONE
+WIDTH_OF_BINS RTHETA=0.02 FBINR=500    ! defaults are .01 and 1000
+PROCESS FOBS                           ! default is FCAL
+eof-rstats
+</pre>
+There is also a simple runnable unix script in $CEXAM/unix/runnable:
+<ul>
+<li><a href="../examples/unix/runnable/rstats.exam">rstats.exam</a>
+</ul>
+<H2> AUTHORS</H2>
+Written by:   S.E.V. Phillips
+<br>
+modified:  Dec.1985      G.Fermi (2-6-88)
+<br>
+modified:  Nov.1986      A.C.Bloomer
+<br>
+This keyworded version 24/jan/1990: Peter Brick
+
+
+</body></html>

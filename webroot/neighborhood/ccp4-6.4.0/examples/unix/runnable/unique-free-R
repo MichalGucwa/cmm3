@@ -1,0 +1,60 @@
+#! /bin/sh
+
+# Wrap-around script for $CETC/uniqueify
+# Completes the dataset by merging output of unique with
+# datafile (using cad). Also adds free-R flag column or
+# completes an existing one.
+
+set -e
+set -a
+
+#
+# Replace missing data with Missing Number Flags (in this case NaNs).
+#
+mtzmnf hklin $CEXAM/toxd/toxd_old.mtz hklout $CCP4_SCR/toxd_nan.mtz \
+<<eof
+TITLE toxd data, testing
+LABI F1=FTOXD3 SIGF1=SIGFTOXD3 -
+     D2=ANAU20 SIGD2=SIGANAU20 -
+     F2=FAU20  SIGF2=SIGFAU20 -
+     F3=FMM11  SIGF3=SIGFMM11 -
+     F4=FI100  SIGF4=SIGFI100
+END
+eof
+
+#
+# E.g. (1)
+#
+# Complete dataset and add free-R column.
+# Keep systematic absences with -s switch (though you probably wouldn't
+# want to do this).
+#
+uniqueify -s $CCP4_SCR/toxd_nan.mtz $CCP4_SCR/toxd-unique.mtz
+
+#
+# E.g. (2)
+#
+# Complete dataset and add free-R column.
+# Increase the fraction of reflections tagged with each free-R
+# indicator above the default 0.05 (sensible for toxd which has
+# small dataset).
+#
+uniqueify -p 0.1 $CCP4_SCR/toxd_nan.mtz $CCP4_SCR/toxd-unique2.mtz
+
+#
+# E.g. (3)
+#
+# First add free-R column to incomplete dataset.
+# (Silly thing to do - this is just to create a dataset with an existing
+# free-R column for illustrating use of uniqueify with -f switch.)
+#
+freerflag hklin $CCP4_SCR/toxd_nan.mtz hklout $CCP4_SCR/toxd_free.mtz << eof
+END
+eof
+
+#
+# Now complete with -f switch to indicate free-R column already present.
+#
+uniqueify -f FreeR_flag $CCP4_SCR/toxd_free.mtz $CCP4_SCR/toxd-unique3.mtz
+
+#

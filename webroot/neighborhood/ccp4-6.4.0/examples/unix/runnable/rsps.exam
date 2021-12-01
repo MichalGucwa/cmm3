@@ -1,0 +1,65 @@
+#!/bin/sh
+#
+#  Example of calculating and interpreting Patterson 
+#  uses Au derivative of Green Mamba Dendrotoxin.
+#  Single site is determined from Patterson and then is refined
+#  in procedure mir_steps.
+#  The Patterson is calculated using data scaled by Fhscal as this
+#  gives a better solution in this case.
+#
+#  Updated to use RSPS v4.2 on 20-01-2000.
+#
+set -e
+#
+if test ! -f $CCP4_SCR/toxd_fhsc.mtz; then
+  echo '! run fhscal.exam first' 1>&2
+  exit 1
+fi
+#
+fft \
+   HKLIN  $CCP4_SCR/toxd_fhsc.mtz \
+   MAPOUT  $CCP4_SCR/toxd_aupatt.map \
+   << END
+PATT
+resol 100 2.5
+! LIST 100 ! uncomment this to get input FFT terms (fftkw.abcoeffs)
+EXCLUD SIG1 3 SIG2 3 DIFF 3700
+titl  2.5 A AU - NAT patterson - excluding 4 sig , and Diso > 3700
+grid 128 64 40 
+rholim 1000
+xyzlim 0 64 0 32 0 20
+binmapout
+LABI F1=FAU20 SIG1=SIGFAU20 F2=FTOXD3  SIG2=SIGFTOXD3
+end
+END
+#
+#
+#  RSPS may be run interactively by typing rsps or from a script as in
+#  this example
+#
+#=====================================================================
+#
+# example script
+#
+#!/bin/sh
+rsps << eof-rsps
+#
+# read spacegroup, file names and cell parameters
+#
+spacegroup 19                        ! must be before file names
+# reset origin peak to zero
+patfile $CCP4_SCR/toxd_aupatt.map type CCP4 reset origin 10.0 0   
+scorfile $CCP4_SCR/rsps.map                     
+pick patterson
+#
+# Harker scan of asymmetric unit
+# Allow one low peak
+#
+vectorset single atoms ; low 0 ; reject 1.0 ; scan au
+pick scoremap 50
+write positions $CCP4_SCR/rsps_harker.pdb
+vlist site 1 10
+#
+eof-rsps
+#
+#=============================================================

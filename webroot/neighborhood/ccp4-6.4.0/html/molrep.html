@@ -1,0 +1,3374 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4 Program Suite : molrep</title>
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX64 6.2 IP19) [Netscape]" />
+</head>
+<body>
+
+<!-- ::INDEX_INFO::MOLREP::Supported::Molecular Replacement::automated program for molecular replacement:::::::: -->
+
+<h1>MOLREP (CCP4: Supported Program)</h1>
+
+<h2>NAME</h2>
+<b>molrep</b>
+- automated program for molecular replacement
+<h2>SYNOPSIS</h2>
+
+<P><B>molrep</B> [<B>HKLIN</B> <I>in.mtz</I>] 
+ [<B>MAPIN</B> <I>EM_map.ccp4</I>] 
+ [<B>MODEL</B> <I>in.pdb ( or EM_mod_map.ccp4)</I>]
+ [<B>MODEL2</B> <I>in2.pdb</I>]
+ [<B>PATH_OUT</B> <I>path_out</I>] [<B>PATH_SCR</B> <I>path_scr</I>]
+<BR>
+<a href="#keywords">[Keyworded input]</a> </P>
+
+<h2><a name="description" id="description"></a>DESCRIPTION</h2>
+<h3>Version 11.0 /22.07.2010/</h3>
+
+<li><a href="#features"><b>Features</b></a>
+<li><a href="#references"><b>References</b></a>
+<li><a href="#installation"><b>Installation and  Downloads
+ (source code, binaries,tutorials)</b></a>
+<li><a href="#new_style"><b>New style to use</b></a>
+<li><a href="#new_keywords"><b>News and New keywords</b></a>
+<li><a href="#input/output"><b>Input/output files</b></a>
+<li><a href="#what"><b>What MOLREP can do</b></a>
+<li><a href="#how"><b>How to use MOLREP</b></a>
+<li><a href="#keywords"><b>Dialogue and keywords</b></a>
+<li><a href="#batch"><b>Command (Batch) file</b></a>
+<li><a href="#CCP4"><b>MOLREP version to read MTZ file</b></a>
+<li><a href="#testing"><b>Testing super_program MOLREP</b></a>
+<li><a href="#theory"><b>Molecular replacement method. Some theory.</b></a>
+<li><a href="#input_examples"><b>Input file examples.</b></a>
+<li><a href="#batch_examples"><b>Command (batch) file examples</b></a>
+<li><a href="#howNCS"><b>How to define NCS</b></a>
+<li><a href="#redirection"><b>How to redirect output and scratch files</b></a>
+<li><a href="#convention"><b>Convention for rotation and coord. system</b></a>
+</ul>
+
+<hr>
+
+<h2><a name="features" id="references"></a>FEATURES</h2>
+
+<ul> 
+<li><a href="#standard_molecular_replacement_method">
+    <b>standard molecular replacement method</b></a> by<br />
+    cross rotation function (<a href="#RF"><b>RF</b></a>),<br />
+    full-symmetry translation function (<a href="#TF"><b>TF</b></a>),<br /> 
+    packing function (<a href="#PF"><b>PF</b></a>)<br />
+    also<br />
+    <a href="#self_rotation_function"><b>Self Rotation Function</b></a> 
+    with PostScript plots<br />
+    Spherically averaged phased translation function
+    (<a href="#SAPTF"><b>SAPTF</b></a>)<br />
+    Phased Rotation function(<a href="#PRF"><b>PRF</b></a>)<br /> 
+    Phased Translation function (<a href="#PTF"><b>PTF</b></a>)<br />
+    Locked cross rotation function (<a href="#LRF"><b>LRF</b></a>)
+</li> 
+
+<li>allows input of <a href="#priori_knowledge"><b>a priori knowledge</b></a>
+    of similarity of the model.
+</li>
+<li><a href="#scaling_by_Patterson"><b>scaling by Patterson</b></a> 
+    origin peak<br />
+    <a href="#soft_low_resolution_cut-off"><b>soft low resolution cut-off</b>
+    </a><br />
+    <a href="#aniso_scaling"><b>anisotropic correction and scaling</b>
+    </a><br />
+    can use <a href="#modified_structure_factors">
+    <b>modified stucture factors</b></a> instead of Fobs for RF
+</li>
+<li><a href="#RB"><b>rigid body refinement</b></a></li>
+<li>can use second fixed model</li>
+<li>can check and manage <a href="#pseudo-translation">
+    <b>pseudo-translation</b></a></li>
+<li>can use <a href="#CCP4"><b>MTZ</b></a> file</li>
+<li><a href="#fitting_two_models"><b>fitting two atomic models</b></a></li>
+<li>can <a href="#just_rotate_and_position"><b>just rotate and position</b></a>
+    the model and compute R-factor, CC</li>
+<li><a href="#search_model"><b>search model</b></a> in electron density or EM map</li>
+<li><a href="#dyad_search"><b>multi-copy searh</b></a></li>
+<li>can choose from symmetry-related models closest to which was found before
+</li>
+<li>can <a href="#model_correction"><b>improve</b></a> 
+    the model before to use<br />
+    model correction by sequence<a href="#sequence_alignment">
+    <b>alignment</b></a>
+</li>
+<li>can use <a href="#NMR"><b>NMR</b></a> model</li>
+<li>can use <a href="#EM"><b>EM</b></a> or electron density map as model
+    or use it instead of Fobs<br />
+    for searching a atomic model in EM map
+</li>
+<li><a href="#search_orientation"><b>search model orientation</b></a> 
+in electron density map for particular position by phased RF</li>
+<li><a href="#find HA"><b>find HA</b></a> positions by MR solution
+</li>
+<li><a href="#heavy atom search"><b>heavy atom search</b></a> 
+</li>
+</ul>
+
+<hr>
+
+<h2><a name="references" id="references"></a>REFERENCES</h2>
+
+<blockquote><pre>      
+   Author:  A.A.Vagin
+                email: <a href="mailto:alexei@ysbl.york.ac.uk">alexei&#64;ysbl.york.ac.uk</a>
+
+   References:     A.A.Vagin, New translation and packing functions.,
+                   Newsletter on protein crystallography., Daresbury
+                   Laboratory, (1989) <b>24</b>, pp 117-121.
+
+                   Alexei Vagin and Alexei Teplyakov.
+                   An approach to multi-copy search in molecular replacement., 
+                   Acta Cryst.D,(2000) <b>56</b>, pp 1622-1624 
+
+                   A.A.Vagin and M.N.Isupov
+                   Spherically averaged phased translation function and 
+                   its application to the search for molecules and fragments 
+                   in electron-density maps
+                   Acta Cryst.D,(2001) <b>57</b>, pp 1451-1456
+
+
+            main:  A.Vagin,A.Teplyakov, MOLREP: an automated program for
+                   molecular replacement.,
+                   J. Appl. Cryst. (1997) <b>30</b>, 1022-1025.</pre></blockquote>
+
+<h2><a name="installation" id="installation"></a>INSTALLATION</h2>
+
+<p>Copy file <a href="downloads/molrep.tar.gz">
+<b>molrep.tar.gz</b> </a>
+</p>
+
+<p>and uncompress it (`gunzip molrep.tar.gz')</p>
+
+<p>After untaring `molrep.tar' (command: tar xvf molrep.tar)
+you will get a molrep directory, with src, doc, data, molrep_check and bin
+subdirectories and README file.
+To build the executable, go to src.
+</p>
+
+<dl>
+<dt><b>1. setenv BLANC_FORT</b></dt>
+<dd> define compiler with options,for example:<br />
+   for linux and mac:<br />
+ setenv BLANC_FORT "f90 -fno-globals -fno-automatic -O1 -w"<br />
+    for linux intel compiler:<br />
+ setenv BLANC_FORT "ifort -static -O1"<br />
+    for mac ibm compiler:<br />
+ setenv BLANC_FORT " xlf -qextname -qarch=auto -qtune=auto -qstrict -O3"<br />
+    else<br />
+ setenv BLANC_FORT "f90  -O1"<br />
+</dd>
+<dt><b>2. csh molrep.setup</b></dt>
+<dd>
+the executable (molrep) will finish up in the bin
+directory; providing the full pathname (.../molrep/bin/molrep)
+one can execute it from anywhere without having to define an
+environmental variable. CCP4 version (which can read MTZ file )
+will be prepared automaticly if ccp4 is installed
+</dd>
+     
+</dl>
+
+
+<p> Also you can download binaries (executable files): 
+</p>
+
+<p>  
+<a href="downloads/molrep_linux.gz">
+<b>molrep_linux.gz</b></a><br />
+<a href="downloads/molrep_macintel.gz">
+<b>molrep_macintel.gz</b></a><br /> 
+</p>
+
+<p> Tutorials: 
+</p>
+<p>  
+<a href="downloads/tutorial_MR.tar.gz">
+<b>tutorial_MR</b></a><br /> 
+</p>
+<p>  
+<a href="downloads/tutorial_EM.tar.gz">
+<b>tutorial_EM</b></a><br /> 
+</p>
+<p>
+also you can use 
+<a href="#testing"><b>Testing_program_MOLREP</b></a>
+as tutorial
+</p>
+
+<h2><a name="new_style" id="nw_style"></a>New style to use</h2>
+
+<pre>
+
+You can use this version as previous one:
+
+1. by command (batch) file
+2. interactively
+3. by ccp4i
+
+New style to use:
+
+     You can use program by command string with options:
+  
+   molrep -f file_sf_or_map -m  model_crd_or_map
+          -mx fixed model   -m2 model_2
+          -po path_out      -ps path_scrath
+          -s file_sequence  -s2  file_seq_for_m2
+          -k file_keywords  -doc y_or_a_or_n
+          -h   -i  -r
+  
+           h = only keyword and mtz label information, clean
+           i = interactive mode
+           r = rest some special files
+           file_keywords = simple text file with keywords
+                           (one line - one keyword)
+  
+       Examples:
+
+       Without any keywords:
+  
+       Usual MR: RF + TF
+   molrep -f file.mtz -m model.pdb
+  
+       Usual MR with fixed model
+   molrep -f file.mtz -m model.pdb -mx mfix.pdb
+  
+       Usual MR with sequence and redirect output and scratch files
+   molrep -f file.mtz -m model.pdb -s file_seq -po out/ -ps scr/
+ 
+       Self rotation funtion
+   molrep -f file.mtz
+  
+       multi-copy search, one model (DYAD M)
+   molrep -f file.mtz -m model.pdb -m2 model.pdb
+  
+       multi-copy search, two different models (DYAD M)
+   molrep -f file.mtz -m model1.pdb -m2 model2.pdb
+  
+       Fitting two atomic models
+   molrep -m model1.pdb -mx model2.pdb
+  
+       Rigid body refinement
+   molrep -f file.mtz  -mx model.pdb
+
+       Get information about keywords and mtz labels, and clean
+   molrep -h -f file.mtz
+
+       If you like to play with keywords:
+  
+       Using keywords from file
+   molrep -f fobs.pdb -m model.pdb -k file_keywords
+  
+       Using keywords interactivly
+   molrep -f file.mtz  -m model.pdb -i "CR"
+   sim .4 "CR"
+   sg all "CR"
+   "CR"
+
+       Script example:
+ 
+   --------------------------------
+   molrep -f fobs.mtz -m model.pdb -i  &lt;&lt;stop
+   fun t
+   file_t tab
+   stick n
+   stop
+   --------------------------------
+ 
+  
+</pre>
+
+
+<h2><a name="new_keywords" id="nw_key"></a>News and New keywords</h2>
+
+<p>Use "<b>molrep -h</b>" to get short manual of MOLREP.
+</p>
+
+<p>
+  You can stop program safely if you create in current
+  directory or in PATH_OUT (if option -po is used) file:
+</p>
+ 
+<p>
+  <em>molrep_stop_signal.xml</em> 
+</p>
+<p>
+  (contents does not matter)
+</p>
+
+<h3><a href="#dyad"><b>DYAD</b></a> &lt; M &gt;</h3>
+<TABLE>
+<TR>
+<TH ALIGN=left><b> </b>
+</TH>
+<TD>
+    new value <b>M</b> means "multi-monomer search", new algorithm of 
+    <a href="#dyad_search"><b> Multi-copy search</b></a> . 
+    Instead to search two copies
+    and then next one program constructs maximal possible complexes of monomers
+    (3mres,4mers,5mers,...) and checks its by TF.
+</TD>
+</TR> 
+</TABLE>
+
+<h3><a href="#score"><b>SCORE</b></a> &lt; Y | N | C  &gt;</h3>
+<TABLE>
+
+<TR>
+<TH ALIGN=left><b> </b>
+</TH>
+<TD>
+   <b>N</b> means do not stop if <em>contrast</em> is good and do not assess solution.
+   Scoring system is working well if expected number of models and
+   proper symmetry of model are correct.Proper symmetry of model 
+   program defines by model Self Rotation Funtion when Cross Rotation
+   function is computed.<br /> 
+   If you like or if you use keyword <b>FUN = T</b>
+   you can define Proper symmetry of model by keyword <b>NCSM</b>.<br />
+</TD>
+</TR> 
+
+<TR>
+<TH ALIGN=left><b> </b>
+</TH>
+<TD>
+   <b>C</b> use Correlation Coeffitient instead of <em>score</em> and do not stop.
+<br />
+<br />
+   <em>score</em> is product Correlation Coeffitient, value of Packing function and maximal value of Packing index.
+   <br />
+    <em>contrast</em> means: <br />  
+   &gt;3.0 - definitly solution<br />
+   &lt;3.0 and &gt; 2.0  - solution<br />
+   &lt;2.0 and &gt; 1.5  - maybe solution<br />
+   &lt;1.5 and &gt; 1.3  - maybe not solution, but program accepts it <br />
+   &lt;1.3 - probably not solution.<br />
+</TD>
+</TR> 
+</TABLE>
+
+<h3><b>NCSM</b> &lt;auto&gt;</h3>
+<TABLE>
+<TR>
+
+<TH ALIGN=left><b> </b>
+</TH>
+<TD>
+  number of subunits in the model (only for scoring) 
+</TD>
+</TR>
+</TABLE>
+
+<h3><a href="#pst"><b>PST</b></a> &lt;A&gt;</h3>
+<TABLE>
+<TR>
+<TH ALIGN=left><b> </b>
+</TH>
+<TD>
+    new value <b>A</b> means to check all pseudo-translation vectors
+    automatically (default now).
+</TD>
+</TR> 
+</TABLE>
+
+<h3><a href="#diff"><b>DIFF</b></a> &lt;M&gt;</h3>
+<TABLE>
+<TR>
+<TH ALIGN=left><b> </b>
+</TH>
+<TD>
+   new value <b>M</b> means to remove fixed model from map (Fobs,PHobs) by mask
+   for RF or PRF.
+</TD>
+</TR> 
+</TABLE>
+
+<h3><a href="#sg"><b>SG</b></a> &lt;name&gt;</h3>
+<TABLE>
+<TR>
+<TH ALIGN=left><b> </b>
+</TH>
+<TD>
+    space group name. You can use this keyword instead <b>NOSG</b><br />
+    <b>ALL</b> means to check all possible space groups
+    automatically.
+</TD>
+</TR> 
+</TABLE>
+
+<h3><a href="#resmin"><b>RESMIN</b></a> &lt;auto&gt;</h3>
+<TABLE>
+<TR>
+<TH ALIGN=left><b> </b>
+</TH>
+<TD>
+   soft resolution cut_off, use it instead <b>COMPL</b>
+</TD>
+</TR> 
+</TABLE>
+
+<h3><b>SEQ</b> &lt; D | Y | N &gt;</h3>
+<TABLE>
+<TR>
+<TH ALIGN=left><b>D</b>
+</TH>
+<TD>
+   default: to use identity as <b>SIM</b> 
+   and to use corrected model only if identity &gt; 20%
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>N</b>
+</TH>
+<TD>
+      means to use identity as <b>SIM</b> 
+      only (without model correction)     
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>Y</b>
+</TH>
+<TD>
+      means to use identity as <b>SIM</b> 
+      and to use corrected model     
+</TD>
+</TR> 
+</TABLE>
+
+<h3><a href="#surf"><b>SURF</b></a> &lt;C &gt;</h3>
+<TABLE>
+<TR>
+<TH ALIGN=left><b> </b>
+</TH>
+<TD>
+   as <b>Y</b> but new B only for Packing function, not change  original B
+</TD>
+</TR> 
+</TABLE>
+
+<h3><b>SURFX</b> &lt; Y | C | N &gt;</h3>
+<TABLE>
+<TR>
+<TH ALIGN=left><b> </b>
+</TH>
+<TD>
+  <b>Y</b> is default. <a href="#surf"><b>SURF</b></a> for fixed model (no shift to origin)
+</TD>
+</TR> 
+</TABLE>
+
+<h3><a href="#self"><b>SELF</b></a> &lt; N | A &gt;</h3>
+<TABLE>
+<TR>
+<TH ALIGN=left><b>A</b>
+</TH>
+<TD>
+   after RF program computes Self_RF and use from RF only related peaks for TF.
+</TD>
+</TR> 
+</TABLE>
+
+
+<h2><a name="input/output" id="input/output"></a>INPUT/OUTPUT FILES</h2>
+
+<h3><a name="input_file_formats" id="input_file_formats">
+    </a>Input file formats</h3>
+
+<ol>
+    <li>Format of input file of models
+      <ol type="A">
+        <li>for atomic model - PDB or CIF or BLANC.</li>
+        <li>for EM or electron density map - CCP4 or BLANC.<br />
+            CCP4 file must have extension "ccp4" or "map"</li>
+      </ol>
+    </li>
+    <li>Input file of structure factors and phases.
+
+     <ol type="A">
+ 
+         <li>Input formatted file of structure factors (CIF).<br />
+          This file must be CIF file which contains indices, structure factors
+          (and phases if you need them): <em>h,k,l,|F|,sig(F),Phi</em> or 
+          <em>h,k,l,|F|,sig(F),Phi,Fom</em></li>
+
+         <li>Input PDB file of structure factors.<br />
+          This file contains indices and structure factors or intensities.
+          (also simple formatted file with <em>h,k,l,|F|,sig(F)</em> or 
+           <em>h,k,l,|F|</em> and without titles is acceptable)</li>
+
+         <li>Alternative input file of structure factors or phases is 
+          unformatted file of
+          <a href="http://www.ysbl.york.ac.uk/~alexei/blanc.html" 
+          target="_blank"><b>BLANC</b></a> suite.</li>
+
+         <li><a href="#CCP4"><b>MTZ</b></a> file,
+           which must have extension "mtz".</li>
+         <li><a href="#EM"><b>EM</b></a> or electron density file
+          (CCP4 file must have extension "ccp4" or "map").<br />  
+          This file will be converted to files of !F! and phases.</li>
+     </ol>
+    </li>
+</ol>
+    
+<p>You can find some examples in <a href="#Input_examples">
+   <b>Input file examples</b>.</a></p>
+
+<p>Space group and unit cell parameters of the unknown structure will be
+taken from the file of structure factors. 
+You can change the space group of the structure factor file by using
+keywords <a href="#nosg">NOSG</a> or <b>SG</b> .</p>
+
+<h3><a name="output_files" id="output_files"></a>Output files</h3> 
+
+<dl>
+<dt><em>molrep.crd</em></dt>
+          <dd>new coordinates of model (plus model_2) corresponding to
+              the best solution of Cross Rotation and Translation
+              Function.(BLANC format)</dd>
+
+<dt><em>molrep.pdb</em></dt>
+          <dd>new PDB coordinate file with molrep solution
+              (this file will be created if you start from PDB file).</dd>
+
+<dt><em>molrep_fcalc.dat</em></dt>
+<dt><em>molrep_phcalc.dat</em></dt>
+          <dd>!F! and phases of molrep solution (plus from model_2).
+              These files will be created if your model is EM or density.
+              (BLANC format)</dd>
+<dt><em>molrep_fcalc.cif</em></dt>
+          <dd>formatted CIFile of molrep solution (plus from model_2)
+              with Fobs, Fcalc, Phcalc
+              (this files will be created if your model is EM or density
+              in CCP4 format).</dd>
+
+<dt><em>molrep.doc</em></dt>
+          <dd>full protocol of calculation (text format).
+
+<dt><em>molrep.btc</em></dt>
+          <dd>command (batch) file. You can repeat
+              calculation using this file:
+              <em>cp molrep.btc bat</em> and <em>sh bat</em></dd>
+
+<dt><a name="molrep_rf_tab" id="molrep_rf_tab"></a><em>molrep_rf.tab</em></dt>
+          <dd>List of peaks of rotation function, created as soon as 
+              the program calculates a Rotation Function.</dd>
+          <dd><em>molrep_rf.tab</em> is default name, you can use another 
+              name using keyword <a href="#file_t">FILE_T</a>.</dd>
+          <dd>You can edit this file and use it for subsequent calculations
+              without computing the rotation function again 
+              (keyword <a href="#fun_t">FUN=T</a>).
+              The program then reads (in free format!): &quot;Sol_&quot;,
+              peak number and Polar angles (theta,phi,chi), <em>e.g.</em>:
+<blockquote><pre>&quot;Sol_  23  10.0    22.2 40.0&quot;</pre></blockquote></dd>
+
+          <dd>In Phased Rotation Function calculations, the program reads 
+             &quot;Sol_&quot;, peak number, Polar angles and shift (sx,sy,sz),
+             <em>e.g.</em>:
+<blockquote><pre>&quot;Sol_  23  10.0    22.2 40.0  .564 .443 .032&quot;</pre></blockquote></dd>
+
+            <dd>In Rotation and Position the model (keyword 
+            <a href="#fun_t">FUN=S</a>), the program reads &quot;Sol_&quot;,
+            peak number,Polar angles and shift (sx,sy,sz)
+             <em>e.g.</em>:
+<blockquote><pre>&quot;Sol_  23  10.0    22.2 40.0  .564 .443 .032&quot;</pre></blockquote>
+            If you like to use Eiler angles use &quot;Sol_A&quot;
+            instead &quot;Sol_&quot;</dd>
+
+            <dd>In 'Search model orientation by PRF' (keyword 
+            <a href="#PRF">PRF=P</a>), the program reads &quot;Sol_&quot;,
+            peak number,Polar angles and shift (sx,sy,sz)
+             <em>e.g.</em>:
+<blockquote><pre>&quot;Sol_  23  10.0    22.2 40.0  .564 .443 .032&quot;</pre></blockquote>
+            But program will use only the shift (sx,sy,sz).</dd>
+
+<dt><em>molrep_srf.tab</em></dt>
+           <dd>List of peaks of Self Rotation Function.</dd>
+           <dd><em>molrep_srf.tab</em> is default name, you can use another 
+              name using keyword <a href="#file_tsr">FILE_TSRF</a>.</dd>
+
+<dt><em>molrep_rf.ps</em></dt>
+           <dd>PostScript file of Self Rotation Function</dd>
+</dl>
+
+<p>Some output files will not be deleted if option "-r" in command string was used. 
+They have the internal format of the
+<a href="http://www.ysbl.york.ac.uk/~alexei/blanc.html"><b>BLANC</b></a>
+program suite and can be used by programs of this suite.
+
+<dl>
+<dt><em>crossrot_alo.dat</em></dt>
+<dd>spherical coefficients of F_observed</dd>
+
+<dt><em>crossrot_alm.dat</em></dt>
+<dd>spherical coefficients of F_model</dd>
+
+<dt><em>crossrot_dns.dat</em></dt>
+<dd>rotation function map</dd>
+
+<dt><em>molrep_fob.dat</em></dt>
+<dd>F_observed</dd>
+</dl>      
+
+<p>also (if you started from MTZ file):</p>
+
+<dl>
+<dt><em>molrep_mtz.cif</em></dt>
+<dd>formatted CIF file of F_observed</dd>
+</dl>
+
+<p>also (if you used keyword <a href="#file_s">FILE_S</a>):</p>
+
+<dl>
+<dt><em> align.pdb</em></dt>
+<dd>corrected by sequence alignment input model</dd>
+</dl>
+
+<p> See also <a href="#redirection">
+<b>How to redirect output and scratch files</b></a>
+</p>
+
+<h2><a name="what" id="what"></a>WHAT MOLREP CAN DO</h2>
+
+<pre>
+
+                          +-- Self RF  (FUN=R, without any model)
+                          !
+         +-- Standard MR -+-- Cross RF (FUN=A or FUN=R )
+         !                !
+         !                +-- Locked Cross RF ( FUN=A or R and LOCK=Y )
+         !                !
+         !                +-- TF       (FUN=A or FUN=T )
+         !
+         !
+         !                                       +- identical models
+         !                                       !
+         !                      +--Multi-monomer-+
+         !                      !     search     !
+         !                      !   (DYAD=M)     +- complex with pairs of
+         !                      !                   different models 
+         !                      !                    
+         !                      !                +- two identical models
+         !                      !                !
+         +-- Multi-copy search -+-- Dyad search -+
+         !     for MR           !   (DYAD=D)     !
+         !                      !                +- two different
+         !                      !                   models 
+         !                      !
+MOLREP --+                      +-- Multy-copy for one model
+         !                          (DYAD=Y)
+         !                        
+         !                        
+         !                       +-- RF and PTF
+         !                       !   (PRF=N)
+         !                       !
+         +-- Fitting two models -+-- SAPTF, RF and PTF
+         !                       !   (PRF=S)
+         !                       !
+         !                       +-- SAPTF, PRF and PTF
+         !                           (PRF=Y)
+         !
+         !
+         !                        +-- RF and PTF
+         !                        !   (PRF=N)
+         !                        !
+         +-- Searching in ED map -+-- SAPTF, RF and PTF 
+         !                        !   (PRF=S)
+         !                        !
+         !                        +-- SAPTF, PRF and PTF
+         !                            (PRF=Y)
+         !
+         +-- Rotate and position the model (FUN=S FILE_T)
+         !
+         !
+         !
+         +-- Search model orientation in electron density map 
+         !   for particular position by phased RF (PRF=P FILE_T2)
+         !
+         !
+         !                +-- find HA positions by MR solution 
+         !                !   (FUN=D, model_2)
+         !                !
+         +-- HA search ---+-- HA search for SIR or SAD   
+         !                !   (DIFF=H, FUN=T, without any model)
+         !                !
+         !                +-- Self RF for HA position 
+         !                    (DIFF=H, FUN=R, without any model)
+         !
+         +-- pure RB refinement (phased or unphased, FUN=B, model_2)
+             
+
+
+   where: FUN, DYAD, PRF, LOCK, DIFF - keyword
+          MR    - Molecular Replacement
+          RF    - Rotation function
+          TF    - Translation function     
+          PRF   - Phased Rotation function
+          PTF   - Phased Translation function
+          SAPTF - Spherically Averaged Phased Translation function
+          ED    - Electron density
+          HA    - heavy atom
+          RB    - rigid body
+</pre>
+
+<ul>
+<li><a href="#standard_molecular_replacement_method">
+    Standard molecular replacement method</a></li>
+<li><a href="#self_rotation_function">Self Rotation Function only</a></li>
+<li><a href="#search_model">Search model in electron density or EM map</a></li>
+<li><a href="#search_orientation">Search model orientation</a> by PRF</li> 
+<li><a href="#fitting_two_models">Fitting two atomic models</a></li>
+<li><a href="#just_rotate_and_position">Just rotate and position the model</a>
+</li>
+<li><a href="#dyad_search">Multi-copy search</a></li>
+<li><a href="#model_correction">Model correction</a></li>
+<li><a href="#sequence_alignment">Use sequence alignment</a></li>
+<li><a href="#NMR">NMR model</a></li>
+<li><a href="#EM">EM or electron density model</a></li>
+<li><a href="#LRF">Locked Cross Rotation Function</a></li>
+<li><a href="#RB">rigid body refinement</a></li>
+<li><a href="#find HA">find HA positions by MR solution</a></li>
+<li><a href="#heavy atom search">heavy atom search</a></li> 
+</ul>
+
+<h3><a name="standard_molecular_replacement_method" 
+    id="standard_molecular_replacement_method"></a>* Standard
+    molecular replacement method</h3>
+
+<p>The program performs molecular replacement in two steps:</p>
+
+<ol> 
+<li><dl><dt>Rotation function (<a href="#RF"><b>RF</b></a>)</dt>
+    <dd>search orientation of model</dd></dl></li>
+<li><dl><dt>Cross Translation function (<a href="#TF"><b>TF</b></a>)
+    and Packing function (<a href="#RF"><b>PF</b></a>)</dt>
+    <dd>search position of oriented model</dd></dl></li>
+</ol>
+
+<p>The result of the Rotation function depends on the radius of a spherical
+domain in the centre of the Patterson function (the so-called cut-off radius).
+This radius must be chosen
+so as to maximize the ratio between the number of inter- and intramolecular
+vectors. The program chooses the value of this radius as twice the
+radius of gyration, but can also use an input value (keyword RAD).</p>
+
+<p>Instead of computing RF, the program can use a list of orientations from
+a Rotation function (keyword FILE_T) which was prepared before.
+Anisotropic correction of data before computing RF can be useful for
+data with high anisotropy (keyword ANISO).</p>
+
+<p><a name="modified_structure_factors" id="modified_structure_factors"></a>
+With a second fixed model (MODEL_2),
+the use of modified stucture factors instead of |Fobs| for RF 
+(keywords <a href="#diff">DIFF</a>,<a href="#p2">P2</a>)
+may make RF clearer. The modified stucture factor is:</p>
+<blockquote>sqrt(|Iobs-Imod2*(P2/100)|)</blockquote>
+<p>where P2 is the percentage of model_2 in the whole structure.</p>
+
+<p>The Translation function can check several peaks of the rotation function (NP)
+by computing a correlation coefficient for each peak and sorting the result.
+For scaling observed and calculated structure factors, the
+program uses the scaling by the origin peak of Patterson, but for
+data with high anisotropy the program can use anisotropic scaling (ANISO).
+The Translation function can take into account the second fixed model (MODEL_2) and
+also, if the number of monomers is known, MOLREP can position
+the input number of monomers in a simple run (keyword NMON). 
+Also in this case the
+possibility to choose from symmetry-related models closest to which was 
+found before is useful (keyword STICK).
+</p>
+<p>
+The program can detect and use pseudo-translation vectors. In this
+case the pseudo-translation related copy will be added to the
+final model (keyword PST).</p>
+
+<p>The Packing function is very important in removing wrong solutions which
+correspond to overlapping symmetry-related or different 
+models (keyword PACK).</p>
+
+<p>
+Be careful, with keyword SURF='Y' program use to calculate Packing Function
+only atoms which lying inside of molecule.So, for nonglobular model 
+(for example, only CA atoms) you cannot use keyword SURF='Y' with PACK='Y'.
+</p>
+
+<p>Use keywords:</p>
+<blockquote>
+<a href="#diff"><b>DIFF</b></a>,
+<a href="#fun"><b>FUN</b></a>,
+<a href="#model_2"><b>MODEL_2</b></a>,
+<a href="#nmon"><b>NMON</b></a>,
+<a href="#np"><b>NP</b></a>,
+<a href="#npt"><b>NPT</b></a>,
+<a href="#p2"><b>P2</b></a>,
+<a href="#pack"><b>PACK</b></a>,
+<a href="#pst"><b>PST</b></a>,
+<a href="#rad"><b>RAD</b></a>,
+<a href="#resmax"><b>RESMAX</b></a>,
+<a href="#resmin"><b>RESMIN</b></a>,
+<a href="#sim"><b>SIM</b></a>,
+<a href="#stick"><b>STICK</b></a>,
+<a href="#surf"><b>SURF</b></a>,
+<a href="#vpst"><b>VPST</b></a>,
+<a href="#file_t"><b>FILE_T</b></a>,
+<a href="#file_tsr"><b>FILE_TSRF</b></a>,
+<a href="#dyad_nsrf"><b>NSRF</b></a>
+</blockquote>
+
+<h3><a name="self_rotation_function" id="self_rotation_function"></a>
+* Self Rotation Function only</h3> 
+
+<p>If you define only a file of structure factors (Fobs), the program
+will compute a Self Rotation function with default value of cut-off radius. 
+Use keyword <a href="#rad">RAD</a> if you want another value.
+Other useful keywords: <a href="#resmax">RESMAX</a>,
+<a href="#resmin">RESMIN</a>, 
+<a href="#sim"><b>SIM</b></a>.</p>
+
+<p>Resulting output:</p>
+ 
+<dl>
+<dt><em>molrep_srf.tab</em></dt>
+<dd>List of peaks of Self Rotation Function.</dd>
+<dd><em>molrep_srf.tab</em> is default name, you can use another 
+        name using keyword <a href="#file_tsr">FILE_TSRF</a>.</dd>
+<dt><em>molrep_rf.ps</em><br>
+<dd>PostScript file of Self Rotation Function
+which contains four plots RF (theta,phi,chi) for<br />chi = 180, 90, 120, 60.
+</dd>
+<dd>You can change the fourth value of chi (60) by keyword 
+<a href="#chi">CHI</a></dd>
+<dd>You can change the scale of these plots of RF by keyword 
+<a href="#scale">SCALE</a></dd>
+<dd>This picture can help understand stereographic projection 
+<img src="gif/stereoproj.gif" alt="stereoproj" align="CENTER"></img>
+</dd> 
+</dl>
+
+
+<h3><a name="search_model" id="search_model"></a>
+* Search model in electron density or EM map</h3>
+
+<p>In some cases it is difficult to solve an X-ray structure 
+by molecular replacement even when a structure for a homologous
+molecule is khown. If prior phase information either from 
+SIR/MAD or from a partial structure is known, this could be 
+used in a six-dimensional search. The program divides the six-dimensional
+search with phases into three steps:</p>
+<ol>
+<li>a spherically averaged phased translation function
+(<a href="#SAPTF"><b>SAPTF</b></a>) is used to locate the position
+of the molecule or its fragment. It compares locally spherically
+avaraged experimental electron density with that calculated
+from the model and tabulates highest scoring positions.</li>
+<li>then for each such position a local phased rotation function
+(<a href="#PRF"><b>PRF</b></a>) is used to find the orientation of 
+the molecule.<br>
+Another possibility is to use usual rotation function (RF) for
+modified map, i.e program sets 0 the 
+density outside of sphere with radius = twice radius of model and
+with the centre in current point.    
+</li>
+<li>the phased translation function (<a href="#PTF"><b>PTF</b></a>) for found 
+orientation which checks and refines the found position.</li>
+</ol>
+
+<p>You need to have the phases in a CIF file of structure factors or
+to use corresponding keywords for MTZ file 
+or use EM map as input instead of Fobs file.
+In EM case map will be converted into !F! and phases.
+</p>
+
+<p>For input map use keywords:</p>
+<blockquote>
+<a href="#dscale"><b>DSCALE</b></a>,
+<a href="#inver"><b>INVER</b></a>,
+<a href="#dlim"><b>DLIM</b></a>
+</blockquote>
+
+
+<blockquote><ul>
+<li>with keyword <b>PRF</b> = 'N' (default value):<br />
+usual Rotation function and Phased Translation 
+function will be used.</li>
+<li>with keyword <b>PRF</b> = 'Y':<br>
+SAPTF (Spherically averaged phased translation function), 
+Phased Rotation function and Phased Translation functions
+will be used.</li>
+<li>with keyword <b>PRF</b> = 'S':<br>
+1.SAPTF (Spherically averaged phased translation function).
+2.For current point of SAPTF solution input map is modified, i.e
+program sets 0 the density outside of sphere with radius = twice radius 
+of model and with the centre in current point.    
+3.usual Rotation function for this modified map.
+4.Phased Translation functions</li>
+</ul></blockquote>
+
+<p> <a href="sfcheck.html"><b>SFCHECK</b></a>
+can convert input map to scaled and/or inverted map.
+</p>
+
+<p>
+If you structure contains several molecules which forms some point group
+you can use this NCS. Program will generate complete model and
+use it for stage PTF. Also result (molrep.pdb) will be complete model.
+</p>
+<p>
+First of all you must define parameters of NCS in PDB file 
+or using  keywords NCS, ANGLES, CENTRE. 
+See <a href="#howNCS"><b>How to define NCS</b></a>
+</p>
+
+<p>Other useful keywords:</p>
+<blockquote>
+<a href="#nmon"><b>NMON</b></a>,
+<a href="#np"><b>NP</b></a>,
+<a href="#npt"><b>NPT</b></a>,
+<a href="#rad"><b>RAD</b></a>,
+<a href="#resmax"><b>RESMAX</b></a>,
+<a href="#resmin"><b>RESMIN</b></a>,
+<a href="#sim"><b>SIM</b></a>,
+<a href="#surf"><b>SURF</b></a>,
+<a href="#inver"><b>INVER</b></a>,
+<a href="#ncs"><b>NCS</b></a>,
+<a href="#angles"><b>ANGLES</b></a>,
+<a href="#centre"><b>CENTRE</b></a>
+</blockquote>
+
+<p>
+Also you can refine solution by <a href="#pure RB">
+<b>Pure Rigid Body Refinement</b></a>
+</p>
+
+<h3><a name="search_orientation" id="search_orientation"></a>* Search model
+orientation in electron density map for particular position by PRF</h3> 
+
+<p>
+You can use this possibility (keywords <a href="#PRF"><b>PRF</b></a>=P
+ and <a href="#fun"><b>FUN</b></a>=R or A) if you want to find the model
+ orientation in ED map by rotating model around the defined point 
+ in ED map. Program puts the origin of model coordinate sysytem to
+ the defined point and performs phased rotation function (PRF).
+Use keyword <a href="#rad"><b>RAD</b></a> to define the radius of sphere
+ for PRF.
+<p>
+You must define the list of defined points of ED map using file  
+<a href="#file_t"><b>FILE_T2</b></a> , wich must contain lines with
+&quot;Sol_&quot;,
+peak number,Polar angles and shift (sx,sy,sz)
+             <em>e.g.</em>:
+<blockquote><pre>&quot;Sol_  23  10.0    22.2 40.0  .564 .443 .032&quot;</pre></blockquote>
+But program will use only the shift (sx,sy,sz).
+<p>
+Model is rotated around the origin of model coordinate sysytem.
+If keyword <a href="#surf"><b>SURF</b></a>= Y,A,2,O program puts the centre
+of model to the origin of model coordinate sysytem automatically.
+If you want, for example, to rotate the model around some atom,
+shift the origin to this atom and use <a href="#surf"><b>SURF</b></a>=N
+ 
+<p>Other useful keywords:</p>
+<blockquote>
+<a href="#nmon"><b>NMON</b></a>,
+<a href="#np"><b>NP</b></a>,
+<a href="#npt"><b>NPT</b></a>,
+<a href="#resmax"><b>RESMAX</b></a>,
+<a href="#resmin"><b>RESMIN</b></a>,
+<a href="#sim"><b>SIM</b></a>,
+<a href="#inver"><b>INVER</b></a>
+</blockquote>
+
+<h3><a name="fitting_two_models" id="fitting_two_models"></a>* Fitting two 
+   atomic models (<a href="#FM"><b>FM</b></a>)</h3>
+ 
+<p>The idea is to fit the electron densities instead of the atomic models,
+trying to find the best overlap. Advantages are:</p>
+
+<ul>
+<li>can be used for cases with very low homology;</li>
+<li>can be used when amino acid sequence is absent;</li>
+<li>no need to use the list of equivalent atoms.</li>
+</ul>
+       
+<p>If you define only two files of models (searching model and model_2),
+without a file of structure factors (Fobs), the program will fit the search
+model (keyword <a href="#file_m">FILE_M</a>) to the second model (keyword 
+<a href="#model_2">MODEL_2</a>). The search model must be smaller or equal
+to the second model.</p>
+<blockquote><ul>
+<li>with keyword <b>PRF</b> = 'N' (default value):<br />
+usual Rotation function (RF) to search  the orientation
+and Phased Translation function (PTF) to search position will be used.</li>
+<li>with keyword <b>PRF</b> = 'Y':<br />
+Spherically averaged phased translation function (SAPTF) gives the
+expected position for model.
+Phased Rotation function (PRF) for expected position gives
+orientation.
+Phased Translation function (PTF) checks and refines the translation
+vector.</li>
+<li>with keyword <b>PRF</b> = 'S':<br />
+1.SAPTF (Spherically averaged phased translation function).
+2.For current point of SAPTF solution input map is modified, i.e
+program sets 0 the density outside of sphere with radius = twice radius 
+of model and with the centre in current point.    
+3.usual Rotation function for this modified map.
+4.Phased Translation functions</li>
+</ul></blockquote>
+
+<p>Other useful keywords:</p>
+<blockquote>
+<a href="#np"><b>NP</b></a>,
+<a href="#npt"><b>NPT</b></a>,
+<a href="#rad"><b>RAD</b></a>,
+<a href="#resmax"><b>RESMAX</b></a>,
+<a href="#resmin"><b>RESMIN</b></a>,
+<a href="#sim"><b>SIM</b></a>,
+<a href="#surf"><b>SURF</b></a>
+</blockquote>
+   
+<p>The result is file <em>molrep.crd</em> (or <em>molrep.pdb</em>) - model
+fitted to second model.</p>
+
+<h3><a name="just_rotate_and_position" id="just_rotate_and_position"></a>
+* Just rotate and position the model</h3>
+
+<p>This possibility may be useful if you want to place the model
+to a particular orientation and position, or to compare several solutions.</p>
+
+<p>Use keyword <a href="#fun_s">FUN=S</a> and define three files: a model
+(keyword <a href="#file_m">FILE_M</a>), a file of structure factors
+(keyword <a href="#file_f">FILE_F</a>) and file with polar angles and shifts
+(keyword <a href="#file_t">FILE_T</a>).
+The program will shift the model to the origin, rotate (by polar angles) and 
+the position it (in fractional unis).
+The new model will be written to an output coordinate file.
+Also the program will compute an R-factor and a Correlation Coefficient.</p>
+<p> If you like to use Eiler angles use &quot;Sol_A&quot;
+ instead &quot;Sol_&quot; see  <a href="#molrep_rf_tab"><em>molrep_rf.tab</em></a>
+</p>
+<p> If you like to rotate around some atom, you have to shift coordinate system origin to this atom by hand and use keyword SURF = N.
+</p>
+<p>Other useful keywords:</p>
+<blockquote>
+<a href="#resmax"><b>RESMAX</b></a>,
+<a href="#resmin"><b>RESMIN</b></a>,
+<a href="#sim"><b>SIM</b></a>
+</blockquote>
+
+<h3><a name="dyad_search" id="dyad_search"></a>* Multi-copy search</h3>
+
+<p>There are three modes: "dyad_search", "Multi-copy search"and "Multi-monomer search".</p>
+
+<p>Dyad_search - Search two copies of a model simultaneously 
+(keyword <a href="#dyad">DYAD=D</a>).</p>
+
+<p>Sometimes you can not find a solution starting with one molecule
+if you have several copies of the molecule in the asymmetrical part of
+the unit cell. In this case a search with two independent molecules
+may give a solution. The central point of method is the construction 
+of a multi-copy search model from properly oriented monomers using
+a special TF (<a href="#STF"><b>STF</b></a>), 
+which gives the intermolrecular verctor between properly 
+oriented monomers (dyad). This dyad can then be used for a positional 
+search with a conventional TF.</p>
+
+<ol>
+<li>the program checks all pairs of <a href="#np">NP</a> peaks of the Rotation
+  Function (RF).
+  For each pair the program uses the first rotation to prepare model-1.
+  Model-2 will be prepared by using the second rotation and one
+  rotation from the crystallographical symmetry operators.
+  The total number of pairs to be checked is ((NP+1)*NP*Nsym)/2</li>
+<li>next, for model-1 and model-2:
+  the program computes the Special Translation Function (<a href="#STF">
+  <b>STF</b></a>) to find the inter-molecular vector of the dyad.</li>
+<li>for <a href="#dyad_npt">NPT</a> peaks (<em>i.e.</em> inter-molecular 
+  vectors) of the STF,
+  the program computes the standard Translation Function (TF) using the 
+  current dyad as a model, and it calculates a Correlation Coefficient for 
+  the first<a href="#dyad_nptd">NPTD</a> peaks of the TF.</li>
+</ol>
+
+<p>Solution and output file: <em>molrep.pdb</em> will be the dyad with the best
+Correlation Coefficient (or several dyads if keyword 
+<a href="#nmon">NMON</a> &gt; 1).</p>
+
+<p>WARNING: the procedure takes quite some time, because the total number of
+Translation Functions to be calculated is NMON*NPT*((NP+1)*NP*Nsym)/2.</p>
+
+<p>In the output .log (.doc) file you can find the following information:</p>
+<blockquote><pre>
+
+Sol_      R1  R2  Rs Rslf STF TF        Shift_1     PFmax PFmin    Rfac   Corr
+Sol_       1   1   1   0   2   1  0.059 0.000 0.201  1.01  0.99   0.569  0.379
+
+and
+
+Sol_best   1   1   1   0   2   1  0.059 0.000 0.201  1.01  0.99   0.569  0.379
+Sol_best         Rot1--&gt;2               Dyad_vector       dist d_ort d_par
+Sol_best    0.0    0.0    0.0    -0.210  0.000 -0.487    39.2  19.6  33.9
+
+</pre></blockquote>
+                
+<p>These lines means:</p>
+<blockquote>
+<dl>
+<dt><tt>R1</tt></dt>
+<dd>peak number of rotation for model-1</dd>
+<dt><tt>R2</tt></dt>
+<dd>peak number of rotation for model-2</dd>
+<dt><tt>Rs</tt></dt>
+<dd> CS operator number which applyed before rotation for model-2</dd>
+<dt><tt>Rslf</tt></dt>
+<dd>peak number of self rotation function</dd>
+<dt><tt>STF</tt></dt>
+<dd>peak number of special translation function</dd>
+<dt><tt>TF</tt></dt>
+<dd>peak number of translation function</dd>
+<dt><tt>Shift_1</tt></dt>
+<dd>position of model-1</dd>
+<dt><tt>PFmax PFmin</tt></dt>
+<dd>min, max values of Packing function</dd>
+<dt><tt>Rfac   Corr</tt></dt>
+<dd>R-factor and Correlation Coefficient</dd>
+<dt><tt> Rot1-&gt;2</tt></dt>
+<dd>polar angles of rotation from model-1 to model-2.</dd>
+<dt><tt> Dyad_vector</tt></dt>
+<dd>vector (in fractional) from model-1 to model-2.</dd>
+<dt>dist d_ort d_part<tt></tt></dt>
+<dd>first number - distance between models (in Angstrom)</dd>
+<dd>second number - distance orthogonal to rotation 1-&gt;2</dd>
+<dd>third number - distance parallel to rotation, <em>i.e.</em> 
+for pure dimer this is 0.</dd>
+</dl></blockquote>
+<p>Also you can find additional information:</p>
+<blockquote><pre>
+Sol_              angles_1             angles_2        shift_2
+Sol_      90.63   98.70  118.12   90.63   98.70  118.12  0.189  0.256 -0.415
+ 
+       +---------------------------------------------------------+ 
+       !                                                         !
+       !                                                         !
+       !                                                         !
+       !                                                         !
+       !                                                         !
+       !      -----------------            -----------------     !
+       !     /                 \          /                 \    !
+       !    /                   \        /                   \   !
+       !    ! rotated (angles_1) !       ! rotated (angles_2) !  !
+       !    !     monomer_1      !       !     monomer_2      !  !
+       !    !                    ! dyad  !                    !  !
+       !    !         +----------!-----------------+          !  !
+       !    !        /           ! vector!       '            !  !
+       !    !       /           /         \  '               /   !
+       !    \      /           /           \                /    ! 
+       !     \    /           /          '  \              /     !
+       !      ---/------------        '      --------------      !
+       !        /shift_1           ' shift_2                     !
+       !       /                '                                !
+       !      /              '                                   !
+       !     /            '                                      !
+       !    /          '                                         !
+       !   /        '                                            !
+       !  /      '                                               !
+       ! /    '                                                  !
+       !/  '                                                     !
+       +---------------------------------------------------------+
+         origin
+</pre></blockquote>
+<p>If you believe the Self-RF, you can try to find a dyad which has 
+the rotation between monomers corresponding to the rotation of the Self-RF
+(use keywords <a href="#dyad_nsrf">NSRF</a>,<a href="#file_tsr">FILE_TSRF</a>).
+</p>
+<p>
+Model-2 can be different from model-1. Use keywords 
+<a href="#dyad_filem2">FILE_M2</a> to define
+file of searching model-2, <a href="#dyad_filet2">FILE_T2</a> 
+with list of peaks rotation function
+for this model (this RF have to be computed before) and 
+<a href="#dyad_np2">NP2</a> number of peacks which will be used.
+</p>
+<p>Multi-copy search - Search many copies of a model (not only dyad)
+(keyword <a href="#dyad">DYAD=Y</a>).
+</p>
+<p>
+Program starts to search a single monomer, after that produces
+the dyad search, repeates dyad search for next dyad with the first being fixed
+and ,finaly, tryes add a single monomer. 
+</p>
+<p>Multi-monomer search - construct complexes of monomers and check.
+(keyword <a href="#dyad">DYAD=M</a>).
+</p>
+<p>
+Instead to search two copies
+and then next one program constructs maximal possible complexes of monomers
+(3mres,4mers,5mers,...) and checks its by TF.
+This algorithm is better and faster then DYAD=D or DYAD=Y. But also it takes 
+a time (about 30min,1h,2h ...). It depends on resolution, size of cell, space group. 
+</p>
+<p>Use keywords:</p>
+<blockquote>
+<a href="#dyad"><b>DYAD</b></a>,
+<a href="#dyad_dist"><b>DIST</b></a>,
+<a href="#np"><b>NP</b></a>,
+<a href="#dyad_nsrf"><b>NSRF</b></a>,
+<a href="#dyad_npt"><b>NPT</b></a>,
+<a href="#dyad_nptd"><b>NPTD</b></a>,
+<a href="#dyad_np2"><b>NP2</b></a>,
+<a href="#dyad_axis"><b>AXIS</b></a>,
+<a href="#dyad_filem2"><b>FILE_M2</b></a>,
+<a href="#dyad_filet2"><b>FILE_T2</b></a>,
+<a href="#file_t"><b>FILE_T</b></a>,
+<a href="#file_tsr"><b>FILE_TSRF</b></a>,
+<a href="#nmon"><b>NMON</b></a>,
+<a href="#all"><b>ALL</b></a>,
+<a href="#pack"><b>PACK</b></a>
+</blockquote>
+<p>For DYAD M:</p>
+<blockquote>
+<a href="#dyad"><b>DYAD</b></a>,
+<a href="#np"><b>NP</b></a>,
+<a href="#dyad_nptd"><b>NPTD</b></a>,
+<a href="#dyad_np2"><b>NP2</b></a>,
+<a href="#dyad_filem2"><b>FILE_M2</b></a>,
+<a href="#dyad_filet2"><b>FILE_T2</b></a>,
+<a href="#file_t"><b>FILE_T</b></a>,
+<a href="#nmon"><b>NMON</b></a>,
+<a href="#all"><b>ALL</b></a>,
+<a href="#pack"><b>PACK</b></a>
+<a href="#nml"><b>NML</b></a>
+</blockquote>
+<p>and also:</p>
+<blockquote>
+<a href="#sim"><b>SIM</b></a>,
+<a href="#resmax"><b>RESMAX</b></a>,
+<a href="#resmin"><b>RESMIN</b></a>,
+<a href="#surf"><b>SURF</b></a>,
+<a href="#stick"><b>STICK</b></a>
+</blockquote>
+
+<a name="model_correction" id="model_correction"></a><h3>* Model correction</h3>
+
+<p>You can improve your model beforehand by using keyword 
+<a href="#surf">SURF</a>.</p>
+
+<TABLE>
+
+<TR>
+<TH ALIGN=left><b>N</b></TH><TD>
+        do not perform any model correction.For FUN=S 
+        (just_rotate_and_position) program changes N to O</TD>
+</TR> 
+<TH ALIGN=left><b>O</b></TH><TD>
+        only shift to the origin</TD>
+</TR> 
+<TH ALIGN=left><b>A</b></TH><TD>
+        make the protein into a polyalanine model 
+        (<em>i.e.</em> remove
+        from the model: water molecules, H atoms, atoms with alternative 
+        conformation (except the first), atoms with occupacy = 0), 
+        make all B = 20, and shift to the origin</TD>
+</TR> 
+<TH ALIGN=left><b>Y</b></TH><TD>
+        remove various atoms from the model (water molecules, 
+        H atoms, atoms with alternative conformation (except the first), 
+        atoms atoms with occupacy = 0), shift to the origin,
+        compute atomic accessible surface area and replace atomic B with 
+        B = 15.0 + SURFACE_AREA*10.0</TD>
+</TR> 
+<TH ALIGN=left><b>2</b></TH><TD>
+        set all B = 20 and shift to the origin</TD>
+</TR> 
+<TH ALIGN=left><b>C</b></TH><TD>
+         as Y but new B only for Packing function (not change original B) 
+         and shift to the origin</TD>
+</TR> 
+</TABLE>
+
+<a name="sequence_alignment" id="sequence_alignment"></a><h3>
+* Using sequence alignment</h3>
+
+<p>Another way to improve your model is to use the sequence of the unknown 
+structure.</p>
+
+<p>Use keyword <a href="#file_s">FILE_S</a> to define a file containing 
+a sequence. This sequence file must be ASCII:</p>
+
+<blockquote><pre> 
+!&gt; title
+!# sequence 
+!SVIGSDDRTRVTNTTAYPYRAIVHISSSIGSCTGWMIGPKTVATAGHCIY
+!# this is comment
+!    DTSSG--SFAGTATVSP   GRNGTSYPYG
+!NRGTRITKEVFDNLTNWKNSAQ
+!
+</pre></blockquote>
+<p>If the first symbol in the line is &quot;#&quot;, it means the line 
+contains comments. Blancs are ignored.</p>
+
+<p>The program will perform sequence alignment and create a new corrected 
+model with the atoms corresponding to the alignment. The output file with 
+the corrected model is <em>align.pdb</em>. Without an Fobs file, 
+the program only performs
+<a href="#model_correction">model correction</a>.</p>
+
+<a name="NMR" id="NMR"></a><h3>* NMR Model</h3>
+<p>
+You can use PDB file with NMR models or pseudo-NMR file with several homologous
+structures which were superimposed before. Algorithm is equivalent to sum
+RF or/and TF for individual structures. Program can find the best model in
+NMR file or use all models (see keyword <a href="#nmr">NMR</a>) . 
+</p>
+<p>
+In the PDB file different models must
+be separated by MODEL record. For example: 
+</p>
+<blockquote><pre>
+HEADER    HYDROLASE (ENDORIBONUCLEASE)         
+CRYST1   64.900   78.320   38.790  90.00  90.00 ...
+MODEL        1 
+ATOM      1  N   ASP A   1      45.161  12.836 ... 
+ATOM      2  CA  ASP A   1      45.220  12.435 ...   
+ ... 
+ATOM    745  SG  CYS A  96      58.398   6.673 ... 
+ATOM    746  OXT CYS A  96      62.238   7.178 ...  
+ENDMDL                                        
+MODEL        2   
+ATOM      1  N   ASP B   1      44.487  11.386 ...  
+ATOM      2  CA  ASP B   1      44.559  11.129 ... 
+ ...
+</pre></blockquote>
+<p>
+ Use keyword <a href="#keyNMR">NMR</a> 
+</p>
+
+<a name="EM" id="EM"></a><h3>* EM or electron density model</h3>
+<p>
+Searching model can be Electron Microscopic model (EM) or electron
+density map. Only values higher the limit (if keyword
+<a href="#rolim"><b>ROLIM</b></a> is defined) will be used.
+Map must have space group P1 and contains whole model.
+Vector ORIGIN defines the centre of model and the rotation will be
+performed around this point.
+If parameter DRAD (radius of model) is defined program will use the density only
+inside the sphere with radius = DRAD and with centre in vector ORIGIN. 
+</p>
+
+
+<pre>
+
+        +--------------------------------+ nz
+   !    !                                !
+   !    .                                .
+   !
+   !    !                                !
+   !    .                                .
+   !
+   !    !                                !
+   !    +--------------------------------+ izmax
+   !    !                                !
+   !    !                                !
+   !    !                                !
+   !    !      ----------------          !
+   !    !     /                \         !
+   !    !    /                  \        !
+   !    !   /                    \       !
+ C_cell !  /                      \      !
+   !    !  !                       !     !
+   !    !  !   DRAD                !     !
+   !    !  !---------- +           !     !
+   !    !  !          / centre     !     !
+   !    !  !         /             /     !
+   !    !  \        /             /      !
+   !    !   \      /             /       !
+   !    !    \    /             /        !
+   !    !     \  /             /         !
+   !    !      -/--------------          !
+   !    !      /                         !
+   !    !     /                          !
+   !    !    / ORIGIN                    !
+   !    !   /                            !
+   !    !  /                             !
+   !    ! /                              !
+   !    !/                               !
+   !    +--------------------------------+
+        0                                nx
+        ----------- A_cell --------------
+  
+</pre>   
+
+<p>
+Program will get vector ORIGIN from file automatically.
+If it is not possible to get correct vector, program will use
+ORIGIN = ( 0.5, 0.5, izmax/(2*nz)).
+If you want you can define ORIGIN yourself.
+</p>
+
+
+<p>Use keywords:</p>
+<blockquote>
+<a href="#dscalem"><b>DSCALEM</b></a>,
+<a href="#inverm"><b>INVERM</b></a>,
+<a href="#rolim"><b>ROLIM</b></a>,
+<a href="#drad"><b>DRAD</b></a>,
+<a href="#origin"><b>ORIGIN</b></a>
+</blockquote>
+
+<a href="#search_model"><b>Search model in electron density map</b></a>
+will be performed as usual.
+
+
+</p>
+
+<a name="LRF" id="LRF"></a><h3>* Locked Cross Rrotation Function</h3>
+
+<p>
+Locked Cross Rotation function (LRF) means to average the Cross Rotation
+function by NCS which can be determined with Self Rotation function.
+LRF is especially useful when NCS forms a group.
+</p>
+<p>Use keywords:</p>
+<blockquote>
+<a href="#lock"><b>LOCK</b></a>,
+<a href="#dyad_nsrf"><b>NSRF</b></a>,
+<a href="#file_tsr"><b>FILE_TSRF</b></a>,
+</blockquote>
+
+<a name="RB" id="RB"></a><h3>* Rigid body refinement</h3>
+
+
+
+<p>
+You can use <a name="pure RB" id="pure RB"></a>
+<b>Rigid Body Refinement</b> in Patterson or Real space (keyword FUN = 'B'). 
+This possibility is useful in the last stage of MR. For example
+after fitting the model into EM map.
+You must define Fobs or Fobs and phases (or Map).
+Also use keyword MODEL_2 for model to refine.
+If you define the phases or use the map program will produce real space 
+refinement (more correctly, in reciprocal space using phase information).
+</p>
+<p>
+If keyword DOM = 'N' (default) program refines MODEL_2 as single molecule.
+</p>
+<p>
+If keyword DOM = 'Y' program performs multi-domain refinement.
+For this you must put into PDB file additional 
+lines before each domain. Additional line contains word '#DOMAIN' and
+domain number (free format).  
+</p>
+<p>For example:</p>
+<blockquote><pre>
+HEADER    HYDROLASE (ENDORIBONUCLEASE)         
+CRYST1   64.900   78.320   38.790  90.00  90.00 ...
+#DOMAIN     1 
+ATOM      1  N   ASP A   1      45.161  12.836 ... 
+ATOM      2  CA  ASP A   1      45.220  12.435 ...   
+ ... 
+ATOM    745  SG  CYS A  96      58.398   6.673 ... 
+ATOM    746  O   CYS A  96      62.238   7.178 ...  
+#DOMAIN     2 
+ATOM    747  N   PHE A  97      44.487  11.386 ...  
+ATOM    748  CA  PHE A  97      44.559  11.129 ... 
+ ...
+ATOM    945  C   VAL A 196      58.398   6.673 ... 
+ATOM    946  O   VAL A 196      62.238   7.178 ...  
+#DOMAIN     1 
+ATOM    947  N   ASP A 197      44.487  11.386 ...  
+ATOM    948  CA  ASP A 197      44.559  11.129 ... 
+ ...
+</pre></blockquote>
+<p>
+If you structure contains several molecules which forms some point group
+you can use this NCS as constraints.
+First of all you must define NCS parameters in PDB file or 
+using keywords: NCS,ANGLES, CENTRE.
+See <a href="#howNCS"><b>How to define NCS</b></a>
+</p>
+<p>
+If you have some trouble with NCS parameters (values: theta,phi,chi,cx,cy,cz)
+use keyword DOM = 'I' and you can find these actual values in output PDB file:
+molrep.pdb. Alternative way to create initial PDB file with complete model
+is to describe only first (reference) molecule and use keyword DOM = 'C'.   
+Complete model you can find these in output PDB file:molrep.pdb.
+Finally use keyword DOM = 'S' for refinement with constraints.
+</p>
+
+<p>Use keywords:</p>
+<blockquote>
+<a href="#fun"><b>FUN</b> = B</a>,
+<a href="#dom"><b>DOM</b></a>,
+<a href="#sim"><b>SIM</b></a>,
+<a href="#resmax"><b>RESMAX</b></a>,
+<a href="#resmin"><b>RESMIN</b></a>,
+<a href="#nref"><b>NREF</b></a>,
+<a href="#ncs"><b>NCS</b></a>,
+<a href="#angles"><b>ANGLES</b></a>,
+<a href="#centre"><b>CENTRE</b></a>
+</blockquote>
+
+</p>
+
+<a name="find HA" id="find HA"></a><h3>* Find HA positions by MR solution</h3>
+<p>
+To define derivative use corresponding label for MTZ file or derivative file
+(FILE_DER).
+</p>
+<p>Use keywords:</p>
+<blockquote>
+<a href="#fun"><b>FUN</b> = D</a>,
+<a href="#model_2"><b>MODEL_2</b> (as MR solution)</a>
+</blockquote>
+
+<a name="heavy atom search" id="heavy atom search"></a>
+  <h3>* Heavy atom search</h3> 
+<p>
+To define derivative use corresponding label for MTZ file or derivative file
+(FILE_DER).
+</p>
+
+<p>In this case you need not to use any model.</p>
+<p>Use keywords:</p>
+<blockquote>
+<a href="#diff"><b>DIFF</b> = H</a>,
+<a href="#fun"><b>FUN</b> = T or R</a>
+</blockquote>
+<p>'FUN = T' means Heavy atom search (experimental version)<br />
+'FUN = R' means Self RF for Heave atom structure.
+</p>
+
+<a name="how" id="how"></a><h2>HOW TO USE MOLREP</h2>
+<p>
+(you can use 
+<a href="#testing"><b>Testing_program_MOLREP</b></a>
+as tutorial)
+</p>
+
+<p>A simple way to use MOLREP is to define files for Fobs and the model
+and use default values for all parameters (<em>i.e.</em> without using 
+any keywords). There is always a chance of solving the structure automatically.
+If this does not work, use a common strategy of molecular replacement.</p>
+
+<h3>Planning ahead</h3>
+
+<p>Success of the molecular replacement method depends on:
+<ul>
+   <li>quality of experimental data</li>
+   <li>scaling |F|_obs and |F|_calc</li>
+   <li>low resolution limit</li>
+   <li>high resolution limit</li>
+   <li>quality of the model, homology, conformation</li>
+</ul>
+
+<p>Things to look out for:</p>
+<dl>
+
+<dt>data</dt>
+ <dd>Look at your data quality. Completeness is very important.
+ Absence of low resolution reflections may cause problems,
+ especially if the model is some part of a whole structure.
+ Look at anisotropy and twinning.</dd>
+ <dd>Think carefully: can you 'safely' use the high resolution reflections?
+ If not, use keyword <a href="#sim">SIM</a> to remove the potentially bad
+ effect of this part of the data. It might be a good idea to use some
+ program to check the data, for example
+ <a href="sfcheck.html"><b>SFCHECK</b></a>.</dd>
+
+<dt>model</dt>
+ <dd>Look at the model regarding the shape. The automatic choice of the
+ cut-off radius for RF is twice the radius of gyration. This is good
+ enough if the shape is approximately spherical. If the model is very
+ asymmetrical, it is better to make a choice yourself.</dd>
+ Remove from your model the heavy atoms and some terminal residues if they
+ lie 'outside' the model.</dd>
+ <dd>Make a choice for <a href="#sim">SIM</a>,<a href="#resmin">RESMIN</a>. If you
+ have not any idea about similarity, SIM=0.35 is a good approximation.</dd>
+ <dd>If you have a dimer use it, but use <a href="#rad">RAD</a> corresponding
+ to a monomer.</dd>
+ <dd>It is very useful to shift the model to the origin of coordinates.
+ Use keyword <a href="#surf">SURF</a> = O or Y (Y is default).</dd>
+
+<dt>Self-RF</dt>
+ <dd>Compute Self-RF. It may give you some idea about NCS or about
+ the number of copies in the asymmetrical part of unit cell.</dd>
+ Choose the radius of integration carefully. The program can not make good
+ enough choice about it without a model (default is 30&#197;).</dd>
+
+<dt>Cross-RF only</dt>
+ <dd>
+ In the DOC_file you can find the list of expected orientations of
+ the model and also the rotations between them. Compare this with the
+ Self-RF. This is an additional check of correctness of the expected
+ orientation. But sometimes we can not find corresponding peaks
+ in Self-RF for correct orientation.</dd>
+
+<dt>Translation function</dt>
+ <dd>If there are several copies of the model in the asymmetrical part of 
+ unit cell, use keyword <a href="#nmon">NMON</a> or multi-copy or dyad search.
+ It is not necessary to use the option of Pseudo-translation for a dyad search,
+ since this can recognize Pseudo-translation itself.</dd>
+
+</dl>
+
+<h3>Dialogue or batch</h3>
+
+ <p>You can use MOLREP 
+ <a href="#keywords">by dialogue or by command (batch) file</a>.
+ Modern computing technology allows the carrying out of most of the calculations
+ for small and medium sized proteins in real time, therefore, dialogue
+ is a preferable way of running MOLREP.
+ However, the program automatically produces a batch command file
+ during dialogue. This feature might be useful for repeated calculations.</p>
+
+<h3><a name="pseudo-translation" id="pseudo-translation"></a>Pseudo-translation</h3>
+
+<p>MOLREP can detect pseudo-translation, and define a pseudo-translation vector.</p>
+
+<p>If keyword <a href="#pst">PST</a> = Y, 
+ the program applies pseudo-translation with a
+ pseudo-translation vector which was defined by the program or the user.
+ When calculating a Translation Function, the program will use this
+ vector to modify structure factors. Pseudo-translation copy will be added
+ to the final model at the end program running.</p>
+
+<p>If <a href="#fun_r">FUN=R</a> and <a href="#list_l">LIST=L</a> MOLREP computes a list
+of Patterson peaks and writes these to <em>molrep.doc</em>. This may be helpful in the
+detection of pseudo-translation.</p>
+
+<p>Use keywords:</p>
+<blockquote>
+<a href="#pst"><b>PST</b></a>,
+<a href="#vpst"><b>VPST</b></a>
+</blockquote>
+
+
+<h3>Flexible model</h3>
+<p>
+If your model is flexible, for example, consists of two domains, you can
+try to solve this problem by two ways:
+</p>
+
+<p>
+1. Create two files for each domain and use dyad search (DYAD = D or DYAD = M)
+</p>
+
+<p>
+2. Solve one domain, refine it and use the solution as fixed model to solve 
+another domain.
+</p>
+
+
+<h3>The use many homologous models</h3>
+<p>
+If you have several homologous models you can create a pseudo NMR file
+with these models and use its together 
+(see <a href="#NMR"><b>NMR</b></a> model).
+But these models must be superimposed before, for example, by MOLREP
+(see <a href="#fitting_two_models"><b>fitting two models</b></a>).
+</p>
+
+
+<h3>Keep in mind</h3>
+
+<ul>
+    
+<li>Without a model file, the program only computes a Self Rotation Function.
+</li>
+
+<li>If <a href="#fun_r">FUN=R</a>, 
+    the program computes and writes
+    to <em>molrep.doc</em> all symmetry-related peaks of the Rotation Function.
+    If also keywords NSRF and FILT_TSRF are used you can fine the pairs of
+    peaks of cross RF which corresponds to NCsymmetry.
+</li>
+
+<li>If you want to change the space group of the structure factor file,
+    use keyword <a href="#nosg">NOSG</a>, <em>i.e.</em> new space group number,
+    or keyword <a href="#sg">SG</a>
+</li>
+
+<li>The Packing Function (<a href="#PF"></b>PF</b></a>) is very important 
+    to remove wrong solutions which correspond to overlapping symmetry-related 
+    or different models. But you can remove this option
+    (<a href="#pack">PACK</a> = N ), for example, if you want to find the model
+    in a special position. Value of PF = 1 corresponds to non-overlapping, 
+    value = -1 corresponds to completely overlapping two models.
+</li>
+
+<li>When MOLREP is trying to find several models 
+    (<a href="#nmon">NMON</a> &gt; 1) it is useful to use keyword 
+    <a href="#stick">STICK</a> = Y. Then for each additional molecule the 
+    program will choose a symmetry-related molecule closest to which was/were 
+    found before.
+
+<li>For the <a href="#PRF">PRF</a> and the <a href="#SAPTF">SAPTF</a>, 
+    the default cut-off radius is <em>once</em> the radius of gyration, 
+    whereas for a Patterson calculation the cut-off radius would be
+    <em>twice</em> the radius of gyration.
+</li>
+
+</ul>
+
+<h3>Tips:</h3>
+
+<dl>
+
+<dt>1</dt>
+<dd>
+      In the beginning use molrep without keywords
+      or only SIM (default 0.35)
+</dd>
+   
+<dt>2</dt>
+<dd>
+      In case with pseudo-translation use also "PST N"
+</dd>
+   
+<dt>3</dt>
+<dd>
+      If input model is an ensemble of models (for example from BALBES)
+      try also "NMR 1" (some variant of RF) and
+      "NMR -1" means only first model from ensemble.
+</dd>
+
+<dt>4</dt>
+<dd>
+      If you are searching additional part of structure in the map
+      after refmac: "molrep -f refmac.mtz -m model.pdb -mx refmac.pdb"
+      with "LABIN F=FWT PH=PHWT"
+      use "DIFF M","SIM -1" (i.e. not use SIM), NP about 50
+      also you can try "PRF Y" or "PRF S" (SAPTF)
+</dd>
+
+<dt>5</dt>
+<dd>
+      In difficult case play with SIM, RESMIN and NP
+</dd>
+
+<dt>6</dt>
+<dd>
+      To check alternative space groups use "SG ALL"
+</dd>
+   
+<dt>7 </dt>
+<dd>
+      For "DYAD M" useful keywords are "ALL","NPTD" and "NML"
+</dd>
+
+<dt>8 </dt>
+<dd>
+     You can stop program safely if you create in current
+     directory or in PATH_OUT (if option "-po" is used) file:
+  
+     <em>molrep_stop_signal.xml</em>   (contents does not matter)
+</dd>
+ 
+</dl>
+
+<!--hereiwas correcting-->
+
+
+
+<a name="keywords" id="keywords"></a><h2>KEYWORDED INPUT</h2>
+
+
+
+<p>It is easy to use MOLREP interactively, but can be used in 
+  <a href="#batch">batch</a>.
+  The available keywords are:
+</p>
+
+<blockquote>
+
+<h3>General keywords</h3>
+
+<p>Common:</p>
+<a href="#file_t"><b>FILE_T</b></a>,
+<a href="#fun"><b>FUN</b></a>,
+<a href="#nmon"><b>NMON</b></a>,
+<a href="#np"><b>NP</b></a>,
+<a href="#npt"><b>NPT</b></a>,
+<a href="#rad"><b>RAD</b></a>
+<a href="#path_src"><b>PATH_SCR</b></a>
+
+<p>And for structure factors control:</p>
+<a href="#resmax"><b>RESMAX</b></a>,
+<a href="#resmin"><b>RESMIN</b></a>,
+<a href="#sim"><b>SIM</b></a>
+
+<p>And for model control:</p>
+<a href="#model_2"><b>MODEL_2</b></a>,
+<a href="#surf"><b>SURF</b></a>
+
+<p>And for multi-copy search:</p>
+<a href="#dyad"><b>DYAD</b></a>,
+<a href="#dyad_filem2"><b>FILE_M2</b></a>,
+<a href="#dyad_filet2"><b>FILE_T2</b></a>,
+<a href="#dyad_np2"><b>NP2</b></a>,
+<a href="#dyad_nptd"><b>NPTD</b></a>,
+<a href="#dyad_nsrf"><b>NSRF</b></a>
+
+<p>And for search in ED:</p>
+<a href="#phase"><b>PHASE</b></a>,
+<a href="#prf"><b>PRF</b></a>,
+<a href="#inver"><b>INVER</b></a>
+
+<p>And for fitting two models:</p>
+<a href="#prf"><b>PRF</b></a>
+
+<p>And for EM or electron density model:</p>
+<a href="#dscalem"><b>DSCALEM</b></a>,
+<a href="#inverm"><b>INVERM</b></a>,
+<a href="#rolim"><b>ROLIM</b></a>,
+<a href="#drad"><b>DRAD</b></a>,
+<a href="#origin"><b>ORIGIN</b></a>
+
+<p>And for EM or electron density instead of Fobs:</p>
+<a href="#dscale"><b>DSCALE</b></a>,
+<a href="#inver"><b>INVER</b></a>,
+<a href="#dlim"><b>DLIM</b></a>
+
+
+<h3>Keywords for special cases</h3>
+
+<p>Common:</p>
+<a href="#aniso"><b>ANISO</b></a>,
+<a href="#badd"><b>BADD</b></a>,
+<a href="#list"><b>LIST</b></a>,
+<a href="#lmax"><b>LMAX</b></a>,
+<a href="#lmin"><b>LMIN</b></a>,
+<a href="#pack"><b>PACK</b></a>,
+
+<p>And for standard MR:</p>
+<a href="#diff"><b>DIFF</b></a>,
+<a href="#file_s"><b>FILE_S</b></a>,
+<a href="#keyNMR"><b>NMR</b></a>, 
+<a href="#nosg"><b>NOSG</b></a>,
+<a href="#p2"><b>P2</b></a>,
+<a href="#pst"><b>PST</b></a>,
+<a href="#stick"><b>STICK</b></a>,
+<a href="#vpst"><b>VPST</b></a>,
+<a href="#LOCK"><b>LOCK</b></a>,
+
+<p>And for Self RF:</p>
+<a href="#chi"><b>CHI</b></a>,
+<a href="#pst"><b>PST</b></a>,
+<a href="#scale"><b>SCALE</b></a>,
+<a href="#file_tsr"><b>FILE_TSRF</b></a>
+
+<p>And for multi-copy search:</p>
+<a href="#dyad_axis"><b>AXIS</b></a>,
+<a href="#diff"><b>DIFF</b></a>,
+<a href="#dyad_dist"><b>DIST</b></a>,
+<a href="#p2"><b>P2</b></a>,
+<a href="#all"><b>ALL</b></a>,
+<a href="#stick"><b>STICK</b></a>
+
+<p>And for search in ED:</p>
+<a href="#diff"><b>DIFF</b></a>,
+<a href="#p2"><b>P2</b></a>,
+<a href="#dyad_nptd"><b>NPTD</b></a>
+
+<p>And for fitting two models:</p>
+<a href="#dyad_nptd"><b>NPTD</b></a>
+
+<p>And for search in ED:</p>
+<a href="#ncs"><b>NCS</b></a>,
+<a href="#angles"><b>ANGLES</b></a>,
+<a href="#centre"><b>CENTRE</b></a>
+
+<p>And for Pure Rigid Body Refinement:</p>
+<a href="#dom"><b>DOM</b></a>,
+<a href="#ncs"><b>NCS</b></a>,
+<a href="#angles"><b>ANGLES</b></a>,
+<a href="#centre"><b>CENTRE</b></a>
+
+</blockquote>
+
+
+                       
+<h2><a name="keywords_general" id="keywords_general"></a>General keywords</h2>
+
+
+
+<h3><a name="np" id="np"></a>NP &lt;np&gt;</h3>
+    <p>Default: &lt;auto&gt;</p>
+    <p>&lt;np&gt; is the number of peaks from the rotation function to be 
+    used (maximum: 200).</p>
+
+<h3><a name="npt" id="npt"></a>NPT &lt;npt&gt;</h3>
+    <p>Default: &lt;15&gt;</p>
+    <p>&lt;npt&gt; is the number of peaks from the translation function 
+    to be used (maximum: 50).</p>
+
+<h3><a name="nmon" id="nmon"></a>NMON &lt;nmon&gt;</h3>
+    <p>Default: &lt;auto&gt;</p>
+    <p>&lt;nmon&gt; is the number of monomers. The program will try to 
+    create a full model, which will consist of NMON initial models plus 
+    model_2.</p>
+
+<h3><a name="resmin" id="resmin"></a>RESMIN &lt;resmin&gt;</h3>
+    <p>Default: &lt;auto&gt;</p>
+    <p>soft resolution cut_off: 
+       <a href="#soft_low_resolution_cut-off">Boff</a> =2*RES_min^2
+    </p>
+
+<h3><a name="compl" id="compl"></a>COMPL &lt;compl&gt;</h3>
+    <p>Default: automatic choice</p>
+    <p>COMPL = V_model/(V_cell/Nsym), RESMIN ~ Rad_model.
+     It corresponds to <a href="#soft_low_resolution_cut-off">Boff</a>: 
+    </p>
+
+<h3><a name="sim" id="sim"></a>SIM &lt;sim&gt;</h3>
+    <p>Default: 0.35</p>
+    <p>Similarity of the model: from 0.1 to 1.0. It corresponds to 
+    <a href="#priori_knowledge">Badd</a>.
+    SIM=1 means normalized F will be used. SIM=-1 means do not use SIM (i.e. BADD=0)
+    If SIM is used, the keyword <a href="#badd">BADD</a> is ignored.</p>
+    <dl>
+      <dt>SIM (Badd)</dt>
+<dd>controls high resolution data</dd>
+      <dt>RESMIN,COMPL (Boff)</dt><dd>controls low resolution data</dd>
+    </dl>
+    <p>The use of Boff and Badd means to change Fobs and Fmodel:</p>
+    <blockquote>|F|_new = |F|_input *exp(-Badd*s<sup>2</sup>)*(1-exp(-Boff*s<sup>2</sup>)</blockquote>
+
+<h3><a name="fun" id="fun"></a>FUN &lt; A | R | T | S | B | D &gt;</h3>
+    <p>Default: &lt;A&gt;</p>
+<TABLE>
+
+<TR>
+<TH ALIGN=left><b>R</b></TH><TD>
+          calculate only Rotation Function
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>T</b></TH><TD>
+          calculate only Translation Function, reading list of peaks
+          of RF from file (<a href="#molrep_rf_tab"><em>molrep_rf.tab</em></a>)
+          or from TAB_file
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>A</b></TH><TD>
+          calculate both: RF and TF
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>S</b></TH><TD>
+          rotate and position the model and compute 
+          R-factor and Correlation Coefficient
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>B</b></TH><TD>
+          pure Rigid Body refinement
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>D</b></TH><TD>
+          find HA positions by MR solution
+</TD>
+</TR> 
+
+</TABLE>
+
+<h3><a name="file_t" id="file_t"></a>FILE_T &lt;filename&gt;</h3>
+    <p>Default: &lt;<em>molrep_rf.tab</em>&gt;</p>
+    <p>Input or output TAB_file (see also <a href="#molrep_rf_tab">
+    <em>molrep_rf.tab</em></a>)</p>
+                        
+<h3><a name="model_2" id="model_2"></a>MODEL_2 &lt;filename&gt;</h3>
+    <p>Default: no model_2</p>
+    <p>Input file with the second (fixed) model in correct position and 
+    orientation, in PDB or BLANC format.
+    This model will be fixed during the search. When fitting two models to
+    each other, the second model is the target model.</p>
+
+<h3><a name="surf" id="surf"></a>SURF &lt; N | Y | A | O | 2 | C  &gt;</h3>
+    <p>Default: &lt;Y&gt;</p>
+    <p>Perform model correction.</p>
+
+<TABLE>
+
+<TR>
+<TH ALIGN=left><b>N</b></TH><TD>
+        do not perform any model correction.For FUN=S 
+        (just_rotate_and_position) program changes N to O</TD>
+</TR> 
+<TH ALIGN=left><b>O</b></TH><TD>
+        only shift to the origin</TD>
+</TR> 
+<TH ALIGN=left><b>A</b></TH><TD>
+        make the protein into a polyalanine model 
+        (<em>i.e.</em> remove
+        from the model: water molecules, H atoms, atoms with alternative 
+        conformation (except the first), atoms with occupacy = 0), 
+        make all B = 20, and shift to the origin</TD>
+</TR> 
+<TH ALIGN=left><b>Y</b></TH><TD>
+        remove various atoms from the model (water molecules, 
+        H atoms, atoms with alternative conformation (except the first), 
+        atoms atoms with occupacy = 0), shift to the origin,
+        compute atomic accessible surface area and replace atomic B with 
+        B = 15.0 + SURFACE_AREA*10.0</TD>
+</TR> 
+<TH ALIGN=left><b>2</b></TH><TD>
+        set all B = 20 and shift to the origin</TD>
+</TR> 
+<TH ALIGN=left><b>C</b></TH><TD>
+         as Y but new B only for Packing function (not change original B) 
+         and shift to the origin</TD>
+</TR> 
+
+</TABLE>
+
+<h3><a name="rad" id="rad"></a>RAD &lt;rad&gt;</h3>
+   <p>Default: automatically calculated from the model, unless:</p>
+   <ul>
+     <li>in case of Self-RF calculations: 30&#197;</li>
+     <li>for Rotation Function calculations: twice the radius of gyration</li>
+     <li>for PRF and SAPTF: radius of gyration</li>
+   </ul>
+   <p>Cut-off radius for Patterson search or for electron density search.</p>
+
+<h3><a name="resmax" id="resmax"></a>RESMAX &lt;resmax&gt;</h3>
+   <p>Default: &lt;auto&gt;</p>
+   <p>High resolution limit.</p>
+
+<h3><a name="path_src" id=""path_src"></a>PATH_SCR &lt;path&gt;</h3>
+   <p>Default: &lt;not used&gt;</p>
+   <p>Path to directory for scratch files. For example: /y/people/alexei/</p>
+
+
+<h2><a name="keywords_special" id="keywords_special"></a>
+    Keywords for special cases</h2>
+
+
+
+<h3><a name="pst" id="pst"></a>PST &lt; N | C | Y &gt;</h3>
+    <p>Default: &lt;N&gt;</p>
+    <p>How to deal with pseudo-translation.</p>
+<TABLE>
+<TR>
+<TH ALIGN=left><b>N</b></TH><TD>
+      ignore pseudo-translation altogether
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>C</b></TH><TD>
+      check only, but do not use pseudo-translation 
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>Y</b></TH><TD>
+       use pseudo-translation. 
+</TD>
+</TR> 
+</TABLE>
+
+<h3><a name="vpst" id="vpst"></a>VPST &lt;vpst1,vpst2,vpst3&gt;</h3>
+    <p>Default: automatically from Patterson</p>
+    <p>Pseudo-translation vector (in fractional units), used when 
+    <a href="#pst">PST</a> = Y.</p>
+
+<h3><a name="badd" id="badd"></a>BADD &lt;badd&gt;</h3>
+    <p>Default: &lt;0&gt;</p>
+    <p><a href="#soft_low_resolution_cut-off">BOFF</a> and 
+    <a href="#priori_knowledge">BADD</a> mean:</p>
+    <blockquote>|F|_new = |F|_input *exp(-Badd*s<sup>2</sup>)*(1-exp(-Boff*s<sup>2</sup>)</blockquote>
+
+<h3><a name="aniso" id="aniso"></a>ANISO &lt; N | Y | C | S | K &gt;</h3>
+   <p>Default: &lt;N&gt;</p>
+<TABLE>
+<TR>
+<TH ALIGN=left><b>N</b></TH><TD>
+     do not use anisotropic correction and/or scaling
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>Y</b></TH><TD>
+     use <a href="#aniso_scaling">
+                    <b>anisotropic correction and scaling</b></a>
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>C</b></TH><TD>
+     use anisotropic correction of Fobs for RF only
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>S</b></TH><TD>
+     use anisotropic scaling for TF only
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>K</b></TH><TD>
+     use scaling without B-factor
+</TD>
+</TR> 
+</TABLE>
+
+<h3><a name="pack" id="pack"></a>PACK &lt; Y | N &gt;</h3>
+    <p>Default: &lt;Y&gt;</p>
+<TABLE>
+<TR>
+<TH ALIGN=left><b>Y</b></TH><TD>
+      use Packing Function with Translation Function
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>N</b></TH><TD>
+      do not use Packing Function with Translation Function
+</TD>
+</TR> 
+</TABLE>
+
+<h3><a name="lmin" id="lmin"></a>LMIN &lt;lmin&gt;</h3>
+    <p>Default: &lt;4&gt;</p>
+    <p>Minimum L-index of spherical coefficients. The program does not use 
+    coefficients with L=0. Possible values are 2,4,6,... L = 2 means to use 
+    all coefficients up to Lmax.</p>
+
+<h3><a name="lmax" id="lmax"></a>LMAX &lt;lmax&gt;</h3>
+    <p>Default: automatic choice</p>
+    <p>Maximum L-index of spherical coefficients. 
+    Possible values are 2,4,6,8,...,98,100.</p>
+
+<h3><a name="prf" id="prf"></a>PRF &lt; N | Y | S | P &gt;</h3>
+   <p>Default: &lt;N&gt;</p>
+<TABLE>
+<TR>
+<TH ALIGN=left><b>N</b></TH><TD>
+              standard RF and Phased Translation Function is calculated
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>Y</b></TH><TD>
+               SAPTF (Spherically averaged phased translation
+               function), Phased Rotation Function (PRF) and Phased 
+               Translation Function will be  used.
+ </TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>S</b></TH><TD>
+               SAPTF (Spherically averaged phased translation
+               function), Usual Rotation Function (RF) for modified map
+               and Phased Translation Function will be  used.
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>P</b></TH><TD>
+                Search the model orientation in ED map by rotating model
+                around the defined points in ED map. List of points must be 
+                in the file <a href="#file_t"><b>FILE_T2</b></a>.
+</TD>
+</TR> 
+</TABLE>
+
+     <p>Program will use the phases of BLANC (by keyword 
+     <a href="#phase">PHASE</a>) or from MTZ file or from EM map.
+     </p>
+     <p>If keyword <a href="#fun_t">FUN=T</a>, rather than computing the 
+     Rotation Function, the program reads rotation function results from 
+     file <a href="#file_t"><b>FILE_T</b></a> ( or &quot;molrep_rf.tab&quot;):
+     &quot;Sol_ peak number, polar angles (theta,phi,chi) and shift 
+     (sx,sy,sz)&quot;</p>
+
+<h3><a name="phase" id="phase"></a>PHASE &lt; name &gt;</h3>
+  <p>Default: none</p>
+  <p>BLANC file of phases. If input Fobs file is CIF use 'PHASE +'.
+     It means to use the phases from CIFile.</p>
+
+<h3><a name="nosg" id="nosg"></a>NOSG &lt;nosg&gt;</h3>
+  <p>Default: &lt;0&gt;</p>
+  <p>Number of new space group if you want to change the space group for 
+  the file of structure factors.  Program just changes space group name,
+  group number and cryst. symmetry operators, but not cell and data.</p>
+
+<h3><a name="sg" id="sg"></a>SG &lt;name&gt;</h3>
+  <p>Default: &lt; &gt;</p>
+  <p>New space group name. "ALL" means to check all possible SG.
+  </p>
+
+<h3><a name="diff" id="diff"></a>DIFF &lt; N | P | F | M | H &gt;</h3>
+  <p>Default: &lt;N&gt;</p>
+<TABLE>
+<TR>
+<TH ALIGN=left><b>N</b></TH><TD>
+    use unmodified structure factors
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>P</b></TH><TD>
+      use modified stucture factors instead of Fobs for RF, 
+      as follows: sqrt(|Iobs-Imod2*(P2/100)|)
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>F</b></TH><TD>
+ use modified stucture factors instead of Fobs for RF, 
+ as follows: vector difference (Fobs - Fmod2*(P2/100))
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>M</b></TH><TD>
+ remove fixed model from diff. fourie by mask (model_2).
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>H</b></TH><TD>
+    for heavy atom search
+</TD>
+</TR> 
+</TABLE>
+
+
+<h3><a name="p2" id="p2"></a>P2 &lt;p2&gt;</h3>
+  <p>Default: &lt;0&gt;</p>
+  <p>Percentage of model_2 in the structure.</p>
+
+<h3><a name="nref" id="nref"></a>NREF &lt;ncycle&gt;</h3>
+  <p>Default: &lt;5&gt;</p>
+  <p>number of cycles of rigid body refinement. 
+  </p>
+
+<h3><a name="stick" id="stick"></a>STICK &lt; N | Y &gt;</h3>
+  <p>Default: &lt;Y&gt;</p>
+  <p>Choose from symmetry-related models closest to which found before 
+  (this option does not work with pseudo-translation possibility).</p>
+
+<h3><a name="file_s" id="file_s"></a>FILE_S &lt;filename&gt;</h3>
+  <p>File with sequence for model correction by sequence alignment.</p>
+
+<h3><a name="keyNMR" id="keyNMR"></a>NMR &lt; 0 | 1 | 2 | 3 &gt;</h3>
+  <p>Default: &lt;0&gt;</p>
+<TABLE>
+<TR>
+<TH ALIGN=left><b>0</b></TH><TD>
+    use PDB file with NMR structures as single model
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>1</b></TH><TD>
+    use NMR possibility only for RF
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>2</b></TH><TD>
+    use NMR possibility for RF and TF. Best NMR model will 
+                  be found and used as solution.
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>3</b></TH><TD>
+    use NMR possibility for RF and TF. Averaged TF will be used.
+                  All NMR models will be used as solution.
+</TD>
+</TR> 
+</TABLE>
+
+<h3><a name="lock" id="lock"></a>LOCK &lt; Y | N &gt;</h3>
+  <p>Default: &lt;N&gt;</p>
+  <p>Locked Cross Rotation function will be performed.
+     Use also keywords:
+     <a href="#file_tsr"><b>FILE_TSRF</b></a> and
+     <a href="#dyad_nsrf"><b>NSRF</b></a>
+  </p>
+  <p>
+     Without FILE_TSRF program computes Self_RF and uses NSRF peaks from it.
+  </p>
+
+<h3><a name="self" id="self"></a>SELF &lt; N | A &gt;</h3>
+  <p>Default: &lt;N&gt;</p>
+  <p><b>A</b> means after RF to compute Self_RF and use from RF only related peaks for TF.
+  </p>
+  <p>
+     If you like you can use keyword:
+     <a href="#dyad_nsrf"><b>NSRF</b></a>
+  </p>
+
+<h3><a name="score" id="score"></a>SCORE &lt; Y | N | C &gt;</h3>
+  <p>Default: &lt;Y&gt;</p>
+<TABLE>
+<TR>
+<TH ALIGN=left><b>N</b></TH><TD>
+    do not stop if contrast is good
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>C</b></TH><TD>
+    Corr.Coef. instead Score and do not stop
+</TD>
+</TR> 
+</TABLE>
+
+<h2><a name="keywords_special_dyad" id="keywords_special_dyad"></a>
+    Keywords specific for multi-copy search</h2>
+
+
+<h3><a name="dyad" id="dyad"></a>DYAD &lt; N | Y | D | M &gt;</h3>
+  <p>Default: &lt;N&gt;</p>
+<TABLE>
+<TR>
+<TH ALIGN=left><b>Y</b></TH><TD>
+    multi-copy search
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>D</b></TH><TD>
+    dyad search
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>M</b></TH><TD>
+    multi-monomer search
+</TD>
+</TR> 
+</TABLE>
+
+<h3><a name="dyad_dist" id="dyad_dist"></a>DIST &lt;Dmin,Dmax,Dpar&gt;</h3>
+  <p>Three distances for dyad search.</p>
+<TABLE>
+<TR>
+<TH ALIGN=left><b>Dmin</b></TH><TD>
+    Default: radius of gyration.
+    minimal distance between molecules
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>Dmax</b></TH><TD>
+    Default: 1000&#197;.
+    maximal distance between molecules
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>Dpar</b></TH><TD>
+    Default: 1000&#197;.
+    maximal shift along rotation axis
+</TD>
+</TR> 
+</TABLE>
+                                        
+<h3><a name="dyad_axis" id="dyad_axis"></a>AXIS &lt;Chi,Delta&gt;</h3>
+  <p>Default: &lt;0,0&gt;</p>
+  <dl>
+    <dt>Chi</dt><dd>check only rotation by Chi (in degrees). 
+       0 means to check all orientations.</dd>
+    <dt>Delta</dt><dd>delta for Chi (in degrees)</dd>
+  </dl>
+
+<h3><a name="dyad_nsrf" id="dyad_nsrf"></a>NSRF &lt;nsrf&gt;</h3>
+  <p>Default: &lt;0&gt;</p>
+  <p>Number of peaks of Self-RF which will be used.
+  0 means not to use Self-RF. A list of Self-RF peaks will be taken from file
+  defined by keyword  <a href="#file_tsr">FILE_TSRF</a> 
+  which must be prepared in advance 
+  (see <a href="#self_rotation_function">Self Rotation Function</a>).</p>
+
+<h3><a name="dyad_nptd" id="dyad_nptd"></a>NPTD &lt;nptd&gt;</h3>
+  <p>Number of 
+  peaks in the <a href="#stf">STF</a> (Special
+  Translation Function) to be used.
+  </p>
+
+<h3><a name="dyad_npt" id="dyad_npt"></a>NPT &lt;nptd&gt;</h3>
+  <p>Number of peaks in TF to be used.
+  </p>
+
+<h3><a name="dyad_np2" id="dyad_np2"></a>NP2 &lt;np2&gt;</h3>
+  <p>Number of peaks in RF for second searching model to be used for 
+  dyad search.</p>
+
+<h3><a name="dyad_filem2" id="dyad_filem2"></a>FILE_M2 &lt;filename&gt;</h3>
+  <p>file of second searching model</p>
+
+<h3><a name="dyad_filet2" id="dyad_filet2"></a>FILE_T2 &lt;filename&gt;</h3>
+  <p>file with list of peaks of RF for second searching model </p>
+
+<h3><a name="all" id="all"></a>ALL &lt; N | Y &gt;</h3>
+  <p>Default: &lt;N&gt;</p>
+  <p>if ALL = Y , program will use all Crystallographical Symmetry Operators 
+  </p>
+
+<h3><a name="nml" id="nml"></a>NML &lt;nml&gt;</h3>
+  <p> number of Nmers to check (DYAD = "M").
+  </p>
+
+<h2><a name="keywords_special_nomodel" id="keywords_special_nomodel"></a>
+    Keywords for Self Rotation Function</h2>
+
+
+
+<p>Without a file of the model, the program computes a Self Rotation Function.
+</p>
+
+<h3><a name="chi" id="chi"></a>CHI &lt;chi&gt;</h3>
+  <p>Default: &lt;60&gt;</p>
+  <p>Angle chi of additional fourth section of RF(theta,phi,chi).</p>
+
+<h3><a name="scale" id="scale"></a>SCALE &lt;scale&gt;</h3>
+  <p>Default: &lt;6&gt;</p>
+  <p>Maximum value of RF is SCALE * SIGMA(RF).</p>
+
+<h3><a name="file_tsr" id="file_tsr"></a>FILE_TSR &lt;filename&gt;</h3>
+    <p>Default: &lt;<em>molrep_srf.tab</em>&gt;</p>
+    <p>Input or output TAB_file with peaks of Self_RF.</p>
+
+
+<h2> Keywords for EM or electron density model:</h2>
+
+
+<h3><a name="dscalem" id="dscalem" ></a>DSCALEM &lt;scale&gt;</h3>
+  <p>Default: &lt;1&gt;</p>
+  <p> scale factor of correction of density cell</p>
+
+<h3><a name="inverm" id="inverm" ></a>INVERM &lt; N | Y &gt;</h3>
+  <p>Default: &lt;N&gt;</p>
+  <p>If Y , inverted phases  will be used</p>
+
+<h3><a name="rolim" id="rolim" ></a>ROLIM &lt;limit&gt;</h3>
+  <p>Default: &lt;not used&gt; </p>
+  <p>minimal value of density which will be used 
+  </p>
+
+<h3><a name="drad" id="drad" ></a>DRAD &lt;radius&gt;</h3>
+  <p>Default: &lt;0&gt;</p>
+  <p>radius of the model (in A).
+     If parameter DRAD is defined program will use the density only
+     inside the sphere with radius = DRAD and with centre in vector ORIGIN. 
+  </p>
+
+<h3><a name="origin" id="origin" ></a>ORIGIN &lt;vector&gt;</h3>
+  <p>Default: &lt;0,0,0&gt;</p>
+  <p>center of the model in the cell (in fract.units)</p>
+
+
+
+<h2> Keywords for EM or electron density instead of Fobs:</h2>
+
+
+
+<h3><a name="dscale" id="dscale" ></a>DSCALE &lt;scale&gt;</h3>
+  <p>Default: &lt;1&gt;</p>
+  <p>scale factor of correction of density cell</p>
+
+<h3><a name="inver" id="inver" ></a>INVER &lt; N | Y &gt;</h3>
+  <p>Default: &lt;N&gt;</p>
+  <p>If Y , inverted phases  will be used</p>
+
+<h3><a name="dlim" id="dlim" ></a>DLIM &lt;limit&gt;</h3>
+  <p>Default: &lt;not used&gt; </p>
+  <p>minimal value of density which will be used 
+  </p>
+
+
+<h2> Keywords for Rigid Body Refinement:</h2>
+
+<h3><a name="dom" id="dom"></a>DOM &lt; N | Y | I | S | C &gt;</h3>
+   <p>Default: &lt;N&gt;</p>
+<TABLE>
+<TR>
+<TH ALIGN=left><b>N</b></TH><TD>
+     RB refinement as single body.
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>Y</b></TH><TD>
+               Multi-domain refinement.
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>I</b></TH><TD>
+               Give only information about molecule-domain structure.
+               Useful for RB refinement with constraints.
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>S</b></TH><TD>
+               Multi-domain refinement with constraints.
+</TD>
+</TR> 
+
+<TH ALIGN=left><b>C</b></TH><TD>
+               only create complete model using NCS parameters.
+               See <a href="#howNCS"><b>How to define NCS</b></a>
+</TD>
+</TR> 
+
+</TABLE>
+
+<h2> Keywords for NCS parameters:</h2>
+<p>
+     See <a href="#howNCS"><b>How to define NCS</b></a>
+</p>
+<h3><a name="ncs" id="ncs" ></a>NCS &lt;ncs_id&gt;</h3>
+  <p>Default: &lt;0&gt;</p>
+  <p>NCS identifier or = "1" which means to use NCS parameters from file.
+  </p>
+
+<h3><a name="angles" id="angles" ></a>ANGLES &lt;theta,phi,chi&gt;</h3>
+  <p>Default: &lt;0,0,0&gt;</p>
+  <p>Polar angles of NCS which define the standard  system orientation 
+     in the cell.
+  </p>
+
+<h3><a name="centre" id="centre" ></a>CENTRE &lt;vector&gt;</h3>
+  <p>Default: &lt;0,0,0&gt;</p>
+  <p>position of the NCS centre in the cell (in fract.units)</p>
+
+<h2> Keywords for Finding or Searching Heavy atoms:</h2>
+
+<h3><a name="file_der" id="file_der"></a>FILE_DER &lt;filename&gt;</h3>
+    <p>Input file of derivative or use labels for MTZ file.
+    </p>
+
+<a name="batch" id="batch"></a><h2>COMMAND (BATCH) FILE</h2>
+
+
+
+
+<p>The best and easiest way to prepare a command file is to run MOLREP once 
+by dialogue. The program 
+creates a command (batch) file (<em>molrep.btc</em>) automatically.</p>
+
+<p>See some <a href="#batch_examples">command (batch) file examples</a>.</p>
+
+<a name="CCP4" id="CCP4"></a><h2>MOLREP VERSION TO READ MTZ file</h2>
+
+
+<h3>Keywords for reading MTZ file</h3>
+<p>The following keywords are necessary only for MTZ files.</p>
+
+<TABLE>
+
+<TR>
+<TH ALIGN=left><b>F</b></TH><TD>label of F or F(+)</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>SIGF</b></TH><TD>label of sigma F or sigma F(+)</TD>
+</TR>
+<TR> 
+<TH ALIGN=left><b>F(-)</b></TH><TD>label of F(-)</TD>
+</TR>
+<TR> 
+<TH ALIGN=left><b>SIGF(-)</b></TH><TD>label of sigma F(-)</TD>
+</TR>
+<TR> 
+<TH ALIGN=left><b>I</b></TH><TD>Label of Intensity of hkl</TD> 
+</TR>
+<TR> 
+<TH ALIGN=left><b>SIGI</b></TH><TD>Standard deviation of the above</TD> 
+</TR> 
+<TR>
+<TH ALIGN=left><b>I(-)</b></TH><TD>label of Intensity of -h -k -l</TD> 
+</TR> 
+<TR>
+<TH ALIGN=left><b>SIGI(-)</b></TH><TD>Standard deviation of the above</TD> 
+</TR>
+<TR> 
+<TH ALIGN=left><b>PH</b></TH><TD>Label of phases</TD>
+</TR>
+<TR> 
+<TH ALIGN=left><b>FOM</b></TH><TD>Label of figure of merit</TD>
+</TR>
+<TR> 
+<TH ALIGN=left><b>FD</b></TH><TD>Label of F-derivative</TD>
+</TR>
+<TR> 
+<TH ALIGN=left><b>SIGFD</b></TH><TD>Label of sigma F-derivative</TD>
+</TR>
+<TR> 
+<TH ALIGN=left><b>DP</b></TH><TD>Label of !F(+)!-!F(-)!</TD>
+</TR>
+<TR> 
+<TH ALIGN=left><b>SIGDP</b></TH><TD>Label of DP</TD>
+</TR>
+
+</TABLE>
+
+
+<a name="testing" id="testing"></a><h2>TESTING THE MOLREP PACKAGE</h2>
+
+<p>
+(also you can use this as tutorial)
+</p>
+
+<p>In directory &quot;../molrep/molrep_check/&quot; there are two files:</p>
+
+<ol>
+<li>.../molrep/molrep_check/mr.bat - command (batch) X-ray testing</li>
+<li>.../molrep/molrep_check/em.bat - command (batch) EM testing</li>
+</ol>
+
+<p>In directory &quot;../molrep/molrep_check/data/&quot; there are several files for X-ray test:
+</p>
+<p>In directory &quot;../molrep/molrep_check/em/&quot; there are several files for EM test:
+</p>
+
+<p>See &quot;../molrep/molrep_check/readme&quot; 
+</p>
+
+
+<a name="theory" id="theory"></a><h2>MOLECULAR REPLACEMENT METHOD - THEORY</h2>
+
+
+<h3><a name="theory_mr_method" id="theory_mr_method"></a>
+Molecular replacement method (MR)</h3>
+
+<p>There are two major steps in the Molecular replacement method:
+orientation and translation search. They are performed by Rotation
+and Translation function. Both of them are correlation functions
+(or overlapping functions) between observed and calculated from model
+Patterson.</p>
+
+<p>Rotation function (<a name="RF" id="RF"></a><b>RF</b>):</p>
+<pre>
+              ROT(<b>R</b>) = <font size="+1">I</font> P<sub>obs</sub>(r) * P<sub>calc</sub>(<b>R</b>,r) dr
+                      rad</pre>
+<p>where</p>
+<blockquote><dl>
+<dt><tt><b>R</b></tt></dt><dd>operator of rotation</dd>
+<dt><tt>&nbsp;<font size="+1">I</font></tt><br />
+<tt>rad</tt></dt><dd>integral inside a sphere in the centre of patterson with radius=rad (<em>i.e.</em> the
+cut-off radius)</dd>
+<dt><tt>P<sub>obs</sub></tt></dt><dd>observed Patterson</dd>
+<dt><tt>P<sub>calc</sub></tt></dt><dd>calculated Patterson for rotated (<tt><b>R</b></tt>) model</dd>
+</dl></blockquote>
+
+<p>Translation function (<a name="TF" id="TF"></a><b>TF</b>):</p>
+<pre>
+            TR(s)  = <font size="+1">I</font> P<sub>obs</sub>(r) * P<sub>calc</sub>(s,r) dr  =
+                    cell
+
+                   = Sum ( I P<sub>obs</sub>(r) * P<sub>calc_ij</sub>(s,r) dr) = Sum TR<sub>ij</sub>(s)  
+                     i#j                                    i#j</pre>
+<p>where</p>
+<blockquote><dl>
+<dt><tt>s</tt></dt><dd>vector of translation</dd>
+<dt><tt><font size="+1">I</font></tt></dt><dd>integral</dd>
+<dt><tt>i,j</tt></dt><dd>cryst. symmetry operator numbers</dd>
+<dt><tt>P<sub>calc_ij</sub>(s,r)</tt></dt><dd>calculated Patterson for
+model corresponding to ith operator and model corresponding to jth operator</dd>
+<dt><tt>TR<sub>ij</sub>(s)</tt></dt><dd>translation function of Pattersons
+<tt>P<sub>obs</sub>(r)</tt> and <tt>P<sub>calc_ij</sub>(s,r)</tt>.</dd>
+</dl></blockquote>
+
+<blockquote>The Translation Function is the sum of translation functions for
+each pair of different cryst. symmetry operators.</blockquote>
+
+<p>The best rotation function algorithm is the Crowther Fast Rotation
+Function which we use here. It utilizes FFT. MOLREP can compute the
+Rotation Function for three different orientations of the model and average
+them. That reduces the noise of Rotation function.</p>
+
+<p>Translation function algorithm was developed by the author and performs
+calculations in the reciprocal space using FFT.</p>
+
+<p>There are two major differences from other translation functions.</p>
+<ol>
+<li>Instead of summation of the translation functions for two operators TR<sub>ij</sub>, we
+use their multiplication which makes the resulting map far more contrast-rich.
+</li>
+
+<li>Finally we can multiply the translation function with the  Packing Function to
+remove peaks corresponding to incorrect solutions with bad packing.
+
+<blockquote>Packing function (<a name="PF" id="PF"></a><b>PF</b>):
+<p>The overlap for the model in the position s</p>
+
+<pre>    
+O(s) = Sum (I Ro_i(r,s) * Ro_j(r,s) dr),  where i#j
+       i,j                  
+</pre>    
+<p>where <tt>Ro_i(r,s)</tt> is the electron density of the model which corresponds to the
+ith cryst. symmetry operator.</p>
+
+<p>Packing function:</p>
+
+<pre>    
+P(s) = 1 - scale * O(s)
+</pre>    
+
+<p>scale is chosen to make overlap of one copy with itself equal one,
+i.e. to make</p>
+ <pre> I Ro_i(r,s) * Ro_i(r,s) dr = 1</pre>
+
+<p>Finally we have P(s) = 1 for no overlap.
+Negative values are  converted to 0.</p>
+
+<p>If we have a fixed model</p>
+<pre> 
+O(s) = Sum (I Ro_i(r,s) * Ro_j(r,s) dr) + Sum (I Ro_fixed(r) * Ro_i(r,s) dr)
+</pre>
+
+<p>The algorithm of calculation of the Packing Function is similar to the one
+for the Translation Function and performed by the same program.</p>
+
+<p>Finally the 'advanced' Translation function is:
+<pre>
+            TR(s)  = [  M  TR<sub>ij</sub>(s) ] * P(s)
+                       i#j</pre>
+<p>where M means multiplication of different TR<sub>ij</sub>.</p></blockquote></li>
+</ol>
+
+<h3><a name="scaling_by_Patterson" id="scaling_by_Patterson"></a>
+Scaling by Patterson</h3>
+
+<p>For scaling we use a completely new strategy based on the Patterson 
+origin peak which is approximated by a Gaussian. This peak is computed
+for both the observed and calculated amplitudes, and each case the B_overall
+is computed. The difference</p>
+<p>
+ B_diff_overall = B_obs_overall - B_calc_overall 
+</p>
+<p>
+is then added to calculated B_overall so as to make the width of the 
+calculated Patterson origin peak equal to the observed peak. 
+This method makes it possible to have a good
+approximation for the scaling problem even if only low resolution data is
+available where other methods do not work. Scaling by Patterson is also
+useful for the Cross Rotation Function where we have different
+cells for the model and the unknown structure.</p>
+
+<h3><a name="soft_low_resolution_cut-off" id="soft_low_resolution_cut-off"></a>Low resolution cut-off (Boff)</h3>
+
+<p>Low resolution cut-off introduces systematical errors in the electron
+density especially near the surface of the model. This is known as the series
+termination effect. Instead of using the usual low resolution cut-off,
+MOLREP multiplies the modules of the structure factors by a special
+coefficient:</p>
+<blockquote><pre>Fnew = Fold (1-exp(-Boff*s<sup>2</sup>)), where Boff= 2resmin<sup>2</sup></pre></blockquote>
+
+<p>Boff is called the &quot;soft low resolution cut-off&quot;, which allows removal
+of structure factors in this resolution range without inroducing 
+the series termination effect.</p>
+
+<a name="priori_knowledge" id="priori_knowledge"></a><h3>The use of a priori knowledge of similarity and
+completeness of the model</h3>
+     
+<p>For low similarity the high resolution reflections are weighted down.
+For this, MOLREP uses an additional overall factor Badd:</p>
+<blockquote><pre>Fnew = Fold exp(-Badd*s<sup>2</sup>)</pre></blockquote>
+
+<p>Value of similarity 'SIM' can be: from 0.1 to 1.0. It corresponds
+to Badd: from (B_limit-Boverall) to -Boverall, where B_limit + 80.</p>
+
+<p>SIM=1 means normalized F will be used.</p>
+
+<p>For low completeness, <em>e.g.</em> when there are several molecules in the a.u.,
+the contribution of low resolution reflections is weighted down.
+To manage the completeness of the model, MOLREP uses a low resolution
+cut-off (Boff). Completeness of model 'COMPL' can be : from 0.2 to 1.0.
+It corresponds to Boff: from 400 to 1600.</p>
+
+<h3>Functions of electron density searching (<a name="SM" id="SM"></a><b>SM</b>)</h3>
+
+<p>We suggest a new approach to divide a phased six-dimensional search
+into three steps:</p>
+<ol>
+<li>A <a href="#SAPTF">spherically averaged translation
+function</a> is used to locate the position of a molcule or its fragment.
+It compares locally spherically averaged experimental electron density
+with that calculated from the model and tabulates highly probable positions
+accordingly.</li>
+<li>Then for each position a local <a href="#PRF">phased rotation function</a> is
+used to find the orientation of the molecule.
+<li>The third step is the <a href="#PTF">phased
+translation function</a>, used to check and refine the found position.</li>
+</ol>
+
+<h4>Spherically averaged phased translation function (<a name="SAPTF" id="SAPTF"></a><b>SAPTF</b>)</h4>
+
+<p>SAPTF gives the expected position of a model in an electron density map by
+the comparison of spherically averaged density of the model with locally
+spherically averaged observed density.</p>
+<blockquote><pre>SAPTF(s) = I R<sub>obs</sub>(r,s) * R<sub>calc</sub>(r) dr
+         rad(s)</pre></blockquote>
+<p>where
+<blockquote><dl>
+<dt><tt>&nbsp;&nbsp;I</tt><br /><tt>rad(s)</tt></dt>
+<dd>integral inside a sphere centred in point s of electron density with radius=rad (<em>i.e.</em>
+the cut-off radius)</dd>
+
+<dt><tt>R<sub>obs</sub></tt></dt>
+<dd>spherically averaged around point s observed electron density</dd>
+
+<dt><tt>R<sub>calc</sub></tt></dt>
+<dd>spherically averaged around origin of coordinate system calculated electron density for model</dd>
+</dl></blockquote>
+
+<h4>Phased Rotation function (<a name="PRF" id="PRF"></a><b>PRF</b>)</h4>
+
+<p>PRF gives the orientation of model placed in some point of electron density.</p>
+<blockquote><pre>PROT(O) = I R<sub>obs</sub>(r) * R<sub>calc</sub>(O,r) dr
+        rad(s)</pre></blockquote>
+<p>where</p>
+<blockquote><dl>
+<dt><tt>O</tt></dt>
+<dd>operator of rotation</dd>
+ 
+<dt><tt>&nbsp;&nbsp;I</tt><br /><tt>rad(s)</tt></dt>
+<dd>integral inside a sphere centred in point s of electron density with radius=rad</dd>
+
+<dt>R<sub>obs</sub></dt>
+<dd>observed electron density</dd>
+<dt>R<sub>calc</sub></dt>
+<dd>calculated electron density for rotated (O) model</dd>
+</dl></blockquote>
+
+<h4>Phased Translation function (<a name="PTF" id="PTF"></a><b>PTF</b>)</h4>
+
+<p>Translation search in electron density map.</p>
+<blockquote><pre>PTR(s)  = I R<sub>obs</sub>(r) * R<sub>calc</sub>(s,r) dr
+        cell</pre></blockquote>
+<p>where</p>
+<blockquote><dl>
+<dt><tt>s</tt></dt>
+<dd>vector of translation</dd>
+<dt><tt>I</tt></dt>
+<dd>integral</dd>
+<dt><tt>R<sub>obs</sub></tt></dt>
+<dd>observed electron density</dd>
+<dt><tt>R<sub>calc</sub>(s,r)</tt></dt>
+<dd>calculated electron density for model placed in the vector s</dd>
+</dl></blockquote>
+
+<h3>Fitting two models (<a name="FM" id="FM"></a><b>FM</b>)</h3>
+
+<p>Fitting through electron density. Second model (MODEL_2) is the
+target model which converted to electron density.
+To search the best overlapping of electron densities of models
+there are two algorithms:</p>
+<ol>
+<li>Rotation Function (Patterson) and Phased Translation Function (electron density).</li>
+    
+<li>All functions for electron density. Spherically Averaged Phased Translation Function gives
+expected position for model. Phased Rotation Function for expected position gives orientation.
+Phased Translation Function checks and refines the translation vector.</li>
+</ol>
+
+<h3>Special Translation Function (<a name="STF" id="STF"></a><b>STF</b>) for dyad search</h3>
+
+<h4>Multi-copy search</h4>
+<p>Search two copies of a model simultaneously. There are three stages to
+this:</p>
+
+<ol>
+<li>Rotation function. The program checks all pairs of first NP peaks of Rotation Function (RF).
+For each pair the program uses the first rotation to prepare model-1.
+Model-2 will be prepared by using the second rotation and one 
+rotation from the crystallographical symmetry operatators.</li>
+
+<li>Next, for the current pair (model-1 and model-2):
+MOLREP computes the Special Translation Function (STF) to
+find the inter-molecular vector of this dyad.</li>
+
+<li>For NPT peaks of the previous Special Translation Function (STF) 
+(<em>i.e.</em> for NPT inter-molecular vectors) the program 
+computes a standard Translation Function (TF) using the current dyad 
+as model and calculates a Correlation Coefficient for first NPTD 
+peaks of TF.</li>
+</ol>
+
+<h4>Special Translation Function (STF)</h4>
+
+<p>Imagine two models in the asymm. part of the unit cell:</p>
+<blockquote><dl>
+<dt>F1(h)</dt>
+<dd>structure factor of model_1 with the centre of gravity in the origin of the coord. system</dd>
+<dt>F2(h)</dt>
+<dd>structure factor of model_2</dd>
+</dl></blockquote>
+
+<p>Let</p>
+<blockquote><dl>
+<dt>S1</dt>
+<dd>vector in unit cell from the origin of the coord. system to the centre of gravity of model_1</dd>
+<dt>S2</dt>
+<dd>vector for model_2</dd>
+</dl></blockquote>
+
+<p>When F(h) is the total structure factor (for the whole crystal structure):</p>
+<blockquote><pre>F(h) = F1(h)exp(-2pihS1) + F2(h)exp(-2pihS2)</pre></blockquote>
+
+<p>Then the Patterson is:</p>
+<blockquote><pre>P(h) = F(h)*F'(h)
+
+       = F1(h)*F1'(h)
+        + F1'(h)*F2(h)*exp(-2pih(S2-S1))
+        + F2'(h)*F2(h)
+        + F1(h)*F2'(h)*exp(-2pih(S1-S2))
+
+       = P0(0) + P1(S2-S1) + P1(S1-S2)</pre></blockquote>
+                    
+<p>The Special Translation Function is a Phased TF with a Patterson function as electron 
+density and P1&nbsp;=&nbsp;F1'(h)*F2(h) as structure factors of the model. Solution of this function is
+the dyad vector S1-S2.</p>
+
+<h3><a name="aniso_scaling" id="aniso_scaling"></a>
+<b>Anisotropic correction and scaling</b></h3>
+<blockquote><pre>
+Aniso correction:
+
+  For Structure Factors we can estimate:
+           
+     1.  isotropic B_overal:
+
+           F(s) ~ Scale_overall * exp (-B_overall*s^2) 
+
+     2.  anisotropic B_overall (tensor) : 
+
+           F(s) ~ Scale_overall * exp(-(B11a*a*hh +2B12a*b*hk+..)
+
+    
+     Aniso correction means to make data isotropic with B_overall:
+
+
+   F_new(s) = F_old(s) * exp(+(B11a*a*hh +2B12a*b*hk+..) * exp(-B_overall*s^2) 
+        
+
+Aniso scaling:
+
+       Fnew = Scale*Fold*exp(-(B11a*a*hh +2B12a*b*hk+..)
+
+       Scale ans aniso B are taken by mimimization: sum(!Fobs-Fnew!)
+
+</pre></blockquote>
+
+<a name="input_examples" id="input_examples"></a><h2>INPUT FILE EXAMPLES</h2>
+
+
+
+<h3>A. Example of CIF file of amplitudes:</h3>
+
+<pre>
+         data_structure_9ins
+         _cell.length_a      100.000
+         _cell_length_b      100.000
+         _cell.length_c      100.000
+         _cell.angle_alpha    90.000
+         _cell.angle_beta     90.000
+         _cell.angle_gamma    90.000
+         _symmetry.space_group_name_H-M  'P 1 21 1'
+         loop_
+         _refln.index_h
+         _refln.index_k
+         _refln.index_l
+         _refln.F_meas_au
+         _refln.F_meas_sigma_au
+            2  3   4    12.3   1.2
+           -2 -3  -4    11.4   1.1
+          . . . . . . . . . . . . .
+</pre>
+
+<p>For intensities use:</p>
+<pre>
+         _refln.intensity_meas 
+         _refln.intensity_sigma 
+</pre>
+
+<h3>B. Example of CIF file of amplitudes with phases:</h3>
+
+<pre>
+         data_9ins
+         _cell.length_a      100.000
+         _cell_length_b      100.000
+         _cell.length_c      100.000
+         _cell.angle_alpha    90.000
+         _cell.angle_beta     90.000
+         _cell.angle_gamma    90.000
+         _symmetry.space_group_name_H-M  'P 1 21 1'
+         loop_
+         _refln.index_h
+         _refln.index_k
+         _refln.index_l
+         _refln.F_meas_au
+         _refln.F_meas_au_sigma
+         _refln.phase_calc
+         _refln.fom
+            1   0   0    3468.4934   138.7397    0.746  1.000 
+            2   0   0     618.4012    24.7360   11.948  1.000 
+          . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+</pre>
+<p>Phases are in degrees.</p>
+
+<h3>C. Example of PDB file of amplitudes:</h3>
+
+<pre>
+       HEADER   R2SARSF   15-JAN-91
+       COMPND   RIBONUCLEASE SA (E.C.3.1.4.8) COMPLEX WITH 3'-*GUANYLIC ACID 
+       SOURCE   (STREPTOMYCES $AUREOFACIENS)
+       AUTHOR   J.SEVCIK,E.J.DODSON,G.G.DODSON
+       CRYST1  64.900   78.320   38.790  90.00  90.00  90.00 P 21 21 21    8
+       CONTNT   H,K,L,S,FOBS,SIGMA(FOBS)
+       FORMAT   (2(I3,2I4,2F7.0,F6.0,9X))
+       COORDS   2SAR
+       REMARK  1 TWO REFLECTIONS PER RECORD.
+       REMARK  2 DMIN=1.85, DMAX=16.28
+       CHKSUM  1 MIN H=0,MAX H=34,MIN K=0,MAX K=41,MIN L=0,MAX L=20
+       CHKSUM  2 TOTAL NUMBER OF REFLECTIONS=17346
+       CHKSUM  3 TOTAL NUMBER OF REFLECTION RECORDS=8673
+       CHKSUM  4 SUM OF FOBS=0.235499E+07
+         0   0   3     60      9    16           0   0   4    106    307    25
+         0   0   5    166     23    20           0   0   6    239    657    52
+         0   0   7    326      0    38           0   0   8    425    511    40
+       . . . . . . . . . . . . . . . . . . . . . .
+</pre>
+
+<h3>D. Example of simple formatted file of amplitudes:</h3>
+
+<p>In this case the assumption is that order of data is H,K,L,F,sig(F)</p>
+<pre>                   
+            2  3   4    12.3   1.2
+           -2 -3  -4    11.4   1.1
+           . . . . . . . . . . . . .
+
+               or 
+
+            2  3   4    12.3  
+           -2 -3  -4    11.4  
+           . . . . . . . . . 
+</pre>
+<p>The length of file records must not exceed 80 characters.
+The format of the records is free, <em>e.g.</em> data must be separated by
+blancs (be careful - some PDB files do not satisfy this rule).</p>
+
+<a name="batch_examples" id="batch_examples"></a><h2>COMMAND (BATCH) FILE EXAMPLES</h2>
+
+<p>
+(see also  
+<a href="#testing"><b>Testing_program_MOLREP</b></a>
+as tutorial)
+</p>
+
+
+<h3>BATCH file example of Cross Rotation and Translation functions:</h3>
+
+<pre>
+# --------------------------------
+ molrep -f fobs.dat -m mm1.crd -i &lt;&lt;stop
+# --------------------------------
+#
+_NP   8
+_RAD 27
+_ANISO C
+_sim   .1
+_compl .5
+stop
+</pre>
+
+<h3>BATCH file example of Self Rotation function:</h3>
+
+<pre>
+
+# --------------------------------
+molrep -f fobs.dat -i &lt;&lt;stop
+# --------------------------------
+_RAD 27
+stop
+</pre>
+
+<h3>BATCH example with MTZ file:</h3>
+
+<pre>
+# --------------------------------
+molrep -f p1.mtz -m p1_pdb.pdb -i &lt;&lt;stop
+# --------------------------------
+_F  FO
+_SIGF  SDFO
+_NP   8
+_ANISO C
+_sim   .1
+_compl .5
+stop
+</pre>
+
+<h3>BATCH example with MTZ file</h3>
+
+<p>For searching in the electron density map for some model (standard Rotation Function will be used):</p>
+
+<pre>
+# --------------------------------
+molrep -f p1.mtz -m mod.pdb -i &lt;&lt;stop
+# --------------------------------
+_F  FO
+_SIGF  SDFO
+_PH    PH_FO
+_NP    8
+stop
+</pre>
+
+<h3>BATCH file example of fitting two models:</h3>
+
+<pre>
+# --------------------------------
+molrep -m mod1.pdb -mx mod2.pdb -i &lt;&lt;stop
+# --------------------------------
+_PRF Y
+stop
+</pre>
+
+<h3>BATCH file example of dyad search:</h3>
+
+<pre>
+# --------------------------------
+molrep -f fobs.dat -m mod1.pdb -i &lt;&lt;stop
+# --------------------------------
+_dyad y
+_axis 0,10
+_dist 0,300,300
+_NPT  3
+_NPTD 3
+stop
+</pre>
+
+<h3>BATCH file example of dimer search:</h3>
+
+<pre>
+# --------------------------------
+molrep -f fobs.dat -m mod1.pdb -i &lt;&lt;stop
+# --------------------------------
+_dyad y
+_axis 180,10
+_dist 0,300,1
+_NPT  3
+_NPTD 3
+stop
+</pre>
+
+<h3>BATCH file example dimer search for Self-RF orientations:</h3>
+
+<pre>
+# --------------------------------
+molrep -f fobs.dat -m mod1.pdb -i &lt;&lt;stop
+# --------------------------------
+_dyad y
+_axis 180,10
+_dist 0,300,1
+_NSRF 20
+_NPT  3
+_NPTD 3
+stop
+</pre>
+
+<h3>BATCH file example of using file of sequence</h3>
+
+<pre>
+# --------------------------------
+molrep -f mtz.mtz -m 1hpg.pdb -s new.seq -i &lt;&lt;stop
+# --------------------------------
+_F  FP
+_SIGF  SIGFP
+_NP   8
+_NMON 2
+_sim   .1
+_compl .5
+stop
+</pre>
+
+<a name="howNCS" id="howNCS"></a><h2>How to define NCS</b></h2>
+<p>
+Program supports the point group symmetry.
+<TABLE>
+<TR>
+<TH ALIGN=left><b>NCS_ID</b></TH><TD>
+     Point group description. 
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>N00</b></TH><TD>
+ Point group is N. For example Point group is 7, NCS_ID is 700.<br>
+ Standard orientation: Nfold axis along Z.
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>N20</b></TH><TD>
+ Point group is N2. For example Point group is 72, NCS_ID is 720.<br>  
+ Standard orientation: Nfold axis along Z, twofold axis along X.
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>N22</b></TH><TD>
+ Point group is N22. For example Point group is 422, NCS_ID is 422.<br>
+ Standard orientation: Nfold axis along Z, twofold axis along X.
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>230</b></TH><TD>
+ Point group is 23.<br>
+ Standard orientation: twofold axis along Z, another twofold axis along X.
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>432</b></TH><TD>
+ Point group is 432.<br>
+ Standard orientation: fourfold axis along Z, another fourfold axis along X.
+</TD>
+</TR> 
+<TR>
+<TH ALIGN=left><b>532</b></TH><TD>
+ Point group is 532.<br>
+ Standard orientation: fivefold axis along Z, projection closest 
+(to Z axis) threefold axis in plan XY along X. 
+</TD>
+</TR> 
+</TABLE>
+
+<p>Polar angles theta, phi, chi define the standard system orientation 
+in the cell. Theta, phi - polar coordinates of Z standard axis.
+Chi - angle of rotation around theta-phi-axis (Z standard axis) which
+bring X axis to standard X axis.
+</p> 
+<p>
+cx,cy,cz (fract.units) define the position of group centre in the cell.
+</p>
+<p>
+It is possible to define NCS parameters using keywords or in input PDB file. 
+</p>
+
+<h3><b>Definition by keywords</b></h3>
+
+<p>Input PDB file must contain only one molecule.Use keywords:</p>
+
+<blockquote>
+<a href="#ncs"><b>NCS</b></a>,
+<a href="#angles"><b>ANGLES</b></a>,
+<a href="#centre"><b>CENTRE</b></a>
+</blockquote>
+
+<p>
+NCS - NCS_ID<br>
+ANGLES - theta, phi, chi<br>
+CENTRE - cx,cy,cz<br>
+</P>
+
+<h3><b>Definition in input PDB file</b></h3>
+
+<p>
+First (reference) molecule must be started with line (free format):
+</p>
+<p>
+#MOLECULE NCS_ID theta phi chi cx cy cz
+</p>
+<p>
+Other molecules must be started with line:
+</p>
+<p>
+#MOLECULE Nmol theta phi chi
+</p>
+<p> where:</p>
+<p>
+ Nmol - molecule number.
+<p>
+ theta phi chi - Polar angles of rotation from first molecule to current one.
+</p>
+<p>For example:  point group is 3.</p>
+<blockquote><pre>
+HEADER    HYDROLASE (ENDORIBONUCLEASE)         
+CRYST1   64.900   78.320   38.790  90.00  90.00 ...
+#MOLECULE  300    0   0  0  .5  .5  .5
+#DOMAIN     1 
+ATOM      1  N   ASP A   1      45.161  12.836 ... 
+ATOM      2  CA  ASP A   1      45.220  12.435 ...   
+ ... 
+ATOM    745  SG  CYS A  96      58.398   6.673 ... 
+ATOM    746  O   CYS A  96      62.238   7.178 ...  
+#DOMAIN     2 
+ATOM    747  N   PHE A  97      44.487  11.386 ...  
+ATOM    748  CA  PHE A  97      44.559  11.129 ... 
+ ...
+ATOM    945  C   VAL A 196      58.398   6.673 ... 
+ATOM    946  O   VAL A 196      62.238   7.178 ...  
+#DOMAIN     1 
+ATOM    947  N   ASP A 197      44.487  11.386 ...  
+ATOM    948  CA  ASP A 197      44.559  11.129 ... 
+ ...
+#MOLECULE  2    0   0  120  
+#DOMAIN     1 
+ATOM      1  N   ASP A   1      45.161  12.836 ... 
+ATOM      2  CA  ASP A   1      45.220  12.435 ...   
+ ... 
+ATOM    745  SG  CYS A  96      58.398   6.673 ... 
+ATOM    746  O   CYS A  96      62.238   7.178 ...  
+#DOMAIN     2 
+ATOM    747  N   PHE A  97      44.487  11.386 ...  
+ATOM    748  CA  PHE A  97      44.559  11.129 ... 
+ ...
+ATOM    945  C   VAL A 196      58.398   6.673 ... 
+ATOM    946  O   VAL A 196      62.238   7.178 ...  
+#DOMAIN     1 
+ATOM    947  N   ASP A 197      44.487  11.386 ...  
+ATOM    948  CA  ASP A 197      44.559  11.129 ... 
+ ...
+#MOLECULE  3    0   0  240  
+#DOMAIN     1 
+ATOM      1  N   ASP A   1      45.161  12.836 ... 
+ATOM      2  CA  ASP A   1      45.220  12.435 ...   
+ ... 
+ATOM    745  SG  CYS A  96      58.398   6.673 ... 
+ATOM    746  O   CYS A  96      62.238   7.178 ...  
+#DOMAIN     2 
+ATOM    747  N   PHE A  97      44.487  11.386 ...  
+ATOM    748  CA  PHE A  97      44.559  11.129 ... 
+ ...
+ATOM    945  C   VAL A 196      58.398   6.673 ... 
+ATOM    946  O   VAL A 196      62.238   7.178 ...  
+#DOMAIN     1 
+ATOM    947  N   ASP A 197      44.487  11.386 ...  
+ATOM    948  CA  ASP A 197      44.559  11.129 ... 
+ ...
+</pre></blockquote>
+<p>
+Alternative way is to use only first molrecule 
+(with NCS parameters in the file) and generate complete model
+automaticly. In pure RB refinement use keyword DOM = 'C'.
+For fitting model into map (i.e. SAPTF+PRF+PTF use keyword NCS = 1). 
+</p>
+
+<a name="redirection" id="redirection"></a><h2>
+How to redirect output and scratch files</b></h2>
+
+<p>
+In command string you can use options: "-po" and "-ps".
+</p>
+
+<p>For example:</p>
+<pre>
+     Usual MR with sequence and redirect output and scratch files
+  molrep -f file.mtz -m model.pdb -s file_seq -po out/ -ps scr/
+<pre>
+
+<a name="convention" id="convention"></a><h2>Convention for rotation</h2> 
+
+<pre>
+
+  Rotation by Euleran angles Alpha, Beta, Gamma:
+
+     euleran angles : 1. A( Z ) - alpha around axis Z
+                      2. B( Y') - beta  around new axis Y
+                      3. G( Z') - gamma around new axis Z
+
+  Rotation by Polar angles Theta, Phi, Chi:
+
+                    polar coordinates Theta, Phi of rotate axis:
+ 
+       Theta     -  angle between  rotate axis and Z
+       Phi       -  angle in plan XY between X and projection rotate axis
+
+       Chi       -  rotation angle arount rotate axis
+</pre>
+
+<h2>Convention for Orthonormal coordinate system</h2>
+
+<pre>
+       Orthonormal axes are defined to have:
+ 
+       A parallel to X , Cstar parallel to Z
+</pre>
+
+</body>
+</html>

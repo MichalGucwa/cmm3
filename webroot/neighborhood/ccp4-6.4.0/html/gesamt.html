@@ -1,0 +1,162 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::GESAMT::Supported::Coordinate file manipulations::structural alignment:::::::: -->
+
+<H1> GESAMT (CCP4: Supported Program)</H1>
+
+<H2> NAME</H2>
+<b>gesamt </b>
+- General Efficient Structural Alignment of Macromolecular Targets
+
+<H2> SYNOPSIS</H2>
+<p>
+1. Printout of usage instructions:
+<p>
+<b>gesamt</b> --help
+<p>
+2. Alignment and superposition of two structures:
+<p>
+<b>gesamt</b> <i>foo_1st.pdb</i> [{-s|-d} SEL1] <i>foo_2nd.pdb</i> [{-s|-d} SEL2]
+[-high|-normal] [<i>foo_out.pdb</i>]
+<p>
+3. Screening a pdb archive:
+<p>
+<b>gesamt</b> <i>foo.pdb</i> [{-s|-d} SEL] -pdb <i>pdb-dir</i> 
+[-high|-normal] [<i>hits.txt</i>]<br>
+<p>
+where <i>SEL1/2</i> are optional selection strings and <i>foo_out.pdb</i> is an
+optional output file.
+<p>&nbsp;<br>
+Keys "-s" and "-d" are used for the selection of a substructure. By default, all
+structure given in the corresponding file, is used. If there are more than one
+chain in the file, all chains are considered as a single structure. Selection
+format depends on the key used. Key "-s" correspondds to MMDB selection format,
+identical to what is used by
+<a href="http://www.ccp4.ac.uk/dist/html/superpose.html">Superpose</a>. The
+format is described in <a href="http://www.ccp4.ac.uk/dist/html/pdbcur.html#atom_selection">pdbcur</a>
+documentation. CCP4i interface works only with this type of selections.
+<p>
+Selection key "-d" provides a more flexible selection scheme used by SCOP:
+<p>
+<table>
+<tr><td NOWRAP VALIGN="top">"*", "(all)"</td>
+    <td VALIGN="top">&nbsp;-&nbsp;</td>
+    <td>take all file</td>
+</tr>
+<tr><td NOWRAP VALIGN="top">"-"</td>
+    <td VALIGN="top">&nbsp;-&nbsp;</td>
+    <td>take chain without chain ID</td>
+</tr>
+<tr><td NOWRAP VALIGN="top">"a:Ni-Mj,b:Kp-Lq,..."</td>
+    <td VALIGN="top">&nbsp;-&nbsp;</td>
+    <td>take chain <i>a</i> residue number <i>N</i>
+        insertion code <i>i</i> to residue number <i>M</i>
+        insertion code <i>j</i> plus chain <i>b</i>
+        residue number <i>K</i> insertion code <i>p</i> to
+        residue number <i>L</i> insertion code <i>q</i> and
+        so on
+    </td>
+</tr>
+<tr><td NOWRAP VALIGN="top">"a:,b:..."</td>
+    <td VALIGN="top">&nbsp;-&nbsp;</td>
+    <td>take whole chains <i>a</i> and <i>b</i> and so on</td>
+</tr>
+<tr><td NOWRAP VALIGN="top">"a:,b:Kp-Lq,..."</td>
+    <td VALIGN="top">&nbsp;-&nbsp;</td>
+    <td>any combination of the above.</td>
+</tr>
+</table>
+
+<p>&nbsp;<br>
+In difference of <a href="http://www.ccp4.ac.uk/dist/html/superpose.html">
+Superpose</a>, Gesamt allows for arbitrary selection of residues, and
+disregards the secondary structure pattern of structures. Gesampt may be
+applied to non-contiguous sets of residues, partially complete and
+short chains.
+
+<H2><a name="description"> DESCRIPTION</a></H2>
+
+<tt>gesamt</tt> aligns two structures by an efficient clustering of short
+fragments, made from adjacent protein backbone C-alpha atoms, followed
+by an iterative three-dimensional refinement based on a dynamic
+programming procedure.
+
+<H2> INPUT AND OUTPUT FILES</H2>
+
+<H3>foo_1st.pdb</H3>
+First input coordinate file. Although typically a PDB file, it can also be
+in mmCIF or MMDB binary formats. The input format is detected automatically.
+This is considered the Query structure to which the transformation matrix
+will be applied.
+
+<H3>foo_2nd.pdb</H3>
+Second input coordinate file. Although typically a PDB file, it can also be
+in mmCIF or MMDB binary formats. The input format is detected automatically.
+This is considered the Target structure.
+
+<h3>foo_out.pdb</h3>
+If specified, the result of applying the transformation matrix
+to <tt>foo_1st.pdb</tt> is written to <tt>foo_out.pdb</tt>.
+
+<h3>pdb-dir</h3>
+A directory with pdb files to align <H3>foo.pdb</H3> with. Gesamt will screen
+any selection of pdb files in given directory. Only files with extensions
+".pdb", ".ent", ".pdb.gz' and ".ent.gz" are looked at.
+
+<h3>hits.txt</h3>
+Optional output file with the list of calculated alignments ordered by the
+decreasing Q-score.
+
+<h2>Command line options</h2>
+
+The optional selection strings <tt>[{-s|-d} SEL1/2]</tt> are in the
+format described above.
+<p>
+Keys "-high" and "-normal" specify "High" and "Normal" mode, respectively. In
+"Normal" mode (default), Gesamt balances the quality of alignment and
+computation speed. This is a recommended mode for most applications. In "High"
+mode, Gesamt attempts to reach maximal quality with no reference to speed
+considerations. In "High" mode, Gesamt is about 10 times slower and achieves
+quality improvement in few percents of all instances on comparison with
+"Normal" mode.
+
+<H2> PROGRAM OUTPUT</H2>
+
+The program reports the Transformation Matrix calculated for
+superimposing <tt>foo_1st.pdb</tt> onto <tt>foo_2nd.pdb</tt>
+and the RMSD from the superposition, as well as polar and Euler
+rotation angles and orthogonal translation vector.
+<p>
+The program then gives a residue-by-residue listing of the
+alignment. Strands and helices in the two structures are identified and
+given in the output. The output also lists distances between all matched
+residues at best structure superposition.
+
+<H2>SEE ALSO</H2>
+
+<P><A HREF="superpose.html">Superpose</A>
+</P>
+
+<H2> AUTHOR</H2>
+
+Eugene Krissinel, CCP4, Research Complex at Harwell,
+Rutherford Appleton Laboratory, Didcot, OX11 0FA, UK.
+
+<H2>REFERENCE</H2>
+
+<UL>
+
+<!-- KEEP startreferencelist -->
+
+<LI>E.Krissinel (2012),
+Enhanced Fold Recognition using Efficient Short Fragment Clustering,
+<i>in preparation</i>
+</LI>
+
+<!-- KEEP endreferencelist -->
+
+</UL>
+
+</body></html>

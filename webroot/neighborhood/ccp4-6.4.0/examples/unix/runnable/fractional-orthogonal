@@ -1,0 +1,44 @@
+#!/bin/sh
+
+# An example of dealing with fractional coordinates from mlphare sites
+# or direct methods.
+
+set -e
+
+# mlphare-type heavy atom coordinates; yes the blank line currently
+# seems necessary...
+
+cat <<+ >>$CCP4_SCR/mlphare_sites.frc
+ATOM   SE1   0.462  0.162  0.021  0.498  0.788 BFAC   24.012
+ATOM   SE2   0.220  0.163  0.103  0.113  0.340 BFAC   24.012
+ATOM   ZN1   0.055  0.264  0.074  0.220  0.163 BFAC   24.012
+ATOM   ZN2   0.562  0.081  0.150  0.220  0.163 BFAC   24.012
+
++
+
+# Generate PDB from fractional, inter alia.  `vectors' will also
+# generate the Patterson vectors and has yet another variety of
+# coordinate input format.
+havecs XYZIN $CCP4_SCR/mlphare_sites.frc XYZOUT $CCP4_SCR/mlphare_sites.pdb \
+       UVWOUT $CCP4_SCR/mlphare_sitesuvw.pdb << +
+152
+PHARE
+ 60.98   60.98   87.94   90.00   90.00  120.00 1
+120 120 60
+0 119 0 119 0 10
++
+
+# coordconv won't handle mlphare format but will do others:
+coordconv xyzin $CCP4_SCR/mlphare_sites.pdb \
+          xyzout $CCP4_SCR/mlphare_sites.yorkfrac <<+
+input pdb
+output frac
++
+
+coordconv xyzin $CCP4_SCR/mlphare_sites.yorkfrac \
+          xyzout $CCP4_SCR/mlphare_sites.yorkpdb <<+
+output pdb orth 1
+input frac 
+cell 60.98   60.98   87.94   90.00   90.00  120.00
++
+#

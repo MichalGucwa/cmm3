@@ -1,0 +1,349 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::TLSANL::Supported::Model Refinement::analysis of TLS tensors and derived anisotropic U factors:::::::: -->
+
+<H1> TLSANL (CCP4: Supported Program)</H1>
+
+<H2> NAME</H2>
+<b>tlsanl </b>
+- analysis of TLS tensors and derived anisotropic U factors
+
+<H2> SYNOPSIS</H2>
+<b>tlsanl  xyzin</b>
+<i>input.pdb</i>
+<b>tlsin</b>
+<i>input.tls</i>
+<b>xyzout</b>
+<i>output.pdb</i>
+[ <b>axes</b>
+<i>output.in</i> ]
+[ <b>sktout</b>
+<i>skttls.log</i> ]
+<br>
+[<A HREF="#keywords">Keyworded input</A>]
+
+<H2><A NAME="description">DESCRIPTION</H2>
+The program analyses TLS tensors and is intended for use with the
+output of <a href="refmac5.html">REFMAC</a> or 
+<a href="restrain.html">RESTRAIN</a>. It can be used to generate
+atomic displacement parameters from the TLS parameters.
+
+<H2><A NAME="files">INPUT AND OUTPUT FILES</H2>
+<H3> TLSIN</H3>
+An ASCII file containing details of the TLS groups and the values
+of the corresponding T, L and S tensors. Typically, this will correspond
+to the TLSOUT file of REFMAC or RESTRAIN. See the
+<a href="restrain.html#section3.4">RESTRAIN</a> documentation for 
+details of the file format. In addition to the records described
+there, the file may contain a line &quot;REFMAC&quot; denoting that
+the file has been output from the refinement program
+<a href="refmac5.html">REFMAC</a>, which has a different order
+of tensor elements.
+
+<H3> XYZIN</H3>
+Input coordinates in PDB format. Typically, this will correspond
+to the XYZOUT file of REFMAC or RESTRAIN.  ANISOU records are ignored. 
+ATOM or HETATM records may contain the full B factor (as output by
+RESTRAIN and REFMAC if TLSOUT ADDU is specified) or only the residual B
+factor, which doesn't include the contribution from the TLS parameters
+(as for REFMAC without TLSOUT ADDU). The program interprets the B
+factors according to the keyword <A HREF="#bresid">BRESID</A>.
+
+<H3> XYZOUT </H3>
+Output coordinates and anisotropic tensors in PDB format. XYZOUT differs
+from XYZIN only in the values of the B factors and the anisotropic
+U tensors.
+<p>
+For atoms which are not in TLS groups but have ANISOU records in XYZIN,
+those ANISOU records are written to XYZOUT without change to either the 
+ANISOU record or the B factor in the ATOM or HETATM record.
+<p>
+<em>NOTE:</em> This is a change to the previous behaviour (CCP4 6.1.1 and 
+earlier) where no ANISOU records from XYZIN were written to XYZOUT.
+<p>
+The ATOM records may contain the B factor derived from the TLS parameters,
+the residual B factor, or their sum, as determined by the keyword 
+<A HREF="#isoout">ISOOUT</A>. Similarly, the ANISOU records may contain 
+the anisotropic U tensors derived from the TLS parameters, the residual
+B factors expressed as a tensor, or their sum, as determined by the keyword 
+<A HREF="#isoout">ISOOUT</A>. The B factor in the ATOM line should always 
+correspond to the isotropic component of the anisotropic tensor in the 
+ANISOU line.
+<p>
+<em>NOTE:</em> This is a change to the previous behaviour (CCP4 5.0.2
+and earlier) where the ANISOU records contained the full ADPs irrespective 
+of the ISOOUT keyword. The ATOM and ANISOU records are now consistent, as 
+required by some other programs.
+
+<H3> AXES </H3>
+
+Output file containing the axes for translation, libration,
+screw-rotation, reduced translation and non-intersecting
+screw-rotation.  By default, the file is in a suitable format for including 
+in a MOLSCRIPT <tt>.in</tt> file. The file can also be written in
+mmCIF format: this can be used, for example, by CCP4 Molecular Graphics.
+See <A HREF="#axes"><B>AXES</B></A> keyword below.
+
+<H3>  SKTOUT </H3>
+
+Output file containing results of several kinds of tests on the TLS 
+model (SKTTLS) comparing ADPs for the atoms in bonds between residues.  
+The same output is written to the log file after the analysis of 
+tensors. The SKTOUT file can be used for plotting with programs such as
+gnuplot. See <A HREF="#skttls"><B>SKTTLS Report</B></A> below.
+
+
+<H2><A NAME="keywords">KEYWORDED INPUT</H2>
+<P>Available keywords are:
+<BLOCKQUOTE>
+<A HREF="#aniso"><B>ANISO</B></A>,
+<A HREF="#binput"><B>BINPUT</B></A>,
+<A HREF="#bresid"><B>BRESID</B></A>,
+<A HREF="#isoout"><B>ISOOUT</B></A>,
+<A HREF="#numeric"><B>NUMERIC</B></A>,
+<A HREF="#axes"><B>AXES</B></A>,
+<A HREF="#end"><B>END</B></A>.
+</BLOCKQUOTE>
+<H3><A NAME="aniso"></A> ANISO</H3>
+Do anisotropic tensor analysis (default: don't). The principal axes of the 
+anisotropic tensor are determined for each atom in each TLS group and written
+to the log output. If the tensor is non-positive definite, then a warning
+is given. Note that the program <a href="anisoanl.html">ANISOANL</a> also
+checks for non-positive definite anisotropic tensors, and this may be
+more convenient.
+The anisotropic tensor includes the isotropic contribution as well
+as the contribution from the TLS parameters.
+
+<H3><A NAME="binput"></A> BINPUT [true | t | false | f] </H3>
+If true (default), assume PDB file contains isotropic B factors.
+Else, assume PDB file contains isotropic U factors (smaller by 8*pi**2).
+
+<H3><A NAME="bresid"></A> BRESID [true | t | false | f] </H3>
+If true, assume the ATOM records in XYZIN contain only residual B
+factors, and don't include the contribution from the TLS parameters
+(this is the case for Refmac if TLSOUT ADDU is <I>not</I> specified). If
+false (default), assume the ATOM records contain the full B factor,
+including the contribution from TLS (as for Refmac if TLSOUT ADDU is
+specified).
+
+<H3><A NAME="isoout"></A> ISOOUT [FULL | RESI | TLSC] </H3>
+Determine whether the ATOM and ANISOU records in XYZOUT contain B and U factors 
+calculated from the TLS parameters (TLSC), residual B factors (RESI), or the sum
+of both (FULL). Default is FULL.
+
+<H3><A NAME="numeric"></A>NUMERIC</H3>
+If this keyword is present TLS ranges are assumed to refer to the
+monotonically ascending numerical order of residue numbers within each
+chain.&nbsp The keyword causes the ATOM & HETATM records in the input
+PDB to be first sorted on chain ID and residue number before the TLS
+ranges are interpreted (the order in the output PDB file is not
+affected).&nbsp The default is the previous behaviour, <I>i.e.</I> to
+assume that the TLS ranges refer to the order of residues in the input
+PDB file (again within each chain).&nbsp The latter is the PDB
+convention for the order of linking residues in the sequence so it seems
+logical that this should also be the standard way of referring to the
+TLS residue ranges.&nbsp In most cases hopefully the residues in each
+chain will already be in monotonically ascending numerical order, in
+which case this option will have absolutely no effect!
+
+<H3><A NAME="axes"></A> AXES [FORMAT MOLSCRIPT | MMCIF] [ &lt; scale &gt; ] </H3>
+
+A file (logical name AXES) is output containing the axes for
+translation, libration, screw-rotation, reduced translation and
+non-intersecting screw-rotation, for each TLS group. All axes are calculated 
+in an orthogonal frame with respect to the centre of reaction.  
+<p>
+By default, or if FORMAT MOLSCRIPT is given, the file is
+in a suitable format for including in a MOLSCRIPT <tt>.in</tt>
+file. If FORMAT MMCIF is given, the file is written in mmCIF format.
+The axes are identified as follows:
+
+<p>
+<table border="1">
+<TR>
+<TH ALIGN=LEFT>Axes</TH>
+<TH ALIGN=LEFT>Description in Molscript file</TH>
+<TH ALIGN=LEFT>Description in mmCIF file</TH>
+</TR>
+<TR>
+<TD>translation T</TD><TD>Translation axes</TD><TD>TRAN</TD>
+</TR>
+<TR>
+<TD>libration L</TD><TD>Libration axes</TD><TD>LIB</TD>
+</TR>
+<TR>
+<TD>screw tensor S</TD><TD>Screw rotation axes</TD><TD>SCREWROT</TD>
+</TR>
+<TR>
+<TD>reduced translation</TD><TD>Reduced translation axes</TD><TD>RTRAN</TD>
+</TR>
+<TR>
+<TD>non-intersecting screw axes</TD><TD>Non-intersecting screw axes</TD><TD>SCREW</TD>
+</TR>
+</table>
+
+<p>
+Each axis is written as a pair of coordinates (in the coordinate
+system of the input PDB file) representing the beginning and the end
+of the axis. For the intersecting axes, the intersection is at the
+centre of reaction of the TLS group. The length of each axis is proportional 
+to the magnitude of the corresponding motion. The proportionality factor can be
+adjusted by the argument &lt; scale &gt;, which defaults to 10.
+
+<H3><A NAME="end"></A> END</H3>
+Terminate input.
+
+<H2><A NAME="output"></A>PROGRAM OUTPUT</H2>
+
+For each TLS group included in the file TLSIN, the program outputs information
+about the TLS tensors in several representations. Two coordinate origins
+are considered:
+<ol>
+<li>The origin used in refinement, and given by the ORIGIN record in TLSIN.
+<li>The centre of reaction, which is the origin that makes S symmetric. 
+TLS tensors with respect to this origin are flagged with a prime (').
+</ol>
+Three axial systems are considered:
+<ol>
+<li>Orthogonal axes, as used in XYZIN and TLSIN
+<li>Libration axes, <EM>i.e.</EM> the principal axes of the L tensor. TLS tensors
+in this axial system are flagged with a caret (^).
+<li>Rigid-body axes.
+</ol>
+The values of the T, L and S tensors are given with respect to both
+origins, and in the first two axial systems. The L tensor is in general independent of
+the origin, and in particular is the same for both origins considered here. In the axial
+system defined by the libration axes only, the diagonal elements of 
+S are also independent of origin.
+<p>
+The values of the T and S tensors held in TLSIN thus depend on the origin chosen for
+their calculation. The Centre of Reaction, however, is independent of the original
+origin, and hence so are quantities calculated with respect to the Centre of Reaction.
+<p>
+The rigid body motion can also be described as 3 screw motions about 3
+non-intersecting axes parallel to the libration axes, together with a 
+reduced translation tensor (see <A HREF="#reference2">Schomaker and Trueblood (1968)</A>). 
+The program gives the absolute position of these screw axes and the pitch of 
+the screw motion along them, followed by the reduced translation tensor.
+
+<H4> <a name="skttls">SKTTLS Report:</a> </H4>
+
+   Several kinds of tests on the TLS model (SKTTLS) are reported following
+   the tensor analysis; if a SKTOUT file is given, a copy of this SKTTLS 
+   report is also written to that file. Three residuals are calculated for
+   each bond between protein or nucleic acid residues:
+   <ol>
+      <li> CCuij, the correlation of anisotropic ADPs from 
+	   <A HREF="#reference3">Merritt (1999)</a>
+      (ranges from 1 down); </li>
+      <li> rSIMU, residual of the SIMU (BFAC) restraint, rmsd of ANISOU values
+      (ranges from 0 up); and </li>
+      <li> rDELU, residual of the DELU (RBON) Rosenfeld rigid bond restraint
+      (ranges from 0 up). </li>
+   </ol>
+<p>
+   The 95th and 99th percentile values of these three residuals were 
+   calculated from a survey of the REFMAC refinements with segmented TLS
+   in the PDB as of Sept. 2009. Extreme values of these residuals, <em>e.g.</em>
+   CCuij below the 99th percentile, may indicate problems with the ADPs 
+   for the atoms in the bond: the TLS segment boundary was
+   misassigned, or something went wrong during refinement, or one or both
+   atoms have non-positive definite ADPs.
+<p>
+   The SKTTLS report has summaries and the full table of these residuals
+   plus a table of the distribution of anisotropies. Summaries include:
+   <ul>
+      <li> the number of bonds for which residuals were counted, and the number
+      of bonds with any residual beyond the 95th or 99th percentile; </li>
+      <li> the mean, standard deviation and worst value of each residual for
+      this structure; </li>
+      <li> the mean and standard deviation anisotropy for all protein, nucleic
+      acid and other non-solvent atoms in this structure; </li>
+      <li> a list of up to 100 outliers, bonds in this structure which are
+      beyond the 95th percentils for any residual. If there are more than
+      100 such outliers, this analysis should be run again after whatever
+      caused those problems is fixed. </li>
+   </ul>
+<p>
+   The table of all residuals, SKTTLS TABLE 1, and the table of
+   anisotropy distributions, SKTTLS TABLE 2, are formatted for loggraph
+   or xloggraph plotting. In addition, the files are formatted so that
+   simple extracts of these tables can be plotted by programs such as
+   gnuplot: all non-blank lines other than table data lines are prefixed
+   with '#' and each table is bracketted by lines of the form:
+   <code> "### START OF SKTTLS TABLE N ###" </code> and 
+   <code> "### END OF SKTTLS TABLE N ###"</code>. 
+<p>
+   SKTTLS TABLE 1 contains bond identifiers, TLS group identifiers, and
+   residual values. Bond identifiers are residue number, chain ID as text
+   and as a number (to facilitate plotting of separate chains in gnuplot)
+   and bond name <em>e.g.</em> C1-N2 or, if there are alternate atoms,
+   C(A)1-N(A)2. TLS group IDs are TLS group number (numbered sequentially
+   from 1 by their order in TLSIN, rather than the given group number)
+   and a point at each segment break. The opposite of rDELU is included
+   after the residual values so that all 3 residuals can be plotted by
+   loggraph with minimal overlapping. The first two lines of the table
+   contain values for the 95th and 99th percentile of each residual.
+<p>   
+   SKTTLS TABLE 2 contains anisotropy bin minimum, maximum and center, and
+   fractions and counts for protein, nucleic acid or other non-solvent
+   atoms. Non-positive definite ADPs are counted in the first bin, -0.05
+   to 0.00; isotropic ADPS are counted in the last bin, 1.00 to 1.00.
+<p> 
+   SKTTLS TABLE 3 is the list of outliers, containing bond identifiers and
+   all three residuals values for each outlying bond. Marks (? or !) show
+   which residuals were beyond the 95 or 99th percentile. This table is 
+   <b>not</b> formatted for plotting.
+
+<p>
+<em>NOTE:</em> This is a change to the previous behaviour (CCP4 6.1.1 and 
+earlier) where no ANISOU records from XYZIN were written to XYZOUT.
+<H2><A NAME="examples">EXAMPLES</H2>
+
+For files generated by <a href="restrain.html">RESTRAIN</a>, defaults
+can be accepted, although the ANISO keyword might be useful:
+<pre>
+
+tlsanl XYZIN foo_in.pdb TLSIN foo_in.tls XYZOUT foo_out.pdb &lt;&lt;eof
+ANISO
+END
+eof
+
+</pre>
+For files generated by <a href="refmac5.html">REFMAC</a>, the BRESID keyword
+will be needed:
+<pre>
+
+tlsanl XYZIN foo_in.pdb TLSIN foo_in.tls XYZOUT foo_out.pdb SKTOUT foo_skt.log &lt;&lt;eof
+BRESID
+END
+eof
+
+</pre>
+
+<H2><a name="references">REFERENCES</H2>
+<ol>
+<!-- KEEP startreferencelist -->
+<li><A NAME="reference1"></A>
+B.Howlin, S.A.Butler, D.S.Moss, G.W.Harris and H.P.C.Driessen, 
+"TLSANL: TLS parameter analysis program for segmented anisotropic refinement
+of macromolecular structures.",
+<i>J. Appl. Cryst.</i>, <b>26</b>, 622-624 (1993)
+<LI><A NAME="reference2"></A>
+V.Schomaker and K.N.Trueblood <i>Acta Cryst.</i>, <b>B24</b>, 63 (1968)
+<LI><A NAME="reference3"></A>
+E.A.Merritt <i>Acta Cryst.</i>, <b>D55</b>, 1997 (1999)
+<!-- KEEP endreferencelist -->
+</ol>
+
+<H2> SEE ALSO</H2>
+<a href="restrain.html">restrain</a>,
+<a href="refmac5.html">refmac</a>
+
+<H2> AUTHORS</H2>
+Huub Driessen, David Moss, Ian Tickle <i>et al.</i>, Birkbeck College.
+<p>
+Contact: Ian Tickle (tickle@mail.cryst.bbk.ac.uk), Martyn Winn (martyn.winn@stfc.ac.uk)
+</body></html>

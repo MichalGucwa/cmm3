@@ -1,0 +1,64 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#======================================================================
+#
+# scalepack script
+#
+#======================================================================
+
+# Source pdb_utils for harvest handling & move to project directory 
+# if we are going to dump harvest file to current directory 
+  if { $RUN_TRUNCATE } {
+    source [SearchPath TOP utils pdb_utils.tcl ] 
+    if { [StringSame $HARVEST_MODE  CURRENTDIR ] } { ChangeDirectory [GetDefaultDirPath] } 
+  }
+
+  set HKLTMP [GetTmpFileName -ext mtz]
+
+  CreateComScript scalepack2mtz scalepack_script
+  set cmd "[BinPath scalepack2mtz] HKLIN \"$HKLIN\" HKLOUT \"$HKLTMP\" "
+  set status [Execute $cmd $scalepack_script program_status report ]
+
+#==================================================================
+# run truncate
+#==================================================================
+
+
+  if $RUN_TRUNCATE {
+
+    set HKL_TRUNCATE [GetTmpFileName -ext mtz]
+    CreateComScript truncate truncate_script
+    set cmd "[BinPath truncate] HKLIN \"$HKLTMP\" HKLOUT \"$HKL_TRUNCATE\""
+    set status [Execute $cmd $truncate_script program_status report]
+
+    HandleHarvestFile $HARVEST_MODE $HARVEST_PNAME $HARVEST_DNAME truncate
+
+  } else { 
+
+    set HKL_TRUNCATE $HKLTMP
+
+  }
+
+#==================================================================
+# run uniqueify
+#==================================================================
+
+  if $UNIQUEIFY {
+    source [SearchPath TOP utils phasing_utils.tcl ]
+    set cmd "Uniqueify \"$HKL_TRUNCATE\" \"$HKLOUT\""
+    if [IfSet $UNIQUEIFY_FREERFRAC] { append cmd " -fraction $UNIQUEIFY_FREERFRAC" }
+    if $COPY_FREER {
+      append cmd " -copy $COPY_FREER_MTZ $COPY_FREER_LABEL" }
+    if { $UNIQUEIFY_EXTEND && [IfSet $UNIQUEIFY_MAXRES] } {
+      append cmd " -extend $UNIQUEIFY_MAXRES" }
+    eval "$cmd"
+  } else {
+    MoveFile $HKL_TRUNCATE $HKLOUT
+  }

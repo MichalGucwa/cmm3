@@ -1,0 +1,204 @@
+#!/bin/sh
+
+# This script does a complete (but simple) molecular replacement calculation
+# for a single model using amore and deriving the parameters as automatically
+# as currently seems possible using standard-ish unix plumbing.  (It still
+# needs work and requires, for instance, a modern /bin/sh, nawk etc.)
+
+# Dave Love, with various influences, March '95.
+# $Id$
+
+# The values of the following variables are taken from the environment, mostly
+# defaulted if not set:
+
+# modelpdb: file of model coordinates
+# mtzdata: reflexion file
+# FPin: column name for F in $mtzdata (default FP)
+# SIGFPin: column name for sigmaF in $mtzdata (default SIG$FPin)
+# sorting, tabling, roting, traing, fiting: These should be set to `y' or `n'
+#   to determine whether or not to run the relevant stage.  They default to
+#   `y'.  To start from the RF stage, set sorting and tabling to n.
+# tag: addition to the generated filenames to identify different runs
+# DIR: Directory in which to put the generated files (default `.')
+# rf_reso, tf_reso, fit_reso: Resolution limits for RF calc, TF calc and
+#     fitting respectively; these must be in Aangstroems and should probably 
+#     not be defaulted.
+# refsols: What to refine in fiting -- SG-dependent (default 
+#     `AL BE GA X Y Z BF')
+# tf_symm: Spacegroup to use for translation function if different from that
+#     in $mtzdata (if testing enantiomers)
+# rmult: A factor by which to multiply the automatically-chosen RF integration
+#     radius (default 1)
+# sharp: Sharpening B value (positive); (default 10)
+# BMAX: Maximum beta to consider; can be set to 90 in some SGs, else
+#     use default of 180.
+
+# Files generated in $DIR:
+
+# ${tag}RF.map: map of rotation function
+# ${tag}TF.map: map of translation function
+# ${tag}fiting.log ${tag}roting1.log ${tag}tabling.log ${tag}traing1.log:
+#    log files
+# ${tag}clmn0.clmn ${tag}hklpck0.hkl ${tag}table1.tab ${tag}clmn1.clmn
+#   ${tag}hklpck1.hkl ${tag}tabled.brk: output from intermediate stages,
+#   useful if restarting from elsewhere.
+
+set -e
+set -h
+
+test "$modelpdb" = "" && echo "`basename $0`: Set variable modelpdb." && exit 1
+test "$mtzdata" = "" && echo "`basename $0`: Set variable mtzdata." && exit 1
+
+#steps to do
+sorting=${sorting-y}
+tabling=${tabling-y}
+roting=${roting-y}
+traing=${traing-y}
+fiting=${fiting-y}
+
+# tag for the generated files to distinguish them if necessary
+tag=am_
+
+# where to put generated stuff, probably usually `.'
+DIR=${DIR-.}
+
+# Resolution limits for RF calc; these must be in Aangstroems and should
+# probably not be defaulted.
+rf_reso=${rf_resol-'20 3'}
+# resolution limits for TF calc; these must be in Aangstroems
+tf_reso=${tf_resol-"$rf_reso"}
+# resolution limits for fitting; these must be in Aangstroems
+fit_reso=${fit_resol-"$rf_reso"}
+
+# Column names in the $mtzdata file
+FPin=${FPin:-FP}
+SIGFPin=${SIGFPin:-SIG$FPin}    # conventional derivation from FP
+
+refsols="AL BE GA X Y Z BF" # what to refine in fiting -- SG-dependent
+
+# Define tf_symm to be the Sg for the translation function, if
+# different from the CRYSTAL data; may be needed to test for
+# enantiomorphic SGs.
+[ "$tf_symm" ] && tfsymm="SYMMETRY $tf_symm"
+
+rmult=${rmult-1.0}
+
+# Sharpening B value -- sign is ignored.
+sharp=${sharp-"10"}
+sharp=`echo $sharp|sed -e 's/^-//'`
+
+BMAX=${BMAX-180}  # can be 90 in appropriate SGs
+
+Badd=${Badd-0}    # BADD paremeter in tabling
+
+# find awk executable
+for myawk in nawk gawk awk
+do
+  if ( `type $myawk >/dev/null 2>&1` ); then
+    break
+  fi
+done
+
+########## end of parameters
+
+# utility functions
+
+calc () {                       # evaluate it args as an expression
+  $myawk "BEGIN{print $*; exit}"; }
+
+min () {                        # minimum of its args
+  tmp=$1; for i
+    do [ $i -lt $tmp ] && tmp=$i; done; echo $tmp; }
+
+# highest resolution involved
+reslim=`min $rf_reso $tf_reso $fit_reso`
+
+if test "$sorting"; then
+
+amore hklin $mtzdata hklpck0 $DIR/${tag}hklpck0.hkl <<+
+  SORTFUN resolution $reslim 100
+  LABIN FP=$FPin  SIGFP=$SIGFPin
++
+
+tabling=${tabling-y}            # next step
+fi
+if [ "$tabling" = y ]; then
+
+# ensure (grid = resolution/(2 sharat)) < 0.5 for safety
+# => shann = reso
+
+amore xyzin1 $modelpdb xyzout1 $DIR/${tag}tabled.brk \
+    table1 $DIR/${tag}table1.tab <<+ | tee $DIR/${tag}tabling.log
+  TABFUN   
+  # this will allow TABFUN to work out the appropriate CRYSTL and SCALEi cards.
+  #  They will be output with XYZOUT
+  CRYSTAL ORTH  1 # CELL `$myawk '/CRYST1/ {print $2, $3, $4, $5, $6, $7; exit 0}' $modelpdb`
+  MODEL 1  BADD $Badd 
+  SAMPLE 1 RESO $reslim SHAN $reslim
++
+
+roting=${roting-y}              # next step
+fi
+
+if [ "$roting" = y ]; then
+
+# Determine the maximum integration limit ($radius) & model box ($box).
+# (amore-sphere should be in $CETC.)
+eval `amore-sphere $mtzdata $DIR/${tag}tabling.log`
+radius=`calc $radius*$rmult`
+
+amore hklpck0 $DIR/${tag}hklpck0.hkl clmn0 $DIR/${tag}clmn0.clmn \
+    table1 $DIR/${tag}table1.tab hklpck1 $DIR/${tag}hklpck1.hkl \
+	  clmn1 $DIR/${tag}clmn1.clmn mapout $DIR/${tag}RF \
+	  <<+  | tee $DIR/${tag}roting1.log
+  ROTFUN 
+  GENERATE 1 RESOLUTION $rf_reso CELL $box 
+  CLMN CRYSTAL ORTH  1 RESOLUTION $rf_reso SPHERE $radius
+  CLMN MODEL 1 RESOLUTION $rf_reso SPHERE $radius
+  ROTATE  CROSS  MODEL 1 BMAX $BMAX
++
+
+grep SOLUTIONRC $DIR/${tag}roting1.log >/dev/null ||
+  { echo "! No RF solutions found." && exit 1; }
+
+traing=${traing-y}              # next step
+fi
+
+if [ "$traing" = y ] ; then
+
+amore hklpck0 $DIR/${tag}hklpck0.hkl table1 $DIR/${tag}table1.tab \
+      mapout $DIR/${tag}TF <<+ | tee $DIR/${tag}traing1.log
+  TRAFUN CB NMOL 1 RESOLUTION $rf_reso
+  $tfsymm
+  CRYSTAL ORTH  1
+  # here are the RF solutions:
+  `grep SOLUTIONRC $DIR/${tag}roting1.log`
++
+
+grep SOLUTIONTF $DIR/${tag}traing1.log >/dev/null ||
+  { echo "! No TF solutions found." && exit 1; }
+
+fiting=${fiting-y}     # next step
+fi
+
+# At this stage one can filter the solutions with a packing analysis,
+# e.g. Kleijwegt's `pacman'.  Not done at present.
+
+if [ "$fiting" = y ]; then
+amore hklpck0 $DIR/${tag}hklpck0.hkl table1 $DIR/${tag}table1.tab <<+ |\
+    tee $DIR/${tag}fiting.log
+  FITFUN NMOL 1 RESOLUTION $fit_reso
+  CRYSTAL ORTH 1
+  # fixme: caveat about y or z refinement for polar SGs
+  REFSOL $refsols
+  # Here are the solutions to fit:
+  `grep SOLUT_ $DIR/${tag}traing1.log | sort -r -n +8 -9 | head -99`
++
+fi
+
+# numeric sort on corr coeff column in descending order
+echo; echo
+echo "Fitted solutions:"; echo
+grep SOLUTIONF $DIR/${tag}fiting.log | sort -r -n +8 -9
+
+#

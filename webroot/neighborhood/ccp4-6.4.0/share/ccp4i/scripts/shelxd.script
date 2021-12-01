@@ -1,0 +1,593 @@
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#     Original shelxd interface written by Thomas Pape & Thomas R. Schneider
+#     Extended for CCP4 by Peter Briggs
+#
+#CCP4i_cvs_Id $Id$
+#=========================================================================
+#
+# shelx script  -  for patterson search or direct methods
+#
+#=========================================================================
+
+
+#-------------------------------------------------------------------------
+# set some variables and prepare CCP4 stuff
+#-------------------------------------------------------------------------
+
+global configure
+
+WriteToLog "\nNow entering shelx script ...\n"
+
+# Source file with utility procedures
+source [SearchPath TOP src CCP4_utils.tcl]
+
+# Read the crystal parameters files - including all the symmetry operations
+ReadSymops [FileJoin [GetEnvPath CLIBD] symop.lib] 1
+
+# Shelx just writes to the directory it runs in so make sure this is scratch
+ChangeDirectory [GetEnvPath CCP4_SCR]
+
+# Set up a Shelx root name
+append shelx_name  $job_params(PROJECT) _ $job_params(JOB_ID)
+append hklin $shelx_name .hkl
+
+#-------------------------------------------------------------------------
+# input reflection file is always in MTZ format, so run mtz2various
+# to create a SHELX hkl-file in HKLF4 format in the scratch directory
+# the hkl-file is named 'name_id.hkl'
+#-------------------------------------------------------------------------
+
+set HKLOUT [FileJoin [GetEnvPath CCP4_SCR] $hklin]
+set OUTPUT_FORMAT SHELX
+
+CreateComScript mtz2various export_script
+
+set status [Execute "[BinPath mtz2various] HKLIN \"$MTZIN\" HKLOUT \"$HKLOUT\" " \
+            $export_script program_status report ]
+
+set SHELX_HKLF 4
+
+#-------------------------------------------------------------------------
+# Now create the SHELXD ins-file
+#-------------------------------------------------------------------------
+
+WriteToLog "\nNow Creating ins-file...\n"
+
+# ins-file will be named 'name_id.ins'
+
+set shelx_ins_file [FileJoin [GetEnvPath CCP4_SCR] $shelx_name.ins ]
+
+# set number of symmetry operators to 0
+set NSYMM 0
+# current line number in hkl-file
+set nl -1
+# last line with SYMM keyword
+set nlmax 0
+# text to be included in ins.file
+set instext {}
+
+# Try to get the symops etc. from the hkl file (as output by mtz2various)
+
+if {[ReadFile [FileJoin [GetEnvPath CCP4_SCR] $hklin] hkl_text -split ]} {
+  foreach line [lrange $hkl_text 0 20]  {
+    incr nl
+    if { [regexp SYMM $line] } {
+      incr NSYMM
+      set SYMM($NSYMM) [string trimright [lrange $line 1 end]]
+      append instext [string trimright "$line"] "\n"
+    } else {
+      if { $NSYMM <= 0 } {
+        append instext "$line\n"
+      } elseif { $nlmax == 0 } {
+        set nlmax [expr $nl - 1]
+      }
+    }
+  }
+} else {
+  TerminateScript 0 -report "ERROR: cannot read hkl-file as output by mtz2various"
+}
+
+# If NSYMM is zero then we probably have not got anything out of the hkl file header
+# At least try getting the symops from the symmetry library
+
+if { $NSYMM <= 0 } {
+  if { [set symops [GetSpaceGroupSymops  $SPACE_GROUP] ] == 0 } {
+    TerminateScript 0 -report \
+      "ERROR: can not find symmetry operations for space group $SPACE_GROUP"
+  } else {
+
+# Set the SYMM array to the symmtry operations - skip the first (identity operation)
+# which Shelx does not require
+
+    foreach symop [lrange $symops 1 end] {
+      incr NSYMM
+      set SYMM($NSYMM) "$symop"
+    }
+  }
+} else {
+
+# We've got useful stuff from the hkl header so copy it to the ins file
+
+regsub \n$ $instext {} newtext
+WriteFile $shelx_ins_file $newtext -overwrite
+
+# rewrite the temporary hkl file without the header
+
+WriteToLog "\nWriting hkl-file generated from mtz-file...\n"
+incr nlmax
+set textout {}
+  foreach line [lrange $hkl_text $nlmax end] {
+    append textout $line \n
+  }
+regsub \n$ $textout {} newtext; set textout $newtext
+WriteFile [FileJoin [GetEnvPath CCP4_SCR] $hklin] $textout -overwrite
+
+# Set NSYMM to zero so symops don't get written to the ins file twice
+
+set NSYMM 0
+set TITLE {}
+set CELL_LAMBDA {}
+set CELL_Z {}
+set LATTICE {}
+
+}
+
+#----------------------------------------------------------------------------------
+# in case we're using Direct Methods we have to prepare some variables ...
+#----------------------------------------------------------------------------------
+
+if {$SHELX_MODE == "DIRECT"} {
+
+  set N_SYMMOPS [GetSpaceGroupNops [GetSpaceGroupNumber $SPACE_GROUP]]
+  set ALL_ATOMS 0
+  set PLOP_LIST ""
+
+  foreach element {C N O S} {
+    set NATOMS($element) [expr round ($ELEMENT_FREQUENCY($element) * $RESIDUES_AU * $N_SYMMOPS)]
+    set ALL_ATOMS [expr $ALL_ATOMS + $NATOMS($element)]
+    lappend ATOM_TYPE_LIST $element
+    lappend NATOMS_LIST $NATOMS($element)
+  }
+
+  if {!$DM_SEED_ONOFF} {
+    set FIND_NATOMS [expr round ([expr $ALL_ATOMS * 0.55 / $N_SYMMOPS ])]
+    for {set n 1} {$n <= $PLOP_STEPS} {incr n} {
+      lappend PLOP_LIST [expr round ((1 + ( double ($n) / double ($PLOP_STEPS))) * $FIND_NATOMS)]
+    }
+
+  }
+
+  #
+  # check if we seed with heavy atoms and if yes prepare the SHELX input
+  #
+
+  if {$DM_SEED_ONOFF} {
+
+  # if we seed from HA or PDB file, we have to prepare the variables
+
+    if {$DM_SEED_METHOD == "HAFILE"} {
+
+      set DM_SEED_NATOMS 0
+      WriteToLog "\nSeeding method is from $DM_SEED_METHOD. File to read is $DM_HA_FILE.\n"
+      if { [ReadFile $DM_HA_FILE ha_text -split] } {
+
+        foreach line $ha_text {
+
+          if { [regexp (^ATOM|^HETATM) $line] } {
+            incr DM_SEED_NATOMS
+            set DM_SEED_USE($DM_SEED_NATOMS) 1
+            set DM_SEED_AT($DM_SEED_NATOMS) [ExtractFromText $line "ATOM " 0 [list 1]]
+            set DM_SEED_X($DM_SEED_NATOMS) [ExtractFromText $line "ATOM " 0 [list 2]]
+            set DM_SEED_Y($DM_SEED_NATOMS) [ExtractFromText $line "ATOM " 0 [list 3]]
+            set DM_SEED_Z($DM_SEED_NATOMS) [ExtractFromText $line "ATOM " 0 [list 4]]
+            set DM_SEED_B($DM_SEED_NATOMS) [format %.3f [expr [ExtractFromText $line "ATOM " 0 [list 8]] / 78.9568]]
+          }
+
+        }
+
+        WriteToLog "\nNumber of heavy atoms used as seed is $DM_SEED_NATOMS.\n"
+
+      }
+
+    }
+
+    if {$DM_SEED_METHOD == "PDBFILE" && [ReadFile $DM_PDB_FILE pdb_text -split] } {
+
+      WriteToLog "\nReading pdb-file $DM_PDB_FILE for seeding ...\n"
+
+      set alpha [expr $CELL_4 * 3.14159 / 180]
+      set beta  [expr $CELL_5 * 3.14159 / 180]
+      set gamma [expr $CELL_6 * 3.14159 / 180]
+
+      set cell_volume [expr $CELL_1 * $CELL_2 * $CELL_3 * \
+        (sqrt (1 - (pow(cos($alpha),2)) - (pow(cos($beta),2)) - (pow(cos($gamma),2)) + \
+        (2 * cos($alpha) * cos($beta) * cos($gamma))))]
+
+      set a_s [expr $CELL_2 * $CELL_3 * (sin($alpha)) / $cell_volume]
+      set b_s [expr $CELL_1 * $CELL_3 * (sin($beta)) / $cell_volume]
+      set c_s [expr $CELL_1 * $CELL_2 * (sin($gamma)) / $cell_volume]
+      set cos_alpha_s [expr (cos($beta) * cos($gamma) - cos($alpha)) / (sin($beta) * sin($gamma))]
+      set cos_beta_s  [expr (cos($alpha) * cos($gamma) - cos($beta)) / (sin($alpha) * sin($gamma))]
+
+      set scale(1,1) [expr 1 / $CELL_1]
+      set scale(1,2) 0.000
+      set scale(1,3) 0.000
+      set scale(2,1) [expr -cos($gamma) / ($CELL_1 * sin($gamma))]
+      set scale(2,2) [expr 1 / ($CELL_2 * sin($gamma))]
+      set scale(2,3) 0.000
+      set scale(3,1) [expr $a_s * $cos_beta_s]
+      set scale(3,2) [expr $b_s * $cos_alpha_s]
+      set scale(3,3) [expr $c_s]
+
+      set DM_SEED_NATOMS 0
+      foreach line $pdb_text {
+
+        if { [regexp (^ATOM|^HETATM) $line]  } {
+
+          incr DM_SEED_NATOMS
+          set DM_SEED_USE($DM_SEED_NATOMS) 1
+          set DM_SEED_AT($DM_SEED_NATOMS) [string trim [string range $line 12 15] " "]
+          set xorth [string range $line 30 37]
+          set yorth [string range $line 38 45]
+          set zorth [string range $line 46 53]
+          set DM_SEED_X($DM_SEED_NATOMS) [format %.3f [expr $xorth * $scale(1,1) + $yorth * $scale(1,2) + $zorth * $scale(1,3)]]
+          set DM_SEED_Y($DM_SEED_NATOMS) [format %.3f [expr $xorth * $scale(2,1) + $yorth * $scale(2,2) + $zorth * $scale(2,3)]]
+          set DM_SEED_Z($DM_SEED_NATOMS) [format %.3f [expr $xorth * $scale(3,1) + $yorth * $scale(3,2) + $zorth * $scale(3,3)]]
+          set DM_SEED_B($DM_SEED_NATOMS) [format %.3f [expr [string range $line 60 65] / 78.9568]]
+
+          # puts "$xorth $yorth $zorth"
+          # puts "$DM_SEED_X($DM_SEED_NATOMS) $DM_SEED_Y($DM_SEED_NATOMS) $DM_SEED_Z($DM_SEED_NATOMS) $DM_SEED_B($DM_SEED_NATOMS)"
+
+        }
+
+      }
+
+    }
+
+
+    for {set nseed 1} {$nseed <= $DM_SEED_NATOMS} {incr nseed} {
+      set DM_SEED_SFAC($nseed) [expr [lsearch $ATOM_TYPE_LIST $DM_SEED_AT($nseed)] +1]
+      if {!$DM_SEED_SFAC($nseed)} {
+        lappend ATOM_TYPE_LIST $DM_SEED_AT($nseed)
+        lappend NATOMS_LIST [expr $N_SYMMOPS *4]
+        incr N_ELEMENTS
+        set DM_SEED_SFAC($nseed) $N_ELEMENTS
+      }
+      # puts "Structure factore number of $nseed, which is a $DM_SEED_AT($nseed) : $DM_SEED_SFAC($nseed)"
+    }
+
+    for {set n 1} {$n <= 10} {incr n} {
+      lappend PLOP_LIST [expr round ( $ALL_ATOMS / $N_SYMMOPS * 0.11 * $n) ]
+    }
+
+  }
+
+}
+
+
+#----------------------------------------------------------------------------------
+# make sure we now have a .hkl-file without header information
+#----------------------------------------------------------------------------------
+#
+# WriteToLog "\nMaking sure input hkl-file is without header ...\n"
+#
+# if {[ReadFile [FileJoin [GetEnvPath CCP4_SCR] $hklin] hkl_text -split] } {
+#   set textout {}
+#   foreach line $hkl_text {
+#     if {! ([regexp {^[a-zA-Z]} $line]) } {
+#       append textout $line \n
+#     }
+#   }
+#
+#   WriteFile [FileJoin [GetEnvPath CCP4_SCR] $hklin] $textout -overwrite
+#
+# }
+#
+# WriteToLog "\nOK!\n"
+#
+#----------------------------------------------------------------------------------
+# run SHELXD ...
+#----------------------------------------------------------------------------------
+
+if { [regexp HEAVY_ATOM $SHELX_MODE]} {
+
+  WriteToLog "\nCreating a SHELXD substructure script...\n"
+  CreateComScript shelxd shelx_script
+  TranscribeFile $shelx_script $shelx_ins_file
+  CopyFile $shelx_ins_file $shelx_script -overwrite
+  WriteToLog "\nRunning SHELXD ...\n"
+  set status [Execute "shelxd $shelx_name " \
+      $shelx_script program_status report ]
+
+} elseif {[regexp DIRECT $SHELX_MODE]} {
+
+  WriteToLog "\nCreating a SHELXD direct methods script...\n"
+  CreateComScript shelxd shelx_script
+  TranscribeFile $shelx_script $shelx_ins_file
+  CopyFile $shelx_ins_file $shelx_script -overwrite
+  WriteToLog "\nRunning SHELXD (Direct Methods) ...\n"
+  set status [Execute "shelxd $shelx_name " \
+              $shelx_script program_status report ]
+}
+
+# Add the name of the command file created by shelx to the list of output files
+# First move it from scratch to temporary directory (these may be the same thing!)
+# to_do: why is this called .res ????
+#
+# set comfile $shelx_name.res
+# CopyFile $comfile [FileJoin [GetDefaultDirPath] $comfile]
+# AddOutputFile $comfile PROJECT
+
+# Copy the shelx log file to the CCP4I log file
+TranscribeFile $shelx_name.lst $LOG_FILE
+
+# Add tables to output when in HEAVY_ATOM mode
+
+if {$SHELX_MODE == "HEAVY_ATOM"} {
+
+  # Add a table with CorrelationCoeffiecients and PATFOM to the logfile
+
+  if {[ReadFile $shelx_name.lst ilines -split]} {
+
+    set text_tmp ""
+    set pat_max -100
+    set weak_max -100
+    set all_max -100
+
+    set try 0
+    foreach line $ilines {
+
+      set buf1 [ExtractFromText $line "Try  " 0 all]
+      if {[string length $buf1]} {
+
+        set all [ExtractFromText $line "Try  " 0 [list 4]]
+        set all_max [max $all $all_max]
+
+        set weak [string range [ExtractFromText $line "Try  " 0 [list 6]] 0 end-1]
+        set weak_max [max $weak $weak_max]
+
+        incr try
+        append text_tmp [format "%10i %10.2f %10.2f" $try $all $weak]
+      }
+
+      set buf2 [ExtractFromText $line "PATFOM " 0 all]
+      if {[string length $buf2] && ![string length $buf1]} {
+
+        set patfom [ExtractFromText $line "PATFOM" 0 [list 1]]
+        set pat_max [max $pat_max $patfom]
+
+        append text_tmp [format " %10.2f\n" $patfom]
+      }
+
+    }
+
+    foreach element {pat_max weak_max all_max} {
+      set $element [expr [set $element] * 1.1]
+    }
+
+    set textout ""
+    append textout " \$TABLE: CorrelationCoefficient_PATFOM:\n"
+    append textout " \$SCATTER\n"
+    append textout " :CCall vs. PATFOM:0|($pat_max)x0|($all_max):4,2:\n"
+    append textout " :CCall vs. CCweak:0|($weak_max)x0|($all_max):3,2:\n"
+    append textout " :CorrelationCoefficient vs. Try:0|($try)x0|($all_max):1,2,3\n"
+    append textout " \$\$\n"
+    append textout "       Try      CCall      CCweak    PATFOM \$\$\n"
+    append textout " \$\$\n"
+    append textout $text_tmp
+    append textout " \$\$\n"
+
+    WriteFile $LOG_FILE $textout
+
+  }
+
+# Add another table with No. of peak and occupancy
+
+  set textout ""
+  append textout " \$TABLE: Site occupancies:\n"
+  append textout " \$GRAPHS\n"
+  append textout " :Occupancy vs. HA Site:Auto:1,2:\n"
+  append textout " \$\$\n"
+  append textout "          Site       Occupancy \$\$\n"
+  append textout " \$\$\n"
+
+  if {[ReadFile $shelx_name.pdb ilines -split]} {
+
+    foreach line $ilines {
+
+      set buf [ExtractFromText $line "HETATM " 0 all]
+      if {[string length $buf]} {
+        set site [ExtractFromText $line "HETATM " 0 [list 1]]
+        set occ  [ExtractFromText $line "HETATM " 0 [list 8]]
+        append textout [format "   %10i    %10.2f\n" $site $occ]
+      }
+
+    }
+
+  }
+
+  append textout " \$\$\n"
+
+  WriteFile $LOG_FILE $textout
+
+}
+
+# if we're in DIRECT mode and do not use known positions for seeding, add only one table
+
+if {$SHELX_MODE == "DIRECT"} {
+
+  if {!$DM_SEED_ONOFF} {
+
+    set plop_max 0
+    set weak_max -100
+    set all_max -100
+
+    if {[ReadFile $shelx_name.lst ilines -split]} {
+
+      set try 0
+      set text_tmp ""
+
+      foreach line $ilines {
+
+        set buf1 [ExtractFromText $line "Try  " 0 all]
+        if {[string length $buf1]} {
+          if {$try} { append text_tmp [format "%10.2f\n" $plop($try)] }
+
+          set all [ExtractFromText $line "Try  " 0 [list 4]]
+          set all_max [max $all $all_max]
+
+          set weak [string range [ExtractFromText $line "Try  " 0 [list 6]] 0 end-1]
+          set weak_max [max $weak $weak_max]
+
+          incr try
+          set plop($try) NaN
+
+          append text_tmp [format "%10i %10.2f %10.2f" $try $all $weak]
+        }
+
+        set buf2 [ExtractFromText $line "Peaklist optimization cycle  $PLOP_STEPS" 0 all]
+        if {[string length $buf2]} {
+          set plop($try) [ExtractFromText $line "Peaklist " 0 [list 6]]
+          set plop_max [max $plop($try) $plop_max]
+        }
+      }
+
+    }
+
+    append text_tmp [format "%10.2f\n" $plop($try)]
+    append text_tmp " \$\$\n"
+
+    set plop_max [max $all_max $plop_max]
+
+    foreach element { plop_max weak_max all_max} {
+      set $element [expr [set $element] * 1.1]
+    }
+
+    set textout ""
+    append textout " \$TABLE: CorrelationCoefficient:\n"
+    append textout " \$SCATTER\n"
+    append textout " :CCall vs. CCweak:0|($weak_max)x0|($plop_max):3,2:\n"
+    append textout " :CorrelationCoefficient vs. Try:0|($try)x0|($plop_max):1,2,3,4\n"
+    append textout " \$\$\n"
+    append textout "       Try     CCall        CCweak    PLOP\$\$\n"
+    append textout " \$\$\n"
+    append textout $text_tmp
+
+    WriteFile $LOG_FILE $textout
+
+  }
+
+# in DIRECT mode with seeding we add CC vs. cycle as table
+
+  if {$DM_SEED_ONOFF} {
+
+    set textout ""
+    append textout " \$TABLE: CorrelationCoefficient_Cycle:\n"
+    append textout " \$GRAPHS\n"
+    append textout " :CC vs. Cycle:0|10x0|100:1,2:\n"
+    append textout " \$\$\n"
+    append textout "       Cycle     CC  \$\$\n"
+    append textout " \$\$\n"
+
+    if {[ReadFile $shelx_name.lst ilines -split]} {
+
+      foreach line $ilines {
+
+        set buf1 [ExtractFromText $line "Peaklist optimization cycle" 0 all]
+        if {[string length $buf1]} {
+          set cc [ExtractFromText $line "Peaklist optimization cycle" 0 [list 6]]
+          set cycle [ExtractFromText $line "Peaklist optimization cycle" 0 [list 3]]
+          append textout [format "%10i %10.2f \n" $cycle $cc]
+        }
+
+      }
+
+    }
+
+    append textout " \$\$\n"
+
+    WriteFile $LOG_FILE $textout
+
+  }
+
+}
+
+#-------------------------------------------------------------------------
+# Read the output .res file and generate HA files
+# only neccessary for heavy atom search!
+#-------------------------------------------------------------------------
+
+if {[regexp HEAVY_ATOM $SHELX_MODE]} {
+
+  if { ![ReadFile [FileJoin [GetEnvPath CCP4_SCR] $shelx_name.res ] resfile -split] } {
+    TerminateScript 1 -report "Can not read Shelx output .res file to create CCP4i .ha files"
+  }
+
+  set nsets 0
+  set na 0
+
+  set textout ""
+  append textout "#\n"
+  append textout "# Important SHELXD parameters\n"
+  append textout "# ---------------------------\n"
+  append textout "# Space group      : $SPACE_GROUP\n"
+  append textout "# Resolution       : $SHEL_DMAX to $SHEL_DMIN\n"
+  append textout "# Heavy atom type  : $HEAVY_TYPE\n"
+  append textout "# Sites to find    : $NHEAVY\n"
+  append textout "# Patterson search : "
+
+  if {$PATS_ONOFF == 1} {
+    append textout "YES\n#\n"
+  } else {
+    append textout "NO\n#\n"
+  }
+
+  set header [format "CELL%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f" \
+             $CELL_1 $CELL_2 $CELL_3 $CELL_4 $CELL_5 $CELL_6]\n
+  append textout $header
+
+  foreach line $resfile {
+
+    # find a line which begins with the heavy atom name and does not have any other
+    # character A-Z in the first word of the line
+
+    if { [regsub ^$HEAVY_TYPE $line "" ll] && ![regexp {[A-Z]} [lindex $ll 0] ]  } {
+      incr na
+      append textout [format "ATOM   %4s  %7.4f %7.4f %7.4f    %12.2f  0.0 BFAC  20.0" \
+	     $HEAVY_TYPE [lindex $ll 2] [lindex $ll 3] [lindex $ll 4] [lindex $ll 5]]\n
+    } elseif {  $na > 0 } {
+
+      # have come to the end of a list of ha atoms in a set
+
+      incr nsets
+
+      WriteFile $HAOUT $textout -overwrite
+      AddOutputFile $HAOUT PROJECT
+      set na 0
+      set textout $header
+    }
+
+  }
+
+}
+
+#------------------------------------------------------------------------------
+# copy the resulting .pdb file to the current directory, regardless
+# of the SHELX method used
+#------------------------------------------------------------------------------
+
+CopyFile [FileJoin [GetEnvPath CCP4_SCR] $shelx_name.pdb] $PDBOUT -overwrite
+
+AddOutputFile $PDBOUT PROJECT
+
+#------------------------------------------------------------------------------
+# following lines are only for testing ...
+#------------------------------------------------------------------------------
+
+# set test [GetSpaceGroupSymops $SPACE_GROUP]
+# puts $test

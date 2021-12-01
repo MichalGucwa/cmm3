@@ -1,0 +1,224 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#===========================================================================
+#
+# check.script
+#
+#===========================================================================
+  global system
+
+# Source file with utility procedures
+  source [SearchPath TOP src CCP4_utils.tcl]
+
+# Go to scratch directory cos these programs dump files in current directory
+
+  ChangeDirectory [GetEnvPath CCP4_SCR]
+
+  if $RUN_RAMPAGE {
+
+    # Generate command line
+    set cmd "[BinPath rapper]"
+
+    set rapperdatadir [FileJoin [GetEnvPath CCP4] share rapper]
+    set paramsfile [FileJoin $rapperdatadir params.xml]
+
+    append cmd " $paramsfile rampage --pdb "
+    append cmd "  \"$XYZIN\""
+    append cmd " --rampage-postscript \"$PSOUT\""
+    if {[string first "No title given" $TITLE] == -1} {
+	append cmd " --rampage-title \"$TITLE\""
+    }
+    append cmd " --rapper-dir \"$rapperdatadir\""
+
+    # Run Rampage
+    set status [Execute $cmd {} program_status report]
+     
+  }
+
+  if $RUN_SFCHECK {
+
+    # Set the output file basename
+    set basename [SetOutputFileRoot -tmp]
+
+    CreateComScript sfcheck sfcheck_script -nocontinue
+
+    DeleteFile sfcheck.log
+
+    # Generate command line
+    set cmd "[BinPath sfcheck]"
+    if { $SFCHECK_MODE != "STRUCTURE" } {
+      append cmd " HKLIN \"$HKLIN\""
+    }
+    if { $SFCHECK_MODE != "EXPERIMENT" } {
+      append cmd " XYZIN \"$XYZIN\""
+    }
+    append cmd " PATH_SCR \"$basename\" PATH_OUT \"$basename\""
+
+    # Run Sfcheck
+    set status [Execute $cmd $sfcheck_script program_status report]
+
+    if [ReadFile $LOG_FILE text ] {
+      set status [expr 1 - [ExtractTextLine $text ERROR: 0 all err_line] ]
+      ExtractTextLine $text Plotfile: 0 2 psfile
+      if { $psfile != "" && [file exists $psfile] } { 
+        MoveFile $psfile $ANALYSIS_FILE
+      }
+    }
+
+    # Locate verbose Sfcheck logfile and add this to the main log file
+    append sfcheck_verbose_log "$basename" "sfcheck.log"
+    if { [file exists $sfcheck_verbose_log] } {
+      WriteToLog "Transcribing verbose Sfcheck log file $sfcheck_verbose_log"
+      TranscribeFile $sfcheck_verbose_log $LOG_FILE
+      DeleteFile $sfcheck_verbose_log
+    } else {
+      WriteToLog "Unable to find verbose Sfcheck log file $sfcheck_verbose_log"
+    }
+
+    # Deal with anisothermal corrected data
+    if { $SFCHECK_MODE != "STRUCTURE" && $SFCHECK_ANISOTHERMAL_CORR } {
+      append sfcheck_cif "$basename" "sfcheck.hkl"
+      if { [file exists $sfcheck_cif] } {
+
+	# Convert to MTZ
+	set tmp_hklout [GetTmpFileName -ext mtz]
+        set cmd "[BinPath cif2mtz] HKLIN $sfcheck_cif HKLOUT $tmp_hklout"
+	set script "END\n"
+        WriteFile [set cif2mtz_script [GetTmpFileName -ext com]] $script
+        set status [Execute $cmd $cif2mtz_script program_status report]
+
+	# Acquire crystal and dataset of source columns
+	switch $SFCHECK_DATA {
+      SF { set label $F1 }
+	  I  { set label $I1 }
+      SF_ANOM { set label $F2 }
+	  I_ANOM  { set label $I2 }
+        }
+	GetMtzDatasetFromLabel $HKLIN $label xtal dataset
+
+	# Append to input file using CAD
+	set cmd "[BinPath cad] HKLIN1 $HKLIN HKLIN2 $tmp_hklout HKLOUT $HKLOUT"
+	set script "LABIN FILE 1 ALL\nLABIN FILE 2 E1=FP E2=SIGFP\nLABOUT FILE 2 E1=$F_ISO E2=$SIGF_ISO\nXNAME FILE 2 E1 TO E2=$xtal\nDNAME FILE 2 E1 TO E2=$dataset\nEND\n"
+        WriteFile [set cad_script [GetTmpFileName -ext com]] $script
+	set status [Execute $cmd $cad_script program_status report]
+
+      } else {
+        WriteToLog "Unable to find verbose Sfcheck CIF file $sfcheck_cif"
+      }
+    }
+  }
+
+  if $RUN_PROCHECK {
+
+  set ext_list [list 01 02 03 04 05 06 07 08 09 10 ]
+  set check_list [list ramchand allramac chi1_chi2 mainchpar sidechpar \
+		residprop bondlenth bondangle planargps distortgm ]
+
+  set outfile_root [file join [GetEnvPath CCP4_SCR] \
+	[file root [ file tail $XYZIN]]  ]
+
+
+# Edit the procheck.prm to switch colour on/off and get sensible output 
+# file names
+
+  if { ![file exists procheck.prm] } {
+    CopyFile [FileJoin [GetEnvPath CINCL] procheck.prm] procheck.prm }
+  if $PROCHECK_COLOUR  { set colour Y } else { set colour N }
+
+  if { [ReadFile procheck.prm prm_text -split] } {
+    foreach line $prm_text {
+      if [regexp "plots in colour" $line] {
+        set line [lreplace $line 0 0 $colour]
+#      } elseif [regexp "9-character description" $line] {
+#        set line [lreplace $line 0 0 Y]
+      }
+      append prm_text_out "$line\n"
+    }
+    WriteFile procheck.prm $prm_text_out -overwrite
+  }
+
+# Copy the procheck data files 
+  if { ![file exists resdefs.dat ] } {
+    CopyFile [FileJoin [GetEnvPath CINCL] resdefs.data] resdefs.dat }
+
+ if { ![file exists prodata ] } {
+    CopyFile [FileJoin [GetEnvPath CINCL] procheck.dat ] prodata }
+
+
+# Create a command script contain just the name of the input file
+  WriteFile [set procheck_script [GetTmpFileName -ext _com]] "$XYZIN"
+
+# cleanup
+  WriteToLog "Running cleanup program\nOutput coordinates in file: $outfile_root.new" 
+  set status [Execute "[BinPath proclean]" $procheck_script program_status report -nocomments]
+
+# secstr
+
+  WriteToLog "Running secstr program\n Output data in file: $outfile_root.rin"
+  set status [Execute "[BinPath secstr]" $procheck_script program_status report -nocomments]
+
+# nb
+
+  WriteToLog "Running nb program\nNon-Bonded Interactionsn Output data in file: $outfile_root.nb" 
+  set status [Execute "[BinPath nb]" $procheck_script program_status report -nocomments]
+
+# anglen
+
+  WriteToLog "Running anglen program\nCalculation of Bond Lengths and Angles
+Output data in file: $outfile_root.lan" 
+  set status [Execute "[BinPath anglen]" $procheck_script program_status report -nocomments]
+
+# Create a command script contain the name of the input file, chain and resolution
+# and a N
+  WriteFile $procheck_script "$XYZIN\n$CHAIN_ID\n$RESOLUTION\nN" -overwrite
+
+#tplot
+# We still run tplot for the chi1-chi2 distributions, but we hide the Ramachandran plots
+
+  WriteToLog "Running tplot program\nchi1-ch2 Distributions" 
+  set status [Execute "[BinPath tplot]" $procheck_script program_status report -nocomments]
+
+# Create a command script contain the name of the input file, chain and resolution
+  WriteFile $procheck_script "$XYZIN\n$CHAIN_ID\n$RESOLUTION" -overwrite
+
+#pplot
+
+  WriteToLog "Running pplot program\nStereochemical Quality Plots" 
+  set status [Execute "[BinPath pplot]" $procheck_script program_status report -nocomments]
+
+# bplot
+  WriteToLog "Running probplot program\nMain Chain Bond Lengths & Angles"
+  set status [Execute "[BinPath probplot]" $procheck_script program_status report -nocomments]
+
+# Add summary files to end of log file
+
+  TranscribeFile $outfile_root.out $LOG_FILE
+  TranscribeFile $outfile_root.sum $LOG_FILE
+
+# Cleanup some of these data files
+
+  DeleteFiles prodata resdef.dat ps.number 
+
+# Change name of postscript files to something more workable
+  
+  set outfiles AddOutputFile
+  set file_root [file rootname [file tail $XYZIN] ]
+  for { set n 2 } { $n <= 9 } { incr n } {
+    set file0 [subst $file_root]_[lindex $ext_list $n].ps
+    if [file exists $file0] {
+      set file1 [SetOutputFileRoot]_[lindex $check_list $n].ps
+      MoveFile $file0 $file1 -overwrite
+      append outfiles " $file1 PROJECT"
+      if $PROCHECK_PRINT  { catch "exec $PRINT_CMD $file1" }
+    }
+  }
+  eval  "$outfiles"
+
+  }

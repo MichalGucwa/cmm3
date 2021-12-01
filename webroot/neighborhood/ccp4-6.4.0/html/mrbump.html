@@ -1,0 +1,648 @@
+<html><head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::MRBUMP::Supported::Molecular Replacement::automated search model generation and automated molecular replacement:::::::: -->
+
+<h1> MrBUMP (CCP4: Supported Program)</h1>
+
+<h2> NAME</h2>
+<b>MrBUMP </b>
+- automated search model generation and automated molecular replacement
+
+<h2> SYNOPSIS</h2>
+
+<p>Full model search, model preparation and molecular replacement:</p>
+
+<p>
+<b>mrbump  hklin</b>
+<i>foo_in.mtz</i>
+<b>seqin</b>
+<i>foo.seq</i>
+<b>hklout</b>
+<i>foo_out.mtz</i>
+<b>xyzout</b>
+<i>foo.pdb</i>
+<br>
+ [<a href="#keywords">Key-worded input</a>]
+</p>
+
+<p>Model search and preparation only:</p>
+
+<p>
+<b>mrbump  seqin</b>
+<i>foo.seq</i>
+<br>
+ [<a href="#keywords">Key-worded input</a>]
+</p>
+
+<p>Molecular replacement only (requires input of output directory of previous run of the program):</p>
+
+<p>
+<b>mrbump  hklin</b>
+<i>foo_in.mtz</i>
+<b>prepdir</b>
+<i>path to previous mrbump job output directory</i>
+<b>hklout</b>
+<i>foo_out.mtz</i>
+<b>xyzout</b>
+<i>foo.pdb</i>
+<br>
+ [<a href="#keywords">Key-worded input</a>]
+</p>
+
+<h2> DESCRIPTION</h2>
+
+<p>
+MrBUMP has three main parts:
+<ol>
+<li>For a given target sequence, automated discovery of chains, domains and multimers that
+are possible templates for molecular replacement search models</li>
+<li>Preparation of actual search models using a variety of structure editing techniques</li>
+<li>Running molecular replacement using these search models and 
+testing whether the resulting solutions will refine. </li>
+</ol>
+</p>
+
+<p>
+Note that MrBUMP makes a number of calls to web-based applications. If your sequence
+information is in any way sensitive, it is recommended that you use the option to run the fasta
+search locally rather than via the OCA web application. This will require installing fasta34
+on the users local machine. The software can be downloaded from the EBI website 
+<a href="ftp://ftp.ebi.ac.uk/pub/software/unix/fasta/">here</a>.  
+</p>
+
+<h2> DEPENDENCIES</h2>
+
+<p>Before MrBUMP can be used, the following dependencies should be installed on the local system. 
+<ul>
+<li>Mandatory:
+  <ul>
+    <li>CCP4 6.0 or later</li>
+    <li>Python 2.3 or later</li>
+    <li>one of: <a href="http://align.bmr.kyushu-u.ac.jp/mafft/software/">Mafft</a>, 
+        <a href="http://probcons.stanford.edu/">Probcons</a>, <a href="http://www.tcoffee.org/">TCoffee</a>
+        or <a href="ftp://ftp.ebi.ac.uk/pub/software/unix/clustalw/">Clustalw</a></li>
+  </ul>
+</li>
+<li>Optional:
+  <ul>
+    <li>Fasta34,</li>
+    <li>Perl + SOAP-Lite module (for SSM search).</li>
+    <li>Gnuplot.</li>
+  </ul>
+</li>
+</ul>
+MrBUMP also requires that the local machine has a connection to the internet (directly or via a
+proxy).  </p> 
+
+
+<h2> INPUT AND OUTPUT FILES</h2>
+
+<h3> HKLIN</h3>
+Input structure factor file for target structure. Must include a FreeR_flag column. In
+general, the spacegroup in HKLIN is assumed to be correct (you should check this!). The
+only exception is the <a href="#enant"><b>ENANt</b></a> keyword which requests that both members of
+a pair of enantiomorphic spacegroups are checked by MrBUMP.
+
+<h3> SEQIN</h3>
+Input sequence file for the target structure. Can be in PIR or Fasta format or 
+it can just contain the amino acid sequence. 
+
+<h3> HKLOUT</h3>
+MTZ file from Refmac5 refinement of the top MR solution.
+
+<h3> XYZOUT</h3>
+PDB coordinate file from Refmac5 refinement of the top MR solution.
+
+<h2> <a name="keywords"></a> KEYWORDED INPUT</h2>
+
+<p>There are a number of options for specifying parameters (e.g. number of molecules
+expected in the asymmetric unit) or preferences (e.g. which multiple alignment program
+to use). Most of these have sensible defaults. The only mandatory keywords are 
+<a href="#labin"><b>LABIn</b></a> and <a href="#jobid"><b>JOBId</b></a>.
+
+<p>Compulsory keywords:
+<blockquote>
+   <a href="#labin"><b>LABIn</b></a>,
+   <a href="#jobid"><b>JOBId</b></a>
+</blockquote>
+</p>
+
+<p>Main keywords:
+<blockquote>
+   <a href="#root_dir"><b>ROOTdir</b></a>,
+   <a href="#nmasu"><b>NMASu</b></a>,
+   <!-- <a href="#num_model"><b>MDLNum</b></a>,-->
+   <a href="#num_mr"><b>MRNUm</b></a>,
+   <a href="#num_ensem"><b>ENSEmnum</b></a>,
+   <a href="#include"><b>INCLude</b></a>,
+   <a href="#localfile"><b>LOCAlfile</b></a>,
+   <a href="#fixed_xyzin"><b>FIXEd_xyzin</b></a>,
+   <a href="#ignore"><b>IGNOre</b></a>,
+   <a href="#mr_programs"><b>MRPRograms</b></a>,
+   <a href="#ma_program"><b>MAPRogram</b></a>,
+   <a href="#mdldpdbclp"><b>MDLDpdbclp</b></a>,
+   <a href="#mdlunmod"><b>MDLUnmod</b></a>,
+   <a href="#mdlplyala"><b>MDLPlyala</b></a>,
+   <a href="#mdlmolrep"><b>MDLMolrep</b></a>,
+   <a href="#mdlchainsaw"><b>MDLChainsaw</b></a>,
+   <a href="#mdlsculptor"><b>MDLSculptor</b></a>,
+   <a href="#use_ssm"><b>SSMSearch</b></a>,
+   <a href="#use_scop"><b>SCOPsearch</b></a>,
+   <a href="#use_pqs"><b>PQSSearch</b></a>,
+   <a href="#dofasta"><b>DOFAsta</b></a>,
+   <a href="#dohhpred"><b>DOHHpred</b></a>,
+   <a href="#hhdbpdb"><b>HHDBpdb</b></a>,
+   <a href="#hhscore"><b>HHSCore</b></a>,
+   <!-- <a href="#fasta_local"><b>FASTalocal</b></a>, -->
+   <a href="#pack"><b>PACK</b></a>,
+   <a href="#pack"><b>PJOBS</b></a>,
+   <a href="#ncyc"><b>NCYC</b></a>,
+   <a href="#reftwin"><b>REFTwin</b></a>,
+   <a href="#update"><b>UPDAte</b></a>,
+   <a href="#onlymodels"><b>ONLYmodels</b></a>,
+   <a href="#tryall"><b>TRYAll</b></a>,
+   <a href="#useacorn"><b>USEAcorn</b></a>,
+   <a href="#acornres"><b>ACORnres</b></a>,
+   <a href="#bucc"><b>BUCCaneer</b></a>
+   <a href="#bcyc"><b>BCYC</b></a>
+   <a href="#arpw"><b>ARPWarp</b></a>
+   <a href="#acyc"><b>ACYC</b></a>
+   <a href="#shel"><b>SHELxe</b></a>
+   <a href="#scyc"><b>SCYC</b></a>
+   <a href="#enant"><b>ENANt</b></a>
+</blockquote>
+</p>
+
+<p>Additional keywords:
+<blockquote>
+   <a href="#pkeyword"><b>PKEYword</b></a>,
+   <a href="#pdb_dir"><b>PDBDir</b></a>,
+   <a href="#pdblocal"><b>PDBLocal</b></a>,
+   <a href="#cluster"><b>CLUSter</b></a>,
+   <a href="#qtype"><b>QTYPe</b></a>,
+   <a href="#qsize"><b>QSIZe</b></a>,
+   <a href="#qsubcom"><b>QSUBcom</b></a>,
+   <a href="#clean"><b>CLEAn</b></a>,
+   <a href="#lite"><b>LITE</b></a>,
+   <a href="#pickle"><b>PICKle</b></a>,
+   <a href="#check"><b>CHECk</b></a>,
+   <a href="#debug"><b>DEBUg</b></a>,
+   <a href="#proxyserver"><b>PROXyserver</b></a>
+</blockquote>
+</p>
+
+<h3><a name="labin" id="labin"></a>LABIN &lt;program label&gt;=&lt;file label&gt;...</h3>
+<p><i>Mandatory</i>. This keyword tells the program which columns in the MTZ file
+should be used as native structure factors, sigmas, and FreeR flag.
+Available program labels are <tt>F</tt>, <tt>SIGF</tt> and <tt>FreeR_flag</tt>.</p>
+
+<h3><a name="jobid" id="jobid"></a>JOBID &lt;job name&gt;</h3>
+<p><i>Mandatory</i>. This is a name for the job. A directory called "search_JOBID" will be 
+created in the directory in which MrBUMP is started from. This directory will contain all of the
+downloaded files and results.</p>
+
+<h3><a name="root_dir" id="root_dir"></a>ROOTDIR &lt;directory&gt;</h3>
+<p>The root directory where the search folder will be created.<br>
+[Default Current working directory]</p>
+
+<h3><a name="nmasu" id="nmasu"></a>NMASU &lt;number&gt;</h3>
+<p>The number of molecules in the asymmetric unit. Leave this blank for automatic calculation.<br>
+[Default Automatic]</p>
+
+<!--<h3><a name="num_model" id="num_model"></a>MDLNUM &lt;number&gt;</h3>
+<p>The number of template models to be prepared for molecular replacement.<br>
+[Default 50]</p>-->
+
+<h3><a name="num_mr" id="num_mr"></a>MRNUM &lt;number&gt;</h3>
+<p>The number of prepared models to be used molecular replacement.<br>
+[Default 20]</p>
+
+<h3><a name="num_ensem" id="num_ensem"></a>ENSEMNUM &lt;number&gt;</h3>
+<p>The number of prepared models to be used in a Phaser Ensemble.<br>
+[Default 5]</p>
+
+<h3><a name="include" id="include"></a>INCLUDE &lt;pdb chain id 1&gt; &lt;pdb chain id 2&gt;...</h3>
+<p>A list of PDB ID codes and Chain IDs to be included in the homologue search. Any specific chains
+entered here are automatically processed in molecular replacement regardless of how they score in the
+template model scoring.<br> <i>Example: INCLUDE 1nio_A.</i></p>
+
+<h3><a name="localfile" id="localfile"></a>LOCALFILE &lt;pdb filename [CHAIN chain id] &gt</h3>
+<p>Use this keyword to specify the location of a local PDB file to be used as a search model in MrBUMP.
+The full path to the file must be specified. The optional CHAIN subkeyword can be used to specify a particular
+chain in the PDB file. If CHAIN is not used then the program will extract chain "A" from the file.<br>
+<i>Example: LOCALFILE /tmp/1nio.pdb CHAIN A.</i></p>
+
+<h3><a name="fixed_xyzin" id="fixed_xyzin"></a>FIXED_XYZIN &lt;pdb filename IDEN sequence identity &gt</h3>
+<p>The FIXED_XYZIN keyword allows the user to input a fixed component structure in the MR search. This
+component should already have the correct orientation. This keyword can be used multiple times if there
+are more than one fixed components known. The sequence identity for each component against its corresponding
+section of the target sequence is required. The full path to the PDB file should also be specified. Fixed 
+components are passed to both Phaser and Molrep.<br>
+<i>Example: FIXED_XYZIN /tmp/fixed.pdb IDEN 0.43</i></p>
+
+<h3><a name="ignore" id="ignore"></a>IGNORE &lt;pdb id 1&gt; &lt;pdb id 2&gt;...</h3>
+<p>A list of PDB ID codes to be ignored in the homologue search. Used for development purposes.</p>
+
+<h3><a name="mr_programs" id="mr_programs"></a>MRPROGRAMS [ Molrep | Phaser ]</h3>
+<p>Names of Molecular Replacement programs to try search models in. Options are Molrep, Phaser or both.
+If both are selected Molrep will be used first.<br>
+[Default Molrep Phaser]</p>
+
+<h3><a name="ma_program" id="ma_program"></a>MAPROGRAM [ MAFFT | PROBCONS | T_COFFEE | CLUSTALW ]</h3>
+<p>Name of the sequence alignment program to be used to do multiple alignment of the template structure
+sequences and the target sequence. In good cases, these programs should give the same result. In
+more marginal cases (e.g. small number of sequences, low sequence identity) they may give very
+different results.<br>
+[Default MAFFT]</p>
+
+<h3><a name="mdlunmod" id="mdlunmod"></a>MDLUNMOD [ True | False ]</h3>
+<p>If true unmodified search models will be passed to the MR stage. This can be useful when a user is providing 
+their own pre-prepared search models via the LOCALFILE option.<br> 
+[Default False]</p>
+
+<h3><a name="mdldpdbclp" id="mdldpdbclp"></a>MDLDPDBCLP [ True | False ]</h3>
+<p>If true models will be prepared for MR using the PDBclip method. With this method, the waters and hydrogens 
+are removed from the coordinate file and the most probable side-chain confirmations are selected. If chain ID's
+are missing they are added.<br> 
+[Default False]</p>
+
+<h3><a name="mdlplyala" id="mdlplyala"></a>MDLPLYALA [ True | False ]</h3>
+<p>If true Polyalanine models will be prepared for the MR step. All side-chains are removed from the PDB files.<br> 
+[Default False]</p>
+
+<h3><a name="mdlmolrep" id="mdlmolrep"></a>MDLMOLREP [ True | False ]</h3>
+<p>If true models will be prepared using Molrep. Molrep does a sequence alignment of the target sequence and 
+the template sequence and prunes the template structure file accordingly.<br> 
+[Default True]</p>
+
+<h3><a name="mdlchainsaw" id="mdlchainsaw"></a>MDLCHAINSAW [ True | False ]</h3>
+<p>If true models will be prepared using Chainsaw. Chainsaw takes in a sequence alignment of the target sequence and 
+the template sequence and prunes the template structure file accordingly.<br> 
+[Default True]</p>
+
+<h3><a name="mdlsculptor" id="mdlsculptor"></a>MDLSCULPTOR [ True | False ]</h3>
+<p>If true models will be prepared using Phaser.Sculptor. Sculptor takes in a sequence alignment of the target sequence and 
+the template sequence and prunes the template structure file accordingly.<br> 
+[Default True]</p>
+
+<h3><a name="use_ssm" id="use_ssm"></a>SSMSEARCH [ True | False ]</h3>
+<p>If true MrBUMP will use the top match from the sequence-based search in a secondary structure-based 
+search to find more potential homologues. Set to false by default. Requires perl and the perl SOAP-Lite
+module to be installed.<br>
+[Default False]</p>
+
+<h3><a name="use_scop" id="use_scop"></a>SCOPSEARCH [ True | False ]</h3>
+<p>If true MrBUMP will use the SCOP database to look for individual domains in the template structures
+found in the sequence-based and secondary structure-based searches.<br>
+[Default True]</p>
+
+<h3><a name="use_pqs" id="use_pqs"></a>PQSSEARCH [ True | False ]</h3>
+<p>If true MrBUMP will use the PQS service at the EBI to find more multimers based on the template 
+structures found in the sequence-based and secondary structure-based searches.<br>
+[Default True]</p>
+
+<h3><a name="dofasta" id="dofasta"></a>DOFASTA [ True | False ]</h3>
+<p>If true, a FASTA search will be carried out to search for the possible template models. A user can turn this
+off and give specific chain IDs to be used as the template models. Note that at least one chain must be specified
+using the INCLUDE keyword if DOFASTA is set to False. Alterntaively, a local file can be specified with the 
+LOCALFILE keyword. Requires that fasta34 or fasta35 be installed on the local machine. These are available from 
+the EBI website: <a href="http://www.ebi.ac.uk/fasta">http://www.ebi.ac.uk/fasta</a>.<br>
+[Default True]</p>
+
+<h3><a name="dohhpred" id="dohhpred"></a>DOHHPRED [ True | False ]</h3>
+<p>If true a sequence-based search for template models will be carried out using HHblits from the HHsuite. Using this search 
+mechanism may give different results from the standard fasta search and produce alternative search models for MR. Note that this
+requires that the user has installed the hhsuite separately along with it's associated pdb sequence database. If this keyword is
+set to true the user must also specify the path to the hhsuite pdb database file using the <a href="#hhdbpdb"><b>HHDBpdb</b></a> keyword. In addition the
+HHLIB environment variable must be set to point to the hhsuite "lib/hh" directory (see hhsuite setup instructions for details).
+The HHsuite can be downloaded from: <a href="http://toolkit.tuebingen.mpg.de/hhpred">http://toolkit.tuebingen.mpg.de/hhpred</a>.<br>
+[Default False]</p>
+
+<h3><a name="hhdbpdb" id="hhdbpdb"></a>HHDBPDB &lt;directory/db_basename&gt;</h3>
+<p>Use this keyword to specify a directory where MrBUMP can find the HHsuite PDB sequence database files. 
+This keyword is required if the user wishes to use the hhpred suite to search for template models. It is only
+needed if the <a href="#dohhpred"><b>DOHHpred</b></a> keyword is set to "True". It should give the full path to the hhsuite database directory
+followed by the base name for the pdb sequence file e.g. "<i>HHDBPDB /usr/local/hhsuite/database/pdb70_06Oct12</i>"<br>
+[Default Not set]</p>
+
+<h3><a name="hhscore" id="hhscore"></a>HHSCORE [ True | False ]</h3>
+<p>If DOHHPRED is true this keyword, when true, instructs MrBUMP to use the alignments generated in the HHblits sequence search for templates
+as the alignments used to score the template models (only for templates found by the HHblits search). In addition, both Sculptor and Chainsaw
+will be given the HHblits alignments for search model preparation. If set to false the alignments generated using the selected multiple alignment 
+program (e.g. MAFFT) will be used for the scoring of template models.<br>  
+[Default True]</p>
+
+<!-- <h3><a name="fasta_local" id="fasta_local"></a>FASTALOCAL [ True | False ]</h3>
+<p>If true, the fasta sequence-based search will be carried out locally rather than via the OCA web-interface.
+This requires that the user have fasta34 installed on there system. This can be downloaded from the EBI
+site <a href="ftp://ftp.ebi.ac.uk/pub/software/unix/fasta/">here</a>.<br>
+[Default True]</p> -->
+
+<h3><a name="pack" id="pack"></a>PACK &lt;number&gt;</h3>
+<p>The number of clashes that Phaser will tolerate.<br>
+[Default 5]</p>
+
+<h3><a name="pjobs" id="pjobs"></a>PJOBS &lt;number&gt;</h3>
+<p>The number of processing cores that Phaser will will use in parallel. Note that when the CLUSTER keyword is set to True (molecular replacement jobs submitted to a cluster queue) PJOBS is always set to 1. <br>
+[Default 2]</p>
+
+<h3><a name="ncyc" id="ncyc"></a>NCYC &lt;number&gt;</h3>
+<p>The number of cycles of restrained refinement to use in Refmac.<br>
+[Default 30]</p>
+
+<h3><a name="reftwin" id="update"></a>REFTWIN [ True | False ]</h3>
+<p>Set this keyword to true if the indications are that your data is twinned. The "TWIN" keyword will be used in 
+Refmac which will determine and account for the twinning in refinement. Only valid for Refmac version 5.5 or later.<br> 
+[Default False]</p>
+
+<h3><a name="update" id="update"></a>UPDATE [ True | False ]</h3>
+<p>If true, the search database files will be tested at the start of the job to see if they are out of date
+with respect to those available from the EBI website. If they are found to be out of date, the latest version
+will be downloaded.<br> 
+[Default True]</p>
+
+<h3><a name="onlymodels" id="onlymodels"></a>ONLYMODELS [ True | False ]</h3>
+<p>If true, only the search models will be generated. The program will exit before any Molecular Replacement
+is carried out.<br>  
+[Default False]</p>
+
+<h3><a name="tryall" id="tryall"></a>TRYALL [ True | False ]</h3>
+<p>If true, the program will try all of the search models in molecular replacement. If false the program will
+exit when it finds the first solution.<br> 
+[Default False]</p>
+
+<h3><a name="useacorn" id="useacorn"></a>USEACORN [ True | False ]</h3>
+<p>If true, program will put each positioned and refined search model through the program 
+<a href="acorn.html">Acorn</a> to try and improve the phases. The target data must also be
+at least 1.7 A. Acorn is unlikely to help at lower resolutions, but this resolution limit can
+be changed with the <a href="#acornres"><b>ACORnres</b></a> keyword.</p>
+<p>MrBUMP prints out the correlation coefficient for medium E values from Acorn. An increase
+in these correlation coefficients over Acorn cycles is a good sign that you have the correct
+solution (the absolute value of the CC may be low, because these are not the strongest E values).
+The columns ECOUT, PHIOUT and WTOUT from Acorn can be used to generate high quality maps to
+help model re-building.
+<br>
+[Default False]</p>
+
+<h3><a name="acornres" id="acornres"></a>ACORNRES &lt;resolution&gt;</h3>
+<p>Resolution limit for applying the Acorn phase improvement procedure.<br>
+[Default 1.7]</p>
+
+<h3><a name="bucc" id="bucc"></a>BUCCANEER [ True | False ]</h3>
+<p>Perform automated model building using Buccaneer.<br>
+[Default True]</p>
+
+<h3><a name="bcyc" id="bcyc"></a>BCYC  &lt;number&gt;</h3>
+<p>Number of autobuild-refine cycles to carry out in Buccaneer.<br>
+[Default 5]</p>
+
+<h3><a name="arpw" id="arpw"></a>ARPWARP [ True | False ]</h3>
+<p>Perform automated model building using ARP/wARP.<br>
+[Default False]</p>
+
+<h3><a name="acyc" id="acyc"></a>ACYC  &lt;number&gt;</h3>
+<p>Number of autobuild-refine cycles to carry out in ARP/wARP.<br>
+[Default 5]</p>
+
+<h3><a name="shel" id="shel"></a>SHELXE [ True | False ]</h3>
+<p>Perform phase improvement and main-chain tracint using SHELXE.<br>
+[Default False]</p>
+
+<h3><a name="scyc" id="scyc"></a>SCYC  &lt;number&gt;</h3>
+<p>Number of auto-tracing cycles to perform in SHELXE.<br>
+[Default 15]</p>
+
+<h3><a name="enant" id="enant"></a>ENANT [ True | False ]</h3>
+<p>If true, program will do molecular replacement for all search models in the enantiomorphic spacegroup, as
+well as in the HKLIN spacegroup, if an enantiomorph exists for the target data spacegroup. MrBUMP will
+identify the better spacegroup for each model. For good MR solutions, the correct spacegroup should
+be identified. For wrong or marginal solutions, it may be harder to distinguish the correct spacegroup.<br>
+[Default False]</p>
+
+<!--<h3><a name="htmlout" id="htmlout"></a>HTMLOUT [ True | False ]</h3>
+<p>If true, the program will write out a html format summary of the results as they are generated. Requires
+that gnuplot is installed to generate plots.<br> 
+[Default False]</p>-->
+
+<h3><a name="pdb_dir" id="pdb_dir"></a>PDBDIR &lt;directory&gt;</h3>
+<p>Use this keyword to specify a directory where MrBUMP can search for the PDB files it needs for
+generating search models. This can help reduce the number of downloads from the PDB databases on
+the internet. Mainly useful for users with slow connections and cases where a user wishes to run
+several jobs requiring similar search models. PDB files should take the form &lt;PDB ID&gt;.pdb
+(e.g. 1nio.pdb). Also, the full path to the directory should be specified.<br>
+[Default Not set]</p>
+
+<h3><a name="pdblocal" id="pdblocal"></a>PDBLOCAL &lt;directory&gt;</h3>
+<p>If you have a local mirror of the PDB available through the file system, you can instruct MrBUMP
+to access it for the PDB files that it needs using this keyword. Give it the full path to the 
+location on this of the top level directory for the PDB database. Note that the PDB mirror must have
+the standard file hierarchy for the PDB database. The files should be stored in directories named
+according to the middle two characters in the PDB ID code. The files should also be gzipped and
+stored in the format <i>pdb&lt;PDB ID&gt;.ent.gz</i>. For example, the file for PDB code 1nio 
+should be <i>&lt;path to PDB directory&gt;/ni/pdb1nio.ent.gz</i>.<br> 
+[Default Not set]</p>
+
+<h3><a name="cluster" id="cluster"></a>CLUSTER [ True | False ]</h3>
+<p>If true, the model preparation and molecular replacement jobs will be farmed out to a cluster. Currently 
+only works for Sun Grid Engine enabled clusters.<br> 
+[Default False]</p>
+
+<h3><a name="qtype" id="qtype"></a>QTYPE [ SGE | PBS ]</h3>
+<p>For use in combination with the CLUSTER keyword. This is the type of batch system that jobs will be submitted to.
+Currently, the Sun Grid Engine (SGE) and Portable Batch System (PBS) systems are supported. <br> 
+[Default SGE]</p>
+
+<h3><a name="qsize" id="qsize"></a>QSIZE &lt;number of cluster processes&gt;</h3>
+<p>This is the maximum number of jobs allowed to be submitted to a cluster system at any one time. Set this value if you 
+want to prevent MrBUMP from overloading an open cluster system.<br>
+[Default Unlimited]</p>
+
+<h3><a name="qsubcom" id="qubcom"></a>QSUBCOM &lt;cluster submission command&gt;</h3>
+<p>Cluster submission command. Arguments to the cluster submission command can also be provided through this keyword. e.g.
+<i>QSUB qsub -l vmem=500MB,walltime=02:00:00</i>.<br>
+[Default qsub]</p>
+
+<h3><a name="clean" id="clean"></a>CLEAN [ True | False ]</h3>
+<p>If true, the program will remove the files generated for models that were marked as "Failed" solutions. Also,
+any files in the scratch area will be removed. This is to cut down on disk space usage.<br> 
+[Default False]</p>
+
+<h3><a name="lite" id="lite"></a>LITE [ True | False ]</h3>
+<p>If true, the program will delete surplus files as it progresses. These include both Molrep and Phaser output files, scratch
+files, log files, downloaded PDB files and sequence alignment files. This reduces considerably the disk footprint of a MrBUMP 
+job. For Phaser and Molrep (on unix systems) a shell script is created to allow for the re-running of the jobs should further 
+investigation be needed.<br>
+[Default False]</p>
+
+<h3><a name="pickle" id="pickle"></a>PICKLE [ True | False ]</h3>
+<p>Use the python 'pickle' function to output the main data structures into a pickle file. Mainly useful for two-step
+runs of MrBUMP - 1. Model search, 2. Molecular Replacement using the previous model generation directory.<br>
+[Default True]</p>
+
+<h3><a name="check" id="check"></a>CHECK [ True | False ]</h3>
+<p>This keyword, if set to True, enables an internet connectivity check at the outset of a job. The test involves
+connecting to each of the PDB file servers specified and attempting to download a PDB file. If all of the download
+attempts fail, the process will report an error and exit the program. This is a possible indication of a network
+connection problem or the need for the user to set a proxy server. It can be disabled in situations where PDB files
+are sourced from a local folder and a network connection is not required. When set to True, this option also 
+invokes a PDB file server connecting time script. This script tests how long it takes to retrieve a PDB file from
+each of the commonly used PDB file servers (UK, USA and JAPAN). The quickest one is then used to retrieve files
+at later stages in the program.<br> 
+[Default True]</p>
+
+<h3><a name="debug" id="debug"></a>DEBUG [ True | False ]</h3>
+<p>If true MrBUMP will give a more verbose output. Also, temporary directories will not be 
+deleted at the end of the job. For Phaser/Molrep and Refmac jobs, shell scripts to re-run these jobs on their own
+will be created in the mr or refine directories for the particular search model (not on Windows).<br>
+[Default False]</p>
+
+<h3><a name="proxyserver" id="proxyserver"></a>PROXYSERVER &lt;http_proxy server address&gt;</h3>
+<p>If you need to use a proxy server to access the internet you should set it using PROXYSERVER. MrBUMP
+uses several on-line services and databases (e.g. the PDB) and thus requires internet access. It is possible to
+run MrBUMP without internet access by turning off the FASTA, SSM and PQS searches and using locally stored PDB files
+as input search models. The proxy server is set in the environment in which MrBUMP is running. An example of
+a proxy server would be "http://proxy.mysite.com:8080/".<br> 
+[Default not set]</p>
+
+<h3><a name="pkeyword" id="pkeyword"></a>PKEYWORD &lt;Phaser keyword and value&gt;</h3>
+<p>This keyword allows for the passing in of any Phaser keywords to the underlying call to Phaser. For example "PKEYWORD MACMR 
+PROTOCOL OFF" will turn the refinement option off for molecular replacement in Phaser. For a list of potential keywords please
+see the <a href="http://www.phaser.cimr.cam.ac.uk/index.php/Phaser_Crystallographic_Software">Phaser wiki documentation</a> page.<br>
+[Default not set]</p>
+
+</p><h3>END</h3>
+End keyworded input.
+
+
+<h2> EXAMPLE KEYWORD INPUT FILES</h2>
+
+<p>Simple example with minimal input using default values:
+</p>
+
+<div>
+<table bgcolor=#FFFF99>
+<td> 
+<pre>
+LABIN F=F SIGF=SIGF FreeR_flag=FreeR_flag
+JOBID MY_JOB_1
+</pre>
+</td>
+</table>
+</div>
+
+<p>A more elaborate example:
+</p>
+
+<div>
+<table bgcolor=#FFFF99>
+<td> 
+<pre>
+LABIN F=FP SIGF=SIGFP FreeR_flag=FREE
+JOBID MY_JOB_2
+MRNUM 10
+ENSEMNUM 5
+IGNORE 1smw 1smm 1smu
+MRPROGRAM molrep phaser
+MAPROGRAM mafft
+DEBUG True
+CLUSTER False 
+SCOPSEARCH True
+SSMSEARCH True
+PQSSEARCH True
+MDLM True
+MDLC True
+MDLS True
+MDLP False
+USEACORN True
+END
+</pre>
+</td>
+</table>
+</div><br>
+
+<h2> PROGRAM OUTPUT</h2>
+
+Once a job has been started a user may view the current status of the job via the output log file
+or via the results.html web page which is created in the directory
+&lt;ROOTDIR&gt;/search_&lt;JOBID&gt;/results and is updated after each stage in the process. A set of search 
+models is first generated and these are fed to the MR/refinement stage in sequence where the ordering
+depends on the alignment score of the template sequence against the target sequence. If a suitable
+solution is found, i.e. a model that refines well, the job will terminate and the final results 
+will be displayed. The resulting refined PDB model and MTZ output from Refmac are made available to the user for 
+further model building.  
+
+<h2> AUTHORS</h2>
+
+Ronan Keegan, Daresbury Laboratory, UK <br>
+Martyn Winn, Daresbury Laboratory, UK <br>
+Vincent Fazio, Materials Science and Engineering, CSIRO, Australia <br>
+
+<h2>ACKNOWLEDGEMENTS</h2>
+
+<p>
+Norman Stein, Pryank Patel.
+</p>
+
+<h3>MrBUMP Program References</h3>
+
+<P>
+Any publication arising from use of MrBUMP should
+include the following reference:</P>
+<P>
+R.M.Keegan and M.D.Winn (2007) <em>Acta Cryst.</em> <b>D63</b>, 447-457
+</P>
+In addition, authors of specific programs should be referenced where
+applicable:
+
+<dl>
+<dt>CCP4
+<dd>Collaborative Computational Project, Number 4. (1994), &quot;The CCP4 Suite: Programs 
+for Protein Crystallography&quot;. <em>Acta Cryst.</em> <b>D50</b>, 760-763 
+<dt>FASTA
+<dd>W. R. Pearson and D. J. Lipman (1988), &quot;Improved Tools
+for Biological Sequence Analysis&quot;, <em>PNAS</em> <b>85</b>, 2444-2448
+<dt>SSM
+<dd>E.Krissinel and K.Henrick (2004), &quot;Secondary-structure matching (SSM), a new tool 
+for fast protein structure alignment in three dimensions&quot;
+<em>Acta Cryst.</em> <b>D60</b>, 2256-2268
+<dt>SCOP
+<dd>A.G.Murzin, S.E.Brenner, T.Hubbard & C.Chothia (1995), <em>J.Mol.Biol.</em>,
+<b>247</b>, 536-540
+<dt>MAFFT
+<dd>K. Katoh, K. Kuma, H. Toh and T. Miyata (2005)
+&quot;MAFFT version 5: improvement in accuracy of multiple sequence alignment&quot; 
+<em>Nucleic Acids Res.</em> <b>33</b>, 511-518
+<dt>PROBCONS
+<dd>Do, C.B., Mahabhashyam, M.S.P., Brudno, M., and Batzoglou, S. (2005)
+&quot;PROBCONS: Probabilistic Consistency-based Multiple Sequence Alignment.&quot;
+<em>Genome Research</em> <b>15</b>, 330-340
+<dt>T_COFFEE
+<dd>C.Notredame, D. Higgins, J. Heringa (2000)
+&quot;T-Coffee: A novel method for multiple sequence alignments.&quot;
+<em>Journal of Molecular Biology</em> <b>302</b>, 205-217
+<dt>CLUSTALW
+<dd>Chenna, Ramu, Sugawara, Hideaki, Koike,Tadashi, Lopez, Rodrigo, 
+Gibson, Toby J, Higgins, Desmond G, Thompson, Julie D. (2003)
+&quot;Multiple sequence alignment with the Clustal series of programs&quot;
+<em>Nucleic Acids Res</em> <b>31</b>, 3497-500
+<dt>CHAINSAW
+<dd>N.D.Stein (2006) <em>in preparation</em>
+<dt>MOLREP
+<dd>A.A.Vagin & A.Teplyakov (1997) <em>J. Appl. Cryst.</em> <b>30</b>, 1022-1025
+<dt>PHASER
+<dd>McCoy, A.J., Grosse-Kunstleve, R.W., Storoni, L.C. & Read, R.J. (2005). 
+&quot;Likelihood-enhanced fast translation functions&quot; <i>Acta Cryst</i> <b>D61</b>, 458-464
+<dt>REFMAC
+<dd>G.N. Murshudov, A.A.Vagin and E.J.Dodson, (1997) &quot;Refinement of Macromolecular 
+Structures by the Maximum-Likelihood Method&quot; <em>Acta Cryst.</em>
+<b>D53</b>, 240-255
+<dt>PISA
+<dd>E.Krissinel and K.Henrick (2005), &quot;Detection of Protein Assemblies in Crystals&quot;,
+edited by M.R. Berthold et.al, CompLife 2005, LNBI 3695,
+pp. 163-174. Springer-Verlag Berlin Heidelberg
+<dt>ACORN
+<dd>Yao Jia-xing, Woolfson,M.M., Wilson,K.S. and Dodson,E.J. (2005) <em>Acta. Cryst.</em> <b>D61</b>, 1465-1475 
+</dl>
+
+</body></html>

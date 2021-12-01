@@ -1,0 +1,427 @@
+<html>
+<head>
+<title>CCP4 Program Suite</title>
+</head>
+
+<body>
+<!-- ::INDEX_INFO::MTZ2CIF::Supported::MTZ manipulations / conversions::produce mmCIF structure factor file suitable for deposition:::::::: -->
+
+<h1>MTZ2CIF (CCP4: Supported Program)</h1>
+<h2>NAME</h2>
+<p><b>mtz2cif</b>
+- produce an mmCIF reflection file suitable for deposition.
+This may contain amplitudes, intensities and/or differences.</p>
+
+<h2>SYNOPSIS</h2>
+<p><b>mtz2cif hklin</b>
+<i>foo_in.mtz</i>
+<b>hklout</b>
+<i>foo_out.cif</i>
+<br />
+[<a href="#keywords">Keyworded input</a>]</p>
+
+<h2>DESCRIPTION</h2>
+
+<p>MTZ2CIF reads an MTZ file (assigned to HKLIN) and produces an
+mmCIF file (assigned to HKLOUT) in a form suitable for deposition
+with the PDB. The user must specify which quantities are to be
+exported via the LABIN keyword; cell and symmetry information is
+taken directly from the MTZ file.</p>
+
+<p>It is also possible to export multiple MTZ datasets to a
+single mmCIF file by specifying multiple LABIN lines.</p>
+
+<h2><a name="keywords"></a>KEYWORDED INPUT</h2>
+
+<p>The allowed keywords are:</p>
+
+<blockquote>
+<a href="#datablock">DATABLOCK</a>,
+<a href="#end">END</a>,
+<a href="#exclude">EXCLUDE</a>,
+<a href="#freeval">FREEVAL</a>,
+<a href="#labin">LABIN</a>,
+<a href="#mode">MODE</a>,
+<a href="#resolution">RESOLUTION</a>
+</blockquote>
+
+<p>Compulsory input keywords are DATABLOCK and LABIN.</p>
+
+<a name="datablock"></a>
+<h3>DATABLOCK &lt;data block header&gt;</h3>
+
+<p>(Compulsory)</p>
+
+<p>&lt;data block header&gt; is a maximum of 80 characters long,
+and must begin with the characters "data_" (any mixture of upper
+and lowercase thereafter).</p>
+
+<a name="end"></a>
+<h3>END</h3>
+
+<p>End input.</p>
+
+<a name="exclude"></a>
+<h3>EXCLUDE &lt;keyword&gt; &lt;value&gt; ...</h3>
+
+<p>Only one keyword is allowed for EXCLUDE:</p>
+
+<dl>
+<dt>SIGP &lt;value&gt;</dt>
+<dd>Reflections are excluded if F &lt; &lt;value&gt;*sigma(F)
+</dl>
+
+<p>Reflections for which F &lt; &lt;value&gt;*sigma(F), and which satisfy
+the resolution limits (if given), will be written with _refln.status '&lt;'.
+The value of _reflns.number_obs excludes all reflections that do not
+satisfy the condition on sigma(F).</b></p>
+
+<a name="freeval"></a>
+<h3>FREEVAL &lt;num&gt;</h3>
+<p>The reflections with FreeRflag = &lt;num&gt; are treated as the
+freeR set: the  default is 0 if FREE is assigned. The FREE column
+must be assigned with LABIN.</p>
+
+<h3><a name="labin"></a>LABIN &lt;program label&gt;=&lt;file label&gt;</h3>
+
+<p> The output is controlled by the labels specified here:</p>
+
+<p>Input labels accepted are:</p>
+<blockquote><table>
+<tr>
+<td>H, K, L</td><td>Indices</td>
+</tr>
+<tr>
+<td>FP, SIGFP</td><td>F and Sigma for native</td>
+</tr>
+<tr>
+<td>FC, PHIC</td><td>F and Phase from model</td>
+</tr>
+<tr>
+<td>DP, SIGDP</td><td>Anomalous difference and Sigma</td>
+</tr>
+<tr>
+<td>I, SIGI</td><td>I and Sigma</td>
+</tr>
+<tr>
+<td>F(+), SIGF(+)</td><td>F+ and Sigma(F+)</td>
+</tr>
+<tr>
+<td>F(-), SIGF(-)</td><td>F- and Sigma(F-)  used for anomalous output</td>
+</tr>
+<tr>
+<td>I(+), SIGI(+)</td><td>I+ and Sigma(I+)</td>
+</tr>
+<tr>
+<td>I(-), SIGI(-)</td><td>I- and Sigma(I-)</td>
+</tr>
+<tr>
+<td>W, FOM</td><td>Weights</td>
+</tr>
+<tr>
+<td>PHIB</td><td>Best phase (experimental)</td>
+</tr>
+<tr>
+<td>HLA,HLB,HLC,HLD</td><td>Hendrickson-Lattman coefficients</td>
+</tr>
+<tr>
+<td>FREE</td><td>FreeR flag</td>
+</tr>
+</table></blockquote>
+
+<p>To output multiple datasets from a single MTZ file to a single
+CIF, use multiple LABIN lines (one per dataset). In CIF, a dataset
+corresponds to a unique crystal/wavelength pair. The program
+assumes that the crystal and dataset information is correctly
+set up in the MTZ file - see the MTZ documentation for more
+details about crystals and datasets in MTZ files.</p>
+
+<p>There are restrictions on the use of multiple datasets:</p>
+
+<ol>
+<li>Each LABIN line must have the same set of program labels (above)
+    for each dataset, with the exception of FREE (which must be
+    specified no more than once, and can only appear on the first
+    LABIN line).</li>
+<li>All columns selected on a single LABIN line must correspond
+    to the same crystal and dataset in the MTZ file.</li>
+</ol>
+
+<p><b>Note that multiple datasets involves writing out non-standard
+CIF tokens - these need to be agreed with the RCSB and EBI</b>. If
+only a single dataset is written then the resulting CIF should conform
+to the existing standards.</p>
+
+<a name="mode"></a>
+<h3>MODE PDBX | CCP4</h3>
+
+<p>Default: PDBX</p>
+
+<p>Specify the _refln.* token set used to write out the reflections
+in the output CIF, for anomalous data.</p>
+
+<dl>
+<dt>PDBX</dt>
+<dd>Use the PDBX exchange dictionary tokens.</dd>
+<dt>CCP4</dt>
+<dd>Use the CCP4 exchange dictionary tokens.</dd>
+</dl>
+
+<p>The CCP4 exchange dictionary corresponds to the token set for
+the old MTZ2VARIOUS CIF output.</p>
+
+<a name="resolution"></a>
+<h3>RESOLUTION &lt;resmin&gt; &lt;resmax&gt;</h3>
+
+<p>Specify minimum (&lt;resmin&gt;) and maximum (&lt;resmax&gt;)
+resolution range in Angstroms. Note that reflections outside
+these limits are still output but are flagged as 'l' (below
+low resolution limit) or 'h' (above high resolution).</p>
+
+<p>The limits will be written to the CIF as the values of
+<tt>_reflns.d_resolution_high</tt> and
+<tt>_reflns.d_resolution_low</tt>.</p>
+
+<h3>Notes on generating mmCIF for deposition</h3>
+
+<a name="reflection_status"></a>
+<h4>1. Reflection Status</h4>
+
+<p>All reflections in the MTZ input file will be output to the CIF
+file. However, there are ways to flag certain reflections with the
+data type _refln.status. Observed reflections will be flagged with
+'o'. Unobserved reflections, <em>i.e.</em> those flagged as missing
+in all the relevant amplitude and/or intensity columns, will be
+flagged as 'x'; these reflections will not be added to
+_reflns.number_obs.</p>
+
+<p>The 'free' reflections will be flagged as 'f'. The keyword FREEVAL
+can be used to indicate this set. Systematically absent reflections
+are flagged with '-'. Note that 'free' reflections are counted as
+'observed' when outputting the total number of observed reflections to
+_reflns.number_obs.</p>
+
+<a name="resolution_cutoffs"></a>
+<h4>2. Use of resolution cut-offs and sigma exclusion</h4>
+
+<p>Note that the translation of the RESOLUTION and EXCLUDE SIGP
+conditions to _refln.status values does not imply that the the use of
+these conditions is good crystallographic practice. Be prepared to
+justify why you have excluded any data from your final
+refinement.</p>
+
+<a name="missing_values"></a>
+<h4>3. Missing values</h4>
+
+<p>The mmCIF character '?' is used to denote missing values.</p>
+
+<a name="anomalous_data"></a>
+<h4>4. Treatment of anomalous data in MTZ2CIF</h4>
+
+<p>The output of anomalous data from MTZ to CIF is still not completely
+resolved. The OUTPUT CIF option in older versions of the
+<a href="mtz2various.html">MTZ2VARIOUS</a> program did not have
+the CIF tokens corresponding to F(+)/F(+) or anomalous difference, and
+so anomalous data was converted to explicit hkl/-h-k-l pairs with the
+corresponding F(+) or F(-) value written to <tt>_refln.F_meas_au</tt>
+as appropriate.</p>
+
+<p>With the use of explicit tokens for anomalous data this approach is
+not necessary - only hkl needs to be written. However note that there is
+some ambiguity if only mean FP is supplied (i.e. without anomalous
+differences or supporting F(+) and F(-) pairs). In this case MTZ2CIF
+will only write one reflection to the CIF per reflection in the MTZ
+file.</p>
+
+<p>Note also that while the <a href="cif2mtz.html">CIF2MTZ</a> program
+can recognise the anomalous tokens (as of CCP4 v6.0), other programs
+such as SFCHECK may not deal correctly with the anomalous data in
+the CIF</p>
+
+<a name="multiple_crystals_and_wavelengths"></a>
+<h4>5. Multiple crystals and wavelengths</h4>
+
+<p>It is possible with MTZ2CIF to write multiple MTZ crystals and
+datasets from a single MTZ file, into a single CIF. This is done by
+specifying multiple <a href="#labin">LABIN</a> lines (one for each
+crystal).</p>
+
+<p>Each LABIN line will correspond to a unique <tt>_refln.crystal_id</tt>
+and <tt>_refln.wavelength_id</tt> pair in the output reflection list.
+Additional non-standard CIF tokens are written in the following CIF
+blocks in order to correctly relate the contents of the block to the
+crystals and wavelengths that have been output:</p>
+
+<ol>
+<li><tt>CELL</tt> block: <tt>_cell.CCP4_wavelength_id</tt> and
+    <tt>_cell.CCP4_crystal_id</tt> relate the cell parameters to
+    a particular crystal_id in the <tt>_REFLN</tt> block (nb
+    the wavelength_id is probably redundant).
+<li><tt>REFLNS</tt> block: <tt>_reflns.CCP4_wavelength_id</tt> and
+    <tt>_reflns.CCP4_crystal_id</tt> relate the statistics to a
+    a particular crystal_id and wavelength_id pair in the
+    <tt>REFLN</tt> block. 
+<li><tt>DIFFRN_RADIATION_WAVELENGTH</tt> block:
+    <tt>_diffrn_radiation_wavelength.CCP4_crystal_id</tt> is
+    needed to uniquely identify the wavelength to which this
+    refers.   
+</ol>
+
+<p>Note that at present neither CIF2MTZ nor SFCHECK can deal with
+multiple crystals and datasets.</p>
+
+<a name="cif_data_items"></a>
+<h4>6. CIF Data Items</h4>
+
+<p>Below is a list of the items output to the CIF file:</p>
+
+<pre>
+ _entry.id
+
+ _audit.revision_id
+ _audit.creation_date
+ _audit.creation_method
+ _audit.update_record
+
+ _cell.entry_id
+ <font color="red">_cell.CCP4_wavelength_id</font> (only for multiple datasets)
+ <font color="red">_cell.CCP4_crystal_id</font> (only for multiple datasets)
+ _cell.length_a
+ _cell.length_b
+ _cell.length_c
+ _cell.angle_alpha
+ _cell.angle_beta
+ _cell.angle_gamma
+
+ _symmetry.entry_id
+ _symmetry.Int_Tables_number
+ _symmetry.space_group_name_H-M
+ _symmetry_equiv.id
+ _symmetry_equiv.pos_as_xyz
+
+ _reflns.entry_id
+ <font color="red">_reflns.CCP4_wavelength_id</font> (only for multiple datasets)
+ <font color="red">_reflns.CCP4_crystal_id</font> (only for multiple datasets)
+ _reflns.d_resolution_high
+ _reflns.d_resolution_low
+ _reflns.limit_h_max
+ _reflns.limit_h_min
+ _reflns.limit_k_max
+ _reflns.limit_k_min
+ _reflns.limit_l_max
+ _reflns.limit_l_min
+ _reflns.number_all
+ _reflns.number_obs
+
+ <font color="red">_diffrn_radiation_wavelength.CCP4_crystal_id</font> (only for multiple datasets)
+ _diffrn_radiation_wavelength.id
+ _exptl_crystal.id
+ _reflns_scale.group_code
+</pre>
+
+<p>The following items are one per reflection:</p>
+
+<pre>
+ _refln.wavelength_id     Always written
+ _refln.crystal_id        Always written
+ _refln.scale_group_code  Always written
+ _refln.index_h           Always written
+ _refln.index_k           Always written
+ _refln.index_l           Always written
+ _refln.status            Always written
+ _refln.F_meas_au         FP
+ _refln.F_meas_sigma_au   SIGFP
+ _refln.F_calc            FC
+ _refln.phase_calc        PHIC
+ _refln.phase_meas        PHIB
+ _refln.fom               FOM
+ _refln.intensity_meas    I
+ _refln.intensity_sigma   SIGI
+ _refln.ebi_F_xplor_bulk_solvent_calc        FPART_BULK_S
+ _refln.ebi_phase_xplor_bulk_solvent_calc    PHIPART_BULK_S
+</pre>
+
+<p>The following items are also one per reflection, the exact
+token will depend on which set of tokens (specified by the
+<a href="#mode">MODE</a> keyword) are being written:</p>
+
+<pre>
+PDBX                              CCP4                                  Label
+-------------------------------------------------------------------------------
+_refln.pdbx_HL_A_iso              _refln.ccp4_SAD_HL_A_iso              HLA
+_refln.pdbx_HL_B_iso              _refln.ccp4_SAD_HL_B_iso              HLB
+_refln.pdbx_HL_C_iso              _refln.ccp4_SAD_HL_C_iso              HLC
+_refln.pdbx_HL_D_iso              _refln.ccp4_SAD_HL_D_iso              HLD
+_refln.pdbx_F_meas_plus           _refln.ccp4_SAD_F_meas_plus_au        F(+)
+_refln.pdbx_F_meas_plus_sigma     _refln.ccp4_SAD_F_meas_plus_sigma_au  SIGF(+)
+_refln.pdbx_F_meas_minus          _refln.ccp4_SAD_F_meas_minus_au       F(-)
+_refln.pdbx_F_meas_minus_sigma    _refln.ccp4_SAD_F_meas_minus_sigma_au SIGF(-)
+_refln.pdbx_anom_difference       _refln.ccp4_SAD_phase_anom            DP
+_refln.pdbx_anom_difference_sigma _refln.ccp4_SAD_phase_anom_sigma      SIGDP
+_refln.pdbx_I_plus                _refln.ccp4_I_plus                    I(+)
+_refln.pdbx_I_plus_sigma          _refln.ccp4_I_plus_sigma              SIGI(+)
+_refln.pdbx_I_plus_sigma          _refln.ccp4_I_minus                   I(-)
+_refln.pdbx_I_minus_sigma         _refln.ccp4_I_minus_sigma             SIGI(-)
+</pre>
+
+<h2>KNOWN BUGS</h2>
+
+<p><em>2/5/2006</em> The CCP4 tokens are not recognised by CIF2MTZ; neither
+the CCP4 nor the PDBX tokens are recognised by SFCHECK.</p>
+
+<h2>EXAMPLES</h2>
+
+<p>Example with a single wavelength:</p>
+
+<pre>
+mtz2cif hklin $CEXAM/tutorial/data/gere_MAD_nat.mtz \
+    hklout $CCP4_SCR/gere_MAD_nat.cif &lt;&lt;EOF
+labin FP=F_nat SIGFP=SIGF_nat \
+      F(+)=F_nat(+) SIGF(+)=SIGF_nat(+) \
+      F(-)=F_nat(-) SIGF(-)=SIGF_nat(-) \
+      FREE=FreeR_flag
+datablock data_gere_TEST
+mode PDBX # Default
+end
+EOF
+</pre>
+
+<p>Example with multiple crystals and wavelengths:</p>
+
+<pre>
+mtz2cif hklin $CEXAM/tutorial/data/gere_MAD_nat.mtz \
+    hklout $CCP4_SCR/gere_MAD_nat.cif &lt;&lt;EOF
+# Dataset 1
+labin FP=F_nat SIGFP=SIGF_nat \
+      F(+)=F_nat(+) SIGF(+)=SIGF_nat(+) \
+      F(-)=F_nat(-) SIGF(-)=SIGF_nat(-) \
+      FREE=FreeR_flag
+# Dataset 2
+labin FP=F_peak SIGFP=SIGF_peak \
+      F(+)=F_peak(+) SIGF(+)=SIGF_peak(+) \
+      F(-)=F_peak(-) SIGF(-)=SIGF_peak(-)
+# Dataset 3
+labin FP=F_infl SIGFP=SIGF_infl \
+      F(+)=F_infl(+) SIGF(+)=SIGF_infl(+) \
+      F(-)=F_infl(-) SIGF(-)=SIGF_infl(-)
+datablock data_gere_TEST
+mode PDBX # Default
+end
+EOF
+</pre>
+
+<p>A runnable unix example script is in $CEXAM/unix/runnable/</p>
+<ul>
+<li><a href="../examples/unix/runnable/mtz2cif.exam">mtz2cif.exam</a></li>
+</ul>
+
+<h2>SEE ALSO</h2>
+<p><a href="mtz2various.html">mtz2various</a>,
+<a href="cif2mtz.html">cif2mtz</a></p>
+
+<h2>AUTHOR</h2>
+<p>Peter Briggs, CCLRC Daresbury</p>
+
+
+</body>
+</html>

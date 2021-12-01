@@ -1,0 +1,79 @@
+#!/bin/sh
+# awa 970404 version 1.1
+#
+# Taken from the example in documentation in ccp4 v3.2
+#
+
+#
+# Combining several files with two CAD jobs and MTZUTILS
+#
+
+# If you try to sort a lot of input columns in CAD, 
+# it can get fatigued. MTZUTILS does no
+# t have the SORT step,
+# so this could save some time. 
+
+#
+# Part a) 
+#
+    cad     hklin1   ../mtz/swift/pa_new2.mtz 
+            hklin2  ../mtz/swift/new_cispt.mtz.mtz  
+            hklout  ../mtz/swift/deriv_nat_cad_12.mtz 
+           <<eof-cad
+    CELL  51.94 64.63 75.73 100.16 111.41 106.10
+    RESOLUTION OVERALL 100000.0  1.0
+    SYMMETRY 1
+    TITLE Combining Pt2, Pt4, Os2 and Shhg2 (native F_V4)
+
+    SCAL  FILE 1  10.0
+
+    LABIN  FILE 1  E1=F     E2=SIGF   
+    CTYP   FILE 1  E1=F     E2=Q
+    LABOUT FILE 1  E1=F_V4  E2=SIGF_V4
+
+    LABIN FILE 2  E1=FPT2 E2=SIGFPT2    E3=DELAPT2 E4=SGDLAPT2
+    CTYP  FILE 2  E1=F     E2=Q           E3=D        E4=Q
+
+    END
+    eof-cad
+
+#
+# Part b)
+#
+    cad     
+            hklin1  ../mtz/swift/pt4_1.mtz 
+            hklin2  ../mtz/swift/anisoscall_hi.mtz 
+            hklin3  ../mtz/swift/os2.mtz 
+            hklout  ../mtz/swift/deriv_nat_cad_345.mtz 
+           &lt;&lt;eof-cad
+    CELL  51.94 64.63 75.73 100.16 111.41 106.10
+    RESOLUTION OVERALL 100000.0  1.0
+    SYMMETRY 1
+    TITLE Combining Pt2, Pt4, Os2 and Shhg2 (native F_V4)
+
+    SCAL  FILE 1  10.0
+
+    LABIN FILE 1  E1=FPT4 E2=SIGFPT4    E3=DELAPT4 E4=SGDLAPT4
+    CTYP  FILE 1  E1=F     E2=Q           E3=D        E4=Q
+
+    LABIN FILE 2  E1=FSHGV2  E2=SGFSHGV2  E3=DELSHGV2 E4=SGDLSHGV2
+    CTYP  FILE 2  E1=F       E2=Q         E3=D        E4=Q
+
+    LABIN FILE 3  E1=FOS2   E2=SIGFOS2  E3=DELOS2 E4=SGDELOS2
+    CTYP  FILE 3  E1=F      E2=Q        E3=D      E4=Q
+
+    END
+    eof-cad
+
+#
+# Part c)
+#
+    mtzutils     
+            hklin1  ../mtz/swift/deriv_nat_cad_12.mtz 
+            hklin2  ../mtz/swift/deriv_nat_cad_345.mtz 
+            hklout  ../mtz/swift/deriv_nat_cad.mtz 
+           &lt;&lt;eof-cad
+    MERGE
+    RUN
+    eof-cad
+

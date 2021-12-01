@@ -1,0 +1,65 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#=====================================================================
+#
+# Run dm
+#
+#=====================================================================
+
+# Source pdb_utils for harvest handling & move to project directory 
+# if we are going to dump harvest file to current directory 
+  source [SearchPath TOP utils pdb_utils.tcl ] 
+  if { [StringSame $HARVEST_MODE  CURRENTDIR ] } { ChangeDirectory [GetDefaultDirPath] } 
+
+  CreateComScript dm dm_script
+
+  set cmd "[BinPath dm] HKLIN \"$HKLIN\" HKLOUT \"$HKLOUT\""
+  if { $SOLVENT_MASK_MODE } {
+    append cmd " SOLIN \"$MASKIN\""
+  } else {
+    append cmd " SOLOUT \"$MASKOUT\""
+  }
+  if { $DM_AVERAGING } {
+    if { $NCSMASK } {
+      set maskout [SetOutputFileRoot -map]_ncs.msk
+      append cmd " NCSOUT \"$maskout\""
+      AddOutputFile $maskout MAP_DEFAULT
+    } else {
+      for { set i 1 } { $i <= $NCS_NDOMAINS } { incr i } {
+        if { $NCS_MASK_FILE($i) != "" } {
+          append cmd " NCSIN$i \"$NCS_MASK_FILE($i)\"" }
+      }
+    }
+    if { $IFVUOUT } {
+      set vuout [SetOutputFileRoot]_ncs.$VUOUT_FORMAT
+      append cmd " VUOUT $vuout"
+    }
+  }
+
+  set status [Execute $cmd $dm_script program_status report ]
+
+  if { $IFVUOUT } { AddOutputFile $vuout PROJECT }
+
+  HandleHarvestFile $HARVEST_MODE $HARVEST_PNAME $HARVEST_DNAME dm
+
+
+#--------------------------------------------------------------------
+# generate map
+#--------------------------------------------------------------------
+
+  if { $IF_MAPOUT } {
+
+    WriteHtml beg pre
+
+    source [SearchPath TOP utils map_utils.tcl]
+
+    source [SearchPath TOP scripts dm_maps.script]
+
+  }

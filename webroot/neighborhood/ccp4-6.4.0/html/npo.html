@@ -1,0 +1,1635 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>CCP4 Program Suite</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]">
+</HEAD>
+<BODY>
+
+<P><!-- ::INDEX_INFO::NPO::Supported::Plotting / Graphics::Molecule and map plotting:::::::: --></P>
+
+<H1>NPO (CCP4: Supported Program)</H1>
+
+<H2>NAME</H2>
+
+<P><B>npo </B>- Molecule and map plotting </P>
+
+<H2>SYNOPSIS</H2>
+
+<P><B>npo</B> [ <B>XYZINn</B> <I>foo_in.brk</I> ] [ <B>mapin</B> <I>foo_in.map
+</I>] [ <B>mapin2</B> <I>foo_in2.map </I>] <B>plot</B> <I>foo_out.plt</I>
+<BR>
+<a href="#keywords">[Keyworded input]</a> </P>
+
+<H2><A NAME="description"></A>DESCRIPTION</H2>
+
+<P>NPO is a flexible program for plotting molecules and electron density
+maps, either separately or together. The molecule may be drawn as sticks,
+ball and stick, or space-filling, in parallel projection, perspective,
+or stereo-pairs with perspective (either side-by-side or red/green). Maps
+may be plotted as single sections or as stacks in mono or stereo, and two
+maps may be plotted together, so that for example a difference map may
+be superimposed on a 2Fo-Fc map. </P>
+
+<H2><A NAME="function"></A>PROGRAM FUNCTION</H2>
+
+<P>The NPO program was originally written by Sam Motherwell (called `pluto')
+at the Chemical Laboratory, Cambridge. It has been modified for proteins
+by Eleanor Dodson, and for map plotting by Phil Evans. </P>
+
+<P>The program can be used in 4 basic ways. </P>
+
+<OL>
+<LI>Plot protein molecule alone. <BR>
+The molecule can be drawn as sticks, ball and sticks, or space filling,
+in parallel projection, perspective, or stereo pairs with perspective.
+<BR>
+The INPUT card determines what sort of coordinates are input. The connections
+between atoms are calculated following the JOIN command and the atom radii
+set into the arrays by the RADII ATOMS command. The molecule is plotted
+following the PLOT command. </LI>
+
+<LI>Draw a single contour map. <BR>
+Maps may be plotted as single sections or as stacks in mono or stereo.
+</LI>
+
+<LI>Superpose molecule and map plots. <BR>
+This option is useful for checking atomic positions against the electron
+density. </LI>
+
+<LI>Plot 2 contour maps. <BR>
+This may be used, for example, to superimpose a difference map on a 2Fo-Fc
+map. Note that at least two colour pens are required to make this option
+worthwhile in practice. </LI>
+</OL>
+
+<H2><A NAME="keywords"></A>KEYWORDED INPUT</H2>
+
+<P>The various data control lines are identified by keywords, as follows,
+read in blocks depending on function. They are indicated in the table as
+compulsory (C), forbidden (F) or optional (O) for plotting of molecules
+and maps. </P>
+
+<PRE> Group 1, initial settings
+
+                Molecule   Map           Comments
+        DATA        O       O       If present, must be 1st for each drawing
+        TITLE       O       O       Must be 1st after DATA
+
+        CELL        C       C        not needed if present in MAPIN&nbsp;or XYZIN
+        SYMM        C       C        not needed if present in MAPIN&nbsp;or XYZIN
+        PRINT       O       O       May appear in group 4
+        USEORTEP    O       O       (Works, just not very well.)
+
+ Group 2, map control
+
+                  Molecule   Map           Comments
+        MAP                   C       Must be 1st in group
+              CONTRS          C       
+              LIMITS          O
+              MODE            O
+              SECTNS          C
+              SLAB            O       Must be after SECTNS
+              GRID            O
+
+ Group 3, atom selection
+
+                           Molecule   Map           Comments
+         INPUT                 C               Must be 1st in group
+            BASE               O
+            LABEL              O
+            BOND               O
+            RESIDU             O
+            BOUNDS             O       F
+            BOX                O       F
+            SPHERE             O       F
+            STYLE              O
+            LINK               O
+            SKEW  and/or TRANS O 
+
+  Group 4, plotting style etc
+
+                          Molecule   Map           Comments
+        JOIN                 C       O       Only one JOIN RESID RADII
+        VIEW  or MATRIX      C      (F)      Not to be used with map
+        ELLIPSOID            O       O       (part of USEORTEP)
+        ESCALE               O       O       (part of USEORTEP)
+        ELSTYLE              O       O       (part of USEORTEP)
+        ORIG | OTRA | OROT   O       O       (part of USEORTEP)
+        SOLID or STICK       O       O
+        RADII                O       O       Must not precede JOIN
+        DCELL                O       F
+        STEREO | MONO        O       O
+        FONT                 O       O
+        THICK                O       O
+        SIZE                 O       O
+        COLOUR               O       O
+
+
+  Group 5, plot
+
+                 Molecule   Map           Comments
+        PLOT        C       C       Must be last (apart from END)
+        END         0       0
+
+</PRE>
+
+<H2><A NAME="keywords_group1"></A>GROUP 1 Keywords</H2>
+
+<H3><A NAME="group1_data"></A>DATA &lt;data identification title&gt; </H3>
+
+<P>This keyword clears all arrays and flags (but not the view direction).
+It is only required to separate two independent drawings (or superimposed
+drawings). </P>
+
+<H3><A NAME="group1_title"></A>TITLE &lt;title&gt;</H3>
+
+<P>If present, this card must be first (after DATA). The title is plotted
+at the head of the drawing. Also clear flags controlling plotting. </P>
+
+<H3><A NAME="group1_cell"></A>CELL &lt;a&gt; &lt;b&gt; &lt;c&gt; &lt;alpha&gt;
+&lt;beta&gt; &lt;gamma&gt; &lt;Lorthogonalisation_Code&gt;</H3>
+
+<P>NB: Only to be used if there is an no input map, and if there are no
+CRYST1 and SCALEi cards in the XYZIN. </P>
+
+<P>Enter cell constants and orthogonalisation switch, if only one number
+use as orthogonalisation code. </P>
+
+<P>Cell dimensions in Angstrom and degrees. Angles default to 90. The cell
+dimensions are used for the conversion of orthogonal coordinates to fractional,
+and vice versa. If cell dimensions of 1 1 1 are given, then the conversion
+to fractional coordinates will have no effect, which will work, provided
+that no map is being plotted, and no translation (from symmetry or BOUNDS)
+is required. </P>
+
+<P>Lorthogonalisation_Code=1 for Brookhaven orthogonalisation convention,
+and =2 (default) Rollett convention. (*) Cell dimensions given here override
+those on the map or PDB file. Sets up the calculation of orthogonalisation
+matrices. </P>
+
+<H3><A NAME="group1_symm"></A>SYMM &lt;symmetry operators&gt;</H3>
+
+<P>Not to be used if MAPIN&nbsp;assigned.</P>
+
+<P>Symmetry operations may be given in two ways: either in the style of
+International Tables, with different operators separated by * or on different
+cards </P>
+
+<P>eg SYMM X,Y,Z * -X,1/2+Y,-Z </P>
+
+<P>Translations may be given as 1/2 or 0.5 etc. Alternatively, the operation
+may be given as 12 numbers, a matrix S and translation vector t, in the
+order S11, S12, S13, t1, S21, S22, etc. Note that the symmetry operations
+act on fractional coordinates x' = Sx + t . At least the identity (X,Y,Z)
+must normally be given. (*) Symmetry operations will be read from the first
+map file, if any, but symmetry data given here on SYMM cards overrides
+that in the file. If no symmetry is given in either place, the identity
+is used. </P>
+
+<H3><A NAME="group1_print"></A>PRINT</H3>
+
+<P>This card may appear with the group 4 cards, and causes extensive diagnostic
+printing in the atom input, atom linking, and reading of the scratch file.
+Its main use is for debugging. </P>
+
+<H3><A NAME="group1_useortep"></A>USEORTEP</H3>
+
+<P>If given then uses ortep subroutines for drawing including bond overlap
+and anisotropic thermal ellipsoids: not recommended yet. </P>
+
+<H2><A NAME="keywords_group2"></A>GROUP 2 keywords</H2>
+
+<H3><A NAME="group2_map"></A>MAP and following keywords</H3>
+
+<P>MAP keyword controls contours, mode and sections. </P>
+
+<H3>MAP map order and sampling SCALE s INVERT NOBOX 3D</H3>
+
+<P>EJD - map order and sampling taken from map header - should be removed..
+</P>
+
+<P>This card introduces map plotting. The three letters X, Y, and Z must
+be given in the appropriate order to indicate the fast, medium and slow
+(section) axes of the map (u, v, and w). They are accompanied by three
+numbers giving the number of sampling intervals along the whole cell in
+each direction. The optional keyword SCALE gives the scale in mm/A (this
+is an alternative to the SIZE card). The 3D option produces contours in
+three directions. Note that all contours will be seen on the plot ie perpendicular
+contours will appear as lines. This option is only useful with map stacks.
+(*) The axis order and sampling are not needed, but if present override
+the data in the file. If the keyword NOBOX is present, the map is not surrounded
+by a box. <BR>
+eg MAP Y 104 X 152 Z 76 SCALE 2.5 </P>
+
+<P>Map has z sections in 1/76 ths with y running fastest (in 1/104) and
+x next (in 1/152). The scale is 2.5 mm/A. </P>
+
+<P>The default orientation of the map on the plotter is with the fast axis
+u along the plotter Xp (to right), v along -Yp (down the paper) and w along
++/- Zp (towards or away depending on the permutation of axes). The keyword
+INVERT on the MAP card interchanges u and v and inverts w relative to the
+plotter axes, ie it puts v along Xp, u along -Yp, and w along-/+ Zp. Alternatively,
+a viewpoint may be given but this is limited as the plot becomes distorted
+unless 3D option is used (see VIEW). </P>
+
+<P>EJD: I haven't tested this and hate to think what would happen! </P>
+
+<PRE> Keywords:
+   <A NAME="group2_map_invert"></A>INVERT (optional) to put v axis along xp (default u along xp)
+   <A NAME="group2_map_axis_order"></A>MAP AXIS ORDER MU,MV,MW, letters X,Y,Z, to give fast,medium,slow
+                            directions in map 
+                            (optional, otherwise picked up from map)
+                            3 Numbers giving sampling intervals 
+                              in these directions
+   <A NAME="group2_map_scale"></A>SCALE (optional) scale in mm/a ( Picture_Scale )
+   <A NAME="group2_map_nobox"></A>NOBOX (optional) stop plotting of box around map
+      <A NAME="group2_map_3d"></A>3D (optional) make contours in x, y, z directions
+
+         MAP     Y 90 X 90 Z 120
+         CONTRS  0.25   
+         SECTNS 23 32 10 10 1
+         LIMITS  51 62 93 106 23 32
+
+
+</PRE>
+
+<H3><A NAME="group2_contrs"></A>CONTRS contour levels </H3>
+
+<P>This keyword sets the contour levels for the map. If two maps are to
+be plotted, this card will appear twice. The contours may either be given
+as a list, or as a lower and upper limits and interval. </P>
+
+<PRE>     eg   CONTRS    200 400 600 800
+          CONTRS 200 TO 800 BY 200
+
+</PRE>
+
+<P>Equivalent positive and negative contour levels may be specified by
+the keyword NEG before the specification of range and interval. </P>
+
+<PRE>     eg   CONTRS NEG 20 TO 60 BY 20
+          will give contour levels 20 40 60 -20 -40 -60
+
+</PRE>
+
+<P>Contours can be specified as sigma levels [SIG] (taken from map rms
+value) or as fractions of the maximum [MAX]. NEG can be used with either
+SIG or MAX but SIG and MAX cannot be used together. If NEG is used with
+MAX then the negative contours are taken has fractions of the minimum density.
+</P>
+
+<PRE>    eg    CONTRS MAX 0.5 0.6 0.7
+          CONTRS NEG SIG 1.0 to 3.0 by 0.5
+
+</PRE>
+
+<H3><A NAME="group2_limits"></A>LIMITS xmin4 xmax ymin ymax zmin zmax</H3>
+
+<P>This limits the map to be drawn in x,y and z grid units. Obviously,
+the limits must be inside the original map limits as calculated from FFT.
+This keyword should not be used in conjunction with BOX, BOUNDS and SPHERE
+which limit the molecule. </P>
+
+<P>&gt;&gt;&gt; EJD - not useful - should use mapmask before plotting </P>
+
+<H3><A NAME="group2_mode"></A>MODE keywords</H3>
+
+<P>This keyword MUST come AFTER the relevant CONTRS keyword. </P>
+
+<P>Sets, </P>
+
+<PRE>   1) COLOUR and/or DASHED (optional, default black)
+   2) BELOW - Contour_Threshold, threshold for contour levels
+   3) COLOUR and/or DASHED, mode for levels BELOW Contour_Threshold
+   4) FIRST to set parameters for 1st section in a stack
+      DASHED keyword followed by 3 numbers, repeat,dash,dot
+
+</PRE>
+
+<P>Mode for plotting contours. If two maps are plotted, each may have a
+MODE card, which must follow its corresponding CONTRS card. The mode is
+BLACK, RED, GREEN, BLUE, etc. (see Notes on Colours) or DASHED : DASHED
+may appear with a colour. If the keyword BELOW is present, a second mode
+is given for contour levels below the specified threshold. If the keyword
+FIRST is present, this mode is used for the first section in each map stack.
+This may be useful to plot sections in pairs, (SECTNS n1 n2 2 1) with one
+dashed or in a different colour. If no mode is given, the default colour
+is used (usually black, unless a COLOUR card is present). The keyword DASHED
+is followed by 3 numbers, repeat, dash, dot. </P>
+
+<PRE>               repeat   repeat length in mm
+               dash     dash length in mm (gap=repeat-dash)
+               dot      length  of  dot  for   chain   lines 
+
+     eg   MODE RED BELOW 0 RED DASHED 4 2 0
+          All red, negative contours dashed.
+          MODE BELOW 0 GREEN
+          Positive contours black
+          MODE DASHED 1 5 3.5
+          All dashed
+
+<A NAME="group2_mode_below"></A>BELOW
+ keyword below, store mode for higher levels and threshold
+     eg    mode red below 0 red dashed 4 2 0
+
+<A NAME="group2_mode_dash"></A>DASH
+          mode dashed 1 5 3.5
+ keyword dashed, store dash parameters, set mode negative
+
+<A NAME="group2_mode_first"></A>FIRST
+  (MODE FIRST not allowed with two maps)
+
+ keywords black,red,green,blue ...
+</PRE>
+
+<H3><A NAME="group2_sectns"></A>SECTNS [FRAC] &lt;FirstSection&gt;
+&lt;LastSection&gt; &lt;StackSections&gt;  &lt;StepSections&gt;
+</H3>
+
+<dt>FirstSection, LastSection</dt>    <dd>1st and last section number</dd>
+<dt>StackSections</dt> <dd>Number of sections in stack [default=1]</dd>
+<dt>StepSections</dt> <dd>Number of sections stepped between stacks of
+sections [default=StackSections]</dd>
+
+<p> Controls which sections to plot and how they are arranged.
+Multiple sections may be overlapped in stacks on the same plot
+(if StackSections > 1). By default these stacks will be contiguous (ie
+StepSections = StackSections), but StepSections maybe specified eg as
+&lt; StackSections to allow staggered stacks with sections in common.
+</p>
+
+<p> If the values are integers greater than the map range, then the
+program treats them as section numbers; but if they are less than the fractional map
+range, they are treated as fractions of the unit cell, and then converted 
+within the program to section numbers.</p>
+
+<p>
+If the FRAC subkeyword is included then the First_Section, Last_Section MUST
+be fractional. In this case the program will still check whether StepSections is
+&lt;1 (i.e. a fraction) or &gt;= 1 (i.e. a number-of-sections step).
+</p>
+
+<PRE>
+
+      eg   SECTNS 3 14
+           plot sections 3 to 14 separately (the normal case)
+
+           SECTNS 3 11 4
+           plot 3 stacks of 4 sections :
+           3,4,5,6 ; 7,8,9,10 ; 11,12,13,14
+             ie start of each stack follows the end of the last one
+
+           SECTNS 3 11 4 2
+           plot 6 overlapping stacks of 4 sections
+           3,4,5,6 ; 5,6,7,8 ; 7,8,9,10 ; 9,10,11,12 ; etc
+             ie the start of each stack is 2 on from start of previous one
+
+</PRE>
+
+<H3><A NAME="group2_slab"></A>SLAB</H3>
+
+<P>Set section limits for selection of atoms. Atoms will be stored on file
+if they lie between the sections specified plus 1 section thickness at
+each end. SLAB section1, section2 </P>
+
+<P>Only useful for large plots. If present, this card must follow the SECTNS
+card. Normally atoms are stored in the scratch file if they lie between
+the sections NFirst_Section-1 and NLast_Section+Nsections_in_Group. However,
+in some cases plotting a map has to be split into several jobs, and it
+may be better to select atoms for the whole map, and to save the scratch
+file for the subsequent jobs (see the SAVED option on the INPUT card).
+In this case, SLAB gives section limits for selection of atoms for the
+scratch file: atom limits are section1-1 to section2+1, where section1
+and section2 are the first and last sections of a series of plots. <BR>
+eg SLAB 0 20 </P>
+
+<H3><A NAME="group2_grid"></A>GRID</H3>
+
+<P>Read grid spacing along u and v in fractional or Angstrom (default Ugrid_Spacing=0.1,Vgrid_Spacing=Ugrid_Spacing)
+and grid offset from map origin along u and v in fractional or Angstrom
+(default=0). If the spacing is .lt. 1.0, it will be treated as fractional,
+and any offset will be treated as fractional as well. <BR>
+GRID Ugrid_Spacing,Vgrid_Spacing,Ugrid_Offset,Vgrid_Offset <BR>
+Draw grid on map, at spacings of Ugrid_Spacing Angstrom along u and Vgrid_Spacing
+along v <BR>
+(default Ugrid_Spacing = 0.1, Vgrid_Spacing = Ugrid_Spacing). </P>
+
+<P>Normally, the grid will pass through the map origin, but it may be offset
+by </P>
+
+<PRE>        Ugrid_Offset  Angstrom  along  u  and
+        Vgrid_Offset  along  v
+          (default=0),
+
+ie the grid passes  through  the  point
+     (Ugrid_Offset, Vgrid_Offset).
+</PRE>
+
+<P>On map stacks, the grid is plotted only on the first section (with the
+lowest section number). </P>
+
+<PRE>
+    eg   GRID 15
+              Draw grid at 15 A spacing in both directions
+         GRID
+              Draw grid at 0.1 (fractional) spacing.
+</PRE>
+
+<P>GRID [U or V] &lt;style for minor lines&gt; EVERY &lt;n&gt; &lt;style
+for major lines&gt; </P>
+
+<P>Set style for plotting grid lines (default full lines in current colour).
+If the first keyword is U or V, the card refers to grid lines across the
+u or v axes: otherwise the style refers to both directions. Two classes
+of grid lines may be defined, major and minor. The keyword EVERY gives
+the spacing of major grid lines, every n'th grid line from the origin (default=1,
+ie all grid lines major). The style specification may be a colour keyword
+(BLACK, RED, GREEN, BLUE, etc) and/or DASHED or FULL (default). DASHED
+is followed by 3 numbers (see MODE card). If the colour is not set, the
+current default colour is used (usually black). Up to three GRID cards
+may be given, to set the spacing and the style along u and v. Any one GRID
+card switches on grid plotting, so a style card may be given without a
+spacing card if the default spacing of 0.1 is wanted. </P>
+
+<PRE>  eg   GRID RED DASHED 10 5 0 EVERY 5 FULL
+            Grid at default spacing 0.1, full line every 0.5.
+       GRID 10 25
+       GRID U RED EVERY 5 BLACK
+       GRID V RED EVERY 2 BLACK
+       GRID RED
+           Grid at 0.1 spacing in red.
+
+</PRE>
+
+<H2><A NAME="keywords_group3"></A>GROUP 3 keywords</H2>
+
+<H3><A NAME="group3_input"></A>INPUT optional keywords</H3>
+
+<P>This card introduces atom input. Initially the coordinate file is associated
+with the logical variable XYZIN1. Subsequently, when INPUT is specified
+the file will be associated with XYZIN2, then XYZIN3 etc.. Multiple input
+files maybe required when either superimposing plots (OVERPLOT) or generating
+several different plots from one command file. The exception to this is
+when 'INPUT SAVED' is specified as the coordinate information comes from
+a scratch file. Optional keywords are: </P>
+
+<PRE>    <A NAME="group3_input_ca"></A>CA   select alpha-carbon (CA) atoms only
+    <A NAME="group3_input_saved"></A>SAVED for plotting into map, the scratch  file  has  already
+              been created in a previous plot but in the same run
+              of the program. The scratch file is deleted when 
+              the program is terminated.
+
+    If OVERPLOT is given on the  card, this indicates that 
+    the next drawing  is superimposed on the previous  one 
+    (ie it is drawn at the same scale and position, without 
+    advancing  the paper). This  provides a  way of evading 
+    the limit  of (Max_Atoms) atoms in a drawing.
+
+</PRE>
+
+<H3><A NAME="group3_label"></A>LABEL keywords c1 [n2]</H3>
+
+<P>Label the given atom or atom type c1. If a number (n2) is given with
+an atom type, this label is only plotted if the residue number is an integral
+multiple of this number. The program by default tries to find the 'best'
+of 8 possible positions for each label. If two numbers are given with an
+atom name, they are used as the position of the start of the label, relative
+to the atom position, in mm. More than one LABEL card can be specified
+if you wish to label more than one atom or atom type </P>
+
+<PRE>       Optional keywords:
+
+    <A NAME="group3_label_fixed"></A>FIXED plot all labels to the right of the atoms.  This saves
+              some  time.  FIXED must precede other keywords and
+              atom types.
+    <A NAME="group3_label_all"></A>ALL label all atoms (default if no atoms specified)
+    <A NAME="group3_label_none"></A>NONE no atoms are labelled
+    <A NAME="group3_label_text"></A>TEXT This is followed by a label (of up to 6 characters)  to
+              be plotted on the following atom.
+
+    eg   LABEL FIXED CA 10
+               label every 10th CA atom
+         LABEL O
+               label all the oxygen atoms, variable label 
+               positions
+         LABEL TEXT IRON FE150 12 -5
+               Plot the label 'IRON' displaced by +12mm on  
+               plotter  x  and -5mm on y from the atom 
+               with name FE150 .
+
+ No tokens given LABEL ALL
+
+FIX  Expecting line of:-
+      LABEL FIX atom_name [increment number, default = 1]
+                label every j'th residue
+Atom Expecting line of:-
+name  LABEL atom_name [increment number, default = 1]
+                label every j'th residue
+ALL  Expecting Line of :-
+      LABEL ALL
+NONE Expecting line of :-
+      LABEL NONE
+TEXT Expecting line of:-
+      LABEL TEXT string ATOM_ID [dx, dy]
+
+i.e. atom plus residue number input, only label this atom if 2 numbers
+on card, use as positions for this label relative to atom position, in
+mm
+
+</PRE>
+
+<H3><A NAME="group3_btype"></A>BTYPE - type of anisotropic temperature
+factors</H3>
+
+<P>default type NBType = 7 (using values from 'RADII ATOMS' for b(11) b(22)
+b(33) b(12) b(13) b(23) </P>
+
+<PRE> with (Base)^{-D (b11*h**2  + b22*k**2  + b33*l**2 +
+                  C*b12*h*k + C*b13*h*l + C*b23*k*l)}
+
+        NBType   Base   C     D
+         0       e      2     1
+         1       e      1     1
+         2       2      2     1
+         3       2      1     1
+        10       e      2     2pi**2
+
+ or the coefficients U(ij)
+
+ with  exp{ - D (a'**2 * U11 * h**2 +
+                 b'**2 * U22 * k**2 +
+                 c'**2 * U33 * l**2 +
+                 C * a' * b' * U12 * h * k +
+                 C * a' * c' * U13 * h * l +
+                 C * b' * c' * U23 * k * l ) }
+
+ where   a',  b',  c'   are reciprocal cell dimensions
+
+        NBType   C    D
+         4       2    1/4
+         5       1    1/4
+         8       2    2 * pi**2
+         9       1    2 * pi**2
+
+   NBType = 6 allows for the Debye-Waller isotropic temperature
+              factor B which is used as follows:
+
+       exp ( -B sin^2(theta/lambda**2)
+
+       B is related to mean-square displacement of the atom
+         (rms) from its mean position by the relation
+
+         B = 8 pi**2 &lt;rms**2&gt;
+
+   the length of the axes are rms.
+
+  NBType = 7 allows for radii to be used
+
+</PRE>
+
+<H3><A NAME="group3_bounds"></A>BOUNDS xmin, xmax, ymin, ymax, zmin, zmax,
+CELL</H3>
+
+<P>Atom limits in fractional coordinates. Only atoms within these limits
+are plotted. Unit cell translations are applied if necessary to put the
+atom into this volume. If maps are plotted, the bounds are set automatically.
+If the keyword CELL is present, the bounds are also stored as the cell
+edges, so that automatic scaling will be done on the bounds. Otherwise
+automatic scaling will be done on atoms only. </P>
+
+<P>If keyword 'cell' absent, do not reset cell edges to bounds values,
+so auto scaling is done on real atoms only </P>
+
+<H3><A NAME="group3_residu"></A>RESIDU keywords</H3>
+
+<PRE>     word2  (optional)    main, side, ca
+       2/3  (essential )  exclud, includ ,select, black, red,
+                          green, blue, yellow, or bond
+       3/4  (optional) 
+       4/5  (optional)  
+
+</PRE>
+
+<P>If a style (colour) keyword is used it must come in the second position
+e.g. RED, GREEN, PURPLE (see Notes on Colours). </P>
+
+<P>Select residues for plotting, and plotting style. The second/third keyword
+may be a selection word SELECT, INCLUD or EXCLUD or BOND. If a residue
+is SELECTed, but not EXCLUDed, all symmetry operations are applied to its
+atoms. If a BOUNDS card is present or maps are plotted , the coordinates
+are tested against them, and unit cell translations are applied to try
+to bring them into the specified volume. Note that each symmetry operation
+can generate no more than one atom. INCLUDed atoms have no symmetry operations
+applied, and no bounds are tested. </P>
+
+<P>The second keyword is optionally MAIN ,SIDE, or CA , to choose main
+chain, side chain, or Ca atoms only (main chain atoms are CA,C ,O ,N ).
+If none of the above keywords are specified then the RESIDUE keyword acts
+on all atoms in the residue. </P>
+
+<P>Residue numbers may be given as a list, as a range n1 TO n2, or all
+residues by the keyword ALL. A style keyword may also be included as the
+last keyword on the card. </P>
+
+<P>The BOND keyword is followed by two numbers, which give the bond types
+(specified on BOND cards) for main and side chain atoms. </P>
+
+<P>Several RESIDU cards may be given, and their effect is cumulative. If
+no cards are given, the default is to SELECT all residues, but if any INCLUD
+or SELECT card is present, all other residues are excluded. </P>
+
+<PRE>     <A NAME="group3_residu_select"></A>SELECT expects
+         Atom_name/Res_nam (TO Atom_name/Res_nam) 
+         either as a list or as a range or ALL
+
+     <A NAME="group3_residu_include"></A>INCLUDE/EXCLUDE expects
+         Atom_name/Res_nam (TO Atom_name/Res_nam)
+         either as a list or range or ALL (only include)
+
+     <A NAME="group3_residu_bond"></A>BOND expects
+         num, num, optionally followed by SELECT 
+
+     <A NAME="group3_residu_colour"></A>Colour expects
+         MAIN, SIDE, CA, SELECT/INCLUDE or BOND.
+
+
+  Some examples:
+
+   RESIDU  BOND 1 2 SELECT 100A TO 123A
+   RESIDU BOND 1 2 SELECT ALL
+   RESIDU RED BOND 3 4 50 TO 56
+        Draw residues 50 to 56 with bond types  3and4  
+        in  red,  all others with bond types 1and2
+   RESIDU GREEN SELECT ALL
+   RESIDU SIDE EXCLUD 50 53 67
+
+WARNING:   use of a list of atom numbers
+           THESE MUST BE LAST on the line
+
+  RESIDUE RED BOND 2 2 SELECT 96L  
+  RESIDUE BLACK BOND 1 1  SELECT 298H TO 302H
+  RESIDUE SELECT 404W
+
+</PRE>
+
+<H3><A NAME="group3_style"></A>STYLE</H3>
+
+<P>Read bond type or colour for symmetry numbers </P>
+
+<PRE>     2nd keyword black,red,green,blue,yellow, or bond
+     optional 3rd keyword trans: colour for all translated atoms
+     otherwise list of symmetry numbers
+
+</PRE>
+
+<P>Read plotting style for molecules with the given symmetry numbers. Style
+keywords are BLACK, RED, GREEN, BLUE, etc and BOND. The BOND keyword is
+followed by two numbers giving the bond type for main and side chains.
+Colours given here take precedence over colours given on RESIDU cards.
+If the keyword TRANS is given with a colour, this colour is used for all
+atoms which have been translated to get them into the BOUNDS or the map,
+irrespective of symmetry operation. This takes priority over a symmetry
+colour. </P>
+
+<PRE>     eg   STYLE RED 2 3
+          STYLE BOND 1 2 2
+             Bond types 1 and 2 for symmetry number 2
+          STYLE GREEN TRANS
+
+
+ STYLE Colour TRANS
+ STYLE Colour sym_numbers
+ STYLE BOND main side sym_numbers
+          bond type - first 2 numbers are bond types 
+                      for main and side chains
+                      remaining numbers are symmetry numbers
+</PRE>
+
+<H3><A NAME="group3_bond"></A>BOND</H3>
+
+<P>Read bond type, bond radius, number of lines for dashed bond, keyword
+DASH followed by repeat,dash,dot BOND bond type, bond radius, number of
+lines </P>
+
+<P>Defines a bond type, referred to on RESIDU and STYLE cards. The bond
+is defined by a cylindrical radius in A and a number of lines. Dashed bonds
+(one line only) are specified by the keyword DASHED and three numbers (see
+MODE card). Bond styles may also be defined by RADII BONDS card (qv) .
+The default style is radius 0.04, 8 lines. </P>
+
+<PRE>       eg   BOND 1 0.04 5
+            BOND 3 DASHED 4 1.5 0
+ dashed line ( use default 0.04 8 0)
+</PRE>
+
+<H3><A NAME="group3_link"></A>LINK link atoms</H3>
+
+<P>If the JOIN RESIDU option is used (qv, automatic for map plotting),
+residues are linked by recognizing the names of link atoms, by default
+N and C . These names may be changed on a LINK card. A number may be given
+for the maximum bond length between these atoms for a bond to be drawn
+(default=1.8). </P>
+
+<PRE>    eg   LINK N C (=default, bondlength =1.8)
+         LINK CA CA 4.1        for CA plots
+
+</PRE>
+
+<P>Two different LINK atom pairs may be given. They must both be given
+(no defaults) and must be in ascending order of bond distance. This may
+be useful for mixed main-chain and CA only drawings. </P>
+
+<PRE>          eg       LINK N C 1.8
+                   LINK CA CA 4.1
+                   LINK P O3'
+
+</PRE>
+
+<H3><A NAME="group3_skew"></A>SKEW </H3>
+
+<P>Read rotation matrix to rotate orthogonal atom coordinates to orthogonal
+map frame: <BR>
+SKEW S11,S12,S13,S21,S22,S23,S31,S32,S33 </P>
+
+<P>Read matrix S to rotate orthogonal atom coordinates into orthogonal
+map frame: Xo(map) = S * (Xo(atom) - t), where the vector t comes from
+a TRANS card (qv). This transformation will usually be required for a skew
+map, or other cases where the map and the molecule are not in the same
+frame. The program then works in the map frame (both orthogonal and fractional),
+which means that symmetry operations (if any) must also be transformed
+into the map frame. A blank SKEW card causes the skew transformation (rotation
+and translation) to be picked up from the map header, if it is present
+there. </P>
+
+<H3><A NAME="group3_trans"></A>TRANS</H3>
+
+<P>Read translation vector to shift orthogonal atom coordinates to map
+frame xormap=Skew_Matrix*(xor-tran) <BR>
+TRANS tx, ty, tz </P>
+
+<P>Translation vector for skew transformation. The vector t is the position
+of the map origin in the molecule frame. </P>
+
+<H3><A NAME="group3_box"></A>BOX x y z hx hy hz CELL</H3>
+
+<P>BOX card, read coordinates of centre of box (A), and half-edges (either
+1 number for all directions or 3 numbers) Select atoms in box centred at
+x,y,z (orthogonal coordinates in A), with half-edges hx,hy,hz A. If hy
+and hz are omitted, hx is used for all directions (default hx=10A). The
+limits are converted to fractional coordinates before use, so in a skew
+cell the box will be skew. The CELL keyword is the same as on the BOUNDS
+card. </P>
+
+<PRE> If 6 numbers , separate half-edges for each direction
+ If 4 numbers, 4th is half-edge, default = 10A
+ 
+</PRE>
+
+<H3><A NAME="group3_sphere"></A>SPHERE card, default radius = 10</H3>
+
+<P>Select atoms in sphere centred at x,y,z A, radius r (default r=10A).
+<BR>
+SPHERE x y z r </P>
+
+<H3><A NAME="group3_main"></A>MAIN card, read list of atom names in main-chain</H3>
+
+<P>Define atoms to be classified as main-chain atoms. The first atom in
+the list is considered as the CA atom for selection by RESIDU SELECT CA
+and INPUT CAS. The default is MAIN CA C N O, for proteins. <BR>
+eg MAIN C1' C2' C3' C4' C5' O4' O5' P O1P O2P O3' N9 N1 </P>
+
+<H3><A NAME="group3_element_symbol"></A>Element symbol in XYZIN</H3>
+
+<P>The element symbol is taken from columns 13:14 of the PDB file. For
+elements that are defined with two letters the program sets the second
+letter to lower case. </P>
+
+<PRE>For example if we have the PDB file below the element symbols 
+would be Xa, Xb and Cu.
+
+REMARK Written by O version 5.9.2
+REMARK Tue Jun 13 17:26:21 1995
+CRYST1  213.920  213.920   85.630  90.00  90.00 120.00
+SCALE1      0.004675  0.002699  0.000000        0.00000
+SCALE2      0.000000  0.005398  0.000000        0.00000
+SCALE3      0.000000  0.000000  0.011678        0.00000
+ATOM      1 XA   JNK     1     120.040  19.308 -20.956  1.00 41.32   6
+ATOM      2 XB   JNK     1     145.538   0.306   7.347  1.00 42.84   6
+ATOM      3 CU   CU  A  30     133.816  15.758   4.597  1.00 36.99  29
+END
+
+
+Thus in the command lines in a script would have to be:
+
+#
+#  Plot of molecule and fc map
+#!/bin/csh
+
+npo xyzin1 sketch.pdb plot z.plot &lt;&lt; eof 
+TITLE Test for NPO
+INPUT BROOK
+LABEL ALL
+BOND 1 0.5 5
+JOIN RADII RESIDUE Cu 0.1
+JOIN BOND 1 XA1 XB1
+JOIN RADII RESIDUE Cu 0.01 Xa 0.01 
+RADII ATOM Cu 1.0 Xa 0.01 Xb 0.01
+SOLID
+VIEW Z
+PLOT ! plot keyword is compulsory
+eof
+
+</PRE>
+
+<P>As you can see dummy symbols are acceptable but follow the same rules
+as real symbols. However, dummy symbols should not contain numbers. Just
+to be confusing the actual atoms names are defined as set out in the PDB
+file (atom_name + res_number + chain_id); thus the copper atom would be
+CU30A. Note that the program presumes that anything beginning with C, N,
+O, or S is Carbon, Nitrogen, Oxygen or Sulphur resp., with the exceptions
+of, CA which is alpha carbon which gets special treatment in akwprotin,
+and OW - water. . </P>
+
+<PRE>Checks:
+ Atom_Name contains a number first check for
+     CA1  i.e. calcium number 1
+ No number in Atom_Name
+   see if left justified heteroatom
+   here we have for example Ca  for calcium - 
+   left justified heteroatom
+    CA as Calpha is in columns 14/15
+    CA as Calcium is in columns 13/14
+
+When labelling C-alpha atoms the atom name is 
+replaced by the residue name + number. For 
+WATER (wa) the atom name + number is used.
+
+</PRE>
+
+<H2><A NAME="keywords_group4"></A>GROUP 4 keywords</H2>
+
+<H3><A NAME="group4_join"></A>JOIN</H3>
+
+<P>This card controls the way in which atoms are linked, either by explicit
+connection, or usually by search for atoms lying within the sum of their
+bonding radii (keyword RADII). A list of bonding radii is then given. The
+keyword RESIDU causes the distance search to be done only within residues,
+and this is usually preferable and faster than a search over all atoms.
+Residues are then linked by atom name (see LINK card). </P>
+
+<PRE> eg   JOIN RADII RESIDU CA 0.9 C 0.9 O 0.9 N 0.9 S 1.1
+
+      Note that CA is a different type from C and that only one card
+      should be given.
+      Hydrogen  bonds  may  be  generated  with  the keyword HBOND :
+
+ eg   JOIN RADII HBOND 3 4 O 1.6 N 1.6
+</PRE>
+
+<P>Search for connections between atoms of type O and type N with radii
+of 1.6 A. The first two numbers are the bond types (qv BOND) for mainchain-mainchain
+bonds and bonds involving sidechains respectively. The bond types may be
+0 , in which case the bond style will be taken from the RADII BONDS card
+or from the default, or they may be -1, to suppress one type of bond (ie
+1 -1 will find mainchain-mainchain bonds only). Mainchain-mainchain bonds
+are excluded within the same or adjacent residues in the same molecule,
+and sidechain-sidechain bonds in the same residue. </P>
+
+<P>The H-bond search must be done before other bond searches (JOIN RADII
+...... ). </P>
+
+<P>Explicit connectivities may be given as a list of atom names, with breaks
+indicated by end of card or by *. A number on a card of explicit connections
+is used as a bond type, referring back to a BOND card. This option will
+only work if both atoms in the bond are in the plot. Also, the CA atom
+changes its name to the residue name i.e. ARG1 (see LABEL). <BR>
+eg JOIN BOND 3 O243 N222 * N243 O251 </P>
+
+<P>If maps are plotted, the atoms are always joined by residue, and a JOIN
+card is only needed to change the radii from the default 0.9 A for all
+atoms. Explicit connections are not allowed. </P>
+
+<P>JOIN EXCLUDE - exclude some bonds - Connections may also be explicitly
+removed from a previously generated list, (either connections between particular
+atoms, or less usefully all bonds between two atom types). Only one bond
+or bond type may be excluded on each card. </P>
+
+<PRE>    eg   JOIN  EXCLUD CA124 CA125
+         JOIN  EXCLUD O N
+    eg   JOIN RADII RESIDU CA 0.9 C 0.9 O 0.9 N 0.9 S 1.1
+    eg   JOIN RADII HBOND 3 4 O 1.6 N 1.6
+    eg   JOIN BOND 3 O243 N222 * N243 O251
+    eg   JOIN NONE
+    eg   JOIN BOND 3 O243 TO N222 N243 N251
+
+ JOIN NONE
+ JOIN RADII
+ JOIN RADII UNIQUE
+ JOIN RADII PRINT
+ JOIN RADII RESIDUE
+ JOIN RADII RESIDUE (Atom_Type n) ...
+     Atom_Type Given  or  Specifically named atom
+ JOIN RADII HBOND
+     Atom_Type Given or  Specifically named atom
+ JOIN RADII ALL n
+ JOIN BOND
+ JOIN BOND bondtype
+ JOIN BOND n Atom1  TO list of atoms
+ join residue by residue
+ called for e.g.
+  JOIN RADII RESIDU CA 0.9 C 0.9 O 0.9 N 0.9 S 1.0 P 1.2
+</PRE>
+
+<H3><A NAME="group4_ellipsoid_type"></A>ELLIPSOID TYPE &lt;n&gt; &lt;AtomType&gt;
+</H3>
+
+<P>Controls ellipsoid type, not allowed with MAPS. See ORTEP-II manual
+for types, TYPE is entered either as a number greater than 700, the standard
+values, 1 to 6. (ortep values 701 to 706). If a number for TYPE is enter
+as 1 to 6 then it refers to a redefined ellipsoid type, entered via the
+keyword ELSTYLE. AtomType is either a group of atoms, i.e. </P>
+
+<DL>
+<DD>CA or Zn </DD>
+</DL>
+
+<P>or it is a specifically named atom. </P>
+
+<H3><A NAME="group4_escale"></A>ESCALE &lt;scale&gt;</H3>
+
+<P>See ortep manual; default = 1.54. This is the Ellipse_ScaleFactor (the
+size of the probability ellipsoid). </P>
+
+<H3><A NAME="group4_elstyle"></A>ELSTYLE TYPE 6 NPLANES n NDOTS n NLINES
+n NDASH n ZERO n RATE n</H3>
+
+<P>Used to redefine an Ellipsoid style for an Ellipsoid type (number 1
+to 6, i.e. ortep types 701 to 706) </P>
+
+<PRE> NPLA sets    NPLANES  (in range 0 to 4 ) default 4
+ NDOT sets    NDOTS    (in range -6 to 6) default 0
+ NLIN sets    NLINES   (in range 0 to 9)  default 8
+ NDAS sets    NDASH    (in range 0 to 9)  default 0
+ ZERO sets    AIN0 (in range 0 to 0.9) default 0.40
+ RATE sets    AIN1 (in range 0 to 0.1) default 0.08
+   if NSOLID/NDOT negative whole number negated
+</PRE>
+
+<H3><A NAME="group4_origin"></A>ORIGIN &lt;orig_atm&gt; &lt;vec1_from_atm&gt;
+&lt;vec1_to_atm&gt; &lt;vec2_from_atm&gt; &lt;vec2_to_atm&gt;</H3>
+
+<P>Equivalent to ORTEP instruction 501. Define the reference Cartesian
+system explicitly. </P>
+
+<H3><A NAME="group4_otranslate"></A>OTRANSLATE &lt;tran_x&gt; &lt;tran_y&gt;
+&lt;tran_z&gt;</H3>
+
+<P>Equivalent to ORTEP instruction 504. Translate the origin of the reference
+Cartesian system along the x, y, z axes of the reference system. </P>
+
+<H3><A NAME="group4_orotation"></A>OROTATION &lt;irot&gt; &lt;phi&gt;</H3>
+
+<P>Equivalent to ORTEP instruction 502. &lt;irot&gt; = 1, 2 or 3 indicates
+a rotation by &lt;phi&gt; about the x, y or z axis respectively. &lt;irot&gt;
+= -1 or -2 indicates a rotation by 120 or 240 degrees respectively about
+the body diagonal. </P>
+
+<H3><A NAME="group4_view"></A>VIEW view definition</H3>
+
+<P>This card defines the viewpoint for the drawing. For map plotting, the
+view is calculated from the map orientation, so a VIEW card should not
+normally be given, unless the atoms are not in the same fractional coordinate
+frame as the map (eg for skewed maps). The information on this card is
+used to construct a matrix to rotate the orthogonal molecule coordinates
+Orthogonal_XYZ into plotter coordinates. However it may be present before
+the MAP card to define the view direction. This is not recommended because
+unless it is used with the 3D option eg VIEW Y. It is preferable to calculate
+your map with different sections to the default. </P>
+
+<PRE>
+            Xp , Xp = R    Orthogonal_XYZ .
+
+    Several options are available.
+
+(a) View relative to axes.
+
+    X                                            ( Yo along Xp
+    Y                View along orthogonal axes  ( Zo along Xp
+    Z                towards origin              ( Xo along Xp
+
+    AFACE            View from (1,1/2,1/2)
+    BFACE                      (1/2,1,1/2)
+    CFACE                      (1/2,1/2,1) towards origin
+
+    LINE x y z       view from fractional point xyz towards
+    origin
+
+(b) View relative to named atoms
+
+    LINE n1 n2 view direction from atom n1 to n2.  The vector v1
+                    = (n1-n2) x (0,1,0) is along Xp.
+    BISECT n1 n2 n3 view along bisector of  n1n2n3  towards  n2,
+                    perpendicular along Yp
+    PERP n1 n2 n3 view perpendicular to plane n1n2n3 ,  bisector
+                    along Xp
+
+(c) Rotation
+</PRE>
+
+<P>After the matrix has been defined by one of the above options, it may
+be rotated about the plotter axes. A positive rotation is clockwise when
+looking along the axis towards the origin. Several rotations may be concatenated.
+</P>
+
+<PRE>    eg   VIEW PERP O139 N36 CB72 X -30
+
+rotate  by  -30  degrees  about  Xp   from   the   specified
+orientation
+</PRE>
+
+<P>The keyword MATRIX causes the current matrix to be modified. VIEW MATRIX
+alone preserves the current matrix (for superimposing drawings). </P>
+
+<PRE> VIEW MATRIX Z 90
+ VIEW MATRIX
+ VIEW MATRIX [X,Y,Z] n
+      keywords defining a rotation matrix to be calculated.
+ VIEW [X,Y,Z]
+ VIEW [X,Y,Z] n
+ VIEW [AFACE, BFACE, CFACE]
+ VIEW LINE x y z
+ line is defined by two atom names
+ line defined by given point
+        from point to origin.
+ VIEW PERP n1 n2 n3
+ VIEW BISECT n1 n2 n3
+</PRE>
+
+<H3><A NAME="group4_solid"></A>SOLID NOHID SHADE a1 a2 Plotter_Step s</H3>
+
+<P>Solid drawing, ie ball and spoke. The keyword NOHID suppresses the
+hidden line removal, making the program much faster. This should normally
+be done when plotting into maps. The keyword SHADE causes shading of the
+atom as if illuminated by a light source whose position is given by the
+angles a1 and a2. Zero angles give the light coming directly towards the
+viewer along the Zp axis. a1 and a2 are rotations about Yp and Zp (suitable
+values 120,-45). The SHADE option is useful for space-filling drawings
+(see RADII ATOMS). The Plotter_Step keyword (see also the DEVICE card)
+allows the plotter step size for circle drawing to be reset from its default
+of 0.25 mm to finer step eg 0.1 . The smaller step gives smoother circles
+but uses more time, particularly if the hidden lines option is used. </P>
+
+<PRE> shade   Shadelight_X     Shadelight_Y 
+ nohid   no hidden line removal
+ Plotter_Step p    reset Plotter_Step
+
+</PRE>
+
+<H3><A NAME="group4_stick"></A>STICK Stick model drawing (one line / bond,
+no circles)</H3>
+
+<H3><A NAME="group4_radii"></A>RADII</H3>
+
+<P>This sets radii for atoms and bonds. There are several options for bond
+specification, atom type, intermolecular, to list, specific atom pair.
+we also enter number of lines for bond. Tapering of bonds may be controlled
+also. <BR>
+RADII ATOMS n1 r1 n2 r2 ..... </P>
+
+<P>This card sets the plotting radii for atom names or atom types n1, n2
+etc to r1, r2 Angstrom . The default setting for all atoms is 0.3 A. Radii
+may be set to approximately Van der Waals radii to give a space-filling
+drawing. Radii may not be set for individual atoms when map plotting. If
+the radius is negative, the atoms are drawn with two concentric circles,
+the inner one with half the given radius. This is particularly useful for
+atoms such as waters which are not joined to other atoms. </P>
+
+<P>When plotting maps, then only one radii can be specified for all atoms.
+It can be changed from the default by RADII ATOM ALL n. </P>
+
+<P>This card may be used to set the bond radii, in a different way to the
+BOND card. The bond style is given by a radius r in A and a number of lines
+n. Alternatively, the style may be given as DASHED and three numbers (see
+MODE card). The default values are 0.04 and 8. <BR>
+The keyword ALL resets the default values. </P>
+
+<PRE> eg   RADII ATOMS CA 0.15 C 0.15 N 0.2 O 0.25 S 0.3 WA -0.2
+      RADII ATOMS ALL 0.5
+      RADII BONDS ALL 0.05 5
+
+     The keyword TO sets the  bond  style  for  all  bonds  to  a
+     particular atom or atom type.
+
+ eg   RADII BONDS TO FE 0 1
+
+     The bond style may also be given for a particular bond  (not
+     when map plotting)
+
+ eg   RADII BOND P2402 07402 0.08 6
+
+     The keyword TAPER applies  exaggerated  perspective  to  all
+     bonds.   A  factor  m  is  given and is used to multiply the
+     ratio of the radii of the end points of the bonds.
+
+ eg   RADII BONDS TAPER 25
+</PRE>
+
+<H3><A NAME="group4_pack"></A>PACK Not Documented </H3>
+
+<P>packing diagram control <BR>
+pack range x1,x2,y1,y2,z1,z2 </P>
+
+<P>Used by pack range instruction find molecules having their centre within
+the range given </P>
+
+<H3><A NAME="group4_mol"></A>MOL Not documented</H3>
+
+<P>moles to be plotted </P>
+
+<H3><A NAME="group4_include"></A>INCLUDE/OMIT</H3>
+
+<P>OMIT atoms list or atom type list </P>
+
+<P>Omit from plotting all specified atoms or all atoms of specified types.
+Up to eight atoms or types may be given on each OMIT card. This card may
+also appear in group 1 before INPUT to omit all atoms of one type from
+the atom selection (one OMIT card only). </P>
+
+<P>Actually a useless option. </P>
+
+<H3><A NAME="group4_dcell"></A>DCELL</H3>
+
+<P>Draw unit cell as a box, with the origin and axes labelled. This is
+not sensible to use when drawing map sections. <BR>
+If a BOUNDS CELL card is present, the cell plotted is the bounds limits.
+</P>
+
+<H3><A NAME="group4_stereo"></A>STEREO [COLOUR | NOTICKS | SEP &lt;s&gt;
+| &lt;d&gt;]</H3>
+
+<P>Causes a stereo pair to be drawn, as seen by an observer at a distance
+of d mm (default 600mm) from the top of the plotting coordinates, with
+an eye separation of 60mm. The keyword COLOUR selects red/green stereo,
+otherwise the two images are side by side. Note that if colours are defined
+for any part of the molecule, the red/green plot will not be correct. </P>
+
+<P>The keyword SEP sets the separation of the two images to s mm. This
+separation will be altered if necessary by the program to a minimum value
+of the width of the drawing (default), and a maximum value of (paper width
+- drawing width) (see SIZE and DEVICE cards for paper width). If the drawing
+is wider than half the paper width, the stereo images will overlap. </P>
+
+<P>NOTICKS option switches off the L and R page indicators. Useful when
+you have a red/green stereo drawing. </P>
+
+<H3><A NAME="group4_mono"></A>MONO [NOBOX | &lt;d&gt;] </H3>
+
+<P>Draw perspective drawing, as seen from a distance d (default 600mm).
+If NOBOX is specified, no bounding box is drawn. </P>
+
+<P>If neither MONO nor STEREO cards are present, the mono drawing is without
+perspective. </P>
+
+<H3><A NAME="group4_size"></A>SIZE s1 CHAR s2 SCALE p PAPER w</H3>
+
+<P>This card controls the scaling of the drawing. If the SCALE keyword
+is given, p is the scale in mm/A . If no scale is given (see also the MAP
+card), the scale factor is calculated to fit the drawing into size s1 mm.
+The scaling is normally done along the plotter Xp axis, but if the PLOT
+Y option is used, scaling is done along the plotter Yp axis. The default
+size is 250mm, 125mm for side-by-side stereo, or 244mm for PLOT Y. </P>
+
+<P>The keyword CHAR sets the size for labels: the characters are spaced
+by s2 mm (default = 2mm). </P>
+
+<P>The keyword PAPER (see also the DEVICE card) sets the paper width for
+scaling and calculation of stereo separation. </P>
+
+<P>Note that a value for s1 must be given: this may be 0 if an explicit
+SCALE is given, either here or on the MAP card. </P>
+
+<PRE>     eg   SIZE 0 CHAR 1.5
+
+PAPER          Paper_Width = FVALUEX(IWORK)
+SCALE          Picture_Scale = FVALUEX(IWORK)
+CHAR           Charcter_Size = fvaluex(iwork)
+</PRE>
+
+<H3><A NAME="group4_matrix"></A>MATRIX</H3>
+
+<P>Matrix r11,r12,r13,r21,r22,r23,r31,r32,r33 </P>
+
+<P>Read view matrix R, Xp = R Xo . Alternative to the VIEW card. </P>
+
+<H3><A NAME="group4_colour"></A>COLOUR</H3>
+
+<P>Keywords BLACK, RED, GREEN, BLUE, MAGENTA, VIOLET, PURPLE, ORANGE or
+CYAN set the pen colour (where not overridden by other commands). Default
+is black. (See Notes on Colours). </P>
+
+<H3><A NAME="group4_bnla"></A>BNLA atom1, atom2, perp_offset, para_offset</H3>
+
+<P>Label the bond from atom1 to atom2 with the bond length. The second
+two numbers offset the label from the bond. </P>
+
+<PRE>        e.g.   BNLA CB17 CG17 1 1
+</PRE>
+
+<H3><A NAME="group4_set"></A>SET - reset all parameters</H3>
+
+<H3><A NAME="group4_font"></A>FONT</H3>
+
+<PRE>   
+ Font     NFont_Number
+      Set font number for different style characters.
+             = 0  simple capitals
+             = 1  block letters (default)
+             = 2  italic
+             = 3  script
+  For GHOST NFont_Number = 0 not used in GHOST,
+                      so used here as flag for italics
+                    1 default Roman font
+                    2 Greek
+                    3 Cyrillic
+</PRE>
+
+<H3><A NAME="group4_thick"></A>THICK</H3>
+
+<P>Set line-thickness for Trilog, default =1 . If .gt. 1 (.le.9) the lines
+are thickened NPen_Thickness times. This is useful for large-scale plots.
+</P>
+
+<H3><A NAME="group4_device"></A>DEVICE keywords</H3>
+
+<P>The DEVICE card sets the paper size (and plotter step size) appropriate
+for a given device. The parameters may be set individually by a keyword/value
+pair: </P>
+
+<PRE>            WIDTH      paper width in mm
+            LENGTH     paper length in mm
+            STEP       plotter step in mm (default = 0.25)
+</PRE>
+
+<P>The paper size is used for scaling if a scale factor is not given, and
+for clipping the picture if a scale factor is given. The STEP keyword (see
+also the SOLID card) allows the plotter step size for circle drawing to
+be reset from its default of 0.25 mm to finer step eg 0.1 . The smaller
+step gives smoother circles but uses more time, particularly if the hidden
+lines option is used. </P>
+
+<P>Alternatively, appropriate values may be set for standard devices: </P>
+
+<PRE>                          Keyword    Width    Length    Step
+                (default)  TRILOG     330      508     default
+                           BIG        330     2032     default
+   for Hewlett-Packard     HP         275      350       0.1
+   eg       DEVICE HP  LENGTH 300 STEP 0.25
+             Set values for HP plotter, then change length
+             to 300mm, step to 0.25
+
+   Keywords  WIDTH    read paper width in mm  Paper_Width
+             LENGTH   read paper length in mm Paper_Length
+             STEP     read plotter step in mm Plotter_Step
+                      (default = 0.25)
+
+           GRID (X and Y are swapped here !)
+                      set width = 253.  length=320.
+             TRILOG   set width = 328., length=508.
+             BIG      set width = 328., length=2032.
+             HP       set width = 275., length=350., step =0.1mm
+                      (for Hewlett-Packard plotter)
+
+ Trilog
+         Paper_Width = 328.0
+         Paper_Length = 508.0
+ Big
+         Paper_Width = 328.0
+         Paper_Length = 2032.0
+  hp
+         Paper_Width = 275.0
+         Paper_Length = 350.0
+         Plotter_Step = 0.1
+ grid file (GHOST)
+         Paper_Width = 253.0
+         Paper_Length = 320.0
+ width
+         Paper_Width = FVALUEX(IWORK+1)
+ length
+         Paper_Length = FVALUEX(IWORK+1)
+ step
+         Plotter_Step = FVALUEX(IWORK+1)
+
+</PRE>
+
+<H3><A NAME="group4_notitle"></A>NOTITLE</H3>
+
+<P>Suppresses all titles, and other text around the plot, except labelling
+of map section axes, X and Y or U and V for pattersons, etc.. </P>
+
+<H3><A NAME="group4_centre"></A>CENTRE</H3>
+
+<P>Read min and max of coords (as printed out by previous run) for producing
+a series of pictures on same origin <BR>
+Xmin,Xmax,Ymin,Ymax,Zmin,Zmax are in plot frame in A </P>
+
+<H2><A NAME="keywords_group5"></A>GROUP 5 keywords</H2>
+
+<H3><A NAME="group5_plot"></A>PLOT [Y]</H3>
+
+<P>This must be the last control card for a drawing, and starts the drawing
+process. Normally the plotter x axis Xp is across the paper, and the Yp
+axis along the roll, but the keyword Y rotates the whole drawing through
+90 degrees, to put Xp along the roll. </P>
+
+<P>This card may contain the number of traces and number of copies of the
+drawing to be made. </P>
+
+<PRE>Y - yacross   draw y axis across paper 
+            THE DEFAULT AT emblhh and dl
+X - xacross, Lpaper_Setting=0
+            THE DEFAULT USING plot84
+TRACE      LTrace_Flag
+COPY       Ncopies 
+</PRE>
+
+<H3><A NAME="group5_end"></A>END</H3>
+
+<P>End input. </P>
+
+<H2><A NAME="files"></A>INPUT AND OUTPUT FILES</H2>
+
+<P>There are three possible input files. Two map files and one PDB file.
+All of these are optional but obviously you need at least one of these.
+</P>
+
+<PRE>    MAPIN    -  first map to be contoured.
+
+    MAPIN2   -  second map to be contoured. This is optional but useful for
+                superimposing 2Fo-Fc and Fo-Fc maps. Note that you need two
+                CONTRS keywords for each map and it is sensible to follow
+                those with two MODE keywords.
+
+     XYZIN1  -  input PDB file containing the coordinates of the model.
+                If there are more INPUT keywords then the subsequent 
+                coordinate files will be associated with XYZIN2, 
+                XYZIN3 etc..
+
+</PRE>
+
+<P>There is only one output file and that is the plot file. This can be
+plotted using xplot84driver. A PS file can be generated either from xplot84driver
+or from pltdev. </P>
+
+<PRE>     PLOT    -  output plot file.
+
+</PRE>
+
+<H2>Notes on Colours</H2>
+
+<P>A list of defined colours is given below along with their pen
+numbers: </P>
+
+<PRE>   1: BLACK
+   2: CYAN
+   3: RED
+   4: GREEN
+   5: BLUE
+   6: MAGENTA
+   7: YELLOW
+   8: PURPLE
+   9: ORANGE
+  10: BLACK
+
+</PRE>
+
+<H2><A NAME="examples"></A>EXAMPLES</H2>
+
+<PRE>  npo xyzin1 ../brk/arg96.brk plot cm.plt &lt;&lt; eof
+  CELL    90.245   90.245   56.235  90.0   90.0  90.00
+  SYMM X,Y,Z                
+  INPUT  BROOK
+  LABEL TEXT Arg96L NE96L  8 1
+  LABEL TEXT Glu298 OE2298H -30 2
+  LABEL TEXT Asp300 CB300H  6 1 
+  RESIDUE RED BOND 2 2 SELECT 96L  
+  RESIDUE BLACK BOND 1 1  SELECT 298H TO 302H
+  RESIDUE SELECT 404W
+  BOND 1 .06 8
+  BOND 2 .06 2
+  BOND 3 DASHED 1 .5 0
+  JOIN BOND 3 WAT404W N301H
+  JOIN BOND 3 OE1298H NH296L
+  JOIN BOND 3 OE2298H NH196L
+  JOIN BOND 3 OE1298H WAT404W
+  JOIN BOND 3 O302H  N299H
+  JOIN RADII RESIDU CA 0.9 C 0.9 O 0.9 N 0.9 S 1.0 P 1.2
+  MATRIX 0.97241 .09670 -.21231 .09231 -.99526 -.03052 -.21425 .01008 -.97673
+  VIEW MATRIX Y 15 X -15 Z 15
+  SOLID   SHADE 45 -45 !PLOT 0.1
+  MONO NOTICKS
+  RADII ATOMS CA 0.225 C 0.225 O 0.275 N 0.255 S 0.275 P 0.3 OW -0.24
+  SIZE 250 CHAR 3.5
+  BNLA OE1298H NH296L 2.0 -3.5 
+  BNLA OE2298H NH196L 2.0 -3.5
+  PLOT 
+  eof
+  #
+
+  npo mapin  m.map plot m.plt &lt;&lt; eof
+  TITL skewing test
+  CELL  59.13770  59.13770  81.79250  90.00000  90.00000 120.00000
+  MAP 
+  CONTRS  .5 TO 4 BY .5
+  SECTNS 20 22 3
+  GRID 0.1
+  COLOUR BLACK
+  PLOT Y
+  eof  
+  #
+
+#!/bin/csh -f
+
+
+# this plots in diff colours and dashed bonds
+# but is complex isn't it ???
+# colours/line thickness is whatever is in your .Xresources
+# for xplot84
+
+~ccp4/cadd/junk/npo  xyzin ~/oppa/oppal/oppal_ortep.pdb\
+     plot kim.plt  \
+     << eof
+CELL 110.600   77.080   71.240  90.00  90.00  90.00  1
+SYMM X,Y,Z
+INPUT BROOK
+LABEL TEXT Glu32    N32A 8 1
+LABEL TEXT Val34  VAL34A  8 1
+#LABEL TEXT Asp419   CA419A 8 1
+#LABEL TEXT Tyr109   CA109A 8 1
+LABEL TEXT His405 HIS405A 8 1
+LABEL TEXT Asp419   ASP419A 8 1
+#LABEL TEXT Tyr109   TYR109A 8 1
+LABEL TEXT Glu276 GLY276A 8 1
+LABEL TEXT Arg404 ARG404A 8 1
+LABEL TEXT Arg413 ARG413A 8 1
+LABEL TEXT Cys417 CYS417A 8 1
+LABEL TEXT Tyr245 TYR245A 8 1
+LABEL TEXT Asn246 ASN246A 8 1
+LABEL TEXT Asn247 ASN247A 8 1
+LABEL TEXT Asn436 ASN436A 8 1
+LABEL TEXT Thr438 THR438A 8 1
+LABEL TEXT Trp397 TRP397A 8 1
+LABEL TEXT Trp416 TRP416A 8 1
+LABEL TEXT Leu401 LEU401A 8 1
+LABEL TEXT Phe400 PHE400A 8 1
+RESIDUE BLACK   BOND  2 2  SELECT 24A TO 506A  
+RESIDUE BLACK  BOND  1 1  SELECT 1B  TO 3B     
+RESIDUE BLACK BOND  3 3  SELECT 15D TO 408D  
+RESIDUE BLACK BOND  2 2  SELECT 1E  TO 5E
+BOND 1 .08 10
+BOND 2 .02 4
+BOND 3 .04 2
+BOND 4 DASHED 1 .5 0
+
+!well it may be in doc but this line isn't in code   
+!JOIN RADII HBOND  4 4 O 1.6 N 1.6
+
+! run first to get list of hbonds using 
+!JOIN RADII HBOND  O 1.6 N 1.6 
+
+! then just edit log file to a set of 
+! JOIN BOND 4 ...... for
+! second run --- do you really want all ???
+! usually would only put in specific ones ???
+
+JOIN BOND 2    SG271A        SG417A     ! disulphide bond
+
+JOIN   BOND   4   OE124A   N32A
+JOIN   BOND   4   NE224A   WAT48D
+JOIN   BOND   4   OE132A   NE2405A
+#JOIN   BOND   4   OE132A   OW048D
+JOIN   BOND   4   OE132A   WAT48D
+JOIN   BOND   4   OE232A   ND2436A
+JOIN   BOND   4   OE232A   NZ2B
+JOIN   BOND   4   O32A   N2B
+JOIN   BOND   4   O33A   OG37A
+JOIN   BOND   4   N34A   O2B
+JOIN   BOND   4   N36A   OE136A
+JOIN   BOND   4   N37A   OG37A
+JOIN   BOND   4   OD138A   NH241A
+JOIN   BOND   4   OD138A   WAT69D
+JOIN   BOND   4   ND238A   WAT24D
+JOIN   BOND   4   NH141A   WAT69D
+JOIN   BOND   4   NH141A   WAT97D
+JOIN   BOND   4   OH109A   OD2419A
+JOIN   BOND   4   O417A   N1B
+JOIN   BOND   4   N417A   O1B
+JOIN   BOND   4   OH109A   N1B
+JOIN   BOND   4   OH245A   OD21E
+JOIN   BOND   4   N246A   OD1246A
+JOIN   BOND   4   O246A   WAT74D
+JOIN   BOND   4   O246A   WAT174D
+JOIN   BOND   4   OD1246A   NZ3B
+JOIN   BOND   4   OD1246A   WAT24D
+JOIN   BOND   4   ND2246A   OD1487A
+JOIN   BOND   4   OD1247A   NZ3B
+JOIN   BOND   4   OD1247A   WAT25D
+JOIN   BOND   4   ND2247A   WAT31D
+JOIN   BOND   4   ND2247A   OD11E
+JOIN   BOND   4   OH269A   WAT86D
+JOIN   BOND   4   OH274A   WAT16D
+JOIN   BOND   4   OH274A   WAT167D
+JOIN   BOND   4   OE1276A   NH2404A
+JOIN   BOND   4   OE1276A   OG1438A
+JOIN   BOND   4   OE1276A   WAT167D
+JOIN   BOND   4   OE2276A   NE404A
+JOIN   BOND   4   OD1366A   NH1413A
+JOIN   BOND   4   ND2366A   OD11E
+JOIN   BOND   4   NE2371A   OD11E
+JOIN   BOND   4   NH1404A   WAT39D
+JOIN   BOND   4   NH1413A   OXT3B
+JOIN   BOND   4   NH2413A   O3B
+JOIN   BOND   4   O415A   WAT16D
+JOIN   BOND   4   O415A   WAT39D
+JOIN   BOND   4   O415A   N3B
+JOIN   BOND   4   NE1416A   O425A
+JOIN   BOND   4   O418A   WAT49D
+JOIN   BOND   4   N419A   OG425A
+JOIN   BOND   4   O419A   WAT176D
+JOIN   BOND   4   OD1419A   N1B
+JOIN   BOND   4   OD2419A   WAT62D
+JOIN   BOND   4   O425A   OG425A
+JOIN   BOND   4   O425A   WAT62D
+JOIN   BOND   4   OG425A   WAT62D
+JOIN   BOND   4   N438A   OG1438A
+JOIN   BOND   4   OH485A   WAT25D
+JOIN   BOND   4   O504A   WAT49D
+JOIN   BOND   4   O504A   WAT387D
+JOIN   BOND   4   O505A   WAT79D
+JOIN   BOND   4   OD2505A   WAT344D
+JOIN   BOND   4   OD1506A   WAT68D
+JOIN   BOND   4   OD1506A   WAT387D
+JOIN   BOND   4   NZ1B   WAT49D
+JOIN   BOND   4   NZ1B   WAT176D
+JOIN   BOND   4   NZ1B   WAT387D
+JOIN   BOND   4   O3B   WAT25D
+JOIN   BOND   4   NZ3B   WAT174D
+JOIN   BOND   4   NZ3B   OD21E
+JOIN   BOND   4   OXT3B   WAT39D
+JOIN   BOND   4   WAT24D   WAT344D
+JOIN   BOND   4   WAT49D   WAT86D
+JOIN   BOND   4   WAT49D   WAT387D
+JOIN   BOND   4   WAT61D   WAT167D
+JOIN   BOND   4   WAT68D   WAT97D
+JOIN   BOND   4   WAT68D   WAT176D
+JOIN   BOND   4   WAT68D   WAT408D
+JOIN   BOND   4   WAT69D   WAT79D
+JOIN   BOND   4   WAT74D   WAT77D
+JOIN   BOND   4   WAT78D   WAT167D
+JOIN   BOND   4   WAT79D   WAT86D
+JOIN   BOND   4   WAT79D   WAT344D
+JOIN   BOND   4   WAT79D   WAT387D
+JOIN   BOND   4   WAT97D   WAT107D
+
+JOIN RADII RESIDU I 1.1 CA 0.9 C 0.9 O 0.9 N 0.9 S 1.1 Fe 1.1
+VIEW Z  
+SOLID SHADE  120 -45   ! shade isn't done by xplot84 > postscript
+STEREO NOBOX  NOTICKS 
+RADII ATOMS CA 0.225 C 0.225 O 0.275 N 0.255 S 0.275 Fe 1.0 OWO -0.24
+SIZE 65 CHAR 1.0
+PLOT
+eof
+exit
+
+
+
+ Plotting a patterson with vectors
+
+npo mapin isopatt plot $SCRATCH/isopatt5.plt xyzin1 emtsvectors.pdb  << eof
+notitle
+map scale 4.0
+sectns 0 0.1 1
+contrs SIG 1
+grid 0.1 0.1
+#
+input brook list
+label all
+solid
+radii  atoms VAA -0.3  
+plot
+eof
+
+</PRE>
+
+<H2>SEE ALSO</H2>
+
+<P><A HREF="xplot84driver.html">xplot84driver</A>, <A HREF="pltdev.html">pltdev</A>
+</P>
+
+<H2>BUGS</H2>
+
+<P>If cell lengths are nearly the same then there can be problems with
+matrix/eigenvalue solution. </P>
+
+</BODY>
+</HTML>

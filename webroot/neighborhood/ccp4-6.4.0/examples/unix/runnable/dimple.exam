@@ -1,0 +1,49 @@
+#!/bin/sh
+
+# A short test for dimple. Requires that molrep, refmac5 and ccp4-python be installed.
+
+python_found=False
+molrep_found=False
+refmac5_found=False
+
+PATH_list=`echo $PATH | sed s'|:| |'g | xargs`
+
+# Look for required programs
+for i in $PATH_list; do if test -x $i/ccp4-python; then python_found=True; fi; done
+for i in $PATH_list; do if test -x $i/molrep; then molrep_found=True; fi; done
+for i in $PATH_list; do if test -x $i/refmac5; then refmac5_found=True; fi; done
+
+# If any are missing
+if [ ${python_found} = False ] 
+then
+   echo "Error: ccp4-python executable not found"  1>&2
+   echo "" 1>&2
+fi
+
+if [ ${molrep_found} = False ] 
+then
+   echo "Error: molrep executable not found"  1>&2
+   echo "" 1>&2
+fi
+
+if [ ${refmac5_found} = False ] 
+then
+   echo "Error: refmac5 executable not found"  1>&2
+   echo "" 1>&2
+fi
+
+if [ ${refmac5_found} = False ] || [ ${molrep_found} = False ] || [ ${python_found} = False ]
+then
+   echo "Missing dependencies - exiting"
+   echo ""
+   exit
+fi
+
+# Remove any files left over from a previous run of this test
+
+rm -rf $CCP4_SCR/dimple_output
+
+# Run the simple test (Insulin example)
+
+dimple -s $CEXAM/data/insulin.mtz $CEXAM/data/insulin.pdb $CCP4_SCR/dimple_output
+

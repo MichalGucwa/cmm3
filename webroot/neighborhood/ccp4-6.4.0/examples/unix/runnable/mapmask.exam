@@ -1,0 +1,147 @@
+#!/bin/sh
+# awa 970408 ver 1.1
+#
+# mapmask - map/mask extend program 
+#
+
+
+# Firstly check to see if sf_calc has been
+# run
+
+set -e
+
+if test ! -f $CCP4_SCR/toxd_fc.map; then
+  echo '! running sf_calc first.' 1>&2
+  echo '! see $CEXAM/unix/runnable/sf_calc .' 1>&2
+  $CEXAM/unix/runnable/sf_calc
+fi
+
+# Secondly check if it worked!
+
+if test ! -f $CCP4_SCR/toxd_fc.map; then
+  echo '! sf_calc did not run correctly.' 1>&2
+  echo '! run it by hand before trying this script again.' 1>&2
+  exit 1
+fi
+
+
+#
+# To Extend A Map (See Extend):
+#
+mapmask                                  \
+mapin $CCP4_SCR/toxd_fc.map              \
+mapout $CCP4_SCR/toxd_ins1.ext           \
+xyzin $CEXAM/toxd/toxd.pdb << eof
+BORDER 5.0
+MODE mapin
+eof
+
+#
+# Or:
+#
+mapmask                                 \
+mapin $CCP4_SCR/toxd_fc.map             \
+mapout $CCP4_SCR/toxd_ins2.ext << eof
+XYZLIM 0 79 0 79 0 19
+MODE mapin
+eof
+
+#
+# To Resection A Map:
+#
+mapmask                                \
+mapin  $CCP4_SCR/toxd_fc.map           \
+mapout $CCP4_SCR/toxd_inszyx.map << eof
+AXIS Z Y X
+MODE mapin
+eof
+
+#
+# To Rescale A Map: (r'=2r+1)
+#
+mapmask                               \
+mapin $CCP4_SCR/toxd_fc.map           \
+mapout $CCP4_SCR/toxd_insscaled.map << eof
+SCALE FACTOR 2.0 1.0
+MODE mapin
+eof
+
+#
+# To Make A Mask From A Map (Mask Covers Region Of Map > 0.5):
+#
+mapmask                               \
+mapin $CCP4_SCR/toxd_fc.map           \
+mskout $CCP4_SCR/toxd_ins1.msk << eof
+MODE mapin
+eof
+
+#
+# To Make A Mask From A Map To Cover 70% Of The Unit Cell:
+#
+mapmask                               \
+mapin $CCP4_SCR/toxd_fc.map           \
+mskout $CCP4_SCR/toxd_ins2.msk << eof
+MASK FRAC 0.7
+MODE mapin
+eof
+
+#
+# To Make A Map From A Mask:
+#
+mapmask                               \
+mapin $CCP4_SCR/toxd_ins1.msk         \
+mapout $CCP4_SCR/toxd_from_msk.map << eof
+MODE mapin
+eof
+
+#
+# To print out a mask section z=5 of all points above 0.9:
+#
+mapmask                               \
+mapin $CCP4_SCR/toxd_fc.map << eof
+MASK CUT 0.9
+PRINT MASK Z 5 5
+MODE mapin
+eof
+
+#
+# To print out alternate map x-sections, scaled x100:
+#
+mapmask                               \
+mapin $CCP4_SCR/toxd_fc.map << eof
+SCALE FACTOR 100
+PRINT MAP X 0 24 2
+MODE mapin
+eof
+
+#
+# To Make A Solvent Envelope, 2.5 Angstroms About Atoms.
+#
+# Use sfall to construct density for all points up to but
+# not exceeding 2.5 A from atoms. Then use mapmask to select
+# this region.
+
+# Step 1: sfall
+
+sfall                                 \
+xyzin $CEXAM/toxd/toxd.pdb            \
+mapout  $CCP4_SCR/junk.map << eof
+MODE ATMMAP		! Calculating atom maps from coordinates. 
+VDWR 2.5		! Maximum radius for which an atom is considered to 
+			! contribute to the electron density (def 2.5)
+SYMM P212121
+eof
+
+
+# Step 2: mapmask
+
+mapmask                   \
+mapin  $CCP4_SCR/junk.map \
+mapout  $CCP4_SCR/bar.msk << eof
+MASK CUT 0.01		! Include all reasonable electron density
+MODE mapin
+eof
+
+#
+
+

@@ -1,0 +1,68 @@
+#!/bin/sh
+#   First calculate structure factors for model coordinates in P1 cell.
+# Dont forget to change the CRYSTL and SCALEi cards at the head 
+# of the PDB file to those appropriate for the "P1 " model cell. 
+# eg: for a cell 50*50*50 you need this.
+#CRYST1   50.00    50.00    50.00   90.00  90.00   90.00
+#SCALE1      0.020000  0.000000  0.000000        0.00000
+#SCALE2      0.000000  0.020000  0.000000        0.00000
+#SCALE3      0.000000  0.000000  0.020000        0.00000
+
+#  toxd_mod_p1.pdb obtained from toxd.pdb by
+#  1) changing CRYSTL and SCALEi cards
+#  2) removing water molecules.
+# this has been done with the supplied version
+
+set -e
+
+#  Read in coordinates to calculate structure factors. 
+sfall  HKLOUT $CCP4_SCR/toxd_mod_p1 \
+       XYZIN $CEXAM/unix/runnable/toxd_mod_p1.pdb <<-END-sfall
+	TITL Phasing on toxd from test data area
+	MODE SFCALC XYZIN 
+	RESO 100 3 
+	SFSG 1
+	SYMM 1
+	LABO FC=FC_p1 PHIC=PHIC_p1
+        NAME PROJECT TOXD CRYSTAL MODEL DATASET CALCULATED
+	END 
+END-sfall
+
+#
+#  Generate E values for Observed F's ( Ian Tickle says so)
+#
+ecalc hklin $CEXAM/toxd/toxd hklout $CCP4_SCR/toxd_e.mtz <<-EOF
+	TITLE TEST OF PROGRAM ECALC WITH REFLECTION DATA
+	REFLECTIONS 1500
+	RESOLUTION 0
+	LABIN FP=FTOXD3  SIGFP=SIGFTOXD3
+	EOF
+#
+#  Generate E values for Calculated F's
+#
+ecalc hklin $CCP4_SCR/toxd_mod_p1 hklout $CCP4_SCR/toxd_mod_p1_e <<-EOF
+	TITLE TEST OF PROGRAM ECALC WITH REFLECTION DATA
+	REFLECTIONS 1500
+	RESOLUTION 0
+	LABIN FP=FC_p1
+	EOF
+#
+# Then run ALMN
+#
+almn HKLIN $CCP4_SCR/toxd_e HKLIN2 $CCP4_SCR/toxd_mod_p1_e \
+   MAPOUT $CCP4_SCR/almn.map <<-END-almn
+	CROSS 3 15
+	RESO  10 3.4
+	TITL  Toxd model rotation function.
+	CRYS file 1 orth 1 flim 1 10000000000000 
+	LABI FILE 1 F=E
+	CRYS file 2 orth 1 flim 1 10000000000000 
+	LABI FILE 2 F=E      
+	LIMIT 0 90 5 1    !  Beta limit 90 because of symmetry
+	!                    If in doubt set Beta limit 180..
+	FIND 5 20
+	NOPR
+	MAP
+	END 
+	END-almn
+#

@@ -1,0 +1,29 @@
+#! /bin/sh
+
+# Example for (c)parrot
+
+# solvent/histogram calculation with cparrot.
+
+set -e
+
+# bug # 3192 - run-all examples produce harvest files - well to counteract
+# this here set HARVESTHOME to somewhere in $CCP4_SCR
+
+HARVESTHOME=$CCP4_SCR
+export HARVESTHOME
+
+if test ! -f $CCP4_SCR/toxd_phase_mir.mtz; then
+  echo "! run the mlphare.exam procedure first" 1>&2
+  exit 1
+fi
+
+cparrot -stdin << eof
+mtzin-wrk $CCP4_SCR/toxd_phase_mir.mtz
+mtzout $CCP4_SCR/toxd_dm.mtz
+colin-wrk-fo /*/*/[FTOXD3,SIGFTOXD3]
+colin-wrk-hl /*/*/[HLA,HLB,HLC,HLD]
+solvent-flatten
+solvent-content 0.48
+histogram-match
+mtzout dm-toxd.mtz
+eof

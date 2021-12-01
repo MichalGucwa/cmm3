@@ -1,0 +1,137 @@
+#!/bin/sh  
+#
+
+#!   Phased translation function calculation
+#
+#!  Step 1.  Calculate isomorphous phases 
+#             or get phases any other way - ie partial structure
+#!#
+#!  Step 2.  CAD will extend data to generate a file containing 
+#!           h k l s   Fobs SIGFobs Phi FOM for 
+#!           all h k l in P1 hemisphere.
+#!#
+#!  Step 3.  Calculate structure factors in P1 from model coordinates
+#!           in cell with cell dimensions of the new structure;
+#!           coordinates rotated to "correct" orientation...
+#
+#!  Cad again to combine these two files.
+#!  Step 4.  CAD will add to the file containing 
+#!           h k l s   Fobs Phiiso  Fcalc Phi calc for 
+#!           all h k l in hemisphere the FC PHIC from step 2.
+#!  You have to run this in spacegroup 1.
+#
+#!#
+#!  Step 5.  the FFT can use these to generate a Phased Translation
+#!           function.
+#!#
+
+set -e
+
+if test ! -f $CCP4_SCR/toxd_phase_mir.mtz; then
+  echo "! run the mlphare procedure first" 1>&2
+  exit 1
+fi
+
+#   Step 1 - use isomorphous phases.
+
+#   Step 2 - use CAD
+#!    Extend phased MTZ file from P212121 to P1
+
+cad        \
+HKLIN1   $CCP4_SCR/toxd_phase_mir.mtz        \
+HKLOUT $CCP4_SCR/expanded.mtz  \
+<< END-sfrk
+reso overall 10000 1
+# Extending out to P1
+outlim SPACEGROUP 1
+
+Labin FILE 1 E1=FTOXD3 E2=SIGFTOXD3 E3=PHI_mir E4=W_mir
+CTYP  FILE 1 E1=F      E2=Q         E3=P       E4=W
+
+END
+END-sfrk
+
+
+#   Step 3 - use LSQKAB to rotate coordinates to new orientation.
+#
+#  run lsqkab first to rotate coordinates to orientation given
+#     by rotation function (almn, amore)
+# Remember to change the CRYSTL and SCALEi cards in the PDB file to
+#  those appropriate for the new cell.
+# ********************************************************************
+#
+lsqkab			\
+WORKCD $CEXAM/toxd/toxd.pdb \
+LSQOP $CCP4_SCR/toxd_rot.pdb	\
+<< END-lsqkab 
+title Rotating model by almn angles
+#Which were zero. So this isn't really nessacary but as an example ..
+#rotat euler alpha beta gamma   - result of ROTATION function
+ROTA EULER  0.0   0.0   0.0
+output  XYZ
+fit WATOM 1 to 10000
+end
+END-lsqkab
+# 
+#  Step 3a -calculate P1 sfs  for these coordinates.
+#
+sfall         XYZIN $CCP4_SCR/toxd_rot.pdb    \
+              HKLOUT $CCP4_SCR/toxd_rot.mtz   \
+              <<END-DATA                     
+TITL   Map generated from rotated coordinates - pt 2
+MODE SFCALC XYZIN
+GRID 160 160 360
+reso 100 2
+SYMM   1
+SFSGRP    1
+LABO  FC=FC_p1 PHIC=AC_p1
+end
+END-DATA
+
+
+
+#   Step 4 
+#!  CAD
+#!  Cad again to combine these two files. Work in P1
+
+
+# Include FC PHIC
+
+
+cad \
+hklin1 $CCP4_SCR/toxd_rot.mtz  \
+hklin2 $CCP4_SCR/expanded.mtz  \
+hklout $CCP4_SCR/final.mtz << END-sfrk
+reso overall 10000 3.5
+SYMM 1
+Labin FILE 1 E1=FC_p1 E2=AC_p1
+CTYP  FILE 1 E1=F     E2=P 
+
+Labin FILE 2 E1=FTOXD3 E2=SIGFTOXD3 E3=PHI_mir E4=W_mir
+CTYP  FILE 2 E1=F      E2=Q         E3=P       E4=W
+END
+  ##
+END-sfrk
+#
+#
+#
+#   Step 5 
+#!  Phased translation function for isomorphous phases set#
+#
+
+#
+fft  \
+HKLIN $CCP4_SCR/final.mtz   \
+MAPOUT $CCP4_SCR/final.map \
+<<endfft
+RESO 1000 3.5
+fftspacegroup 1
+phtr
+titl  Output a map from the phases calculated previously
+grid 168 168 384
+xyzlim 0 167 0 167 0 383
+binmap
+LABI F1=FTOXD3 PHI=PHI_mir F2=FC_p1 PHI2=AC_p1
+#
+endfft
+#

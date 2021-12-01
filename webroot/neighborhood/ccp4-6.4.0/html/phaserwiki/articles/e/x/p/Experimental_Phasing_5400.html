@@ -1,0 +1,207 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<!-- headlinks removed -->
+	<link rel="shortcut icon" href="../../../../misc/favicon.ico"/>
+    <title>Experimental Phasing - Phaserwiki</title>
+    <style type="text/css">/*<![CDATA[*/ @import "../../../../skins/offline/main.css"; /*]]>*/</style>
+    <link rel="stylesheet" type="text/css" media="print" href="../../../../skins/common/commonPrint.css" />
+    <!--[if lt IE 5.5000]><style type="text/css">@import "../../../../skins/monobook/IE50Fixes.css";</style><![endif]-->
+    <!--[if IE 5.5000]><style type="text/css">@import "../../../../skins/monobook/IE55Fixes.css";</style><![endif]-->
+    <!--[if IE 6]><style type="text/css">@import "../../../../skins/monobook/IE60Fixes.css";</style><![endif]-->
+    <!--[if IE]><script type="text/javascript" src="../../../../skins/common/IEFixes.js"></script>
+    <meta http-equiv="imagetoolbar" content="no" /><![endif]-->
+    <script type="text/javascript" src="../../../../skins/common/wikibits.js"></script>
+    <script type="text/javascript" src="../../../../skins/offline/md5.js"></script>
+    <script type="text/javascript" src="../../../../skins/offline/utf8.js"></script>
+    <script type="text/javascript" src="../../../../skins/offline/lookup.js"></script>
+    <script type="text/javascript" src="../../../../raw/gen.js"></script>                  </head>
+  <body
+    class="ns-0 ns-subject page-Experimental_Phasing">
+    <div id="globalWrapper">
+      <div id="column-content">
+	<div id="content">
+	  <a name="top" id="contentTop"></a>
+	        <h1 class="firstHeading">Experimental Phasing</h1>
+	  <div id="bodyContent">
+	    <h3 id="siteSub">From Phaserwiki</h3>
+	    <div id="contentSub"></div>
+	    	    	    <!-- start content -->
+	    <div style="margin-left: 25px; float: right;"><table id="toc" class="toc" summary="Contents"><tr><td><div id="toctitle"><h2>Contents</h2></div>
+<ul>
+<li class="toclevel-1"><a href="#Automated_Experimental_Phasing"><span class="tocnumber">1</span> <span class="toctext">Automated Experimental Phasing</span></a></li>
+<li class="toclevel-1"><a href="#How_to_Define_Data"><span class="tocnumber">2</span> <span class="toctext">How to Define Data</span></a></li>
+<li class="toclevel-1"><a href="#How_to_Define_Atoms"><span class="tocnumber">3</span> <span class="toctext">How to Define Atoms</span></a>
+<ul>
+<li class="toclevel-2"><a href="#Cluster_Compounds"><span class="tocnumber">3.1</span> <span class="toctext">Cluster Compounds</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1"><a href="#How_to_Control_Output"><span class="tocnumber">4</span> <span class="toctext">How to Control Output</span></a></li>
+<li class="toclevel-1"><a href="#Basic_Modes_for_Experimental_Phasing"><span class="tocnumber">5</span> <span class="toctext">Basic Modes for Experimental Phasing</span></a>
+<ul>
+<li class="toclevel-2"><a href="#SAD_Phasing"><span class="tocnumber">5.1</span> <span class="toctext">SAD Phasing</span></a></li>
+<li class="toclevel-2"><a href="#Combined_MR_and_SAD_Phasing"><span class="tocnumber">5.2</span> <span class="toctext">Combined MR and SAD Phasing</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1"><a href="#Density_Modification_after_Phaser"><span class="tocnumber">6</span> <span class="toctext">Density Modification after Phaser</span></a></li>
+</ul>
+</td></tr></table><script type="text/javascript"> if (window.showTocToggle) { var tocShowText = "show"; var tocHideText = "hide"; showTocToggle(); } </script>
+</div>
+<p>Phaser performs SAD phasing in two modes. In the Automated Experimental Phasing mode, Phaser corrects for anisotropy, puts the data on absolute scale, does a cell content analysis, refines heavy atom sites to optimize phasing, and completes the model from log-likelihood gradient maps. Alternatively, the SAD Phasing mode can be used, which only refines heavy atom sites to optimize phasing, and completes the model from log-likelihood gradient maps. For this mode, the data should be pre-corrected for anisotropy and put on an absolute scale. This mode should only be used as part of automation pipelines, where the correct preparation of the data can be guaranteed and it saves cpu time
+</p>
+<a name="Automated_Experimental_Phasing" id="Automated_Experimental_Phasing"></a><h2> <span class="mw-headline">Automated Experimental Phasing</span></h2>
+<p>MODE EP_AUTO combines the anisotropy correction, cell content analysis, and SAD Phasing modes to automatically solve a structure by experimental phasing. The final solution is output to the files FILEROOT.sol, FILEROOT.mtz and FILEROOT.pdb. Many structures can be solved by running an automated experimental phasing job with defaults.
+</p>
+<a name="How_to_Define_Data" id="How_to_Define_Data"></a><h2> <span class="mw-headline">How to Define Data</span></h2>
+<p>You need to tell Phaser the name of the mtz file containing your data and the columns in the mtz file to be used. For SAD phasing, a single CRYSTAL and DATASET with anomalous data (F(+), SIGF(+), F(-) and SIGF(-)) must be given. The columns must have the correct CCP4 column type: 'G' for F(+) and F(-) and 'L' for SIGF(+) and SIGF(-). If the columns on your mtz file have somehow acquired the incorrect column type, you should change the column type with an mtz editing programme (e.g. sftools).
+</p>
+<pre>
+   CRYSTAL insulin DATASET sad LABIN F+ = F(+) SIG+ = SIGF(+) F- = F(-) SIG- = SIGF(-)
+</pre>
+<a name="How_to_Define_Atoms" id="How_to_Define_Atoms"></a><h2> <span class="mw-headline">How to Define Atoms</span></h2>
+<p>Atom sites are defined with the ATOM keyword. Atoms sites may be entered one at a time specifying fractional or orthogonal coordinates, occupancy and B-factor, or from a PDB file, or from a mlphare-style HA file. The crystal to which the atoms correspond must be specified in the input.
+</p><p>A partial structure, for example a partial and poor MR solution (which may or may not contain anomalous scatterers) can be used to start the phasing, either alone or in addition to some anomalous scattering sites entered with the ATOM keyword. The partial structure is entered with the PART keyword.
+If you do not have a partial MR structure, anomalous scatterers must be found using Patterson methods, Direct methods or Dual Space methods (e.g. phenix.hyss, SHELXD, SnB, Rantan) prior to running Phaser. Note that SHELXD outputs a pdb file with the scatterers labelled sulphur (S) regardless of the correct scattering type: you need to change the pdb so that it contains the correct scattering type prior to using it in Phaser.
+</p>
+<a name="Cluster_Compounds" id="Cluster_Compounds"></a><h3> <span class="mw-headline">Cluster Compounds</span></h3>
+<p>Cluster compounds can be used as the scattering type. The coordinates for Ta₆Br₁₂ are stored internally and have the cluster name TX. Coordinates of other cluster compounds must be supplied (coordinates are translated to the origin internally before spherical averaging of the structure factors) and are given the cluster name XX.
+</p>
+<pre>
+   CLUSTER PDB &lt;PDBFILE&gt;
+</pre>
+<a name="How_to_Control_Output" id="How_to_Control_Output"></a><h2> <span class="mw-headline">How to Control Output</span></h2>
+<p>The output of Phaser can be controlled with the following keywords:
+</p>
+<a name="Basic_Modes_for_Experimental_Phasing" id="Basic_Modes_for_Experimental_Phasing"></a><h2> <span class="mw-headline">Basic Modes for Experimental Phasing</span></h2>
+<a name="SAD_Phasing" id="SAD_Phasing"></a><h3> <span class="mw-headline">SAD Phasing</span></h3>
+<p>MODE EP_SAD phases SAD data and completes the structure from log-likelihood gradient maps. The final solution is output to the files FILEROOT.sol, FILEROOT.mtz and FILEROOT.pdb .
+</p><p>Do SAD phasing of insulin. This is the minimum input, using all defaults (except the ROOT filename)
+</p>
+<pre>
+  #insulin_sad.com
+  phaser &lt;&lt; eof
+  MODE EP_SAD
+  TITLe sad phasing insulin with intrinsic sulphurs
+  HKLIn S-insulin.mtz
+  CRYStal insulin DATAset sad LABIn F+=F(+) SIG+=SIGF(+) F-=F(-) SIG-=SIGF(-)
+  WAVElength 1.5418
+  LLGComplete COMPLETE ON SCATterer S
+  ATOM CRYStal insulin PDB S-insulin_hyss.pdb
+  ROOT insulin_sad
+  eof
+</pre>
+<a name="Combined_MR_and_SAD_Phasing" id="Combined_MR_and_SAD_Phasing"></a><h3> <span class="mw-headline">Combined MR and SAD Phasing</span></h3>
+<p>MODE EP_SAD when used with the PART keyword phases SAD data and completes the structure from log-likelihood gradient maps using a partial structure as (at least part of) the initial atomic substructure. Only the real (i.e. non-anomalous) signal from the partial structure is used. The final solution is output to the files FILEROOT.sol, FILEROOT.mtz and FILEROOT.pdb. Note that, because the substructure after log-likelihood-gradient completion includes the partial model, the phases automatically combine information from the partial model and the anomalous scatterers.
+</p><p>Do SAD phasing of insulin starting from partial model of one helix only. This is the minimum input, using all defaults (except the ROOT filename)
+</p>
+<pre>
+  #insulin_mr_sad.com
+  phaser &lt;&lt; eof
+  MODE EP_SAD
+  TITLe sad phasing insulin with intrinsic sulphurs, starting from a helix
+  HKLIn S-insulin.mtz
+  CRYStal insulin DATAset sad LABIn F+=F(+) SIG+=SIGF(+) F-=F(-) SIG-=SIGF(-)
+  WAVElength 1.5418
+  LLGComplete COMPlete ON SCATterer S
+  PART PDB helix.pdb ID 100
+  ROOT insulin_mr_sad
+  eof
+</pre>
+<a name="Density_Modification_after_Phaser" id="Density_Modification_after_Phaser"></a><h2> <span class="mw-headline">Density Modification after Phaser</span></h2>
+<p>Phaser produces map coefficients that reduce the model bias coming from the real contribution of the anomalous scatterers, and there is a small but significant improvement by starting density modification from these FWT/PHWT coefficients rather than FP, PHIB and FOM.
+</p><p>The FWT/PHWT coefficients should be used when running Resolve. If you run Phaser then Resolve from the AutoSol wizard of phenix, FWT/PHWT are picked up automatically.
+</p><p>If you're using DM from ccp4i, you have to provide PHIB, FOM and the HL coefficients in the interface, then use the "Run&amp;View Com File" option to add "FDM=FWT PHIDM=PHWT" to the LABIN line of the DM input.
+</p>
+<!-- 
+NewPP limit report
+Preprocessor node count: 23/1000000
+Post-expand include size: 0/2097152 bytes
+Template argument size: 0/2097152 bytes
+Expensive parser function count: 0/100
+-->
+<div class="printfooter">
+</div>
+	    	    <!-- end content -->
+	    <div class="visualClear"></div>
+	  </div>
+	</div>
+      </div>
+      <div id="column-one">
+	<div class="portlet" id="p-logo">
+            <a style="background-image: url(../../../../misc/PhaserwikiLogo.png);"
+	    href="http://www.phaser.cimr.cam.ac.uk/index.php/Phaser_Crystallographic_Software"
+	    title="Phaser Crystallographic Software"></a>
+	</div>
+	<script type="text/javascript"> if (window.isMSIE55) fixalpha(); </script>
+		<div class='portlet' id='p-site'>
+	  <h5>site</h5>
+	  <div class='pBody'>
+	    <ul>
+	    	      <li id="n-Home"><a href="../../../../index.html">Home</a></li>
+	     	      <li id="n-News"><a href="../../../../articles/n/e/w/News.html">News</a></li>
+	     	      <li id="n-Events"><a href="../../../../articles/e/v/e/Events.html">Events</a></li>
+	     	      <li id="n-Downloads"><a href="../../../../articles/d/o/w/Downloads.html">Downloads</a></li>
+	     	    </ul>
+	  </div>
+	</div>
+		<div class='portlet' id='p-documentation'>
+	  <h5>documentation</h5>
+	  <div class='pBody'>
+	    <ul>
+	    	      <li id="n-Manuals"><a href="../../../../articles/m/a/n/Manuals.html">Manuals</a></li>
+	     	      <li id="n-MR-Phasing"><a href="../../../../articles/m/o/l/Molecular_Replacement_a23a.html">MR Phasing</a></li>
+	     	      <li id="n-SAD-Phasing"><a href="../../../../articles/e/x/p/Experimental_Phasing_5400.html">SAD Phasing</a></li>
+	     	      <li id="n-Keyword-Examples"><a href="../../../../articles/m/r/_/MR_using_keyword_input_9c88.html">Keyword Examples</a></li>
+	     	      <li id="n-Python-Examples"><a href="../../../../articles/p/y/t/Python_Example_Scripts_7723.html">Python Examples</a></li>
+	     	      <li id="n-Tutorials"><a href="../../../../articles/t/u/t/Tutorials.html">Tutorials</a></li>
+	     	      <li id="n-FAQ"><a href="../../../../articles/f/a/q/FAQ_1fe9.html">FAQ</a></li>
+	     	      <li id="n-Top-Ten-Tips"><a href="../../../../articles/t/o/p/Top_Ten_Tips_3fcd.html">Top Ten Tips</a></li>
+	     	      <li id="n-Bugs"><a href="../../../../articles/b/u/g/Bugs.html">Bugs</a></li>
+	     	      <li id="n-Publications"><a href="../../../../articles/p/u/b/Publications.html">Publications</a></li>
+	     	      <li id="n-View-SVN"><a href="../../../../articles/s/v/n/SVN_Repository_93a5.html">View SVN</a></li>
+	     	    </ul>
+	  </div>
+	</div>
+		<div class='portlet' id='p-other'>
+	  <h5>other</h5>
+	  <div class='pBody'>
+	    <ul>
+	    	      <li id="n-Contact"><a href="../../../../articles/c/o/n/Contact.html">Contact</a></li>
+	     	      <li id="n-Developers"><a href="../../../../articles/d/e/v/Developers.html">Developers</a></li>
+	     	      <li id="n-Licences"><a href="../../../../articles/l/i/c/Licences.html">Licences</a></li>
+	     	      <li id="n-External-Links"><a href="../../../../articles/e/x/t/External_Links_ff0e.html">External Links</a></li>
+	     	      <li id="n-Help"><a href="../../../../articles/c/o/n/Help%7EContents_22de.html">Help</a></li>
+	     	    </ul>
+	  </div>
+	</div>
+	<!--
+	<div id="p-search" class="portlet">
+	  <h5><label for="searchInput">Search</label></h5>
+	  <div id="searchBody" class="pBody">
+	    <form action="javascript:goToStatic(3)" id="searchform"><div>
+	      <input id="searchInput" name="search" type="text"
+	        accesskey="f" value="" />
+	      <input type='submit' name="go" class="searchButton" id="searchGoButton"
+	        value="Go" />
+	    </div></form>
+	  </div>
+	</div>
+-->
+	      </div><!-- end of the left (by default at least) column -->
+      <div class="visualClear"></div>
+      <div id="footer">
+<!--
+    <div id="f-poweredbyico"><a href="http://www.mediawiki.org/"><img src="../../../../skins/common/images/poweredby_mediawiki_88x31.png" alt="Powered by MediaWiki" /></a></div>	-->
+<!-- date DATE Date -->
+	<ul id="f-list">
+	   Static <a href="http://www.phaser.cimr.cam.ac.uk/index.php/Phaser_Crystallographic_Software">Phaserwiki</a> 
+Thu Jul 25 23:20:16 BST 2013
+<!--
+	            </li>
+	  	  <li id="f-credits">This page was last modified 11:24, 23 May 2011 by <a href="../../../../articles/a/i/r/User%7EAirlie_8634.html" title="User:Airlie">Airlie McCoy</a>. Based on work by <a href="../../../../articles/r/a/n/User%7ERandy_8422.html" title="User:Randy">Randy Read</a>&#32;and&#32;<a href="../../../../articles/w/i/k/User%7EWikiSysop_5eaf.html" title="User:WikiSysop">WikiSysop</a>.</li>	  	  <li id="f-about"><a href="../../../../articles/a/b/o/Phaserwiki%7EAbout_932f.html" title="Phaserwiki:About">About Phaserwiki</a></li>	  	  -->
+	</ul>
+      </div>
+    </div>
+  </body>
+</html>

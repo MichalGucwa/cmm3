@@ -1,0 +1,70 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#=====================================================================
+#
+# Xfit script
+#
+#=====================================================================
+
+  RunNotification
+
+# Source file with utility procedures
+  source [FileJoin [GetEnvPath CCP4I_TOP] src CCP4_utils.tcl]
+
+# Define crystal and macro files
+  set crystal_file [SetOutputFileRoot]_xfit.xtal
+  set macro_file [SetOutputFileRoot]_xfit.script
+  set script_file [SetOutputFileRoot]_xfit.com
+
+# Crystal file needs cell and symm
+  set symfile [FileJoin [GetEnvPath CLIBD] symop.lib]
+  set symm "symm  x,y,z."
+  if { ![file exists $symfile] || ![ReadSymops $symfile 1 ] || \
+    [set symops_list [GetSpaceGroupSymops $SPACE_GROUP]] == 0 } {
+    WriteToLog "Can not read symops from CLIBD/symop.lib: will use P1"
+  } else {
+    set symm [string tolower [lindex $symops_list 0]]
+    if {[llength $symops_list] > 1 } {
+      foreach s [lrange $symops_list 1 end] {
+        append symm "; [string tolower $s]"
+      }
+    }
+    append symm "."
+  }
+
+# don't need a script file for map2fs or xfit
+ WriteFile $script_file "" -overwrite
+
+# write the temporary crystal file
+ WriteFile $crystal_file "name crystal file from CCP4I" -overwrite
+ WriteFile $crystal_file "cell $CELL_1 $CELL_2 $CELL_3 $CELL_4 $CELL_5 $CELL_6"
+ WriteFile $crystal_file "symm $symm"
+
+# and the startup macro
+  WriteFile $macro_file "crystal $crystal_file" -overwrite
+  for {set n 1} {$n <= $NXYZS} {incr n} {
+    WriteFile $macro_file "loadpdbcent $n $XYZIN($n)"
+  }
+  for {set n 1} {$n <= $NMAPS} {incr n} {
+    WriteFile $macro_file "LoadMap $n $MAPIN($n).fs"
+    if {[regexp msk$ $MAPIN($n)]} { WriteFile $macro_file "contourlevels 1" }
+    WriteFile $macro_file "contourradius $CONT_RAD"
+    WriteFile $macro_file "contourmap $n"
+  }
+
+# now convert ccp4 maps to fs maps
+  for {set n 1} {$n <= $NMAPS} {incr n} {
+    set cmd "map2fs mapin $MAPIN($n) mapout $MAPIN($n).fs"
+    set status [Execute $cmd $script_file program_status report]
+  }
+
+# and launch xfit
+  set cmd "xfit \"$macro_file\""
+  set status [Execute $cmd $script_file program_status report -success]

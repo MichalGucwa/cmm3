@@ -1,0 +1,455 @@
+# ============================================================
+#       Outline of Heavy atom refinement and Phasing tutorial 
+#            Aarhus June 1992   ( E.J.Dodson)
+# ============================================================
+#        Example based on MIR solution of beta glucosidase by
+#               Tracey Barrett; C.G. Suresh     York.
+#        Protein of 425 residues 
+#        cell 69.83 69.83 248.29   90 90 90 
+#        Spacegroup  P41212  / P43212 ?
+#    Two derivatives; Hg and U.
+#    Hg gave an excellent Patterson.
+
+# Steps after solving patterson for 1 site.
+#    Use FFT, PEAKSEARCH/PEAKMAX  HAVECS, Int Tab etc..
+#========================
+# step 1.
+#   Refine Hg Site 1 using Centric differences only
+#  Phasing cycle ( the last) will calculate SIR phases for all reflections.
+#    See step1_mlphare.com
+
+#
+# Step 2.
+#========================
+#   Difference Fourier to find more sites. Contour and
+#   note pertubation in map about first site.
+#   Check patterson peaks are consistent with 2nd.. sites. ( do not worry 
+#   too much if they are not...
+#  (Use of difference fouriers fixes probem of alternative origins for
+#   Harker solution of second site - could have been solved by looking
+#   for cross vectors between sites - MULTAn etc)
+#
+#    See step2_mlphare.com
+#
+#
+# Step 3.
+#========================
+#   Refine 3 Hg Sites  using Centric differences only
+#   3rd site diappears - didnt fit Patterson anyway.
+#  Phasing cycle ( the last) will calculate SIR phases for all reflections
+#
+#    See step3_mlphare.com -  step3_mlphare3A.com
+#
+#
+# Step 4.
+#========================
+#   Difference fouriers to look for U sites.
+#   No need to worry about origin or hand of 2nd solution relative to first.
+#   In fact first attempt at this failed. Some very rogue observations at
+# low resolution had to be excluded from map before U sites appeared.
+#   Check sites v Patterson - again necessary to exclude rogue differences.
+#
+#    See step4_mlphare.com
+#
+#
+# Step 5.
+#========================
+#  Refinement of both derivatives together.
+#    See step5_mlphare.com
+#
+#
+# Step 6.
+#========================
+#  Refinement of both derivatives together including anomalous data
+#    If hand correct, and there are TWO independent derivatives; 
+#    anomalous occupancies will be positive if hand correct;
+#                                   negative if hand incorrect.
+#       If so - change positions to -x,-y,-z, ( spacegroup to 
+#        enantiomorph if necessary) and go on..
+#
+#    See step6_mlphare.com, step6a_mlphare.com
+#
+#   Next steps not here:
+#
+# Step 7.
+#========================
+#  Check U pattersons.
+#  Now should repeat procedure, using U phases to find Hg.
+#  Calculate isomorphous map...
+#
+# Step 8.
+#========================
+# Run SQUASH to do solvent flattening.
+
+# Step 9.
+#========================
+# Build structure.
+#
+
+###   Command procedures in mir_procedure.com
+    ==================================================
+                          STEP 1
+    ==================================================
+# step 1.
+#   Refine Hg Site 1 using Centric differences only
+#  Phasing cycle ( the last) will calculate SIR phases for all reflections.
+#----------------------------------------------------
+#----------------------------------------------------
+#    step1_mlphare.com
+#----------------------------------------------------
+#----------------------------------------------------
+
+#!/bin/csh -f
+#
+mlphare			\
+HKLIN ../scaleit/scaled_bghgu2.mtz \
+HKLOUT phased_bghgu_step1.mtz \
+DATOUT test.dat	\
+<< 'END-phare'
+TITLE Ref and Phasing on  1 hG   derivative of beta glucosidase
+RESO 100.0 5
+CENTRIC
+ANGLE 10
+THRESHOLD 2.5 0.5
+PRINT AVF AVE MON 1000 
+CYCLES 10
+LABI FP=F_bgl1 SIGFP=SIGF_bgl1 -
+FPH1=F_hgl2 SIGFPH1=SIGF_hgl2 
+LABO  ALLIN PHIB=PHI_BHG1 FOM=FOM_BHG1  
+
+DERIV     hgl2  1
+DCYCLE PHASE ALL REFCYC ALL KBOV ALL
+ISOE     100 100 100 100 100 100 100 100 100 100 
+ATOM   HG    0.649  0.429  0.084  1.799  1.582 BFAC   25.000
+ATREF X ALL Y ALL Z ALL OCC ALL 
+END
+'END-phare'
+
+
+    ==================================================
+                          STEP 2
+    ==================================================
+#
+# Step 2.
+#   Difference Fourier to find more sites. Contour and
+#   note pertubation in map about first site.
+#   Check patterson peaks are consistent with 2nd.. sites. ( do not worry 
+#   too much if they are not...
+#----------------------------------------------------
+#----------------------------------------------------
+#    See step2_mlphare.com
+#----------------------------------------------------
+#----------------------------------------------------
+#
+#!/bin/csh -f
+#
+fft \
+HKLIN phased_bghgu_step1.mtz \
+MAPOUT bghg_site2.map	\
+<< 'END_fft' 
+RESO 10 3.0
+LIST 100
+FFTSPG 92 
+TITL  betaglucosidase Fourier map  to find 2nd site.
+grid 72 72 264  
+xyzlim 0 72 0 72 0 33  
+BINMAPOUT
+LABI F2=F_hgl2 SIG2=SIGF_hgl2 F1=F_bgl1 SIG1=SIGF_bgl1 -
+PHI=PHI_BHG1 W=FOM_BHG1
+'END_fft'
+second:
+peaksearch    \
+MAPIN bghg_site2.map	\
+XYZOUTFRC site2.frc  \
+<< 'END' 
+5 100 0
+END
+'END'
+
+
+    ==================================================
+                          STEP 2A
+    ==================================================
+
+#
+#  Get PDB file of coordinates and vectors.
+#!/bin/csh -f
+#  Alternative inputs - PDB,fractional or phare_ml
+# 1)   Input fractional sites 
+#   Free format:   Occup   x y z b
+#
+# 2)Input PHARE fractional sites 
+#ATOM   HG    0.026  0.000  0.287 19.75 25.74 BFAC   13.887
+#
+# 3) PDB - usual sort of stuff CRYSTAL/SCALEi coordinates.
+#
+havecs				\
+XYZIN sites.frc		\
+XYZOUT sites.pdb		\
+UVWOUT sitesuvw.pdb		\
+<< 'END-havecs' 
+92
+PHARE
+ 69.83 69.83 248.29 90 90 90 1
+72 72 264
+0 36 0 36 0 132
+'END-havecs'
+
+#   Plot map.  Choose sensible contour levels
+#
+npo
+MAPIN bghg_site2.map	\
+XYZIN sites.pdb \
+PLOT site2.plot		\
+<< 'END' 
+TITL betaglucosidase Patterson of U derivative
+MAP SCALE 2.0
+CONTRS 0.15 0.175 0.2 0.25 0.3 0.35 0.4
+SECTNS 8 24 1
+INPUT BROOK
+LABEL FIXED ALL 
+RADII ATOMS HG 0.1
+PLOT Z
+'END'
+
+
+    ==================================================
+                          STEP 3
+    ==================================================
+
+#
+# Step 3.
+#========================
+#   Refine 3 Hg Sites  using Centric differences only
+#  Phasing cycle ( the last) will calculate SIR phases for all reflections
+#
+#----------------------------------------------------
+#----------------------------------------------------
+#    See step3_mlphare.com -  step3_mlphare3A.com
+#----------------------------------------------------
+#----------------------------------------------------
+#
+#
+#
+mlphare			\
+HKLIN ../scaleit/scaled_bghgu2.mtz \
+HKLOUT phased_bghgu_step3.mtz \
+DATOUT test.dat	\
+<< 'END-phare'
+TITLE Ref and Phasing on  3 possible hG   derivative of beta glucosidase
+RESO 100.0 5
+CENTRIC
+ANGLE 10
+THRESHOLD 2.5 0.5
+PRINT AVF AVE MON 1000 
+CYCLES 10
+LABI FP=F_bgl1 SIGFP=SIGF_bgl1 -
+FPH1=F_hgl2 SIGFPH1=SIGF_hgl2 
+LABO  ALLIN PHIB=PHI_BHG2 FOM=FOM_BHG2  
+
+DERIV     hgl2  1
+DCYCLE PHASE ALL REFCYC ALL KBOV ALL
+ISOE     100 100 100 100 100 100 100 100 100 100 
+ATOM   HG    0.649  0.429  0.084  1.799   BFAC   25.000
+ATREF X ALL Y ALL Z ALL OCC ALL 
+ATOM   HG    0.07 0.0 0.03   0.5  BFAC 25.0
+ATREF X ALL Y ALL Z ALL OCC ALL 
+ATOM   HG    0.514  0.47 0.087  0.5 BFAC 25.0
+ATREF X ALL Y ALL Z ALL OCC ALL 
+END
+'END-phare'
+
+
+    ==================================================
+                          STEP 4
+    ==================================================
+#
+# Step 4.
+#========================
+#   Difference fouriers to look for U sites.
+#    In this case it was important to EXCLUDE ridiculous differences.
+#----------------------------------------------------
+#----------------------------------------------------
+#    See step4_mlphare.com 
+#----------------------------------------------------
+#----------------------------------------------------
+#
+#
+#!/bin/csh -f
+fft \
+HKLIN phased_bghgu_step3.mtz \
+MAPOUT bghg_u.map	\
+<< 'END_fft' 
+RESO 10 5.0
+LIST 100
+EXCLUDE DIFF  1300
+FFTSPG 92 
+TITL  betaglucosidase Fourier map  to find u sites.
+grid 72 72 264  
+xyzlim 0 72 0 72 0 33  
+BINMAPOUT
+LABI F1=F_ugl2 SIG1=SIGF_ugl2 F2=F_bgl1 SIG2=SIGF_bgl1 -
+PHI=PHI_BHG2 W=FOM_BHG2
+'END_fft'
+peaksearch    \
+MAPIN bghg_u.map	\
+XYZOUTFRC siteu.frc  \
+<< 'END' 
+4 100 0
+END
+'END'
+
+
+    ==================================================
+                          STEP 5
+    ==================================================
+#
+# Step 5.
+#========================
+#  Refinement of both derivatives together.
+#  Include refinement of anomalous occupancies.
+#----------------------------------------------------
+#----------------------------------------------------
+#    See step5_mlphare.com 
+#----------------------------------------------------
+#----------------------------------------------------
+
+#!/bin/csh -f
+#
+mlphare			\
+HKLIN ../scaleit/scaled_bghgu2.mtz \
+HKLOUT phased_bghgu_step5.mtz \
+DATOUT test.dat	\
+<< 'END-phare'
+TITLE Ref and Phasing on  2 hG    2 U derivative of beta glucosidase
+RESO 100.0 5
+CENTRIC
+ANGLE 10
+THRESHOLD 2.5 0.5
+PRINT AVF AVE MON 1000 
+CYCLES 10
+LABI FP=F_bgl1 SIGFP=SIGF_bgl1 -
+FPH1=F_hgl2 SIGFPH1=SIGF_hgl2  -
+FPH2=F_ugl2 SIGFPH2=SIGF_ugl2 
+LABO  ALLIN PHIB=PHI_BHG2U1 FOM=FOM_BHG2U1  
+
+DERIV     hgl2  1
+DCYCLE PHASE ALL REFCYC ALL KBOV ALL
+ISOE      746.82  548.14  407.42  365.98  379.86  329.45  346.91  345.99
+ATOM   HG    0.650  0.430  0.085  1.824 BFAC   25.000
+ATREF X ALL Y ALL Z ALL OCC ALL 
+ATOM   HG    0.059 -0.025  0.015  1.383 BFAC   25.000
+ATREF X ALL Y ALL Z ALL OCC ALL 
+
+DERIV     ul2  1
+DCYCLE PHASE ALL REFCYC ALL KBOV ALL
+ISOE     100 100 100 100 100 100 100 100 100 100 
+ATOM   U     0.623  0.070  0.159  0.824  BFAC   25.000
+ATREF X ALL Y ALL Z ALL OCC ALL 
+ATOM   U     0.058  0.973  0.015  0.884  BFAC   25.000
+ATREF X ALL Y ALL Z ALL OCC ALL 
+END
+'END-phare'
+#
+
+    ==================================================
+                          STEP 6
+    ==================================================
+#  Refinement of both derivatives together.
+#  Include refinement of anomalous occupancies on both hands.
+#----------------------------------------------------
+#----------------------------------------------------
+#    See step6_mlphare.com  step6a_mlphare.com
+#----------------------------------------------------
+#----------------------------------------------------
+
+#!/bin/csh -f
+#
+mlphare			\
+HKLIN ../scaleit/scaled_bghgu2.mtz \
+HKLOUT phased_bghgu_step6.mtz \
+DATOUT test.dat	\
+<< 'END-phare'
+TITLE Ref and Phasing on  2 hG    2 U derivative of beta glucosidase
+RESO 100.0 5
+ANGLE 10
+THRESHOLD 2.5 0.5
+PRINT AVF AVE MON 1000 
+CYCLES 10
+LABI FP=F_bgl1 SIGFP=SIGF_bgl1 -
+FPH1=F_hgl2 SIGFPH1=SIGF_hgl2   DPH1=D_hgl2 SIGDPH1=SIGD_hgl2  -
+FPH2=F_ugl2 SIGFPH2=SIGF_ugl2 DPH2=D_ugl2 SIGDPH2=SIGD_ugl2 
+LABO  ALLIN PHIB=PHI_BHG2U2 FOM=FOM_BHG2U2  
+
+DERIV     hgl2  1
+DCYCLE PHASE ALL REFCYC ALL KBOV ALL
+ISOE      746.82  548.14  407.42  365.98  379.86  329.45  346.91  345.99
+ANOE      50 50 50 50 50 50 50 50 50 50 50 50 50 50
+ATOM   HG    0.650  0.430  0.085  1.824  0.0  BFAC   25.000
+ATREF X ALL Y ALL Z ALL OCC ALL  AOCC ALL
+ATOM   HG    0.059 -0.025  0.015  1.383  0.0  BFAC   25.000
+ATREF X ALL Y ALL Z ALL OCC ALL  AOCC ALL
+
+DERIV     ul2  1
+DCYCLE PHASE ALL REFCYC ALL KBOV ALL
+ISOE     100 100 100 100 100 100 100 100 100 100 
+ANOE      50 50 50 50 50 50 50 50 50 50 50 50 50 50
+ATOM   U     0.623  0.070  0.159  0.824   0.0  BFAC   25.000
+ATREF X ALL Y ALL Z ALL OCC ALL  AOCC ALL
+ATOM   U     0.058  0.973  0.015  0.884   0.0  BFAC   25.000
+ATREF X ALL Y ALL Z ALL OCC ALL  AOCC ALL
+END
+'END-phare'
+
+#----------------------------------------------------
+#----------------------------------------------------
+        step6a_mlphare.com
+#----------------------------------------------------
+#----------------------------------------------------
+
+#!/bin/csh -f
+#
+mtzutils			\
+HKLIN1 ../scaleit/scaled_bghgu2.mtz \
+HKLOUT scaled_96.mtz \
+<< 'END-phare'
+onefile
+symm P43212
+end
+'END-phare'
+#
+mlphare			\
+HKLIN scaled_96.mtz \
+HKLOUT phased_bghgu_step6a.mtz \
+DATOUT test.dat	\
+<< 'END-phare'
+TITLE Ref and Phasing on  2 hG    2 U derivative of beta glucosidase
+RESO 100.0 5
+ANGLE 10
+THRESHOLD 2.5 0.5
+PRINT AVF AVE MON 1000 
+CYCLES 10
+LABI FP=F_bgl1 SIGFP=SIGF_bgl1 -
+FPH1=F_hgl2 SIGFPH1=SIGF_hgl2   DPH1=D_hgl2 SIGDPH1=SIGD_hgl2  -
+FPH2=F_ugl2 SIGFPH2=SIGF_ugl2 DPH2=D_ugl2 SIGDPH2=SIGD_ugl2 
+LABO  ALLIN PHIB=PHI_BHG2U2 FOM=FOM_BHG2U2  
+
+DERIV     hgl2  1
+DCYCLE PHASE ALL REFCYC ALL KBOV ALL
+ISOE      746.82  548.14  407.42  365.98  379.86  329.45  346.91  345.99
+ANOE      50 50 50 50 50 50 50 50 50 50 50 50 50 50
+ATOM   HG    -0.650  -0.430  -0.085  1.824  0.0  BFAC   25.000
+ATREF X ALL Y ALL Z ALL OCC ALL  AOCC ALL
+ATOM   HG    -0.059 0.025  -0.015  1.383  0.0  BFAC   25.000
+ATREF X ALL Y ALL Z ALL OCC ALL  AOCC ALL
+
+DERIV     ul2  1
+DCYCLE PHASE ALL REFCYC ALL KBOV ALL
+ISOE     100 100 100 100 100 100 100 100 100 100 
+ANOE      50 50 50 50 50 50 50 50 50 50 50 50 50 50
+ATOM   U     -0.623  -0.070  -0.159  0.824   0.0  BFAC   25.000
+ATREF X ALL Y ALL Z ALL OCC ALL  AOCC ALL
+ATOM   U     -0.058  -0.973  -0.015  0.884   0.0  BFAC   25.000
+ATREF X ALL Y ALL Z ALL OCC ALL  AOCC ALL
+END
+'END-phare'

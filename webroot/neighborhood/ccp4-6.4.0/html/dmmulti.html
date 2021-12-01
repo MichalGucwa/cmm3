@@ -1,0 +1,676 @@
+<HTML> 
+<HEAD>
+<TITLE>CCP4 Program Suite</TITLE>
+</HEAD> 
+<BODY> 
+<!--::INDEX_INFO::DMMULTI::Supported::Density Modification - Molecular Averaging::multi-xtal density modification package:::::::: -->
+
+<H1>DMMULTI (CCP4: Supported Program)</H1>
+<H2>NAME</H2>
+<B>dmmulti</B>
+- multi-xtal density modification package, release 0.9, 4/5/98
+<H2>SYNOPSIS</H2>
+
+<P><B>dmmulti HKLIN1</B> <I>foo1.mtz</I> [<B>HKLIN2 ...</B>] <B>HKLOUT1</B> <I>bar1.mtz</I> [<B>HKLOUT2 ...</B>]<BR>
+[<B>SOLIN1</B> <I>foosol1.msk</I> [<B>SOLIN2 ...</B>]] [<B>SOLOUT1</B> <I>barsol1.msk</I> [<B>SOLOUT2 ...</B>]]<BR>
+[<B>MSKIN1</B> <I>foomsk1.msk</I> [ <B>MSKIN2 ...</B>]] <BR>
+[<A HREF="#keywords">Keyworded input</A>]
+
+<!--Kevin D. Cowtan: Department of Chemistry, University of York
+          email: cowtan@ysbl.york.ac.uk-->
+
+<H2>REFERENCE</H2>
+<!-- KEEP startreferencelist -->
+<P>K. Cowtan (1994), Joint CCP4 and ESF-EACBM Newsletter on Protein
+Crystallography, 31, p34-38.</P>
+<!-- KEEP endreferencelist -->
+
+<!--VERSION 0.9 ALPHA RELEASE NOTES:
+
+ONLY SOLVENT FLATTENING, HISTOGRAM MATCHING AND THE VARIOUS SORTS OF
+AVERAGING ARE CURRENTLY IMPLEMENTED. THE SKELETONISATION MAY OR MAY
+NOT WORK. 'O' AVERAGING MATRICES ARE NOT YET IMPLEMENTED - USE THE
+CCP4 MATRIX FORMAT INSTEAD.-->
+
+
+<H2><A NAME="description"></A>DESCRIPTION</H2>
+
+<P>'dmmulti' is a package which applies real space constraints based on
+known features of a protein electron density map in order to improve
+the approximate phasing obtained from experimental sources. The
+program may be applied to data from one or more crystal forms
+simultaneously. Various information can be applied, including such
+diverse elements as the following (see keyword <A HREF="#mode">MODE</A>):</P>
+
+<DL>
+<DT>SOLV</DT>
+<DD>Solvent flattening (<A HREF="#ref8">8</A>)</DD>
+<DT>HIST</DT>
+<DD>Histogram mapping (<A HREF="#ref9">9</A>)</DD>
+<DT>SKEL</DT>
+<DD>Skeletonisation (<A HREF="#ref1">1</A>,<A HREF="#ref7">7</A>)    (alpha release)</DD>
+<DT>AVER</DT>
+<DD>NCS averaging, including multi-crystal averaging (<A HREF="#ref2">2</A>,<A HREF="#ref6">6</A>)</DD>
+</DL>
+
+<P>A discriminator analogous to the crystallographic free-R factor (<A HREF="#ref3">3</A>)
+plays an important part in the procedure, providing a good indication
+of the effectiveness of a particular density modification calculation,
+and also an accurate method for determining weights for new phases
+calculated by the procedure. This avoids the problems of over-consistency
+and overestimated weights which could arise in earlier
+density modification procedures. Note that the dm-free-R is not truly
+a free-R factor since it is impossible to completely isolate a set of
+reflections: all structure factor magnitudes are fundamentally
+interrelated through the density constraints in real space.</P>
+
+<P>The program can either use a free-R set from the mtz file, or generate
+its own set internally. It is also possible to recycle the
+calculation, performing the density modification once or more times with
+different free-R sets, and then once with no free-R set but using the
+information obtained from the free-R cycles. This has been found to
+give a slight improvement in the overall results.</P>
+
+<P>Calculation of scale and B-factor for the data are automatic. This is
+performed by comparison with an empirically derived database of map
+variance at different resolutions, and is more reliable than the
+conventional Wilson plot.</P>
+
+<P>Non-crystallographic symmetry averaging can be performed for both
+proper and improper symmetries, and different NCS averaging operations
+can be applied to different parts of the protein (Thanks to Dave
+Schuller for his help with this). Spectral B-spline interpolation is
+used for fast calculation on a low resolution grid; this has been
+developed by Dr. Eric H. Grosse.</P>
+
+<P>Multi-crystal averaging can be performed between phased and/or
+unphased forms. The calculation is performed efficiently and entirely
+in-core.</P>
+
+<P>Skeletonisation is by the core-tracing algorithm of Swanson (<A HREF="#ref7">7</A>). This
+is faster than Greer's algorithm and allows adjustment of the
+skeletonisation parameters without recalculating the skeleton. As a
+result the skeletonisation calculation is rendered largely automatic.</P>
+
+<P>Operation is by standard keyworded card input. Input masks may be on
+any grid and axis order, however if the mask grid is too fine the
+program may run out of space to store it.</P>
+
+<H2><A NAME="files"></A>INPUT FILES</H2>
+
+<H3>HKLINi</H3>
+<P>Input mtz file for i'th crystal form -
+This should contain the conventional (CCP4) asymmetric unit of data (see <A HREF="cad.html">CAD</A>).</P>
+<H3>[SOLINi]</H3>
+<P>Input solvent mask for i'th crystal form -
+This overrides the automatic Wang mask determination. The
+input mask can have any grid and axis ordering, and may
+have any extent from the protein region of a single
+asymmetric unit to the whole cell.</P>
+<H3>[MSKINj]</H3>
+<P>Input averaging masks for j'th domain -
+These are used with the AVER option. The input masks can
+have any grid or axis ordering, and should cover a single
+monomer or domain, however correct results will still
+be obtained (more slowly) if the mask covers a proper
+symmetry related multimer. 'dmmulti' does not perform
+overlap removal.</P>
+
+<H2>OUTPUT FILES</H2>
+<H3>HKLOUTi</H3>
+<P>Output mtz file for i'th crystal form.</P>
+<H3>[SOLOUTi]</H3>
+<P>Output solvent mask for i'th crystal form -
+This will be on the program grid with default axis order,
+and will cover the whole unit cell.</P>
+
+<H2><A NAME="keywords"></A><A NAME="keywords_major"></A>MAJOR KEYWORDS</H2>
+
+<P>Input is keyworded. Available keywords are:</P>
+<A HREF="#average">AVERAGE</A>, <A HREF="#grid">GRID</A>, <A HREF="#labin">LABIN</A>,
+<A HREF="#labout">LABOUT</A>, <A HREF="#mode">MODE</A>, <A HREF="#ncycle">NCYCLE</A>,
+<A HREF="#resolution">RESOLUTION</A>, <A HREF="#scale">SCALE</A>, <A HREF="#scheme">SCHEME</A>,
+<A HREF="#skel">SKEL</A>, <A HREF="#solc">SOLC</A>, <A HREF="#wang">WANG</A>,
+<A HREF="#xtal">XTAL</A>.
+</P>
+
+<P>(MODE and SOLC are compulsory)</P>
+
+<H3><A NAME="xtal"></A>XTAL &lt;xtal&gt;</H3>
+
+<P>Select the &lt;xtal&gt;'th crystal form. Keywords following the
+keyword will apply to this crystal form. Any keywords
+before the first XTAL card apply to form 1.</P>
+
+<H3><A NAME="mode"></A>MODE [SOLV] [HIST] [AVER] [SKEL]</H3>
+    
+<P>Select the calculation to be performed:</P>
+
+<DL>
+<DT><A NAME="mode_solv"></A>SOLV</DT>
+<DD> = Solvent flattening</DD>
+<DT><A NAME="mode_hist"></A>HIST</DT>
+<DD> = Histogram mapping</DD>
+<DT><A NAME="mode_aver"></A>AVER</DT>
+<DD> = Non-crystallographic symmetry averaging</DD>
+<DT><A NAME="mode_skel"></A>SKEL</DT>
+<DD> = Skeletonisation</DD>
+</DT>
+</DL>
+    
+<H3><A NAME="solc"></A>SOLC &lt;solc&gt; [ MASK &lt;solvfrac&gt; &lt;protfrac&gt; ] [ MEAN &lt;solvval&gt; &lt;protval&gt; ]</H3>
+    
+<DL>
+<DT>&lt;solc&gt;</DT>
+<DD> = solvent content. ALWAYS INPUT THE CORRECT SOLVENT CONTENT HERE TO
+ENSURE CORRECT SCALING. 0.0=all protein, 1.0=all solvent.</DD>
+    
+<DT><A NAME="solc_mask"></A>MASK</DT>
+<DD> - used to set different mask volumes to the above
+for histogram matching and solvent flattening.<BR>
+&lt;solvfrac&gt; = fraction of cell to be masked as solvent.<BR>
+&lt;protfrac&gt; = fraction of cell to be masked as protein.<BR>
+If &lt;solvfrac&gt;+&lt;protfrac&gt; &lt; 1.0 then there will be a buffer
+region between solvent and protein which is neither
+histogram matched nor solvent flattened. This feature is
+provided by popular demand, but makes things worse in
+most of my test cases.</DD>
+    
+<DT><A NAME="solc_mean"></A>MEAN</DT>
+<DD> - used to set mean density for solvent and protein 
+regions. This affects scaling and density modification.<BR>
+&lt;solvval&gt; = mean density in solvent region.<BR>
+&lt;protval&gt; = mean density in protein region.<BR>
+(defaults 0.32, 0.43 electrons per cubic angstrom)</DD>
+</DL>
+    
+<H3><A NAME="resolution"></A>RESOLUTION &lt;rmin&gt; &lt;rmax&gt;</H3>
+    
+<P>Resolution range of reflections to be included in the calculation.
+By the end of the calculation all the reflections in this range
+will be included, however at the start only a subset are used,
+chosen on the basis of the SCHEME card (default is the whole range of the input mtz file).</P>
+    
+<H3><A NAME="ncycle"></A>NCYCLE &lt;ncycle&gt; [ FREE &lt;ncross&gt; ]</H3>
+    
+<P>Number of cycles of phase extension to perform
+(defaults &lt;ncycle&gt;=10 &lt;ncross&gt;=1).</P>
+    
+<DL>
+<DT>&lt;ncycle&gt;</DT>
+<DD> = Number of cycles over which to perform phase
+extension. Use 10 cycles for a quick result, try more
+(20-100) but check the free-R factor.</DD>
+    
+<DT>&lt;ncross&gt;</DT>
+<DD> = Number of times each step is performed to provide
+statistics for the free-R and phase weighting.<BR>
+For &lt;ncross&gt;=1 a changing random set of reflections are omitted
+each cycle for the free-R factor.<BR>
+For &lt;ncross&gt;=2 a fixed set is chosen (using the free-R flag if
+available) and omitted for the free-R factor, then the cycle
+is run a second time using all the reflections.<BR>
+For &lt;ncross&gt; &gt; 2 (&lt;ncross&gt;-1) multiple free-R sets are generated,
+then on the &lt;ncross&gt;-th cycle all reflections are included.</DD>
+</DL>
+    
+<P>The total time taken is proportional to the product of these
+two values. Use &lt;ncross&gt; = 1 for large structures where the time
+becomes a significant factor, otherwise use &lt;ncross&gt; = 2. Only
+use &lt;ncross&gt; &gt; 2 for small structures where the statistics are
+particularly poor (&lt; 5000 reflections).</P>
+
+<P>In the case of a multi-crystal calculation only one NCYCLE
+card is allowed, which applies to all forms.</P>
+    
+    
+<H3><A NAME="scheme"></A>SCHEME  AUTO | RES | MAG | FOM [ [ FROM &lt;res&gt; ] | [ FRAC &lt;frac&gt; ] ]</H3>
+    
+<DL>
+<DT><A NAME="scheme_res"></A>RES</DT>
+<DD> - perform phase extension in resolution steps, starting
+with the low resolution data.</DD>
+<DT><A NAME="scheme_mag"></A>MAG</DT>
+<DD> - perform phase extension in magnitude steps, starting
+with the largest reflections.</DD>
+<DT><A NAME="scheme_fom"></A>FOM</DT>
+<DD> - perform phase extension in FOM steps, starting with the
+best phased data.</DD>
+<DT><A NAME="scheme_auto"></A>AUTO</DT>
+<DD> - perform phase extension using a combination of the above
+chosen on the basis of what the data set looks like. This
+option will also pick a reasonable value for &lt;frac&gt;.</DD>
+</DL>
+    
+<DL>
+<DT><A NAME="scheme_frac"></A>FRAC &lt;frac&gt;</DT>
+<DD> - fraction of the input data to use as a starting set.</DD>
+<DT><A NAME="scheme_from"></A>FROM &lt;res&gt;</DT>
+<DD> - sets &lt;frac&gt; to the fraction of the data within a
+resolution sphere radius &lt;res&gt;.</DD>
+</DL>
+    
+<P>(default: AUTO)</P>
+    
+<H3><A NAME="labin"></A>LABIN FP=.. SIGFP=.. [PHIO=.. FOMO=..]
+[HLA=.. HLB=.. HLC=.. HLD=..]
+[PHIDM=.. FOMDM=..]
+[FREE=..]</H3>
+    
+<P>Normally just the first four columns (FP,SIGFP,PHIO,FOMO)
+are input. However if you have Hendrickson-Lattman
+coefficients you may want to input these to the program
+as well (the difference is marginal except for SIR
+data). If you want to start from the end of a previous
+density modification calculation then the PHIDM, FOMDM
+columns are used.</P>
+
+<P>For multi-crystal averaging, if a crystal form is unphased
+the PHIO and FOMO columns may be omitted. There should be
+some sort of phases for at least one form.</P>
+    
+<DL>
+<DT>FP</DT>
+<DD> = F magnitude</DD>
+<DT>SIGFP</DT>
+<DD> = standard deviation, 0 for unmeasured</DD>
+
+<DT>PHIO</DT>
+<DD> = best initial phase estimate</DD>
+<DT>FOMO</DT>
+<DD> = weight attached to PHIO</DD>
+    
+<DT>HLA-HLD</DT>
+<DD> = Hendrickson Lattman coefficients</DD>
+<DT>PHIDM</DT>
+<DD> = phase from previous density modification calculation
+to use as starting value</DD>
+<DT>FOMDM</DT>
+<DD> = weight from previous density modification calculation
+to use as starting value</DD>
+<DT>FREE</DT>
+<DD> = free-R flag (only used if ncross&gt;1)</DD>
+</DL>
+    
+<H3><A NAME="labout"></A>LABOUT PHIDM=.. FOMDM=.. [FCDM=.. PHICDM=..]</H3>
+    
+<P>Normally just the first two columns are output. Don't
+use the other two unless you are a very clever person.</P>
+    
+<DL>
+<DT>PHIDM</DT>
+<DD> = modified phase</DD>
+<DT>FOMDM</DT>
+<DD> = weight attached to PHIDM</DD>
+    
+<DT>FCDM</DT>
+<DD> = F from final modified map before phase recombination</DD>
+<DT>PHICDM</DT>
+<DD> = Phase from final modified map before recombination</DD>
+</DL>
+
+<H2><A NAME="keywords_other"></A>OTHER KEYWORDS</H2>
+
+<H3><A NAME="skel"></A>SKEL [ LENGTH &lt;joinlen&gt; &lt;endlen&gt; ] [ BFAC &lt;bfac&gt; ] [ EVERY &lt;nskl&gt; ]</H3>
+    
+<P>Perform iterative skeletonisation on the map. Cycles
+of skeletonisation are interspersed with cycles of
+conventional density modification
+(defaults &lt;joinlen&gt;=6.0 &lt;endlen&gt;=6.0 &lt;bfac&gt;=45 &lt;nskl&gt;=3).</P>
+    
+<DL>
+<DT><A NAME="skel_joinlen"></A>&lt;joinlen&gt;</DT>
+<DD> = length of skeleton in Angstrom/residue to
+generate between density peaks.</DD>
+<DT><A NAME="skel_endlen"></A>&lt;endlen&gt;</DT>
+<DD> = length of skeleton in Angstrom/residue to
+generate in 'trailing ends'.</DD>
+<DT><A NAME="skel_bfac"></A>&lt;bfac&gt;</DT>
+<DD> = temperature factor to apply to the sharpened
+map before skeletonisation.</DD>
+<DT><A NAME="skel_nskl"></A>&lt;nskl&gt;</DT>
+<DD> = apply skeletonisation instead of every
+&lt;nskl&gt;-th density modification cycle.</DD>
+</DL>
+    
+    
+See also <A HREF="dm_skeletonisation.html">dm_skeletonisation</A>.
+    
+<H3><A NAME="average"></A>AVERAGE [DOMAIN &lt;domn&gt;} [ REFINE [ STEP &lt;dr&gt; &lt;dphi&gt; ] [ EVERY &lt;nref&gt; ]]</H3>
+
+<P>Set a NCS symmetry averaging operator. This card is
+followed by one rotation/translation matrices on
+subsequent lines in either CCP4 or O/RAVE format
+(defaults &lt;dr&gt;=0.5 A, &lt;dphi&gt;=2.5 degrees, &lt;nref&gt;=3).</P>
+    
+<DL>
+<DT>CCP4 Formats (see also <A HREF="lsqkab.html">lsqkab</A>)</DT>
+<DD>ROTA EULER &lt;alpha&gt; &lt;beta&gt; &lt;gamma&gt;   (Euler angles)<BR>
+TRAN &lt;t1&gt; &lt;t2&gt; &lt;t3&gt;</DD>
+<DT>or</DT>
+<DD>ROTA POLAR &lt;omega&gt; &lt;phi&gt; &lt;kappa&gt;    (Polar angles)<BR>
+TRAN &lt;t1&gt; &lt;t2&gt; &lt;t3&gt;</DD>
+<DT>or</DT>
+<DD>ROTA MATRIX &lt;r11&gt; &lt;r12&gt; &lt;r13&gt; &lt;r21&gt; &lt;r22&gt; &lt;r23&gt; &lt;r31&gt; &lt;r32&gt; &lt;r33&gt;<BR>
+TRAN &lt;t1&gt; &lt;t2&gt; &lt;t3&gt;</DD>
+</DL>
+<DL>
+<DT>O/RAVE Format</DT>
+<DD>
+OMAT<BR>
+r11 &nbsp; r21 &nbsp; r31 &nbsp;&nbsp; (note that the rotation matrix is<BR>
+r12 &nbsp; r22 &nbsp; r32 &nbsp;&nbsp; transposed with respect to CCP4<BR>
+r13 &nbsp; r23 &nbsp; r33 &nbsp;&nbsp; or conventional matrix format)<BR>
+t1 &nbsp;&nbsp;&nbsp;  t2 &nbsp;&nbsp;&nbsp;&nbsp;  t3  &nbsp;&nbsp;&nbsp;&nbsp;
+<DT>where</DT>
+<DD>x' = r11 x + r12 y + r13 z + t1<BR>
+y' = r21 x + r22 y + r23 z + t2<BR>
+z' = r31 x + r32 y + r33 z + t3</DD>
+</DL>
+    
+<P>These are the operations which map the density in the
+region covered by the input mask onto the appropriate
+regions in the current crystal form. The first operator
+must be the identity matrix.
+The mask is input in CCP4 mask (map mode 0) format on the
+input file label MSKIN1, and should cover just one monomer
+or averaging domain, NOT the whole unit cell. The mask
+grid need not agree with the program grid.</P>
+    
+<P><A NAME="average_domain"></A>If you want to apply different ncs operations to different
+domains of the protein, then each AVER card should contain
+a DOMAIN card to indicate which to domain this operator
+applies.</P>
+
+<P><A NAME="average_ref"></A><A NAME="average_step"></A>
+<A NAME="average_every"></A>The REF, STEP and EVERY cards will enable refinement of
+the ncs rotation matrices between averaging cycles. The
+REF card enables the refinement of a particular set of NCS
+parameters. Note that the STEP card allows different 
+refinement step sizes can be used for different domains,
+however all but one EVERY card will be ignored. The refined
+matrices will be written out at the end of the log file.</P>
+<DL>
+<DT>&lt;dr&gt;</DT>
+<DD> = step size for refinement of positional parameters
+in Angstrom.</DD>
+<DT>&lt;dphi&gt;</DT>
+<DD> = step size for refinement of rotational parameters
+in degrees.</DD>
+<DT>&lt;nref&gt;</DT>
+<DD> = the number of phase extension cycles between
+each parameter refinement.</DD>
+</DL>
+    
+<P>See also <A HREF="dm_ncs_averaging.html">dm_ncs_averaging</A></P>
+    
+<H3><A NAME="grid"></A>GRID &lt;nx&gt; &lt;ny&gt; &lt;nz&gt;</H3>
+    
+<P>Set the grid for the calculation. You may want to do
+this if you want to include your own mask or dump a
+map or mask (defaults: minimum efficient factors above Nyquist spacing).</P>
+    
+<H3><A NAME="wang"></A>WANG &lt;radius&gt; &lt;mode&gt; [ LIMITS &lt;rhomin&gt; &lt;rhomax&gt; ]</H3>
+    
+<P>Set the averaging radius and mode for calculating the
+solvent mask
+(defaults: &lt;radius&gt;=8.0 &lt;mode&gt;=1 &lt;rhomin&gt;=0.32 &lt;rhomax&gt;=2.0 e/A^3).</P>
+            
+<DL>
+<DT><A NAME="wang_radius"></A>&lt;radius&gt;</DT>
+<DD> = radius of averaging sphere (Angstroms)</DD>
+
+<DT><A NAME="wang_mode"></A>&lt;mode&gt;</DT>
+<DD> = 1:  Use weighting scheme w=1-(r/R) (Wang's method)</DD>
+<DD> = 2:  Use weighting scheme w=1-(r/R)**2</DD>
+</DL>
+
+<P><A NAME="wang_limits"></A>Heavy atoms can bias the mask calculation procedure,
+resulting in a mask of spheres around the heavy atom
+sites. The LIMITS card can be used to set the values at
+which the electron density is truncated before smoothing.
+To truncate heavy atoms set &lt;rhomax&gt; to the maximum electron
+density due to non-heavy atoms at the appropriate
+resolution.</P>
+    
+<H3><A NAME="scale"></A>SCALE &lt;scale&gt; &lt;bfac&gt;</H3>
+    
+<P>Override internal scaling and scale input data by
+F^2 = &lt;scale&gt; * exp (&lt;bfac&gt; * s / 2.0) * F^2
+Scaling is critical to histogram mapping and
+Sayre's equation. In some cases you may want to
+override the B-factor, but run without this card first,
+and consider long and hard before changing scale.</P>
+
+<H2>LOOKING AT YOUR OUTPUT</H2>
+
+<P>Look at the free-R factor: but you will have to disentangle the output
+for the different crystal forms.</P>
+
+<P>The script 'multilog' can be used to roughly separate those portions
+of the output dealing with different crystal forms. Type:
+<PRE>&gt; multilog name-of-your-dmmulti-logfile</PRE></P>
+
+
+<H2>CHANGES FROM 'dm'</H2>
+
+<P>The XTAL keyword for separating keywords for different forms is new.</P>
+
+<P>The format of the AVER keyword is consistent with dm version 1.8 and later</P>
+
+<P>There are now multiple input and output reflection and solvent masks
+for the various forms.</P>
+
+<P>Only the last NCYC or EVERY keyword in the command file will have any
+effect, since cycles must be synchronised across the different
+forms. Only the last REF or STEP keyword in any crystal form will
+have an effect and will apply for all matrices in that form.</P>
+
+<H2><A NAME="common_problems"></A>COMMON PROBLEMS</H2>
+
+<P>Refinement of averaging operators only works when the first
+operator given for each domain is the identity. This restriction
+does not apply when averaging without refining the operators.</P>
+
+<P>Check the averaging correlation on the first cycle: this is a strong
+indication of whether the mask and matrices have been correctly
+determined.</P>
+
+<P>Averaging operators must be FROM the masked region TO the copy in the
+unit cell. All averaging operators are defined in orthogonal
+coordinates using the conventional CCP4/Uppsala axis conventions.</P>
+
+<H2>AUTHOR</H2>
+
+<P>Kevin D. Cowtan, Department of Chemistry, University of York <BR>
+email: cowtan@ysbl.york.ac.uk </P>
+
+<H2><A NAME="references"></A>REFERENCES</H2>
+
+<OL>
+<P><!-- KEEP startreferencelist --></P>
+
+<LI><A NAME="ref1"></A>Baker D., Bystroff C., Fletterick R., Agard D. (1994) Acta Cryst D49 429-439</LI>
+<LI><A NAME="ref2"></A>Bricogne, G. (1974) Acta Cryst A30 395-405</LI>
+<LI><A NAME="ref3"></A>Brunger, A. T. (1992) Nature 355, 472-474</LI>
+<LI><A NAME="ref4"></A>Cowtan K. D., Main, P. (1993) Acta Cryst D49 148-157</LI>
+<LI><A NAME="ref5"></A>Sayre, D. (1974) Acta Cryst A30 180-184</LI>
+<LI><A NAME="ref6"></A>Schuller D. (1996) Acta Cryst D52 425-434</LI>
+<LI><A NAME="ref7"></A>Swanson, S. (1994) Acta Cryst D50 695-708</LI>
+<LI><A NAME="ref8"></A>Wang, B. C. (1985) Methods in Enzymology 115, 90-112</LI>
+<LI><A NAME="ref9"></A>Zhang, K. Y. J., Main P. (1990) Acta Cryst A46 377-381</LI>
+<!-- KEEP endreferencelist -->
+</OL>
+
+<H2><A NAME="examples"></A>EXAMPLES</H2>
+
+<H3><A NAME="example1"></A>[ a simple solvent/histogram calculation ]</H3>
+
+<PRE>dmmulti                                 \
+        hklin gmto.mtz                  \
+        hklout gmtodm.mtz               \
+        histlib dm/hist.lib             \
+        << 'my-data'
+SOLC 0.35
+MODE SOLV HIST
+NCYCLE 10
+LABIN FP=FP SIGFP=SIGFP PHIO=PHIB FOMO=FOM
+LABOUT PHIDM=PHI1 FOMDM=W1
+'my-data'</PRE>
+
+<H3><A NAME="example2"></A>[ a better solvent/histogram calculation, ]<BR>
+[ takes 2x as long, uses fixed free-R set ]<BR>
+[ starts at 3.0A and extends from there ]</H3>
+
+<PRE>dmmulti                                 \
+        hklin gmto.mtz                  \
+        hklout gmtodm.mtz               \
+        histlib dm/hist.lib             \
+        << 'my-data'
+SOLC 0.35
+MODE SOLV HIST
+NCYCLE 10 FREE 2
+SCHEME RES FROM 3.0
+LABIN FP=FP SIGFP=SIGFP PHIO=PHIB FOMO=FOM FREE=FreeR_flag
+LABOUT PHIDM=PHI1 FOMDM=W1
+'my-data'</PRE>
+
+<H3><A NAME="example3"></A>[ a two fold averaging calculation with ]<BR>
+[ two domains and refinement of the 2nd ]<BR>
+[ set of averaging matrices. ]</H3>
+
+<PRE>dmmulti \
+ hklin hpattj.mtz \
+ hklout dm1.mtz \
+ mskin1 cwnads.mask \
+ mskin2 cwglobs.mask \
+ histlib /usr/people/schuller/dm/hist.lib \
+<< 'EOF-dm'
+SOLC 0.57
+MODE SOLV HIST AVER
+NCYCLE 40
+AVERAGE DOMAIN 1
+OMAT
+ 1.0 0.0 0.0
+ 0.0 1.0 0.0
+ 0.0 0.0 1.0
+ 0.0 0.0 0.0
+AVERAGE DOMAIN 1
+OMAT
+    -0.71389002    -0.69492584     0.08611962
+    -0.69635397     0.69129372    -0.19136506
+     0.07357326    -0.19652288    -0.97735721
+   115.37364197    54.98566055    67.00005341
+AVERAGE DOMAIN 2 REFINE
+OMAT
+ 1.0 0.0 0.0
+ 0.0 1.0 0.0
+ 0.0 0.0 1.0
+ 0.0 0.0 0.0
+AVERAGE DOMAIN 2 REFINE
+OMAT
+     0.75830859     0.65183645     0.00883542
+     0.65189570    -0.75824565    -0.00975925
+     0.00033828     0.01316060    -0.99991322
+    17.30371666   -47.10081482    68.99727631
+LABIN FP=FP SIGFP=SIGFP PHIO=PHIml FOMO=FOMml -
+HLA=HLA HLB=HLB HLC=HLC HLD=HLD
+LABOUT PHIDM=PHIDM FOMDM=FOMDM
+'EOF-dm'</PRE>
+
+<H3><A NAME="example4"></A>[ a two crystal averaging calculation ]<BR>
+[ where a single domain is being averaged. ]<BR>
+[ There is no ncs within either form. ]</H3>
+
+<PRE>dmmulti \
+  hklin1  hkl/gmtomir.mtz  hklin2 hkl/gmtmmir.mtz  \
+  hklout1 dmgmto.mtz       hklout2 dmgmtm.mtz      \
+  mskin1  gmto.msk <<+
+
+NCYC 10
+
+XTAL 1
+SOLC 0.35
+MODE SOLV HIST AVER
+AVER REFI
+ROTA POLAR 0 0 0
+TRAN 0 0 0
+LABIN FP=FP SIGFP=SIGFP PHIO=PHIB FOMO=FOM
+
+XTAL 2
+SOLC 0.41
+MODE SOLV HIST AVER
+AVER REFI
+ROTA MATR  0.74198  0.34530  0.57466  0.52980  0.22324 -0.81821 -0.41082  0.91155 -0.01730
+TRAN -27.92476 -10.49614 -11.78758
+LABIN FP=FP SIGFP=SIGFP
+
+END
++</PRE>
+
+<H3><A NAME="example5"></A>[ a three crystal averaging calculation ]<BR>
+[ where a single domain is being averaged. ]<BR>
+[ The first form has MIR phases and a ncs ]<BR>
+[ dimer. The second form is unphased and ]<BR>
+[ contains a monomer. The third form is ]<BR>
+[ unphased and contains a trimer. ]</H3>
+
+<PRE>dmmulti \
+ hklin1 ins6a.mtz                         hklout1 dmins1.mtz \
+ hklin2 ins_hagfish_tetr_T_dim.mtz        hklout2 dmins2.mtz \
+ hklin3 ins_mi3_crosslinked_fred_p321.mtz hklout3 dmins3.mtz \
+ mskin1 insab.msk \
+ << +
+NCYC 500
+
+XTAL 1
+RESO 1000 2.0
+SCHEME RES FROM 6.0
+MODE SOLV HIST AVER
+SOLC 0.30
+AVER
+ROTATION MATRIX: 1 0 0 0 1 0 0 0 1
+TRANSLATION 0 0 0
+AVER
+ROTATION MATRIX    -0.87108 -0.49050  0.02492 -
+                   -0.49025  0.87144  0.01588 -
+                   -0.02951  0.00162 -0.99956
+TRANSLATION   -0.18740   0.11924  -0.66475
+LABI FP=FP SIGFP=SDFP  PHIO=AISOB FOMO=FOM
+
+XTAL 2
+RESO 1000 2.0
+SCHEME RES FROM 6.0
+MODE SOLV HIST AVER
+SOLC 0.50
+AVER
+ROTATION MATRIX     0.46802  0.82899  0.30616 -
+                   -0.81508  0.53880 -0.21293 -
+                   -0.34148 -0.14989  0.92786
+TRANSLATION  3.90866   3.11148   1.14348
+LABI FP=FP SIGFP=SIGFP
+
+XTAL 3
+RESO 1000 2.0
+SCHEME RES FROM 6.0
+MODE SOLV HIST AVER
+SOLC 0.40
+AVER
+ROTATION MATRIX     0.71822 -0.69491 -0.03563 -
+                   -0.69556 -0.71840 -0.00954 -
+                   -0.01897  0.03164 -0.99932
+TRANSLATION  0.24079  45.93060   9.55959
+AVER
+ROTATION MATRIX    -0.26303 -0.96446  0.02510 -
+                    0.96442 -0.26356 -0.02065 -
+                    0.02653  0.01877  0.99947
+TRANSLATION  0.60388  45.35286  10.53205
+AVER
+ROTATION MATRIX      0.68837  0.72534  0.00538 -
+                   -0.72535  0.68836  0.00420 -
+                   -0.00066 -0.00680  0.99998
+TRANSLATION -0.45315   0.17668   0.38123
+LABI FP=FMI3 SIGFP=SMI3
++</PRE>
+</BODY>
+</HTML>

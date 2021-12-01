@@ -1,0 +1,46 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#===========================================================================
+#
+# adddict.script
+#
+#===========================================================================
+# Run libcheck to add a new monomer description to a monomer library file
+
+  if { ![file exists $LIBOUT] } {
+    if { ![file exists [file join [GetSystemVar DOT] monomer]] } {
+      CreateDir [file join [GetSystemVar DOT] monomer]
+    }
+    CopyFile $GEOM_FILE $LIBOUT
+  } else {
+
+    set FILE_OUT [file join [GetDefaultDirPath TEMPORARY] \
+        [subst $job_params(PROJECT)]_$job_params(JOB_ID)]
+
+    WriteComFile libcheck_script \
+"_Y
+_FILE_L $GEOM_FILE
+_FILE_L2 $LIBOUT
+_FILE_O $FILE_OUT
+_END\n"
+    Execute [BinPath libcheck ] $libcheck_script status report
+
+# Copy the 'old' library file to temporary directory
+
+  set BACKUP_FILE [file join [GetDefaultDirPath TEMPORARY] \
+        [subst $job_params(PROJECT)]_$job_params(JOB_ID)]_lib_backup.tmp
+  WriteToLog "Saving copy of old library file $LIBOUT\n to $BACKUP_FILE"
+  MoveFile $LIBOUT $BACKUP_FILE
+
+# Copy the new library file to place of the old dictionary
+  MoveFile $FILE_OUT.lib $LIBOUT
+  }
+
+  set status  1

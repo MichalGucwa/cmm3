@@ -1,0 +1,65 @@
+#!/bin/sh -e
+
+#######################################################
+#
+# Simple SFALL Examples using rnase data
+#
+# These are simple examples of using SFALL
+# Refer to documentation for more details/options.
+#
+# (See also $CEXAM/unix/runnable/sf-calc)
+#
+#######################################################
+
+#######################################################
+# 1. Generate Structure Factors from Coordinates
+#######################################################
+
+sfall XYZIN $CEXAM/rnase/rnase.pdb \
+      HKLIN $CEXAM/rnase/rnase25.mtz \
+      HKLOUT $CCP4_SCR/rnase25_calc.mtz <<eof-sfall
+title Generate structure factors from coordinates
+# Set the mode for structure factor calculation
+# using input coords and reflection file
+# (NB. It is not compulsory to have HKLIN)
+mode sfcalc xyzin hklin
+# Input labels for native
+labin  FP=FNAT SIGFP=SIGFNAT
+# Output labels for calculated structure factors
+labout FC=FC PHIC=PHIC
+# Use 'noscale' to stop output Fp being scaled to Fc
+noscale
+end
+eof-sfall
+
+#######################################################
+# 2. Generate map from coordinates
+#######################################################
+
+sfall XYZIN $CEXAM/rnase/rnase.pdb \
+      MAPOUT $CCP4_SCR/rnase_atm.map <<eof-sfall
+title Generate atom map from coordinates
+# Set the mode for atom-map calculation
+mode atmmap
+# Supply symmetry information
+symmetry 19
+end
+eof-sfall
+
+
+#######################################################
+# 3. Generate structure factors from a map
+#######################################################
+
+sfall MAPIN $CCP4_SCR/rnase_atm.map \
+      HKLOUT $CCP4_SCR/rnase_junk.mtz <<eof-sfall
+# Set the mode for structure factor calc. from a map
+mode sfcalc mapin
+# Supply symmetry information
+symmetry 19
+# Output labels for calculated structure factors
+labout FC=FC PHIC=PHIC
+end
+eof-sfall
+#
+exit

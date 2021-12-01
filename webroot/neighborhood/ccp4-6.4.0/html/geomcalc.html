@@ -1,0 +1,150 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>CCP4 Program Suite</title>
+</head>
+<body>
+<!-- ::INDEX_INFO::GEOMCALC::Supported::Coordinate file manipulations::molecular geometry calculations:::::::: -->
+<h1> GEOMCALC (CCP4: Supported Program)</h1>
+<h2> NAME</h2>
+<b>geomcalc </b>
+- molecular geometry calculations.
+<h2> SYNOPSIS</h2>
+<b>geomcalc XYZIN</b>
+<i>foo_in.pdb </i>
+<b>XYZOUT</b>
+<i>foo_out.pdb </i>
+<br>
+[<a href="#keywords">Keyworded input</a>]
+<h2><a name="description">DESCRIPTION</a></h2>
+Read and store molecule, then do various geometry calculations,
+according to commands.
+<dl>
+  <dt><br>
+  </dt>
+  <dd>- fit subset of atoms to plane </dd>
+  <dt><br>
+  </dt>
+  <dd>- calculate deviation of atoms from plane </dd>
+  <dt><br>
+  </dt>
+  <dd>- calculate atom - atom distances </dd>
+  <dt><br>
+  </dt>
+  <dd>- calculate bond angles </dd>
+  <dt><br>
+  </dt>
+  <dd>- calculate torsion angles </dd>
+</dl>
+<h2><a name="keywords"></a> KEYWORDED INPUT</h2>
+<p>Available keywords are:
+</p>
+<blockquote><a href="#angle"><b>ANGLE</b></a>, <a href="#atom"><b>ATOM</b></a>,
+  <a href="#centre"><b>CENTRE</b></a>, <a href="#current"><b>CURRENT</b></a>,
+  <a href="#distance"><b>DISTANCE</b></a>, <a href="#fold"><b>FOLD</b></a>,
+  <a href="#fromplane"><b>FROMPLANE</b></a>, <a href="#plane"><b>PLANE</b></a>,
+  <a href="#read"><b>READ</b></a>, <a href="#Separation"><b>SEPARATION,</b></a><b>
+  <a href="#tilt">TILT</a></b>, <a href="#torsion"><b>TORSION</b></a>,
+  <a href="#transform"><b>TRANSFORM</b></a>, <a href="#write"><b>WRITE</b></a>,
+  <a href="#xaxis"><b>XAXIS</b></a>
+</blockquote>
+The syntax of an atom-name is
+&lt;chain-name&gt;|&lt;residue_number&gt;:&lt;atomname&gt;,
+<em>i.e.</em> with the 3 components separated by the delimiters | and
+:.
+If either &lt;chain-name&gt; or &lt;residue_number&gt; are omitted,
+they default
+to the previously used value (initially blank and 1 respectively).
+Note that atom-specifiers are case-sensitive.
+<h3><a name="read"></a> READ [&lt;input file name&gt;]</h3>
+Read molecule from file &amp; store. If the filename is not given,
+the logical name XYZIN is used. Any previously stored molecule
+will be overwritten. On entry to the program, it will always try
+to read XYZIN.
+<h3><a name="plane"></a> PLANE [&lt;plane_number&gt;] [+]
+&lt;atom-names&gt; | ALL</h3>
+List atom names to define plane. If the first token is +, these
+atoms will be added to a previously defined plane. Otherwise, a
+PLANE command will replace a previously defined plane.
+The direction of the plane normal is defined as approximately parallel
+to the vector (xyz2-xyz1) x (xyz3-xyz1), where
+xyz1, xyz2, xyz3 are the coordinates of atoms 1,2,3
+If plane_number is given, then this command defines this plane
+and makes it the current plane. If it is not set, the plane-number
+defaults to 1.
+<p> If the keyword ALL is given instead of an atom list, all atoms
+will be used. This may be useful for finding the principal directions
+of a whole molecule.
+</p>
+<h3><a name="fromplane"></a> FROMPLANE &lt;atom-names&gt; | POINT
+&lt;x&gt; &lt;y&gt; &lt;z&gt;<br>
+</h3>
+Calculate perpendicular distance of listed atoms (or point) from
+previously
+defined
+current plane (<em>i.e.</em> the last one defined, or the one set with
+the
+CURRENT command).<br>
+<h3><a name="Separation"></a>SEPARATION&nbsp; <span
+ style="font-weight: bold;"></span>&lt;plane_number1&gt;
+&lt;plane_number2&gt;</h3>
+Calculate distance between the centres of two previously defined
+planes. This is usually only sensible if the two planes are essentially
+the same. <br>
+<h3><a name="atom">ATOM</a> &lt;atom-name&gt;</h3>
+Print coordinates of specified atom
+<h3><a name="distance"></a> DISTANCE &lt;atom-name1&gt;
+&lt;atom-name2&gt;</h3>
+Calculate distance between named atoms
+<h3><a name="angle"></a> ANGLE &lt;atom-name1&gt; &lt;atom-name2&gt;
+&lt;atom-name3&gt;</h3>
+Calculate angle between named atoms, i.e. between the vectors 2 -&gt; 1
+and 2 -&gt; 3.
+<h3><a name="torsion"></a> TORSION &lt;atom-name1&gt;
+&lt;atom-name2&gt; &lt;atom-name3&gt; &lt;atom-name4&gt;</h3>
+Calculate torsion angle between named atoms
+<h3><a name="transform"></a> TRANSFORM</h3>
+Transform all stored atoms into frame of previously defined plane,
+<em>i.e.</em> put origin at centre of plane, with the major axis along
+x and the
+plane normal along z.
+Note that all currently defined planes will also be transformed into
+the new frame.
+<h3><a name="xaxis"></a> XAXIS &lt;atom-name1&gt; &lt;atom-name2&gt;</h3>
+Redefine transformation for the current plane to put the plane normal
+along z and the vector vx = &lt;atom-name1&gt; -&gt; &lt;atom-name2&gt;
+in the xz plane
+(<em>i.e.</em> the projection of vx on the plane is put along x). This
+will then
+be used for any subsequent TRANSFORM commands. It allows for a
+consistent
+frame definition for a series of related but different planes.
+<h3><a name="centre"></a> CENTRE &lt;atom-name&gt; | &lt;x&gt;
+&lt;y&gt; &lt;z&gt;</h3>
+Redefine the centre of the current plane, either to the position of an
+atom,
+or to the given coordinates. This will shift the origin
+of subsequent TRANSFORM operations, but will mangle future FROMPLANE
+commands (unless the new centre lies in the plane).
+<h3><a name="write"></a> WRITE [&lt;output file name&gt;]</h3>
+Write out stored coordinates to file (normally after a TRANSFORM
+command)
+If the filename is omitted, the logical name XYZOUT is used.
+<h3><a name="current"></a> CURRENT &lt;plane_number&gt;</h3>
+Define current plane number: this plane must have been previously
+defined with a PLANE command.
+<h3><a name="fold"></a> FOLD &lt;plane_number_1&gt;
+&lt;plane_number_2&gt;</h3>
+Calculate angle between two previously defined planes.
+<h3><a name="tilt"></a> TILT &lt;atom-name1&gt; &lt;atom-name2&gt; |
+&lt;dx&gt; &lt;dy&gt; &lt;dz&gt;</h3>
+Calculate angle between vector and the normal to the current plane. 
+The vector may be
+defined either as &lt;dx&gt; &lt;dy&gt; &lt;dz&gt;, or as
+&lt;atom-name1&gt; -&gt; &lt;atom-name2&gt;
+<h2> AUTHOR</h2>
+Phil Evans, MRC LMB, September 1995
+<br>
+Plane fit algorithm stolen from Judd Fermi
+</body>
+</html>

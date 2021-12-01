@@ -1,0 +1,150 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#======================================================================
+#
+# scaleit script
+#
+#======================================================================
+
+  global scaleit_anal
+  if $TABULATE_ANALYSIS { 
+# Source the file with utility procedures for analyis
+    source [SearchPath TOP utils phasing_utils.tcl ]
+# Define a global array to hold data extracted from log files
+# and put names of MTZ columns in the  array
+    for { set n 1 } { $n <= $N_DERIVS } { incr n } {
+      set scaleit_anal(data,$n) "$FPH($n) $DPH($n) $FPHp($n) $FPHm($n)"
+    }
+    set scaleit_anal(hklin) $HKLIN
+    set scaleit_anal(FP) $FP
+  }
+
+  set tmp_log_file [GetTmpFileName -ext log]
+set LABIN_FP "FP SIGFP"
+set LABIN_FPH "FPH SIGFPH"
+set LABIN_DPH "DPH SIGDPH"
+
+# -------------------------------------------------------------Run Fhscal
+  if [regexp FHSCAL $SCALE_MODE ] {
+
+  CreateComScript fhscal fhscal_script
+
+  set cmd "[BinPath fhscal] HKLIN \"$HKLIN\" HKLOUT \"$HKLOUT\""
+  set status [ Execute $cmd $fhscal_script program_status  report ]
+
+# if go on to run scaleit then want ANALYSIS mode
+  if [regexp ANAL $SCALE_MODE] { set SCALE_MODE ANALYSIS }
+  set HKLIN $HKLOUT
+
+  }
+
+#-------------------------------------------------------------Run Scaleit
+# for the $SCALE_MODE == FHSCALANAL  option scaleit is run after FHSCAL
+
+  if { ![regexp FHSCAL $SCALE_MODE ] } {
+
+
+  CreateComScript scaleit scaleit_script
+  set cmd "[BinPath scaleit] HKLIN \"$HKLIN\""
+  if { ![regexp ANALYSIS $SCALE_MODE ]} { append cmd " HKLOUT $HKLOUT" }
+
+  set status [ Execute $cmd $scaleit_script  \
+	program_status  report -copy_log $tmp_log_file ]
+
+
+  if $TABULATE_ANALYSIS { scaleit_analysis all scaleit_anal $tmp_log_file }
+  DeleteFile $tmp_log_file
+
+  }
+
+# Switch off AUTOmatic assignment of columns to datasets for the
+# remaining steps, which are analysis only
+  set AUTO_SAVE $IFAUTO
+  if { $IFAUTO } {
+    set IFAUTO 0
+    WriteToLog "Automatic column selection has been switched off for all subsquent runs of Scaleit"
+  }
+
+# CROSS_COMPARE can include dispersive difference analysis
+  if { $CROSS_COMPARE && $N_DERIVS > 1 } {
+
+    set tmpout [GetTmpFileName -ext mtz]
+
+    for { set n 0 } { $n <= [expr $N_DERIVS - 1] } { incr n } {
+      
+      for { set m [expr $n +1] } { $m <= $N_DERIVS } { incr m } {
+
+      set LABIN "FP SIGFP FPH1 SIGFPH1"
+      if { $n > 0 } {
+        set FP $FPH($n)
+        set SIGFP $SIGFPH($n)
+      }
+      set FPH1 $FPH($m)
+      set SIGFPH1 $SIGFPH($m)
+      if  { $ANOMALOUS_DATA } { 
+        append LABIN " DPH1 SIGDPH1"
+        set DPH1 $DPH($m)
+        set SIGDPH1 $SIGDPH($m)
+      }
+
+      set scaleit_script ""
+      CreateComScript scaleit_analysis scaleit_script
+
+      Execute "[BinPath scaleit] HKLIN \"$HKLOUT\" HKLOUT \"$tmpout\"" \
+	$scaleit_script program_status  report -copy_log $tmp_log_file ]
+
+      if $TABULATE_ANALYSIS { 
+         scaleit_analysis pair scaleit_anal $tmp_log_file [expr $n +1] [expr $m +1] }
+
+      DeleteFile $tmp_log_file
+#      DeleteFile $com
+      DeleteFile $tmpout
+
+      }
+    }
+
+# DISP_DIFF actually refers to anomalous difference analysis
+    if { $DISP_DIFF } {
+
+      for { set n 1 } { $n <= $N_DERIVS } { incr n } {
+      if { [StringSame $FPHp($n) Unassigned] && \
+	   [StringSame $FPHm($n) Unassigned]  } {
+        for { set i 1 } { $i <= 5 } { incr i } {
+          set scaleit_anal(disp,[subst $n],[subst $i]) 0.0
+        }
+      } else  {
+
+        set LABIN "FP SIGFP FPH1 SIGFPH1"
+        set FP $FPHp($n)
+        set SIGFP $SIGFPHp($n)
+        set FPH1 $FPHm($n)
+        set SIGFPH1 $SIGFPHm($n)
+
+        set scaleit_script ""
+        CreateComScript scaleit_analysis scaleit_script
+
+        Execute "[BinPath scaleit] HKLIN \"$HKLOUT\" HKLOUT \"$tmpout\"" \
+	  $scaleit_script  program_status  report -copy_log $tmp_log_file ]
+
+        if $TABULATE_ANALYSIS {
+         scaleit_analysis disp scaleit_anal $tmp_log_file $n $n }
+
+        DeleteFile $tmp_log_file
+#        DeleteFile $com
+        DeleteFile $tmpout
+      } } 
+    }
+  }
+
+  if $TABULATE_ANALYSIS { 
+    set tabfile [SetOutputFileRoot]_scaleit.summary
+    scaleit_write_tab scaleit_anal $tabfile $N_DERIVS $DISP_DIFF
+    AddOutputFile $tabfile PROJECT
+  }

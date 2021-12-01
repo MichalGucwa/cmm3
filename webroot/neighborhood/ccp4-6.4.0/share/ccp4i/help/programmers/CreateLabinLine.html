@@ -1,0 +1,174 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4i Documentation for Programmers: CreateLabinLine command</title>
+<link rel="stylesheet" type="text/css" href="../ccp4idocs.css" title="CCP4i" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+</head>
+<body>
+
+<table border="0">
+<tr><td rowspan="3" class="logopic"><img src="../images/weblogo175.gif" alt="CCP4 web logo" /></td>
+<td class="logohead">CCP4i: Graphical User Interface</td></tr>
+<tr><td class="logoprog">Documentation for Programmers</td></tr>
+<tr><td class="logotitle">CreateLabinLine</td></tr>
+</table>
+<br />
+<table border="0">
+<tr><td>
+<a href="CreateLine.html" target="_INDEXMAIN">
+<img border="0" class="navbutton" src="../images/3Dnexttr.gif" alt="next button" /></a>
+<a href="CreateInputFileLine.html" target="_INDEXMAIN">
+<img border="0" class="navbutton" src="../images/3Dprevtr.gif" alt="previous button" /></a>
+<a href="progframeset.html" target="_PROGRAMMERSDOCS">
+<img border="0" class="navbutton" src="../images/3Dtoptr.gif" alt="top button" /></a>
+</td></tr>
+</table>
+
+<h3><a name="name"></a>NAME</h3>
+
+<p>CreateLabinLine, CreateLabinLine4 - draw a line for the user to select
+labelled columns from an input file</p>
+
+<h3><a name="synopsis"></a>SYNOPSIS</h3>
+
+<p><strong>CreateLabinLine</strong> <em>line_id message_text filenameVar label column_labelVar
+priority_name_list</em></p>
+
+<p>Optional Arguments:</p>
+
+<blockquote>
+<strong><a href="#sigma"
+target="_self">-sigma</a></strong> <em>labeln column_labelVarn priority_name_listn</em><br />
+
+<strong><a href="#dependent"
+target="_self">-dependent</a></strong> <em>labeln column_labelVarn priority_name_listn</em><br />
+
+<strong><a href="#help"
+target="_self">-help</a></strong> <em>help_target</em><br />
+
+<strong><a href="#command"
+target="_self">-command</a></strong> <em>command</em><br />
+
+<strong><a href="#toggle_display"
+target="_self">-toggle_display</a></strong> <em>controlVar status
+control_value_list</em>
+</blockquote>
+
+<h3><a name="description"></a>DESCRIPTION</h3>
+
+<p>Create a line which enables the user to select labelled columns from
+a list of the appropriate columns extracted from the input file. Return
+the id of the line <em>line_id</em>. The line is drawn with a text label
+<em>label</em> and the message <em>message_text</em> will appear in the message
+line when the cursor is over the input widgets in the line.
+<em>filenameVar</em> is the name of the variable which will contain the
+name of the input file. When an input file is selected, it is read and
+the names of the labelled columns are stored in the CCP4i program.</p>
+
+<p><em>CreateLabelLine</em> will create one or (if the <strong>-sigma</strong>
+and/or <strong>-dependent</strong> arguments are used) more menus (up to
+four) that list all labelled columns in the input MTZ file of the
+appropriate type for the variable <em>column_labelVar</em>.</p>
+
+<p>The appropriate type depends on the
+<a href="def_files.html#mtz_column_types" target="_self">data type</a>
+of the variable which is set in the <em>taskname</em>.def file. The first
+column label of the appropriate type will be set as the default value for
+column_labelVar unless the MTZ&nbsp;file contains a label with one of the
+names listed in <em>priority_name_list</em> in which case it is set as the
+default.</p>
+
+<p>The <em>priority_name_list</em> can be useful if, for example, you know
+the user probably wants to select the FP but is not useful in other
+instances when it can be set to &quot;&quot;.</p>
+
+<dl>
+<dt><a name="sigma"></a><strong>-sigma</strong> <em>labeln column_labelVarn
+priority_name_listn</em><br />
+    <a name="sigma"></a><strong>-dependent</strong> <em>labeln
+column_labelVarn priority_name_listn</em></dt>
+<dd>The labin line can have an additional menu to select an additional labelled
+column <em>column_labelVarn</em> which is the sigma, weight or other
+dependent quantity of the first <em>column_labelVar</em>.
+The additional variable will be updated automatically to keep in sync when
+the user changes the first. The additional menu has a label <em>labeln</em>
+and can have a <em>priority_name_listn</em>.</dd>
+
+<dt><a name="help"></a><strong>-help</strong> <em>help_target</em></dt>
+<dd>The user can access on-line help by clicking the right mouse button
+on a widget. The help file is defined by the preceding
+<em>SetProgramHelpFile</em> command. The <em>help_target</em> is the target
+within that file to go to when the user clicks on any widget in the line</dd>
+
+<dt><a name="command"></a><strong>-command</strong> <em>command</em></dt>
+<dd>Allows the user to specify a command that will be executed whenever
+any of labels are updated by the user (or by an update to the labels
+for example when loading a new MTZ file). Note that the same command is
+associated with all labels in the line.</dd>
+</dl>
+
+<dt><a name="toggle_display"></a><strong>-toggle_display</strong> <em>controlVar status
+control_value_list</em></dt>
+<dd>Whether the line is displayed is dependent on the value of the parameter
+called <em>controlVar</em>. If the value of <em>controlVar</em> is one of
+the values in <em>control_value_list</em>, the line will be displayed
+if <em>status</em> is <strong>open</strong> or hidden if <em>status</em> is
+<strong>hide</strong>. The opposite status will be adopted if the value of
+<em>control_var</em> is not one of those in the <em>control_value_list</em>.</dd>
+</dl>
+
+<p>Note that the CreateLabinLine4 command is now just a wrapper for
+CreateLabinLine, which incorporates the functionality outlined above.</p>
+
+<h3><a name="examples"></a>EXAMPLES</h3>
+
+<p>The following are standard examples of using the
+CreateLabinLine for different situations:</p>
+
+<p>Example for specifying structure factor amplitudes plus a dependent
+sigma:</p>
+
+<pre>
+CreateLabinLine line \
+    "Enter labels for native" HKLIN \ 
+    "FPH" F { F } -sigma "SigFPH" SIGF { NULL }
+</pre>
+
+<p>Example of Friedel pairs:</p>
+
+<pre>
+CreateLabinLine line \
+    "Enter labels for Friedel pairs" HKLIN \ 
+    "F(+)" Fp { F } \
+    -sigma "SigF(+)" SIGFp { NULL } \
+    -dependent "F(-)" Fm { NULL } \
+    -sigma2 "SigF(-)" SIGFm { NULL }
+</pre>
+
+<p>Example with anomalous difference data:</p>
+
+<pre>
+CreateLabinLine line \
+    "Enter labels for derivative with anomalous differences" HKLIN \ 
+    "FPH" F { F } \
+    -sigma "SigFPH" SIGF { NULL } \
+    -dependent "DPH" D { NULL } \
+    -sigma "SigDPH" SIGD { NULL }
+</pre>
+
+<p>Example with Hendrickson-Lattman coefficients:</p>
+
+<pre>
+CreateLabinLine line \
+    "Enter labels for Hendrickson-Lattman coefficients" HKLIN \ 
+    "HLA" HLA { H } \
+    -dependent "HLB" HLB { NULL } \
+    -dependent "HLC" HLC { NULL } \
+    -dependent "HLD" HLD { NULL }
+</pre>
+
+<h3><a name="keywords"></a>KEYWORDS</h3>
+
+</body>
+</html>

@@ -1,0 +1,215 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::DM_ncs_averaging::General::Density Modification - Molecular Averaging::dm for ncs averaging::see DM program:::::: -->
+
+
+<H1> DM for ncs averaging (CCP4: General) </H1>
+<H2> NAME</H2>
+<b>dm_ncs_averaging</b> 
+- dm for ncs averaging
+
+<H2> AVERAGING REQUIREMENTS</H2>
+In order to perform an averaging calculation you need the following information:
+<ol>
+<li>Averaging Matrix.<br>
+The averaging, or 'RT' operators are a rotation and translation which
+describe the mapping between one area of density and another. For 
+<a href="dm.html">DM</a>
+they can be given as matrices in CCP4 or O format, or as Euler/Polar
+angles and translations. They are always given in orthogonal angstrom
+coordinates.
+<li>Averaging Mask.<br>
+This covers the region of the unit cell that obeys the
+non-crystallographic symmetry. Note that it does not cover a unit cell
+or an asymmetric unit, it does not obey the cell repeat, and it does
+not obey the crystallographic symmetry. It is fundamentally different
+from a solvent mask. If you do not understand this you had better go
+back to the textbooks, or hope that the 'automask' facility works
+right first time.
+</ol>
+
+<H2> MAKING AVERAGING MATRICES</H2>
+The most likely place to find your averaging operators is from running
+a self-rotation and translation function, typically in 
+<a href="amore.html">AMORE</a>. This will give the operator you 
+need in Euler angles, which may be used in DM.
+<P> 
+You must get the matrices the right way round. For example, if you
+calculate a matrix which maps an A chain onto a B chain, then the
+averaging mask must cover the volume occupied by the A chain.
+<P> 
+Alternatively you can make your averaging matrices if you can build
+some corresponding fragments of structure in symmetry related
+molecules. Heavy atom coordinates can also be used in the
+determination of averaging matrices, especially if the rotation
+function has been solved. In this case you will need to run a program
+such as <a href="lsqkab.html">LSQKAB</a>.
+
+<H2> MAKING AVERAGING MATRICES USING LSQKAB</H2>
+You can use the program LSQKAB from the CCP4 library to calculate the
+matrices relating one set of atoms to another. See the documentation
+of that program to find out more about writing the command script. Here
+is an example script which will find the matrix to map 125 residues
+from chain B onto chain A. You could also match e.g. chain A in one pdb
+file to another chain A in a different file.
+<pre>
+
+lsqkab                   
+     REFRCD chmi.pdb \  
+     WORKCD chmi.pdb \ 
+     LSQOP  junk.pdb \
+  &lt;&lt; 'END-lsqkab'
+OUTPUT  XYZ
+FIT  WRESIDU MAIN 2 TO 126 WCHAIN B
+MATCH RRESIDU 2 TO 126 RCHAIN A
+END
+'END-lsqkab'
+
+</pre>
+The output of this run included the following information:
+<pre>
+
+          SUM DISPLACEMENTS**2 =  78.070
+          SQRT(SUM DISPLACEMENTS**2)=   0.395
+          AVERAGE DISPLACEMENT =   0.236
+          MAXIMUM DISPLACEMENT =   5.001
+
+
+      ROTATION MATRIX:
+           -0.43671  0.05443  0.89796
+           -0.62780  0.69647 -0.34754
+           -0.64432 -0.71551 -0.26998
+  TRANSLATION VECTOR IN AS   43.63491  38.05914  62.72586
+
+ .........
+
+  CROWTHER ALPHA BETA GAMMA  158.84190-105.66331 132.00317
+  SPHERICAL POLARS OMEGA PHI CHI  113.28130 103.41944 120.33858
+  DIRECTION COSINES OF ROTATION AXIS   -0.21318   0.89350  -0.39524
+
+</pre>
+The small average displacement is a good indication that a correct
+match has been found. The symmetry operators may then be input to
+DM, either as matrices using the ROTA MATRIX and TRANS cards, or as
+angles and translations. Alternatively, the matrix may be transposed
+and input in O/RAVE format.
+<P> 
+Thus in this case, the 'AVER' card in the DM command file was as
+follows (note that a second run of LSQKAB was used to determine the
+third symmetry, between chains A and C):
+<pre>
+
+AVER REF
+ROTA POLAR  0.0  0.0  0.0
+TRANS  0.0  0.0  0.0
+AVER REF
+ROTA MATRIX -0.43671  0.05443  0.89796     -0.62780  0.69647 -0.34754  -
+            -0.64432 -0.71551 -0.26998
+TRANS  43.635 38.059 62.726
+AVER REF
+ROTA MATRIX -0.42948 -0.62559 -0.65130      0.06496  0.69793 -0.71322  -
+             0.90074 -0.34862 -0.25911
+TRANS  82.989 15.401 -8.928
+
+</pre>
+or
+<pre>
+
+AVER REF
+ROTA POLAR  0.0  0.0  0.0
+TRANS  0.0  0.0  0.0
+AVER REF
+ROTA EULER 158.84190 -105.66331 132.00317
+TRANS  43.635 38.059 62.726
+AVER REF
+ROTA EULER  47.59828 -105.01736  21.15850
+TRANS  82.989 15.401 -8.928
+
+</pre>
+or
+<pre>
+
+AVER REF
+ROTA POLAR  0.0  0.0  0.0
+TRANS  0.0  0.0  0.0
+AVER REF
+ROTA POLAR  113.28130 103.41944 120.33858
+TRANS  43.635 38.059 62.726
+AVER REF
+ROTA POLAR   66.58067 -76.78019 119.69176
+TRANS  82.989 15.401 -8.928
+
+</pre>
+or
+<pre>
+
+AVER REF
+OMAT
+  1.000  0.000  0.000
+  0.000  1.000  0.000
+  0.000  0.000  1.000
+  0.000  0.000  0.000
+AVER REF
+OMAT
+ -0.437 -0.628 -0.644
+  0.054  0.696 -0.716
+  0.898 -0.348 -0.270
+ 43.635 38.059 62.726
+AVER REF
+OMAT
+ -0.429  0.065  0.901
+ -0.626  0.698 -0.349
+ -0.651 -0.713 -0.259
+ 82.989 15.401 -8.928
+
+</pre>
+
+<H2> Making Averaging Masks</H2>
+The easiest way to make an averaging mask is to let DM generate one
+by its built in local-correlation-masking code. However even this
+requires some thought. The program must pick a correlation cutoff to
+isolate the correct masked volume, so it needs to know how much of the
+map will agree with a rotated copy of itself. This is achieved with the
+'NCSMASK NMER &lt;nmer&gt;' card.
+<P> 
+You need to specify how many monomers will map onto matching density
+under the non-crystallographic symmetry transformations. In the
+simplest case - purely improper ncs - the answer is 1. In the case of
+purely proper ncs (e.g. 3-fold rotation, or 2-2-2 ncs), then it is the
+number of monomers in the crystallographic asymmetric unit (3 and 4 in
+these cases).
+<P> 
+More complex cases occur when ncs operators are related to
+crystallographic operators, usually to build up larger multimers. For
+example, in Insulin there is a 2-fold ncs axis perpendicular to the
+crystallographic 3-fold and intersecting it, with the result that the
+entire hexamer obeys the noncrystallographic symmetry, so &lt;nmer&gt;=6. If
+fact this case is further complicated because neighbouring cells up
+and down the c-axis are related onto each other, so the CLIM card must
+also be used.
+<P> 
+Given the complexity of the task, it is often better to make your own
+mask. The local-correlation map can also be generated by 
+<A HREF=maprot.html>MAPROT</A> and used in conjunction with graphics 
+programs, MAPROT, and <A HREF=ncsmask.html>NCSMASK</A>, to generate 
+an averaging mask.
+
+<H2> Making a mask from coordinates</H2>
+The other common method for generating an averaging mask is from
+coordinates or bones. Coordinates are available when the model has
+been partly built, or when there is a molecular replacement solution.
+<P> 
+Bones are generally generated and then pruned in 'O'. The output bones
+file can be turned into a pseudo-pdb file using the utility
+<A HREF=bones2pdb.html>BONDES2PDB</A>.
+<P> 
+In either case, the .pdb file can be converted directly into an
+averaging mask using the NCSMASK program.
+
+<H2> AUTHOR</H2>
+Dr. Kevin Cowtan, Protein Structure Group, University of York, England
+
+</body></html>
+

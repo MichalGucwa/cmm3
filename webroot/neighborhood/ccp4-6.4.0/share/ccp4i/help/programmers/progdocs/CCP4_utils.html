@@ -1,0 +1,368 @@
+<!doctype html public "-//w3c//dtd html 3.2//en">
+<html>
+<head>
+<title>CCP4I Documentation for Programmers: Core Documentation</title>
+<link rel="stylesheet" type="text/css" href="../../ccp4idocs.css" title="CCP4i" />
+<meta name="GENERATOR" content="Mozilla/3.0Gold (X11; I; IRIX 6.2 IP22) [Netscape]" />
+</head>
+<body>
+<H2>CCP4i Documentation for Programmers: Core Documentation</H2>
+<H3>Contents</H3>
+<h3>Handling CCP4-Specific File Formats</h3>
+<a name="InitialiseProject" ><h4><font color="#CC3333">InitialiseProject</font> <em>The place for CCP4 specific initialisation</em></h4> 
+<p><em>Argument list: None</em></p>
+<a name="InitialiseProject" ><h4><font color="#CC3333">InitialiseProject</font> <em>Load data from file CCP4/lib/data/symop.lib & CCP4/ccp4i/etc/crystal.lib</em></h4> 
+<p><em>Argument list: None</em></p>
+<p>Loaded into crystal_data array<p>
+<a name="ReadCrystalData" ><h4><font color="#CC3333">ReadCrystalData</font> <em>Read etc/crystal.lib file and extract crystallographic info</em></h4> 
+<p><em>Argument list:  &lt;file&gt;</em></p>
+<p>Save to array crystal_data<p>
+<p>There are crystal_data(N_LAUE) laue groups stored as list of space groups in crystal_data(LAUE,$spgp)<p>
+<p>The patterson info for space group spgp is stored in crystal_data(PATTERSON,$spgp) and is a list consisting of: patterson_spsgp_number, number of harker planes, definition of planes<p>
+<p><strong>file</strong>  Full path name of crystal.lib file<p>
+<h3>MTZ Column Selection</h3>
+<a name="MTZ_Column_Selection"><h3> MTZ Column Selection </h3> 
+<p>CreateLabinLine and CreateLaboutLine are the APIs with a lot of support procedures. There is also CreateCadLabinLine which is for the customised labin lines used in the CAD interface.<p>
+<a name="CreateLabinLine" ><h4><font color="#CC3333">CreateLabinLine</font> <em>Draw task interface line for selecting input MTZ column labels</em></h4> 
+<p><em>Argument list:  &lt;linein&gt; &lt;message&gt; &lt;filein&gt; &lt;label1&gt; &lt;name1&gt; &lt;\&gt;</em></p>
+<p>This is a version of CreateLabinLine that can accommodate up to four MTZ labels in a single group.<p>
+<p>The MTZ label line can allow the user to select up to four MTZ labels.  The second and subsequent labels are expected to be associated with the first (such as a sigma or a Freidel mate) and when the user selects the first label then the second and subsequent labels are automatically updated to be the appropriate related column in the MTZ file. The label types are defined in CCP4I_TOP/etc/types.def<p>
+<p>This procedure sets up commands so that when the user selects an input MTZ file the column names in the file are automatically read by the procedure ExtractMTZData and the menu(s) for users to select the column labels is updated by SetLabin<p>
+<p><strong>linein</strong>  Output Tk frame id for the line<p>
+<p><strong>message</strong>  Message line which appears if cursor over this line<p>
+<p><strong>filein</strong>  Name of element in the task interface array which contains the name of the input MTZ file<p>
+<p><strong>label1</strong>  Text to appear in the task interface line<p>
+<p><strong>name1</strong>  Name of the element in the task interface array which contains the name of the input label<p>
+<p><strong>priority_name_list1</strong>  A list of possible column label names - if one of these appears in the MTZ file then it is set as the default.<p>
+<p><strong>-sigma</strong><em>  labeln namen priority_name_listn</em><p>
+<p>The label, element name and priority labels for an additional MTZ label<p>
+<p><strong>-dependent</strong><em>  labeln namen priority_name_listn</em><p>
+<p>Equivalent to the -sigma option<p>
+<p><strong>-toggle_display</strong><em>  toggle_var toggle_state toggle_hitlist</em><p>
+<p>Display this line in the task window dependent on the value of toggle_var.  If it takes any of the values in the list toggle_hitlist then set the display status to toggle_state.  toggle_state can be 'open', the line is displayed, or  'hide', the line is not displayed.<p>
+<p><strong>-command</strong><em>  command_string</em><p>
+<p>Associate a command to be invoked when the user clicks on any of the labels in the grouping.<p>
+<a name="CreateLabinLine4" ><h4><font color="#CC3333">CreateLabinLine4</font> <em>Draw task interface line for selecting input MTZ column labels</em></h4> 
+<p><em>Argument list:  &lt;linein&gt; &lt;message&gt; &lt;filein&gt; &lt;label1&gt; &lt;name1&gt; &lt;\&gt;</em></p>
+<p>This command is now just a wrapper to CreateLabinLine, and so supports all the same options as that command.<p>
+<a name="add_labinline_command" ><h4><font color="#CC3333">add_labinline_command</font> <em>Internal function used in CreateLabinLine</em></h4> 
+<p><em>Argument list:  &lt;command&gt; &lt;arrayname&gt; &lt;var&gt;</em></p>
+<p>This adds a command callback to a label variable.<p>
+<p><strong>command</strong>  The command to be invoked<p>
+<p><strong>arrayname</strong>  The name of the parameter array<p>
+<p><strong>var</strong>  The parameter name associated with the label<p>
+<a name="invoke_labinline_command" ><h4><font color="#CC3333">invoke_labinline_command</font> <em>Internal function used in CreateLabinLine</em></h4> 
+<p><em>Argument list:  &lt;command&gt; &lt;args&gt;</em></p>
+<p>Invoke a user-defined callback when labels are changed<p>
+<p><strong>command</strong>  The command to be invoked when the labels are updated<p>
+<a name="SetLabin" ><h4><font color="#CC3333">SetLabin</font> <em>An updated version of SetLabin ...</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;filename&gt; &lt;args&gt;</em></p>
+<a name="SetLabin" ><h4><font color="#CC3333">SetLabin</font> <em>Handler to update Labin menu after user has selected MTZ file</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;filename&gt; &lt;args&gt;</em></p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>filename</strong>  Element of array which contains the MTZ file name<p>
+<p><strong>labin_element1...labin_elementn</strong>  Any number of elements of the array which are the input column labels which map onto the labin menu widgets<p>
+<p><strong>-setallelements</strong><p>
+<p>Flag that the labin elements are part of extending frames and have multiple instances with names element,n.  Update the menus for all instances of the element<p>
+<a name="add_label_menu_extras" ><h4><font color="#CC3333">add_label_menu_extras</font> <em>Internal procedure called from SetLabin</em></h4> 
+<p><em>Argument list:  &lt;menu&gt; &lt;arrayname&gt; &lt;ele&gt; &lt;file&gt; &lt;countVar&gt;</em></p>
+<p>Append the "ListAllLabels" and "EnterLabel" options to the labin menus set up in SetLabin.<p>
+<a name="extract_label_data" ><h4><font color="#CC3333">extract_label_data</font> <em>Internal procedure called from SetLabin</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;\&gt;</em></p>
+<p>Set up the variables needed to define the label widgets in SetLabin.<p>
+<a name="SetLabinUnassigned" ><h4><font color="#CC3333">SetLabinUnassigned</font> <em>Set labin menu to 'Unassigned' if the user has deselected an MTZ file</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;element&gt; &lt;args&gt;</em></p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>element</strong>  Name of labin element in array<p>
+<p><strong>-setallelements</strong><p>
+<p>Flag that the labin element is part of extending frames and has multiple instances with name element,n.  Update the menus for all instances of the element<p>
+<a name="UpdateDependentLabin" ><h4><font color="#CC3333">UpdateDependentLabin</font> <em>Update the second labin column in a line when user selects the first labin#d_desc This procedure is called when the user selects a new item from the labin menu</em></h4> 
+<p><em>Argument list:  &lt;selection&gt; &lt;arrayname&gt; &lt;param0&gt; &lt;args&gt;</em></p>
+<p><strong>selection</strong>  The selected value for the first labin<p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>param0</strong>  The name of the array element which contains the first labin on the CreatelabinLine<p>
+<p><strong>param1...paramn</strong>  A list of the dependent labin elements. There is usually just one for the second labin in the CreateLabin line<p>
+<a name="SetLabelList" ><h4><font color="#CC3333">SetLabelList</font> <em>Save a list of allowed column labels and types a labin array element</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;element&gt; &lt;name_list&gt; &lt;type_list&gt; &lt;mode&gt; &lt;&gt;</em></p>
+<p>This list corresponds to the list of values presented in the menu <p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>element</strong>  The name of the array element which contains the labin<p>
+<p><strong>name_list</strong>  List of valid column names for this labin<p>
+<p><strong>type_list</strong>  List of the column types for these column names<p>
+<p><strong>mode</strong>  Optional 'append' to append to existing list, otherwise overwrite<p>
+<a name="GetLabelList" ><h4><font color="#CC3333">GetLabelList</font> <em>Return the list of allowed column labels and types for a labin array element</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;element&gt; &lt;name_listVar&gt; &lt;type_listVar&gt;</em></p>
+<p>This list corresponds to the list of values presented in the menu<p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>element</strong>  The name of the array element which contains the labin<p>
+<p><strong>name_listVar</strong>  Output. List of valid column names for this labin<p>
+<p><strong>type_listVar</strong>  Output. List of the column types for these column names<p>
+<a name="ListAllLabels" ><h4><font color="#CC3333">ListAllLabels</font> <em>List all column labels in MTZ file to support the 'List all Labels' option on column label menu</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;element&gt; &lt;file&gt;</em></p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>element</strong>  The name of the array element which contains the labin<p>
+<p><strong>file</strong>  The full path name for the MTZ file<p>
+<a name="handle_list_labels" ><h4><font color="#CC3333">handle_list_labels</font> <em>handler to update column label when it is selected from 'List all Columns'</em></h4> 
+<p><em>Argument list:  &lt;w&gt; &lt;arrayname&gt; &lt;element&gt;</em></p>
+<p><strong>w</strong>  The Tk id of the listbox which listed all column labels<p>
+<p><strong>arrayname</strong>  name of data array<p>
+<p><strong>element</strong>  Name of element in array containing the selected column name<p>
+<a name="EnterLabel" ><h4><font color="#CC3333">EnterLabel</font> <em>Window for user to type column label to support 'Enter Label' option on columns menu</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;ele&gt;</em></p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>ele</strong>  The array element for the column label<p>
+<a name="CreateCadLabinLine" ><h4><font color="#CC3333">CreateCadLabinLine</font> <em>Display the MTZ label selection line used in the Cad task interface</em></h4> 
+<p><em>Argument list:  &lt;linein&gt; &lt;message&gt; &lt;filein&gt; &lt;label1&gt; &lt;name1&gt; &lt;label2&gt;</em></p>
+<p>See the Cad task interface for normal usage<p>
+<p><strong>linein</strong>  Output Tk frame id for the line<p>
+<p><strong>message</strong>  Message line which appears if cursor over this line<p>
+<p><strong>filein</strong>  Name of element in the task interface array which contains the name of the input MTZ file<p>
+<p><strong>label1</strong>  Text to appear in the task interface line<p>
+<p><strong>name1</strong>  Name of the element in the task interface array which contains the name of the input label<p>
+<p><strong>label2</strong>  Text to appear in the task interface line<p>
+<p><strong>name2</strong>  Name of the element in the task interface array which contains the name of the output label<p>
+<p><strong>label3</strong>  Text to appear in the task interface line<p>
+<p><strong>type</strong>  The MTZ column type for the output column<p>
+<p><strong>-checkbutton</strong><em>  <elementname></em><p>
+<p>Specify the name of an element in the task interface array which contains a logical variable and associate this with a checkbutton on the line<p>
+<a name="cad_update_labin" ><h4><font color="#CC3333">cad_update_labin</font> <em>Handler for CreateCadLabinLine to create menu of input column names</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;index&gt; &lt;name1&gt; &lt;name2&gt; &lt;type&gt;</em></p>
+<p>This procedure is invoked when an input MTZ column is selected from menu.  The default values of the output column name and type are set to be the same as those of the input column. This procedure has an input 'index' which indicates which of the multiple column selection lines has been changed by the user. The procedure is complicated by the fact that the Cad task may have more than one input MTZ file and with multiple MTZ files then the 'index' parameter is 2-dimensional.  The procedure GetLabelList is called to get a list of the column names and types associated with this column selection line and the list of names is searched to find the index in the list of the column selected by user.  This index is then used to extract the correct column type from the list of columns.<p>
+<p><strong>arrayname</strong>  Name of task interface array<p>
+<p><strong>index</strong>  The number of the column selection line that is been updated<p>
+<p><strong>name1</strong>  Name of the element in the task interface array which contains the name of the input label<p>
+<p><strong>name2</strong>  Name of the element in the task interface array which contains the name of the output label<p>
+<p><strong>type</strong>  The MTZ column type for the output column<p>
+<a name="CreateLaboutLine" ><h4><font color="#CC3333">CreateLaboutLine</font> <em> Draw a task interface line for user to specify output MTZ column name</em></h4> 
+<p><em>Argument list:  &lt;linein&gt; &lt;message&gt; &lt;fileout&gt; &lt;label1&gt; &lt;name1&gt; &lt;args&gt;</em></p>
+<p><strong>linein</strong>  Output Tk frame id for the line<p>
+<p><strong>message</strong>  Message line which appears if cursor over this line<p>
+<p><strong>fileout</strong>  Name of element in the task interface array which contains the name of the output MTZ file<p>
+<p><strong>label1</strong>  Text to appear in the task interface line<p>
+<p><strong>name1</strong>  Name of the element in the task interface array which contains the name of the output labelpvar {$linein} line<p>
+<a name="CheckLabout" ><h4><font color="#CC3333">CheckLabout</font> <em>Procedure to be called before running a task to check uniqueness of output MTZ column names</em></h4> 
+<p><em>Argument list:  &lt;arrayname&gt; &lt;labout&gt; &lt;hklin&gt;</em></p>
+<p>Not currently used - code may not be reliable<p>
+<p><strong>arrayname</strong>  Name of task interface array<p>
+<p><strong>labout</strong>  Name of element in array which contains a list of the array elements which are output column labels.#d_arg hklin Array element which contains the name of the input MTZ file<p>
+<a name="PackLabinLine" ><h4><font color="#CC3333">PackLabinLine</font> <em>Pack, i.e. set the layout, of the task interface line to select MTZ columns</em></h4> 
+<p><em>Argument list:  &lt;line&gt; &lt;args&gt;</em></p>
+<p>This procedure is needed to complement CreateLabinLine.  When CreateLabinLine calls CreateLine with the line format 'MTZlabel' line procedure is used to layout the line.<p>
+<p><strong>Tk</strong>  frame id for the line<p>
+<h3>Extracting Data from Map Files</h3>
+<a name="InitialiseMAPData" ><h4><font color="#CC3333">InitialiseMAPData</font> <em>Initialise the MAP_file_data array with header info from the last selected input CCP4 map file.</em></h4> 
+<p><em>Argument list: None</em></p>
+<a name="ReadCCP4Map" ><h4><font color="#CC3333">ReadCCP4Map</font> <em>Read a CCP4 map file using mapdump and return program output</em></h4> 
+<p><em>Argument list:  &lt;file&gt; &lt;ttVar&gt;</em></p>
+<p><strong>file</strong>  Input map file name<p>
+<p><strong>ttVar</strong>  Returned text output by mapdump program<p>
+<a name="ExtractMAPData" ><h4><font color="#CC3333">ExtractMAPData</font> <em>Read header info from a CCP4 map file and save to MAP_file_data array</em></h4> 
+<p><em>Argument list:  &lt;file&gt;</em></p>
+<p><strong>file</strong>  Input map file name<p>
+<h3>Extracting Data from PDB Files</h3>
+<a name="InitialisePDBData" ><h4><font color="#CC3333">InitialisePDBData</font> <em>Initialise the PDB_file_data array which holds header parameters from the last selected input PDB file.</em></h4> 
+<p><em>Argument list: None</em></p>
+<a name="ExtractPDBData" ><h4><font color="#CC3333">ExtractPDBData</font> <em>Read header from PDB file and load params into global array PDB_file_data</em></h4> 
+<p><em>Argument list:  &lt;file&gt;</em></p>
+<a name="GetCCP4SpaceGroup" ><h4><font color="#CC3333">GetCCP4SpaceGroup</font> <em> Return space group in CCP4 format</em></h4> 
+<p><em>Argument list:  &lt;spacegp&gt;</em></p>
+<h3>Extracting Data from MTZ Files</h3>
+<a name="SetMtzParamField" ><h4><font color="#CC3333">SetMtzParamField</font> <em>Put data value from MTZ header into an array element</em></h4> 
+<p><em>Argument list:  &lt;paramtype&gt; &lt;arrayname&gt; &lt;filename&gt; &lt;element&gt;</em></p>
+<p><strong>paramtype</strong>  Parameter type - must one of the names of elements in MTZ_file_data array<p>
+<p><strong>arrayname</strong>  Name of data array<p>
+<p><strong>filename</strong>  Name of array element containing MTZ file name<p>
+<p><strong>element</strong>  Name of array element to receive data from MTZ<p>
+<a name="GetMtzParam" ><h4><font color="#CC3333">GetMtzParam</font> <em>Return a specified data item from specified MTZ file</em></h4> 
+<p><em>Argument list:  &lt;file&gt; &lt;param&gt; &lt;dataVar&gt;</em></p>
+<p><strong>file</strong>  MTZ file name<p>
+<p><strong>param</strong>  Parameter type - must be one of the names of elements in MTZ_file_data array<p>
+<p><strong>dataVar</strong>  Variable with returned data value<p>
+<a name="GetMtzParamFromDataset" ><h4><font color="#CC3333">GetMtzParamFromDataset</font> <em>Return a specified data item from specified MTZ file</em></h4> 
+<p><em>Argument list:  &lt;file&gt; &lt;xtal&gt; &lt;dataset&gt; &lt;param&gt; &lt;dataVar&gt;</em></p>
+<p>A variation on GetMtzParam.<p>
+<p><strong>file</strong>  MTZ file name<p>
+<p><strong>xtal</strong>  A crystal in the MTZ file<p>
+<p><strong>dataset</strong>  A dataset in the MTZ file<p>
+<p><strong>param</strong>  Parameter type - must be one of the names of elements in MTZ_file_data array<p>
+<p><strong>dataVar</strong>  Variable with returned data value<p>
+<a name="GetMtzColumnResolution" ><h4><font color="#CC3333">GetMtzColumnResolution</font> <em>Return the maximum and minimum resolution for an MTZ column.</em></h4> 
+<p><em>Argument list:  &lt;file&gt; &lt;label&gt; &lt;maxresoVar&gt; &lt;minresoVar&gt;</em></p>
+<p>The resolution values are given in Angrstroms. Returns 1 on success, 0 on failure.<p>
+<p><strong>file</strong>  MTZ file name<p>
+<p><strong>label</strong>  MTZ column label<p>
+<p><strong>maxresoVar</strong>  Variable returned with maximum resolution<p>
+<p><strong>minresoVar</strong>  Variable returned with minimum resolution<p>
+<a name="GetMtzDatasetFromLabel" ><h4><font color="#CC3333">GetMtzDatasetFromLabel</font> <em>Return the parent dataset for the specified label</em></h4> 
+<p><em>Argument list:  &lt;file&gt; &lt;label&gt; &lt;xtalVar&gt; &lt;datasetVar&gt;</em></p>
+<p>The parent "dataset" consists of an MTZ crystal-dataset pair. This procedure returns 1 on success (the parent dataset is identified) and 0 on failure (no parent is identified).<p>
+<p><strong>file</strong>  MTZ file name<p>
+<p><strong>label</strong>  MTZ column label<p>
+<p><strong>xtalVar</strong>  Variable returned with parent crystal name<p>
+<p><strong>datasetVar</strong>  Variable returned with parent dataset name<p>
+<a name="GetMtzXtals" ><h4><font color="#CC3333">GetMtzXtals</font> <em>Return list of crystal names in an MTZ file</em></h4> 
+<p><em>Argument list:  &lt;file&gt;</em></p>
+<p><strong>file</strong>  MTZ file name<p>
+<a name="GetMtzDatasetsInXtal" ><h4><font color="#CC3333">GetMtzDatasetsInXtal</font> <em>Return a list of the datasets associated with a crystal in an MTZ file</em></h4> 
+<p><em>Argument list:  &lt;file&gt; &lt;xtal&gt;</em></p>
+<p><strong>file</strong>  MTZ file name<p>
+<p><strong>xtal</strong>  Crystal name<p>
+<a name="GetMtzColsInDataset" ><h4><font color="#CC3333">GetMtzColsInDataset</font> <em>Return a list of the columns in a dataset in an MTZ file</em></h4> 
+<p><em>Argument list:  &lt;file&gt; &lt;xtal&gt; &lt;dataset&gt;</em></p>
+<p><strong>file</strong>  MTZ file name<p>
+<p><strong>xtal</strong>  Crystal name<p>
+<p><strong>dataset</strong>  Dataset name<p>
+<a name="MtzColSameDataset" ><h4><font color="#CC3333">MtzColSameDataset</font> <em>Determine whether two columns belong to the same dataset</em></h4> 
+<p><em>Argument list:  &lt;file&gt; &lt;col1&gt; &lt;col2&gt;</em></p>
+<p>Return 1 if the parent dataset and crystal names for each label match, and 0 if not.<p>
+<p><strong>file</strong>  MTZ file<p>
+<p><strong>col1</strong>  Label of the first column in the comparison<p>
+<p><strong>col2</strong>  Label of the second column<p>
+<a name="GetMtzAllCols" ><h4><font color="#CC3333">GetMtzAllCols</font> <em>List all column labels in an MTZ file</em></h4> 
+<p><em>Argument list:  &lt;file&gt;</em></p>
+<p><strong>file</strong>  MTZ file name<p>
+<a name="GetMtzColType" ><h4><font color="#CC3333">GetMtzColType</font> <em>Return MTZ column type corresponding to a specific label</em></h4> 
+<p><em>Argument list:  &lt;file&gt; &lt;label&gt;</em></p>
+<p>Returns the column type taken from the file, or an empty string if no match to the supplied label is found in the file.<p>
+<p>Required by GroupMtzCols.<p>
+<p><strong>file</strong>  MTZ file<p>
+<p><strong>label</strong>  MTZ column label<p>
+<a name="GroupMtzCols" ><h4><font color="#CC3333">GroupMtzCols</font> <em>Group a list of MTZ columns by type</em></h4> 
+<p><em>Argument list:  &lt;file&gt; &lt;col_list&gt; &lt;nlabels&gt; &lt;4&gt;</em></p>
+<p>This procedure is used to group the supplied list of MTZ columns according to their type.<p>
+<p>It returns a list of lists, each sublist containing a group of labels. For mean structure factor amplitudes (type F), mean intensities (type J), E-values (type E) and anomalous differences (type D), the groupings returned will be pairs based on value-sigma. For phases (type P) the groupings will be pairs based on phases-weight.<p>
+<p>For F(+)/F(-) and I(+)/I(-) the groupings will sets of four columns.<p>
+<p>For Hendrickson-Lattman coefficients the grouping will also be a set of four columns.<p>
+<p>For situations where there are F/Phi pairings, additional "groups" (consisting of the single F and the single Phi) may also appear. <p>
+<p>This procedure assumes strict typing. Columns for which no matching sigma etc is expected or found, will be returned in the list as a single item.<p>
+<p>The heuristic algorithm is as follows:<p>
+<p>1. Go through the column list once, attempting to group columns that appear in sequence in the list (for example, "F SIGF" or "I(+) SIGI(+) I(-) SIGI(-)"). This results in a list of groups, with "ungrouped" labels assigned to "groups" of one.<p>
+<p>2. Check the groups for those containing either single F-type or single P-type columns, and try to merge them into F-P pairs.<p>
+<p>3. Look for mistyped Freidel pairs of amplitudes (e.g. F(+) which is typed as "F" instead of "G") and try to assemble these into groups of four labels. (The identification is based on the names having either "(+)" or "(-)" components.)<p>
+<p>4. Look for anomalous differences (type "D") that should be matched with labels of type "F".<p>
+<p><strong>file</strong>  MTZ file<p>
+<p><strong>col_list</strong>  List of column names (MTZ labels)<p>
+<p><strong>nlabels</strong>  Maximum number of labels in a group (default is 4)<p>
+<a name="InitialiseMTZData" ><h4><font color="#CC3333">InitialiseMTZData</font> <em>Initialise the MTZ_file_data array with header info from the last selected input MTZ file</em></h4> 
+<p><em>Argument list: None</em></p>
+<a name="ReadMTZ" ><h4><font color="#CC3333">ReadMTZ</font> <em>Read an MTZ file using mtzdump and return program output</em></h4> 
+<p><em>Argument list:  &lt;file&gt; &lt;ttVar&gt; &lt;mtzdmp_args&gt; &lt;HEADER&gt;</em></p>
+<p><strong>file</strong>  Input MTZ file name<p>
+<p><strong>ttVar</strong>  Returned text output by mtzdump program<p>
+<p><strong>mtzdmp_args</strong>  (Optional, default=HEADER) Arguments to the mtzdump program.<p>
+<a name="ExtractMTZData" ><h4><font color="#CC3333">ExtractMTZData</font> <em>Read header info from an MTZ file and save to MTZ_file_data array</em></h4> 
+<p><em>Argument list:  &lt;file&gt;</em></p>
+<p>First, checks to see if file exists. Then checks to see if<p>
+<p>data has already been loaded. If the data has not been loaded,<p>
+<p>or the file has been changed on disk since loading, then the<p>
+<p>global array MTZ_file_data is initialised, and filled again<p>
+<p>from the file.<p>
+<p><strong>file</strong>  Name of MTZ file<p>
+<a name="InitialiseParamFromFile" ><h4><font color="#CC3333">InitialiseParamFromFile</font> <em>Initialise the *_file_data arrays containing data from map/pdb/mtz file headers</em></h4> 
+<p><em>Argument list:  &lt;format&gt;</em></p>
+<p>This is called when user loads a new def file into task and (possibly) changes the selected files from which header data has been loaded<p>
+<p><strong>format</strong>  pdb, mtz or map or 'all' for all three<p>
+<a name="GetMtzColumnList" ><h4><font color="#CC3333">GetMtzColumnList</font> <em>Return the labelled columns of a specified type and one default</em></h4> 
+<p><em>Argument list:  &lt;file&gt; &lt;name_listin&gt; &lt;type_listin&gt; &lt;default_name_in&gt;</em></p>
+<p>This procedure calls GetMtzGroupByType to recover groups of columns from the file, then searches the list for matching column groupings by type before looking for any column name which matches any of the priority name list input to CreateLabinLine. This procedure, itself, is just setting the default selected column that the user sees immediately after selecting an MTZ file.<p>
+<p>Although priority names can be specified for up to four columns, in practice due to the grouping mechanism it is likely that only the first will have any practical effect.<p>
+<p>This function returns the number of columns in name_listin on output, or zero if there was a problem.<p>
+<p>See also the docs for GetMtzColumnByType and GetMtzGroupByType.<p>
+<p><strong>file</strong>  Name of MTZ file for which info required<p>
+<p><strong>name_listin</strong>  Output. List of selected column names<p>
+<p><strong>type_listin</strong>  Output. List of the types of the selected columns<p>
+<p><strong>default_name_in</strong>  Output. The name of one default column<p>
+<p><strong>select_type</strong>  A list of one or more required column types<p>
+<p><strong>priority_name_list</strong>  A list of the preferred column names for the default<p>
+<p><strong>name_listin2</strong>  Output. List of selected column names<p>
+<p><strong>type_listin2</strong>  Output. List of the required column types<p>
+<p><strong>default_name2_in</strong>  Output. The name of one default column<p>
+<p><strong>select_type2</strong>  Optional. A list of one or more required column types<p>
+<p><strong>priority_name_list2</strong>  A list of the preferred column names for the default<p>
+<p><strong>name_listin3</strong>  Output. List of selected column names<p>
+<p><strong>type_listin3</strong>  Output. List of the required column types<p>
+<p><strong>default_name3_in</strong>  Output. The name of one default column<p>
+<p><strong>select_type3</strong>  Optional. A list of one or more required column types<p>
+<p><strong>priority_name_list3</strong>  A list of the preferred column names for the default<p>
+<p><strong>name_listin4</strong>  Output. List of selected column names<p>
+<p><strong>type_listin4</strong>  Output. List of the required column types<p>
+<p><strong>default_name4_in</strong>  Output. The name of one default column<p>
+<p><strong>select_type4</strong>  Optional. A list of one or more required column types<p>
+<p><strong>priority_name_list4</strong>  A list of the preferred column names for the default<p>
+<a name="GetMtzColumnByType" ><h4><font color="#CC3333">GetMtzColumnByType</font> <em>Return the labelled columns of a specified type found in an MTZ file</em></h4> 
+<p><em>Argument list:  &lt;file&gt; &lt;select_type&gt; &lt;name_listin&gt; &lt;type_listin&gt;</em></p>
+<p>This procedure calls ExtractMTZData which loads the MTZ header info into the MTZ_file_data array if that array does not already hold data for the specified file.  This procedure can output either one or two sets of selected columns.  The second set of columns is expected to be something like a sigma or a weight and a column in this set is expected to appear in the MTZ file immediately after a column from the first set.  If a column from the first selected set is followed in the MTZ file by a column of type unsuitable for the second set then the value 'Unassigned' is appended to the second set.<p>
+<p><strong>file</strong>  Name of MTZ file for which info required<p>
+<p><strong>select_type</strong>  A list of one or more column types which the selected columns may have.<p>
+<p><strong>name_listin</strong>  Output. List of selected column names<p>
+<p><strong>type_listin</strong>  Output. List of the types of the selected columns<p>
+<p><strong>select_type2</strong>  Optional. A list of one or more column types which the selected columns may have.<p>
+<p><strong>name_listin2</strong>  Output. List of selected column names<p>
+<p><strong>type_listin2</strong>  Output. List of the types of the selected columns<p>
+<a name="GetMtzGroupByType" ><h4><font color="#CC3333">GetMtzGroupByType</font> <em>Return groups of MTZ columns based on the requested types</em></h4> 
+<p><em>Argument list:  &lt;file&gt; &lt;select_type&gt; &lt;\&gt;</em></p>
+<p>Given a set of input column types this procedure tries to match them to the groups of columns that are returned from GroupMtzCols.<p>
+<p>The procedure returns a list of lists: two lists, the first of which is a list of groups and the second of which is a list of the corresponding types.<p>
+<p>This procedure is called from GetMtzColumnList.<p>
+<p><strong>file</strong>  Name of the MTZ file<p>
+<p><strong>select_type</strong>  MTZ column type for first column<p>
+<p><strong>select_type2</strong>  MTZ column type for second column<p>
+<p><strong>select_type3</strong>  MTZ column type for third column<p>
+<p><strong>select_type4</strong>  MTZ column type for fourth column<p>
+<h3>Accessing Standard Crystallographic Data</h3>
+<a name="GetSpaceGroupNumber" ><h4><font color="#CC3333">GetSpaceGroupNumber</font> <em>Return space group number from input space group code</em></h4> 
+<p><em>Argument list:  &lt;code&gt;</em></p>
+<p><strong>code</strong>  space group code (or number will be handled OK)<p>
+<a name="GetSpaceGroupCode" ><h4><font color="#CC3333">GetSpaceGroupCode</font> <em>Return CCP4 space group code from input space group number</em></h4> 
+<p><em>Argument list:  &lt;number&gt;</em></p>
+<p><strong>number</strong>  space group number (or code will be handled OK)<p>
+<a name="GetSpaceGroupStdCode" ><h4><font color="#CC3333">GetSpaceGroupStdCode</font> <em>Return PDB standard space group code from input space group number</em></h4> 
+<p><em>Argument list:  &lt;number&gt;</em></p>
+<p><strong>number</strong>  space group number (or CCP4 code will be handled OK)<p>
+<a name="GetSpaceGroupNops" ><h4><font color="#CC3333">GetSpaceGroupNops</font> <em>Return the number of symmetry ops for a space group</em></h4> 
+<p><em>Argument list:  &lt;number&gt;</em></p>
+<p><strong>number</strong>  space group number (or CCP4/PDB code will be handled OK)<p>
+<a name="GetSpaceGroupLattice" ><h4><font color="#CC3333">GetSpaceGroupLattice</font> <em>Return the crystal lattice for a space group</em></h4> 
+<p><em>Argument list:  &lt;number&gt;</em></p>
+<p><strong>number</strong>  space group number (or CCP4/PDB code will be handled OK)<p>
+<a name="GetSpaceGroupSymops" ><h4><font color="#CC3333">GetSpaceGroupSymops</font> <em>Return the symmetry ops for a space group as a list</em></h4> 
+<p><em>Argument list:  &lt;number&gt;</em></p>
+<p><strong>number</strong>  space group number (or CCP4/PDB code will be handled OK)<p>
+<a name="GetAsymUnit" ><h4><font color="#CC3333">GetAsymUnit</font> <em>Return the CCP4 standard asymmetric unit</em></h4> 
+<p><em>Argument list:  &lt;spgp_code&gt;</em></p>
+<p><strong>spgp_code</strong>  Space group code (CCP4 or PDB) or space group number<p>
+<a name="GetLaueGroupNumber" ><h4><font color="#CC3333">GetLaueGroupNumber</font> <em>Return  an identifier for the laue group</em></h4> 
+<p><em>Argument list:  &lt;spgp_code&gt;</em></p>
+<p>Will return 0 if not in the LAUE list from etc/crystal.lib file<p>
+<p><strong>spgp_code</strong>  Space group code (CCP4 or PDB) or space group number<p>
+<a name="GetLaueGroup" ><h4><font color="#CC3333">GetLaueGroup</font> <em>Return a list of space groups in given Laue group</em></h4> 
+<p><em>Argument list:  &lt;laue_no&gt;</em></p>
+<p><strong>laue_no</strong>  Laue group number<p>
+<a name="GetPattersonSpaceGroup" ><h4><font color="#CC3333">GetPattersonSpaceGroup</font> <em>Return the Patterson space group for given space group</em></h4> 
+<p><em>Argument list:  &lt;spgp_code&gt;</em></p>
+<p><strong>spgp_code</strong>  Space group code (CCP4 or PDB) or space group number<p>
+<a name="GetHarkerSections" ><h4><font color="#CC3333">GetHarkerSections</font> <em>Return the Harker sections for given space group (as Tcl list)</em></h4> 
+<p><em>Argument list:  &lt;spgp_code&gt; &lt;modein&gt; &lt;2&gt;</em></p>
+<p><strong>spgp_code</strong>  Space group code (CCP4 or PDB) or space group number<p>
+<p><strong>modein</strong>  Maximum number of sections returned (or all). Optional, default 2<p>
+<a name="GetFFTSpaceGroups" ><h4><font color="#CC3333">GetFFTSpaceGroups</font> <em>Get a list of space groups supported by FFT program</em></h4> 
+<p><em>Argument list:  &lt;spgpVar&gt;</em></p>
+<p><strong>spgpVar</strong>  Returned list of space groups<p>
+<a name="GetChangeHandData" ><h4><font color="#CC3333">GetChangeHandData</font> <em>Get resultant space group and transformations fro changing hand of data</em></h4> 
+<p><em>Argument list:  &lt;spgp_code&gt; &lt;space_groupVar&gt; &lt;cxVar&gt;</em></p>
+<p><strong>spgp_code</strong>  Space group code (CCP4 or PDB) or space group number<p>
+<p><strong>space_groupVar</strong>  Returned. Space group for data on changed hand<p>
+<p><strong>cxVar</strong>  Returned. Tcl list of cx,xy,cz where change of hand transforms x,y,z to cx-x,cy-y,cz-z<p>
+<a name="GetTwinData" ><h4><font color="#CC3333">GetTwinData</font> <em>Get the transformation(s) for twinned data</em></h4> 
+<p><em>Argument list:  &lt;spgp_code&gt; &lt;cxVar&gt;</em></p>
+<p><strong>spgp_code</strong>  Space group code (CCP4 or PDB) or space group number<p>
+<p><strong>cxVar</strong>  Returned. A Tcl list of transformations of form -h,-k,l<p>
+<a name="GetLatticeFromSpaceGp" ><h4><font color="#CC3333">GetLatticeFromSpaceGp</font> <em>Return the lattice type from space group name ('cos shelx can not!)</em></h4> 
+<p><em>Argument list:  &lt;spacegp&gt; &lt;args&gt;</em></p>
+<p>shelx number code: P = -1  I = -2  F = -4 A = -5  B = -6  C = -7<p>
+<p><strong>spgp_code</strong>  Space group code (CCP4 or PDB) or space group number<p>
+<p><strong>-shelx</strong><p>
+<p>Return the Shelx numbering code <p>
+</body>
+</html>
+

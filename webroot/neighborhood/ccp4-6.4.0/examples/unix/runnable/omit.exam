@@ -1,0 +1,29 @@
+#!/bin/sh
+
+set -e
+
+if test ! -f $CCP4_SCR/toxd_sf.mtz; then
+  echo '! run sf_calc first' 1>&2
+  exit 1
+fi
+
+# Minimal example
+
+omit hklin $CCP4_SCR/toxd_sf.mtz mapout $CCP4_SCR/output_1.map <<eof
+LABI FP=FTOXD3 FC=FC_sf PHI=AC_sf
+SCAL 2.0 -1.0 
+END
+eof
+
+# Add title, set map grid, and do histogram mapping of omit
+# map to starting map.
+
+omit hklin $CCP4_SCR/toxd_sf.mtz mapout $CCP4_SCR/output_2.map <<eof
+LABI FP=FTOXD3 FC=FC_sf PHI=AC_sf
+SCAL 2.0 -1.0 
+TITLE omit map for toxd
+GRID 96 48 32 
+HIST
+END
+eof
+#

@@ -1,0 +1,154 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#======================================================================
+#
+# truncate script
+#
+#======================================================================
+
+# Source pdb_utils for harvest handling & move to project directory 
+# if we are going to dump harvest file to current directory
+  source [SearchPath TOP utils pdb_utils.tcl ]
+  if { [StringSame $HARVEST_MODE  CURRENTDIR ] } { ChangeDirectory [GetDefaultDirPath] }
+
+
+# -----------------------------------------------------------------------
+# Run RWCONTENTS if required
+# -----------------------------------------------------------------------
+
+  if { $CONTENTS_MODE == "PDB" } {
+# use the GetPDBContents procedure in pdb_utils.tcl to get contents of PDB file
+    source [SearchPath TOP utils pdb_utils.tcl]
+    GetPDBContents $CONTENTS_PDB nres contents heavy_atoms
+    set N_CONTENTS 0
+    foreach element $contents {
+      incr N_CONTENTS 
+      set CONTENTS_ATOM_TYPE($N_CONTENTS) [lindex $element 0]
+      set CONTENTS_ATOM_COUNT($N_CONTENTS) [lindex $element 1]
+    }
+  }
+
+
+  if { $OLDPROG } {
+#==================================================================
+# run truncate
+#==================================================================
+
+  set HKL_TRUNCATE [GetTmpFileName -ext mtz]
+
+  CreateComScript truncate truncate_script
+
+  set cmd "[BinPath truncate] HKLIN \"$HKLIN\""
+  if { ![StringSame $INPUT_DATA AMPLITUDES] } {
+    append cmd " HKLOUT \"$HKL_TRUNCATE\""
+  }
+  if { $FALLOFF_PLOT != "" } { 
+    set plotfile [SetOutputFileRoot -tmp]_falloff.plt
+    append cmd " PLOT $plotfile" 
+  }
+
+  set status [Execute $cmd $truncate_script program_status report  ]
+
+  if { $FALLOFF_PLOT != "" } {AddOutputFile $plotfile TEMPORARY}
+
+#
+#  Remove the input Is from the output MTZ
+#
+  if { [file exists $HKL_TRUNCATE] } { 
+
+    if { $OUTPUT_I } {
+
+      set HKL_NOIS $HKL_TRUNCATE
+  
+    } else {
+
+      set HKL_NOIS [GetTmpFileName -ext mtz]
+
+      if { $ANOMALOUS } {
+        WriteComFile mtzutils_script \
+        "include $F $SIGF $DANO $SIGDANO $Fp $SIGFp $Fm $SIGFm $ISYM"
+      } else {
+        WriteComFile mtzutils_script "include $F $SIGF"
+      }
+
+      set status [Execute "[BinPath mtzutils] HKLIN \"$HKL_TRUNCATE\" HKLOUT \"$HKL_NOIS\"" \
+		$mtzutils_script program_status report  ]
+    }
+  }  else {
+
+    if { ![StringSame $INPUT_DATA AMPLITUDES] } {
+       TerminateScript 0 -report "No output file from Truncate??"
+    } else {
+       TerminateScript 1
+    }
+  }
+
+  HandleHarvestFile $HARVEST_MODE $HARVEST_PNAME $HARVEST_DNAME truncate
+
+
+} else { 
+
+#==================================================================
+# run ctruncate
+#==================================================================
+
+  set HKL_TRUNCATE [GetTmpFileName -ext mtz]
+
+  CreateComScript ctruncate ctruncate_script
+  set cmd "[BinPath ctruncate] -mtzin \"$HKLIN\""
+  if { ![StringSame $INPUT_DATA AMPLITUDES] } {
+    append cmd " -mtzout \"$HKL_TRUNCATE\"" 
+    if { !$ANISOCORR } {
+      append cmd " -no-aniso "
+    }
+    if { $CTRUNCATE_SCALE & $CTRUNCATE_NRES != "" } {
+      append cmd " -nres $CTRUNCATE_NRES "  
+    }
+    append cmd " -colin \"/*/*/\\\[$IMEANIN,$SIGIMEANIN\\\]\""
+    if  { $ANOMALOUS } {
+      append cmd " -colano \"/*/*/\\\[$Ipp,$SIGIpp,$Imm,$SIGImm\\\]\""
+    }
+    if { $LABOUT_LABEL != "" } {
+      append cmd " -colout $LABOUT_LABEL"
+    }
+  } else {
+    append cmd " -amplitudes "
+    append cmd " -colin \"/*/*/\\\[$FMEANIN,$SIGFMEANIN\\\]\""   
+  } 
+  set status [Execute $cmd $ctruncate_script program_status report -edit-script]
+  
+  if { [file exists $HKL_TRUNCATE] } { 
+    set HKL_NOIS $HKL_TRUNCATE
+  } else {
+    if { ![StringSame $INPUT_DATA AMPLITUDES] } {
+       TerminateScript 0 -report "No output file from Ctruncate??"
+    } else {
+       TerminateScript 1
+    }
+  }
+}
+
+
+#==================================================================
+# run uniqueify
+#==================================================================
+
+  if $UNIQUEIFY {
+    source [SearchPath TOP utils phasing_utils.tcl ]
+    set cmd "Uniqueify \"$HKL_NOIS\" \"$HKLOUT\""
+    if [IfSet $UNIQUEIFY_FREERFRAC] { append cmd " -fraction $UNIQUEIFY_FREERFRAC" }
+    if $COPY_FREER {
+      append cmd " -copy $COPY_FREER_MTZ $COPY_FREER_LABEL" }
+    if { $UNIQUEIFY_EXTEND && [IfSet $UNIQUEIFY_MAXRES] } {
+      append cmd " -extend $UNIQUEIFY_MAXRES" }
+    eval "$cmd"
+  } else {
+    MoveFile $HKL_NOIS $HKLOUT
+  }

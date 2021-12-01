@@ -1,0 +1,192 @@
+<html>
+<head><title>CCP4 Program Suite</title></head>
+<body>
+
+<!-- ::INDEX_INFO::STEREO::Supported::Others/Jiffies::Extract coordinates from stereo diagrams:::::::: -->
+
+<H1> STEREO (CCP4: Supported Program)</H1>
+<H2> NAME </H2>
+<b>stereo </b>
+- Extract coordinates from stereo diagrams
+<H2> SYNOPSIS</H2>
+<b>stereo  xyzin</b>
+<i>coordinate_file</i>
+<b>xyzout</b>
+<i>coord.brk</i>
+<br>
+<A HREF="#keywords">[Keyworded input]</A>
+<H2><A NAME="description"></A> DESCRIPTION</H2>
+The
+<b>stereo</b>
+program recreates three-dimensional coordinates on the basis of a pair
+of two-dimensional ones extracted from a stereo diagram.  The input
+coordinates are taken from the logical name XYZIN (see
+<A HREF="#format_of_xyzin"><b>FORMAT OF XYZIN</b></A>)
+into a PDB-format file on XYZOUT.  The output will not necessarily be
+a sensible PDB file, especially if the optional information about atom
+names and residue types isn't supplied.  The programs
+<A HREF="coordconv.html"><b>coordconv</b></A>,
+<b>reform</b>, and
+<A HREF="pdbset.html"><b>pdbset</b></A>
+may be useful for manipulating the output.
+<P> 
+The input coordinates are expected to be measured (from some
+publication for which you don't have the coordinates electronically)
+with a flatbed cross-hair digitiser or similar device.  If you don't
+have such a device you might be able to do this:
+<ul>
+<li>
+make a transparency of the picture;
+<li>
+stick it against a graphics screen and fire up some drawing program
+from which you can get the data in a sensible form, <EM>e.g.</EM> `xfig';
+<li>
+draw points or lines to trace each stereo view and save the drawing;
+<li>
+mangle the drawn points output into a suitable form for input to this
+program (see <A HREF="#format_of_xyzin">below</A>) using your favourite utility.
+</ul>
+<H2><A NAME="keywords"></A> KEYWORDED INPUT</H2>
+<P>Available keywords are:
+<BLOCKQUOTE>
+<A HREF="#criterion"><B>CRITERION</B></A>,
+<A HREF="#constraint"><B>CONSTRAINT</B></A>,
+<A HREF="#phi"><B>PHI</B></A>,
+<A HREF="#title"><B>TITLE</B></A>,
+<A HREF="#viewset"><B>VIEWSET</B></A>.
+</BLOCKQUOTE>
+<H3><A NAME="title"></A> TITLE &lt;title&gt;</H3>
+<H3><A NAME="phi"></A> PHI &lt;phi&gt;</H3>
+Angular separation of the stereo components in degrees.  If not given
+the correct value will be searched for.
+<H3><A NAME="viewset"></A> VIEWSET &lt;v&gt;</H3>
+Viewing distance in inches.  If not given the correct value will be
+searched for.
+<H3><A NAME="criterion"></A> CRITERION &lt;crit&gt;</H3>
+Criterion for removing bad measurements from &lt;phi&gt; and &lt;v&gt; searches.
+The default value is 1.5.  Prior to &lt;phi&gt;, &lt;v&gt; search, the program
+uses &lt;phi&gt;=3 degrees, &lt;v&gt;=infinity, and distances used in constraints.
+All distances which are outside the range (s*&lt;crit&gt;,s/(&lt;crit&gt;**2)),
+where s is the standard Ca-Ca distance of 3.84 A, will be rejected
+from the search.
+<H3><A NAME="constraint"></A> CONSTRAINT &lt;const1&gt; &lt;const2&gt; &lt;const3&gt; &lt;const4&gt;</H3>
+Specify a constraint.  If no constraints are specified a polypeptide
+chain of alpha carbon atoms will be assumed and the distances between
+succeeding pairs of atoms will be refined against the standard alpha
+carbon - alpha carbon distance of 3.84 Angstroms.
+<dl>
+<dt> &lt;const1&gt;<dd>
+First i-th atom in constraint                         
+<dt> &lt;const2&gt;<dd>
+First j-th atom in constraint (if negative, will count backwards).
+<dt> &lt;const3&gt;<dd>
+Last i-th atom in constraint                         
+<dt> &lt;const4&gt;<dd>
+Distance s(i,j) between i-th and j-th atoms measured in Angstroems.
+</dl>
+<P>                                                                           
+If &lt;const2&gt;=0 for the k-th constraint line, an alpha helix is assumed.
+In this case &lt;const1&gt; should be the first carbon alpha atom in the
+helix (call it atom i) and &lt;const3&gt; should be the last carbon alpha
+atom in the helix (call it atom j) and a series of constraints is
+generated in place of the given constraint as follows.
+<dl>
+<dt> The first set of constraints will be for<dd>
+<pre>
+atom i to atom i+2
+atom i+1 to atom i+3                                           
+etc. until i+n=j
+</pre>
+<dt> The second set of constraints will be for<dd>
+<pre>
+atom i to atom i+3                                             
+atom i+1 to atom i+4                                           
+etc. until i+n=j                                               
+the last constraint will be for                                    
+atom i to atom j                                               
+</pre>
+</dl>
+<P> 
+By assuming the parameters for an alpha helix, the program works out
+the appropriate values for s(i,j) in subroutine HELIX.
+<P> 
+Examples of particular constraints that may be set are             
+<ol>
+<li>
+An alpha carbon chain of n atoms.
+<br>
+ CONSTRAINT 1 2 n-1 3.84
+<li>
+Two antiparallel strands, each n residues long, starting at residue
+numbers p and q.
+<br>
+ CONSTRAINT p -(q+n-1) (p+n-1) 4.72 
+(Note: there are two different Ca-Ca distances between antiparallel
+strands and this number is an average.)
+<li>
+An alpha helix n residues long starting at residue p.
+<br>
+ CONSTRAINT p p+4 p+n-4 6.20
+</ol>
+<P> 
+The program will minimise the sum over all the constraints of
+<br>
+              sum(((x(i)-x(j))**2-s(i,j)**2)**2)                          
+<H2><A NAME="format_of_xyzin"></A> FORMAT OF XYZIN</H2>
+The input data file comprises free format records of the form
+<br>
+ &lt;xl&gt; &lt;yl&gt; &lt;xr&gt; &lt;yr&gt; [ &lt;atom name&gt; [ &lt;residue name&gt; [ &lt;residue number&gt;] ] ]
+<P> 
+These are the left and right stereo diagram coordinates.  It is
+assumed that the coordinates will be given in microns, so as to
+provide the viewing distance in inches.  The program will work if the
+coordinates are in any other units but the &lt;v&gt; distance will not be in
+inches but on a corresponding arbitrary scale.  Each coordinate has an
+optional &lt;atom name&gt;, &lt;residue name&gt; and &lt;residue number&gt; which will
+be used in he XYZOUT file if given.  Otherwise dummy tags will be
+used.
+<H2><A NAME="standard_output"></A> STANDARD OUTPUT</H2>
+The output is hopefully self explanatory but essentially it consists
+of the following sequential items following header.
+<ul>
+<li>
+Echo of input data
+<li>
+Refinement of orientation of x,y coordinates to minimise y separation
+in left and right equivalent atoms.
+<li>
+x and y refined to separate origins.                              
+<li>
+Statistics on separation of x and y coordinates.  initial
+determination of &lt;phi&gt;.
+<li>
+Search for best &lt;phi&gt; and &lt;v&gt;.                                        
+<li>
+Best value of &lt;phi&gt; and &lt;v&gt;.                                          
+<li>
+x, y, z three-dimensional coordinates for each cycle of refinement.
+<pre>
+          a. 3 cycles of z refinement                                     
+          b. 3 cycles of y refinement                                     
+          c. 3 cycles of x refinement                                     
+</pre>
+Shifts (in Angstroms), coordinates and rms for each constraint are
+given after each cycle.
+</ul>
+<H2> SEE ALSO</H2>
+ <A HREF=pdbset.html>pdbset</A>,
+reform (1),
+xfig (1)
+<H2> AUTHOR</H2>
+<pre>
+M. G. Rossmann                             March 1979 
+        Dept. of Biological Sciences                                      
+        Purdue University                                                 
+        West Lafayette, Indiana 47907                                     
+
+Modified and reorganized with new math routines
+        b4x@mace.cc.purdue.edu         August 5, 1994
+
+Hacked into CCP4 conventions (basically i/o) at Daresbury.
+</pre>
+</body></html>

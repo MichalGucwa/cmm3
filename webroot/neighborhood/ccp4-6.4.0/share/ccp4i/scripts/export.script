@@ -1,0 +1,37 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#=========================================================================
+#
+# export script
+#
+#=========================================================================
+
+# For TNT format run CAD to ensure sorted on hkl 
+# Might also be necessary to change reflection space !!
+
+  if [regexp TNT $OUTPUT_FORMAT] {
+
+  set mtz_tmp [GetTmpFileName -ext mtz ]
+  set cad_script [GetTmpFileName -ext com ]
+  WriteFile $cad_script "LABIN FILE 1 ALL \n"
+
+  set status [Execute "[BinPath cad] HKLIN1 \"$HKLIN\" HKLOUT \"$mtz_tmp\"" \
+                $cad_script program_status report ]
+
+  } else {
+ 
+    set mtz_tmp $HKLIN
+  }
+
+
+  CreateComScript  mtz2various export_script
+
+  set status [Execute "[BinPath mtz2various] HKLIN \"$mtz_tmp\" HKLOUT \"$EXPORT_FILE\"" \
+		$export_script program_status report ]

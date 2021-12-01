@@ -1,0 +1,299 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<!-- headlinks removed -->
+	<link rel="shortcut icon" href="../../../../misc/favicon.ico"/>
+    <title>MR using keyword input - Phaserwiki</title>
+    <style type="text/css">/*<![CDATA[*/ @import "../../../../skins/offline/main.css"; /*]]>*/</style>
+    <link rel="stylesheet" type="text/css" media="print" href="../../../../skins/common/commonPrint.css" />
+    <!--[if lt IE 5.5000]><style type="text/css">@import "../../../../skins/monobook/IE50Fixes.css";</style><![endif]-->
+    <!--[if IE 5.5000]><style type="text/css">@import "../../../../skins/monobook/IE55Fixes.css";</style><![endif]-->
+    <!--[if IE 6]><style type="text/css">@import "../../../../skins/monobook/IE60Fixes.css";</style><![endif]-->
+    <!--[if IE]><script type="text/javascript" src="../../../../skins/common/IEFixes.js"></script>
+    <meta http-equiv="imagetoolbar" content="no" /><![endif]-->
+    <script type="text/javascript" src="../../../../skins/common/wikibits.js"></script>
+    <script type="text/javascript" src="../../../../skins/offline/md5.js"></script>
+    <script type="text/javascript" src="../../../../skins/offline/utf8.js"></script>
+    <script type="text/javascript" src="../../../../skins/offline/lookup.js"></script>
+    <script type="text/javascript" src="../../../../raw/gen.js"></script>                  </head>
+  <body
+    class="ns-0 ns-subject page-MR_using_keyword_input">
+    <div id="globalWrapper">
+      <div id="column-content">
+	<div id="content">
+	  <a name="top" id="contentTop"></a>
+	        <h1 class="firstHeading">MR using keyword input</h1>
+	  <div id="bodyContent">
+	    <h3 id="siteSub">From Phaserwiki</h3>
+	    <div id="contentSub"></div>
+	    	    	    <!-- start content -->
+	    <div style="margin-left: 25px; float: right;"><table id="toc" class="toc" summary="Contents"><tr><td><div id="toctitle"><h2>Contents</h2></div>
+<ul>
+<li class="toclevel-1"><a href="#Sample_Script"><span class="tocnumber">1</span> <span class="toctext">Sample Script</span></a></li>
+<li class="toclevel-1"><a href="#Adding_to_the_Script"><span class="tocnumber">2</span> <span class="toctext">Adding to the Script</span></a></li>
+<li class="toclevel-1"><a href="#Searching_for_more_than_one_molecule"><span class="tocnumber">3</span> <span class="toctext">Searching for more than one molecule</span></a></li>
+<li class="toclevel-1"><a href="#Running_individual_steps"><span class="tocnumber">4</span> <span class="toctext">Running individual steps</span></a></li>
+</ul>
+</td></tr></table><script type="text/javascript"> if (window.showTocToggle) { var tocShowText = "show"; var tocHideText = "hide"; showTocToggle(); } </script>
+</div>
+<a name="Sample_Script" id="Sample_Script"></a><h2> <span class="mw-headline">Sample Script</span></h2>
+<p>Let us look at a very simple PHASER script (AUTO_toxd1.com in the distributed tutorial files):
+</p>
+<pre> phaser &lt;&lt; eof
+ MODE MR_AUTO
+ HKLIN toxd.mtz
+ LABIN F = FTOXD3 SIGF = SIGFTOXD3
+ ENSEMBLE toxd PDBFILE 1D0D_B.pdb IDENTITY 0.364
+ COMPOSITION PROTEIN SEQUENCE toxd.seq NUM 1
+ SEARCH ENSEMBLE toxd NUM 1
+ ROOT AUTO_toxd1
+ eof
+</pre>
+<p>The words in bold are Phaser keywords. Only the first 4 characters are significant so it does not matter whether you write ENSEMBLE, ENSEMB or ENSE.
+</p><p>Let us examine the contents of this script line by line. The first line:
+</p>
+<pre> phaser &lt;&lt; eof
+</pre>
+<p>tells us what to run. phaser is the Phaser executable which should be in your PATH for this to work. If you were to run Phaser it wouldn't actually do anything straight away but ask for user input (try it). So what we need to do next is to feed it some information before we get anything out of it. This is what the script job is for. The last part of the first line says: Feed in the subsequent lines until you hit eof (at the end of the script).
+</p><p>Let us move on to the next line
+</p>
+<pre> MODE MR_AUTO
+</pre>
+<p>MODE is a Phaser keyword and tells it what kind of job we want to run. Phaser can be used for many different jobs, so it needs to know what it is being used for. In this case MR_AUTO stands for Molecular Replacement - AUTOmatic. Other possibilities are MR_FRF or MR_FTF for example. Most molecular replacement problems can be solved with the AUTO mode, but very specialized jobs can be run by using the other keywords individually.
+</p><p>The next line in the script: 
+</p>
+<pre> HKLIN toxd.mtz
+</pre>
+<p>specifies where our data are coming from. The HKL data are found in an MTZ file located in the directory you run the script from. MTZ files can store a lot of data so we need to tell Phaser which part of the file we need. The next line in the script:
+</p>
+<pre> LABIN F = FTOXD3 SIGF = SIGFTOXD3
+</pre>
+<p>specifies which columns the structure factor amplitudes and their standard deviations come from.
+</p><p>Next we need to specify a model that we will use for the molecular replacement. The line:
+</p>
+<pre> ENSEMBLE toxd PDBFILE 1D0D_B.pdb IDENTITY 0.364
+</pre>
+<p>tells us the PDB File for the model and the sequence identity between this model and the corresponding protein in our crystal. The sequence identity is needed so phaser can estimate the RMS error in the model. Ignore the keyword ENSEMBLE for the time being. It will be discussed in more detail later. For now, just think of it as a handle to the model.
+</p><p>The next line:
+</p>
+<pre> COMPOSITION PROTEIN SEQUENCE toxd.seq NUM 1
+</pre>
+<p>tells us the composition in the Asymmetric Unit. In our case it is protein with a sequence given in the file toxd.seq, and there is one molecule in the asymmetric unit. We could have specified the composition in a number of other ways, for instance by saying that the molecular weight of the protein is 7139.
+</p><p>Now all we need to do is to tell Phaser which model to search with. In our case we only have one model so it is trivial:
+</p>
+<pre> SEARCH ENSEMBLE toxd NUM 1
+</pre>
+<p>The subkey "NUM 1" is the default, but we could have asked Phaser to search for more than one copy. Finally we tell PHASER where to put all the output files. The line:
+</p>
+<pre> ROOT AUTO_toxd1
+</pre>
+<p>tells it to put everything in the tutorial directory and that the start of the output file names will be AUTO_toxd1, so you will get a bunch of files called AUTO_toxd1.log, AUTO_toxd1.sum, etc.
+</p><p>Ok, we are done. Let us run it! If you now type
+</p>
+<pre> source AUTO_toxd1.com
+</pre>
+<p>in the tutorial directory, it should all run. After it has finished you will notice a number of files that have been created. The best file to look at to get an overview of the job is the summary file, AUTO_toxd1.sum in this case. In that file you will see the progress of all the steps in an automatic Phaser run: correction for anisotropy, cell content analysis, rotation search, rescoring rotation peaks, translation searches, rescoring translations, packing, refinement, and generation of output PDB and MTZ files.
+</p>
+<a name="Adding_to_the_Script" id="Adding_to_the_Script"></a><h2> <span class="mw-headline">Adding to the Script</span></h2>
+<p>Let us modify our script file a little. Use your favourite editor and, after the ENSEMBLE command, add the line:
+</p>
+<pre> PDBFILE 1BIK_on_1D0D.pdb IDENTITY 0.377
+</pre>
+<p>with an ampersand also added at the end of the previous line. The ampersand means line continuation - you could leave out the ampersand and put the information about the new pdbfile on the same line. To avoid overwriting your old files, change the file root to AUTO_toxd2. Your script job will look like this (AUTO_toxd2.com in the tutorial directory):
+</p>
+<pre> phaser &lt;&lt; eof
+ MODE MR_AUTO
+ HKLIN toxd.mtz
+ LABIN F = FTOXD3 SIGF = SIGFTOXD3
+ ENSEMBLE toxd PDBFILE 1D0D_B.pdb IDENTITY 0.364 PDBFILE 1BIK_on_1D0D.pdb IDENTITY 0.377
+ COMPOSITION PROTEIN SEQUENCE toxd.seq NUM 1
+ SEARCH ENSEMBLE toxd NUM 1
+ ROOT AUTO_toxd2
+ eof
+</pre>
+<p>What have we done? We have now specified a second PDB File to be added to our model. But why do we give it the same handle? Remember I promised to talk in more detail about the ENSEMBLE keyword? Well here we go: What ENSEMBLE really does is that it takes all the PDB files and merges them together into an averaged model. See, neither 1D0D_B nor 1BIK are very good on their own but we can hope that if we put the two together into one single model that their identical features emphasize each other and that their dissimilar parts will be weighted down. This is exactly what the ENSEMBLE is for. It takes a number of PDB files and combines them using their sequence identity (or RMS error) to compute weighting factors.
+</p><p>Of course, for this to make any sense the models in the PDB files have to have the same relative orientation. In the distributed files, you will find a file 1BIK.pdb, but not the file 1BIK_on_1D0D.pdb. You will have to generate this by using another program to superimpose 1BIK on 1D0D. Probably the most convenient is to use the SSM superpose option in coot. It is VERY important to view your PDB files together in a graphics program (like O, PyMol, xfit or coot) before you attempt to use them in this way.
+</p><p>In our previous example we only had one single PDB file so the ENSEMBLE keyword didn't really mean a lot.
+</p>
+<a name="Searching_for_more_than_one_molecule" id="Searching_for_more_than_one_molecule"></a><h2> <span class="mw-headline">Searching for more than one molecule</span></h2>
+<p>The following job illustrates a more difficult molecular replacement problem, searching for the two components of a complex between beta-lactamase and the beta-lactamase inhibitor protein (BLIP) (AUTO_beta_blip.com in the tutorial directory) .
+</p>
+<pre> phaser &lt;&lt; eof
+ MODE MR_AUTO
+ HKLIN beta_blip_P3221.mtz
+ LABIN F = Fobs SIGF = Sigma
+ ENSEMBLE beta PDBFILE beta.pdb IDENTITY 1.0
+ ENSEMBLE blip PDBFILE blip.pdb IDENTITY 1.0
+ COMPOSITION PROTEIN SEQUENCE beta.seq NUM 1
+ COMPOSITION PROTEIN SEQUENCE blip.seq NUM 1
+ SEARCH ENSEMBLE beta NUM 1
+ SEARCH ENSEMBLE blip NUM 1
+ ROOT AUTO_beta_blip
+ eof
+</pre>
+<p>Here we define a separate ENSEMBLE for each separate rigid body that we will be looking for, and we give separate SEARCH commands for each one we wish to look for in this job. This job has been set up to look first for the bigger component, beta, which will be easier to find. Then the information from the fixed beta component will be used in looking for the smaller (and harder to locate) BLIP component.
+</p><p>Note the NUM subkey of the SEARCH command. If we were looking for more than one copy, we could give a NUM greater than 1. Note also that, for convenience, more than one COMPOSITION command can be given. Phaser will just add up the compositions given for the separate components.
+</p>
+<a name="Running_individual_steps" id="Running_individual_steps"></a><h2> <span class="mw-headline">Running individual steps</span></h2>
+<p>In special circumstances, you may need to run the steps of a structure solution separately, to gain more control over the progress of the run or to use specialized features. This can be illustrated by breaking up the solution of the beta-lactamase:BLIP complex.
+</p><p>Here is a job to automatically find the beta-lactamase component, which we would expect to be easier to find than BLIP (AUTO_beta.com in the tutorial directory).
+</p>
+<pre> phaser &lt;&lt; eof
+ MODE MR_AUTO
+ HKLIN beta_blip_P3221.mtz
+ LABIN F = Fobs SIGF = Sigma
+ ENSEMBLE beta PDBFILE beta.pdb IDENTITY 1.0
+ COMPOSITION PROTEIN SEQUENCE beta.seq NUM 1
+ COMPOSITION PROTEIN SEQUENCE blip.seq NUM 1
+ SEARCH ENSEMBLE beta NUM 1 
+ ROOT AUTO_beta
+ eof
+</pre>
+<p>Compared to the fully automated job searching for both components, the only important difference is the removal of the second SEARCH command. We could have defined the ENSEMBLE for blip, but we aren't using it in this job so it isn't necessary. Note that both COMPOSITION commands are still needed so that Phaser knows the fraction of the structure specified by beta!
+</p><p>Now we can use the information from the beta-lactamase solution in carrying out a rotation search for the BLIP component.
+</p>
+<pre> phaser &lt;&lt; eof
+ MODE MR_FRF
+ HKLIN beta_blip_P3221.mtz
+ LABIN F = Fobs SIGF = Sigma
+ ENSEMBLE beta PDBFILE beta.pdb IDENTITY 1.0
+ ENSEMBLE blip PDBFILE blip.pdb IDENTITY 1.0
+ COMPOSITION PROTEIN SEQUENCE beta.seq NUM 1
+ COMPOSITION PROTEIN SEQUENCE blip.seq NUM 1
+ SOLUTION 6DIM ENSEMBLE beta EULER 199.95 41.50 184.08 FRAC -0.4974 -0.1588 -0.2808
+ SEARCH ENSEMBLE blip
+ ROOT ROT_blip_fixbeta
+ eof
+</pre>
+<p>Note that the MODE is now MR_FRF (Fast Rotation Function). The SOLUTION 6DIM command gives information about the solution for beta that is contained in the output file AUTO_beta.sol from running AUTO_beta.com. Take a look at AUTO_beta.sol, if you ran that job. Notice that it specifies the space group (important if we had tested both possibilities, P3121 and P3221). The SOLU SET command can be used to separate different potential solutions, each of which can be used as the start of searches for further molecules, but in this case there is only one.
+</p><p>Instead of copying the information from AUTO_beta.sol, it is easier to just include it using the @ command. @ is a Phaser preprocessor command that allows you to read in external files and use the contents as if they were explicitly included in the script file. The script is ROT_blip_fixbeta.com in the tutorial directory.
+</p>
+<pre> phaser &lt;&lt; eof
+ MODE MR_FRF
+ HKLIN beta_blip_P3221.mtz
+ LABIN F = Fobs SIGF = Sigma
+ ENSEMBLE beta PDBFILE beta.pdb IDENTITY 1.0
+ ENSEMBLE blip PDBFILE blip.pdb IDENTITY 1.0
+ COMPOSITION PROTEIN SEQUENCE beta.seq NUM 1
+ COMPOSITION PROTEIN SEQUENCE blip.seq NUM 1
+ @AUTO_beta.sol
+ SEARCH ENSEMBLE blip
+ ROOT ROT_blip_fixbeta
+ eof
+</pre>
+<p>Look at the file ROT_blip_fixbeta.rlist produced by running this job ("source ROT_blip_fixbeta.com" in the tutorial directory). This file contains the rotation peaks (SOLU TRIAL commands) as well as the fixed beta-lactamase solution (SOLU 6DIM command). We can include this file in a job to run a translation search, still fixing the known beta-lactamase solution.
+</p>
+<pre> phaser &lt;&lt; eof
+ MODE MR_FTF
+ HKLIN beta_blip_P3221.mtz
+ LABIN F = Fobs SIGF = Sigma
+ ENSEMBLE beta PDBFILE beta.pdb IDENTITY 1.0
+ ENSEMBLE blip PDBFILE blip.pdb IDENTITY 1.0
+ COMPOSITION PROTEIN SEQUENCE beta.seq NUM 1
+ COMPOSITION PROTEIN SEQUENCE blip.seq NUM 1
+ @ROT_blip_fixbeta.rlist
+ ROOT TRA_blip_fixbeta
+ eof
+</pre>
+<p>What has changed?
+</p>
+<ul><li> The MODE is now MR_FTF (Molecular Replacement - Fast Translation Function) instead of MR_FRF
+</li><li> The orientations from the rotation search have been included using the @ command
+</li><li> The SEARCH keyword has disappeared
+</li></ul>
+<p>Ok, that's all there is to it, so run this script (TRA_blip_fixbeta.com) and see what output you get.
+</p><p>Now that you have an introduction to some of the most common commands used in Phaser, you could look at the full documentation to get an idea of the other things you can do.
+</p>
+<!-- 
+NewPP limit report
+Preprocessor node count: 6/1000000
+Post-expand include size: 0/2097152 bytes
+Template argument size: 0/2097152 bytes
+Expensive parser function count: 0/100
+-->
+<div class="printfooter">
+</div>
+	    <div id="catlinks"><div id='catlinks' class='catlinks'><div id="mw-normal-catlinks"><a href="../../../../articles/c/a/t/Special%7ECategories_101d.html" title="Special:Categories">Category</a>:&#32;<span dir='ltr'><a href="../../../../articles/t/u/t/Category%7ETutorial_c3b5.html" title="Category:Tutorial">Tutorial</a></span></div></div></div>	    <!-- end content -->
+	    <div class="visualClear"></div>
+	  </div>
+	</div>
+      </div>
+      <div id="column-one">
+	<div class="portlet" id="p-logo">
+            <a style="background-image: url(../../../../misc/PhaserwikiLogo.png);"
+	    href="http://www.phaser.cimr.cam.ac.uk/index.php/Phaser_Crystallographic_Software"
+	    title="Phaser Crystallographic Software"></a>
+	</div>
+	<script type="text/javascript"> if (window.isMSIE55) fixalpha(); </script>
+		<div class='portlet' id='p-site'>
+	  <h5>site</h5>
+	  <div class='pBody'>
+	    <ul>
+	    	      <li id="n-Home"><a href="../../../../index.html">Home</a></li>
+	     	      <li id="n-News"><a href="../../../../articles/n/e/w/News.html">News</a></li>
+	     	      <li id="n-Events"><a href="../../../../articles/e/v/e/Events.html">Events</a></li>
+	     	      <li id="n-Downloads"><a href="../../../../articles/d/o/w/Downloads.html">Downloads</a></li>
+	     	    </ul>
+	  </div>
+	</div>
+		<div class='portlet' id='p-documentation'>
+	  <h5>documentation</h5>
+	  <div class='pBody'>
+	    <ul>
+	    	      <li id="n-Manuals"><a href="../../../../articles/m/a/n/Manuals.html">Manuals</a></li>
+	     	      <li id="n-MR-Phasing"><a href="../../../../articles/m/o/l/Molecular_Replacement_a23a.html">MR Phasing</a></li>
+	     	      <li id="n-SAD-Phasing"><a href="../../../../articles/e/x/p/Experimental_Phasing_5400.html">SAD Phasing</a></li>
+	     	      <li id="n-Keyword-Examples"><a href="../../../../articles/m/r/_/MR_using_keyword_input_9c88.html">Keyword Examples</a></li>
+	     	      <li id="n-Python-Examples"><a href="../../../../articles/p/y/t/Python_Example_Scripts_7723.html">Python Examples</a></li>
+	     	      <li id="n-Tutorials"><a href="../../../../articles/t/u/t/Tutorials.html">Tutorials</a></li>
+	     	      <li id="n-FAQ"><a href="../../../../articles/f/a/q/FAQ_1fe9.html">FAQ</a></li>
+	     	      <li id="n-Top-Ten-Tips"><a href="../../../../articles/t/o/p/Top_Ten_Tips_3fcd.html">Top Ten Tips</a></li>
+	     	      <li id="n-Bugs"><a href="../../../../articles/b/u/g/Bugs.html">Bugs</a></li>
+	     	      <li id="n-Publications"><a href="../../../../articles/p/u/b/Publications.html">Publications</a></li>
+	     	      <li id="n-View-SVN"><a href="../../../../articles/s/v/n/SVN_Repository_93a5.html">View SVN</a></li>
+	     	    </ul>
+	  </div>
+	</div>
+		<div class='portlet' id='p-other'>
+	  <h5>other</h5>
+	  <div class='pBody'>
+	    <ul>
+	    	      <li id="n-Contact"><a href="../../../../articles/c/o/n/Contact.html">Contact</a></li>
+	     	      <li id="n-Developers"><a href="../../../../articles/d/e/v/Developers.html">Developers</a></li>
+	     	      <li id="n-Licences"><a href="../../../../articles/l/i/c/Licences.html">Licences</a></li>
+	     	      <li id="n-External-Links"><a href="../../../../articles/e/x/t/External_Links_ff0e.html">External Links</a></li>
+	     	      <li id="n-Help"><a href="../../../../articles/c/o/n/Help%7EContents_22de.html">Help</a></li>
+	     	    </ul>
+	  </div>
+	</div>
+	<!--
+	<div id="p-search" class="portlet">
+	  <h5><label for="searchInput">Search</label></h5>
+	  <div id="searchBody" class="pBody">
+	    <form action="javascript:goToStatic(3)" id="searchform"><div>
+	      <input id="searchInput" name="search" type="text"
+	        accesskey="f" value="" />
+	      <input type='submit' name="go" class="searchButton" id="searchGoButton"
+	        value="Go" />
+	    </div></form>
+	  </div>
+	</div>
+-->
+	      </div><!-- end of the left (by default at least) column -->
+      <div class="visualClear"></div>
+      <div id="footer">
+<!--
+    <div id="f-poweredbyico"><a href="http://www.mediawiki.org/"><img src="../../../../skins/common/images/poweredby_mediawiki_88x31.png" alt="Powered by MediaWiki" /></a></div>	-->
+<!-- date DATE Date -->
+	<ul id="f-list">
+	   Static <a href="http://www.phaser.cimr.cam.ac.uk/index.php/Phaser_Crystallographic_Software">Phaserwiki</a> 
+Thu Jul 25 23:20:16 BST 2013
+<!--
+	            </li>
+	  	  <li id="f-credits">This page was last modified 21:24, 1 August 2012 by <a href="../../../../articles/a/i/r/User%7EAirlie_8634.html" title="User:Airlie">Airlie McCoy</a>. Based on work by <a href="../../../../articles/w/i/k/User%7EWikiSysop_5eaf.html" title="User:WikiSysop">WikiSysop</a>.</li>	  	  <li id="f-about"><a href="../../../../articles/a/b/o/Phaserwiki%7EAbout_932f.html" title="Phaserwiki:About">About Phaserwiki</a></li>	  	  -->
+	</ul>
+      </div>
+    </div>
+  </body>
+</html>

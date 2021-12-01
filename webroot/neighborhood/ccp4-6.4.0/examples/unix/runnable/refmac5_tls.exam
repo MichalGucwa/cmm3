@@ -1,0 +1,43 @@
+#!/bin/sh 
+
+set -e
+
+# Simple example of using REFMAC5 with TLS option.
+# (In fact, TLS gives no great improvement in this case, but it
+# shows the method.)
+
+
+refmac5 \
+HKLIN  $CEXAM/rnase/rnase18.mtz \
+HKLOUT $CCP4_SCR/rnase_out.mtz \
+TLSIN  $CEXAM/rnase/rnase.tls \
+TLSOUT $CCP4_SCR/rnase_out.tls \
+XYZIN  $CEXAM/rnase/rnase.pdb \
+XYZOUT $CCP4_SCR/rnase_out.pdb << eor
+#
+# Input/output column assignments
+#
+LABIN FP=FNAT SIGFP=SIGFNAT FREE=FreeR_flag
+LABO FC=FC PHIC=PHIC  FWT=2FOFCWT DELFWT=FOFCWT
+#
+# Type of refinement, in particular requesting TLS cycles
+#
+REFI TLSC 20 
+REFI TYPE REST 
+REFI BREF ISOT METH CGMAT 
+#
+# Scaling, in particular requesting anisotropic scaling
+#
+SCAL TYPE BULK   
+SCAL LSSC ANISOT
+SCAL LSSC FIXBulk  BBULk 200
+#
+# Other keywords
+#
+WEIG AUTO
+BFAC SET 20     ! initialise B factors to constant value - useful for TLS
+MAKE HYDR N     ! ignore hydrogens
+MONI MEDI
+NCYC 10
+END
+eor

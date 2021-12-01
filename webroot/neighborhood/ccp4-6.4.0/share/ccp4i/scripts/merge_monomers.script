@@ -1,0 +1,48 @@
+#
+#     Copyright (C) 1999-2004  Liz Potterton, Peter Briggs
+#
+#     This code is distributed under the terms and conditions of the
+#     CCP4 Program Suite Licence Agreement as a CCP4 Library.
+#     A copy of the CCP4 licence can be obtained by writing to the
+#     CCP4 Secretary, Daresbury Laboratory, Warrington WA4 4AD, UK.
+#
+#CCP4i_cvs_Id $Id$
+#===========================================================================
+#
+# merge_monomers.script
+#
+#===========================================================================
+# Run libcheck to add a new monomer description to a monomer library file
+
+  # We need to perform a run of libcheck for each file specified by the
+  # user
+  set FILE_IN_1 $LIBIN(1)
+  for { set i 2 } { $i <= $NFILES } { incr i } {
+     # Set files up
+     set FILE_IN_2 $LIBIN($i)
+     set FILE_OUT [GetTmpFileName]
+     # Run Libcheck
+     WriteComFile libcheck_script \
+"_Y
+_FILE_L $FILE_IN_1
+_FILE_L2 $FILE_IN_2
+_FILE_O $FILE_OUT
+_END\n"
+    Execute [BinPath libcheck ] $libcheck_script status report
+    # NB libcheck adds ".lib" to the end of the output file name
+    # (even when this is already present)
+    # Set up files for next round
+    set FILE_IN_1 ""
+    append FILE_IN_1 $FILE_OUT .lib
+  }
+
+  # Move final output file to correct place
+  # The final file name is stored as FILE_IN_1, from the loop above
+  if { [file exists $FILE_IN_1] } {
+     MoveFile $FILE_IN_1 $LIBOUT
+  } else {
+     TerminateScript 0 -report "ERROR output dictionary file not found"
+  }
+
+
+
